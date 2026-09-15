@@ -1,23 +1,25 @@
 # 3DReport
 
-Aplicativo para criação de **orçamentos de impressão 3D**. A partir dos dados do
-fatiador (filamento, comprimento em metros e tempo de impressão) e dos custos da
-operação (energia, manutenção, falhas, acabamento, retorno do investimento na
-máquina), calcula o **valor de produção** e o **valor de venda** com a margem de
-lucro desejada.
+Aplicativo para criação de **orçamentos de impressão 3D**. A partir do filamento
+usado, da impressora escolhida (cada uma com seu próprio perfil salvo) e dos
+dados da peça (comprimento em metros e tempo de impressão), calcula o **valor
+de produção** e o **valor de venda** com a margem de lucro desejada.
 
-> **Status:** motor de cálculo implementado e testado; UI de orçamento e
-> configurações funcionando (persistência ainda em memória). Veja pendências
-> em [docs/decisions.md](docs/decisions.md).
+> **Status:** motor de cálculo implementado e testado; telas de orçamento,
+> cadastro de filamentos, cadastro de impressoras e configurações gerais
+> funcionando, com persistência real em disco. Veja pendências em
+> [docs/decisions.md](docs/decisions.md).
 
 ## Funcionalidades
 
 | Funcionalidade | Edição | Estado |
 |---|---|---|
 | Cálculo de custo de produção e preço de venda | Gratuita | Pronto (`core`) |
-| Tela de orçamento (filamento, comprimento, tempo → produção/venda) | Gratuita | Pronto, persistência em memória |
-| Tela de configurações (energia, manutenção, falhas, máquina, margem) | Gratuita | Pronto, persistência em memória |
-| Cadastro de filamentos pela UI / persistência real | Gratuita | Planejado |
+| Tela de orçamento (escolhe filamento + impressora, entra comprimento/tempo → produção/venda) | Gratuita | Pronto |
+| Cadastro de filamentos (catálogo salvo) | Gratuita | Pronto |
+| Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Gratuita | Pronto |
+| Configurações gerais do negócio (energia, falhas, acabamento, margem) | Gratuita | Pronto |
+| Persistência em disco (`~/.3dreport/`, arquivos JSON) | Gratuita | Pronto |
 | Taxas de marketplace, embalagem etc. | Paga | Planejado |
 
 ## Stack

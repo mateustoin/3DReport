@@ -31,12 +31,15 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 | Executar o app desktop | `./gradlew :composeApp:run` |
 | Rodar todos os testes | `./gradlew allTests` |
 | Rodar só testes do core | `./gradlew :core:jvmTest` |
+| Rodar só testes do composeApp (persistência) | `./gradlew :composeApp:jvmTest` |
 | Compilar e testar tudo | `./gradlew build` |
 | Gerar instalador do SO atual | `./gradlew :composeApp:packageDistributionForCurrentOS` |
 | Limpar build | `./gradlew clean` |
 
 - Relatório de testes: `core/build/reports/tests/jvmTest/index.html`.
 - Instaladores gerados: `composeApp/build/compose/binaries/`.
+- Dados do app (filamentos, impressoras, configurações): `~/.3dreport/*.json`.
+  Apague a pasta para resetar para os valores padrão.
 
 ### Rodando pela IDE
 - Android Studio/IntelliJ: abra `Main.kt` e clique no ▶ ao lado de `fun main()`,

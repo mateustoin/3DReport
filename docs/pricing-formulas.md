@@ -15,20 +15,28 @@ As fórmulas foram derivadas da planilha de precificação usada atualmente
 | Comprimento de filamento | `filamentLengthMeters` | m |
 | Tempo de impressão | `printTimeMinutes` | min |
 
-### Configurações da operação (`PricingSettings`)
+### Perfil da impressora escolhida (`PrinterProfile`) — uma por orçamento
+
+Uma pessoa costuma ter várias impressoras; cada uma tem seu próprio perfil
+salvo (tela Impressoras) e o orçamento escolhe qual usar.
 
 | Parâmetro | Campo | Unidade |
 |---|---|---|
-| Preço do kWh | `energyPricePerKwh` | R$ |
 | Consumo da impressora | `printerPowerWatts` | W |
 | Custo de manutenção por hora | `maintenanceCostPerHour` | R$/h |
-| Taxa de falhas | `failureRate` | fração (0,10 = 10%) |
-| Taxa de acabamento | `finishingRate` | fração |
-| Custo administrativo (ex.: modelagem) | `administrativeCost` | R$ por orçamento |
 | Valor da máquina | `machineInvestment.machinePrice` | R$ |
 | Prazo de retorno | `machineInvestment.paybackMonths` | meses |
 | Dias de uso por mês | `machineInvestment.printingDaysPerMonth` | dias |
 | Horas de uso por dia | `machineInvestment.printingHoursPerDay` | h |
+
+### Configurações gerais do negócio (`PricingSettings`) — iguais para qualquer impressora
+
+| Parâmetro | Campo | Unidade |
+|---|---|---|
+| Preço do kWh | `energyPricePerKwh` | R$ |
+| Taxa de falhas | `failureRate` | fração (0,10 = 10%) |
+| Taxa de acabamento | `finishingRate` | fração |
+| Custo administrativo (ex.: modelagem) | `administrativeCost` | R$ por orçamento |
 | Margem de lucro | `profitMargin` | fração (1,0 = 100%) |
 
 ## Cálculos
