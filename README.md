@@ -26,7 +26,7 @@ com a margem de lucro desejada.
 | Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos) | Pronto |
 | Marca d'água personalizada no PDF (texto, configurável em Configurações) | Pronto |
 | Exportar vários orçamentos selecionados num PDF só (um por página) | Pronto |
-| Serviços opcionais no orçamento (pintura, lixamento, acabamento etc.) | Planejado |
+| Serviços opcionais no orçamento (pintura, lixamento, acabamento etc.) | Pronto |
 | Taxas de marketplace, custo de embalagem/spray etc. | Planejado |
 
 ## Apoie o projeto

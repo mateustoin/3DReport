@@ -29,6 +29,7 @@ ao final, com data.
 | 22 | 2026-09-15 | Marca d'água diagonal e rodapé viram **opções independentes** (checkbox pra cada uma em Configurações); com um nome preenchido, salvar exige ao menos uma marcada. "Exportar PDF" passa a abrir o diálogo de salvar direto na pasta Documents/Documentos do usuário, em vez do padrão do sistema | Aprovada |
 | 23 | 2026-09-15 | Bug de terceiros contornado: arrastar a janela entre monitores com DPI/escala diferentes deixava o conteúdo com o layout antigo até um redimensionamento manual — bug conhecido do Compose Desktop/Skiko (JetBrains/compose-multiplatform#3685 e relacionadas), sem correção oficial. Contornado detectando a troca de monitor e forçando um redimensionamento programático (`Main.kt`) | Aprovada |
 | 24 | 2026-09-15 | Exportar vários orçamentos num PDF só: seleção múltipla direto na lista da aba Histórico (checkbox por linha), sem tela separada. Um orçamento por página, na ordem da lista; marca d'água/rodapé (se configurados) em todas as páginas | Aprovada |
+| 25 | 2026-09-15 | Serviços opcionais no orçamento (aba "Serviços", catálogo nome+preço; checkboxes na tela de Orçamento). O valor dos serviços selecionados soma só no **Total (venda + serviços)** — o **Lucro exibido não muda**, porque o app não modela o custo de um serviço (só o preço cobrado do cliente), então tratar tudo como lucro puro seria enganoso | Aprovada |
 
 ## Pendentes de aprovação
 

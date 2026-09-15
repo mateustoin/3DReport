@@ -9,13 +9,13 @@ Projeto **Kotlin Multiplatform** com dois módulos Gradle:
 ├─ core/                      # KMP puro: domínio e cálculo (sem UI)
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/core/
-│     │  ├─ model/            # Filament, PrinterProfile, PrintJob, PricingSettings, BrandingSettings, Quote, SavedQuote
+│     │  ├─ model/            # Filament, PrinterProfile, Service, PrintJob, PricingSettings, BrandingSettings, Quote, SavedQuote
 │     │  └─ pricing/          # PricingCalculator
 │     └─ commonTest/          # testes unitários (kotlin.test)
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/app/
-│     │  ├─ App.kt            # raiz: navegação por abas (Orçamento / Histórico / Filamentos / Impressoras / Configurações)
+│     │  ├─ App.kt            # raiz: navegação por abas (Orçamento / Histórico / Filamentos / Impressoras / Serviços / Configurações)
 │     │  ├─ data/              # contratos dos repositórios (expect class — ver "Persistência" abaixo)
 │     │  ├─ platform/          # capacidades específicas de plataforma (expect fun — ver "Capacidades de plataforma")
 │     │  └─ ui/                # uma pasta por tela: <tela>/<Tela>Screen.kt + <Tela>ViewModel.kt + <Tela>UiState.kt/FormState.kt
@@ -40,11 +40,15 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   modelos — usada pela persistência do `composeApp`, não pelo `core` em si).
 - `model/`: classes imutáveis (`data class`) que validam suas entradas no `init`
   (`IllegalArgumentException` para valores negativos/zero inválidos).
-  - `Filament` e `PrinterProfile` têm `id: String` — são entidades salvas em
-    catálogo (a UI gera o id ao criar, com `kotlin.uuid.Uuid`); os demais
-    modelos continuam sendo apenas objetos de valor.
+  - `Filament`, `PrinterProfile` e `Service` têm `id: String` — são entidades
+    salvas em catálogo (a UI gera o id ao criar, com `kotlin.uuid.Uuid`); os
+    demais modelos continuam sendo apenas objetos de valor.
+  - `Service` não entra em `PricingCalculator` — seu preço já é o valor
+    cobrado do cliente (não um custo com margem em cima), então soma
+    diretamente no valor de venda na camada de UI/export, não no cálculo
+    interno de produção/lucro (decisão 25).
 - `pricing/PricingCalculator`: função pura `calculate(job, printer, settings): Quote`.
-  Fórmulas em [pricing-formulas.md](pricing-formulas.md).
+  Fórmulas em [pricing-formulas.md](pricing-formulas.md). Não conhece serviços.
 - Alvo atual: `jvm()`.
 
 ### `composeApp`
@@ -55,12 +59,16 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   imutável), um `ViewModel` (Kotlin puro, sem `Composable`, expõe
   `StateFlow`) e um `*Screen` (`@Composable` que só observa o `ViewModel` e
   envia eventos — sem lógica de cálculo).
-- Cinco telas, navegadas por abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt):
+- Seis telas, navegadas por abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt):
   - **Orçamento** (`ui/quote`): escolhe filamento + impressora (dropdowns,
     alimentados pelos catálogos salvos) e entra comprimento + tempo de
-    impressão; mostra produção/venda/lucro calculados a cada mudança. Quando
-    o resultado é válido, mostra também o formulário pra salvar (nome, foto,
-    link do modelo — todos opcionais; ver `SaveQuoteFormState`).
+    impressão; mostra produção/venda/lucro calculados a cada mudança. Se
+    houver serviços cadastrados, mostra uma seção "Serviços opcionais" com
+    uma checkbox por serviço (decisão 25); o resultado então também mostra
+    cada serviço marcado e o "Total (venda + serviços)" (`QuoteResult.grandTotal`)
+    — o Lucro exibido não muda. Quando o resultado é válido, mostra também o
+    formulário pra salvar (nome, foto, link do modelo — todos opcionais; ver
+    `SaveQuoteFormState`), que agora também congela os serviços escolhidos.
   - **Histórico** (`ui/history`): lista os orçamentos salvos (`SavedQuote` —
     um retrato congelado do `Quote` no momento em que foi salvo, não afetado
     por edições posteriores em filamento/impressora/configurações), com
@@ -71,10 +79,12 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     também uma checkbox de seleção; com 1+ selecionados, um botão "Exportar
     selecionados (PDF)" (decisão 24) gera um único PDF com um orçamento por
     página, na mesma ordem da lista.
-  - **Filamentos** (`ui/filaments`) e **Impressoras** (`ui/printers`): cadastro
-    (listar, adicionar, editar, excluir) dos catálogos usados no Orçamento.
-    Mesmo padrão de tela nos dois: lista + formulário (`FormState`) que abre
-    para adicionar/editar um item por vez.
+  - **Filamentos** (`ui/filaments`), **Impressoras** (`ui/printers`) e
+    **Serviços** (`ui/services`): cadastro (listar, adicionar, editar,
+    excluir) dos catálogos usados no Orçamento. Mesmo padrão de tela nos
+    três: lista + formulário (`FormState`) que abre para adicionar/editar um
+    item por vez. Diferente dos outros dois, o catálogo de serviços começa
+    vazio (não há serviço "padrão").
   - **Configurações** (`ui/settings`): edita os parâmetros gerais do negócio
     (`PricingSettings` — iguais para qualquer impressora) em rascunho; só
     grava no repositório compartilhado ao clicar em "Salvar". Na mesma tela,
@@ -87,13 +97,14 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     desmarcadas (erro de validação, mesmo padrão dos outros formulários).
 
 ### Persistência
-- `data/FilamentRepository`, `data/PrinterRepository`, `data/SettingsRepository`,
-  `data/QuoteHistoryRepository` e `data/BrandingRepository` guardam o estado
-  compartilhado entre as telas (`StateFlow`) e persistem em disco: arquivos
-  JSON em `~/.3dreport/` (`filaments.json`, `printers.json`, `settings.json`,
+- `data/FilamentRepository`, `data/PrinterRepository`, `data/ServiceRepository`,
+  `data/SettingsRepository`, `data/QuoteHistoryRepository` e
+  `data/BrandingRepository` guardam o estado compartilhado entre as telas
+  (`StateFlow`) e persistem em disco: arquivos JSON em `~/.3dreport/`
+  (`filaments.json`, `printers.json`, `services.json`, `settings.json`,
   `quotes.json`, `branding.json`), lidos uma vez na criação e regravados a
-  cada mudança. Pré-carregados com um catálogo/perfil padrão no primeiro uso
-  (exceto histórico e marca d'água, que começam vazios).
+  cada mudança. Filamentos/impressoras vêm com um catálogo/perfil padrão no
+  primeiro uso; serviços, histórico e marca d'água começam vazios.
 - A foto de um `SavedQuote`, quando existe, **não** vai dentro do JSON — fica
   como arquivo à parte em `~/.3dreport/photos/<id>.<extensão>`, referenciado
   pelo campo `photoFileName`. Motivo: manter o JSON pequeno e legível; o
