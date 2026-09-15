@@ -164,4 +164,38 @@ class QuoteViewModelTest {
         // Lucro não deve mudar por causa de serviços (decisão: só entram no total, não no lucro).
         assertEquals(quote.profit, quote.salePrice - quote.productionCost)
     }
+
+    @Test
+    fun marketplaceFeeOnlyAppliesWhenToggled() {
+        val settingsRepository = SettingsRepository()
+        settingsRepository.update(settingsRepository.settings.value.copy(marketplaceFeeRate = 0.15))
+        val viewModel = QuoteViewModel(
+            FilamentRepository(),
+            PrinterRepository(),
+            settingsRepository,
+            ServiceRepository(),
+            QuoteHistoryRepository(),
+        )
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+
+        fun currentQuote() = viewModel.calculate(
+            viewModel.filaments.value,
+            viewModel.printers.value,
+            viewModel.settings.value,
+            viewModel.services.value,
+            viewModel.input.value,
+        ).quote!!
+
+        val withoutFee = currentQuote()
+        assertEquals(0.0, withoutFee.marketplaceFeeRate)
+
+        viewModel.setAppliesMarketplaceFee(true)
+        val withFee = currentQuote()
+
+        assertEquals(0.15, withFee.marketplaceFeeRate)
+        assertTrue(withFee.salePrice > withoutFee.salePrice)
+        // Margem real (lucro) não deve mudar mesmo com o preço de tabela maior.
+        assertEquals(withoutFee.profit, withFee.profit, 1e-9)
+    }
 }

@@ -7,4 +7,5 @@ data class QuoteInputState(
     val lengthMetersText: String = "",
     val printTimeMinutesText: String = "",
     val selectedServiceIds: Set<String> = emptySet(),
+    val appliesMarketplaceFee: Boolean = false,
 )

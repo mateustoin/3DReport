@@ -33,8 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.toPercentText
 
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
 @Composable
@@ -97,6 +99,16 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             }
         }
 
+        if (settings.marketplaceFeeRate > 0.0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = input.appliesMarketplaceFee,
+                    onCheckedChange = viewModel::setAppliesMarketplaceFee,
+                )
+                Text("Vender por marketplace (taxa de ${settings.marketplaceFeeRate.toPercentText()})")
+            }
+        }
+
         HorizontalDivider()
 
         Text("Resultado", style = MaterialTheme.typography.titleMedium)
@@ -107,6 +119,13 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             quote != null -> {
                 Text("Produção: ${quote.productionCost.toBrl()}")
                 Text("Venda: ${quote.salePrice.toBrl()}")
+                if (quote.marketplaceFeeRate > 0.0) {
+                    Text(
+                        "Já inclui a taxa de marketplace (${quote.marketplaceFeeRate.toPercentText()}) — " +
+                            "o cliente paga esse valor normalmente.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
                 Text("Lucro: ${quote.profit.toBrl()}")
                 if (result.selectedServices.isNotEmpty()) {
                     result.selectedServices.forEach { service ->
@@ -163,6 +182,9 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
             onValueChange = viewModel::setSourceLink,
             label = { Text("Link do modelo (opcional, uso interno)") },
         )
+        if (form.sourceLink.isNotBlank()) {
+            LinkText(text = "Abrir link no navegador", url = form.sourceLink)
+        }
 
         Button(onClick = onSave) { Text("Salvar orçamento") }
 

@@ -55,6 +55,8 @@ class QuoteViewModel(
         it.copy(selectedServiceIds = if (id in it.selectedServiceIds) it.selectedServiceIds - id else it.selectedServiceIds + id)
     }
 
+    fun setAppliesMarketplaceFee(applies: Boolean) = inputState.update { it.copy(appliesMarketplaceFee = applies) }
+
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
     fun clearPhoto() = saveFormState.update { it.copy(photo = null, savedConfirmation = false) }
@@ -88,7 +90,9 @@ class QuoteViewModel(
         }
 
         val job = PrintJob(filament = filament, filamentLengthMeters = length, printTimeMinutes = time)
-        return runCatching { PricingCalculator.calculate(job, printer, settings) }.fold(
+        return runCatching {
+            PricingCalculator.calculate(job, printer, settings, input.appliesMarketplaceFee)
+        }.fold(
             onSuccess = { QuoteResult(filament, printer, quote = it, selectedServices = selectedServices) },
             onFailure = { QuoteResult(filament, printer, errorMessage = it.message, selectedServices = selectedServices) },
         )

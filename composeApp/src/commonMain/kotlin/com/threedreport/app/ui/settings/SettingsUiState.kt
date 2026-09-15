@@ -13,6 +13,7 @@ data class SettingsUiState(
     val finishingRatePercentText: String = "",
     val administrativeCostText: String = "",
     val profitMarginPercentText: String = "",
+    val marketplaceFeeRatePercentText: String = "",
     val errorMessage: String? = null,
     val savedConfirmation: Boolean = false,
 )

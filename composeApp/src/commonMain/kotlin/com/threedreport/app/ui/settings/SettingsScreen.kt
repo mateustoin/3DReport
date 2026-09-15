@@ -59,6 +59,16 @@ fun SettingsScreen(viewModel: SettingsViewModel, brandingViewModel: BrandingView
             viewModel.update { s -> s.copy(profitMarginPercentText = it) }
         }
 
+        Text("Marketplace", style = MaterialTheme.typography.titleMedium)
+        LabeledField("Taxa de marketplace (%, ex.: Shopee)", state.marketplaceFeeRatePercentText) {
+            viewModel.update { s -> s.copy(marketplaceFeeRatePercentText = it) }
+        }
+        Text(
+            "Marcada por orçamento na aba Orçamento, quando aquela venda for por um marketplace. " +
+                "O valor de venda sobe o suficiente pra sua margem de lucro real não mudar.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
         Button(onClick = viewModel::save) { Text("Salvar") }
 
         state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }

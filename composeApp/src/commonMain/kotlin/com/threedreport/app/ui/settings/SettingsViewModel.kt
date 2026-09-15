@@ -31,6 +31,7 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository) {
                 finishingRate = current.finishingRatePercentText.toRequiredDouble("Taxa de acabamento") / 100.0,
                 administrativeCost = current.administrativeCostText.toRequiredDouble("Custo administrativo"),
                 profitMargin = current.profitMarginPercentText.toRequiredDouble("Margem de lucro") / 100.0,
+                marketplaceFeeRate = current.marketplaceFeeRatePercentText.toRequiredDouble("Taxa de marketplace") / 100.0,
             )
         }
 
@@ -50,4 +51,5 @@ private fun PricingSettings.toUiState() = SettingsUiState(
     finishingRatePercentText = (finishingRate * 100).toString(),
     administrativeCostText = administrativeCost.toString(),
     profitMarginPercentText = (profitMargin * 100).toString(),
+    marketplaceFeeRatePercentText = (marketplaceFeeRate * 100).toString(),
 )

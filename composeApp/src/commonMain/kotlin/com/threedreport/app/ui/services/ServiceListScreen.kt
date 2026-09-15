@@ -36,8 +36,10 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
     ) {
         Text("Serviços", style = MaterialTheme.typography.titleLarge)
         Text(
-            "Serviços opcionais que você oferece junto com a impressão (ex.: pintura, lixamento). " +
-                "O preço aqui já é o valor cobrado do cliente.",
+            "Serviços opcionais que você oferece junto com a impressão (ex.: pintura, lixamento, " +
+                "embalagem especial). O preço aqui já é o valor cobrado do cliente. Taxa de " +
+                "marketplace (ex.: Shopee) não entra aqui — ela é configurada em Configurações, " +
+                "porque desconta da sua venda em vez de somar no total do cliente.",
             style = MaterialTheme.typography.bodySmall,
         )
 
