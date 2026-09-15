@@ -16,7 +16,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/** Tela de Configurações: parâmetros de custo da operação, editados em conjunto e salvos com um botão. */
+/**
+ * Tela de Configurações gerais: parâmetros do negócio, iguais para qualquer
+ * impressora/orçamento (energia, falhas, acabamento, administrativo, margem).
+ * O que é específico de cada impressora fica na tela de Impressoras.
+ */
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsState()
@@ -29,17 +33,6 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
         LabeledField("Preço do kWh (R$)", state.energyPricePerKwhText) {
             viewModel.update { s -> s.copy(energyPricePerKwhText = it) }
         }
-        LabeledField("Consumo da impressora (W)", state.printerPowerWattsText) {
-            viewModel.update { s -> s.copy(printerPowerWattsText = it) }
-        }
-
-        Text("Manutenção e custos fixos", style = MaterialTheme.typography.titleMedium)
-        LabeledField("Manutenção por hora (R$)", state.maintenanceCostPerHourText) {
-            viewModel.update { s -> s.copy(maintenanceCostPerHourText = it) }
-        }
-        LabeledField("Custo administrativo por orçamento (R$)", state.administrativeCostText) {
-            viewModel.update { s -> s.copy(administrativeCostText = it) }
-        }
 
         Text("Falhas e acabamento", style = MaterialTheme.typography.titleMedium)
         LabeledField("Taxa de falhas (%)", state.failureRatePercentText) {
@@ -49,18 +42,9 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
             viewModel.update { s -> s.copy(finishingRatePercentText = it) }
         }
 
-        Text("Retorno do investimento na máquina", style = MaterialTheme.typography.titleMedium)
-        LabeledField("Valor da máquina (R$)", state.machinePriceText) {
-            viewModel.update { s -> s.copy(machinePriceText = it) }
-        }
-        LabeledField("Prazo de retorno (meses)", state.paybackMonthsText) {
-            viewModel.update { s -> s.copy(paybackMonthsText = it) }
-        }
-        LabeledField("Dias de uso por mês", state.printingDaysPerMonthText) {
-            viewModel.update { s -> s.copy(printingDaysPerMonthText = it) }
-        }
-        LabeledField("Horas de uso por dia", state.printingHoursPerDayText) {
-            viewModel.update { s -> s.copy(printingHoursPerDayText = it) }
+        Text("Custos administrativos", style = MaterialTheme.typography.titleMedium)
+        LabeledField("Custo administrativo por orçamento (R$)", state.administrativeCostText) {
+            viewModel.update { s -> s.copy(administrativeCostText = it) }
         }
 
         Text("Margem", style = MaterialTheme.typography.titleMedium)

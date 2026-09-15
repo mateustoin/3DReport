@@ -14,7 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.ui.filaments.FilamentListScreen
+import com.threedreport.app.ui.filaments.FilamentListViewModel
+import com.threedreport.app.ui.printers.PrinterListScreen
+import com.threedreport.app.ui.printers.PrinterListViewModel
 import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
@@ -22,15 +27,22 @@ import com.threedreport.app.ui.settings.SettingsViewModel
 
 private enum class AppTab(val label: String) {
     QUOTE("Orçamento"),
+    FILAMENTS("Filamentos"),
+    PRINTERS("Impressoras"),
     SETTINGS("Configurações"),
 }
 
 @Composable
 fun App() {
     val filamentRepository = remember { FilamentRepository() }
+    val printerRepository = remember { PrinterRepository() }
     val settingsRepository = remember { SettingsRepository() }
-    val quoteViewModel = remember { QuoteViewModel(filamentRepository, settingsRepository) }
+
+    val quoteViewModel = remember { QuoteViewModel(filamentRepository, printerRepository, settingsRepository) }
+    val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
+    val printerListViewModel = remember { PrinterListViewModel(printerRepository) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
+
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
 
     MaterialTheme {
@@ -48,6 +60,8 @@ fun App() {
 
                 when (selectedTab) {
                     AppTab.QUOTE -> QuoteScreen(quoteViewModel)
+                    AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
+                    AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
                     AppTab.SETTINGS -> SettingsScreen(settingsViewModel)
                 }
             }

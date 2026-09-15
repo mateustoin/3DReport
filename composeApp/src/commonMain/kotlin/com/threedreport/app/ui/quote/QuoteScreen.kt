@@ -24,44 +24,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.format.toBrl
 
-/** Tela de Orçamento: dados da peça (filamento, comprimento, tempo) e resultado calculado. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
 @Composable
 fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsState()
-    var filamentMenuExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ExposedDropdownMenuBox(
-            expanded = filamentMenuExpanded,
-            onExpandedChange = { filamentMenuExpanded = it },
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                readOnly = true,
-                value = state.selectedFilament?.name.orEmpty(),
-                onValueChange = {},
-                label = { Text("Filamento") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = filamentMenuExpanded) },
-            )
-            DropdownMenu(
-                expanded = filamentMenuExpanded,
-                onDismissRequest = { filamentMenuExpanded = false },
-            ) {
-                state.filaments.forEach { filament ->
-                    DropdownMenuItem(
-                        text = { Text("${filament.name} · ${filament.pricePerKg.toBrl()}/kg") },
-                        onClick = {
-                            viewModel.selectFilament(filament)
-                            filamentMenuExpanded = false
-                        },
-                    )
-                }
-            }
-        }
+        LabeledDropdown(
+            label = "Filamento",
+            items = state.filaments,
+            selected = state.selectedFilament,
+            itemLabel = { "${it.name} · ${it.pricePerKg.toBrl()}/kg" },
+            displayText = { it.name },
+            onSelect = viewModel::selectFilament,
+        )
+
+        LabeledDropdown(
+            label = "Impressora",
+            items = state.printers,
+            selected = state.selectedPrinter,
+            itemLabel = { it.name },
+            displayText = { it.name },
+            onSelect = viewModel::selectPrinter,
+        )
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
@@ -89,7 +77,44 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
                 Text("Venda: ${quote.salePrice.toBrl()}")
                 Text("Lucro: ${quote.profit.toBrl()}")
             }
+            state.filaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
+            state.printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
             else -> Text("Preencha os campos acima para calcular.", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> LabeledDropdown(
+    label: String,
+    items: List<T>,
+    selected: T?,
+    itemLabel: (T) -> String,
+    displayText: (T) -> String,
+    onSelect: (T) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            readOnly = true,
+            value = selected?.let(displayText).orEmpty(),
+            onValueChange = {},
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(itemLabel(item)) },
+                    onClick = {
+                        onSelect(item)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }
