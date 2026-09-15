@@ -114,6 +114,8 @@ funcionalidades.
 
 ## Convenções
 
+Revisadas e ratificadas na decisão 16 de [decisions.md](decisions.md).
+
 - Pacote base: `com.threedreport`.
 - Identificadores em inglês; KDoc e documentação em português.
 - Percentuais como fração decimal (`0.10` = 10%).

@@ -20,8 +20,8 @@ ao final, com data.
 | 13 | 2026-09-15 | Navegação ampliada para **4 abas**: Orçamento, Filamentos, Impressoras, Configurações. Orçamento passa a ter 2 dropdowns (Filamento e Impressora); Filamentos e Impressoras têm tela própria de cadastro (listar/adicionar/editar/excluir) | Aprovada |
 | 14 | 2026-09-15 | Persistência real de filamentos, impressoras e configurações: **arquivo JSON local** (`kotlinx.serialization`, em `~/.3dreport/`), por trás da mesma interface de repositório (`expect`/`actual`) | Aprovada |
 | 15 | 2026-09-15 | Projeto vira **gratuito e de código aberto**: sem edição paga, sem assinatura, sem verificação de licença no software. Licença de código: **Apache 2.0** (substitui a licença proprietária da decisão 3). Sustentação financeira via doação voluntária (Buy Me a Coffee: `mateustoin`, link no README/`.github/FUNDING.yml`). O repositório GitHub, hoje privado, será aberto para o público pelo responsável do projeto quando ele decidir (não pelo Claude) | Aprovada |
+| 16 | 2026-09-15 | Convenções da base **ratificadas como estão** (revisão pedida após o projeto virar open source): pacote `com.threedreport`; identificadores em inglês com KDoc/comentários em português (reavaliar se aparecerem colaboradores que não leem português); valores monetários em `Double`, arredondados só na exibição (reavaliar só se algum bug de arredondamento aparecer na prática) | Aprovada |
 
 ## Pendentes de aprovação
 
-- Convenções adotadas na base e passíveis de revisão: pacote `com.threedreport`,
-  identificadores em inglês com KDoc em português, valores monetários em `Double`.
+Nenhuma no momento — ver [roadmap.md](roadmap.md) para as próximas evoluções.

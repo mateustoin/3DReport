@@ -63,6 +63,7 @@ docs/        Documentação
 | [docs/architecture.md](docs/architecture.md) | Módulos, plataformas, convenções |
 | [docs/pricing-formulas.md](docs/pricing-formulas.md) | Parâmetros e fórmulas de cálculo |
 | [docs/decisions.md](docs/decisions.md) | Decisões aprovadas e pendentes |
+| [docs/roadmap.md](docs/roadmap.md) | Backlog de evoluções e próximas implementações |
 | [core/README.md](core/README.md) | Módulo `core` |
 | [composeApp/README.md](composeApp/README.md) | Módulo `composeApp` |
 
