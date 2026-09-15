@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.formatDateTime
+import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.SavedQuote
 
@@ -107,8 +108,11 @@ private fun SavedQuoteRow(
                         "Lucro: ${savedQuote.quote.profit.toBrl()}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                savedQuote.sourceLink?.let {
-                    Text("Link interno (não exportado): $it", style = MaterialTheme.typography.bodySmall)
+                savedQuote.sourceLink?.let { link ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Link interno (não exportado):", style = MaterialTheme.typography.bodySmall)
+                        LinkText(text = link, url = link)
+                    }
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
