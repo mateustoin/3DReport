@@ -21,6 +21,7 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
+            implementation(libs.kotlinx.coroutines.core)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)

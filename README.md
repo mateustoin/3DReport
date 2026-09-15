@@ -6,15 +6,18 @@ operação (energia, manutenção, falhas, acabamento, retorno do investimento n
 máquina), calcula o **valor de produção** e o **valor de venda** com a margem de
 lucro desejada.
 
-> **Status:** base do projeto. O motor de cálculo está implementado e testado;
-> a interface atual é provisória e a UI/UX definitiva ainda será definida.
+> **Status:** motor de cálculo implementado e testado; UI de orçamento e
+> configurações funcionando (persistência ainda em memória). Veja pendências
+> em [docs/decisions.md](docs/decisions.md).
 
 ## Funcionalidades
 
 | Funcionalidade | Edição | Estado |
 |---|---|---|
-| Cálculo de custo de produção e preço de venda | Gratuita | Motor pronto (`core`), sem UI |
-| Interface de criação de orçamento | Gratuita | A definir |
+| Cálculo de custo de produção e preço de venda | Gratuita | Pronto (`core`) |
+| Tela de orçamento (filamento, comprimento, tempo → produção/venda) | Gratuita | Pronto, persistência em memória |
+| Tela de configurações (energia, manutenção, falhas, máquina, margem) | Gratuita | Pronto, persistência em memória |
+| Cadastro de filamentos pela UI / persistência real | Gratuita | Planejado |
 | Taxas de marketplace, embalagem etc. | Paga | Planejado |
 
 ## Stack

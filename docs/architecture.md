@@ -14,7 +14,10 @@ Projeto **Kotlin Multiplatform** com dois módulos Gradle:
 │     └─ commonTest/          # testes unitários (kotlin.test)
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
-│     ├─ commonMain/          # UI compartilhada (App.kt)
+│     ├─ commonMain/kotlin/com/threedreport/app/
+│     │  ├─ App.kt            # raiz: navegação por abas (Orçamento / Configurações)
+│     │  ├─ data/              # repositórios em memória (filamentos, configurações)
+│     │  └─ ui/                # uma pasta por tela: <tela>/<Tela>Screen.kt + <Tela>ViewModel.kt + <Tela>UiState.kt
 │     └─ jvmMain/             # entrada do desktop (Main.kt)
 ├─ docs/                      # documentação
 ├─ gradle/libs.versions.toml  # catálogo de versões
@@ -38,9 +41,20 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
 - Compose Multiplatform + Material 3.
 - Alvo atual: `jvm()` (desktop). Empacotamento nativo via `compose.desktop`
   (`.deb`, `.msi`, `.dmg`).
-- **A tela atual é provisória** e só demonstra a integração com o `core`.
-  O padrão de apresentação proposto é MVVM (ViewModel + StateFlow), a ser
-  confirmado junto com a proposta de UI/UX.
+- Padrão de apresentação: **MVVM**. Cada tela tem um `UiState` (`data class`
+  imutável), um `ViewModel` (Kotlin puro, sem `Composable`, expõe
+  `StateFlow<UiState>`) e um `*Screen` (`@Composable` que só observa o
+  `ViewModel` e envia eventos — sem lógica de cálculo).
+- Duas telas, navegadas por abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt):
+  - **Orçamento** (`ui/quote`): entra filamento + comprimento + tempo de
+    impressão, mostra produção/venda/lucro calculados a cada mudança.
+  - **Configurações** (`ui/settings`): edita os parâmetros de
+    `PricingSettings` em rascunho; só grava no repositório compartilhado ao
+    clicar em "Salvar".
+- `data/FilamentRepository` e `data/SettingsRepository` guardam o estado
+  compartilhado entre as telas. Implementação atual: **em memória**, com
+  valores padrão pré-carregados (ver decisão 11 em [decisions.md](decisions.md));
+  persistência real é uma pendência futura.
 
 ## Plataformas
 

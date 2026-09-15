@@ -13,13 +13,14 @@ ao final, com data.
 | 6 | 2026-09-15 | Manutenção: substituir "depreciação %/h" por **custo fixo em R$/hora** | Aprovada |
 | 7 | 2026-09-15 | Taxas de marketplace (Shopee) e custo de spray: **fora da edição gratuita** | Aprovada |
 | 8 | 2026-09-15 | Falhas e acabamento: percentuais **sobre o custo de material** | Aprovada |
+| 9 | 2026-09-15 | UI/UX da tela de orçamento: **2 telas** (Orçamento + Configurações) com navegação por abas; Orçamento só pede o que muda por peça (filamento, comprimento, tempo), Configurações reúne os parâmetros da operação (energia, manutenção, falhas, acabamento, máquina, margem) | Aprovada |
+| 10 | 2026-09-15 | Padrão de apresentação: **MVVM** (ViewModel + StateFlow), um ViewModel por tela | Aprovada |
+| 11 | 2026-09-15 | Persistência de filamentos e configurações: **em memória por enquanto** (repositórios com valores padrão pré-carregados); armazenamento real fica para decisão futura | Aprovada |
 
 ## Pendentes de aprovação
 
-- UI/UX da tela de orçamento (layout, fluxo, campos).
-- Padrão de apresentação (proposto: MVVM com ViewModel + StateFlow).
-- Persistência de filamentos e configurações (onde e como salvar).
-- Filamentos pré-cadastrados (ex.: PLA/ABS/PETG com densidades padrão).
+- Persistência real de filamentos e configurações (arquivo/DB — quando sair do estágio "em memória").
+- Cadastro/edição de filamentos pela UI (hoje a lista de filamentos — PLA/ABS/PETG com densidades padrão — é fixa em [`FilamentRepository`](../composeApp/src/commonMain/kotlin/com/threedreport/app/data/FilamentRepository.kt)).
 - Mecanismo de separação entre edição gratuita e paga.
 - Convenções adotadas na base e passíveis de revisão: pacote `com.threedreport`,
   identificadores em inglês com KDoc em português, valores monetários em `Double`.
