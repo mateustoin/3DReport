@@ -28,6 +28,7 @@ import com.threedreport.core.model.SavedQuote
 @Composable
 fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Modifier) {
     val savedQuotes by viewModel.savedQuotes.collectAsState()
+    val copiedId by viewModel.copiedId.collectAsState()
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -46,7 +47,10 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
             SavedQuoteRow(
                 savedQuote = savedQuote,
                 photoBytes = savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) },
+                justCopied = copiedId == savedQuote.id,
                 onDownloadPhoto = { viewModel.downloadPhoto(savedQuote) },
+                onExportPdf = { viewModel.exportPdf(savedQuote) },
+                onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
                 onDelete = { viewModel.delete(savedQuote.id) },
             )
         }
@@ -57,7 +61,10 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
 private fun SavedQuoteRow(
     savedQuote: SavedQuote,
     photoBytes: ByteArray?,
+    justCopied: Boolean,
     onDownloadPhoto: () -> Unit,
+    onExportPdf: () -> Unit,
+    onCopy: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -83,6 +90,8 @@ private fun SavedQuoteRow(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onExportPdf) { Text("Exportar PDF") }
+                    TextButton(onClick = onCopy) { Text(if (justCopied) "Copiado!" else "Copiar") }
                     if (photoBytes != null) {
                         TextButton(onClick = onDownloadPhoto) { Text("Baixar foto") }
                     }
