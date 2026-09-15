@@ -3,6 +3,7 @@ package com.threedreport.app.ui.history
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.copyToClipboard
+import com.threedreport.app.platform.defaultDocumentsDirectory
 import com.threedreport.app.platform.renderSavedQuotePdf
 import com.threedreport.app.platform.saveBytesToFile
 import com.threedreport.core.model.SavedQuote
@@ -31,9 +32,13 @@ class QuoteHistoryViewModel(
     }
 
     fun exportPdf(savedQuote: SavedQuote) {
-        val watermarkText = brandingRepository.branding.value.watermarkText
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes(savedQuote), watermarkText)
-        saveBytesToFile(pdfBytes, "${sanitizeFileName(savedQuote.name)}.pdf")
+        val branding = brandingRepository.branding.value
+        val brandName = branding.watermarkText?.takeIf { it.isNotBlank() }
+        val diagonalText = brandName?.takeIf { branding.showWatermark }
+        val footerText = brandName?.takeIf { branding.showFooter }
+
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes(savedQuote), diagonalText, footerText)
+        saveBytesToFile(pdfBytes, "${sanitizeFileName(savedQuote.name)}.pdf", defaultDocumentsDirectory())
     }
 
     fun copyQuoteToClipboard(savedQuote: SavedQuote) {

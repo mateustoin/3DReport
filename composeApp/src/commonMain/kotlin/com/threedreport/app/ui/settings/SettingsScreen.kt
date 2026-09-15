@@ -2,11 +2,13 @@ package com.threedreport.app.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -14,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.focus.tabToNavigate
@@ -68,11 +71,23 @@ fun SettingsScreen(viewModel: SettingsViewModel, brandingViewModel: BrandingView
         Text("Marca d'água do PDF", style = MaterialTheme.typography.titleMedium)
         LabeledField("Texto da marca d'água (opcional)", branding.watermarkTextInput, brandingViewModel::update)
 
+        CheckboxRow("Marca d'água diagonal no PDF", branding.showWatermark, brandingViewModel::setShowWatermark)
+        CheckboxRow("Rodapé com o nome no PDF", branding.showFooter, brandingViewModel::setShowFooter)
+
         Button(onClick = brandingViewModel::save) { Text("Salvar") }
 
+        branding.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (branding.savedConfirmation) {
             Text("Marca d'água salva.", color = MaterialTheme.colorScheme.primary)
         }
+    }
+}
+
+@Composable
+private fun CheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(label)
     }
 }
 

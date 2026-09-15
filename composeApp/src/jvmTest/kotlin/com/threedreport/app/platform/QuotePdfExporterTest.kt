@@ -39,7 +39,7 @@ class QuotePdfExporterTest {
 
     @Test
     fun pdfContainsNameAndSalePriceButNotInternalData() {
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null)
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = null)
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
@@ -56,7 +56,7 @@ class QuotePdfExporterTest {
         }
         val photoBytes = ByteArrayOutputStream().use { out -> ImageIO.write(image, "png", out); out.toByteArray() }
 
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes, watermarkText = null)
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes, watermarkText = null, footerText = null)
 
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.pages.count() == 1)
@@ -65,7 +65,12 @@ class QuotePdfExporterTest {
 
     @Test
     fun pdfContainsWatermarkTextWhenProvided() {
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "Marcenaria 3D do João")
+        val pdfBytes = renderSavedQuotePdf(
+            savedQuote,
+            photoBytes = null,
+            watermarkText = "Marcenaria 3D do João",
+            footerText = null,
+        )
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
@@ -77,9 +82,9 @@ class QuotePdfExporterTest {
     }
 
     @Test
-    fun blankWatermarkIsNotDrawn() {
-        val withBlank = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "   ")
-        val withNull = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null)
+    fun blankWatermarkAndFooterAreNotDrawn() {
+        val withBlank = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "   ", footerText = "   ")
+        val withNull = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = null)
 
         val textWithBlank = Loader.loadPDF(withBlank).use { PDFTextStripper().getText(it) }
         val textWithNull = Loader.loadPDF(withNull).use { PDFTextStripper().getText(it) }
@@ -89,7 +94,12 @@ class QuotePdfExporterTest {
 
     @Test
     fun footerShowsBrandNameAsCleanContiguousText() {
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "Marcenaria 3D do João")
+        val pdfBytes = renderSavedQuotePdf(
+            savedQuote,
+            photoBytes = null,
+            watermarkText = null,
+            footerText = "Marcenaria 3D do João",
+        )
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
@@ -97,6 +107,26 @@ class QuotePdfExporterTest {
         // extrator — ver pdfContainsWatermarkTextWhenProvided), o rodapé não é
         // rotacionado, então deve aparecer como uma string contígua normal.
         assertTrue(text.contains("Marcenaria 3D do João"))
+    }
+
+    @Test
+    fun watermarkAndFooterAreIndependent() {
+        val onlyWatermark = Loader.loadPDF(
+            renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "Marca", footerText = null)
+        ).use { PDFTextStripper().getText(it) }
+        val onlyFooter = Loader.loadPDF(
+            renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = "Marca")
+        ).use { PDFTextStripper().getText(it) }
+        val neither = Loader.loadPDF(
+            renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = null)
+        ).use { PDFTextStripper().getText(it) }
+
+        // O rodapé sozinho contém "Marca" como string contígua; a marca d'água
+        // sozinha quebra em fragmentos (é diagonal) mas ainda contém as letras.
+        assertTrue(onlyFooter.contains("Marca"))
+        assertFalse(neither.contains("Marca"))
+        assertTrue(onlyWatermark.replace(Regex("\\s+"), "").contains("Marca"))
+        assertFalse(onlyWatermark.contains("Marca")) // sem rodapé, não aparece como string contígua
     }
 
     @Test
@@ -112,7 +142,12 @@ class QuotePdfExporterTest {
         }
         val photoBytes = ByteArrayOutputStream().use { out -> ImageIO.write(image, "png", out); out.toByteArray() }
 
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes, watermarkText = "Marcenaria 3D do João")
+        val pdfBytes = renderSavedQuotePdf(
+            savedQuote,
+            photoBytes,
+            watermarkText = "Marcenaria 3D do João",
+            footerText = null,
+        )
 
         val document = Loader.loadPDF(pdfBytes)
         val rendered = PDFRenderer(document).renderImageWithDPI(0, 72f)

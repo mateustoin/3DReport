@@ -13,17 +13,43 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class BrandingViewModel(private val repository: BrandingRepository) {
 
-    private val state = MutableStateFlow(
-        BrandingUiState(watermarkTextInput = repository.branding.value.watermarkText.orEmpty())
-    )
+    private val state = MutableStateFlow(repository.branding.value.toUiState())
     val uiState: StateFlow<BrandingUiState> = state.asStateFlow()
 
     fun update(text: String) {
-        state.value = state.value.copy(watermarkTextInput = text, savedConfirmation = false)
+        state.value = state.value.copy(watermarkTextInput = text, errorMessage = null, savedConfirmation = false)
+    }
+
+    fun setShowWatermark(show: Boolean) {
+        state.value = state.value.copy(showWatermark = show, errorMessage = null, savedConfirmation = false)
+    }
+
+    fun setShowFooter(show: Boolean) {
+        state.value = state.value.copy(showFooter = show, errorMessage = null, savedConfirmation = false)
     }
 
     fun save() {
-        repository.update(BrandingSettings(watermarkText = state.value.watermarkTextInput.trim().ifEmpty { null }))
-        state.value = state.value.copy(savedConfirmation = true)
+        val current = state.value
+        val watermarkText = current.watermarkTextInput.trim().ifEmpty { null }
+
+        if (watermarkText != null && !current.showWatermark && !current.showFooter) {
+            state.value = current.copy(errorMessage = "Selecione ao menos uma opção: marca d'água ou rodapé.")
+            return
+        }
+
+        repository.update(
+            BrandingSettings(
+                watermarkText = watermarkText,
+                showWatermark = current.showWatermark,
+                showFooter = current.showFooter,
+            )
+        )
+        state.value = current.copy(errorMessage = null, savedConfirmation = true)
     }
 }
+
+private fun BrandingSettings.toUiState() = BrandingUiState(
+    watermarkTextInput = watermarkText.orEmpty(),
+    showWatermark = showWatermark,
+    showFooter = showFooter,
+)

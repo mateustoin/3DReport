@@ -34,4 +34,14 @@ class BrandingRepositoryTest {
         val reloaded = BrandingRepository().branding.value
         assertEquals("Minha Marca", reloaded.watermarkText)
     }
+
+    @Test
+    fun showWatermarkAndShowFooterFlagsSurviveNewRepositoryInstance() {
+        val original = BrandingRepository()
+        original.update(BrandingSettings(watermarkText = "Minha Marca", showWatermark = false, showFooter = true))
+
+        val reloaded = BrandingRepository().branding.value
+        assertEquals(false, reloaded.showWatermark)
+        assertEquals(true, reloaded.showFooter)
+    }
 }

@@ -18,7 +18,12 @@ import javax.imageio.ImageIO
 import kotlin.math.cos
 import kotlin.math.sin
 
-actual fun renderSavedQuotePdf(savedQuote: SavedQuote, photoBytes: ByteArray?, watermarkText: String?): ByteArray {
+actual fun renderSavedQuotePdf(
+    savedQuote: SavedQuote,
+    photoBytes: ByteArray?,
+    watermarkText: String?,
+    footerText: String?,
+): ByteArray {
     PDDocument().use { document ->
         val page = PDPage(PDRectangle.A4)
         document.addPage(page)
@@ -58,9 +63,12 @@ actual fun renderSavedQuotePdf(savedQuote: SavedQuote, photoBytes: ByteArray?, w
             // Marca d'água e rodapé por último: desenhados por cima do resto do
             // conteúdo (inclusive a foto), translúcidos o bastante pra não
             // atrapalhar a leitura — do contrário ficam encobertos pela foto.
+            // Independentes: cada um só aparece se o respectivo texto vier preenchido.
             if (!watermarkText.isNullOrBlank()) {
                 drawWatermark(content, page, titleFont, watermarkText)
-                drawFooter(content, page, bodyFont, watermarkText, margin)
+            }
+            if (!footerText.isNullOrBlank()) {
+                drawFooter(content, page, bodyFont, footerText, margin)
             }
         }
 
