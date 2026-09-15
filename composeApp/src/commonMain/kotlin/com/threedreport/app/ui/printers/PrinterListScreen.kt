@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.PrinterProfile
 
@@ -93,43 +94,43 @@ private fun PrinterForm(
         Text(if (form.id == null) "Nova impressora" else "Editar impressora", style = MaterialTheme.typography.titleMedium)
 
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.name,
             onValueChange = { text -> onChange { it.copy(name = text) } },
             label = { Text("Nome (ex.: Ender 3)") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.printerPowerWattsText,
             onValueChange = { text -> onChange { it.copy(printerPowerWattsText = text) } },
             label = { Text("Consumo (W)") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.maintenanceCostPerHourText,
             onValueChange = { text -> onChange { it.copy(maintenanceCostPerHourText = text) } },
             label = { Text("Manutenção por hora (R$)") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.machinePriceText,
             onValueChange = { text -> onChange { it.copy(machinePriceText = text) } },
             label = { Text("Valor da máquina (R$)") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.paybackMonthsText,
             onValueChange = { text -> onChange { it.copy(paybackMonthsText = text) } },
             label = { Text("Prazo de retorno (meses)") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.printingDaysPerMonthText,
             onValueChange = { text -> onChange { it.copy(printingDaysPerMonthText = text) } },
             label = { Text("Dias de uso por mês") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.printingHoursPerDayText,
             onValueChange = { text -> onChange { it.copy(printingHoursPerDayText = text) } },
             label = { Text("Horas de uso por dia") },

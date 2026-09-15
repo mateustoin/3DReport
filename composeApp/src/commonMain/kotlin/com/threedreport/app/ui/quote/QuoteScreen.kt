@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
@@ -68,14 +69,14 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
         )
 
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = input.lengthMetersText,
             onValueChange = viewModel::setLengthMeters,
             label = { Text("Comprimento de filamento (m)") },
         )
 
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = input.printTimeMinutesText,
             onValueChange = viewModel::setPrintTimeMinutes,
             label = { Text("Tempo de impressão (min)") },
@@ -111,7 +112,7 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
         Text("Salvar orçamento", style = MaterialTheme.typography.titleMedium)
 
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.name,
             onValueChange = viewModel::setSaveName,
             label = { Text("Nome (opcional)") },
@@ -133,7 +134,7 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
         }
 
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.sourceLink,
             onValueChange = viewModel::setSourceLink,
             label = { Text("Link do modelo (opcional, uso interno)") },

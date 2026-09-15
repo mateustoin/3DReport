@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.focus.tabToNavigate
 
 /**
  * Tela de Configurações gerais: parâmetros do negócio, iguais para qualquer
@@ -64,7 +65,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
 @Composable
 private fun LabeledField(label: String, value: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().tabToNavigate(),
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },

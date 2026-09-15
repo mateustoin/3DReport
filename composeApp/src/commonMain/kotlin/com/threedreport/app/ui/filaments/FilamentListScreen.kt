@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.Filament
 
@@ -92,25 +93,25 @@ private fun FilamentForm(
         Text(if (form.id == null) "Novo filamento" else "Editar filamento", style = MaterialTheme.typography.titleMedium)
 
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.name,
             onValueChange = { text -> onChange { it.copy(name = text) } },
             label = { Text("Nome") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.pricePerKgText,
             onValueChange = { text -> onChange { it.copy(pricePerKgText = text) } },
             label = { Text("Preço por kg (R$)") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.densityGPerCm3Text,
             onValueChange = { text -> onChange { it.copy(densityGPerCm3Text = text) } },
             label = { Text("Densidade (g/cm³)") },
         )
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.diameterMmText,
             onValueChange = { text -> onChange { it.copy(diameterMmText = text) } },
             label = { Text("Diâmetro (mm)") },
