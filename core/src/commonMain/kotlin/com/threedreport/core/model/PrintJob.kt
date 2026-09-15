@@ -1,5 +1,7 @@
 package com.threedreport.core.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Dados de uma peça a ser orçada, normalmente informados pelo fatiador.
  *
@@ -10,6 +12,7 @@ package com.threedreport.core.model
  * @property filamentLengthMeters comprimento de filamento consumido, em metros.
  * @property printTimeMinutes tempo de impressão, em minutos.
  */
+@Serializable
 data class PrintJob(
     val filament: Filament,
     val filamentLengthMeters: Double,
