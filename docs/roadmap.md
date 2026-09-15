@@ -2,58 +2,80 @@
 
 Lista viva de evoluções e próximas implementações. Diferente de
 [decisions.md](decisions.md) (o que já foi decidido), este documento é um
-**rascunho de backlog**: itens aqui ainda não têm data nem prioridade
-definida. Um item só sai daqui pra `decisions.md` quando alguém propuser
-como implementar, o responsável do projeto aprovar, e a mudança entrar no
-código (ver [development.md](development.md#fluxo-de-mudanças)).
+**backlog**: itens aqui ainda não têm data definida. Um item só sai daqui pra
+`decisions.md` quando alguém propuser como implementar, o responsável do
+projeto aprovar, e a mudança entrar no código (ver
+[development.md](development.md#fluxo-de-mudanças)).
 
-> Este primeiro rascunho foi montado juntando pendências que já apareceram em
-> conversas anteriores. Ainda precisa da sua revisão: o que prioriza, o que
-> remove, e principalmente **o que falta** — funcionalidades de produto que só
-> você tem em mente.
+As seções abaixo estão em **ordem de prioridade** (definida em 2026-09-15):
+funcionalidades de produto e UI/UX primeiro; só depois disso, instaladores
+desktop; só depois disso, infraestrutura/qualidade (não urgente enquanto o
+repositório continua privado); Android é a menor prioridade de todas — fica
+pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
 
-## Funcionalidades do produto
+## 1. Funcionalidades do produto e UI/UX
 
-- [ ] **Salvar/exportar um orçamento finalizado.** Hoje a tela de Orçamento só
-      calcula em tempo real; não há como guardar um orçamento pronto pra
-      mandar pro cliente (o mockup original de UI/UX até tinha um botão
-      "Salvar orçamento" que nunca foi implementado). Formato de saída a
-      decidir: PDF, texto pra copiar/colar, impressão direta, etc.
-- [ ] **Histórico de orçamentos.** Lista dos orçamentos já calculados/salvos,
-      pra consultar depois sem precisar refazer as contas.
+- [ ] **Salvar um orçamento**, com:
+  - **Nome (opcional).** Se deixado em branco ao salvar, gerar um nome
+    genérico automático (ex.: "Orçamento #N" ou com a data) pra aparecer no
+    histórico.
+  - **Foto do produto (opcional).** Upload de imagem anexada ao orçamento —
+    faz parte do orçamento em si, então **entra no export** (PDF e,
+    dependendo de como o copiar/colar simplificado for desenhado, pelo menos
+    referenciada nele).
+  - **Link do modelo (opcional).** De onde o modelo 3D foi obtido (ex.:
+    Thingiverse, Cults3D). É **só uso interno** — nunca aparece no PDF nem no
+    texto de copiar/colar; serve só pro criador reencontrar a origem do
+    modelo ao revisitar um orçamento antigo no histórico.
+- [ ] **Exportar o orçamento.** Dois formatos:
+  - **PDF** — formato principal, pra mandar pro cliente.
+  - **Copiar e colar simplificado** — versão em texto, mais rápida pra colar
+    numa conversa de WhatsApp/marketplace sem gerar arquivo.
+  - Em ambos os formatos: nome, dados calculados (produção/venda/lucro) e
+    foto (quando houver) aparecem; o link do modelo **nunca** aparece.
+- [ ] **Histórico de orçamentos.** Lista dos orçamentos salvos (nome, foto,
+  link interno, valores), pra consultar depois sem refazer as contas.
 - [ ] **Taxas de marketplace (ex.: Shopee) e custo de embalagem/spray.**
-      Estava fora de escopo por ser "recurso pago" (decisão 7, hoje
-      substituída) — não há mais essa barreira, só falta decidir como esses
-      custos entram na fórmula (ver planilha de referência).
+  Estava fora de escopo por ser "recurso pago" (decisão 7, hoje substituída)
+  — não há mais essa barreira, só falta decidir como esses custos entram na
+  fórmula (ver planilha de referência).
 - [ ] **Edição/exclusão com confirmação.** Nas telas de Filamentos e
-      Impressoras, "Excluir" age na hora, sem diálogo de confirmação — risco
-      de exclusão acidental de um perfil configurado com calma.
+  Impressoras, "Excluir" age na hora, sem diálogo de confirmação — risco de
+  exclusão acidental de um perfil configurado com calma.
 
-## Plataformas
+## 2. Instaladores desktop
 
-- [ ] **Android.** Já é a plataforma planejada desde a decisão 1; os passos
-      estão descritos em [architecture.md](architecture.md#como-adicionar-android-no-futuro).
-      Principal trabalho: um `actual` de `data/` para Android (`DataStore`
-      ou arquivo em `Context.filesDir`, já que a persistência atual usa
-      `java.io.File` com `user.home`, específico de desktop).
-- [ ] **Instaladores desktop.** `./gradlew :composeApp:packageDistributionForCurrentOS`
-      já gera `.deb`/`.msi`/`.dmg`, mas nunca foi publicado um release — vale
-      decidir um fluxo (ex.: GitHub Releases) quando o repositório for público.
+- [ ] `./gradlew :composeApp:packageDistributionForCurrentOS` já gera
+  `.deb`/`.msi`/`.dmg`, mas nunca foi publicado um release — decidir um fluxo
+  (ex.: GitHub Releases) quando o repositório for público.
 
-## Infraestrutura e qualidade (agora que o projeto é open source)
+## 3. Infraestrutura e qualidade (open source)
+
+Adiado porque o repositório ainda é privado — não há urgência.
 
 - [ ] **CI no GitHub Actions.** Rodar `./gradlew build` (compila + testa
-      `core` e `composeApp`) a cada push/PR. Hoje isso só roda manualmente.
-      Importante pra dar confiança a quem for revisar/contribuir de fora.
+  `core` e `composeApp`) a cada push/PR.
 - [ ] **CONTRIBUTING.md.** Como rodar, testar e propor mudanças — hoje só
-      existe [docs/development.md](development.md), voltado a você mesmo.
+  existe [docs/development.md](development.md), voltado a você mesmo.
 - [ ] **Badges no README.** Build (CI), licença (Apache 2.0) e o botão de
-      apoio (Buy Me a Coffee) já linkado — comuns em repositórios públicos.
+  apoio (Buy Me a Coffee) já linkado — comuns em repositórios públicos.
+
+## 4. Android (menor prioridade — bem mais pra frente)
+
+- [ ] Só quando o projeto estiver consolidado e houver demanda de verdade.
+  Passos técnicos já mapeados em
+  [architecture.md](architecture.md#como-adicionar-android-no-futuro).
+  Principal trabalho: um `actual` de `data/` para Android (`DataStore` ou
+  arquivo em `Context.filesDir`, já que a persistência atual usa
+  `java.io.File` com `user.home`, específico de desktop) — e, se o upload de
+  foto do orçamento já existir nessa altura, também precisará de um caminho
+  de armazenamento de imagem por plataforma.
 
 ## Observações técnicas (não são pedidos de mudança, só pontos a reavaliar se algo doer na prática)
 
 - Persistência em arquivo JSON (decisão 14) foi escolhida por simplicidade;
-  se o volume de dados crescer muito ou vier a precisar de consultas mais
-  complexas, migrar para SQLDelight é a alternativa que já foi cogitada.
+  se o volume de dados crescer muito (ex.: histórico de orçamentos com fotos)
+  ou vier a precisar de consultas mais complexas, migrar para SQLDelight é a
+  alternativa que já foi cogitada.
 - Valores monetários em `Double` (decisão 16): reavaliar só se aparecer um
   bug real de arredondamento — não é esperado no uso atual.
