@@ -17,9 +17,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.Service
@@ -29,6 +33,7 @@ import com.threedreport.core.model.Service
 fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modifier) {
     val services by viewModel.services.collectAsState()
     val form by viewModel.form.collectAsState()
+    var pendingDelete by remember { mutableStateOf<Service?>(null) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -47,7 +52,7 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
             ServiceRow(
                 service = service,
                 onEdit = { viewModel.startEdit(service) },
-                onDelete = { viewModel.delete(service.id) },
+                onDelete = { pendingDelete = service },
             )
         }
 
@@ -63,6 +68,18 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
                 onCancel = viewModel::cancelEdit,
             )
         }
+    }
+
+    pendingDelete?.let { service ->
+        ConfirmDialog(
+            title = "Excluir serviço?",
+            message = "\"${service.name}\" será removido do catálogo. Essa ação não pode ser desfeita.",
+            onConfirm = {
+                viewModel.delete(service.id)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 }
 

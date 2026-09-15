@@ -17,9 +17,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.Filament
@@ -29,6 +33,7 @@ import com.threedreport.core.model.Filament
 fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Modifier) {
     val filaments by viewModel.filaments.collectAsState()
     val form by viewModel.form.collectAsState()
+    var pendingDelete by remember { mutableStateOf<Filament?>(null) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -40,7 +45,7 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
             FilamentRow(
                 filament = filament,
                 onEdit = { viewModel.startEdit(filament) },
-                onDelete = { viewModel.delete(filament.id) },
+                onDelete = { pendingDelete = filament },
             )
         }
 
@@ -56,6 +61,18 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
                 onCancel = viewModel::cancelEdit,
             )
         }
+    }
+
+    pendingDelete?.let { filament ->
+        ConfirmDialog(
+            title = "Excluir filamento?",
+            message = "\"${filament.name}\" será removido do catálogo. Essa ação não pode ser desfeita.",
+            onConfirm = {
+                viewModel.delete(filament.id)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 }
 

@@ -17,9 +17,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.PrinterProfile
@@ -29,6 +33,7 @@ import com.threedreport.core.model.PrinterProfile
 fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modifier) {
     val printers by viewModel.printers.collectAsState()
     val form by viewModel.form.collectAsState()
+    var pendingDelete by remember { mutableStateOf<PrinterProfile?>(null) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -40,7 +45,7 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
             PrinterRow(
                 printer = printer,
                 onEdit = { viewModel.startEdit(printer) },
-                onDelete = { viewModel.delete(printer.id) },
+                onDelete = { pendingDelete = printer },
             )
         }
 
@@ -56,6 +61,18 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
                 onCancel = viewModel::cancelEdit,
             )
         }
+    }
+
+    pendingDelete?.let { printer ->
+        ConfirmDialog(
+            title = "Excluir impressora?",
+            message = "\"${printer.name}\" será removida do catálogo. Essa ação não pode ser desfeita.",
+            onConfirm = {
+                viewModel.delete(printer.id)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 }
 

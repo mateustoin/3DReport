@@ -18,11 +18,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.formatDateTime
+import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.SavedQuote
@@ -33,6 +37,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val copiedId by viewModel.copiedId.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
+    var pendingDelete by remember { mutableStateOf<SavedQuote?>(null) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -70,9 +75,21 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
                 onDownloadPhoto = { viewModel.downloadPhoto(savedQuote) },
                 onExportPdf = { viewModel.exportPdf(savedQuote) },
                 onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
-                onDelete = { viewModel.delete(savedQuote.id) },
+                onDelete = { pendingDelete = savedQuote },
             )
         }
+    }
+
+    pendingDelete?.let { savedQuote ->
+        ConfirmDialog(
+            title = "Excluir orçamento?",
+            message = "\"${savedQuote.name}\" será removido do histórico, junto com a foto salva (se houver). Essa ação não pode ser desfeita.",
+            onConfirm = {
+                viewModel.delete(savedQuote.id)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 }
 
