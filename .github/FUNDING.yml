@@ -1,0 +1,4 @@
+# Faz o GitHub mostrar o botão "Sponsor" no repositório, apontando pra
+# doação voluntária (não há assinatura nem recurso pago no software).
+# TODO: trocar SEU_USUARIO pelo usuário real do Buy Me a Coffee.
+buy_me_a_coffee: SEU_USUARIO

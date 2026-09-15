@@ -96,5 +96,6 @@ Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.
 - **Energia:** a planilha exibe o kWh como "1,2", mas o valor real usado é 1,23.
 - **Manutenção:** o campo "Depreciação por hora (%)" foi substituído por um
   custo fixo em R$ por hora (`maintenanceCostPerHour`), mais simples de entender.
-- **Taxas de marketplace (Shopee) e custo de embalagem/spray:** fora do escopo
-  da edição gratuita; não implementados.
+- **Taxas de marketplace (Shopee) e custo de embalagem/spray:** ainda não
+  implementados (não há mais "edição gratuita" limitando isso — é só uma
+  funcionalidade pendente, sem decisão de prioridade ainda).

@@ -1,9 +1,10 @@
 # 3DReport
 
-Aplicativo para criação de **orçamentos de impressão 3D**. A partir do filamento
-usado, da impressora escolhida (cada uma com seu próprio perfil salvo) e dos
-dados da peça (comprimento em metros e tempo de impressão), calcula o **valor
-de produção** e o **valor de venda** com a margem de lucro desejada.
+Aplicativo **gratuito e de código aberto** para criação de **orçamentos de
+impressão 3D**. A partir do filamento usado, da impressora escolhida (cada uma
+com seu próprio perfil salvo) e dos dados da peça (comprimento em metros e
+tempo de impressão), calcula o **valor de produção** e o **valor de venda**
+com a margem de lucro desejada.
 
 > **Status:** motor de cálculo implementado e testado; telas de orçamento,
 > cadastro de filamentos, cadastro de impressoras e configurações gerais
@@ -12,15 +13,21 @@ de produção** e o **valor de venda** com a margem de lucro desejada.
 
 ## Funcionalidades
 
-| Funcionalidade | Edição | Estado |
-|---|---|---|
-| Cálculo de custo de produção e preço de venda | Gratuita | Pronto (`core`) |
-| Tela de orçamento (escolhe filamento + impressora, entra comprimento/tempo → produção/venda) | Gratuita | Pronto |
-| Cadastro de filamentos (catálogo salvo) | Gratuita | Pronto |
-| Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Gratuita | Pronto |
-| Configurações gerais do negócio (energia, falhas, acabamento, margem) | Gratuita | Pronto |
-| Persistência em disco (`~/.3dreport/`, arquivos JSON) | Gratuita | Pronto |
-| Taxas de marketplace, embalagem etc. | Paga | Planejado |
+| Funcionalidade | Estado |
+|---|---|
+| Cálculo de custo de produção e preço de venda | Pronto (`core`) |
+| Tela de orçamento (escolhe filamento + impressora, entra comprimento/tempo → produção/venda) | Pronto |
+| Cadastro de filamentos (catálogo salvo) | Pronto |
+| Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Pronto |
+| Configurações gerais do negócio (energia, falhas, acabamento, margem) | Pronto |
+| Persistência em disco (`~/.3dreport/`, arquivos JSON) | Pronto |
+| Taxas de marketplace, custo de embalagem/spray etc. | Planejado |
+
+## Apoie o projeto
+
+O 3DReport é e sempre será gratuito e de código aberto — não há edição paga
+nem assinatura. Se ele te ajuda, considere uma doação voluntária:
+[Buy Me a Coffee](https://buymeacoffee.com/SEU_USUARIO).
 
 ## Stack
 
@@ -61,6 +68,5 @@ docs/        Documentação
 
 ## Licença
 
-Software proprietário — todos os direitos reservados. Uma Edição Gratuita, com as
-funcionalidades básicas de orçamento, poderá ser distribuída em formato
-executável. Veja [LICENSE](LICENSE).
+Código aberto sob [Apache License 2.0](LICENSE). Gratuito, sem edição paga —
+veja [Apoie o projeto](#apoie-o-projeto).

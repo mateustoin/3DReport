@@ -101,12 +101,16 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
 Esse passo não foi feito agora para manter o build simples e independente do
 Android SDK enquanto o foco é desktop.
 
-## Edição gratuita x paga
+## Modelo: gratuito e de código aberto
 
-Ainda não há separação de código. A ideia é que o cálculo básico de orçamento
-(atual `core`) componha a edição gratuita, e recursos pagos entrem em módulos
-próprios. O mecanismo (flavors, módulos, licença em runtime) será proposto
-quando houver o primeiro recurso pago.
+Não há edição paga nem separação de código por licença (decisão 15 em
+[decisions.md](decisions.md)): todas as funcionalidades, atuais e futuras,
+fazem parte do mesmo software gratuito, sob [Apache 2.0](../LICENSE). Não há
+verificação de licença, flag de build "pro" ou módulo pago em lugar nenhum do
+projeto — se algo assim aparecer no futuro, é sinal de que essa decisão foi
+revista (e deve estar documentada aqui). Sustentação financeira do projeto é
+via doação voluntária (Buy Me a Coffee, ver README), não via venda de
+funcionalidades.
 
 ## Convenções
 
