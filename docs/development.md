@@ -59,3 +59,17 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
    aprovadas antes da implementação e registradas em [decisions.md](decisions.md).
 2. Código e documentação mudam no mesmo commit; o `README.md` é mantido atualizado.
 3. `./gradlew build` deve passar antes de commitar.
+
+## Versionamento
+
+O app segue **SemVer** (decisão 27 em [decisions.md](decisions.md)), com bump
+de **MINOR a cada leva de funcionalidades entregue** (`PATCH` fica pra
+correções isoladas fora de uma leva; `MAJOR` fica pra quebras de
+compatibilidade, sem caso de uso previsto ainda). Ao fechar uma leva, atualize
+a versão **nos dois lugares** (fonte única mantida manualmente em sincronia,
+sem geração automática):
+
+- `gradle.properties` → `appVersion`
+- [`composeApp/.../app/AppVersion.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/AppVersion.kt) → `APP_VERSION`
+
+A versão aparece no rodapé do app e no instalador nativo (`packageVersion`).

@@ -95,13 +95,29 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   Feito (2026-09-15): `core/model/Service`; `SavedQuote.services` (retrato
   congelado do preço no momento de salvar, mesmo princípio do resto do
   orçamento) + `totalWithServices`; `ServiceRepository`.
-- [ ] **Taxas de marketplace (ex.: Shopee) e custo de embalagem/spray.**
-  Estava fora de escopo por ser "recurso pago" (decisão 7, hoje substituída)
-  — não há mais essa barreira, só falta decidir como esses custos entram na
-  fórmula (ver planilha de referência).
+- [x] **Taxa de marketplace (ex.: Shopee).** Configurada em Configurações
+  (`PricingSettings.marketplaceFeeRate`, %); marcada por orçamento (checkbox
+  na aba Orçamento, só aparece se a taxa estiver configurada). Diferente de
+  um serviço: o marketplace desconta a taxa da venda, não é somado ao total
+  do cliente — por isso o valor de venda sobe o suficiente pra manter a
+  margem de lucro real (decisão 26; `PricingCalculator` ganhou
+  `appliesMarketplaceFee`, `Quote.marketplaceFeeRate`). Custo de embalagem/
+  spray, por outro lado, **entra na aba Serviços** (é um valor fixo cobrado
+  do cliente, cabe direto no que já existe — não precisou de aba nova).
+  Feito (2026-09-15).
 - [ ] **Edição/exclusão com confirmação.** Nas telas de Filamentos e
   Impressoras, "Excluir" age na hora, sem diálogo de confirmação — risco de
   exclusão acidental de um perfil configurado com calma.
+- [x] **Versão do app + ajuda + rodapé com crédito/doação.** `APP_VERSION`
+  (hoje `0.2.0`, SemVer) em `gradle.properties`/`AppVersion.kt`, bump MINOR a
+  cada leva de funcionalidades (decisão 27). Rodapé fixo em todas as telas:
+  versão, nome do autor, link do GitHub, link do Buy Me a Coffee e um botão
+  "Ajuda" que abre um diálogo com a versão, uma descrição curta e um resumo
+  de cada aba. Feito (2026-09-15): `App.kt` (`AppFooter`/`HelpDialog`).
+- [x] **Link do modelo clicável.** Na aba Orçamento (formulário de salvar) e
+  no Histórico, o link do modelo vira um hyperlink de verdade — clicar abre
+  no navegador padrão (`platform/openUrl`, `ui/components/LinkText`). Feito
+  (2026-09-15).
 
 ## 2. Instaladores desktop
 

@@ -12,11 +12,11 @@ nos modelos, para a persistência feita pelo `composeApp`).
 | `model/PrinterProfile.kt` | Perfil de impressora salvo (id, consumo, manutenção, `MachineInvestment`) — uma pessoa pode ter várias |
 | `model/Service.kt` | Serviço opcional salvo em catálogo (id, nome, preço já cobrado do cliente) — não passa por `PricingCalculator` |
 | `model/PrintJob.kt` | Dados da peça: filamento, metros e minutos |
-| `model/PricingSettings.kt` | Custos gerais do negócio, iguais para qualquer impressora (energia, falhas, acabamento, administrativo, margem) |
+| `model/PricingSettings.kt` | Custos gerais do negócio, iguais para qualquer impressora (energia, falhas, acabamento, administrativo, margem, taxa de marketplace opcional) |
 | `model/BrandingSettings.kt` | Personalização do documento exportado (hoje: texto da marca d'água do PDF) — não é parâmetro de custo |
-| `model/Quote.kt` | Resultado: `CostBreakdown`, produção, venda, lucro |
+| `model/Quote.kt` | Resultado: `CostBreakdown`, produção, venda, lucro (`marketplaceFeeRate` guarda a taxa efetivamente aplicada, se houver) |
 | `model/SavedQuote.kt` | Retrato congelado de um `Quote` + serviços escolhidos, salvo no histórico (nome, foto, link interno, data, `totalWithServices`) |
-| `pricing/PricingCalculator.kt` | `calculate(job, printer, settings): Quote` |
+| `pricing/PricingCalculator.kt` | `calculate(job, printer, settings, appliesMarketplaceFee = false): Quote` |
 
 ## Uso
 
@@ -33,6 +33,10 @@ val quote = PricingCalculator.calculate(
 quote.productionCost // 8.09...
 quote.salePrice      // 16.19...
 ```
+
+Com `appliesMarketplaceFee = true` e `settings.marketplaceFeeRate > 0`, o
+valor de venda sobe o suficiente pra manter o lucro real igual ao de uma
+venda sem marketplace (`salePrice = baseSalePrice / (1 − taxa)`).
 
 Fórmulas: [../docs/pricing-formulas.md](../docs/pricing-formulas.md).
 

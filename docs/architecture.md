@@ -47,8 +47,19 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     cobrado do cliente (não um custo com margem em cima), então soma
     diretamente no valor de venda na camada de UI/export, não no cálculo
     interno de produção/lucro (decisão 25).
-- `pricing/PricingCalculator`: função pura `calculate(job, printer, settings): Quote`.
-  Fórmulas em [pricing-formulas.md](pricing-formulas.md). Não conhece serviços.
+  - `PricingSettings.marketplaceFeeRate` (%, decisão 26) é diferente de um
+    `Service`: é descontado da venda pelo marketplace, não somado ao total do
+    cliente. Por isso não é um valor fixo — é usado pelo `PricingCalculator`
+    pra ajustar o preço de venda (ver abaixo), e `Quote.marketplaceFeeRate`
+    guarda a taxa efetivamente aplicada (0 se o orçamento não marcou a
+    checkbox), usada no cálculo de `Quote.profit`.
+- `pricing/PricingCalculator`: função pura
+  `calculate(job, printer, settings, appliesMarketplaceFee = false): Quote`.
+  Fórmulas em [pricing-formulas.md](pricing-formulas.md). Não conhece
+  serviços. Quando `appliesMarketplaceFee` é true e há taxa configurada, o
+  valor de venda é inflado (`salePrice = baseSalePrice / (1 − taxa)`) pra que
+  o lucro real, após a taxa, fique igual ao de uma venda sem marketplace
+  (decisão 26).
 - Alvo atual: `jvm()`.
 
 ### `composeApp`
@@ -66,9 +77,14 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     houver serviços cadastrados, mostra uma seção "Serviços opcionais" com
     uma checkbox por serviço (decisão 25); o resultado então também mostra
     cada serviço marcado e o "Total (venda + serviços)" (`QuoteResult.grandTotal`)
-    — o Lucro exibido não muda. Quando o resultado é válido, mostra também o
-    formulário pra salvar (nome, foto, link do modelo — todos opcionais; ver
-    `SaveQuoteFormState`), que agora também congela os serviços escolhidos.
+    — o Lucro exibido não muda. Se houver taxa de marketplace configurada em
+    Configurações, mostra também uma checkbox "Vender por marketplace"
+    (decisão 26) que ajusta o valor de venda calculado. Quando o resultado é
+    válido, mostra também o formulário pra salvar (nome, foto, link do modelo
+    — todos opcionais; ver `SaveQuoteFormState`), que agora também congela os
+    serviços escolhidos; o link do modelo, quando preenchido, aparece como um
+    hyperlink clicável (`ui/components/LinkText`, decisão 29) além do campo de
+    texto editável.
   - **Histórico** (`ui/history`): lista os orçamentos salvos (`SavedQuote` —
     um retrato congelado do `Quote` no momento em que foi salvo, não afetado
     por edições posteriores em filamento/impressora/configurações), com
@@ -78,7 +94,8 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     modelo nunca aparecem, porque é documento pro cliente. Cada linha tem
     também uma checkbox de seleção; com 1+ selecionados, um botão "Exportar
     selecionados (PDF)" (decisão 24) gera um único PDF com um orçamento por
-    página, na mesma ordem da lista.
+    página, na mesma ordem da lista. Quando há link do modelo, ele também
+    aparece como hyperlink clicável (só na tela — nunca no PDF, decisão 29).
   - **Filamentos** (`ui/filaments`), **Impressoras** (`ui/printers`) e
     **Serviços** (`ui/services`): cadastro (listar, adicionar, editar,
     excluir) dos catálogos usados no Orçamento. Mesmo padrão de tela nos
@@ -86,8 +103,9 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     item por vez. Diferente dos outros dois, o catálogo de serviços começa
     vazio (não há serviço "padrão").
   - **Configurações** (`ui/settings`): edita os parâmetros gerais do negócio
-    (`PricingSettings` — iguais para qualquer impressora) em rascunho; só
-    grava no repositório compartilhado ao clicar em "Salvar". Na mesma tela,
+    (`PricingSettings` — iguais para qualquer impressora), incluindo a taxa de
+    marketplace opcional (%, decisão 26), em rascunho; só grava no
+    repositório compartilhado ao clicar em "Salvar". Na mesma tela,
     uma seção separada (`BrandingViewModel`, próprio botão "Salvar") edita a
     marca d'água opcional do PDF exportado (decisão 20) — fica fora de
     `PricingSettings` por não ser parâmetro de custo. Duas checkboxes
@@ -130,11 +148,15 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   —, uma página por item, na ordem dada; nome, valor de venda, foto, marca
   d'água/rodapé opcionais e independentes em cada página, via
   [Apache PDFBox](https://pdfbox.apache.org/) no `jvmMain`; Apache 2.0,
-  mesma licença do projeto) e `defaultDocumentsDirectory` (pasta
+  mesma licença do projeto), `defaultDocumentsDirectory` (pasta
   "Documents"/"Documentos" do usuário, decisão 22, com fallback pra pasta
-  pessoal). Um único item produz o mesmo PDF de uma página do export
-  individual — a tela de Histórico usa a mesma função pra exportar 1 ou
-  vários orçamentos, só muda o tamanho da lista (decisão 24).
+  pessoal) e `openUrl` (abre uma URL no navegador padrão do sistema, via
+  `java.awt.Desktop` no `jvmMain`, decisão 29 — usado por
+  `ui/components/LinkText`, um `Text` clicável e sublinhado reaproveitado
+  onde houver link do modelo e no rodapé/diálogo de ajuda). Um único item
+  produz o mesmo PDF de uma página do export individual — a tela de
+  Histórico usa a mesma função pra exportar 1 ou vários orçamentos, só muda
+  o tamanho da lista (decisão 24).
 - Quando configurados, marca d'água e rodapé são desenhados **por cima de
   todo o conteúdo** (inclusive a foto — decisão 21; `PDExtendedGraphicsState`
   pra opacidade, `Matrix.getRotateInstance` pra rotação da diagonal).
@@ -154,6 +176,22 @@ janela; quando a `GraphicsConfiguration` muda (trocou de monitor), simula um
 redimensionamento de 1px programaticamente, que é o que já resolvia na mão.
 Se isso for corrigido oficialmente numa versão futura do Compose
 Multiplatform, esse workaround pode ser removido.
+
+### Versão do app e rodapé
+O app segue **SemVer** (decisão 27), com bump de MINOR a cada leva de
+funcionalidades entregue. A versão tem fonte única mantida manualmente em
+sincronia em dois lugares (sem geração automática, pra não adicionar
+complexidade de build num projeto de um mantenedor só):
+- `gradle.properties` (`appVersion`) — usado como `packageVersion` do
+  instalador nativo em [`composeApp/build.gradle.kts`](../composeApp/build.gradle.kts).
+- [`AppVersion.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/AppVersion.kt)
+  (`APP_VERSION`) — usado em runtime, exibido no rodapé e no diálogo de ajuda.
+
+[`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt)
+também define um rodapé fixo (`AppFooter`, abaixo do conteúdo de todas as
+abas) com a versão, o nome do autor, links pro GitHub e pro Buy Me a Coffee
+(`ui/components/LinkText`) e um botão "Ajuda" que abre um `HelpDialog` com a
+versão, uma descrição curta do app e um resumo de cada aba (decisão 28).
 
 ## Plataformas
 

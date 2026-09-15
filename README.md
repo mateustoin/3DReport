@@ -26,8 +26,10 @@ com a margem de lucro desejada.
 | Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos) | Pronto |
 | Marca d'água personalizada no PDF (texto, configurável em Configurações) | Pronto |
 | Exportar vários orçamentos selecionados num PDF só (um por página) | Pronto |
-| Serviços opcionais no orçamento (pintura, lixamento, acabamento etc.) | Pronto |
-| Taxas de marketplace, custo de embalagem/spray etc. | Planejado |
+| Serviços opcionais no orçamento (pintura, lixamento, embalagem/spray etc.) | Pronto |
+| Taxa de marketplace (ex.: Shopee), ajusta o valor de venda | Pronto |
+| Link do modelo clicável (abre no navegador) | Pronto |
+| Versão do app + rodapé com autor/GitHub/doação + ajuda | Pronto |
 
 ## Apoie o projeto
 
