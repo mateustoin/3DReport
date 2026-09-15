@@ -2,6 +2,7 @@ package com.threedreport.app.ui.quote
 
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
+import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MachineInvestment
@@ -34,7 +35,7 @@ class QuoteViewModelTest {
     @Test
     fun newlyAddedFilamentAppearsWithoutRecreatingTheViewModel() {
         val filamentRepository = FilamentRepository()
-        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository())
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), QuoteHistoryRepository())
 
         val newFilament = Filament(id = "nylon", name = "Nylon", pricePerKg = 150.0, densityGPerCm3 = 1.14)
         filamentRepository.add(newFilament) // equivalente a salvar na tela de Filamentos
@@ -45,7 +46,7 @@ class QuoteViewModelTest {
     @Test
     fun editedPrinterIsReflectedInCalculation() {
         val printerRepository = PrinterRepository()
-        val viewModel = QuoteViewModel(FilamentRepository(), printerRepository, SettingsRepository())
+        val viewModel = QuoteViewModel(FilamentRepository(), printerRepository, SettingsRepository(), QuoteHistoryRepository())
 
         val printer = printerRepository.printers.value.first()
         viewModel.selectPrinter(printer.id)
@@ -75,7 +76,7 @@ class QuoteViewModelTest {
                 machineInvestment = MachineInvestment(1000.0, 10, 20, 8.0),
             )
         )
-        val viewModel = QuoteViewModel(FilamentRepository(), printerRepository, SettingsRepository())
+        val viewModel = QuoteViewModel(FilamentRepository(), printerRepository, SettingsRepository(), QuoteHistoryRepository())
         val firstPrinter = printerRepository.printers.value.first()
         viewModel.selectPrinter(firstPrinter.id)
 

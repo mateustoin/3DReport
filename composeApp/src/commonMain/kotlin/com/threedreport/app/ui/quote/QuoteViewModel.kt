@@ -2,12 +2,15 @@ package com.threedreport.app.ui.quote
 
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
+import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.platform.pickImageFile
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.Quote
 import com.threedreport.core.pricing.PricingCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +29,7 @@ class QuoteViewModel(
     filamentRepository: FilamentRepository,
     printerRepository: PrinterRepository,
     settingsRepository: SettingsRepository,
+    private val historyRepository: QuoteHistoryRepository,
 ) {
     val filaments: StateFlow<List<Filament>> = filamentRepository.filaments
     val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
@@ -34,10 +38,28 @@ class QuoteViewModel(
     private val inputState = MutableStateFlow(QuoteInputState())
     val input: StateFlow<QuoteInputState> = inputState.asStateFlow()
 
+    private val saveFormState = MutableStateFlow(SaveQuoteFormState())
+    val saveForm: StateFlow<SaveQuoteFormState> = saveFormState.asStateFlow()
+
     fun selectFilament(id: String) = inputState.update { it.copy(filamentId = id) }
     fun selectPrinter(id: String) = inputState.update { it.copy(printerId = id) }
     fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text) }
     fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text) }
+
+    fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
+    fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
+    fun clearPhoto() = saveFormState.update { it.copy(photo = null, savedConfirmation = false) }
+
+    fun pickPhoto() {
+        val picked = pickImageFile() ?: return
+        saveFormState.update { it.copy(photo = picked, savedConfirmation = false) }
+    }
+
+    fun saveQuote(quote: Quote) {
+        val form = saveFormState.value
+        historyRepository.save(form.name, quote, form.photo, form.sourceLink)
+        saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
+    }
 
     fun calculate(
         filaments: List<Filament>,
