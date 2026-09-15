@@ -2,6 +2,7 @@
 // Contém os modelos de domínio e o motor de cálculo de orçamento.
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -12,6 +13,9 @@ kotlin {
     jvm()
 
     sourceSets {
+        commonMain.dependencies {
+            implementation(libs.kotlinx.serialization.core)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

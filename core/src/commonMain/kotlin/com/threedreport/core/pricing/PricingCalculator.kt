@@ -2,6 +2,7 @@ package com.threedreport.core.pricing
 
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.PricingSettings
+import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 
@@ -13,20 +14,20 @@ import com.threedreport.core.model.Quote
  */
 object PricingCalculator {
 
-    fun calculate(job: PrintJob, settings: PricingSettings): Quote {
+    fun calculate(job: PrintJob, printer: PrinterProfile, settings: PricingSettings): Quote {
         val hours = job.printTimeHours
         val weightGrams = job.filament.weightGrams(job.filamentLengthMeters)
 
         val material = weightGrams / GRAMS_PER_KG * job.filament.pricePerKg
-        val energy = hours * (settings.printerPowerWatts / WATTS_PER_KW) * settings.energyPricePerKwh
+        val energy = hours * (printer.printerPowerWatts / WATTS_PER_KW) * settings.energyPricePerKwh
 
         val costs = CostBreakdown(
             material = material,
             energy = energy,
-            maintenance = hours * settings.maintenanceCostPerHour,
+            maintenance = hours * printer.maintenanceCostPerHour,
             failures = material * settings.failureRate,
             finishing = material * settings.finishingRate,
-            investmentReturn = hours * settings.machineInvestment.costPerHour,
+            investmentReturn = hours * printer.machineInvestment.costPerHour,
             administrative = settings.administrativeCost,
         )
 

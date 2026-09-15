@@ -1,22 +1,28 @@
 package com.threedreport.core.model
 
+import kotlinx.serialization.Serializable
 import kotlin.math.PI
 
 /**
- * Filamento usado na impressão.
+ * Filamento usado na impressão. Um catálogo de filamentos é salvo pela UI;
+ * cada orçamento escolhe um deles.
  *
+ * @property id identificador único, atribuído por quem cria o filamento (UI).
  * @property name nome livre para identificação (ex.: "PLA", "ABS barato").
  * @property pricePerKg preço do quilo do filamento, em R$.
  * @property densityGPerCm3 densidade do material, em g/cm³ (ex.: PLA ≈ 1,24; ABS ≈ 1,04; PETG ≈ 1,27).
  * @property diameterMm diâmetro nominal do filamento, em mm.
  */
+@Serializable
 data class Filament(
+    val id: String,
     val name: String,
     val pricePerKg: Double,
     val densityGPerCm3: Double,
     val diameterMm: Double = DEFAULT_DIAMETER_MM,
 ) {
     init {
+        require(name.isNotBlank()) { "name não pode ser vazio" }
         require(pricePerKg >= 0) { "pricePerKg não pode ser negativo: $pricePerKg" }
         require(densityGPerCm3 > 0) { "densityGPerCm3 deve ser positivo: $densityGPerCm3" }
         require(diameterMm > 0) { "diameterMm deve ser positivo: $diameterMm" }
