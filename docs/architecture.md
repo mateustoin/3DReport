@@ -64,7 +64,10 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   - **Histórico** (`ui/history`): lista os orçamentos salvos (`SavedQuote` —
     um retrato congelado do `Quote` no momento em que foi salvo, não afetado
     por edições posteriores em filamento/impressora/configurações), com
-    ações de baixar a foto e excluir.
+    ações de baixar a foto, **exportar PDF**, **copiar** (texto simplificado
+    pra área de transferência) e excluir. Exportação (decisão 19) mostra só
+    nome + valor de venda + foto — produção, lucro e o link do modelo nunca
+    aparecem, porque é documento pro cliente.
   - **Filamentos** (`ui/filaments`) e **Impressoras** (`ui/printers`): cadastro
     (listar, adicionar, editar, excluir) dos catálogos usados no Orçamento.
     Mesmo padrão de tela nos dois: lista + formulário (`FormState`) que abre
@@ -99,10 +102,15 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   seguindo o mesmo padrão `expect`/`actual` da persistência: `pickImageFile`
   e `saveBytesToFile` (diálogo nativo de escolher/salvar arquivo, via
   `java.awt.FileDialog` no `jvmMain`), `decodeImageBitmap` (bytes → `ImageBitmap`
-  pra exibir no Compose, via Skia no `jvmMain`) e `formatDateTime`
-  (formatação de data/hora, via `java.time` no `jvmMain`).
+  pra exibir no Compose, via Skia no `jvmMain`), `formatDateTime`
+  (formatação de data/hora, via `java.time` no `jvmMain`), `copyToClipboard`
+  (via `java.awt.Toolkit` no `jvmMain`) e `renderSavedQuotePdf` (monta o PDF
+  do orçamento — nome, valor de venda, foto — via
+  [Apache PDFBox](https://pdfbox.apache.org/) no `jvmMain`; Apache 2.0, mesma
+  licença do projeto).
 - Usado pela tela de Orçamento (escolher foto ao salvar) e pela de Histórico
-  (baixar foto, mostrar miniatura, formatar a data salva).
+  (baixar foto, mostrar miniatura, formatar a data salva, exportar PDF,
+  copiar texto).
 
 ## Plataformas
 

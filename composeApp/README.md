@@ -8,14 +8,14 @@ Interface do 3DReport com Compose Multiplatform. Depende de `core`.
 |---|---|
 | `src/commonMain/.../App.kt` | Composable raiz: navegação por abas |
 | `src/commonMain/.../data/` | Contratos dos repositórios (`expect class`), MVVM |
-| `src/commonMain/.../platform/` | Contratos de capacidades de plataforma (`expect fun`): escolher/salvar arquivo, decodificar imagem, formatar data |
+| `src/commonMain/.../platform/` | Contratos de capacidades de plataforma (`expect fun`): escolher/salvar arquivo, decodificar imagem, formatar data, copiar pra área de transferência, gerar PDF |
 | `src/commonMain/.../ui/quote` | Tela de Orçamento (com formulário de salvar) |
-| `src/commonMain/.../ui/history` | Tela de Histórico dos orçamentos salvos |
+| `src/commonMain/.../ui/history` | Tela de Histórico: consultar, exportar (PDF/copiar), baixar foto, excluir |
 | `src/commonMain/.../ui/filaments` | Tela de Filamentos (cadastro) |
 | `src/commonMain/.../ui/printers` | Tela de Impressoras (cadastro) |
 | `src/commonMain/.../ui/settings` | Tela de Configurações gerais |
 | `src/jvmMain/.../data/` | Persistência real (`actual class`): arquivos JSON + fotos em `~/.3dreport/` |
-| `src/jvmMain/.../platform/` | Implementação real (`actual fun`): `java.awt.FileDialog`, Skia, `java.time` |
+| `src/jvmMain/.../platform/` | Implementação real (`actual fun`): `java.awt.FileDialog`/`Toolkit`, Skia, `java.time`, Apache PDFBox |
 | `src/jvmMain/.../Main.kt` | Entrada do desktop (janela) |
 
 Detalhes da arquitetura MVVM e da persistência: [../docs/architecture.md](../docs/architecture.md).

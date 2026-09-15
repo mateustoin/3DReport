@@ -31,15 +31,29 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
 
   Feito (2026-09-15): formulário na própria tela de Orçamento, salva em
   `~/.3dreport/quotes.json` + foto em `~/.3dreport/photos/`.
-- [ ] **Exportar o orçamento.** Dois formatos:
-  - **PDF** — formato principal, pra mandar pro cliente; inclui a foto,
-    quando houver.
-  - **Copiar e colar simplificado** — versão em texto, mais rápida pra colar
-    numa conversa de WhatsApp/marketplace sem gerar arquivo; nome e dados
-    calculados (produção/venda/lucro), sem foto.
-  - O link do modelo **nunca** aparece em nenhum dos dois formatos.
-  - Ainda não implementado — próximo item natural, já que agora existem
-    orçamentos salvos pra exportar.
+- [x] **Exportar o orçamento.** Dois formatos, disponíveis na aba Histórico
+  (opera sobre um orçamento já salvo):
+  - **PDF** — formato principal, pra mandar pro cliente; nome, **valor de
+    venda** e a foto, quando houver.
+  - **Copiar e colar simplificado** — versão em texto (vai pra área de
+    transferência), mais rápida pra colar numa conversa de WhatsApp/
+    marketplace; nome e **valor de venda**, sem foto.
+  - Produção e lucro **não aparecem** em nenhum dos dois formatos (decisão
+    19 — não expor custo/margem pro cliente). O link do modelo também nunca
+    aparece.
+  - Feito (2026-09-15): `platform/QuotePdfExporter` (Apache PDFBox) +
+    `platform/Clipboard`.
+- [ ] **Marca d'água personalizada no PDF.** Ideia levantada em 2026-09-15
+  junto com a exportação: o PDF do orçamento poder levar uma marca d'água do
+  criador (texto ou imagem — a definir), pra deixar o documento mais
+  personalizado. Em aberto: é texto (nome/marca) ou imagem que o usuário
+  sobe; onde configurar isso (provavelmente um campo novo em Configurações);
+  posição/opacidade.
+- [ ] **Exportar vários orçamentos num PDF só.** Ideia levantada em
+  2026-09-15: na aba Histórico, poder selecionar 2+ orçamentos e gerar um
+  único PDF compilado — útil pra quem vende mais de um produto de uma vez
+  pro mesmo cliente. Precisa de seleção múltipla na lista (hoje cada linha
+  só tem ações individuais).
 - [x] **Histórico de orçamentos.** Lista dos orçamentos salvos (nome, foto —
   com opção de baixar —, link interno, valores), pra consultar depois sem
   refazer as contas. Feito (2026-09-15): aba "Histórico".
