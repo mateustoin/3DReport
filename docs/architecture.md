@@ -64,10 +64,13 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   - **Histórico** (`ui/history`): lista os orçamentos salvos (`SavedQuote` —
     um retrato congelado do `Quote` no momento em que foi salvo, não afetado
     por edições posteriores em filamento/impressora/configurações), com
-    ações de baixar a foto, **exportar PDF**, **copiar** (texto simplificado
-    pra área de transferência) e excluir. Exportação (decisão 19) mostra só
-    nome + valor de venda + foto — produção, lucro e o link do modelo nunca
-    aparecem, porque é documento pro cliente.
+    ações por linha de baixar a foto, **exportar PDF**, **copiar** (texto
+    simplificado pra área de transferência) e excluir. Exportação (decisão
+    19) mostra só nome + valor de venda + foto — produção, lucro e o link do
+    modelo nunca aparecem, porque é documento pro cliente. Cada linha tem
+    também uma checkbox de seleção; com 1+ selecionados, um botão "Exportar
+    selecionados (PDF)" (decisão 24) gera um único PDF com um orçamento por
+    página, na mesma ordem da lista.
   - **Filamentos** (`ui/filaments`) e **Impressoras** (`ui/printers`): cadastro
     (listar, adicionar, editar, excluir) dos catálogos usados no Orçamento.
     Mesmo padrão de tela nos dois: lista + formulário (`FormState`) que abre
@@ -111,12 +114,16 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   `java.awt.FileDialog` no `jvmMain`), `decodeImageBitmap` (bytes → `ImageBitmap`
   pra exibir no Compose, via Skia no `jvmMain`), `formatDateTime`
   (formatação de data/hora, via `java.time` no `jvmMain`), `copyToClipboard`
-  (via `java.awt.Toolkit` no `jvmMain`), `renderSavedQuotePdf` (monta o PDF
-  do orçamento — nome, valor de venda, foto, marca d'água/rodapé opcionais e
-  independentes — via [Apache PDFBox](https://pdfbox.apache.org/) no
-  `jvmMain`; Apache 2.0, mesma licença do projeto) e
-  `defaultDocumentsDirectory` (pasta "Documents"/"Documentos" do usuário,
-  decisão 22, com fallback pra pasta pessoal).
+  (via `java.awt.Toolkit` no `jvmMain`), `renderSavedQuotesPdf` (monta o PDF
+  a partir de uma lista de `QuoteExportItem` — orçamento + foto já carregada
+  —, uma página por item, na ordem dada; nome, valor de venda, foto, marca
+  d'água/rodapé opcionais e independentes em cada página, via
+  [Apache PDFBox](https://pdfbox.apache.org/) no `jvmMain`; Apache 2.0,
+  mesma licença do projeto) e `defaultDocumentsDirectory` (pasta
+  "Documents"/"Documentos" do usuário, decisão 22, com fallback pra pasta
+  pessoal). Um único item produz o mesmo PDF de uma página do export
+  individual — a tela de Histórico usa a mesma função pra exportar 1 ou
+  vários orçamentos, só muda o tamanho da lista (decisão 24).
 - Quando configurados, marca d'água e rodapé são desenhados **por cima de
   todo o conteúdo** (inclusive a foto — decisão 21; `PDExtendedGraphicsState`
   pra opacidade, `Matrix.getRotateInstance` pra rotação da diagonal).

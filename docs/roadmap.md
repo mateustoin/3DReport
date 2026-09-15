@@ -70,11 +70,15 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
     padrão do sistema (geralmente a última pasta usada). `platform/FileSaver`
     ganhou `defaultDocumentsDirectory()`; "Baixar foto" no Histórico não foi
     alterado (continua sem pasta inicial definida).
-- [ ] **Exportar vários orçamentos num PDF só.** Ideia levantada em
-  2026-09-15: na aba Histórico, poder selecionar 2+ orçamentos e gerar um
-  único PDF compilado — útil pra quem vende mais de um produto de uma vez
-  pro mesmo cliente. Precisa de seleção múltipla na lista (hoje cada linha
-  só tem ações individuais).
+- [x] **Exportar vários orçamentos num PDF só.** Na aba Histórico, marcar a
+  caixinha de 1+ orçamentos mostra um botão "Exportar selecionados (PDF)" —
+  gera um único PDF com um orçamento por página, na ordem da lista, cada um
+  com sua própria foto (se tiver); marca d'água/rodapé (quando configurados)
+  aparecem em todas as páginas. Útil pra quem vende mais de um produto de
+  uma vez pro mesmo cliente. Feito (2026-09-15): `renderSavedQuotesPdf`
+  passou a receber uma lista (`QuoteExportItem`) em vez de um único
+  orçamento — o export individual de uma linha só virou uma lista de 1 item,
+  sem duplicar a lógica de desenho da página.
 - [x] **Histórico de orçamentos.** Lista dos orçamentos salvos (nome, foto —
   com opção de baixar —, link interno, valores), pra consultar depois sem
   refazer as contas. Feito (2026-09-15): aba "Histórico".

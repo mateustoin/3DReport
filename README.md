@@ -25,7 +25,7 @@ com a margem de lucro desejada.
 | Configurações gerais do negócio (energia, falhas, acabamento, margem) | Pronto |
 | Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos) | Pronto |
 | Marca d'água personalizada no PDF (texto, configurável em Configurações) | Pronto |
-| Exportar vários orçamentos num PDF só | Planejado |
+| Exportar vários orçamentos selecionados num PDF só (um por página) | Pronto |
 | Serviços opcionais no orçamento (pintura, lixamento, acabamento etc.) | Planejado |
 | Taxas de marketplace, custo de embalagem/spray etc. | Planejado |
 

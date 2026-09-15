@@ -28,6 +28,7 @@ ao final, com data.
 | 21 | 2026-09-15 | Correção: marca d'água ficava **encoberta pela foto** (desenhada antes dela). Passa a ser desenhada **por cima de todo o conteúdo**, inclusive a foto — técnica padrão de marca d'água em documentos. Adicionado também um **rodapé profissional** (linha fina + nome da marca centralizado, no fim da página) quando há marca d'água configurada, pra reforçar a identificação mesmo se a diagonal passar despercebida | Aprovada |
 | 22 | 2026-09-15 | Marca d'água diagonal e rodapé viram **opções independentes** (checkbox pra cada uma em Configurações); com um nome preenchido, salvar exige ao menos uma marcada. "Exportar PDF" passa a abrir o diálogo de salvar direto na pasta Documents/Documentos do usuário, em vez do padrão do sistema | Aprovada |
 | 23 | 2026-09-15 | Bug de terceiros contornado: arrastar a janela entre monitores com DPI/escala diferentes deixava o conteúdo com o layout antigo até um redimensionamento manual — bug conhecido do Compose Desktop/Skiko (JetBrains/compose-multiplatform#3685 e relacionadas), sem correção oficial. Contornado detectando a troca de monitor e forçando um redimensionamento programático (`Main.kt`) | Aprovada |
+| 24 | 2026-09-15 | Exportar vários orçamentos num PDF só: seleção múltipla direto na lista da aba Histórico (checkbox por linha), sem tela separada. Um orçamento por página, na ordem da lista; marca d'água/rodapé (se configurados) em todas as páginas | Aprovada |
 
 ## Pendentes de aprovação
 
