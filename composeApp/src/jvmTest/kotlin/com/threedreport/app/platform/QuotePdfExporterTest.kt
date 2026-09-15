@@ -5,6 +5,7 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.model.Service
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
@@ -230,5 +231,38 @@ class QuotePdfExporterTest {
 
         assertTrue(firstPageText.contains("Marcenaria 3D do João"))
         assertTrue(secondPageText.contains("Marcenaria 3D do João"))
+    }
+
+    @Test
+    fun pdfListsEachServiceAndTheGrandTotalWhenPresent() {
+        val quoteWithServices = savedQuote.copy(
+            services = listOf(Service(id = "paint", name = "Pintura", price = 20.0)),
+        )
+
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(quoteWithServices, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("Pintura"))
+        assertTrue(text.contains("20,00"))
+        assertTrue(text.contains("Total"))
+        assertTrue(text.contains("36,19")) // 16,19 (venda) + 20,00 (pintura)
+    }
+
+    @Test
+    fun noTotalLineInPdfWhenThereAreNoServices() {
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertFalse(text.contains("Total"))
     }
 }

@@ -5,9 +5,11 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.model.Service
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class QuoteExportTextTest {
 
@@ -50,5 +52,24 @@ class QuoteExportTextTest {
         assertFalse(text.contains(savedQuote.quote.productionCost.toString()))
         assertFalse(text.contains("Lucro"))
         assertFalse(text.contains("Produção"))
+    }
+
+    @Test
+    fun includesEachServiceAndTheGrandTotalWhenPresent() {
+        val withServices = savedQuote.copy(
+            services = listOf(Service(id = "paint", name = "Pintura", price = 20.0)),
+        )
+
+        val text = withServices.toCopyPasteText()
+
+        assertEquals("Suporte de celular\nVenda: R$ 16,19\nPintura: R$ 20,00\nTotal: R$ 36,19", text)
+    }
+
+    @Test
+    fun noTotalLineWhenThereAreNoServices() {
+        val text = savedQuote.toCopyPasteText()
+
+        assertFalse(text.contains("Total"))
+        assertTrue(text.contains("Venda"))
     }
 }

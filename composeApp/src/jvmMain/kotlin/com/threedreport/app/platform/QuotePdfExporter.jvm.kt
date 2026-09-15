@@ -34,7 +34,7 @@ actual fun renderSavedQuotesPdf(items: List<QuoteExportItem>, watermarkText: Str
     }
 }
 
-/** Desenha nome, valor de venda, foto (se houver) e marca d'água/rodapé (se configurados) numa única página. */
+/** Desenha nome, valor de venda (+ serviços/total, se houver), foto (se houver) e marca d'água/rodapé (se configurados) numa única página. */
 private fun drawQuotePage(
     document: PDDocument,
     page: PDPage,
@@ -47,21 +47,41 @@ private fun drawQuotePage(
     val margin = 50f
     val footerReserve = 50f
     var cursorY = page.mediaBox.height - margin
+    val savedQuote = item.savedQuote
 
     PDPageContentStream(document, page).use { content ->
         content.beginText()
         content.setFont(titleFont, 20f)
         content.newLineAtOffset(margin, cursorY)
-        content.showText(item.savedQuote.name)
+        content.showText(savedQuote.name)
         content.endText()
         cursorY -= 30f
 
         content.beginText()
         content.setFont(bodyFont, 14f)
         content.newLineAtOffset(margin, cursorY)
-        content.showText("Venda: ${item.savedQuote.quote.salePrice.toBrl()}")
+        content.showText("Venda: ${savedQuote.quote.salePrice.toBrl()}")
         content.endText()
-        cursorY -= 30f
+        cursorY -= 24f
+
+        if (savedQuote.services.isNotEmpty()) {
+            savedQuote.services.forEach { service ->
+                content.beginText()
+                content.setFont(bodyFont, 12f)
+                content.newLineAtOffset(margin, cursorY)
+                content.showText("${service.name}: ${service.price.toBrl()}")
+                content.endText()
+                cursorY -= 18f
+            }
+
+            content.beginText()
+            content.setFont(titleFont, 14f)
+            content.newLineAtOffset(margin, cursorY)
+            content.showText("Total: ${savedQuote.totalWithServices.toBrl()}")
+            content.endText()
+            cursorY -= 24f
+        }
+        cursorY -= 6f
 
         val bufferedImage = item.photoBytes?.let { ImageIO.read(ByteArrayInputStream(it)) }
         if (bufferedImage != null) {

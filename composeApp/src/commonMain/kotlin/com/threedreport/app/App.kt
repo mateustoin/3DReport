@@ -17,6 +17,7 @@ import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.ui.filaments.FilamentListScreen
 import com.threedreport.app.ui.filaments.FilamentListViewModel
@@ -26,6 +27,8 @@ import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
 import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
+import com.threedreport.app.ui.services.ServiceListScreen
+import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsViewModel
@@ -35,6 +38,7 @@ private enum class AppTab(val label: String) {
     HISTORY("Histórico"),
     FILAMENTS("Filamentos"),
     PRINTERS("Impressoras"),
+    SERVICES("Serviços"),
     SETTINGS("Configurações"),
 }
 
@@ -45,13 +49,15 @@ fun App() {
     val settingsRepository = remember { SettingsRepository() }
     val historyRepository = remember { QuoteHistoryRepository() }
     val brandingRepository = remember { BrandingRepository() }
+    val serviceRepository = remember { ServiceRepository() }
 
     val quoteViewModel = remember {
-        QuoteViewModel(filamentRepository, printerRepository, settingsRepository, historyRepository)
+        QuoteViewModel(filamentRepository, printerRepository, settingsRepository, serviceRepository, historyRepository)
     }
     val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository) }
+    val serviceListViewModel = remember { ServiceListViewModel(serviceRepository) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
     val brandingViewModel = remember { BrandingViewModel(brandingRepository) }
 
@@ -75,6 +81,7 @@ fun App() {
                     AppTab.HISTORY -> QuoteHistoryScreen(historyViewModel)
                     AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
                     AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
+                    AppTab.SERVICES -> ServiceListScreen(serviceListViewModel)
                     AppTab.SETTINGS -> SettingsScreen(settingsViewModel, brandingViewModel)
                 }
             }

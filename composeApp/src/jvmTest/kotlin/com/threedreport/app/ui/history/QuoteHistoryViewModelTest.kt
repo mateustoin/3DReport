@@ -65,7 +65,7 @@ class QuoteHistoryViewModelTest {
     fun deletingASelectedQuoteRemovesItFromSelection() {
         val repository = QuoteHistoryRepository()
         val viewModel = QuoteHistoryViewModel(repository, BrandingRepository())
-        val saved = repository.save(name = "Peça", quote = quote, photo = null, sourceLink = null)
+        val saved = repository.save(name = "Peça", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         viewModel.toggleSelection(saved.id)
         assertEquals(setOf(saved.id), viewModel.selectedIds.value)

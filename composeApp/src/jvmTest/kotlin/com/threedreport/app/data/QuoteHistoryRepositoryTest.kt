@@ -6,6 +6,7 @@ import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -53,7 +54,7 @@ class QuoteHistoryRepositoryTest {
     @Test
     fun blankNameGetsAGenericDefault() {
         val repository = QuoteHistoryRepository()
-        val saved = repository.save(name = "  ", quote = quote, photo = null, sourceLink = null)
+        val saved = repository.save(name = "  ", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         assertTrue(saved.name.isNotBlank())
     }
@@ -61,7 +62,7 @@ class QuoteHistoryRepositoryTest {
     @Test
     fun savedQuoteSurvivesNewRepositoryInstance() {
         val repository = QuoteHistoryRepository()
-        repository.save(name = "Suporte de celular", quote = quote, photo = null, sourceLink = "https://example.com/model")
+        repository.save(name = "Suporte de celular", quote = quote, services = emptyList(), photo = null, sourceLink = "https://example.com/model")
 
         val reloaded = QuoteHistoryRepository().savedQuotes.value.first()
         assertEquals("Suporte de celular", reloaded.name)
@@ -76,6 +77,7 @@ class QuoteHistoryRepositoryTest {
         val saved = repository.save(
             name = "Com foto",
             quote = quote,
+            services = emptyList(),
             photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
             sourceLink = null,
         )
@@ -86,11 +88,24 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
+    fun servicesSurviveNewRepositoryInstance() {
+        val repository = QuoteHistoryRepository()
+        val services = listOf(Service(id = "s1", name = "Pintura", price = 20.0))
+
+        val saved = repository.save(name = "Com serviço", quote = quote, services = services, photo = null, sourceLink = null)
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }
+        assertEquals(services, reloaded.services)
+        assertEquals(quote.salePrice + 20.0, reloaded.totalWithServices)
+    }
+
+    @Test
     fun deleteRemovesMetadataAndPhotoFile() {
         val repository = QuoteHistoryRepository()
         val saved = repository.save(
             name = "Pra excluir",
             quote = quote,
+            services = emptyList(),
             photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(9)),
             sourceLink = null,
         )

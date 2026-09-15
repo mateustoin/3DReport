@@ -3,6 +3,7 @@ package com.threedreport.app.data
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.model.Service
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,13 @@ actual class QuoteHistoryRepository actual constructor() {
     actual val savedQuotes: StateFlow<List<SavedQuote>> = state.asStateFlow()
 
     @OptIn(ExperimentalUuidApi::class)
-    actual fun save(name: String, quote: Quote, photo: PickedFile?, sourceLink: String?): SavedQuote {
+    actual fun save(
+        name: String,
+        quote: Quote,
+        services: List<Service>,
+        photo: PickedFile?,
+        sourceLink: String?,
+    ): SavedQuote {
         val id = Uuid.random().toString()
         val photoFileName = photo?.let { picked ->
             val extension = picked.fileName.substringAfterLast('.', "img")
@@ -32,6 +39,7 @@ actual class QuoteHistoryRepository actual constructor() {
             id = id,
             name = name.trim().ifEmpty { defaultName() },
             quote = quote,
+            services = services,
             photoFileName = photoFileName,
             sourceLink = sourceLink?.trim()?.ifEmpty { null },
             savedAtEpochMillis = System.currentTimeMillis(),

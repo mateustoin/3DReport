@@ -6,4 +6,5 @@ data class QuoteInputState(
     val printerId: String? = null,
     val lengthMetersText: String = "",
     val printTimeMinutesText: String = "",
+    val selectedServiceIds: Set<String> = emptySet(),
 )

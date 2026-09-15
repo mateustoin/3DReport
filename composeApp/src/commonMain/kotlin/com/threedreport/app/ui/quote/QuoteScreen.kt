@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,10 +42,11 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
     val filaments by viewModel.filaments.collectAsState()
     val printers by viewModel.printers.collectAsState()
     val settings by viewModel.settings.collectAsState()
+    val services by viewModel.services.collectAsState()
     val input by viewModel.input.collectAsState()
     val saveForm by viewModel.saveForm.collectAsState()
 
-    val result = viewModel.calculate(filaments, printers, settings, input)
+    val result = viewModel.calculate(filaments, printers, settings, services, input)
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxSize().verticalScroll(rememberScrollState()),
@@ -82,6 +84,19 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             label = { Text("Tempo de impressão (min)") },
         )
 
+        if (services.isNotEmpty()) {
+            Text("Serviços opcionais", style = MaterialTheme.typography.titleMedium)
+            services.forEach { service ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = service.id in input.selectedServiceIds,
+                        onCheckedChange = { viewModel.toggleService(service.id) },
+                    )
+                    Text("${service.name} · ${service.price.toBrl()}")
+                }
+            }
+        }
+
         HorizontalDivider()
 
         Text("Resultado", style = MaterialTheme.typography.titleMedium)
@@ -93,6 +108,15 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
                 Text("Produção: ${quote.productionCost.toBrl()}")
                 Text("Venda: ${quote.salePrice.toBrl()}")
                 Text("Lucro: ${quote.profit.toBrl()}")
+                if (result.selectedServices.isNotEmpty()) {
+                    result.selectedServices.forEach { service ->
+                        Text("${service.name}: ${service.price.toBrl()}")
+                    }
+                    Text(
+                        "Total (venda + serviços): ${result.grandTotal!!.toBrl()}",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
             }
             filaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
             printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
@@ -101,7 +125,7 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
 
         if (quote != null) {
             HorizontalDivider()
-            SaveQuoteForm(saveForm, viewModel, onSave = { viewModel.saveQuote(quote) })
+            SaveQuoteForm(saveForm, viewModel, onSave = { viewModel.saveQuote(quote, result.selectedServices) })
         }
     }
 }
