@@ -105,9 +105,12 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   spray, por outro lado, **entra na aba Serviços** (é um valor fixo cobrado
   do cliente, cabe direto no que já existe — não precisou de aba nova).
   Feito (2026-09-15).
-- [ ] **Edição/exclusão com confirmação.** Nas telas de Filamentos e
-  Impressoras, "Excluir" age na hora, sem diálogo de confirmação — risco de
-  exclusão acidental de um perfil configurado com calma.
+- [x] **Exclusão com confirmação.** "Excluir" agia na hora, sem diálogo de
+  confirmação — risco de exclusão acidental de um item configurado com
+  calma. Feito (2026-09-15): `ui/components/ConfirmDialog` (diálogo genérico,
+  nomeando o item antes de excluir), usado nas 4 telas com essa ação —
+  Filamentos, Impressoras, Serviços e Histórico (decisão 30). Edição não
+  precisou de confirmação própria — só é efetivada ao clicar em "Salvar".
 - [x] **Versão do app + ajuda + rodapé com crédito/doação.** `APP_VERSION`
   (hoje `0.2.0`, SemVer) em `gradle.properties`/`AppVersion.kt`, bump MINOR a
   cada leva de funcionalidades (decisão 27). Rodapé fixo em todas as telas:

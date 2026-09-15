@@ -96,12 +96,16 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     selecionados (PDF)" (decisão 24) gera um único PDF com um orçamento por
     página, na mesma ordem da lista. Quando há link do modelo, ele também
     aparece como hyperlink clicável (só na tela — nunca no PDF, decisão 29).
+    "Excluir" abre antes um `ui/components/ConfirmDialog` nomeando o
+    orçamento (decisão 30).
   - **Filamentos** (`ui/filaments`), **Impressoras** (`ui/printers`) e
     **Serviços** (`ui/services`): cadastro (listar, adicionar, editar,
     excluir) dos catálogos usados no Orçamento. Mesmo padrão de tela nos
     três: lista + formulário (`FormState`) que abre para adicionar/editar um
     item por vez. Diferente dos outros dois, o catálogo de serviços começa
-    vazio (não há serviço "padrão").
+    vazio (não há serviço "padrão"). "Excluir" abre antes um
+    `ui/components/ConfirmDialog` nomeando o item (decisão 30) — mesmo
+    diálogo genérico usado no Histórico.
   - **Configurações** (`ui/settings`): edita os parâmetros gerais do negócio
     (`PricingSettings` — iguais para qualquer impressora), incluindo a taxa de
     marketplace opcional (%, decisão 26), em rascunho; só grava no

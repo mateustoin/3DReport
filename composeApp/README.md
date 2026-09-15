@@ -11,6 +11,7 @@ Interface do 3DReport com Compose Multiplatform. Depende de `core`.
 | `src/commonMain/.../data/` | Contratos dos repositórios (`expect class`), MVVM |
 | `src/commonMain/.../platform/` | Contratos de capacidades de plataforma (`expect fun`): escolher/salvar arquivo, decodificar imagem, formatar data, copiar pra área de transferência, gerar PDF, abrir URL no navegador |
 | `src/commonMain/.../ui/components/LinkText.kt` | `Text` clicável (sublinhado) que abre uma URL via `platform/openUrl` |
+| `src/commonMain/.../ui/components/ConfirmDialog.kt` | Diálogo genérico de confirmação, usado antes de excluir (Filamentos, Impressoras, Serviços, Histórico) |
 | `src/commonMain/.../ui/format/PercentFormat.kt` | `Double.toPercentText()` — formata fração decimal como percentual (ex.: `0.15` → `"15%"`) |
 | `src/commonMain/.../ui/quote` | Tela de Orçamento (serviços opcionais, checkbox de marketplace, formulário de salvar com link do modelo clicável) |
 | `src/commonMain/.../ui/history` | Tela de Histórico: consultar, exportar (PDF/copiar, 1 ou vários), baixar foto, excluir, link do modelo clicável |

@@ -34,6 +34,7 @@ ao final, com data.
 | 27 | 2026-09-15 | Versionamento do app: **SemVer**, começando em `0.2.0` pra esta leva (`0.1.0` já usado retroativamente pro trabalho anterior). Bump de **MINOR a cada leva de funcionalidades entregue**; fonte única em `gradle.properties` (`appVersion`, usado no instalador) + `AppVersion.kt` (constante `APP_VERSION`, exibida no rodapé) — mantidos manualmente em sincronia, sem geração automática | Aprovada |
 | 28 | 2026-09-15 | Rodapé fixo em todas as telas: versão do app, nome do autor, link do GitHub, link de doação (Buy Me a Coffee) e um botão "Ajuda" (abre diálogo com versão, descrição curta e resumo de cada aba) | Aprovada |
 | 29 | 2026-09-15 | Link do modelo (aba Orçamento e Histórico) vira **hyperlink clicável**, abrindo no navegador padrão do sistema | Aprovada |
+| 30 | 2026-09-15 | Confirmação antes de excluir: diálogo (`ui/components/ConfirmDialog`) nomeando o item, em **4 telas** — Filamentos, Impressoras, Serviços (catálogos) e Histórico (orçamento salvo, junto com a foto) — todas com o mesmo risco de exclusão acidental de algo configurado com calma. Edição não ganhou confirmação própria: já exige clicar em "Salvar" pra valer, o que já funciona como confirmação | Aprovada |
 
 ## Pendentes de aprovação
 
