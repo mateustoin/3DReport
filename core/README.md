@@ -13,6 +13,7 @@ nos modelos, para a persistência feita pelo `composeApp`).
 | `model/PrintJob.kt` | Dados da peça: filamento, metros e minutos |
 | `model/PricingSettings.kt` | Custos gerais do negócio, iguais para qualquer impressora (energia, falhas, acabamento, administrativo, margem) |
 | `model/Quote.kt` | Resultado: `CostBreakdown`, produção, venda, lucro |
+| `model/SavedQuote.kt` | Retrato congelado de um `Quote` salvo no histórico (nome, foto, link interno, data) |
 | `pricing/PricingCalculator.kt` | `calculate(job, printer, settings): Quote` |
 
 ## Uso

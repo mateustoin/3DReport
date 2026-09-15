@@ -6,10 +6,10 @@ com seu próprio perfil salvo) e dos dados da peça (comprimento em metros e
 tempo de impressão), calcula o **valor de produção** e o **valor de venda**
 com a margem de lucro desejada.
 
-> **Status:** motor de cálculo implementado e testado; telas de orçamento,
-> cadastro de filamentos, cadastro de impressoras e configurações gerais
-> funcionando, com persistência real em disco. Veja pendências em
-> [docs/decisions.md](docs/decisions.md).
+> **Status:** motor de cálculo implementado e testado; telas de orçamento
+> (com salvar no histórico), histórico de orçamentos, cadastro de filamentos,
+> cadastro de impressoras e configurações gerais funcionando, com
+> persistência real em disco. Veja o backlog em [docs/roadmap.md](docs/roadmap.md).
 
 ## Funcionalidades
 
@@ -17,10 +17,13 @@ com a margem de lucro desejada.
 |---|---|
 | Cálculo de custo de produção e preço de venda | Pronto (`core`) |
 | Tela de orçamento (escolhe filamento + impressora, entra comprimento/tempo → produção/venda) | Pronto |
+| Salvar orçamento (nome, foto e link do modelo opcionais) | Pronto |
+| Histórico de orçamentos (consultar, baixar foto, excluir) | Pronto |
 | Cadastro de filamentos (catálogo salvo) | Pronto |
 | Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Pronto |
 | Configurações gerais do negócio (energia, falhas, acabamento, margem) | Pronto |
-| Persistência em disco (`~/.3dreport/`, arquivos JSON) | Pronto |
+| Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos) | Pronto |
+| Exportar orçamento (PDF / copiar-colar) | Planejado |
 | Taxas de marketplace, custo de embalagem/spray etc. | Planejado |
 
 ## Apoie o projeto

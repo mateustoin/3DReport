@@ -9,17 +9,19 @@ Projeto **Kotlin Multiplatform** com dois módulos Gradle:
 ├─ core/                      # KMP puro: domínio e cálculo (sem UI)
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/core/
-│     │  ├─ model/            # Filament, PrinterProfile, PrintJob, PricingSettings, Quote
+│     │  ├─ model/            # Filament, PrinterProfile, PrintJob, PricingSettings, Quote, SavedQuote
 │     │  └─ pricing/          # PricingCalculator
 │     └─ commonTest/          # testes unitários (kotlin.test)
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/app/
-│     │  ├─ App.kt            # raiz: navegação por abas (Orçamento / Filamentos / Impressoras / Configurações)
+│     │  ├─ App.kt            # raiz: navegação por abas (Orçamento / Histórico / Filamentos / Impressoras / Configurações)
 │     │  ├─ data/              # contratos dos repositórios (expect class — ver "Persistência" abaixo)
+│     │  ├─ platform/          # capacidades específicas de plataforma (expect fun — ver "Capacidades de plataforma")
 │     │  └─ ui/                # uma pasta por tela: <tela>/<Tela>Screen.kt + <Tela>ViewModel.kt + <Tela>UiState.kt/FormState.kt
 │     ├─ jvmMain/kotlin/com/threedreport/app/
 │     │  ├─ data/              # persistência real (actual class): arquivos JSON em ~/.3dreport/
+│     │  ├─ platform/          # actual fun: java.awt.FileDialog, Skia, java.time
 │     │  └─ Main.kt            # entrada do desktop (janela)
 │     └─ jvmTest/              # testes da persistência (kotlin.test)
 ├─ docs/                      # documentação
@@ -53,10 +55,16 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   imutável), um `ViewModel` (Kotlin puro, sem `Composable`, expõe
   `StateFlow`) e um `*Screen` (`@Composable` que só observa o `ViewModel` e
   envia eventos — sem lógica de cálculo).
-- Quatro telas, navegadas por abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt):
+- Cinco telas, navegadas por abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt):
   - **Orçamento** (`ui/quote`): escolhe filamento + impressora (dropdowns,
     alimentados pelos catálogos salvos) e entra comprimento + tempo de
-    impressão; mostra produção/venda/lucro calculados a cada mudança.
+    impressão; mostra produção/venda/lucro calculados a cada mudança. Quando
+    o resultado é válido, mostra também o formulário pra salvar (nome, foto,
+    link do modelo — todos opcionais; ver `SaveQuoteFormState`).
+  - **Histórico** (`ui/history`): lista os orçamentos salvos (`SavedQuote` —
+    um retrato congelado do `Quote` no momento em que foi salvo, não afetado
+    por edições posteriores em filamento/impressora/configurações), com
+    ações de baixar a foto e excluir.
   - **Filamentos** (`ui/filaments`) e **Impressoras** (`ui/printers`): cadastro
     (listar, adicionar, editar, excluir) dos catálogos usados no Orçamento.
     Mesmo padrão de tela nos dois: lista + formulário (`FormState`) que abre
@@ -66,11 +74,18 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     grava no repositório compartilhado ao clicar em "Salvar".
 
 ### Persistência
-- `data/FilamentRepository`, `data/PrinterRepository` e `data/SettingsRepository`
-  guardam o estado compartilhado entre as telas (`StateFlow`) e persistem em
-  disco: arquivos JSON em `~/.3dreport/` (`filaments.json`, `printers.json`,
-  `settings.json`), lidos uma vez na criação e regravados a cada mudança.
-  Pré-carregados com um catálogo/perfil padrão no primeiro uso.
+- `data/FilamentRepository`, `data/PrinterRepository`, `data/SettingsRepository`
+  e `data/QuoteHistoryRepository` guardam o estado compartilhado entre as
+  telas (`StateFlow`) e persistem em disco: arquivos JSON em `~/.3dreport/`
+  (`filaments.json`, `printers.json`, `settings.json`, `quotes.json`), lidos
+  uma vez na criação e regravados a cada mudança. Pré-carregados com um
+  catálogo/perfil padrão no primeiro uso (exceto o histórico, que começa
+  vazio).
+- A foto de um `SavedQuote`, quando existe, **não** vai dentro do JSON — fica
+  como arquivo à parte em `~/.3dreport/photos/<id>.<extensão>`, referenciado
+  pelo campo `photoFileName`. Motivo: manter o JSON pequeno e legível; o
+  `Quote` embutido no `SavedQuote` já tem os números todos (produção, venda,
+  detalhamento de custos), então o histórico não precisa recalcular nada.
 - Cada repositório é um `expect class` em `commonMain` (contrato) com um
   `actual class` em `jvmMain` (implementação com `java.io.File`) — assim o
   restante da UI (`ui/`, `App.kt`) continua compartilhado, só a leitura/escrita
@@ -78,6 +93,16 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   `data/JsonFileStore.kt` (só em `jvmMain`).
 - Testado em `composeApp/src/jvmTest` (round-trip: grava, recria o
   repositório, confere que o valor voltou do disco).
+
+### Capacidades de plataforma
+- `platform/` guarda funções (não classes) que dependem do SO/plataforma,
+  seguindo o mesmo padrão `expect`/`actual` da persistência: `pickImageFile`
+  e `saveBytesToFile` (diálogo nativo de escolher/salvar arquivo, via
+  `java.awt.FileDialog` no `jvmMain`), `decodeImageBitmap` (bytes → `ImageBitmap`
+  pra exibir no Compose, via Skia no `jvmMain`) e `formatDateTime`
+  (formatação de data/hora, via `java.time` no `jvmMain`).
+- Usado pela tela de Orçamento (escolher foto ao salvar) e pela de Histórico
+  (baixar foto, mostrar miniatura, formatar a data salva).
 
 ## Plataformas
 
@@ -93,10 +118,13 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
 3. Criar um módulo de aplicação Android (ex.: `androidApp`) que dependa de
    `composeApp`/`core` e contenha a `Activity` chamando `App()`.
 4. Nenhuma mudança em `core/commonMain` nem em `composeApp/commonMain` (telas,
-   ViewModels, `App.kt`) deve ser necessária — exceto os repositórios em
-   `data/`: cada `expect class` precisa de um `actual` para Android (ex.:
-   `DataStore` ou arquivo em `Context.filesDir`, já que `java.io.File` com
-   `user.home` do `jvmMain` não existe nesse alvo).
+   ViewModels, `App.kt`) deve ser necessária — exceto tudo que é `expect` em
+   `data/` e `platform/`, que precisa de um `actual` para Android: os
+   repositórios (ex.: `DataStore` ou arquivo em `Context.filesDir`, já que
+   `java.io.File` com `user.home` do `jvmMain` não existe nesse alvo) e as
+   capacidades de plataforma (`pickImageFile`/`saveBytesToFile` via intents
+   do Android em vez de `FileDialog`, `decodeImageBitmap` via `BitmapFactory`
+   em vez de Skia).
 
 Esse passo não foi feito agora para manter o build simples e independente do
 Android SDK enquanto o foco é desktop.
