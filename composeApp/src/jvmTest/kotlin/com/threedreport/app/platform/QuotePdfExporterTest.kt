@@ -37,9 +37,20 @@ class QuotePdfExporterTest {
         savedAtEpochMillis = 0L,
     )
 
+    private val otherSavedQuote = savedQuote.copy(
+        id = "2",
+        name = "Vaso decorativo",
+        quote = savedQuote.quote.copy(salePrice = 45.0),
+        sourceLink = null,
+    )
+
     @Test
     fun pdfContainsNameAndSalePriceButNotInternalData() {
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = null)
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
@@ -56,7 +67,11 @@ class QuotePdfExporterTest {
         }
         val photoBytes = ByteArrayOutputStream().use { out -> ImageIO.write(image, "png", out); out.toByteArray() }
 
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes, watermarkText = null, footerText = null)
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes)),
+            watermarkText = null,
+            footerText = null,
+        )
 
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.pages.count() == 1)
@@ -65,9 +80,8 @@ class QuotePdfExporterTest {
 
     @Test
     fun pdfContainsWatermarkTextWhenProvided() {
-        val pdfBytes = renderSavedQuotePdf(
-            savedQuote,
-            photoBytes = null,
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
             watermarkText = "Marcenaria 3D do João",
             footerText = null,
         )
@@ -83,8 +97,16 @@ class QuotePdfExporterTest {
 
     @Test
     fun blankWatermarkAndFooterAreNotDrawn() {
-        val withBlank = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "   ", footerText = "   ")
-        val withNull = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = null)
+        val withBlank = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            watermarkText = "   ",
+            footerText = "   ",
+        )
+        val withNull = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
 
         val textWithBlank = Loader.loadPDF(withBlank).use { PDFTextStripper().getText(it) }
         val textWithNull = Loader.loadPDF(withNull).use { PDFTextStripper().getText(it) }
@@ -94,9 +116,8 @@ class QuotePdfExporterTest {
 
     @Test
     fun footerShowsBrandNameAsCleanContiguousText() {
-        val pdfBytes = renderSavedQuotePdf(
-            savedQuote,
-            photoBytes = null,
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
             watermarkText = null,
             footerText = "Marcenaria 3D do João",
         )
@@ -111,15 +132,13 @@ class QuotePdfExporterTest {
 
     @Test
     fun watermarkAndFooterAreIndependent() {
-        val onlyWatermark = Loader.loadPDF(
-            renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "Marca", footerText = null)
+        fun textFor(watermarkText: String?, footerText: String?) = Loader.loadPDF(
+            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes = null)), watermarkText, footerText)
         ).use { PDFTextStripper().getText(it) }
-        val onlyFooter = Loader.loadPDF(
-            renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = "Marca")
-        ).use { PDFTextStripper().getText(it) }
-        val neither = Loader.loadPDF(
-            renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null, footerText = null)
-        ).use { PDFTextStripper().getText(it) }
+
+        val onlyWatermark = textFor(watermarkText = "Marca", footerText = null)
+        val onlyFooter = textFor(watermarkText = null, footerText = "Marca")
+        val neither = textFor(watermarkText = null, footerText = null)
 
         // O rodapé sozinho contém "Marca" como string contígua; a marca d'água
         // sozinha quebra em fragmentos (é diagonal) mas ainda contém as letras.
@@ -142,9 +161,8 @@ class QuotePdfExporterTest {
         }
         val photoBytes = ByteArrayOutputStream().use { out -> ImageIO.write(image, "png", out); out.toByteArray() }
 
-        val pdfBytes = renderSavedQuotePdf(
-            savedQuote,
-            photoBytes,
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes)),
             watermarkText = "Marcenaria 3D do João",
             footerText = null,
         )
@@ -174,5 +192,43 @@ class QuotePdfExporterTest {
             foundNonPurePixel,
             "Toda a janela ao redor do centro continua azul puro — a marca d'água não está aparecendo por cima da foto.",
         )
+    }
+
+    @Test
+    fun multipleItemsProduceOnePagePerItemInOrder() {
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, null), QuoteExportItem(otherSavedQuote, null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val document = Loader.loadPDF(pdfBytes)
+        assertEquals(2, document.numberOfPages)
+
+        val firstPageText = PDFTextStripper().apply { startPage = 1; endPage = 1 }.getText(document)
+        val secondPageText = PDFTextStripper().apply { startPage = 2; endPage = 2 }.getText(document)
+        document.close()
+
+        assertTrue(firstPageText.contains("Suporte de celular"))
+        assertTrue(firstPageText.contains("16,19"))
+        assertTrue(secondPageText.contains("Vaso decorativo"))
+        assertTrue(secondPageText.contains("45,00"))
+    }
+
+    @Test
+    fun multipleItemsAllGetTheSameWatermarkAndFooter() {
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, null), QuoteExportItem(otherSavedQuote, null)),
+            watermarkText = null,
+            footerText = "Marcenaria 3D do João",
+        )
+
+        val document = Loader.loadPDF(pdfBytes)
+        val firstPageText = PDFTextStripper().apply { startPage = 1; endPage = 1 }.getText(document)
+        val secondPageText = PDFTextStripper().apply { startPage = 2; endPage = 2 }.getText(document)
+        document.close()
+
+        assertTrue(firstPageText.contains("Marcenaria 3D do João"))
+        assertTrue(secondPageText.contains("Marcenaria 3D do João"))
     }
 }

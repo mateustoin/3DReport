@@ -1,7 +1,6 @@
 package com.threedreport.app.platform
 
 import com.threedreport.app.ui.format.toBrl
-import com.threedreport.core.model.SavedQuote
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
@@ -18,63 +17,73 @@ import javax.imageio.ImageIO
 import kotlin.math.cos
 import kotlin.math.sin
 
-actual fun renderSavedQuotePdf(
-    savedQuote: SavedQuote,
-    photoBytes: ByteArray?,
-    watermarkText: String?,
-    footerText: String?,
-): ByteArray {
+actual fun renderSavedQuotesPdf(items: List<QuoteExportItem>, watermarkText: String?, footerText: String?): ByteArray {
     PDDocument().use { document ->
-        val page = PDPage(PDRectangle.A4)
-        document.addPage(page)
-
-        val margin = 50f
-        val footerReserve = 50f
         val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
         val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
-        var cursorY = page.mediaBox.height - margin
 
-        PDPageContentStream(document, page).use { content ->
-            content.beginText()
-            content.setFont(titleFont, 20f)
-            content.newLineAtOffset(margin, cursorY)
-            content.showText(savedQuote.name)
-            content.endText()
-            cursorY -= 30f
-
-            content.beginText()
-            content.setFont(bodyFont, 14f)
-            content.newLineAtOffset(margin, cursorY)
-            content.showText("Venda: ${savedQuote.quote.salePrice.toBrl()}")
-            content.endText()
-            cursorY -= 30f
-
-            val bufferedImage = photoBytes?.let { ImageIO.read(ByteArrayInputStream(it)) }
-            if (bufferedImage != null) {
-                val pdImage = LosslessFactory.createFromImage(document, bufferedImage)
-                val maxWidth = page.mediaBox.width - margin * 2
-                val maxHeight = cursorY - footerReserve
-                val scale = minOf(maxWidth / pdImage.width, maxHeight / pdImage.height, 1f)
-                val drawWidth = pdImage.width * scale
-                val drawHeight = pdImage.height * scale
-                content.drawImage(pdImage, margin, cursorY - drawHeight, drawWidth, drawHeight)
-            }
-
-            // Marca d'água e rodapé por último: desenhados por cima do resto do
-            // conteúdo (inclusive a foto), translúcidos o bastante pra não
-            // atrapalhar a leitura — do contrário ficam encobertos pela foto.
-            // Independentes: cada um só aparece se o respectivo texto vier preenchido.
-            if (!watermarkText.isNullOrBlank()) {
-                drawWatermark(content, page, titleFont, watermarkText)
-            }
-            if (!footerText.isNullOrBlank()) {
-                drawFooter(content, page, bodyFont, footerText, margin)
-            }
+        items.forEach { item ->
+            val page = PDPage(PDRectangle.A4)
+            document.addPage(page)
+            drawQuotePage(document, page, titleFont, bodyFont, item, watermarkText, footerText)
         }
 
         val output = ByteArrayOutputStream()
         document.save(output)
         return output.toByteArray()
+    }
+}
+
+/** Desenha nome, valor de venda, foto (se houver) e marca d'água/rodapé (se configurados) numa única página. */
+private fun drawQuotePage(
+    document: PDDocument,
+    page: PDPage,
+    titleFont: PDType1Font,
+    bodyFont: PDType1Font,
+    item: QuoteExportItem,
+    watermarkText: String?,
+    footerText: String?,
+) {
+    val margin = 50f
+    val footerReserve = 50f
+    var cursorY = page.mediaBox.height - margin
+
+    PDPageContentStream(document, page).use { content ->
+        content.beginText()
+        content.setFont(titleFont, 20f)
+        content.newLineAtOffset(margin, cursorY)
+        content.showText(item.savedQuote.name)
+        content.endText()
+        cursorY -= 30f
+
+        content.beginText()
+        content.setFont(bodyFont, 14f)
+        content.newLineAtOffset(margin, cursorY)
+        content.showText("Venda: ${item.savedQuote.quote.salePrice.toBrl()}")
+        content.endText()
+        cursorY -= 30f
+
+        val bufferedImage = item.photoBytes?.let { ImageIO.read(ByteArrayInputStream(it)) }
+        if (bufferedImage != null) {
+            val pdImage = LosslessFactory.createFromImage(document, bufferedImage)
+            val maxWidth = page.mediaBox.width - margin * 2
+            val maxHeight = cursorY - footerReserve
+            val scale = minOf(maxWidth / pdImage.width, maxHeight / pdImage.height, 1f)
+            val drawWidth = pdImage.width * scale
+            val drawHeight = pdImage.height * scale
+            content.drawImage(pdImage, margin, cursorY - drawHeight, drawWidth, drawHeight)
+        }
+
+        // Marca d'água e rodapé por último: desenhados por cima do resto do
+        // conteúdo (inclusive a foto), translúcidos o bastante pra não
+        // atrapalhar a leitura — do contrário ficam encobertos pela foto.
+        // Independentes: cada um só aparece se o respectivo texto vier preenchido.
+        if (!watermarkText.isNullOrBlank()) {
+            drawWatermark(content, page, titleFont, watermarkText)
+        }
+        if (!footerText.isNullOrBlank()) {
+            drawFooter(content, page, bodyFont, footerText, margin)
+        }
     }
 }
 

@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,6 +31,7 @@ import com.threedreport.core.model.SavedQuote
 fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Modifier) {
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val copiedId by viewModel.copiedId.collectAsState()
+    val selectedIds by viewModel.selectedIds.collectAsState()
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -41,6 +44,19 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
                 "Nenhum orçamento salvo ainda. Calcule um na aba Orçamento e clique em \"Salvar orçamento\".",
                 style = MaterialTheme.typography.bodyMedium,
             )
+        } else {
+            Text(
+                "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        if (selectedIds.isNotEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("${selectedIds.size} selecionado(s)", style = MaterialTheme.typography.bodyMedium)
+                Button(onClick = viewModel::exportSelectedPdf) { Text("Exportar selecionados (PDF)") }
+                TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
+            }
         }
 
         savedQuotes.sortedByDescending { it.savedAtEpochMillis }.forEach { savedQuote ->
@@ -48,6 +64,8 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
                 savedQuote = savedQuote,
                 photoBytes = savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) },
                 justCopied = copiedId == savedQuote.id,
+                selected = savedQuote.id in selectedIds,
+                onToggleSelected = { viewModel.toggleSelection(savedQuote.id) },
                 onDownloadPhoto = { viewModel.downloadPhoto(savedQuote) },
                 onExportPdf = { viewModel.exportPdf(savedQuote) },
                 onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
@@ -62,6 +80,8 @@ private fun SavedQuoteRow(
     savedQuote: SavedQuote,
     photoBytes: ByteArray?,
     justCopied: Boolean,
+    selected: Boolean,
+    onToggleSelected: () -> Unit,
     onDownloadPhoto: () -> Unit,
     onExportPdf: () -> Unit,
     onCopy: () -> Unit,
@@ -69,6 +89,8 @@ private fun SavedQuoteRow(
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Checkbox(checked = selected, onCheckedChange = { onToggleSelected() })
+
             if (photoBytes != null) {
                 Image(
                     bitmap = decodeImageBitmap(photoBytes),
