@@ -12,6 +12,7 @@ nos modelos, para a persistência feita pelo `composeApp`).
 | `model/PrinterProfile.kt` | Perfil de impressora salvo (id, consumo, manutenção, `MachineInvestment`) — uma pessoa pode ter várias |
 | `model/PrintJob.kt` | Dados da peça: filamento, metros e minutos |
 | `model/PricingSettings.kt` | Custos gerais do negócio, iguais para qualquer impressora (energia, falhas, acabamento, administrativo, margem) |
+| `model/BrandingSettings.kt` | Personalização do documento exportado (hoje: texto da marca d'água do PDF) — não é parâmetro de custo |
 | `model/Quote.kt` | Resultado: `CostBreakdown`, produção, venda, lucro |
 | `model/SavedQuote.kt` | Retrato congelado de um `Quote` salvo no histórico (nome, foto, link interno, data) |
 | `pricing/PricingCalculator.kt` | `calculate(job, printer, settings): Quote` |
