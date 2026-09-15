@@ -20,21 +20,24 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
     genérico automático (ex.: "Orçamento #N" ou com a data) pra aparecer no
     histórico.
   - **Foto do produto (opcional).** Upload de imagem anexada ao orçamento —
-    faz parte do orçamento em si, então **entra no export** (PDF e,
-    dependendo de como o copiar/colar simplificado for desenhado, pelo menos
-    referenciada nele).
+    entra no **PDF** e fica disponível no **histórico** (com opção de
+    baixar a foto de volta a partir do histórico, caso o criador perca o
+    arquivo original com o tempo). **Não** entra no copiar/colar — quem gera
+    o orçamento já tem a foto em mãos pra mandar junto por fora.
   - **Link do modelo (opcional).** De onde o modelo 3D foi obtido (ex.:
     Thingiverse, Cults3D). É **só uso interno** — nunca aparece no PDF nem no
     texto de copiar/colar; serve só pro criador reencontrar a origem do
     modelo ao revisitar um orçamento antigo no histórico.
 - [ ] **Exportar o orçamento.** Dois formatos:
-  - **PDF** — formato principal, pra mandar pro cliente.
+  - **PDF** — formato principal, pra mandar pro cliente; inclui a foto,
+    quando houver.
   - **Copiar e colar simplificado** — versão em texto, mais rápida pra colar
-    numa conversa de WhatsApp/marketplace sem gerar arquivo.
-  - Em ambos os formatos: nome, dados calculados (produção/venda/lucro) e
-    foto (quando houver) aparecem; o link do modelo **nunca** aparece.
-- [ ] **Histórico de orçamentos.** Lista dos orçamentos salvos (nome, foto,
-  link interno, valores), pra consultar depois sem refazer as contas.
+    numa conversa de WhatsApp/marketplace sem gerar arquivo; nome e dados
+    calculados (produção/venda/lucro), sem foto.
+  - O link do modelo **nunca** aparece em nenhum dos dois formatos.
+- [ ] **Histórico de orçamentos.** Lista dos orçamentos salvos (nome, foto —
+  com opção de baixar —, link interno, valores), pra consultar depois sem
+  refazer as contas.
 - [ ] **Taxas de marketplace (ex.: Shopee) e custo de embalagem/spray.**
   Estava fora de escopo por ser "recurso pago" (decisão 7, hoje substituída)
   — não há mais essa barreira, só falta decidir como esses custos entram na
