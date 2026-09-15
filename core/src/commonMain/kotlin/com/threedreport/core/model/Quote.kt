@@ -29,7 +29,11 @@ data class CostBreakdown(
  * @property filamentWeightGrams massa estimada de filamento, em gramas.
  * @property costs detalhamento dos custos.
  * @property productionCost valor de produção (= [CostBreakdown.total]).
- * @property salePrice valor de venda (= produção · (1 + margem)).
+ * @property salePrice valor de venda (= produção · (1 + margem), já ajustado
+ *   pra compensar [marketplaceFeeRate] quando aplicável — é o preço de fato
+ *   cobrado do cliente, o marketplace não aparece pra ele).
+ * @property marketplaceFeeRate percentual do marketplace já embutido em
+ *   [salePrice] para este orçamento (`0.0` se não vendido por marketplace).
  */
 @Serializable
 data class Quote(
@@ -38,8 +42,13 @@ data class Quote(
     val costs: CostBreakdown,
     val productionCost: Double,
     val salePrice: Double,
+    val marketplaceFeeRate: Double = 0.0,
 ) {
-    /** Lucro bruto: venda − produção. */
+    /**
+     * Lucro líquido real: o que sobra depois do marketplace descontar sua
+     * parte de [salePrice] (quando [marketplaceFeeRate] > 0), menos a
+     * produção. Sem marketplace, é só venda − produção.
+     */
     val profit: Double
-        get() = salePrice - productionCost
+        get() = salePrice * (1 - marketplaceFeeRate) - productionCost
 }

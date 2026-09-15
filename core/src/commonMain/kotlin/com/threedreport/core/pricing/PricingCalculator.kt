@@ -14,7 +14,18 @@ import com.threedreport.core.model.Quote
  */
 object PricingCalculator {
 
-    fun calculate(job: PrintJob, printer: PrinterProfile, settings: PricingSettings): Quote {
+    /**
+     * @param appliesMarketplaceFee se `true`, aumenta o valor de venda o
+     *   suficiente para compensar `settings.marketplaceFeeRate` — a margem
+     *   de lucro real (ver [Quote.profit]) fica igual à de uma venda sem
+     *   marketplace, só o preço de tabela muda.
+     */
+    fun calculate(
+        job: PrintJob,
+        printer: PrinterProfile,
+        settings: PricingSettings,
+        appliesMarketplaceFee: Boolean = false,
+    ): Quote {
         val hours = job.printTimeHours
         val weightGrams = job.filament.weightGrams(job.filamentLengthMeters)
 
@@ -32,12 +43,17 @@ object PricingCalculator {
         )
 
         val productionCost = costs.total
+        val baseSalePrice = productionCost * (1 + settings.profitMargin)
+        val feeRate = if (appliesMarketplaceFee) settings.marketplaceFeeRate else 0.0
+        val salePrice = if (feeRate > 0.0) baseSalePrice / (1 - feeRate) else baseSalePrice
+
         return Quote(
             job = job,
             filamentWeightGrams = weightGrams,
             costs = costs,
             productionCost = productionCost,
-            salePrice = productionCost * (1 + settings.profitMargin),
+            salePrice = salePrice,
+            marketplaceFeeRate = feeRate,
         )
     }
 

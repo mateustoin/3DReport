@@ -102,6 +102,41 @@ class PricingCalculatorTest {
         }
     }
 
+    @Test
+    fun marketplaceFeeRaisesSalePriceButKeepsRealProfitUnchanged() {
+        val settingsWithFee = spreadsheetSettings.copy(marketplaceFeeRate = 0.15)
+
+        val withoutMarketplace = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settingsWithFee)
+        val withMarketplace = PricingCalculator.calculate(
+            spreadsheetJob,
+            spreadsheetPrinter,
+            settingsWithFee,
+            appliesMarketplaceFee = true,
+        )
+
+        // Preço de tabela sobe pra compensar o desconto do marketplace...
+        assertEquals(16.19, withoutMarketplace.salePrice, CENT_TOLERANCE)
+        assertEquals(16.19 / 0.85, withMarketplace.salePrice, CENT_TOLERANCE)
+        // ...mas o lucro real (depois do marketplace descontar a parte dele) fica igual.
+        assertEquals(withoutMarketplace.profit, withMarketplace.profit, 1e-9)
+    }
+
+    @Test
+    fun marketplaceFeeNotAppliedWhenFlagIsFalseEvenIfConfigured() {
+        val settingsWithFee = spreadsheetSettings.copy(marketplaceFeeRate = 0.15)
+
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settingsWithFee)
+
+        assertEquals(0.0, quote.marketplaceFeeRate, 1e-9)
+        assertEquals(16.19, quote.salePrice, CENT_TOLERANCE)
+    }
+
+    @Test
+    fun invalidMarketplaceFeeRateIsRejected() {
+        assertFailsWith<IllegalArgumentException> { spreadsheetSettings.copy(marketplaceFeeRate = -0.1) }
+        assertFailsWith<IllegalArgumentException> { spreadsheetSettings.copy(marketplaceFeeRate = 1.0) }
+    }
+
     private companion object {
         /** A planilha exibe valores com 2 casas; aceitamos diferença de até meio centavo. */
         const val CENT_TOLERANCE = 0.005
