@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -25,6 +26,7 @@ import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
 import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
+import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsViewModel
 
@@ -42,14 +44,16 @@ fun App() {
     val printerRepository = remember { PrinterRepository() }
     val settingsRepository = remember { SettingsRepository() }
     val historyRepository = remember { QuoteHistoryRepository() }
+    val brandingRepository = remember { BrandingRepository() }
 
     val quoteViewModel = remember {
         QuoteViewModel(filamentRepository, printerRepository, settingsRepository, historyRepository)
     }
-    val historyViewModel = remember { QuoteHistoryViewModel(historyRepository) }
+    val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
+    val brandingViewModel = remember { BrandingViewModel(brandingRepository) }
 
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
 
@@ -71,7 +75,7 @@ fun App() {
                     AppTab.HISTORY -> QuoteHistoryScreen(historyViewModel)
                     AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
                     AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
-                    AppTab.SETTINGS -> SettingsScreen(settingsViewModel)
+                    AppTab.SETTINGS -> SettingsScreen(settingsViewModel, brandingViewModel)
                 }
             }
         }

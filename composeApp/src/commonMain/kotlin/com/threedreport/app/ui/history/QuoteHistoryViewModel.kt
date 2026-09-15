@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.copyToClipboard
 import com.threedreport.app.platform.renderSavedQuotePdf
@@ -10,7 +11,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** ViewModel da tela de Histórico: lista os orçamentos salvos e permite excluir, baixar a foto ou exportar. */
-class QuoteHistoryViewModel(private val repository: QuoteHistoryRepository) {
+class QuoteHistoryViewModel(
+    private val repository: QuoteHistoryRepository,
+    private val brandingRepository: BrandingRepository,
+) {
 
     val savedQuotes: StateFlow<List<SavedQuote>> = repository.savedQuotes
 
@@ -27,7 +31,8 @@ class QuoteHistoryViewModel(private val repository: QuoteHistoryRepository) {
     }
 
     fun exportPdf(savedQuote: SavedQuote) {
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes(savedQuote))
+        val watermarkText = brandingRepository.branding.value.watermarkText
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes(savedQuote), watermarkText)
         saveBytesToFile(pdfBytes, "${sanitizeFileName(savedQuote.name)}.pdf")
     }
 

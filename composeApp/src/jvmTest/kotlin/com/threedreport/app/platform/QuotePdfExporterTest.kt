@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -37,7 +38,7 @@ class QuotePdfExporterTest {
 
     @Test
     fun pdfContainsNameAndSalePriceButNotInternalData() {
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null)
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null)
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
@@ -54,10 +55,34 @@ class QuotePdfExporterTest {
         }
         val photoBytes = ByteArrayOutputStream().use { out -> ImageIO.write(image, "png", out); out.toByteArray() }
 
-        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes)
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes, watermarkText = null)
 
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.pages.count() == 1)
         document.close()
+    }
+
+    @Test
+    fun pdfContainsWatermarkTextWhenProvided() {
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "Marcenaria 3D do João")
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        // O texto diagonal quebra em várias "linhas" pro extrator (a posição Y de
+        // cada caractere muda ao longo da diagonal); comparamos ignorando espaços.
+        val normalizedText = text.replace(Regex("\\s+"), "")
+        val normalizedWatermark = "Marcenaria 3D do João".replace(Regex("\\s+"), "")
+        assertTrue(normalizedText.contains(normalizedWatermark))
+    }
+
+    @Test
+    fun blankWatermarkIsNotDrawn() {
+        val withBlank = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "   ")
+        val withNull = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = null)
+
+        val textWithBlank = Loader.loadPDF(withBlank).use { PDFTextStripper().getText(it) }
+        val textWithNull = Loader.loadPDF(withNull).use { PDFTextStripper().getText(it) }
+
+        assertEquals(textWithNull, textWithBlank)
     }
 }

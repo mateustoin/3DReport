@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -19,12 +20,14 @@ import com.threedreport.app.ui.focus.tabToNavigate
 
 /**
  * Tela de Configurações gerais: parâmetros do negócio, iguais para qualquer
- * impressora/orçamento (energia, falhas, acabamento, administrativo, margem).
+ * impressora/orçamento (energia, falhas, acabamento, administrativo, margem),
+ * e a personalização do PDF exportado (marca d'água).
  * O que é específico de cada impressora fica na tela de Impressoras.
  */
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) {
+fun SettingsScreen(viewModel: SettingsViewModel, brandingViewModel: BrandingViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsState()
+    val branding by brandingViewModel.uiState.collectAsState()
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -58,6 +61,17 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
         state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (state.savedConfirmation) {
             Text("Configurações salvas.", color = MaterialTheme.colorScheme.primary)
+        }
+
+        HorizontalDivider()
+
+        Text("Marca d'água do PDF", style = MaterialTheme.typography.titleMedium)
+        LabeledField("Texto da marca d'água (opcional)", branding.watermarkTextInput, brandingViewModel::update)
+
+        Button(onClick = brandingViewModel::save) { Text("Salvar") }
+
+        if (branding.savedConfirmation) {
+            Text("Marca d'água salva.", color = MaterialTheme.colorScheme.primary)
         }
     }
 }

@@ -13,7 +13,7 @@ Interface do 3DReport com Compose Multiplatform. Depende de `core`.
 | `src/commonMain/.../ui/history` | Tela de Histórico: consultar, exportar (PDF/copiar), baixar foto, excluir |
 | `src/commonMain/.../ui/filaments` | Tela de Filamentos (cadastro) |
 | `src/commonMain/.../ui/printers` | Tela de Impressoras (cadastro) |
-| `src/commonMain/.../ui/settings` | Tela de Configurações gerais |
+| `src/commonMain/.../ui/settings` | Tela de Configurações gerais + marca d'água do PDF |
 | `src/jvmMain/.../data/` | Persistência real (`actual class`): arquivos JSON + fotos em `~/.3dreport/` |
 | `src/jvmMain/.../platform/` | Implementação real (`actual fun`): `java.awt.FileDialog`/`Toolkit`, Skia, `java.time`, Apache PDFBox |
 | `src/jvmMain/.../Main.kt` | Entrada do desktop (janela) |
