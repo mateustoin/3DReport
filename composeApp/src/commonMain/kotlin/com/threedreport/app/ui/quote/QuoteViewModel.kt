@@ -5,82 +5,59 @@ import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.pricing.PricingCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * ViewModel da tela de Orçamento.
  *
- * Recalcula o [com.threedreport.core.model.Quote] a cada mudança de entrada,
- * usando o filamento/impressora escolhidos e as configurações gerais
- * vigentes nos repositórios compartilhados.
+ * [filaments], [printers] e [settings] são repassados diretamente dos
+ * repositórios compartilhados (sem cópia), então refletem na hora qualquer
+ * cadastro/edição feito nas outras telas. [calculate] é uma função pura,
+ * chamada pela tela a cada recomposição com os valores atuais desses fluxos.
  */
 class QuoteViewModel(
-    private val filamentRepository: FilamentRepository,
-    private val printerRepository: PrinterRepository,
-    private val settingsRepository: SettingsRepository,
+    filamentRepository: FilamentRepository,
+    printerRepository: PrinterRepository,
+    settingsRepository: SettingsRepository,
 ) {
-    private val state = MutableStateFlow(
-        QuoteUiState(
-            filaments = filamentRepository.filaments.value,
-            selectedFilament = filamentRepository.filaments.value.firstOrNull(),
-            printers = printerRepository.printers.value,
-            selectedPrinter = printerRepository.printers.value.firstOrNull(),
-        )
-    )
-    val uiState: StateFlow<QuoteUiState> = state.asStateFlow()
+    val filaments: StateFlow<List<Filament>> = filamentRepository.filaments
+    val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
+    val settings: StateFlow<PricingSettings> = settingsRepository.settings
 
-    fun selectFilament(filament: Filament) {
-        state.value = state.value.copy(selectedFilament = filament)
-        recalculate()
-    }
+    private val inputState = MutableStateFlow(QuoteInputState())
+    val input: StateFlow<QuoteInputState> = inputState.asStateFlow()
 
-    fun selectPrinter(printer: PrinterProfile) {
-        state.value = state.value.copy(selectedPrinter = printer)
-        recalculate()
-    }
+    fun selectFilament(id: String) = inputState.update { it.copy(filamentId = id) }
+    fun selectPrinter(id: String) = inputState.update { it.copy(printerId = id) }
+    fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text) }
+    fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text) }
 
-    fun setLengthMeters(text: String) {
-        state.value = state.value.copy(lengthMetersText = text)
-        recalculate()
-    }
-
-    fun setPrintTimeMinutes(text: String) {
-        state.value = state.value.copy(printTimeMinutesText = text)
-        recalculate()
-    }
-
-    private fun recalculate() {
-        val current = state.value
-        val filament = current.selectedFilament
-        val printer = current.selectedPrinter
-        val length = parseDecimal(current.lengthMetersText)
-        val time = parseDecimal(current.printTimeMinutesText)
+    fun calculate(
+        filaments: List<Filament>,
+        printers: List<PrinterProfile>,
+        settings: PricingSettings,
+        input: QuoteInputState,
+    ): QuoteResult {
+        val filament = filaments.find { it.id == input.filamentId } ?: filaments.firstOrNull()
+        val printer = printers.find { it.id == input.printerId } ?: printers.firstOrNull()
+        val length = parseDecimal(input.lengthMetersText)
+        val time = parseDecimal(input.printTimeMinutesText)
 
         if (filament == null || printer == null || length == null || time == null) {
-            state.value = current.copy(quote = null, errorMessage = null)
-            return
+            return QuoteResult(filament = filament, printer = printer)
         }
 
-        val quote = runCatching {
-            PricingCalculator.calculate(
-                job = PrintJob(
-                    filament = filament,
-                    filamentLengthMeters = length,
-                    printTimeMinutes = time,
-                ),
-                printer = printer,
-                settings = settingsRepository.settings.value,
-            )
-        }
-
-        state.value = current.copy(
-            quote = quote.getOrNull(),
-            errorMessage = quote.exceptionOrNull()?.message,
+        val job = PrintJob(filament = filament, filamentLengthMeters = length, printTimeMinutes = time)
+        return runCatching { PricingCalculator.calculate(job, printer, settings) }.fold(
+            onSuccess = { QuoteResult(filament, printer, quote = it) },
+            onFailure = { QuoteResult(filament, printer, errorMessage = it.message) },
         )
     }
 }

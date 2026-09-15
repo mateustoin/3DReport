@@ -2,8 +2,11 @@ package com.threedreport.app.ui.quote
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,40 +30,45 @@ import com.threedreport.app.ui.format.toBrl
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
 @Composable
 fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.uiState.collectAsState()
+    val filaments by viewModel.filaments.collectAsState()
+    val printers by viewModel.printers.collectAsState()
+    val settings by viewModel.settings.collectAsState()
+    val input by viewModel.input.collectAsState()
+
+    val result = viewModel.calculate(filaments, printers, settings, input)
 
     Column(
-        modifier = modifier.padding(24.dp).fillMaxWidth(),
+        modifier = modifier.padding(24.dp).fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         LabeledDropdown(
             label = "Filamento",
-            items = state.filaments,
-            selected = state.selectedFilament,
+            items = filaments,
+            selected = result.filament,
             itemLabel = { "${it.name} · ${it.pricePerKg.toBrl()}/kg" },
             displayText = { it.name },
-            onSelect = viewModel::selectFilament,
+            onSelect = { viewModel.selectFilament(it.id) },
         )
 
         LabeledDropdown(
             label = "Impressora",
-            items = state.printers,
-            selected = state.selectedPrinter,
+            items = printers,
+            selected = result.printer,
             itemLabel = { it.name },
             displayText = { it.name },
-            onSelect = viewModel::selectPrinter,
+            onSelect = { viewModel.selectPrinter(it.id) },
         )
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
-            value = state.lengthMetersText,
+            value = input.lengthMetersText,
             onValueChange = viewModel::setLengthMeters,
             label = { Text("Comprimento de filamento (m)") },
         )
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
-            value = state.printTimeMinutesText,
+            value = input.printTimeMinutesText,
             onValueChange = viewModel::setPrintTimeMinutes,
             label = { Text("Tempo de impressão (min)") },
         )
@@ -69,16 +77,16 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
 
         Text("Resultado", style = MaterialTheme.typography.titleMedium)
 
-        val quote = state.quote
+        val quote = result.quote
         when {
-            state.errorMessage != null -> Text(state.errorMessage.orEmpty(), color = MaterialTheme.colorScheme.error)
+            result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
             quote != null -> {
                 Text("Produção: ${quote.productionCost.toBrl()}")
                 Text("Venda: ${quote.salePrice.toBrl()}")
                 Text("Lucro: ${quote.profit.toBrl()}")
             }
-            state.filaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
-            state.printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
+            filaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
+            printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
             else -> Text("Preencha os campos acima para calcular.", style = MaterialTheme.typography.bodyMedium)
         }
     }
