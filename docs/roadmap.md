@@ -47,10 +47,17 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   ficou pra uma iteração futura, se fizer falta), configurado em
   Configurações (`BrandingSettings`, separado de `PricingSettings` por não
   ser parâmetro de custo). Desenhado diagonal, cinza claro, translúcido,
-  centralizado, atrás do resto do conteúdo — sem controle de
-  posição/opacidade pelo usuário por ora. Feito (2026-09-15):
-  `platform/QuotePdfExporter` recebe o texto e desenha; `data/BrandingRepository`
-  persiste em `~/.3dreport/branding.json`.
+  centralizado, **por cima** do resto do conteúdo (inclusive da foto — ver
+  correção abaixo) — sem controle de posição/opacidade pelo usuário por ora.
+  Feito (2026-09-15): `platform/QuotePdfExporter` recebe o texto e desenha;
+  `data/BrandingRepository` persiste em `~/.3dreport/branding.json`.
+  - **Correção (2026-09-15):** a marca d'água era desenhada *antes* da foto
+    e ficava totalmente encoberta por ela quando o orçamento tinha foto.
+    Reordenado pra desenhar por cima de tudo (técnica padrão de marca
+    d'água), com opacidade ajustada (0,18) pra continuar discreta.
+  - **Rodapé profissional (2026-09-15):** quando há marca d'água
+    configurada, o PDF ganha um rodapé — linha fina + nome da marca
+    centralizado — no fim da página, como um documento de orçamento formal.
 - [ ] **Exportar vários orçamentos num PDF só.** Ideia levantada em
   2026-09-15: na aba Histórico, poder selecionar 2+ orçamentos e gerar um
   único PDF compilado — útil pra quem vende mais de um produto de uma vez

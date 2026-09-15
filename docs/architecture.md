@@ -110,9 +110,10 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   (via `java.awt.Toolkit` no `jvmMain`) e `renderSavedQuotePdf` (monta o PDF
   do orçamento — nome, valor de venda, foto, marca d'água opcional — via
   [Apache PDFBox](https://pdfbox.apache.org/) no `jvmMain`; Apache 2.0, mesma
-  licença do projeto). A marca d'água é texto diagonal translúcido desenhado
-  atrás do resto do conteúdo (`PDExtendedGraphicsState` pra opacidade,
-  `Matrix.getRotateInstance` pra rotação).
+  licença do projeto). Quando há marca d'água configurada, ela é desenhada
+  **por cima de todo o conteúdo** (inclusive a foto — decisão 21;
+  `PDExtendedGraphicsState` pra opacidade, `Matrix.getRotateInstance` pra
+  rotação) e o PDF ganha um rodapé (linha fina + nome da marca centralizado).
 - Usado pela tela de Orçamento (escolher foto ao salvar) e pela de Histórico
   (baixar foto, mostrar miniatura, formatar a data salva, exportar PDF,
   copiar texto).
