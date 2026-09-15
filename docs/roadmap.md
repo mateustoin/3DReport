@@ -57,6 +57,21 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
 - [x] **Histórico de orçamentos.** Lista dos orçamentos salvos (nome, foto —
   com opção de baixar —, link interno, valores), pra consultar depois sem
   refazer as contas. Feito (2026-09-15): aba "Histórico".
+- [ ] **Serviços opcionais no orçamento** (pintura, lixamento, acabamento,
+  etc.). Ideia levantada em 2026-09-15: como os serviços e preços são
+  particulares de cada criador, precisaria de uma **aba "Serviços"** —
+  mesmo padrão de cadastro de Filamentos/Impressoras (nome + preço, salvo
+  em catálogo). Na tela de Orçamento, os serviços cadastrados apareceriam
+  como **checkboxes**: o criador marca quais se aplicam àquele orçamento
+  específico (dinâmico, por peça). O **PDF/copiar-colar** passaria a
+  detalhar, além do que já mostra hoje, cada serviço selecionado (nome +
+  valor) e o **valor total** (venda + serviços).
+  Em aberto pra quando for implementar: se o valor do serviço soma só na
+  venda ou também entra no cálculo interno de produção/lucro; se o
+  `SavedQuote` precisa congelar os serviços escolhidos e seus preços no
+  momento do salvamento (mesmo princípio do retrato congelado já usado pro
+  resto do orçamento — decisão 12/18), pra não mudar retroativamente se o
+  preço de um serviço for editado depois no cadastro.
 - [ ] **Taxas de marketplace (ex.: Shopee) e custo de embalagem/spray.**
   Estava fora de escopo por ser "recurso pago" (decisão 7, hoje substituída)
   — não há mais essa barreira, só falta decidir como esses custos entram na
