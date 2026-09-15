@@ -27,7 +27,7 @@ com a margem de lucro desejada.
 
 O 3DReport é e sempre será gratuito e de código aberto — não há edição paga
 nem assinatura. Se ele te ajuda, considere uma doação voluntária:
-[Buy Me a Coffee](https://buymeacoffee.com/SEU_USUARIO).
+[Buy Me a Coffee](https://buymeacoffee.com/mateustoin).
 
 ## Stack
 
