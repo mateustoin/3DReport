@@ -48,7 +48,8 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = "3DReport"
-            packageVersion = "0.1.0"
+            // Lido de gradle.properties; mantenha com.threedreport.app.APP_VERSION em sincronia.
+            packageVersion = providers.gradleProperty("appVersion").get()
         }
     }
 }
