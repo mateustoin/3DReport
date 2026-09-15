@@ -8,6 +8,9 @@ import com.threedreport.core.model.SavedQuote
  * interno) nem o link do modelo (uso interno).
  *
  * @param watermarkText marca d'água opcional (personalização do criador,
- *   ver [com.threedreport.core.model.BrandingSettings]); `null`/vazio não desenha nenhuma.
+ *   ver [com.threedreport.core.model.BrandingSettings]); `null`/vazio não desenha
+ *   marca d'água nem rodapé. Quando presente, aparece duas vezes: diagonal e
+ *   translúcida por cima de todo o conteúdo (inclusive a foto, pra continuar
+ *   visível ali) e num rodapé discreto no fim da página.
  */
 expect fun renderSavedQuotePdf(savedQuote: SavedQuote, photoBytes: ByteArray?, watermarkText: String?): ByteArray

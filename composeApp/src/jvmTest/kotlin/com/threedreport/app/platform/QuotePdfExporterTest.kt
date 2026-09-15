@@ -6,6 +6,7 @@ import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -84,5 +85,59 @@ class QuotePdfExporterTest {
         val textWithNull = Loader.loadPDF(withNull).use { PDFTextStripper().getText(it) }
 
         assertEquals(textWithNull, textWithBlank)
+    }
+
+    @Test
+    fun footerShowsBrandNameAsCleanContiguousText() {
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes = null, watermarkText = "Marcenaria 3D do João")
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        // Diferente da marca d'água diagonal (que quebra em várias "linhas" pro
+        // extrator — ver pdfContainsWatermarkTextWhenProvided), o rodapé não é
+        // rotacionado, então deve aparecer como uma string contígua normal.
+        assertTrue(text.contains("Marcenaria 3D do João"))
+    }
+
+    @Test
+    fun watermarkStaysVisibleOverThePhotoInsteadOfBeingHiddenBehindIt() {
+        // Reprodução do bug relatado: a marca d'água ficava encoberta pela foto
+        // porque era desenhada antes dela. Cobrimos toda a área central da página
+        // (onde a diagonal cruza) com uma foto de cor sólida e conferimos que o
+        // pixel central, depois de renderizado, não é mais a cor pura da foto —
+        // ou seja, a marca d'água foi composta por cima, visível.
+        val pureBlue = Color.BLUE
+        val image = BufferedImage(495, 682, BufferedImage.TYPE_INT_RGB).apply {
+            graphics.apply { color = pureBlue; fillRect(0, 0, 495, 682) }
+        }
+        val photoBytes = ByteArrayOutputStream().use { out -> ImageIO.write(image, "png", out); out.toByteArray() }
+
+        val pdfBytes = renderSavedQuotePdf(savedQuote, photoBytes, watermarkText = "Marcenaria 3D do João")
+
+        val document = Loader.loadPDF(pdfBytes)
+        val rendered = PDFRenderer(document).renderImageWithDPI(0, 72f)
+        document.close()
+
+        // Um único pixel pode cair num vão entre letras (a marca d'água é texto,
+        // não uma linha contínua); varremos uma janela ao redor do centro, onde a
+        // diagonal cruza, e basta um pixel não-azul-puro pra provar que algo foi
+        // composto por cima da foto ali.
+        val centerX = rendered.width / 2
+        val centerY = rendered.height / 2
+        val windowRadius = 80
+        var foundNonPurePixel = false
+        for (x in (centerX - windowRadius)..(centerX + windowRadius)) {
+            for (y in (centerY - windowRadius)..(centerY + windowRadius)) {
+                val pixel = Color(rendered.getRGB(x, y))
+                if (pixel.rgb != pureBlue.rgb) {
+                    foundNonPurePixel = true
+                }
+            }
+        }
+
+        assertTrue(
+            foundNonPurePixel,
+            "Toda a janela ao redor do centro continua azul puro — a marca d'água não está aparecendo por cima da foto.",
+        )
     }
 }
