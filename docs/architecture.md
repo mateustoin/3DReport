@@ -9,7 +9,7 @@ Projeto **Kotlin Multiplatform** com dois módulos Gradle:
 ├─ core/                      # KMP puro: domínio e cálculo (sem UI)
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/core/
-│     │  ├─ model/            # Filament, PrinterProfile, PrintJob, PricingSettings, Quote, SavedQuote
+│     │  ├─ model/            # Filament, PrinterProfile, PrintJob, PricingSettings, BrandingSettings, Quote, SavedQuote
 │     │  └─ pricing/          # PricingCalculator
 │     └─ commonTest/          # testes unitários (kotlin.test)
 ├─ composeApp/                # UI Compose Multiplatform
@@ -74,16 +74,19 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     para adicionar/editar um item por vez.
   - **Configurações** (`ui/settings`): edita os parâmetros gerais do negócio
     (`PricingSettings` — iguais para qualquer impressora) em rascunho; só
-    grava no repositório compartilhado ao clicar em "Salvar".
+    grava no repositório compartilhado ao clicar em "Salvar". Na mesma tela,
+    uma seção separada (`BrandingViewModel`, próprio botão "Salvar") edita a
+    marca d'água opcional do PDF exportado (decisão 20) — fica fora de
+    `PricingSettings` por não ser parâmetro de custo.
 
 ### Persistência
-- `data/FilamentRepository`, `data/PrinterRepository`, `data/SettingsRepository`
-  e `data/QuoteHistoryRepository` guardam o estado compartilhado entre as
-  telas (`StateFlow`) e persistem em disco: arquivos JSON em `~/.3dreport/`
-  (`filaments.json`, `printers.json`, `settings.json`, `quotes.json`), lidos
-  uma vez na criação e regravados a cada mudança. Pré-carregados com um
-  catálogo/perfil padrão no primeiro uso (exceto o histórico, que começa
-  vazio).
+- `data/FilamentRepository`, `data/PrinterRepository`, `data/SettingsRepository`,
+  `data/QuoteHistoryRepository` e `data/BrandingRepository` guardam o estado
+  compartilhado entre as telas (`StateFlow`) e persistem em disco: arquivos
+  JSON em `~/.3dreport/` (`filaments.json`, `printers.json`, `settings.json`,
+  `quotes.json`, `branding.json`), lidos uma vez na criação e regravados a
+  cada mudança. Pré-carregados com um catálogo/perfil padrão no primeiro uso
+  (exceto histórico e marca d'água, que começam vazios).
 - A foto de um `SavedQuote`, quando existe, **não** vai dentro do JSON — fica
   como arquivo à parte em `~/.3dreport/photos/<id>.<extensão>`, referenciado
   pelo campo `photoFileName`. Motivo: manter o JSON pequeno e legível; o
@@ -105,9 +108,11 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   pra exibir no Compose, via Skia no `jvmMain`), `formatDateTime`
   (formatação de data/hora, via `java.time` no `jvmMain`), `copyToClipboard`
   (via `java.awt.Toolkit` no `jvmMain`) e `renderSavedQuotePdf` (monta o PDF
-  do orçamento — nome, valor de venda, foto — via
+  do orçamento — nome, valor de venda, foto, marca d'água opcional — via
   [Apache PDFBox](https://pdfbox.apache.org/) no `jvmMain`; Apache 2.0, mesma
-  licença do projeto).
+  licença do projeto). A marca d'água é texto diagonal translúcido desenhado
+  atrás do resto do conteúdo (`PDExtendedGraphicsState` pra opacidade,
+  `Matrix.getRotateInstance` pra rotação).
 - Usado pela tela de Orçamento (escolher foto ao salvar) e pela de Histórico
   (baixar foto, mostrar miniatura, formatar a data salva, exportar PDF,
   copiar texto).

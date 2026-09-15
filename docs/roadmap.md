@@ -43,12 +43,14 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
     aparece.
   - Feito (2026-09-15): `platform/QuotePdfExporter` (Apache PDFBox) +
     `platform/Clipboard`.
-- [ ] **Marca d'água personalizada no PDF.** Ideia levantada em 2026-09-15
-  junto com a exportação: o PDF do orçamento poder levar uma marca d'água do
-  criador (texto ou imagem — a definir), pra deixar o documento mais
-  personalizado. Em aberto: é texto (nome/marca) ou imagem que o usuário
-  sobe; onde configurar isso (provavelmente um campo novo em Configurações);
-  posição/opacidade.
+- [x] **Marca d'água personalizada no PDF.** Texto opcional (não imagem —
+  ficou pra uma iteração futura, se fizer falta), configurado em
+  Configurações (`BrandingSettings`, separado de `PricingSettings` por não
+  ser parâmetro de custo). Desenhado diagonal, cinza claro, translúcido,
+  centralizado, atrás do resto do conteúdo — sem controle de
+  posição/opacidade pelo usuário por ora. Feito (2026-09-15):
+  `platform/QuotePdfExporter` recebe o texto e desenha; `data/BrandingRepository`
+  persiste em `~/.3dreport/branding.json`.
 - [ ] **Exportar vários orçamentos num PDF só.** Ideia levantada em
   2026-09-15: na aba Histórico, poder selecionar 2+ orçamentos e gerar um
   único PDF compilado — útil pra quem vende mais de um produto de uma vez

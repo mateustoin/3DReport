@@ -24,8 +24,9 @@ com a margem de lucro desejada.
 | Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Pronto |
 | Configurações gerais do negócio (energia, falhas, acabamento, margem) | Pronto |
 | Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos) | Pronto |
-| Marca d'água personalizada no PDF | Planejado |
+| Marca d'água personalizada no PDF (texto, configurável em Configurações) | Pronto |
 | Exportar vários orçamentos num PDF só | Planejado |
+| Serviços opcionais no orçamento (pintura, lixamento, acabamento etc.) | Planejado |
 | Taxas de marketplace, custo de embalagem/spray etc. | Planejado |
 
 ## Apoie o projeto
