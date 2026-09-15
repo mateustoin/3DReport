@@ -77,7 +77,11 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     grava no repositório compartilhado ao clicar em "Salvar". Na mesma tela,
     uma seção separada (`BrandingViewModel`, próprio botão "Salvar") edita a
     marca d'água opcional do PDF exportado (decisão 20) — fica fora de
-    `PricingSettings` por não ser parâmetro de custo.
+    `PricingSettings` por não ser parâmetro de custo. Duas checkboxes
+    (`showWatermark`/`showFooter`, decisão 22) controlam se o texto aparece
+    na diagonal, no rodapé, nos dois ou em nenhum; com o texto preenchido,
+    `BrandingViewModel.save()` recusa salvar se as duas estiverem
+    desmarcadas (erro de validação, mesmo padrão dos outros formulários).
 
 ### Persistência
 - `data/FilamentRepository`, `data/PrinterRepository`, `data/SettingsRepository`,
@@ -107,16 +111,31 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   `java.awt.FileDialog` no `jvmMain`), `decodeImageBitmap` (bytes → `ImageBitmap`
   pra exibir no Compose, via Skia no `jvmMain`), `formatDateTime`
   (formatação de data/hora, via `java.time` no `jvmMain`), `copyToClipboard`
-  (via `java.awt.Toolkit` no `jvmMain`) e `renderSavedQuotePdf` (monta o PDF
-  do orçamento — nome, valor de venda, foto, marca d'água opcional — via
-  [Apache PDFBox](https://pdfbox.apache.org/) no `jvmMain`; Apache 2.0, mesma
-  licença do projeto). Quando há marca d'água configurada, ela é desenhada
-  **por cima de todo o conteúdo** (inclusive a foto — decisão 21;
-  `PDExtendedGraphicsState` pra opacidade, `Matrix.getRotateInstance` pra
-  rotação) e o PDF ganha um rodapé (linha fina + nome da marca centralizado).
+  (via `java.awt.Toolkit` no `jvmMain`), `renderSavedQuotePdf` (monta o PDF
+  do orçamento — nome, valor de venda, foto, marca d'água/rodapé opcionais e
+  independentes — via [Apache PDFBox](https://pdfbox.apache.org/) no
+  `jvmMain`; Apache 2.0, mesma licença do projeto) e
+  `defaultDocumentsDirectory` (pasta "Documents"/"Documentos" do usuário,
+  decisão 22, com fallback pra pasta pessoal).
+- Quando configurados, marca d'água e rodapé são desenhados **por cima de
+  todo o conteúdo** (inclusive a foto — decisão 21; `PDExtendedGraphicsState`
+  pra opacidade, `Matrix.getRotateInstance` pra rotação da diagonal).
 - Usado pela tela de Orçamento (escolher foto ao salvar) e pela de Histórico
-  (baixar foto, mostrar miniatura, formatar a data salva, exportar PDF,
-  copiar texto).
+  (baixar foto, mostrar miniatura, formatar a data salva, exportar PDF —
+  já abrindo o diálogo na pasta de Documentos —, copiar texto).
+
+### Workaround: janela em monitores com DPI diferentes
+`Main.kt` contorna um bug conhecido do Compose Desktop/Skiko (decisão 23):
+arrastar a janela pra um monitor com DPI/escala diferente deixa o conteúdo
+com o layout antigo até algo forçar um relayout — normalmente só volta ao
+redimensionar a janela na mão (ver
+[JetBrains/compose-multiplatform#3685](https://github.com/JetBrains/compose-multiplatform/issues/3685)
+e relacionadas; sem correção oficial até a versão do Compose Multiplatform
+usada aqui). `FixMultiMonitorDpiRedrawBug()` escuta `componentMoved` na
+janela; quando a `GraphicsConfiguration` muda (trocou de monitor), simula um
+redimensionamento de 1px programaticamente, que é o que já resolvia na mão.
+Se isso for corrigido oficialmente numa versão futura do Compose
+Multiplatform, esse workaround pode ser removido.
 
 ## Plataformas
 

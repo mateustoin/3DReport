@@ -58,6 +58,18 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   - **Rodapé profissional (2026-09-15):** quando há marca d'água
     configurada, o PDF ganha um rodapé — linha fina + nome da marca
     centralizado — no fim da página, como um documento de orçamento formal.
+  - **Checkboxes independentes (2026-09-15):** diagonal e rodapé viraram
+    opções separadas (`showWatermark`/`showFooter` em `BrandingSettings`) —
+    o criador escolhe ter os dois, só um, ou nenhum. Com um nome preenchido,
+    ao menos um dos dois precisa estar marcado ao salvar (senão o nome fica
+    configurado sem aparecer em lugar nenhum); erro de validação impede
+    salvar nesse caso.
+  - **Pasta padrão ao exportar (2026-09-15):** "Exportar PDF" agora abre o
+    diálogo de salvar já na pasta "Documents"/"Documentos" do usuário (o que
+    existir; cai para a pasta pessoal se nenhuma existir) — antes usava o
+    padrão do sistema (geralmente a última pasta usada). `platform/FileSaver`
+    ganhou `defaultDocumentsDirectory()`; "Baixar foto" no Histórico não foi
+    alterado (continua sem pasta inicial definida).
 - [ ] **Exportar vários orçamentos num PDF só.** Ideia levantada em
   2026-09-15: na aba Histórico, poder selecionar 2+ orçamentos e gerar um
   único PDF compilado — útil pra quem vende mais de um produto de uma vez
@@ -125,3 +137,11 @@ Adiado porque o repositório ainda é privado — não há urgência.
   alternativa que já foi cogitada.
 - Valores monetários em `Double` (decisão 16): reavaliar só se aparecer um
   bug real de arredondamento — não é esperado no uso atual.
+- **Bug de terceiros contornado (2026-09-15):** arrastar a janela entre
+  monitores com DPI/escala diferentes deixava o conteúdo (ex.: a barra de
+  abas) com o layout antigo até a janela ser redimensionada na mão — bug
+  conhecido do Compose Desktop/Skiko, não do nosso código (ver
+  [architecture.md](architecture.md) e decisão 22). Contornado forçando um
+  redimensionamento programático quando a janela muda de monitor. Se algum
+  dia isso for corrigido oficialmente no Compose Multiplatform, o workaround
+  em `Main.kt` pode ser removido.
