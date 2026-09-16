@@ -48,8 +48,15 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = "3DReport"
+            vendor = "Mateus Antonio da Silva"
             // Lido de gradle.properties; mantenha com.threedreport.app.APP_VERSION em sincronia.
             packageVersion = providers.gradleProperty("appVersion").get()
+
+            // O bundler .deb do jpackage exige nome de pacote começando com
+            // letra minúscula — "3DReport" (packageName acima) é rejeitado.
+            linux {
+                packageName = "threedreport"
+            }
         }
     }
 }
