@@ -29,6 +29,7 @@ import com.threedreport.app.platform.formatDateTime
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.core.model.SavedQuote
 
 /** Tela de Histórico: orçamentos salvos, com o retrato dos valores no momento em que foram salvos. */
@@ -121,7 +122,8 @@ private fun SavedQuoteRow(
                 Text(savedQuote.name, style = MaterialTheme.typography.titleMedium)
                 Text(formatDateTime(savedQuote.savedAtEpochMillis), style = MaterialTheme.typography.bodySmall)
                 Text(
-                    "Produção: ${savedQuote.quote.productionCost.toBrl()} · Venda: ${savedQuote.quote.salePrice.toBrl()} · " +
+                    "Peso: ${savedQuote.quote.filamentWeightGrams.toWeightText()} · " +
+                        "Produção: ${savedQuote.quote.productionCost.toBrl()} · Venda: ${savedQuote.quote.salePrice.toBrl()} · " +
                         "Lucro: ${savedQuote.quote.profit.toBrl()}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
