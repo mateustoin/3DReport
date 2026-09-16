@@ -96,8 +96,10 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     selecionados (PDF)" (decisão 24) gera um único PDF com um orçamento por
     página, na mesma ordem da lista. Quando há link do modelo, ele também
     aparece como hyperlink clicável (só na tela — nunca no PDF, decisão 29).
-    "Excluir" abre antes um `ui/components/ConfirmDialog` nomeando o
-    orçamento (decisão 30).
+    A linha de produção/venda/lucro (uso interno, não exportada) agora
+    também mostra o peso estimado da peça (`Quote.filamentWeightGrams`,
+    decisão 32). "Excluir" abre antes um `ui/components/ConfirmDialog`
+    nomeando o orçamento (decisão 30).
   - **Filamentos** (`ui/filaments`), **Impressoras** (`ui/printers`) e
     **Serviços** (`ui/services`): cadastro (listar, adicionar, editar,
     excluir) dos catálogos usados no Orçamento. Mesmo padrão de tela nos
@@ -196,6 +198,11 @@ também define um rodapé fixo (`AppFooter`, abaixo do conteúdo de todas as
 abas) com a versão, o nome do autor, links pro GitHub e pro Buy Me a Coffee
 (`ui/components/LinkText`) e um botão "Ajuda" que abre um `HelpDialog` com a
 versão, uma descrição curta do app e um resumo de cada aba (decisão 28).
+
+Toda leva de funcionalidades também ganha uma entrada em
+[`CHANGELOG.md`](../CHANGELOG.md) (formato Keep a Changelog, decisão 31),
+no mesmo commit do bump de versão — ver
+[development.md](development.md#changelog).
 
 ## Plataformas
 

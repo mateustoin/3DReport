@@ -13,8 +13,9 @@ Interface do 3DReport com Compose Multiplatform. Depende de `core`.
 | `src/commonMain/.../ui/components/LinkText.kt` | `Text` clicável (sublinhado) que abre uma URL via `platform/openUrl` |
 | `src/commonMain/.../ui/components/ConfirmDialog.kt` | Diálogo genérico de confirmação, usado antes de excluir (Filamentos, Impressoras, Serviços, Histórico) |
 | `src/commonMain/.../ui/format/PercentFormat.kt` | `Double.toPercentText()` — formata fração decimal como percentual (ex.: `0.15` → `"15%"`) |
+| `src/commonMain/.../ui/format/WeightFormat.kt` | `Double.toWeightText()` — formata gramas com vírgula decimal (ex.: `12.3` → `"12,3 g"`) |
 | `src/commonMain/.../ui/quote` | Tela de Orçamento (serviços opcionais, checkbox de marketplace, formulário de salvar com link do modelo clicável) |
-| `src/commonMain/.../ui/history` | Tela de Histórico: consultar, exportar (PDF/copiar, 1 ou vários), baixar foto, excluir, link do modelo clicável |
+| `src/commonMain/.../ui/history` | Tela de Histórico: consultar, exportar (PDF/copiar, 1 ou vários), baixar foto, excluir (com confirmação), link do modelo clicável, peso da peça (uso interno) |
 | `src/commonMain/.../ui/filaments` | Tela de Filamentos (cadastro) |
 | `src/commonMain/.../ui/printers` | Tela de Impressoras (cadastro) |
 | `src/commonMain/.../ui/services` | Tela de Serviços opcionais (cadastro) |

@@ -35,6 +35,8 @@ ao final, com data.
 | 28 | 2026-09-15 | Rodapé fixo em todas as telas: versão do app, nome do autor, link do GitHub, link de doação (Buy Me a Coffee) e um botão "Ajuda" (abre diálogo com versão, descrição curta e resumo de cada aba) | Aprovada |
 | 29 | 2026-09-15 | Link do modelo (aba Orçamento e Histórico) vira **hyperlink clicável**, abrindo no navegador padrão do sistema | Aprovada |
 | 30 | 2026-09-15 | Confirmação antes de excluir: diálogo (`ui/components/ConfirmDialog`) nomeando o item, em **4 telas** — Filamentos, Impressoras, Serviços (catálogos) e Histórico (orçamento salvo, junto com a foto) — todas com o mesmo risco de exclusão acidental de algo configurado com calma. Edição não ganhou confirmação própria: já exige clicar em "Salvar" pra valer, o que já funciona como confirmação | Aprovada |
+| 31 | 2026-09-15 | Processo: toda leva de funcionalidades passa a exigir **bump de versão + entrada no `CHANGELOG.md`** (formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)), no mesmo commit da documentação — não é opcional. Serve de rascunho pronto pras release notes de cada versão quando um release for publicado no GitHub | Aprovada |
+| 32 | 2026-09-15 | Peso da peça (`Quote.filamentWeightGrams`, já calculado internamente a partir da densidade do filamento e do comprimento) passa a aparecer no Histórico — só uso interno do criador, junto com produção/venda/lucro; não entra no PDF nem no copiar/colar (mesmo tratamento do link do modelo e dos valores internos) | Aprovada |
 
 ## Pendentes de aprovação
 

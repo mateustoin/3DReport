@@ -121,6 +121,11 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   no Histórico, o link do modelo vira um hyperlink de verdade — clicar abre
   no navegador padrão (`platform/openUrl`, `ui/components/LinkText`). Feito
   (2026-09-15).
+- [x] **Peso da peça no Histórico.** `Quote.filamentWeightGrams` já era
+  calculado internamente (densidade do filamento × comprimento usado) mas
+  nunca era mostrado. Passa a aparecer na linha de Produção/Venda/Lucro do
+  Histórico — uso só interno do criador, não entra no PDF nem no
+  copiar/colar (decisão 32). Feito (2026-09-15).
 
 ## 2. Instaladores desktop
 

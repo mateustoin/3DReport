@@ -14,7 +14,7 @@ nos modelos, para a persistência feita pelo `composeApp`).
 | `model/PrintJob.kt` | Dados da peça: filamento, metros e minutos |
 | `model/PricingSettings.kt` | Custos gerais do negócio, iguais para qualquer impressora (energia, falhas, acabamento, administrativo, margem, taxa de marketplace opcional) |
 | `model/BrandingSettings.kt` | Personalização do documento exportado (hoje: texto da marca d'água do PDF) — não é parâmetro de custo |
-| `model/Quote.kt` | Resultado: `CostBreakdown`, produção, venda, lucro (`marketplaceFeeRate` guarda a taxa efetivamente aplicada, se houver) |
+| `model/Quote.kt` | Resultado: `CostBreakdown`, peso do filamento, produção, venda, lucro (`marketplaceFeeRate` guarda a taxa efetivamente aplicada, se houver) |
 | `model/SavedQuote.kt` | Retrato congelado de um `Quote` + serviços escolhidos, salvo no histórico (nome, foto, link interno, data, `totalWithServices`) |
 | `pricing/PricingCalculator.kt` | `calculate(job, printer, settings, appliesMarketplaceFee = false): Quote` |
 

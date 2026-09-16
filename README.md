@@ -30,6 +30,8 @@ com a margem de lucro desejada.
 | Taxa de marketplace (ex.: Shopee), ajusta o valor de venda | Pronto |
 | Link do modelo clicável (abre no navegador) | Pronto |
 | Versão do app + rodapé com autor/GitHub/doação + ajuda | Pronto |
+| Confirmação antes de excluir (filamentos, impressoras, serviços, histórico) | Pronto |
+| Peso da peça no Histórico (uso interno, calculado da densidade/comprimento) | Pronto |
 
 ## Apoie o projeto
 
@@ -67,6 +69,7 @@ docs/        Documentação
 
 | Documento | Conteúdo |
 |---|---|
+| [CHANGELOG.md](CHANGELOG.md) | O que mudou em cada versão |
 | [docs/development.md](docs/development.md) | Setup, IDE, executar, testar, empacotar |
 | [docs/architecture.md](docs/architecture.md) | Módulos, plataformas, convenções |
 | [docs/pricing-formulas.md](docs/pricing-formulas.md) | Parâmetros e fórmulas de cálculo |
