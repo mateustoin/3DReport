@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.Service
@@ -47,6 +48,10 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
                 "porque desconta da sua venda em vez de somar no total do cliente.",
             style = MaterialTheme.typography.bodySmall,
         )
+
+        if (services.isEmpty()) {
+            EmptyState("Nenhum serviço cadastrado ainda. Cadastre o primeiro abaixo.")
+        }
 
         services.forEach { service ->
             ServiceRow(

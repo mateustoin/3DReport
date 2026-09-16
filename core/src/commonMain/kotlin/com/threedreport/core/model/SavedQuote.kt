@@ -22,6 +22,11 @@ import kotlinx.serialization.Serializable
  * @property sourceLink link de onde o modelo 3D foi obtido, se houver. Uso
  *   **só interno**: nunca aparece em nenhum export (PDF ou copiar/colar).
  * @property savedAtEpochMillis quando foi salvo (epoch millis).
+ * @property client cliente vinculado a este orçamento, se houver. Mesmo
+ *   tratamento do [sourceLink] — uso só interno, nunca exportado.
+ * @property status andamento do pedido, editável no Histórico. Todo
+ *   orçamento nasce [OrderStatus.ORCADO] (o ato de salvar já é o orçamento
+ *   "feito"). Uso só interno, nunca exportado.
  */
 @Serializable
 data class SavedQuote(
@@ -32,6 +37,8 @@ data class SavedQuote(
     val photoFileName: String? = null,
     val sourceLink: String? = null,
     val savedAtEpochMillis: Long,
+    val client: Client? = null,
+    val status: OrderStatus = OrderStatus.ORCADO,
 ) {
     /** Total de fato cobrado do cliente: valor de venda + soma dos serviços escolhidos. */
     val totalWithServices: Double

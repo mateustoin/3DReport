@@ -18,7 +18,7 @@ com a margem de lucro desejada.
 | Cálculo de custo de produção e preço de venda | Pronto (`core`) |
 | Tela de orçamento (escolhe filamento + impressora, entra comprimento/tempo → produção/venda) | Pronto |
 | Salvar orçamento (nome, foto e link do modelo opcionais) | Pronto |
-| Histórico de orçamentos (consultar, baixar foto, excluir) | Pronto |
+| Histórico de orçamentos (consultar, filtrar, baixar foto, excluir) | Pronto |
 | Exportar orçamento — PDF e copiar/colar (nome + valor de venda + foto no PDF) | Pronto |
 | Cadastro de filamentos (catálogo salvo) | Pronto |
 | Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Pronto |
@@ -32,6 +32,9 @@ com a margem de lucro desejada.
 | Versão do app + rodapé com autor/GitHub/doação + ajuda | Pronto |
 | Confirmação antes de excluir (filamentos, impressoras, serviços, histórico) | Pronto |
 | Peso da peça no Histórico (uso interno, calculado da densidade/comprimento) | Pronto |
+| Tema claro/escuro (segue o sistema por padrão) | Pronto |
+| Cliente e status do pedido no orçamento (uso interno, editável no Histórico) | Pronto |
+| Dashboard (total vendido, lucro e filamento mais usado, por período) | Pronto |
 
 ## Apoie o projeto
 

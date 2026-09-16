@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
@@ -29,6 +30,7 @@ class QuoteExportTextTest {
         ),
         sourceLink = "https://example.com/model",
         savedAtEpochMillis = 0L,
+        client = Client(name = "Maria Cliente", contact = "maria@example.com"),
     )
 
     @Test
@@ -43,6 +45,13 @@ class QuoteExportTextTest {
         val text = savedQuote.toCopyPasteText()
 
         assertFalse(text.contains(savedQuote.sourceLink!!))
+    }
+
+    @Test
+    fun neverIncludesInternalClient() {
+        val text = savedQuote.toCopyPasteText()
+
+        assertFalse(text.contains(savedQuote.client!!.name))
     }
 
     @Test

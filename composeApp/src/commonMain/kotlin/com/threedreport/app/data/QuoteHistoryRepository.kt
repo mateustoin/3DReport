@@ -1,6 +1,8 @@
 package com.threedreport.app.data
 
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.core.model.Client
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -19,12 +21,22 @@ expect class QuoteHistoryRepository() {
 
     /**
      * Salva [quote] com [name] (gera um nome genérico se vazio), os
-     * [services] escolhidos (retrato do preço no momento), [photo] e
-     * [sourceLink] opcionais.
+     * [services] escolhidos (retrato do preço no momento), [photo],
+     * [sourceLink] e [client] opcionais. Nasce com [OrderStatus.ORCADO].
      */
-    fun save(name: String, quote: Quote, services: List<Service>, photo: PickedFile?, sourceLink: String?): SavedQuote
+    fun save(
+        name: String,
+        quote: Quote,
+        services: List<Service>,
+        photo: PickedFile?,
+        sourceLink: String?,
+        client: Client? = null,
+    ): SavedQuote
 
     fun delete(id: String)
+
+    /** Atualiza o andamento do pedido [id] pra [status]. Não faz nada se [id] não existir. */
+    fun updateStatus(id: String, status: OrderStatus)
 
     /** Bytes da foto de [savedQuote], ou `null` se não houver foto salva. */
     fun photoBytes(savedQuote: SavedQuote): ByteArray?

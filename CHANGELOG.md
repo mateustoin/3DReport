@@ -5,6 +5,24 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.1.0] - 2026-09-16
+
+### Adicionado
+- Tema claro/escuro, com opção de seguir o tema do sistema (padrão) ou
+  escolher manualmente em Configurações → Aparência. Paleta de cores
+  customizada (azul petróleo + laranja âmbar) no lugar do roxo padrão do
+  Material3.
+- Cliente vinculado ao orçamento (nome + contato, opcional) — uso só
+  interno, nunca aparece no PDF ou no copiar/colar.
+- Status do pedido no Histórico (Orçado → Aprovado → Em impressão → Pronto
+  → Entregue), editável direto na lista.
+- Busca e filtro no Histórico: por nome/cliente, por status e por um atalho
+  de período (7 dias, 30 dias, este mês).
+- Nova aba Dashboard: total vendido, lucro acumulado e filamento mais
+  usado, recortados pelo mesmo atalho de período do Histórico.
+- Estado vazio nas listas de Filamentos, Impressoras e Serviços (antes não
+  mostravam nada quando não havia nenhum item cadastrado).
+
 ## [1.0.0] - 2026-09-15
 
 ### Adicionado

@@ -186,6 +186,19 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
             LinkText(text = "Abrir link no navegador", url = form.sourceLink)
         }
 
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = form.clientName,
+            onValueChange = viewModel::setClientName,
+            label = { Text("Cliente (opcional, uso interno)") },
+        )
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = form.clientContact,
+            onValueChange = viewModel::setClientContact,
+            label = { Text("Contato do cliente (opcional)") },
+        )
+
         Button(onClick = onSave) { Text("Salvar orçamento") }
 
         if (form.savedConfirmation) {

@@ -9,9 +9,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -20,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.focus.tabToNavigate
+import com.threedreport.app.ui.theme.ThemeViewModel
+import com.threedreport.core.model.ThemeMode
 
 /**
  * Tela de Configurações gerais: parâmetros do negócio, iguais para qualquer
@@ -28,14 +34,25 @@ import com.threedreport.app.ui.focus.tabToNavigate
  * O que é específico de cada impressora fica na tela de Impressoras.
  */
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, brandingViewModel: BrandingViewModel, modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    brandingViewModel: BrandingViewModel,
+    themeViewModel: ThemeViewModel,
+    modifier: Modifier = Modifier,
+) {
     val state by viewModel.uiState.collectAsState()
     val branding by brandingViewModel.uiState.collectAsState()
+    val themeMode by themeViewModel.mode.collectAsState()
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Text("Aparência", style = MaterialTheme.typography.titleMedium)
+        ThemeModeSelector(selected = themeMode, onSelect = themeViewModel::setMode)
+
+        HorizontalDivider()
+
         Text("Energia", style = MaterialTheme.typography.titleMedium)
         LabeledField("Preço do kWh (R$)", state.energyPricePerKwhText) {
             viewModel.update { s -> s.copy(energyPricePerKwhText = it) }
@@ -89,6 +106,23 @@ fun SettingsScreen(viewModel: SettingsViewModel, brandingViewModel: BrandingView
         branding.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (branding.savedConfirmation) {
             Text("Marca d'água salva.", color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemeModeSelector(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
+    val options = ThemeMode.entries
+    SingleChoiceSegmentedButtonRow {
+        options.forEachIndexed { index, mode ->
+            SegmentedButton(
+                selected = mode == selected,
+                onClick = { onSelect(mode) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+            ) {
+                Text(mode.label)
+            }
         }
     }
 }

@@ -2,12 +2,15 @@ package com.threedreport.app.ui.history
 
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.copyToClipboard
 import com.threedreport.app.platform.defaultDocumentsDirectory
+import com.threedreport.app.platform.periodStartEpochMillis
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.saveBytesToFile
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +34,32 @@ class QuoteHistoryViewModel(
 
     private val selectedIdsState = MutableStateFlow<Set<String>>(emptySet())
     val selectedIds: StateFlow<Set<String>> = selectedIdsState.asStateFlow()
+
+    private val filterState = MutableStateFlow(HistoryFilter())
+    val filter: StateFlow<HistoryFilter> = filterState.asStateFlow()
+
+    fun setSearchQuery(query: String) = filterState.update { it.copy(query = query) }
+    fun setStatusFilter(status: OrderStatus?) = filterState.update { it.copy(status = status) }
+    fun setPeriodFilter(period: PeriodPreset) = filterState.update { it.copy(period = period) }
+
+    /** Função pura: aplica [filter] a [savedQuotes], já ordenados do mais recente pro mais antigo. */
+    fun visibleQuotes(savedQuotes: List<SavedQuote>, filter: HistoryFilter): List<SavedQuote> {
+        val startEpochMillis = periodStartEpochMillis(filter.period)
+        val normalizedQuery = filter.query.trim()
+
+        return savedQuotes
+            .filter { savedQuote ->
+                (filter.status == null || savedQuote.status == filter.status) &&
+                    (startEpochMillis == null || savedQuote.savedAtEpochMillis >= startEpochMillis) &&
+                    (normalizedQuery.isEmpty() || savedQuote.matchesQuery(normalizedQuery))
+            }
+            .sortedByDescending { it.savedAtEpochMillis }
+    }
+
+    private fun SavedQuote.matchesQuery(query: String): Boolean =
+        name.contains(query, ignoreCase = true) || client?.name?.contains(query, ignoreCase = true) == true
+
+    fun updateStatus(id: String, status: OrderStatus) = repository.updateStatus(id, status)
 
     fun delete(id: String) {
         repository.delete(id)

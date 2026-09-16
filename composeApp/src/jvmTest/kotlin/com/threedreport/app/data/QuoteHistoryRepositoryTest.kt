@@ -1,8 +1,10 @@
 package com.threedreport.app.data
 
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.core.model.Client
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MachineInvestment
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
@@ -97,6 +99,51 @@ class QuoteHistoryRepositoryTest {
         val reloaded = QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }
         assertEquals(services, reloaded.services)
         assertEquals(quote.salePrice + 20.0, reloaded.totalWithServices)
+    }
+
+    @Test
+    fun clientSurvivesNewRepositoryInstance() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(
+            name = "Com cliente",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            sourceLink = null,
+            client = Client(name = "Maria", contact = "(11) 99999-0000"),
+        )
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }
+        assertEquals(Client(name = "Maria", contact = "(11) 99999-0000"), reloaded.client)
+    }
+
+    @Test
+    fun savedQuoteWithoutClientHasNullClient() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(name = "Sem cliente", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        assertNull(saved.client)
+    }
+
+    @Test
+    fun savedQuoteStartsWithOrcadoStatus() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(name = "Novo", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        assertEquals(OrderStatus.ORCADO, saved.status)
+    }
+
+    @Test
+    fun updateStatusChangesOnlyTheTargetQuoteAndSurvivesReload() {
+        val repository = QuoteHistoryRepository()
+        val target = repository.save(name = "Alvo", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val other = repository.save(name = "Outro", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        repository.updateStatus(target.id, OrderStatus.APROVADO)
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value
+        assertEquals(OrderStatus.APROVADO, reloaded.first { it.id == target.id }.status)
+        assertEquals(OrderStatus.ORCADO, reloaded.first { it.id == other.id }.status)
     }
 
     @Test

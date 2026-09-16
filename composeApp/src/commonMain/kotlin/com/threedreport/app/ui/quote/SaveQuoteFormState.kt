@@ -7,5 +7,7 @@ data class SaveQuoteFormState(
     val name: String = "",
     val photo: PickedFile? = null,
     val sourceLink: String = "",
+    val clientName: String = "",
+    val clientContact: String = "",
     val savedConfirmation: Boolean = false,
 )

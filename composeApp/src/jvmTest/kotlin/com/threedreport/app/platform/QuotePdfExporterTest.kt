@@ -1,5 +1,6 @@
 package com.threedreport.app.platform
 
+import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
@@ -36,6 +37,7 @@ class QuotePdfExporterTest {
         ),
         sourceLink = "https://example.com/model",
         savedAtEpochMillis = 0L,
+        client = Client(name = "Maria Cliente", contact = "maria@example.com"),
     )
 
     private val otherSavedQuote = savedQuote.copy(
@@ -59,6 +61,7 @@ class QuotePdfExporterTest {
         assertTrue(text.contains("16,19"))
         assertFalse(text.contains(savedQuote.sourceLink!!))
         assertFalse(text.contains("8,09")) // custo de produção: não deve ir pro PDF do cliente
+        assertFalse(text.contains(savedQuote.client!!.name)) // cliente: uso interno, não deve ir pro PDF
     }
 
     @Test

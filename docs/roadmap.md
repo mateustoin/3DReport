@@ -134,31 +134,37 @@ implementação.
 
 ### Próxima leva sugerida (maior valor / dependências mais simples)
 
-- [ ] **Dark mode / Light mode.** Tema claro e escuro (Material 3 já dá
-  suporte a `darkColorScheme`/`lightColorScheme`), com opção pra seguir o
-  tema do sistema operacional por padrão e um toggle manual (Configurações ou
-  rodapé) pra sobrescrever.
-- [ ] **Modernização da UI.** Revisão visual geral — paleta de cores,
-  espaçamento, tipografia, ícones e estado vazio das listas — pra dar uma
-  cara mais profissional/atual ao app, sem trocar de framework (continua
-  Compose Multiplatform + Material 3).
-- [ ] **Cliente vinculado ao orçamento.** Campo opcional de cliente (nome +
-  contato) no formulário de salvar orçamento, no mesmo espírito do nome/foto/
-  link do modelo que já existem hoje. Fica só no histórico/uso interno, como
-  o link do modelo (avaliar depois se vira campo do PDF também, ex.
-  "Orçamento para: <nome>"). Base pros dois itens seguintes.
-- [ ] **Status do pedido.** Com cliente cadastrado (item acima), cada
-  orçamento salvo ganha um status (Orçado → Aprovado → Em impressão → Pronto
-  → Entregue), editável no Histórico — transforma a aba Histórico numa visão
-  de andamento da produção, útil pra quem tem várias peças rodando ao mesmo
-  tempo.
-- [ ] **Busca/filtro no histórico.** Por nome, cliente (quando existir) e
-  status/período — hoje o Histórico é uma lista simples sem filtro; vai doer
-  conforme o volume de orçamentos salvos cresce.
-- [ ] **Dashboard/relatório simples.** Total vendido no período, lucro
-  acumulado, produto/filamento mais usado — dado que já existe espalhado no
-  Histórico (e fica mais rico com cliente/status), só falta agregação e um
-  recorte por período.
+- [x] **Dark mode / Light mode.** Tema claro e escuro, com opção pra seguir o
+  tema do sistema operacional por padrão (`ThemeMode.SYSTEM`) e um seletor
+  manual em Configurações → Aparência (decisão 35). Feito (2026-09-16):
+  `core/model/ThemeMode`, `data/ThemeRepository` (`~/.3dreport/theme.json`),
+  `ui/theme/{Color,Theme,ThemeViewModel}.kt`.
+- [x] **Modernização da UI.** Paleta de cores customizada (azul petróleo +
+  laranja âmbar, no lugar do roxo padrão do Material3) e componente
+  `EmptyState` aplicado às listas de Filamentos/Impressoras/Serviços, que
+  antes não mostravam nada quando vazias (decisão 36). Escopo definido:
+  unificar as 3 telas de catálogo num componente genérico e migrar pra
+  `Scaffold`/`SnackbarHost` ficaram de fora, registrados em "Observações
+  técnicas" abaixo. Feito (2026-09-16): `ui/theme/Color.kt`,
+  `ui/components/EmptyState.kt`.
+- [x] **Cliente vinculado ao orçamento.** Campo opcional (`Client(name,
+  contact?)`) embutido em `SavedQuote`, mesmo tratamento do link do modelo —
+  uso só interno, nunca exportado (decisão 37). Feito (2026-09-16):
+  `core/model/Client`, campos "Cliente"/"Contato" na tela de Orçamento,
+  exibido no Histórico.
+- [x] **Status do pedido.** Novo enum `OrderStatus` (Orçado → Aprovado → Em
+  impressão → Pronto → Entregue, padrão `ORCADO`), editável por um dropdown
+  em cada linha do Histórico (decisão 37). Feito (2026-09-16):
+  `core/model/OrderStatus`, `QuoteHistoryRepository.updateStatus`.
+- [x] **Busca/filtro no histórico.** Busca por nome/cliente + filtro por
+  status + atalhos de período (Tudo/7 dias/30 dias/Este mês), usando o mesmo
+  `PeriodPreset` do Dashboard (decisão 38). Feito (2026-09-16):
+  `ui/history/HistoryFilter`, `QuoteHistoryViewModel.visibleQuotes`.
+- [x] **Dashboard/relatório simples.** Nova aba com total vendido, lucro
+  acumulado e filamento mais usado, recortados pelo mesmo atalho de período
+  do filtro do Histórico (decisão 38). Feito (2026-09-16):
+  `core/report/QuoteReport` (agregação pura, mesmo estilo do
+  `PricingCalculator`), `ui/dashboard/{DashboardViewModel,DashboardScreen}`.
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 
@@ -341,3 +347,18 @@ Adiado porque o repositório ainda é privado — não há urgência.
   redimensionamento programático quando a janela muda de monitor. Se algum
   dia isso for corrigido oficialmente no Compose Multiplatform, o workaround
   em `Main.kt` pode ser removido.
+- **Duplicação entre Filamentos/Impressoras/Serviços (observado em
+  2026-09-16):** as 3 telas de catálogo (`FilamentListScreen`,
+  `PrinterListScreen`, `ServiceListScreen`) são quase idênticas em estrutura
+  (lista + formulário de adicionar/editar + `ConfirmDialog` de exclusão).
+  Fora do escopo da modernização de UI da leva 2026-09-16 (decisão 36) por
+  ser um refactor grande à parte — unificar num componente genérico de
+  lista/formulário é candidato a uma leva futura, se a duplicação continuar
+  incomodando.
+- **`App.kt` sem `Scaffold`/`SnackbarHost` (observado em 2026-09-16):** todo
+  feedback de sucesso/erro hoje é `Text` inline (vermelho/erro, colorido/
+  sucesso) que aparece/desaparece com a recomposição, em vez de um toast
+  transitório. Migrar pra `Scaffold` + `SnackbarHost` foi cogitado na
+  modernização de UI da leva 2026-09-16 mas ficou de fora por ser um
+  refactor que toca as 5 telas com esse padrão (decisão 36) — candidato a
+  uma leva futura de UI.

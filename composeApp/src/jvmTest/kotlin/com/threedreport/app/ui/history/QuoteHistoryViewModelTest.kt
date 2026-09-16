@@ -2,8 +2,11 @@ package com.threedreport.app.ui.history
 
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.platform.PeriodPreset
+import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import kotlin.io.path.createTempDirectory
@@ -74,4 +77,79 @@ class QuoteHistoryViewModelTest {
 
         assertTrue(viewModel.selectedIds.value.isEmpty())
     }
+
+    @Test
+    fun updateStatusChangesTheSavedQuoteStatus() {
+        val repository = QuoteHistoryRepository()
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository())
+        val saved = repository.save(name = "Peça", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        viewModel.updateStatus(saved.id, OrderStatus.PRONTO)
+
+        assertEquals(OrderStatus.PRONTO, repository.savedQuotes.value.first { it.id == saved.id }.status)
+    }
+
+    @Test
+    fun visibleQuotesFiltersByQueryMatchingNameOrClient() {
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val byName = quote.let { SavedQuoteFixture.of(it, name = "Suporte de celular") }
+        val byClient = quote.let { SavedQuoteFixture.of(it, name = "Vaso", client = Client(name = "João")) }
+        val neither = quote.let { SavedQuoteFixture.of(it, name = "Chaveiro") }
+
+        val filter = HistoryFilter(query = "joão")
+        val visible = viewModel.visibleQuotes(listOf(byName, byClient, neither), filter)
+
+        assertEquals(listOf(byClient), visible)
+    }
+
+    @Test
+    fun visibleQuotesFiltersByStatus() {
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val orcado = SavedQuoteFixture.of(quote, name = "A", status = OrderStatus.ORCADO)
+        val entregue = SavedQuoteFixture.of(quote, name = "B", status = OrderStatus.ENTREGUE)
+
+        val visible = viewModel.visibleQuotes(listOf(orcado, entregue), HistoryFilter(status = OrderStatus.ENTREGUE))
+
+        assertEquals(listOf(entregue), visible)
+    }
+
+    @Test
+    fun visibleQuotesFiltersByPeriod() {
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val now = System.currentTimeMillis()
+        val today = SavedQuoteFixture.of(quote, name = "Hoje", savedAtEpochMillis = now)
+        val longAgo = SavedQuoteFixture.of(quote, name = "Antigo", savedAtEpochMillis = now - 60L * 24 * 60 * 60 * 1000)
+
+        val visible = viewModel.visibleQuotes(listOf(today, longAgo), HistoryFilter(period = PeriodPreset.LAST_30_DAYS))
+
+        assertEquals(listOf(today), visible)
+    }
+
+    @Test
+    fun visibleQuotesAreSortedByMostRecentFirst() {
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val older = SavedQuoteFixture.of(quote, name = "Mais antigo", savedAtEpochMillis = 1_000L)
+        val newer = SavedQuoteFixture.of(quote, name = "Mais novo", savedAtEpochMillis = 2_000L)
+
+        val visible = viewModel.visibleQuotes(listOf(older, newer), HistoryFilter())
+
+        assertEquals(listOf(newer, older), visible)
+    }
+}
+
+private object SavedQuoteFixture {
+    fun of(
+        quote: Quote,
+        name: String,
+        client: Client? = null,
+        status: OrderStatus = OrderStatus.ORCADO,
+        savedAtEpochMillis: Long = 0L,
+    ) = com.threedreport.core.model.SavedQuote(
+        id = name,
+        name = name,
+        quote = quote,
+        client = client,
+        status = status,
+        savedAtEpochMillis = savedAtEpochMillis,
+    )
 }

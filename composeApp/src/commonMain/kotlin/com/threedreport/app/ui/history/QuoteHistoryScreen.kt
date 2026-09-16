@@ -12,7 +12,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,12 +32,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.formatDateTime
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.app.ui.format.toWeightText
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
 
 /** Tela de Histórico: orçamentos salvos, com o retrato dos valores no momento em que foram salvos. */
@@ -38,6 +49,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val copiedId by viewModel.copiedId.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
+    val filter by viewModel.filter.collectAsState()
     var pendingDelete by remember { mutableStateOf<SavedQuote?>(null) }
 
     Column(
@@ -56,6 +68,8 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
                 "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só.",
                 style = MaterialTheme.typography.bodySmall,
             )
+
+            HistoryFilterBar(filter = filter, viewModel = viewModel)
         }
 
         if (selectedIds.isNotEmpty()) {
@@ -66,7 +80,12 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
             }
         }
 
-        savedQuotes.sortedByDescending { it.savedAtEpochMillis }.forEach { savedQuote ->
+        val visibleQuotes = viewModel.visibleQuotes(savedQuotes, filter)
+        if (savedQuotes.isNotEmpty() && visibleQuotes.isEmpty()) {
+            EmptyState("Nenhum orçamento encontrado com esse filtro.")
+        }
+
+        visibleQuotes.forEach { savedQuote ->
             SavedQuoteRow(
                 savedQuote = savedQuote,
                 photoBytes = savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) },
@@ -77,6 +96,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
                 onExportPdf = { viewModel.exportPdf(savedQuote) },
                 onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
                 onDelete = { pendingDelete = savedQuote },
+                onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
             )
         }
     }
@@ -95,6 +115,74 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
 }
 
 @Composable
+private fun HistoryFilterBar(filter: HistoryFilter, viewModel: QuoteHistoryViewModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = filter.query,
+            onValueChange = viewModel::setSearchQuery,
+            label = { Text("Buscar por nome ou cliente") },
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PeriodPreset.entries.forEach { preset ->
+                FilterChip(
+                    selected = preset == filter.period,
+                    onClick = { viewModel.setPeriodFilter(preset) },
+                    label = { Text(preset.label) },
+                )
+            }
+        }
+
+        StatusFilterDropdown(selected = filter.status, onSelect = viewModel::setStatusFilter)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StatusFilterDropdown(selected: OrderStatus?, onSelect: (OrderStatus?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            readOnly = true,
+            value = selected?.label ?: "Todos os status",
+            onValueChange = {},
+            label = { Text("Status") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("Todos os status") }, onClick = { onSelect(null); expanded = false })
+            OrderStatus.entries.forEach { status ->
+                DropdownMenuItem(text = { Text(status.label) }, onClick = { onSelect(status); expanded = false })
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StatusDropdown(status: OrderStatus, onStatusChange: (OrderStatus) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        TextButton(onClick = { expanded = true }) { Text("Status: ${status.label}") }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            OrderStatus.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    onClick = {
+                        onStatusChange(option)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun SavedQuoteRow(
     savedQuote: SavedQuote,
     photoBytes: ByteArray?,
@@ -105,6 +193,7 @@ private fun SavedQuoteRow(
     onExportPdf: () -> Unit,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
+    onStatusChange: (OrderStatus) -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -133,6 +222,14 @@ private fun SavedQuoteRow(
                         LinkText(text = link, url = link)
                     }
                 }
+                savedQuote.client?.let { client ->
+                    Text(
+                        "Cliente (uso interno): ${client.name}" + (client.contact?.let { " · $it" } ?: ""),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                StatusDropdown(status = savedQuote.status, onStatusChange = onStatusChange)
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = onExportPdf) { Text("Exportar PDF") }

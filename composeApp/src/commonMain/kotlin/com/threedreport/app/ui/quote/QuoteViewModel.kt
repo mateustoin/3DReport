@@ -7,6 +7,7 @@ import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.pickImageFile
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.core.model.Client
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
@@ -59,6 +60,8 @@ class QuoteViewModel(
 
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
+    fun setClientName(text: String) = saveFormState.update { it.copy(clientName = text, savedConfirmation = false) }
+    fun setClientContact(text: String) = saveFormState.update { it.copy(clientContact = text, savedConfirmation = false) }
     fun clearPhoto() = saveFormState.update { it.copy(photo = null, savedConfirmation = false) }
 
     fun pickPhoto() {
@@ -68,7 +71,10 @@ class QuoteViewModel(
 
     fun saveQuote(quote: Quote, services: List<Service>) {
         val form = saveFormState.value
-        historyRepository.save(form.name, quote, services, form.photo, form.sourceLink)
+        val client = form.clientName.trim().ifEmpty { null }?.let { name ->
+            Client(name = name, contact = form.clientContact.trim().ifEmpty { null })
+        }
+        historyRepository.save(form.name, quote, services, form.photo, form.sourceLink, client)
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
     }
 

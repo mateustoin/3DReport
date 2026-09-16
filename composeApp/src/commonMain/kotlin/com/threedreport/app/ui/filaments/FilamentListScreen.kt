@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.Filament
@@ -40,6 +41,10 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Filamentos", style = MaterialTheme.typography.titleLarge)
+
+        if (filaments.isEmpty()) {
+            EmptyState("Nenhum filamento cadastrado ainda. Cadastre o primeiro abaixo.")
+        }
 
         filaments.forEach { filament ->
             FilamentRow(

@@ -1,6 +1,8 @@
 package com.threedreport.app.data
 
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.core.model.Client
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -27,6 +29,7 @@ actual class QuoteHistoryRepository actual constructor() {
         services: List<Service>,
         photo: PickedFile?,
         sourceLink: String?,
+        client: Client?,
     ): SavedQuote {
         val id = Uuid.random().toString()
         val photoFileName = photo?.let { picked ->
@@ -43,6 +46,7 @@ actual class QuoteHistoryRepository actual constructor() {
             photoFileName = photoFileName,
             sourceLink = sourceLink?.trim()?.ifEmpty { null },
             savedAtEpochMillis = System.currentTimeMillis(),
+            client = client,
         )
         state.value = state.value + saved
         persist()
@@ -54,6 +58,11 @@ actual class QuoteHistoryRepository actual constructor() {
         state.value = state.value.filterNot { it.id == id }
         persist()
         removed?.photoFileName?.let { File(photosDir, it).delete() }
+    }
+
+    actual fun updateStatus(id: String, status: OrderStatus) {
+        state.value = state.value.map { if (it.id == id) it.copy(status = status) else it }
+        persist()
     }
 
     actual fun photoBytes(savedQuote: SavedQuote): ByteArray? {

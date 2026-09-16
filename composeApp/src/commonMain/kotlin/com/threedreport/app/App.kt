@@ -18,6 +18,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,7 +32,10 @@ import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.data.ThemeRepository
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.dashboard.DashboardScreen
+import com.threedreport.app.ui.dashboard.DashboardViewModel
 import com.threedreport.app.ui.filaments.FilamentListScreen
 import com.threedreport.app.ui.filaments.FilamentListViewModel
 import com.threedreport.app.ui.history.QuoteHistoryScreen
@@ -45,6 +49,8 @@ import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsViewModel
+import com.threedreport.app.ui.theme.AppTheme
+import com.threedreport.app.ui.theme.ThemeViewModel
 
 private const val GITHUB_URL = "https://github.com/mateustoin/3DReport"
 private const val BUY_ME_A_COFFEE_URL = "https://buymeacoffee.com/mateustoin"
@@ -53,6 +59,7 @@ private const val AUTHOR_NAME = "Mateus Antonio da Silva"
 private enum class AppTab(val label: String) {
     QUOTE("Orçamento"),
     HISTORY("Histórico"),
+    DASHBOARD("Dashboard"),
     FILAMENTS("Filamentos"),
     PRINTERS("Impressoras"),
     SERVICES("Serviços"),
@@ -67,21 +74,25 @@ fun App() {
     val historyRepository = remember { QuoteHistoryRepository() }
     val brandingRepository = remember { BrandingRepository() }
     val serviceRepository = remember { ServiceRepository() }
+    val themeRepository = remember { ThemeRepository() }
 
     val quoteViewModel = remember {
         QuoteViewModel(filamentRepository, printerRepository, settingsRepository, serviceRepository, historyRepository)
     }
     val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository) }
+    val dashboardViewModel = remember { DashboardViewModel(historyRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository) }
     val serviceListViewModel = remember { ServiceListViewModel(serviceRepository) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
     val brandingViewModel = remember { BrandingViewModel(brandingRepository) }
+    val themeViewModel = remember { ThemeViewModel(themeRepository) }
 
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var showHelp by remember { mutableStateOf(false) }
+    val themeMode by themeViewModel.mode.collectAsState()
 
-    MaterialTheme {
+    AppTheme(themeMode) {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
                 PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
@@ -98,10 +109,11 @@ fun App() {
                     when (selectedTab) {
                         AppTab.QUOTE -> QuoteScreen(quoteViewModel)
                         AppTab.HISTORY -> QuoteHistoryScreen(historyViewModel)
+                        AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
                         AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
                         AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
                         AppTab.SERVICES -> ServiceListScreen(serviceListViewModel)
-                        AppTab.SETTINGS -> SettingsScreen(settingsViewModel, brandingViewModel)
+                        AppTab.SETTINGS -> SettingsScreen(settingsViewModel, brandingViewModel, themeViewModel)
                     }
                 }
 
@@ -149,9 +161,10 @@ private fun HelpDialog(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text("• Orçamento: escolha filamento/impressora, informe comprimento e tempo, e calcule.")
-                Text("• Histórico: consulte, exporte em PDF ou copie orçamentos salvos (1 ou vários juntos).")
+                Text("• Histórico: consulte, filtre, exporte em PDF ou copie orçamentos salvos (1 ou vários juntos).")
+                Text("• Dashboard: total vendido, lucro e filamento mais usado no período.")
                 Text("• Filamentos, Impressoras e Serviços: seus catálogos, usados na tela de Orçamento.")
-                Text("• Configurações: parâmetros de custo, marca d'água do PDF e taxa de marketplace.")
+                Text("• Configurações: aparência (tema), parâmetros de custo, marca d'água do PDF e taxa de marketplace.")
                 LinkText(text = "Ver código-fonte no GitHub", url = GITHUB_URL)
                 LinkText(text = "☕ Apoiar o projeto no Buy Me a Coffee", url = BUY_ME_A_COFFEE_URL)
             }

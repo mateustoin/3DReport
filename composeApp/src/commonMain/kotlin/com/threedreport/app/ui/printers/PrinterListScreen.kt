@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.core.model.PrinterProfile
@@ -40,6 +41,10 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Impressoras", style = MaterialTheme.typography.titleLarge)
+
+        if (printers.isEmpty()) {
+            EmptyState("Nenhuma impressora cadastrada ainda. Cadastre a primeira abaixo.")
+        }
 
         printers.forEach { printer ->
             PrinterRow(
