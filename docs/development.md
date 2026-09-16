@@ -37,7 +37,13 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 | Limpar build | `./gradlew clean` |
 
 - Relatório de testes: `core/build/reports/tests/jvmTest/index.html`.
-- Instaladores gerados: `composeApp/build/compose/binaries/`.
+- Instaladores gerados: `composeApp/build/compose/binaries/main/<formato>/`
+  (ex.: `.../deb/3dreport_0.3.0_amd64.deb`, `.../msi/3DReport-0.3.0.msi`,
+  `.../dmg/3DReport-0.3.0.dmg`). **`packageDistributionForCurrentOS` só gera
+  o formato do SO em que está rodando** — o `jpackage` (por trás do
+  empacotamento) não faz cross-compilation. Pra ter os 3 formatos, é preciso
+  rodar em cada SO (ou usar o workflow de CI — ver "Cortando um release"
+  abaixo).
 - Dados do app (filamentos, impressoras, configurações): `~/.3dreport/*.json`.
   Apague a pasta para resetar para os valores padrão.
 
@@ -89,3 +95,37 @@ importa), não em termos de arquivos/classes internos (isso já está em
 `decisions.md`/`architecture.md`). Serve de rascunho pronto pra colar como
 release notes quando um release for de fato publicado no GitHub (ver
 [roadmap.md](roadmap.md#2-instaladores-desktop)).
+
+## Cortando um release
+
+Instaladores dos 3 SOs (decisão 33 em [decisions.md](decisions.md)) são
+gerados pelo workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml),
+disparado só por **push de uma tag** `vX.Y.Z` (nunca em push normal de
+branch). Passo a passo:
+
+1. Feche a leva normalmente: código + docs + bump de versão + `CHANGELOG.md`
+   (passos acima), tudo commitado e já em `main`.
+2. **Antes de criar a tag, sempre confirme com o responsável do projeto** se é
+   pra cortar o release agora ou seguir implementando e só taguear depois —
+   não crie/empurre a tag por conta própria.
+3. Com o aval:
+   ```bash
+   git tag v0.3.0        # mesma versão do gradle.properties/AppVersion.kt
+   git push origin v0.3.0
+   ```
+4. O workflow builda o `.deb` (Ubuntu), `.msi` (Windows) e `.dmg` (macOS) em
+   paralelo, um runner por SO — resolve a limitação de
+   `packageDistributionForCurrentOS` sem precisar de máquina Windows/macOS
+   própria — e junta os três num **GitHub Release em rascunho** (`draft`),
+   com a descrição já preenchida a partir da seção correspondente do
+   `CHANGELOG.md`.
+5. Revise o rascunho em github.com/mateustoin/3DReport/releases e clique em
+   "Publish release" quando estiver satisfeito (o workflow nunca publica
+   sozinho).
+
+Sem assinatura de código: o `.msi` dispara aviso do SmartScreen do Windows
+("Editor desconhecido" → "Mais informações → Executar assim mesmo") e o
+`.dmg` dispara aviso do Gatekeeper do macOS (clique direito → "Abrir"). Um
+certificado de assinatura tem custo recorrente, o que não combina com o
+modelo 100% financiado por doação (decisão 15) — fica registrado como
+limitação conhecida, não como pendência.

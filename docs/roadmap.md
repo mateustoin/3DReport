@@ -129,9 +129,14 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
 
 ## 2. Instaladores desktop
 
-- [ ] `./gradlew :composeApp:packageDistributionForCurrentOS` já gera
-  `.deb`/`.msi`/`.dmg`, mas nunca foi publicado um release — decidir um fluxo
-  (ex.: GitHub Releases) quando o repositório for público.
+- [x] **Fluxo de release.** `./gradlew :composeApp:packageDistributionForCurrentOS`
+  gera `.deb`/`.msi`/`.dmg`, mas só do SO em que roda (sem cross-compilation).
+  `.github/workflows/release.yml` builda os 3 num runner por SO (GitHub
+  Actions), disparado só por push de tag `vX.Y.Z` (sempre confirmar antes de
+  criar a tag), e junta tudo num GitHub Release em **rascunho** (nunca
+  publicado sozinho), com a descrição vinda do `CHANGELOG.md` (decisão 33).
+  Feito (2026-09-15) — ainda **não foi cortado o primeiro release de fato**
+  (nenhuma tag empurrada ainda).
 
 ## 3. Infraestrutura e qualidade (open source)
 
