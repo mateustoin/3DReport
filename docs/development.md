@@ -38,8 +38,8 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 
 - Relatório de testes: `core/build/reports/tests/jvmTest/index.html`.
 - Instaladores gerados: `composeApp/build/compose/binaries/main/<formato>/`
-  (ex.: `.../deb/3dreport_0.3.0_amd64.deb`, `.../msi/3DReport-0.3.0.msi`,
-  `.../dmg/3DReport-0.3.0.dmg`). **`packageDistributionForCurrentOS` só gera
+  (ex.: `.../deb/3dreport_1.0.0_amd64.deb`, `.../msi/3DReport-1.0.0.msi`,
+  `.../dmg/3DReport-1.0.0.dmg`). **`packageDistributionForCurrentOS` só gera
   o formato do SO em que está rodando** — o `jpackage` (por trás do
   empacotamento) não faz cross-compilation. Pra ter os 3 formatos, é preciso
   rodar em cada SO (ou usar o workflow de CI — ver "Cortando um release"
@@ -110,8 +110,8 @@ branch). Passo a passo:
    não crie/empurre a tag por conta própria.
 3. Com o aval:
    ```bash
-   git tag v0.3.0        # mesma versão do gradle.properties/AppVersion.kt
-   git push origin v0.3.0
+   git tag v1.0.0        # mesma versão do gradle.properties/AppVersion.kt
+   git push origin v1.0.0
    ```
 4. O workflow builda o `.deb` (Ubuntu), `.msi` (Windows) e `.dmg` (macOS) em
    paralelo, um runner por SO — resolve a limitação de

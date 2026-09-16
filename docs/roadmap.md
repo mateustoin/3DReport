@@ -135,8 +135,8 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   Actions), disparado só por push de tag `vX.Y.Z` (sempre confirmar antes de
   criar a tag), e junta tudo num GitHub Release em **rascunho** (nunca
   publicado sozinho), com a descrição vinda do `CHANGELOG.md` (decisão 33).
-  Feito (2026-09-15) — ainda **não foi cortado o primeiro release de fato**
-  (nenhuma tag empurrada ainda).
+  Feito (2026-09-15) — primeiro release publicado como **`v1.0.0`**, não
+  `v0.3.0` (o bundler do macOS exige versão ≥ 1, decisão 34).
 
 ## 3. Infraestrutura e qualidade (open source)
 

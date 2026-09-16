@@ -5,7 +5,7 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
-## [0.3.0] - 2026-09-15
+## [1.0.0] - 2026-09-15
 
 ### Adicionado
 - Peso estimado da peça (a partir da densidade do filamento e do comprimento
