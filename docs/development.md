@@ -59,6 +59,9 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
    aprovadas antes da implementação e registradas em [decisions.md](decisions.md).
 2. Código e documentação mudam no mesmo commit; o `README.md` é mantido atualizado.
 3. `./gradlew build` deve passar antes de commitar.
+4. Ao fechar uma leva de funcionalidades, sempre: bump de versão (ver
+   "Versionamento" abaixo) + entrada nova em [`CHANGELOG.md`](../CHANGELOG.md)
+   — não é opcional, mesmo pra levas pequenas.
 
 ## Versionamento
 
@@ -73,3 +76,16 @@ sem geração automática):
 - [`composeApp/.../app/AppVersion.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/AppVersion.kt) → `APP_VERSION`
 
 A versão aparece no rodapé do app e no instalador nativo (`packageVersion`).
+
+## Changelog
+
+[`CHANGELOG.md`](../CHANGELOG.md) (raiz do repo) segue o formato
+[Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) (decisão 31 em
+[decisions.md](decisions.md)): uma seção por versão (mais recente no topo),
+com subseções `Adicionado`/`Alterado`/`Corrigido` conforme fizer sentido.
+Toda leva de funcionalidades ganha sua entrada **no mesmo commit** do bump de
+versão — escreva do ponto de vista de quem usa o app (o quê mudou e por quê
+importa), não em termos de arquivos/classes internos (isso já está em
+`decisions.md`/`architecture.md`). Serve de rascunho pronto pra colar como
+release notes quando um release for de fato publicado no GitHub (ver
+[roadmap.md](roadmap.md#2-instaladores-desktop)).
