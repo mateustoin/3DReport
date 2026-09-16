@@ -94,7 +94,7 @@ versão — escreva do ponto de vista de quem usa o app (o quê mudou e por quê
 importa), não em termos de arquivos/classes internos (isso já está em
 `decisions.md`/`architecture.md`). Serve de rascunho pronto pra colar como
 release notes quando um release for de fato publicado no GitHub (ver
-[roadmap.md](roadmap.md#2-instaladores-desktop)).
+[roadmap.md](roadmap.md#3-instaladores-desktop)).
 
 ## Cortando um release
 

@@ -126,8 +126,165 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   nunca era mostrado. Passa a aparecer na linha de Produção/Venda/Lucro do
   Histórico — uso só interno do criador, não entra no PDF nem no
   copiar/colar (decisão 32). Feito (2026-09-15).
+Os itens abaixo (ainda sem checkbox marcado) vieram de uma sessão de
+brainstorming com o responsável do projeto (2026-09-16), pensando no app do
+ponto de vista de quem vende impressão 3D no dia a dia. Estão agrupados por
+prioridade sugerida — o responsável do projeto decide a ordem real de
+implementação.
 
-## 2. Instaladores desktop
+### Próxima leva sugerida (maior valor / dependências mais simples)
+
+- [ ] **Dark mode / Light mode.** Tema claro e escuro (Material 3 já dá
+  suporte a `darkColorScheme`/`lightColorScheme`), com opção pra seguir o
+  tema do sistema operacional por padrão e um toggle manual (Configurações ou
+  rodapé) pra sobrescrever.
+- [ ] **Modernização da UI.** Revisão visual geral — paleta de cores,
+  espaçamento, tipografia, ícones e estado vazio das listas — pra dar uma
+  cara mais profissional/atual ao app, sem trocar de framework (continua
+  Compose Multiplatform + Material 3).
+- [ ] **Cliente vinculado ao orçamento.** Campo opcional de cliente (nome +
+  contato) no formulário de salvar orçamento, no mesmo espírito do nome/foto/
+  link do modelo que já existem hoje. Fica só no histórico/uso interno, como
+  o link do modelo (avaliar depois se vira campo do PDF também, ex.
+  "Orçamento para: <nome>"). Base pros dois itens seguintes.
+- [ ] **Status do pedido.** Com cliente cadastrado (item acima), cada
+  orçamento salvo ganha um status (Orçado → Aprovado → Em impressão → Pronto
+  → Entregue), editável no Histórico — transforma a aba Histórico numa visão
+  de andamento da produção, útil pra quem tem várias peças rodando ao mesmo
+  tempo.
+- [ ] **Busca/filtro no histórico.** Por nome, cliente (quando existir) e
+  status/período — hoje o Histórico é uma lista simples sem filtro; vai doer
+  conforme o volume de orçamentos salvos cresce.
+- [ ] **Dashboard/relatório simples.** Total vendido no período, lucro
+  acumulado, produto/filamento mais usado — dado que já existe espalhado no
+  Histórico (e fica mais rico com cliente/status), só falta agregação e um
+  recorte por período.
+
+### Visualização e análise de STL (funcionalidade grande, dividida em fases)
+
+- [ ] **Fase 1 — Upload de STL + visualizador 3D.** Anexar o arquivo STL do
+  modelo ao orçamento (além da foto que já existe hoje). Envolve:
+  - **Parser de STL** (formato binário e ASCII) pra ler a malha de
+    triângulos — vira a base de tudo que vem depois (fases 2 e 3).
+  - **Visualizador 3D** dentro do app: carregar a malha, rotacionar/zoom/pan,
+    escolher um ângulo e enquadramento de câmera. **Decisão técnica a
+    avaliar antes de começar**, porque não há nenhuma dependência de 3D no
+    projeto hoje: lib de renderização nativa compatível com Compose
+    Desktop/JVM (ex.: JOGL/LWJGL, um canvas OpenGL embutido via
+    `SwingPanel`/AWT) vs. embutir um visualizador web local com three.js
+    numa `WebView`/CEF. A primeira opção é mais leve e nativa; a segunda é
+    mais rápida de implementar (three.js já resolve parsing/render/câmera)
+    mas adiciona uma dependência pesada (engine web embarcada) só pra isso.
+  - **Exportar a visualização como imagem**: capturar o frame renderizado no
+    ângulo escolhido e salvar/anexar como a foto do orçamento — reusa o
+    campo de foto que já existe, sem precisar de campo novo no modelo de
+    dados do orçamento.
+  - O arquivo STL em si fica guardado só pra reuso interno (fases seguintes)
+    — não entra no PDF/copiar-colar (mesmo tratamento do link do modelo).
+- [ ] **Fase 2 — Estimativa automática de peso/tempo a partir do STL.** Hoje
+  o criador digita comprimento de filamento e tempo de impressão na mão. Com
+  a malha já carregada (fase 1), dá pra calcular o **volume** da peça
+  geometricamente e, com um "perfil de impressão" configurável (altura de
+  camada, % de preenchimento, velocidade média — por impressora ou global),
+  **sugerir** peso e tempo estimados; o criador continua podendo ajustar na
+  mão (é um ponto de partida, não substitui o fatiador real, que considera
+  suporte/purga/etc.). Depende só da fase 1.
+- [ ] **Fase 3 — Análise de complexidade / nível de dificuldade.**
+  **Motivação:** peças com geometria complexa (ex.: uma action figure) dão
+  mais trabalho de configurar o fatiador (suporte, orientação) e têm mais
+  risco de falha durante a impressão do que uma peça simples de peso/tempo
+  equivalente (ex.: um cubo) — hoje isso não é capturado em lugar nenhum do
+  orçamento, então duas peças de peso/tempo parecido acabam custando o
+  mesmo, mesmo que uma dê muito mais trabalho de verdade. Primeira versão:
+  um **nível de dificuldade** (ex. Fácil/Médio/Difícil) calculado a partir
+  de heurísticas da própria malha (todas dependem só da fase 1, sem exigir
+  um fatiador real embutido):
+  - **Razão área de superfície ÷ volume** — proxy de quantidade de detalhe
+    (formas lisas tendem a um valor baixo; formas com muitos
+    relevos/reentrâncias, um valor alto, pro mesmo volume).
+  - **% de superfície em overhang** (faces cuja normal aponta abaixo de um
+    ângulo limite configurável, ex. 45°) — proxy de necessidade de suporte.
+  - **Contagem de triângulos** (proxy grosseiro de nível de detalhe) e
+    **número de componentes desconexos** (a peça é uma malha só ou várias
+    partes soltas no mesmo arquivo? mais partes tende a mais trabalho de
+    organização na mesa de impressão).
+  - **Verificação de malha não-manifold** (STL corrompido, com furos ou
+    normais invertidas) como aviso separado — tecnicamente não é "nível de
+    dificuldade de impressão", é "esse arquivo tem um problema", mas nasce
+    do mesmo parser e vale mostrar no mesmo lugar: evita o criador descobrir
+    isso só quando já está fatiando de verdade.
+  - O nível de dificuldade fica **só de uso interno** (mesmo padrão do peso
+    e do link do modelo) — não entra no PDF nem no copiar-colar; serve pro
+    criador decidir se cobra uma margem extra por complexidade (a decisão de
+    precificação em si continua manual, o app só informa).
+  - **Evolução futura** (fora do escopo da primeira versão, só registrando a
+    ideia): detecção de suporte mais precisa que a heurística de ângulo
+    (simulação real de fatiamento), sugestão de melhor orientação de
+    impressão pra minimizar suporte, estimativa de quantidade de material
+    de suporte gerado, e — combinando com a fase 2 — um "custo extra
+    sugerido" automático em cima do nível de dificuldade.
+
+### Produção e precificação
+
+- [ ] **Controle de estoque de filamento.** Registrar rolos (peso
+  inicial/restante) por filamento cadastrado; ao salvar um orçamento, abater
+  o consumo estimado do rolo em uso. Evita começar uma impressão sem saber
+  se sobra material, e dá uma base de "quando comprar mais" no futuro.
+- [ ] **Fila de impressão / agenda da impressora.** Visão de quanto tempo
+  cada impressora cadastrada vai ficar ocupada (soma dos orçamentos com
+  status "Em impressão", ver item de status acima) — ajuda a prometer prazo
+  com mais segurança pro cliente. Depende do item "Status do pedido".
+- [ ] **Custo de falha real acumulado.** Hoje a taxa de falha é um % fixo
+  estimado nas Configurações. Permitir marcar um orçamento/impressão como
+  "falhou" (com motivo opcional) e, com histórico suficiente, sugerir um %
+  de falha calibrado com dado real do próprio criador em vez de um chute
+  inicial.
+
+### Vendas e divulgação
+
+- [ ] **Catálogo/portfólio exportável.** Gerar um PDF ou página simples com
+  foto + preço de peças "prontas" (não sob encomenda, ex. produtos de
+  prateleira), reaproveitando foto/preço que já existem no orçamento — pra
+  mandar pro cliente ou postar em grupo de venda.
+- [ ] **Templates de orçamento.** Mais de uma configuração de aparência do
+  PDF (além de marca d'água/rodapé) — ex. um template mais formal vs. mais
+  simples — com um nome pra identificar cada um em Configurações.
+- [ ] **Múltiplas moedas/localização.** Hoje `R$` é fixo no PDF/UI. Só
+  relevante se houver intenção de distribuir o app fora do Brasil —
+  prioridade baixa, registrando a ideia caso surja demanda.
+
+### Integrações
+
+- [ ] **Exportar histórico pra CSV/Excel.** Pra quem já usa planilha
+  (Excel/Google Sheets) como contabilidade paralela do negócio.
+- [ ] **Import/export de catálogo de filamentos entre criadores.** Arquivo
+  (JSON/CSV) com perfis de filamentos populares (ex. marcas/linhas comuns no
+  Brasil) que a comunidade possa compartilhar/importar, evitando cadastro
+  manual do zero a cada filamento novo.
+- [ ] **Integração com WhatsApp.** Mandar o PDF/texto do orçamento direto
+  pro cliente sem sair do app. Prioridade baixa e incerta por ora — exige
+  conta WhatsApp Business API (custo/burocracia de aprovação), avaliar se
+  compensa frente ao fluxo atual (copiar-colar manual já cobre o uso comum).
+
+### UX extras
+
+- [ ] **Atalhos de teclado.** Pro fluxo rápido de criar orçamento, útil pra
+  quem faz vários por dia.
+- [ ] **Onboarding na primeira execução.** Assistente curto guiando o
+  cadastro da primeira impressora/filamento/margem, em vez de abrir numa
+  tela vazia sem nenhum dado cadastrado.
+
+## 2. Site (GitHub Pages) — divulgação e instruções de uso
+
+- [ ] **Site institucional em GitHub Pages.** Landing page com o que o app
+  faz, screenshots, link de download (GitHub Releases) e instruções de uso
+  (equivalente a um manual rápido). Bom SEO (meta tags, `sitemap.xml`,
+  conteúdo em português voltado a quem busca "orçamento impressão 3D" e
+  termos correlatos) pra ajudar a divulgar organicamente. Faz mais sentido
+  **depois** do repositório ficar público (decisão 15 — hoje ainda é
+  privado), já que o site vai linkar pro repo/releases.
+
+## 3. Instaladores desktop
 
 - [x] **Fluxo de release.** `./gradlew :composeApp:packageDistributionForCurrentOS`
   gera `.deb`/`.msi`/`.dmg`, mas só do SO em que roda (sem cross-compilation).
@@ -137,8 +294,16 @@ pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
   publicado sozinho), com a descrição vinda do `CHANGELOG.md` (decisão 33).
   Feito (2026-09-15) — primeiro release publicado como **`v1.0.0`**, não
   `v0.3.0` (o bundler do macOS exige versão ≥ 1, decisão 34).
+- [ ] **Confirmar que atualizar preserva os dados locais.** Instalar uma
+  versão mais nova por cima de uma instalação existente não deve apagar
+  `~/.3dreport/` (orçamentos, fotos, catálogos, configurações) — hoje isso
+  nunca foi testado de fato. Testar o fluxo real (instalar v1.0.0, gerar
+  dados de exemplo, instalar por cima uma versão seguinte) em pelo menos
+  Windows (MSI); confirmar se o instalador exige desinstalar a versão
+  anterior antes (o que poderia disparar uma limpeza) e documentar o
+  resultado aqui.
 
-## 3. Infraestrutura e qualidade (open source)
+## 4. Infraestrutura e qualidade (open source)
 
 Adiado porque o repositório ainda é privado — não há urgência.
 
@@ -149,7 +314,7 @@ Adiado porque o repositório ainda é privado — não há urgência.
 - [ ] **Badges no README.** Build (CI), licença (Apache 2.0) e o botão de
   apoio (Buy Me a Coffee) já linkado — comuns em repositórios públicos.
 
-## 4. Android (menor prioridade — bem mais pra frente)
+## 5. Android (menor prioridade — bem mais pra frente)
 
 - [ ] Só quando o projeto estiver consolidado e houver demanda de verdade.
   Passos técnicos já mapeados em
