@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manual rápido: como usar o 3DReport para orçar impressão 3D</title>
+  <meta name="description" content="Passo a passo para configurar o 3DReport e gerar seu primeiro orçamento de impressão 3D: cadastro de impressora, filamento, cálculo de preço e exportação em PDF.">
+  <link rel="canonical" href="https://mateustoin.github.io/3DReport/manual.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b5fa8">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="3DReport">
+  <meta property="og:title" content="Manual rápido: como usar o 3DReport">
+  <meta property="og:description" content="Passo a passo para configurar o 3DReport e gerar seu primeiro orçamento de impressão 3D.">
+  <meta property="og:url" content="https://mateustoin.github.io/3DReport/manual.html">
+  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/icon.png">
+  <meta property="og:locale" content="pt_BR">
+
+  <link rel="stylesheet" href="assets/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "Como calcular o preço de uma impressão 3D com o 3DReport",
+    "description": "Passo a passo para configurar impressora, filamento e gerar um orçamento de impressão 3D no 3DReport.",
+    "step": [
+      {"@type": "HowToStep", "name": "Instale o 3DReport", "text": "Baixe o instalador do seu sistema operacional na página de releases e instale normalmente."},
+      {"@type": "HowToStep", "name": "Cadastre sua impressora", "text": "Em Impressoras, informe consumo de energia, custo de manutenção por hora e o investimento da máquina."},
+      {"@type": "HowToStep", "name": "Cadastre seu filamento", "text": "Em Filamentos, informe marca, preço por kg, densidade e as cores disponíveis em estoque."},
+      {"@type": "HowToStep", "name": "Ajuste as configurações do negócio", "text": "Em Configurações, defina preço do kWh, taxa de falhas, taxa de acabamento, custo administrativo e margem de lucro."},
+      {"@type": "HowToStep", "name": "Gere o orçamento", "text": "Na aba Orçamento, escolha o filamento e a impressora, informe o comprimento de filamento e o tempo de impressão da peça."},
+      {"@type": "HowToStep", "name": "Salve e exporte", "text": "Salve o orçamento (com nome, foto e cliente opcionais) e exporte em PDF ou copie o texto para enviar ao cliente."}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="index.html">
+        <img src="assets/icon.png" alt="Ícone do 3DReport" width="32" height="32">
+        3DReport
+      </a>
+      <div class="nav-links">
+        <a href="index.html#funcionalidades">Funcionalidades</a>
+        <a href="index.html#como-funciona">Como funciona</a>
+        <a href="manual.html">Manual</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" style="padding-bottom: 20px;">
+      <div class="container" style="display: block;">
+        <p class="eyebrow">Manual rápido</p>
+        <h1>Do zero ao primeiro orçamento em 6 passos</h1>
+        <p class="lead">
+          Este guia cobre o essencial para começar a usar o 3DReport hoje
+          mesmo. Para a lista completa de funcionalidades, veja a
+          <a href="index.html#funcionalidades">página inicial</a>.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div>
+              <h3>Instale o 3DReport</h3>
+              <p>Baixe o instalador do seu sistema operacional (Windows, Linux ou macOS) na <a href="https://github.com/mateustoin/3DReport/releases/latest">página de releases</a> e instale normalmente.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div>
+              <h3>Cadastre sua impressora</h3>
+              <p>Na aba <strong>Impressoras</strong>, cadastre um perfil com o consumo de energia (W), o custo de manutenção por hora e o investimento da máquina (valor, prazo de retorno, dias e horas de uso). Você pode cadastrar mais de uma impressora e escolher qual usar em cada orçamento.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div>
+              <h3>Cadastre seu filamento</h3>
+              <p>Na aba <strong>Filamentos</strong>, informe a marca, o preço por quilo, a densidade e as cores disponíveis (com controle manual de "Em estoque"/"Acabou" por cor).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <div>
+              <h3>Ajuste as configurações do seu negócio</h3>
+              <p>Em <strong>Configurações</strong>, defina o preço do kWh, a taxa de falhas, a taxa de acabamento, um custo administrativo (ex.: tempo de modelagem) e a margem de lucro desejada. Esses valores são os mesmos para qualquer impressora ou orçamento.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">5</div>
+            <div>
+              <h3>Gere o orçamento</h3>
+              <p>Na aba <strong>Orçamento</strong>, escolha o filamento e a impressora cadastrados, informe o comprimento de filamento (em metros, direto do fatiador) e o tempo de impressão (em minutos). O app calcula o valor de produção e sugere o valor de venda com sua margem.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">6</div>
+            <div>
+              <h3>Salve e exporte</h3>
+              <p>Salve o orçamento (nome, foto e link do modelo são opcionais) e, na aba <strong>Histórico</strong>, exporte em PDF ou copie um texto resumido para colar numa conversa de WhatsApp ou marketplace.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt">
+      <div class="container">
+        <h2>Próximos passos</h2>
+        <p class="section-intro">Depois do primeiro orçamento, explore:</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Serviços opcionais</h3>
+            <p>Cadastre pintura, lixamento ou embalagem em <strong>Serviços</strong> e marque quais se aplicam a cada orçamento.</p>
+          </div>
+          <div class="card">
+            <h3>Marca d'água e templates</h3>
+            <p>Em Configurações → "Marca d'água do PDF", personalize o rodapé do seu PDF e salve como template para reaproveitar depois.</p>
+          </div>
+          <div class="card">
+            <h3>Dashboard</h3>
+            <p>Acompanhe total vendido, lucro e filamento mais usado na aba Dashboard, filtrando por período.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>3DReport · Apache License 2.0 · por Mateus Antonio</span>
+      <div class="footer-links">
+        <a href="index.html">Início</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <a href="https://github.com/mateustoin/3DReport/releases/latest">Downloads</a>
+        <a href="https://buymeacoffee.com/mateustoin">Doar</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

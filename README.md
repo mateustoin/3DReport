@@ -9,8 +9,15 @@
   <a href="LICENSE"><img alt="Licença" src="https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-0B5FA8"></a>
   <img alt="Plataforma" src="https://img.shields.io/badge/plataforma-Windows%20%7C%20Linux%20%7C%20macOS-0B5FA8">
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white">
+  <a href="https://github.com/mateustoin/3DReport/actions/workflows/ci.yml"><img alt="Status do CI" src="https://github.com/mateustoin/3DReport/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/mateustoin/3DReport/actions/workflows/release.yml"><img alt="Status do release" src="https://github.com/mateustoin/3DReport/actions/workflows/release.yml/badge.svg"></a>
   <a href="https://buymeacoffee.com/mateustoin"><img alt="Buy Me a Coffee" src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-apoie-B56A1A?logo=buymeacoffee&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="https://mateustoin.github.io/3DReport/">Site</a> ·
+  <a href="https://github.com/mateustoin/3DReport/releases/latest">Download</a> ·
+  <a href="https://mateustoin.github.io/3DReport/manual.html">Manual rápido</a>
 </p>
 
 Aplicativo **gratuito e de código aberto** para criação de **orçamentos de
@@ -27,12 +34,14 @@ com a margem de lucro desejada.
 ## Sumário
 
 - [Funcionalidades](#funcionalidades)
+- [Screenshots](#screenshots)
 - [Apoie o projeto](#apoie-o-projeto)
 - [Stack](#stack)
 - [Início rápido](#início-rápido)
 - [Instaladores](#instaladores)
 - [Estrutura](#estrutura)
 - [Documentação](#documentação)
+- [Contribuindo](#contribuindo)
 - [Licença](#licença)
 
 ## Funcionalidades
@@ -75,6 +84,13 @@ com a margem de lucro desejada.
 
 </details>
 
+## Screenshots
+
+<!-- PLACEHOLDER: substitua pelos caminhos reais depois de adicionar as
+     imagens em site/assets/screenshots/ (ver site/assets/screenshots/PLACEHOLDER.md) -->
+> Screenshots em breve. Enquanto isso, veja o app rodando no
+> [manual rápido do site](https://mateustoin.github.io/3DReport/manual.html).
+
 ## Apoie o projeto
 
 O 3DReport é e sempre será gratuito e de código aberto — não há edição paga
@@ -114,6 +130,7 @@ bloquear a abertura na primeira vez (clique direito → "Abrir").
 core/        Domínio e motor de cálculo (Kotlin Multiplatform puro, sem UI)
 composeApp/  Interface Compose Multiplatform (desktop)
 docs/        Documentação
+site/        Site institucional (GitHub Pages)
 ```
 
 ## Documentação
@@ -128,6 +145,12 @@ docs/        Documentação
 | [docs/roadmap.md](docs/roadmap.md) | Backlog de evoluções e próximas implementações |
 | [core/README.md](core/README.md) | Módulo `core` |
 | [composeApp/README.md](composeApp/README.md) | Módulo `composeApp` |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Como propor mudanças e enviar um PR |
+
+## Contribuindo
+
+Contribuições são bem-vindas. Veja [CONTRIBUTING.md](CONTRIBUTING.md) para o
+fluxo de setup, testes e envio de PR.
 
 ## Licença
 

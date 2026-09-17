@@ -1,0 +1,27 @@
+name: Sugerir uma funcionalidade
+description: Ideia de melhoria ou funcionalidade nova para o 3DReport
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de abrir, dá uma olhada no
+        [backlog](https://github.com/mateustoin/3DReport/blob/main/docs/roadmap.md),
+        a ideia pode já estar planejada.
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema isso resolve?
+      description: Qual dificuldade você tem hoje, no dia a dia de vender impressão 3D, que motivou o pedido?
+    validations:
+      required: true
+  - type: textarea
+    id: solucao
+    attributes:
+      label: Como você imagina que funcionaria?
+    validations:
+      required: true
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas (opcional)

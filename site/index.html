@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3DReport: orçamento de impressão 3D grátis e open source</title>
+  <meta name="description" content="Calcule o preço de venda das suas impressões 3D com base no custo real: filamento, energia, manutenção e margem de lucro. App gratuito, open source, com PDF, histórico e catálogo de peças.">
+  <link rel="canonical" href="https://mateustoin.github.io/3DReport/">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b5fa8">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="3DReport">
+  <meta property="og:title" content="3DReport: orçamento de impressão 3D grátis e open source">
+  <meta property="og:description" content="Calcule o preço de venda das suas impressões 3D com base no custo real: filamento, energia, manutenção e margem de lucro. Grátis, open source, com PDF, histórico e catálogo.">
+  <meta property="og:url" content="https://mateustoin.github.io/3DReport/">
+  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/icon.png">
+  <meta property="og:locale" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="3DReport: orçamento de impressão 3D grátis e open source">
+  <meta name="twitter:description" content="Calculadora de preço para quem vende impressão 3D. Grátis, open source, com PDF, histórico e catálogo de peças.">
+  <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/icon.png">
+
+  <link rel="stylesheet" href="assets/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "3DReport",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Windows, Linux, macOS",
+    "description": "Calculadora de preço e gestão de orçamentos para quem vende impressão 3D, grátis e open source, com PDF, histórico e catálogo de peças.",
+    "url": "https://mateustoin.github.io/3DReport/",
+    "downloadUrl": "https://github.com/mateustoin/3DReport/releases/latest",
+    "license": "https://github.com/mateustoin/3DReport/blob/main/LICENSE",
+    "softwareVersion": "1.8.0",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "BRL"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Quanto custa o 3DReport?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nada. O 3DReport é gratuito e de código aberto, sem edição paga nem assinatura. O projeto se mantém por doações voluntárias."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Como o 3DReport calcula o preço de uma impressão 3D?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A partir do filamento usado (preço por kg, densidade), do perfil da impressora (consumo de energia, manutenção, retorno de investimento) e dos parâmetros do seu negócio (energia, taxa de falhas, acabamento, margem de lucro), o app calcula o valor de produção e sugere o valor de venda com a margem desejada."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "O 3DReport funciona em quais sistemas operacionais?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Windows, Linux e macOS, com instaladores nativos (.msi, .deb, .dmg) disponíveis na página de releases do GitHub."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Meus dados de orçamento ficam salvos onde?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Localmente, no seu computador, dentro da pasta pessoal do usuário. O 3DReport não envia nenhum dado para servidores externos."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="index.html">
+        <img src="assets/icon.png" alt="Ícone do 3DReport" width="32" height="32">
+        3DReport
+      </a>
+      <div class="nav-links">
+        <a href="#funcionalidades">Funcionalidades</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="manual.html">Manual</a>
+        <a href="#faq">Perguntas frequentes</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div>
+          <p class="eyebrow">Orçamento de impressão 3D</p>
+          <h1>Saiba quanto cobrar em cada impressão 3D, sem planilha e sem chute</h1>
+          <p class="lead">
+            O 3DReport calcula o custo real de produção e sugere o valor de
+            venda com a margem de lucro que você definir, a partir do
+            filamento, da impressora usada e do tempo de impressão de cada
+            peça. Gratuito, open source e roda direto no seu computador.
+          </p>
+          <div class="btn-row">
+            <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Baixar grátis</a>
+            <a class="btn btn-secondary" href="manual.html">Ver manual rápido</a>
+          </div>
+        </div>
+        <div class="hero-art">
+          <img src="assets/icon.png" alt="Ícone do 3DReport, um cubo em camadas representando impressão 3D" width="160" height="160">
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="container">
+        <h2>O app por dentro</h2>
+        <p class="section-intro">
+          Substitua as imagens abaixo por capturas de tela reais em
+          <code>site/assets/screenshots/</code> (recomendado 1280×800, PNG).
+        </p>
+        <div class="grid">
+          <div class="screenshot">
+            <img src="assets/screenshots/orcamento.png" alt="Tela de Orçamento do 3DReport, com cálculo de valor de produção e venda" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="screenshot-placeholder">
+              <strong>Tela de Orçamento</strong>
+              <span>assets/screenshots/orcamento.png</span>
+            </div>
+          </div>
+          <div class="screenshot">
+            <img src="assets/screenshots/historico.png" alt="Tela de Histórico de orçamentos do 3DReport" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="screenshot-placeholder">
+              <strong>Histórico &amp; Dashboard</strong>
+              <span>assets/screenshots/historico.png</span>
+            </div>
+          </div>
+          <div class="screenshot">
+            <img src="assets/screenshots/pdf.png" alt="Exemplo de PDF de orçamento exportado pelo 3DReport" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="screenshot-placeholder">
+              <strong>PDF exportado</strong>
+              <span>assets/screenshots/pdf.png</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="funcionalidades" class="alt">
+      <div class="container">
+        <h2>Feito para quem vende impressão 3D no dia a dia</h2>
+        <p class="section-intro">
+          Não é só uma calculadora: acompanha o negócio inteiro, do cadastro
+          de filamento até o PDF que vai pro cliente.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Cálculo de custo e preço de venda</h3>
+            <p>Considera filamento, energia, manutenção, falhas, acabamento, retorno do investimento da impressora e margem de lucro.</p>
+          </div>
+          <div class="card">
+            <h3>Várias impressoras e filamentos</h3>
+            <p>Cadastre cada impressora com seu próprio perfil e cada filamento com marca, cores e controle de estoque.</p>
+          </div>
+          <div class="card">
+            <h3>Histórico e dashboard</h3>
+            <p>Consulte orçamentos salvos, filtre por cliente/status/período e veja total vendido, lucro e filamento mais usado.</p>
+          </div>
+          <div class="card">
+            <h3>Exportação em PDF</h3>
+            <p>Orçamento individual, vários orçamentos num PDF só ou catálogo de peças em grade, com marca d'água personalizada.</p>
+          </div>
+          <div class="card">
+            <h3>Serviços e taxas opcionais</h3>
+            <p>Pintura, lixamento, embalagem e taxa de marketplace (ex.: Shopee) entram no orçamento sem complicar o cálculo interno.</p>
+          </div>
+          <div class="card">
+            <h3>Múltiplas moedas</h3>
+            <p>BRL, USD, EUR ou GBP, com o símbolo e a formatação corretos em toda a interface, no PDF e no copiar e colar.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="como-funciona">
+      <div class="container">
+        <h2>Como o cálculo funciona</h2>
+        <p class="section-intro">
+          Fórmula transparente, sem caixa-preta. Detalhes completos e
+          exemplo numérico em
+          <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>.
+        </p>
+        <div class="formula-box">
+VALOR DE PRODUÇÃO = material + energia + manutenção + falhas
+                     + acabamento + retorno do investimento + administrativo
+
+VALOR DE VENDA     = produção × (1 + margem de lucro)
+LUCRO              = venda − produção
+        </div>
+      </div>
+    </section>
+
+    <section id="instalacao" class="alt">
+      <div class="container">
+        <h2>Instalação</h2>
+        <p class="section-intro">Instaladores nativos, gerados por release, disponíveis para os três sistemas operacionais desktop.</p>
+        <div class="grid">
+          <div class="card">
+            <span class="badge-os">Windows</span>
+            <p>Baixe o <code>.msi</code> na página de releases. O Windows pode avisar "Editor desconhecido": clique em "Mais informações → Executar assim mesmo".</p>
+          </div>
+          <div class="card">
+            <span class="badge-os">Linux</span>
+            <p>Baixe o <code>.deb</code> na página de releases e instale normalmente pelo gerenciador de pacotes do seu sistema.</p>
+          </div>
+          <div class="card">
+            <span class="badge-os">macOS</span>
+            <p>Baixe o <code>.dmg</code> na página de releases. Na primeira execução, clique com o botão direito no app → "Abrir" para liberar no Gatekeeper.</p>
+          </div>
+        </div>
+        <div class="btn-row" style="margin-top: 28px;">
+          <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Ver todos os downloads</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="container">
+        <h2>Perguntas frequentes</h2>
+        <details class="faq-item">
+          <summary>Quanto custa o 3DReport?</summary>
+          <p>Nada. É gratuito e de código aberto, sem edição paga nem assinatura. O projeto se mantém por doações voluntárias.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Como o 3DReport calcula o preço de uma impressão 3D?</summary>
+          <p>A partir do filamento usado, do perfil da impressora e dos parâmetros do seu negócio (energia, falhas, acabamento, margem), o app calcula o valor de produção e sugere o valor de venda. Veja a fórmula completa acima ou no manual.</p>
+        </details>
+        <details class="faq-item">
+          <summary>O 3DReport funciona em quais sistemas operacionais?</summary>
+          <p>Windows, Linux e macOS, com instaladores nativos para cada um.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Meus dados de orçamento ficam salvos onde?</summary>
+          <p>Localmente, no seu computador. O 3DReport não envia nenhum dado para servidores externos.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Existe versão para Android ou celular?</summary>
+          <p>Ainda não. É uma possibilidade futura no <a href="https://github.com/mateustoin/3DReport/blob/main/docs/roadmap.md">roadmap</a>, sem previsão de data.</p>
+        </details>
+      </div>
+    </section>
+
+    <section id="apoie" class="alt">
+      <div class="container">
+        <h2>Apoie o projeto</h2>
+        <p class="section-intro">
+          O 3DReport é e sempre será gratuito e de código aberto. Se ele te
+          ajuda a precificar melhor o seu negócio de impressão 3D, considere
+          uma doação voluntária.
+        </p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="https://buymeacoffee.com/mateustoin">Buy Me a Coffee</a>
+          <a class="btn btn-secondary" href="https://github.com/mateustoin/3DReport">Ver código no GitHub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>3DReport · Apache License 2.0 · por Mateus Antonio</span>
+      <div class="footer-links">
+        <a href="manual.html">Manual</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <a href="https://github.com/mateustoin/3DReport/releases/latest">Downloads</a>
+        <a href="https://buymeacoffee.com/mateustoin">Doar</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

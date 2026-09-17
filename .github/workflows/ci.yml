@@ -1,0 +1,25 @@
+name: CI
+
+# Compila e testa a cada push/PR em main — dá visibilidade de que o
+# build está saudável pra quem visita o repositório (ver docs/roadmap.md,
+# seção "Infraestrutura e qualidade").
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Build e testes
+        run: ./gradlew build

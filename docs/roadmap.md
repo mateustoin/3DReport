@@ -9,9 +9,13 @@ projeto aprovar, e a mudança entrar no código (ver
 
 As seções abaixo estão em **ordem de prioridade** (definida em 2026-09-15):
 funcionalidades de produto e UI/UX primeiro; só depois disso, instaladores
-desktop; só depois disso, infraestrutura/qualidade (não urgente enquanto o
-repositório continua privado); Android é a menor prioridade de todas — fica
-pra quando o projeto estiver consolidado e houver demanda, ainda sem previsão.
+desktop; só depois disso, infraestrutura/qualidade (adiantada em 2026-09-17,
+decisão 49, antes mesmo do repositório abrir); Android é a menor prioridade
+de todas, fica pra quando o projeto estiver consolidado e houver demanda,
+ainda sem previsão. O repositório ficou **público** em 2026-09-17 (decisão
+50), destravando o que dependia disso: instalação real pelos links do site,
+downloads da página de releases e a assinatura "Gerado com 3DReport" nos
+PDFs (seção 1, "Vendas e divulgação").
 
 ## 1. Funcionalidades do produto e UI/UX
 
@@ -330,11 +334,11 @@ implementação.
     pra colar direto numa conversa informal de WhatsApp/marketplace, onde um
     link a mais soa mais invasivo do que discreto. Reavaliar só se fizer
     sentido depois.
-  - **Depende de:** por ora o link aponta pro repositório GitHub (única
-    presença online do projeto); trocar pro "Site institucional em GitHub
-    Pages" (seção 2) quando esse existir — e ambos dependem do repositório
-    virar público (decisão 15), já que hoje o link levaria a um repo privado
-    inacessível pra quem recebesse o PDF.
+  - **Dependências resolvidas (decisão 50):** o repositório e o site
+    institucional em GitHub Pages (seção 2) já existem e estão públicos, então
+    o link pode apontar direto pro site (`https://mateustoin.github.io/3DReport/`),
+    com o repositório como alternativa. Item segue no backlog só pela
+    implementação em si (ainda não entrou no código).
 
 ### Integrações
 
@@ -395,13 +399,21 @@ implementação.
 
 ## 2. Site (GitHub Pages) — divulgação e instruções de uso
 
-- [ ] **Site institucional em GitHub Pages.** Landing page com o que o app
-  faz, screenshots, link de download (GitHub Releases) e instruções de uso
-  (equivalente a um manual rápido). Bom SEO (meta tags, `sitemap.xml`,
-  conteúdo em português voltado a quem busca "orçamento impressão 3D" e
-  termos correlatos) pra ajudar a divulgar organicamente. Faz mais sentido
-  **depois** do repositório ficar público (decisão 15 — hoje ainda é
-  privado), já que o site vai linkar pro repo/releases.
+- [x] **Site institucional em GitHub Pages** (decisão 49). Landing page
+  (`site/index.html`) com funcionalidades, fórmula de cálculo resumida,
+  instalação por SO, FAQ (com dados estruturados `FAQPage`) e apoio; manual
+  rápido em página própria (`site/manual.html`, dados estruturados `HowTo`).
+  Meta tags de SEO (title/description por página, Open Graph, Twitter Card,
+  `SoftwareApplication` JSON-LD), `sitemap.xml`, `robots.txt` e `404.html`
+  personalizado. Conteúdo em português voltado a quem busca "orçamento
+  impressão 3D", "calculadora de preço impressão 3D" e termos correlatos.
+  Screenshots ainda são placeholders (ver
+  `site/assets/screenshots/PLACEHOLDER.md`) — a página já degrada bem sem
+  eles (caixa tracejada no lugar da imagem que falta). Feito (2026-09-17):
+  `.github/workflows/pages.yml` publica `site/` a cada push em `main` que
+  muda a pasta (precisa de "Settings → Pages → Source: GitHub Actions"
+  habilitado, e o repositório ainda precisa ficar público pra release/
+  download linkados no site funcionarem — decisão 15).
 
 ## 3. Instaladores desktop
 
@@ -444,14 +456,24 @@ implementação.
 
 ## 4. Infraestrutura e qualidade (open source)
 
-Adiado porque o repositório ainda é privado — não há urgência.
+Adiantado pra preparar o repositório antes de ficar público (decisão 49),
+já que funciona independente da visibilidade do repo (GitHub Actions roda em
+repositório privado também). O repositório ficou público em 2026-09-17
+(decisão 50).
 
-- [ ] **CI no GitHub Actions.** Rodar `./gradlew build` (compila + testa
-  `core` e `composeApp`) a cada push/PR.
-- [ ] **CONTRIBUTING.md.** Como rodar, testar e propor mudanças — hoje só
-  existe [docs/development.md](development.md), voltado a você mesmo.
-- [ ] **Badges no README.** Build (CI), licença (Apache 2.0) e o botão de
-  apoio (Buy Me a Coffee) já linkado — comuns em repositórios públicos.
+- [x] **CI no GitHub Actions.** `.github/workflows/ci.yml` roda
+  `./gradlew build` (compila + testa `core` e `composeApp`) a cada push/PR em
+  `main`. Feito (2026-09-17).
+- [x] **CONTRIBUTING.md.** Feito (2026-09-17): setup, fluxo de PR, mensagens
+  de commit (Conventional Commits) e como propor mudanças, complementando
+  [docs/development.md](development.md) (que continua focado em você mesmo).
+- [x] **Templates de issue/PR.** Feito (2026-09-17):
+  `.github/ISSUE_TEMPLATE/{bug_report,feature_request}.yml` +
+  `.github/PULL_REQUEST_TEMPLATE.md`.
+- [x] **Badges no README.** Build (CI), release, licença (Apache 2.0) e o
+  botão de apoio (Buy Me a Coffee) já linkado. Feito (2026-09-17).
+- [ ] **CODE_OF_CONDUCT.md.** Avaliado e deixado de fora por ora (2026-09-17)
+  — mais útil se/quando surgir uma comunidade de contribuidores ativa.
 
 ## 5. Android (menor prioridade — bem mais pra frente)
 
