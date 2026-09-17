@@ -5,6 +5,13 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.4.0] - 2026-09-17
+
+### Adicionado
+- Ícone próprio do app (antes saía com o ícone padrão do Java/jpackage).
+- Instalador Windows (e Linux) passa a criar atalho na área de trabalho
+  e no menu Iniciar ao instalar.
+
 ## [1.3.0] - 2026-09-16
 
 ### Adicionado

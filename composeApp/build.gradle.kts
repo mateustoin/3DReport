@@ -52,10 +52,27 @@ compose.desktop {
             // Lido de gradle.properties; mantenha com.threedreport.app.APP_VERSION em sincronia.
             packageVersion = providers.gradleProperty("appVersion").get()
 
+            // Ícone do app (cubo isométrico "em camadas" + bico de impressão,
+            // nas cores da paleta do app) — decisão 42. Cada plataforma exige
+            // o formato nativo do seu instalador (.ico/.icns/.png).
+            windows {
+                iconFile.set(project.file("packaging/icons/icon.ico"))
+                // Cria atalho na área de trabalho ao instalar (o jpackage/WiX
+                // usado aqui não oferece uma caixinha de escolha no instalador
+                // — só a opção de criar sempre ou nunca; ver decisão 42).
+                shortcut = true
+                menu = true
+            }
+            macOS {
+                iconFile.set(project.file("packaging/icons/icon.icns"))
+            }
+
             // O bundler .deb do jpackage exige nome de pacote começando com
             // letra minúscula — "3DReport" (packageName acima) é rejeitado.
             linux {
                 packageName = "threedreport"
+                iconFile.set(project.file("packaging/icons/icon.png"))
+                shortcut = true
             }
         }
     }

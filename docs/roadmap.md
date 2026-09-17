@@ -324,6 +324,21 @@ implementação.
   versão mais nova detecta e substitui a anterior automaticamente, sem
   instalação lado a lado e sem exigir desinstalar manualmente antes.
   Feito (2026-09-17).
+- [x] **Ícone do app + atalho de área de trabalho** (decisão 42). O app não
+  tinha ícone próprio (saía com o ícone padrão do Java/jpackage). Criado um
+  ícone (cubo isométrico "em camadas" + bico de impressão, nas cores da
+  paleta do app — azul petróleo e laranja âmbar), gerado programaticamente
+  (sem depender de nenhuma ferramenta de imagem externa) nos 3 formatos
+  nativos exigidos por instalador (`.ico`/`.icns`/`.png`). Instalador
+  Windows passa a criar atalho na área de trabalho e no menu Iniciar ao
+  instalar — a ferramenta de empacotamento usada aqui (jpackage/WiX, via
+  Compose Multiplatform) só oferece "criar sempre" ou "nunca criar", não
+  uma caixinha de escolha durante a instalação; optou-se por criar sempre.
+  Verificado localmente: build gerou o `.msi` sem erros, o `.exe` extraído
+  já carrega o ícone customizado (não mais o padrão do Java), e a tabela
+  `Shortcut` do MSI lista o atalho em `DesktopFolder` e no menu Iniciar.
+  Feito (2026-09-17): `composeApp/packaging/icons/{icon.ico,icon.icns,icon.png}`,
+  `composeApp/build.gradle.kts` (`windows`/`macOS`/`linux { iconFile, shortcut }`).
 
 ## 4. Infraestrutura e qualidade (open source)
 
