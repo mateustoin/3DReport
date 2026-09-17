@@ -86,10 +86,11 @@ com a margem de lucro desejada.
 
 ## Screenshots
 
-<!-- PLACEHOLDER: substitua pelos caminhos reais depois de adicionar as
-     imagens em site/assets/screenshots/ (ver site/assets/screenshots/PLACEHOLDER.md) -->
-> Screenshots em breve. Enquanto isso, veja o app rodando no
-> [manual rápido do site](https://mateustoin.github.io/3DReport/manual.html).
+<p align="center">
+  <img src="site/assets/screenshots/orcamento.png" width="32%" alt="Tela de Orçamento do 3DReport, com cálculo de valor de produção e venda">
+  <img src="site/assets/screenshots/historico.png" width="32%" alt="Tela de Histórico de orçamentos do 3DReport">
+  <img src="site/assets/screenshots/pdf.png" width="32%" alt="Exemplo de PDF de orçamento exportado pelo 3DReport">
+</p>
 
 ## Apoie o projeto
 

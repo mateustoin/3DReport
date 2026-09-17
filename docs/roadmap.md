@@ -407,12 +407,9 @@ implementação.
   `SoftwareApplication` JSON-LD), `sitemap.xml`, `robots.txt` e `404.html`
   personalizado. Conteúdo em português voltado a quem busca "orçamento
   impressão 3D", "calculadora de preço impressão 3D" e termos correlatos.
-  Screenshots ainda são placeholders (ver
-  `site/assets/screenshots/PLACEHOLDER.md`) — a página já degrada bem sem
-  eles (caixa tracejada no lugar da imagem que falta). Feito (2026-09-17):
-  `.github/workflows/pages.yml` publica `site/` a cada push em `main` que
-  muda a pasta. **No ar** desde que o repositório ficou público (decisão 50):
-  https://mateustoin.github.io/3DReport/.
+  Feito (2026-09-17): `.github/workflows/pages.yml` publica `site/` a cada
+  push em `main` que muda a pasta. **No ar** desde que o repositório ficou
+  público (decisão 50): https://mateustoin.github.io/3DReport/.
   - **Reforço de SEO pra "venda de impressão 3D" (decisão 51, 2026-09-17):**
     além de "orçamento", title/meta description/Open Graph/JSON-LD passaram a
     cobrir "venda"/"vender impressão 3D" também. Nova seção "Do orçamento à
@@ -421,6 +418,16 @@ implementação.
     novo item de FAQ e um 7º passo no manual ("Acompanhe a venda até a
     entrega"). Tópicos `venda-impressao-3d`/`vendas` adicionados ao
     repositório GitHub pelo mesmo motivo.
+  - **Screenshots reais adicionadas (decisão 52, 2026-09-17):** os 3
+    placeholders (`orcamento.png`, `historico.png`, `pdf.png`, 1280×800) foram
+    substituídos por capturas reais do app em `site/assets/screenshots/`
+    (também usadas no README) — `PLACEHOLDER.md` removido. `og:image`/
+    `twitter:image` do site (antes o ícone do app) passaram a usar
+    `orcamento.png`, com `twitter:card` mudado pra `summary_large_image`
+    (prévia grande ao compartilhar o link, em vez de miniatura). Ainda vale um
+    banner dedicado (1200×630, nome do app + composição de telas) no lugar da
+    screenshot crua, se quiser refinar mais a prévia de compartilhamento —
+    ideia registrada, não crítica.
 
 ## 3. Instaladores desktop
 
