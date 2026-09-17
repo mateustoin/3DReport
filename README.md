@@ -1,4 +1,17 @@
-# 3DReport
+<p align="center">
+  <img src="composeApp/packaging/icons/icon.png" width="120" alt="Ícone do 3DReport">
+</p>
+
+<h1 align="center">3DReport</h1>
+
+<p align="center">
+  <a href="CHANGELOG.md"><img alt="Versão" src="https://img.shields.io/badge/vers%C3%A3o-1.8.0-0B5FA8"></a>
+  <a href="LICENSE"><img alt="Licença" src="https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-0B5FA8"></a>
+  <img alt="Plataforma" src="https://img.shields.io/badge/plataforma-Windows%20%7C%20Linux%20%7C%20macOS-0B5FA8">
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white">
+  <a href="https://github.com/mateustoin/3DReport/actions/workflows/release.yml"><img alt="Status do release" src="https://github.com/mateustoin/3DReport/actions/workflows/release.yml/badge.svg"></a>
+  <a href="https://buymeacoffee.com/mateustoin"><img alt="Buy Me a Coffee" src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-apoie-B56A1A?logo=buymeacoffee&logoColor=white"></a>
+</p>
 
 Aplicativo **gratuito e de código aberto** para criação de **orçamentos de
 impressão 3D**. A partir do filamento usado, da impressora escolhida (cada uma
@@ -11,34 +24,56 @@ com a margem de lucro desejada.
 > cadastro de impressoras e configurações gerais funcionando, com
 > persistência real em disco. Veja o backlog em [docs/roadmap.md](docs/roadmap.md).
 
+## Sumário
+
+- [Funcionalidades](#funcionalidades)
+- [Apoie o projeto](#apoie-o-projeto)
+- [Stack](#stack)
+- [Início rápido](#início-rápido)
+- [Instaladores](#instaladores)
+- [Estrutura](#estrutura)
+- [Documentação](#documentação)
+- [Licença](#licença)
+
 ## Funcionalidades
 
-| Funcionalidade | Estado |
-|---|---|
-| Cálculo de custo de produção e preço de venda | Pronto (`core`) |
-| Tela de orçamento (escolhe filamento + impressora, entra comprimento/tempo → produção/venda) | Pronto |
-| Salvar orçamento (nome, foto e link do modelo opcionais) | Pronto |
-| Histórico de orçamentos (consultar, filtrar, baixar foto, excluir) | Pronto |
-| Exportar orçamento — PDF e copiar/colar (nome + valor de venda + foto no PDF) | Pronto |
-| Cadastro de filamentos (catálogo salvo, com marca, várias cores e controle manual de estoque por cor) | Pronto |
-| Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Pronto |
-| Configurações gerais do negócio (energia, falhas, acabamento, margem) | Pronto |
-| Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos) | Pronto |
-| Marca d'água personalizada no PDF (texto, configurável em Configurações) | Pronto |
-| Exportar vários orçamentos selecionados num PDF só (um por página) | Pronto |
-| Serviços opcionais no orçamento (pintura, lixamento, embalagem/spray etc.) | Pronto |
-| Taxa de marketplace (ex.: Shopee), ajusta o valor de venda | Pronto |
-| Link do modelo clicável (abre no navegador) | Pronto |
-| Versão do app + rodapé com autor/GitHub/doação + ajuda | Pronto |
-| Confirmação antes de excluir (filamentos, impressoras, serviços, histórico) | Pronto |
-| Peso da peça no Histórico (uso interno, calculado da densidade/comprimento) | Pronto |
-| Tema claro/escuro (segue o sistema por padrão) | Pronto |
-| Cliente e status do pedido no orçamento (uso interno, editável no Histórico) | Pronto |
-| Dashboard (total vendido, lucro e filamento mais usado, por período) | Pronto |
-| Atalhos de teclado (navegação entre abas, salvar/limpar orçamento) | Pronto |
-| Catálogo/portfólio exportável em PDF (grade, várias peças por página) | Pronto |
-| Templates de orçamento (presets nomeados de marca d'água/rodapé) | Pronto |
-| Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto | Pronto |
+<details>
+<summary>Ver lista completa (20+ prontas)</summary>
+
+**Orçamento**
+- Cálculo de custo de produção e preço de venda (`core`)
+- Tela de orçamento — escolhe filamento + impressora, informa comprimento/tempo → produção/venda
+- Salvar orçamento (nome, foto e link do modelo opcionais)
+- Serviços opcionais no orçamento (pintura, lixamento, embalagem/spray etc.)
+- Taxa de marketplace (ex.: Shopee) — ajusta o valor de venda automaticamente
+- Link do modelo clicável (abre no navegador) e peso da peça (uso interno)
+
+**Histórico & Dashboard**
+- Histórico de orçamentos — consultar, filtrar, baixar foto, excluir
+- Cliente e status do pedido por orçamento
+- Exportar em PDF ou copiar/colar (nome + valor de venda + foto no PDF)
+- Exportar vários orçamentos selecionados num PDF só (um por página)
+- Catálogo/portfólio exportável em PDF (grade, várias peças por página)
+- Dashboard — total vendido, lucro e filamento mais usado, por período
+
+**Catálogos**
+- Cadastro de filamentos — marca, várias cores e controle manual de estoque por cor
+- Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento)
+
+**Personalização do PDF**
+- Marca d'água personalizada (texto, configurável em Configurações)
+- Templates — fotos salvas de marca d'água/rodapé, com indicador do template ativo
+
+**Configurações & plataforma**
+- Configurações gerais do negócio (energia, falhas, acabamento, margem)
+- Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
+- Tema claro/escuro (segue o sistema por padrão)
+- Atalhos de teclado (navegação entre abas, salvar/limpar orçamento)
+- Confirmação antes de excluir (filamentos, impressoras, serviços, histórico)
+- Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos)
+- Versão do app + rodapé com autor/GitHub/doação + ajuda
+
+</details>
 
 ## Apoie o projeto
 
