@@ -268,32 +268,32 @@ implementação.
   do Histórico — nenhuma UI de seleção nova, nenhum campo novo pra marcar
   "peça pronta". Feito (2026-09-17): `platform/QuotePdfExporter.renderCatalogPdf`,
   `QuoteHistoryViewModel.exportCatalogPdf`.
-- [x] **Templates de orçamento** (decisão 45). Nova aba "Templates":
-  biblioteca de presets nomeados de marca d'água/rodapé — "Usar este" copia
-  o preset pra dentro da configuração ativa (Configurações → Marca d'água
-  do PDF, que continua sendo o único editor da config em uso). Feito
-  (2026-09-17): `core/model/QuoteTemplate`, `data/TemplateRepository`,
-  `ui/templates/{TemplateFormState,TemplateListViewModel,TemplateListScreen}`.
-  - **Melhorias de UX identificadas (2026-09-17, ainda não implementadas):**
-    - **Indicador de template ativo.** Ao clicar "Usar este", nada na lista
-      mostra qual template foi aplicado por último — dá pra confundir qual
-      config está de fato em uso. Adicionar um destaque (ex.: badge "Ativo"
-      ou o botão virar "Ativo" desabilitado) no template que bate com a
-      config atual de `BrandingSettings`.
-    - **Repensar a relação Templates ↔ Configurações.** Hoje os mesmos 3
-      campos (texto da marca d'água, mostrar diagonal, mostrar rodapé) têm
-      **dois formulários independentes**: um na aba Templates (criar/editar
-      preset) e outro em Configurações → "Marca d'água do PDF" (a config
-      ativa) — editar um não reflete no outro, fica ambíguo qual "vale".
-      Ideia: Templates vira uma **biblioteca de salvar/carregar snapshots**
-      da config ativa, não um catálogo CRUD à parte — remove o formulário
-      próprio da aba Templates (some `TemplateFormState`/o form de
-      nome+texto+checkboxes); Configurações ganha um botão "Salvar como
-      template" (só pede um nome, tira uma foto da config atual); a aba
-      Templates vira uma lista simples de nomes com "Carregar"/"Excluir".
-      Um único lugar de edição ao vivo (Configurações), Templates só guarda
-      "fotos" nomeadas pra voltar depois — resolve a redundância e também
-      cobre o indicador acima (o template recém-carregado fica óbvio).
+- [x] **Templates de orçamento** (decisões 45 e 47). Biblioteca de **fotos
+  nomeadas** do `BrandingSettings` ativo — sem tela/aba própria: acessada
+  por um diálogo modal a partir de Configurações → "Marca d'água do PDF",
+  que continua sendo o único editor ao vivo. Feito (2026-09-17):
+  `core/model/QuoteTemplate`, `data/TemplateRepository`,
+  `ui/templates/{TemplateListViewModel,TemplateListDialog}`.
+  - **Indicador de template ativo (decisão 47, 2026-09-17):** badge "Ativo"
+    ao lado do nome, no template cujos campos batem com a config atual de
+    `BrandingSettings` (`TemplateListViewModel.activeTemplateId`).
+  - **Relação Templates ↔ Configurações repensada (decisão 47,
+    2026-09-17):** Templates deixou de ter formulário próprio de
+    criar/editar (removido `TemplateFormState`) — vira uma lista simples
+    de "Carregar"/"Excluir". Configurações → "Marca d'água do PDF" ganhou
+    o botão "Salvar como template" (só pede um nome; tira uma foto do que
+    está no formulário na hora do clique, mesmo sem ter clicado em
+    "Salvar" antes). Feito:
+    `ui/settings/BrandingViewModel.{startSaveAsTemplate,confirmSaveAsTemplate}`.
+  - **Aba dedicada removida (decisão 47, 2026-09-17):** revisão de
+    usabilidade pedida pelo responsável do projeto — uma aba fixa no menu
+    principal era desproporcional pra uma funcionalidade tão estreita
+    (só usada dentro de uma sub-seção de Configurações, ao contrário de
+    Filamentos/Impressoras/Serviços, catálogos usados no fluxo principal
+    de Orçamento). A lista de templates vira um **diálogo modal**
+    (`TemplateListDialog`), aberto pelo botão "Ver templates salvos" ao
+    lado de "Salvar como template" — volta a 7 abas no menu,
+    `Ctrl/Cmd+7`→Configurações.
 - [x] **Múltiplas moedas/localização** (decisão 46). Nova seção "Moeda" em
   Configurações — BRL, USD, EUR ou GBP, cada uma com seu próprio símbolo e
   convenção de separador decimal/milhar (não é só trocar "R$" por "$").

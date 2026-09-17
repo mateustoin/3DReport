@@ -2,6 +2,7 @@ package com.threedreport.app.ui.templates
 
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.TemplateRepository
+import com.threedreport.core.model.QuoteTemplate
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -22,41 +23,19 @@ class TemplateListViewModelTest {
         System.clearProperty("threedreport.dataDir")
     }
 
-    @Test
-    fun savingANewTemplatePersistsAllFields() {
-        val repository = TemplateRepository()
-        val viewModel = TemplateListViewModel(repository, BrandingRepository())
-
-        viewModel.startAdd()
-        viewModel.updateForm {
-            it.copy(name = "Formal", watermarkText = "Minha Loja", showWatermark = true, showFooter = false)
-        }
-        viewModel.save()
-
-        val saved = repository.templates.value.first { it.name == "Formal" }
-        assertEquals("Minha Loja", saved.watermarkText)
-        assertTrue(saved.showWatermark)
-        assertEquals(false, saved.showFooter)
-    }
-
-    @Test
-    fun savingWithBlankNameFailsWithError() {
-        val viewModel = TemplateListViewModel(TemplateRepository(), BrandingRepository())
-
-        viewModel.startAdd()
-        viewModel.updateForm { it.copy(name = "   ") }
-        viewModel.save()
-
-        assertTrue(viewModel.form.value?.errorMessage != null)
-    }
+    private fun sampleTemplate(name: String = "Formal") = QuoteTemplate(
+        id = name,
+        name = name,
+        watermarkText = "Minha Loja",
+        showWatermark = true,
+        showFooter = false,
+    )
 
     @Test
     fun deletingRemovesFromCatalog() {
         val repository = TemplateRepository()
+        repository.add(sampleTemplate())
         val viewModel = TemplateListViewModel(repository, BrandingRepository())
-        viewModel.startAdd()
-        viewModel.updateForm { it.copy(name = "Simples") }
-        viewModel.save()
         val template = repository.templates.value.first()
 
         viewModel.delete(template.id)
@@ -65,18 +44,14 @@ class TemplateListViewModelTest {
     }
 
     @Test
-    fun applyToActiveCopiesTemplateIntoBrandingSettings() {
+    fun loadCopiesTemplateIntoBrandingSettings() {
         val templateRepository = TemplateRepository()
+        templateRepository.add(sampleTemplate())
         val brandingRepository = BrandingRepository()
         val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
-        viewModel.startAdd()
-        viewModel.updateForm {
-            it.copy(name = "Formal", watermarkText = "Minha Loja", showWatermark = true, showFooter = false)
-        }
-        viewModel.save()
         val template = templateRepository.templates.value.first()
 
-        viewModel.applyToActive(template.id)
+        viewModel.load(template.id)
 
         val branding = brandingRepository.branding.value
         assertEquals("Minha Loja", branding.watermarkText)
@@ -85,12 +60,27 @@ class TemplateListViewModelTest {
     }
 
     @Test
-    fun applyToActiveDoesNothingForUnknownId() {
+    fun loadDoesNothingForUnknownId() {
         val brandingRepository = BrandingRepository()
         val viewModel = TemplateListViewModel(TemplateRepository(), brandingRepository)
 
-        viewModel.applyToActive("does-not-exist")
+        viewModel.load("does-not-exist")
 
         assertNull(brandingRepository.branding.value.watermarkText)
+    }
+
+    @Test
+    fun activeTemplateIdMatchesTemplateWithSameFieldsAsBranding() {
+        val templateRepository = TemplateRepository()
+        val brandingRepository = BrandingRepository()
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
+        val formal = sampleTemplate("Formal")
+        templateRepository.add(formal)
+
+        assertNull(viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value))
+
+        viewModel.load(formal.id)
+
+        assertEquals(formal.id, viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value))
     }
 }

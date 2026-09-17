@@ -5,6 +5,20 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.8.0] - 2026-09-17
+
+### Alterado
+- Templates de orçamento: deixou de ter formulário próprio de criar/editar
+  — Configurações → "Marca d'água do PDF" passa a ser o único lugar de
+  edição, com um novo botão "Salvar como template" (só pede um nome).
+- A aba "Templates" foi removida do menu principal — a lista de templates
+  salvos ("Carregar"/"Excluir") agora abre como um diálogo, pelo botão
+  "Ver templates salvos" ao lado de "Salvar como template".
+
+### Adicionado
+- Indicador de template ativo: badge "Ativo" ao lado do nome do template
+  cujos campos batem com a marca d'água/rodapé em uso no momento.
+
 ## [1.7.0] - 2026-09-17
 
 ### Adicionado

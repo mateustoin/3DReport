@@ -22,6 +22,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.templates.TemplateListDialog
+import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.ThemeMode
@@ -40,13 +43,15 @@ import com.threedreport.core.model.ThemeMode
 /**
  * Tela de Configurações gerais: parâmetros do negócio, iguais para qualquer
  * impressora/orçamento (energia, falhas, acabamento, administrativo, margem),
- * e a personalização do PDF exportado (marca d'água).
+ * e a personalização do PDF exportado (marca d'água, com biblioteca de
+ * templates salvos — ver [TemplateListDialog]).
  * O que é específico de cada impressora fica na tela de Impressoras.
  */
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     brandingViewModel: BrandingViewModel,
+    templateListViewModel: TemplateListViewModel,
     themeViewModel: ThemeViewModel,
     currencyViewModel: CurrencyViewModel,
     modifier: Modifier = Modifier,
@@ -55,6 +60,7 @@ fun SettingsScreen(
     val branding by brandingViewModel.uiState.collectAsState()
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
+    var showTemplatesDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -127,6 +133,27 @@ fun SettingsScreen(
         if (branding.savedConfirmation) {
             Text("Marca d'água salva.", color = MaterialTheme.colorScheme.primary)
         }
+
+        if (branding.isSavingAsTemplate) {
+            LabeledField("Nome do template (ex.: Formal, Simples)", branding.templateNameInput, brandingViewModel::updateTemplateName)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = brandingViewModel::confirmSaveAsTemplate) { Text("Salvar template") }
+                TextButton(onClick = brandingViewModel::cancelSaveAsTemplate) { Text("Cancelar") }
+            }
+            branding.templateSaveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = brandingViewModel::startSaveAsTemplate) { Text("Salvar como template") }
+                TextButton(onClick = { showTemplatesDialog = true }) { Text("Ver templates salvos") }
+            }
+        }
+        if (branding.templateSavedConfirmation) {
+            Text("Template salvo.", color = MaterialTheme.colorScheme.primary)
+        }
+    }
+
+    if (showTemplatesDialog) {
+        TemplateListDialog(templateListViewModel, onDismiss = { showTemplatesDialog = false })
     }
 }
 

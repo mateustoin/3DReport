@@ -67,8 +67,7 @@ funciona via terminal). Detalhes em [docs/development.md](docs/development.md).
 ## Instaladores
 
 Instaladores nativos (`.deb`/`.msi`/`.dmg`) são gerados por CI a cada release
-e publicados em [GitHub Releases](https://github.com/mateustoin/3DReport/releases)
-— ainda não há um release publicado (ver [docs/roadmap.md](docs/roadmap.md)).
+e publicados em [GitHub Releases](https://github.com/mateustoin/3DReport/releases).
 Como não são assinados digitalmente (custo recorrente incompatível com o
 modelo 100% gratuito/doação), o Windows pode avisar "Editor desconhecido"
 (clique em "Mais informações → Executar assim mesmo") e o macOS pode

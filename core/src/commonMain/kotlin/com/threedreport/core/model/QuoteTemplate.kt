@@ -3,10 +3,12 @@ package com.threedreport.core.model
 import kotlinx.serialization.Serializable
 
 /**
- * Preset nomeado de personalização do PDF, pra trocar rápido a marca d'água/
- * rodapé em uso sem reconfigurar o texto toda vez. "Usar este" copia estes
- * campos pra dentro do [BrandingSettings] ativo (ver [com.threedreport.app.data.TemplateRepository],
- * módulo `composeApp`) — o template em si não é usado direto nos exports.
+ * Foto nomeada de uma configuração de marca d'água/rodapé, pra guardar e
+ * voltar a ela depois sem reconfigurar o texto toda vez. Criado a partir do
+ * [BrandingSettings] ativo em Configurações ("Salvar como template") e
+ * "Carregar" copia estes campos de volta pra dentro dele (ver
+ * [com.threedreport.app.data.TemplateRepository], módulo `composeApp`) — o
+ * template em si não é usado direto nos exports.
  *
  * @property id identificador único, atribuído ao criar.
  * @property name nome pra identificar o template (ex.: "Formal", "Simples").

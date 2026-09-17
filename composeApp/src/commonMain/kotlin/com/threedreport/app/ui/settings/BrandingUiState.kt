@@ -7,4 +7,8 @@ data class BrandingUiState(
     val showFooter: Boolean = true,
     val errorMessage: String? = null,
     val savedConfirmation: Boolean = false,
+    val isSavingAsTemplate: Boolean = false,
+    val templateNameInput: String = "",
+    val templateSaveError: String? = null,
+    val templateSavedConfirmation: Boolean = false,
 )

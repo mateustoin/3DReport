@@ -74,7 +74,7 @@ jobs:
         with:
           path: dist
 
-      - name: Extrair a seção da versão do CHANGELOG.md
+      - name: Montar notas de release (intro + mudanças do CHANGELOG.md + doação + instalação)
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           awk -v ver="[$VERSION]" '
@@ -83,7 +83,41 @@ jobs:
               if (index($0, ver) > 0) { printing = 1; next }
             }
             printing { print }
-          ' CHANGELOG.md > release_notes.md
+          ' CHANGELOG.md > changelog_section.md
+
+          cat > release_notes.md <<'EOF'
+          3DReport é um app gratuito e de código aberto para orçamentos de
+          impressão 3D — do custo de produção ao preço de venda, com controle
+          de filamentos/impressoras e histórico de vendas.
+
+          ## O que mudou
+          EOF
+
+          cat changelog_section.md >> release_notes.md
+
+          cat >> release_notes.md <<'EOF'
+
+          ## Apoie o projeto
+
+          O 3DReport é e sempre será gratuito — mantido só com doações
+          voluntárias. Se ele te ajuda, considere apoiar:
+          [Buy Me a Coffee](https://buymeacoffee.com/mateustoin).
+
+          ## Instalação
+
+          Baixe o instalador do seu sistema abaixo, em **Assets**. Como não
+          são assinados digitalmente (custo recorrente incompatível com o
+          modelo gratuito), alguns sistemas avisam antes de abrir:
+
+          - **Windows (`.msi`)** — o SmartScreen pode avisar "Editor
+            desconhecido": clique em "Mais informações" → "Executar assim
+            mesmo".
+          - **macOS (`.dmg`)** — pode bloquear na primeira abertura: clique
+            com o botão direito no app → "Abrir".
+          - **Linux (`.deb`)** — Debian/Ubuntu e derivados:
+            `sudo dpkg -i threedreport_*.deb`.
+          EOF
+
           cat release_notes.md
 
       - name: Criar release em rascunho
