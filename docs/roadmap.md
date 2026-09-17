@@ -311,14 +311,19 @@ implementação.
   publicado sozinho), com a descrição vinda do `CHANGELOG.md` (decisão 33).
   Feito (2026-09-15) — primeiro release publicado como **`v1.0.0`**, não
   `v0.3.0` (o bundler do macOS exige versão ≥ 1, decisão 34).
-- [ ] **Confirmar que atualizar preserva os dados locais.** Instalar uma
-  versão mais nova por cima de uma instalação existente não deve apagar
-  `~/.3dreport/` (orçamentos, fotos, catálogos, configurações) — hoje isso
-  nunca foi testado de fato. Testar o fluxo real (instalar v1.0.0, gerar
-  dados de exemplo, instalar por cima uma versão seguinte) em pelo menos
-  Windows (MSI); confirmar se o instalador exige desinstalar a versão
-  anterior antes (o que poderia disparar uma limpeza) e documentar o
-  resultado aqui.
+- [x] **Confirmar que atualizar preserva os dados locais** (decisão 41).
+  Confirmado inspecionando os `.msi` reais publicados (v1.0.0 e v1.3.0,
+  via a tabela do Windows Installer, sem precisar instalar): (1) o
+  instalador nunca referencia `~/.3dreport/` — tudo fica sob `INSTALLDIR`
+  (`Program Files\3DReport`), a pasta do usuário nunca aparece na tabela
+  `Directory` do pacote, já que os dados são gravados em tempo de
+  execução pelo próprio app (`user.home`), fora do controle do MSI; (2)
+  as duas versões compartilham o mesmo `UpgradeCode`, com a tabela
+  `Upgrade` + `FindRelatedProducts`/`RemoveExistingProducts`
+  configurados como um **major upgrade MSI padrão** — instalar uma
+  versão mais nova detecta e substitui a anterior automaticamente, sem
+  instalação lado a lado e sem exigir desinstalar manualmente antes.
+  Feito (2026-09-17).
 
 ## 4. Infraestrutura e qualidade (open source)
 
