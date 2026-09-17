@@ -302,6 +302,39 @@ implementação.
   Feito (2026-09-17): `core/model/Currency`, `data/CurrencyRepository`,
   `ui/format/CurrencyFormat.kt` (`LocalCurrency`, `toMoney()`,
   `toCurrencyText()`).
+- [ ] **Assinatura discreta "Gerado com 3DReport" nos PDFs exportados.**
+  Ideia trazida pelo responsável do projeto (2026-09-17): já que o projeto
+  vive só de doação voluntária, sem verba de marketing (decisão 15), cada
+  PDF gerado (orçamento individual, múltiplos orçamentos e catálogo —
+  `platform/QuotePdfExporter`) ganharia uma linha pequena e discreta, num
+  canto do documento, com algo como "Gerado com 3DReport" — hyperlink pro
+  repositório (ou pro site institucional, quando existir) e uma referência
+  curta ao link de apoio (Buy Me a Coffee). Cada orçamento/catálogo enviado
+  pro cliente de um vendedor vira uma chance de outro criador conhecer o
+  app — o mesmo tipo de divulgação orgânica de "Feito com X" que ferramentas
+  gratuitas usam, só que aqui sem versão paga pra "tirar a marca".
+  - **Não é a marca d'água/rodapé do vendedor** (`BrandingSettings`, decisões
+    20-22) — aquele espaço já é do vendedor, pra construir a marca *dele*
+    pro cliente final. Essa assinatura precisa ser um elemento visualmente
+    distinto e menor (ex.: canto inferior, fonte pequena e discreta), sem
+    competir com a identidade que o vendedor está tentando passar no
+    documento que ele manda pro cliente dele — o app continua sendo uma
+    ferramenta a serviço do vendedor, não uma vitrine pro 3DReport.
+  - **Ligada por padrão, mas configurável.** Sem edição paga pra remover a
+    marca (decisão 15), a única alavanca de alcance aqui é vir ligada por
+    padrão — mas precisa dar pra desligar em Configurações (checkbox, mesmo
+    espírito de `showWatermark`/`showFooter`), pra quem prefira entregar um
+    documento sem nenhuma referência a terceiros. Perde algo de alcance,
+    ganha em confiança de quem usa a ferramenta a longo prazo.
+  - **Escopo: só PDF**, não no copiar/colar (decisão 19) — aquele formato é
+    pra colar direto numa conversa informal de WhatsApp/marketplace, onde um
+    link a mais soa mais invasivo do que discreto. Reavaliar só se fizer
+    sentido depois.
+  - **Depende de:** por ora o link aponta pro repositório GitHub (única
+    presença online do projeto); trocar pro "Site institucional em GitHub
+    Pages" (seção 2) quando esse existir — e ambos dependem do repositório
+    virar público (decisão 15), já que hoje o link levaria a um repo privado
+    inacessível pra quem recebesse o PDF.
 
 ### Integrações
 
@@ -311,10 +344,6 @@ implementação.
   (JSON/CSV) com perfis de filamentos populares (ex. marcas/linhas comuns no
   Brasil) que a comunidade possa compartilhar/importar, evitando cadastro
   manual do zero a cada filamento novo.
-- [ ] **Integração com WhatsApp.** Mandar o PDF/texto do orçamento direto
-  pro cliente sem sair do app. Prioridade baixa e incerta por ora — exige
-  conta WhatsApp Business API (custo/burocracia de aprovação), avaliar se
-  compensa frente ao fluxo atual (copiar-colar manual já cobre o uso comum).
 
 ### UX extras
 
@@ -330,6 +359,39 @@ implementação.
   cadastro da primeira impressora/filamento/margem, em vez de abrir numa
   tela vazia sem nenhum dado cadastrado. Baixa prioridade — fica pra
   depois.
+- [ ] **Duplicar orçamento.** Pedido do responsável do projeto (2026-09-17):
+  vender a mesma peça, com os mesmos parâmetros, pra outra pessoa hoje exige
+  refazer o orçamento do zero. Um botão "Duplicar" no Histórico copiaria
+  tudo de um `SavedQuote` (filamento/impressora/comprimento/tempo/serviços/
+  taxa de marketplace, foto, link do modelo) pra um novo orçamento, deixando
+  só nome/cliente/contato pra ajustar antes de salvar pro cliente novo.
+  Duas regras específicas já definidas pelo responsável do projeto:
+  - **Data/hora do duplicado é a do momento da duplicação**, não a do
+    original — `savedAtEpochMillis` novo, não copiado (o duplicado é, pra
+    todos os efeitos, um orçamento novo no Histórico, só que reaproveitando
+    os números). Junto disso, o status também deveria voltar a `ORCADO`
+    (mesma regra de "todo orçamento nasce Orçado" que já vale pra um
+    orçamento criado do zero — o duplicado é um novo pedido, ainda não
+    andou).
+  - **Se a foto não mudar, reaproveitar o mesmo arquivo** — não duplicar o
+    arquivo de imagem em disco. Isso não é automático hoje: o nome do
+    arquivo é gerado como `"$id.$extensão"` (1 arquivo por `SavedQuote`,
+    `data/QuoteHistoryRepository.jvm.kt`), então duplicar exigiria **dois**
+    `SavedQuote` (ids diferentes) apontando pro **mesmo** `photoFileName` —
+    o que por sua vez exige mudar a exclusão (`delete()` hoje apaga o
+    arquivo de foto sem checar se outro orçamento salvo ainda referencia
+    esse mesmo nome de arquivo; precisaria checar antes de apagar).
+  - **Em aberto pra quando for implementar:** como não existe hoje edição
+    de um orçamento já salvo (só o status é editável no Histórico — o resto
+    é retrato congelado, ver KDoc de `SavedQuote`), duplicar precisa decidir
+    entre (a) clonar direto uma nova linha no Histórico e também adicionar uma
+    edição leve de nome/cliente/contato ali mesmo (feature pequena e
+    genericamente útil, não só pra esse caso), ou (b) reabrir o duplicado
+    como rascunho preenchido na aba Orçamento (reaproveitando o próprio
+    formulário de salvar, que já pede nome/cliente/contato/link) pra revisar
+    e salvar de novo — mais trabalho (`QuoteViewModel` não tem hoje como se
+    popular a partir de um `SavedQuote` existente), mas evita criar uma
+    segunda forma de editar metadados de orçamento.
 
 ## 2. Site (GitHub Pages) — divulgação e instruções de uso
 
