@@ -25,6 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.FilamentRepository
@@ -93,7 +100,46 @@ fun App() {
     val themeMode by themeViewModel.mode.collectAsState()
 
     AppTheme(themeMode) {
-        Surface(modifier = Modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxSize().onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                val accel = event.isCtrlPressed || event.isMetaPressed
+
+                val tabForKey = when {
+                    accel && event.key == Key.One -> AppTab.QUOTE
+                    accel && event.key == Key.Two -> AppTab.HISTORY
+                    accel && event.key == Key.Three -> AppTab.DASHBOARD
+                    accel && event.key == Key.Four -> AppTab.FILAMENTS
+                    accel && event.key == Key.Five -> AppTab.PRINTERS
+                    accel && event.key == Key.Six -> AppTab.SERVICES
+                    accel && event.key == Key.Seven -> AppTab.SETTINGS
+                    else -> null
+                }
+                if (tabForKey != null) {
+                    selectedTab = tabForKey
+                    return@onPreviewKeyEvent true
+                }
+
+                when {
+                    accel && event.key == Key.S && selectedTab == AppTab.QUOTE -> {
+                        quoteViewModel.saveCurrentQuote()
+                        true
+                    }
+                    accel && event.key == Key.N && selectedTab == AppTab.QUOTE -> {
+                        quoteViewModel.resetForm()
+                        true
+                    }
+                    event.key == Key.Escape -> {
+                        var handled = false
+                        if (filamentListViewModel.form.value != null) { filamentListViewModel.cancelEdit(); handled = true }
+                        if (printerListViewModel.form.value != null) { printerListViewModel.cancelEdit(); handled = true }
+                        if (serviceListViewModel.form.value != null) { serviceListViewModel.cancelEdit(); handled = true }
+                        handled
+                    }
+                    else -> false
+                }
+            },
+        ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
                     AppTab.entries.forEach { tab ->
@@ -165,6 +211,11 @@ private fun HelpDialog(onDismiss: () -> Unit) {
                 Text("• Dashboard: total vendido, lucro e filamento mais usado no período.")
                 Text("• Filamentos, Impressoras e Serviços: seus catálogos, usados na tela de Orçamento.")
                 Text("• Configurações: aparência (tema), parâmetros de custo, marca d'água do PDF e taxa de marketplace.")
+                Text("Atalhos de teclado", style = MaterialTheme.typography.titleSmall)
+                Text("• Ctrl/Cmd+1 a 7: pula direto para cada aba, nessa ordem.")
+                Text("• Ctrl/Cmd+S: salva o orçamento atual (aba Orçamento).")
+                Text("• Ctrl/Cmd+N: limpa a tela de Orçamento pra começar um novo.")
+                Text("• Esc: cancela o formulário aberto em Filamentos/Impressoras/Serviços.")
                 LinkText(text = "Ver código-fonte no GitHub", url = GITHUB_URL)
                 LinkText(text = "☕ Apoiar o projeto no Buy Me a Coffee", url = BUY_ME_A_COFFEE_URL)
             }

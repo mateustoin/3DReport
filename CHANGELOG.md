@@ -5,6 +5,14 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.5.0] - 2026-09-17
+
+### Adicionado
+- Atalhos de teclado: `Ctrl`/`Cmd+1` a `7` pula entre as abas; `Ctrl`/`Cmd+S`
+  salva o orçamento atual e `Ctrl`/`Cmd+N` limpa a tela pra começar um novo
+  (aba Orçamento); `Esc` cancela o formulário aberto em Filamentos/
+  Impressoras/Serviços. Listados no diálogo de Ajuda.
+
 ## [1.4.0] - 2026-09-17
 
 ### Adicionado

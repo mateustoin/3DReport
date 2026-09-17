@@ -79,6 +79,19 @@ class QuoteViewModel(
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
     }
 
+    /** Atalho de teclado (Ctrl/Cmd+S): recalcula com os valores atuais e salva, se houver um orçamento válido. */
+    fun saveCurrentQuote() {
+        val result = calculate(filaments.value, printers.value, settings.value, services.value, input.value)
+        val quote = result.quote ?: return
+        saveQuote(quote, result.selectedServices)
+    }
+
+    /** Atalho de teclado (Ctrl/Cmd+N): limpa a peça e o formulário de salvar, pra começar um orçamento novo. */
+    fun resetForm() {
+        inputState.value = QuoteInputState()
+        saveFormState.value = SaveQuoteFormState()
+    }
+
     fun calculate(
         filaments: List<Filament>,
         printers: List<PrinterProfile>,

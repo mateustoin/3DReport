@@ -279,4 +279,41 @@ class QuoteViewModelTest {
 
         assertEquals(null, viewModel.input.value.filamentColorId)
     }
+
+    @Test
+    fun saveCurrentQuoteSavesWhenThereIsAValidQuote() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+
+        viewModel.saveCurrentQuote()
+
+        assertEquals(1, historyRepository.savedQuotes.value.size)
+    }
+
+    @Test
+    fun saveCurrentQuoteDoesNothingWithoutAValidQuote() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        // comprimento/tempo em branco: sem orçamento calculado
+
+        viewModel.saveCurrentQuote()
+
+        assertTrue(historyRepository.savedQuotes.value.isEmpty())
+    }
+
+    @Test
+    fun resetFormClearsInputAndSaveForm() {
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.setSaveName("Peça de teste")
+        viewModel.setClientName("Maria")
+
+        viewModel.resetForm()
+
+        assertEquals(QuoteInputState(), viewModel.input.value)
+        assertEquals(SaveQuoteFormState(), viewModel.saveForm.value)
+    }
 }

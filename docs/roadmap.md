@@ -285,11 +285,18 @@ implementação.
 
 ### UX extras
 
-- [ ] **Atalhos de teclado.** Pro fluxo rápido de criar orçamento, útil pra
-  quem faz vários por dia.
+- [x] **Atalhos de teclado** (decisão 43). `Ctrl`/`Cmd+1` a `7` pula direto
+  pra cada aba; `Ctrl`/`Cmd+S` salva o orçamento atual e `Ctrl`/`Cmd+N`
+  limpa a tela de Orçamento pra começar um novo (os dois só na aba
+  Orçamento); `Esc` cancela o formulário de adicionar/editar aberto em
+  Filamentos/Impressoras/Serviços. Funcionam com `Ctrl` (Windows/Linux) ou
+  `Cmd` (macOS) indistintamente. Listados no diálogo de Ajuda. Feito
+  (2026-09-17): `App.kt` (`onPreviewKeyEvent` no `Surface` raiz),
+  `QuoteViewModel.saveCurrentQuote`/`resetForm`.
 - [ ] **Onboarding na primeira execução.** Assistente curto guiando o
   cadastro da primeira impressora/filamento/margem, em vez de abrir numa
-  tela vazia sem nenhum dado cadastrado.
+  tela vazia sem nenhum dado cadastrado. Baixa prioridade — fica pra
+  depois.
 
 ## 2. Site (GitHub Pages) — divulgação e instruções de uso
 
