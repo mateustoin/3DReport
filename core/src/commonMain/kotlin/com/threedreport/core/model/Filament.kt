@@ -12,6 +12,15 @@ import kotlin.math.PI
  * @property pricePerKg preço do quilo do filamento, em R$.
  * @property densityGPerCm3 densidade do material, em g/cm³ (ex.: PLA ≈ 1,24; ABS ≈ 1,04; PETG ≈ 1,27).
  * @property diameterMm diâmetro nominal do filamento, em mm.
+ * @property brand marca/fabricante do filamento, se houver (ex.: "Voolt").
+ * @property colorName nome da cor por escrito (ex.: "Vermelho Fosco"), se houver.
+ * @property colorHex cor visual do rolo, em hex (ex.: "#E53935"), se houver.
+ * @property inStock controle **manual** de estoque (decisão: dedução
+ *   automática pelo consumo é imprecisa na prática — falhas de impressão,
+ *   testes e sobras consomem material sem virar um orçamento salvo). O
+ *   criador alterna manualmente; quando `false` ("Acabou"), o filamento
+ *   continua no catálogo (histórico de orçamentos antigos continua
+ *   coerente) mas não aparece pra seleção na tela de Orçamento.
  */
 @Serializable
 data class Filament(
@@ -20,6 +29,10 @@ data class Filament(
     val pricePerKg: Double,
     val densityGPerCm3: Double,
     val diameterMm: Double = DEFAULT_DIAMETER_MM,
+    val brand: String? = null,
+    val colorName: String? = null,
+    val colorHex: String? = null,
+    val inStock: Boolean = true,
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }

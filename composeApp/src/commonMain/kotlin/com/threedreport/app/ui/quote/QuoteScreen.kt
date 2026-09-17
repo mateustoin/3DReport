@@ -41,7 +41,8 @@ import com.threedreport.app.ui.format.toPercentText
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
 @Composable
 fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
-    val filaments by viewModel.filaments.collectAsState()
+    val allFilaments by viewModel.filaments.collectAsState()
+    val filaments = allFilaments.filter { it.inStock }
     val printers by viewModel.printers.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val services by viewModel.services.collectAsState()
@@ -137,6 +138,10 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
                     )
                 }
             }
+            filaments.isEmpty() && allFilaments.isNotEmpty() -> Text(
+                "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" na aba Filamentos.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
             filaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
             printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
             else -> Text("Preencha os campos acima para calcular.", style = MaterialTheme.typography.bodyMedium)

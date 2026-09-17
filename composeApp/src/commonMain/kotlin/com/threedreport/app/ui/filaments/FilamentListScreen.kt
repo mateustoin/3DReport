@@ -1,17 +1,24 @@
 package com.threedreport.app.ui.filaments
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,6 +29,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
@@ -51,6 +61,7 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
                 filament = filament,
                 onEdit = { viewModel.startEdit(filament) },
                 onDelete = { pendingDelete = filament },
+                onToggleInStock = { viewModel.toggleInStock(filament.id) },
             )
         }
 
@@ -82,26 +93,46 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
 }
 
 @Composable
-private fun FilamentRow(filament: Filament, onEdit: () -> Unit, onDelete: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun FilamentRow(filament: Filament, onEdit: () -> Unit, onDelete: () -> Unit, onToggleInStock: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().alpha(if (filament.inStock) 1f else 0.5f)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text(filament.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "${filament.pricePerKg.toBrl()}/kg · ${filament.densityGPerCm3} g/cm³",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                parseHexColor(filament.colorHex)?.let { ColorSwatch(color = it, size = 20.dp) }
+                Column {
+                    Text(filament.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        buildString {
+                            append("${filament.pricePerKg.toBrl()}/kg · ${filament.densityGPerCm3} g/cm³")
+                            filament.brand?.let { append(" · $it") }
+                            filament.colorName?.let { append(" · $it") }
+                            if (!filament.inStock) append(" · Acabou")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
             Row {
+                TextButton(onClick = onToggleInStock) { Text(if (filament.inStock) "Marcar esgotado" else "Marcar em estoque") }
                 TextButton(onClick = onEdit) { Text("Editar") }
                 TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
             }
         }
     }
+}
+
+@Composable
+private fun ColorSwatch(color: Color, size: Dp, selected: Boolean = false, onClick: (() -> Unit)? = null) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .background(color, CircleShape)
+            .border(if (selected) 2.dp else 1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+            .let { if (onClick != null) it.clickable(onClick = onClick) else it },
+    )
 }
 
 @Composable
@@ -138,6 +169,41 @@ private fun FilamentForm(
             onValueChange = { text -> onChange { it.copy(diameterMmText = text) } },
             label = { Text("Diâmetro (mm)") },
         )
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = form.brand,
+            onValueChange = { text -> onChange { it.copy(brand = text) } },
+            label = { Text("Marca (opcional)") },
+        )
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = form.colorName,
+            onValueChange = { text -> onChange { it.copy(colorName = text) } },
+            label = { Text("Nome da cor (opcional, ex.: Vermelho Fosco)") },
+        )
+
+        Text("Cor visual (opcional)", style = MaterialTheme.typography.bodySmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FILAMENT_COLOR_PRESETS.forEach { (label, hex) ->
+                parseHexColor(hex)?.let { color ->
+                    ColorSwatch(
+                        color = color,
+                        size = 28.dp,
+                        selected = form.colorHex == hex,
+                        onClick = {
+                            onChange {
+                                it.copy(colorHex = hex, colorName = it.colorName.ifBlank { label })
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Switch(checked = form.inStock, onCheckedChange = { checked -> onChange { it.copy(inStock = checked) } })
+            Text(if (form.inStock) "Em estoque" else "Acabou")
+        }
 
         form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 

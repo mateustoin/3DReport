@@ -38,6 +38,42 @@ class FilamentRepositoryTest {
     }
 
     @Test
+    fun defaultFilamentsStartInStock() {
+        assertTrue(FilamentRepository().filaments.value.all { it.inStock })
+    }
+
+    @Test
+    fun brandAndColorSurviveNewRepositoryInstance() {
+        val original = FilamentRepository()
+        val newFilament = Filament(
+            id = "custom-color",
+            name = "PLA Vermelho",
+            pricePerKg = 100.0,
+            densityGPerCm3 = 1.24,
+            brand = "Voolt",
+            colorName = "Vermelho Fosco",
+            colorHex = "#E53935",
+        )
+        original.add(newFilament)
+
+        val reloaded = FilamentRepository().filaments.value.first { it.id == "custom-color" }
+        assertEquals("Voolt", reloaded.brand)
+        assertEquals("Vermelho Fosco", reloaded.colorName)
+        assertEquals("#E53935", reloaded.colorHex)
+    }
+
+    @Test
+    fun inStockFlagPersistsChange() {
+        val repository = FilamentRepository()
+        val filament = repository.filaments.value.first()
+
+        repository.update(filament.copy(inStock = false))
+
+        val reloaded = FilamentRepository().filaments.value.first { it.id == filament.id }
+        assertEquals(false, reloaded.inStock)
+    }
+
+    @Test
     fun updatePersistsChange() {
         val repository = FilamentRepository()
         val filament = repository.filaments.value.first()

@@ -46,6 +46,10 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
                 pricePerKg = current.pricePerKgText.toRequiredDouble("Preço/kg"),
                 densityGPerCm3 = current.densityGPerCm3Text.toRequiredDouble("Densidade"),
                 diameterMm = current.diameterMmText.toRequiredDouble("Diâmetro"),
+                brand = current.brand.trim().ifEmpty { null },
+                colorName = current.colorName.trim().ifEmpty { null },
+                colorHex = current.colorHex,
+                inStock = current.inStock,
             )
         }
 
@@ -61,5 +65,11 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
     fun delete(id: String) {
         repository.delete(id)
         if (formState.value?.id == id) formState.value = null
+    }
+
+    /** Alterna manualmente entre "Em estoque" e "Acabou" — sem tentar calcular automaticamente. */
+    fun toggleInStock(id: String) {
+        val filament = repository.filaments.value.find { it.id == id } ?: return
+        repository.update(filament.copy(inStock = !filament.inStock))
     }
 }

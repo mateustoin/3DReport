@@ -5,6 +5,15 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.2.0] - 2026-09-16
+
+### Adicionado
+- Controle de estoque de filamento: marca e cor (visual + nome escrito) no
+  cadastro, e um estado "Em estoque"/"Acabou" alternado manualmente por
+  filamento (sem tentar calcular automaticamente pelo consumo). Filamento
+  esgotado continua no catálogo (acinzentado) mas some da seleção na tela
+  de Orçamento.
+
 ## [1.1.0] - 2026-09-16
 
 ### Adicionado

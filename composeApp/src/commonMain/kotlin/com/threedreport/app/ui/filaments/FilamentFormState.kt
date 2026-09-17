@@ -12,6 +12,10 @@ data class FilamentFormState(
     val pricePerKgText: String = "",
     val densityGPerCm3Text: String = "",
     val diameterMmText: String = Filament.DEFAULT_DIAMETER_MM.toString(),
+    val brand: String = "",
+    val colorName: String = "",
+    val colorHex: String? = null,
+    val inStock: Boolean = true,
     val errorMessage: String? = null,
 )
 
@@ -21,4 +25,8 @@ internal fun Filament.toFormState() = FilamentFormState(
     pricePerKgText = pricePerKg.toString(),
     densityGPerCm3Text = densityGPerCm3.toString(),
     diameterMmText = diameterMm.toString(),
+    brand = brand.orEmpty(),
+    colorName = colorName.orEmpty(),
+    colorHex = colorHex,
+    inStock = inStock,
 )
