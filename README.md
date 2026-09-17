@@ -38,6 +38,7 @@ com a margem de lucro desejada.
 | Atalhos de teclado (navegação entre abas, salvar/limpar orçamento) | Pronto |
 | Catálogo/portfólio exportável em PDF (grade, várias peças por página) | Pronto |
 | Templates de orçamento (presets nomeados de marca d'água/rodapé) | Pronto |
+| Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto | Pronto |
 
 ## Apoie o projeto
 

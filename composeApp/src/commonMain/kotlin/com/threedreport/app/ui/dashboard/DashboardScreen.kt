@@ -17,7 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.PeriodPreset
-import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.toMoney
 
 /** Tela de Dashboard: total vendido, lucro e filamento mais usado, recortados por um período rápido. */
 @Composable
@@ -50,10 +50,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatCard("Orçamentos", summary.quoteCount.toString(), Modifier.weight(1f))
-                StatCard("Total vendido", summary.totalSalePrice.toBrl(), Modifier.weight(1f))
+                StatCard("Total vendido", summary.totalSalePrice.toMoney(), Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Lucro", summary.totalProfit.toBrl(), Modifier.weight(1f))
+                StatCard("Lucro", summary.totalProfit.toMoney(), Modifier.weight(1f))
                 StatCard(
                     "Filamento mais usado",
                     summary.mostUsedFilamentName?.let { "$it (${summary.mostUsedFilamentCount}x)" } ?: "-",

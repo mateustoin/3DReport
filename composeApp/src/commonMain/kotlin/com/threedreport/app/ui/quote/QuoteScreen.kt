@@ -36,7 +36,9 @@ import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.focus.tabToNavigate
-import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
@@ -51,6 +53,7 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
     val saveForm by viewModel.saveForm.collectAsState()
 
     val result = viewModel.calculate(filaments, printers, settings, services, input)
+    val currency = LocalCurrency.current
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxSize().verticalScroll(rememberScrollState()),
@@ -60,7 +63,7 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             label = "Filamento",
             items = filaments,
             selected = result.filament,
-            itemLabel = { "${it.name} · ${it.pricePerKg.toBrl()}/kg" },
+            itemLabel = { "${it.name} · ${it.pricePerKg.toCurrencyText(currency)}/kg" },
             displayText = { it.name },
             onSelect = { viewModel.selectFilament(it.id) },
         )
@@ -108,7 +111,7 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
                         checked = service.id in input.selectedServiceIds,
                         onCheckedChange = { viewModel.toggleService(service.id) },
                     )
-                    Text("${service.name} · ${service.price.toBrl()}")
+                    Text("${service.name} · ${service.price.toMoney()}")
                 }
             }
         }
@@ -131,8 +134,8 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
         when {
             result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
             quote != null -> {
-                Text("Produção: ${quote.productionCost.toBrl()}")
-                Text("Venda: ${quote.salePrice.toBrl()}")
+                Text("Produção: ${quote.productionCost.toMoney()}")
+                Text("Venda: ${quote.salePrice.toMoney()}")
                 if (quote.marketplaceFeeRate > 0.0) {
                     Text(
                         "Já inclui a taxa de marketplace (${quote.marketplaceFeeRate.toPercentText()}) — " +
@@ -140,13 +143,13 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                Text("Lucro: ${quote.profit.toBrl()}")
+                Text("Lucro: ${quote.profit.toMoney()}")
                 if (result.selectedServices.isNotEmpty()) {
                     result.selectedServices.forEach { service ->
-                        Text("${service.name}: ${service.price.toBrl()}")
+                        Text("${service.name}: ${service.price.toMoney()}")
                     }
                     Text(
-                        "Total (venda + serviços): ${result.grandTotal!!.toBrl()}",
+                        "Total (venda + serviços): ${result.grandTotal!!.toMoney()}",
                         style = MaterialTheme.typography.titleSmall,
                     )
                 }

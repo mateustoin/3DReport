@@ -18,6 +18,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +35,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.data.BrandingRepository
+import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -46,6 +48,7 @@ import com.threedreport.app.ui.dashboard.DashboardScreen
 import com.threedreport.app.ui.dashboard.DashboardViewModel
 import com.threedreport.app.ui.filaments.FilamentListScreen
 import com.threedreport.app.ui.filaments.FilamentListViewModel
+import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.history.QuoteHistoryScreen
 import com.threedreport.app.ui.history.QuoteHistoryViewModel
 import com.threedreport.app.ui.printers.PrinterListScreen
@@ -55,6 +58,7 @@ import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListScreen
 import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
+import com.threedreport.app.ui.settings.CurrencyViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsViewModel
 import com.threedreport.app.ui.templates.TemplateListScreen
@@ -87,11 +91,12 @@ fun App() {
     val serviceRepository = remember { ServiceRepository() }
     val templateRepository = remember { TemplateRepository() }
     val themeRepository = remember { ThemeRepository() }
+    val currencyRepository = remember { CurrencyRepository() }
 
     val quoteViewModel = remember {
         QuoteViewModel(filamentRepository, printerRepository, settingsRepository, serviceRepository, historyRepository)
     }
-    val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository) }
+    val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository, currencyRepository) }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository) }
@@ -100,83 +105,87 @@ fun App() {
     val brandingViewModel = remember { BrandingViewModel(brandingRepository) }
     val templateListViewModel = remember { TemplateListViewModel(templateRepository, brandingRepository) }
     val themeViewModel = remember { ThemeViewModel(themeRepository) }
+    val currencyViewModel = remember { CurrencyViewModel(currencyRepository) }
 
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var showHelp by remember { mutableStateOf(false) }
     val themeMode by themeViewModel.mode.collectAsState()
+    val currency by currencyViewModel.currency.collectAsState()
 
     AppTheme(themeMode) {
-        Surface(
-            modifier = Modifier.fillMaxSize().onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                val accel = event.isCtrlPressed || event.isMetaPressed
+        CompositionLocalProvider(LocalCurrency provides currency) {
+            Surface(
+                modifier = Modifier.fillMaxSize().onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    val accel = event.isCtrlPressed || event.isMetaPressed
 
-                val tabForKey = when {
-                    accel && event.key == Key.One -> AppTab.QUOTE
-                    accel && event.key == Key.Two -> AppTab.HISTORY
-                    accel && event.key == Key.Three -> AppTab.DASHBOARD
-                    accel && event.key == Key.Four -> AppTab.FILAMENTS
-                    accel && event.key == Key.Five -> AppTab.PRINTERS
-                    accel && event.key == Key.Six -> AppTab.SERVICES
-                    accel && event.key == Key.Seven -> AppTab.TEMPLATES
-                    accel && event.key == Key.Eight -> AppTab.SETTINGS
-                    else -> null
-                }
-                if (tabForKey != null) {
-                    selectedTab = tabForKey
-                    return@onPreviewKeyEvent true
-                }
+                    val tabForKey = when {
+                        accel && event.key == Key.One -> AppTab.QUOTE
+                        accel && event.key == Key.Two -> AppTab.HISTORY
+                        accel && event.key == Key.Three -> AppTab.DASHBOARD
+                        accel && event.key == Key.Four -> AppTab.FILAMENTS
+                        accel && event.key == Key.Five -> AppTab.PRINTERS
+                        accel && event.key == Key.Six -> AppTab.SERVICES
+                        accel && event.key == Key.Seven -> AppTab.TEMPLATES
+                        accel && event.key == Key.Eight -> AppTab.SETTINGS
+                        else -> null
+                    }
+                    if (tabForKey != null) {
+                        selectedTab = tabForKey
+                        return@onPreviewKeyEvent true
+                    }
 
-                when {
-                    accel && event.key == Key.S && selectedTab == AppTab.QUOTE -> {
-                        quoteViewModel.saveCurrentQuote()
-                        true
+                    when {
+                        accel && event.key == Key.S && selectedTab == AppTab.QUOTE -> {
+                            quoteViewModel.saveCurrentQuote()
+                            true
+                        }
+                        accel && event.key == Key.N && selectedTab == AppTab.QUOTE -> {
+                            quoteViewModel.resetForm()
+                            true
+                        }
+                        event.key == Key.Escape -> {
+                            var handled = false
+                            if (filamentListViewModel.form.value != null) { filamentListViewModel.cancelEdit(); handled = true }
+                            if (printerListViewModel.form.value != null) { printerListViewModel.cancelEdit(); handled = true }
+                            if (serviceListViewModel.form.value != null) { serviceListViewModel.cancelEdit(); handled = true }
+                            handled
+                        }
+                        else -> false
                     }
-                    accel && event.key == Key.N && selectedTab == AppTab.QUOTE -> {
-                        quoteViewModel.resetForm()
-                        true
+                },
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
+                        AppTab.entries.forEach { tab ->
+                            Tab(
+                                selected = selectedTab == tab,
+                                onClick = { selectedTab = tab },
+                                text = { Text(tab.label) },
+                            )
+                        }
                     }
-                    event.key == Key.Escape -> {
-                        var handled = false
-                        if (filamentListViewModel.form.value != null) { filamentListViewModel.cancelEdit(); handled = true }
-                        if (printerListViewModel.form.value != null) { printerListViewModel.cancelEdit(); handled = true }
-                        if (serviceListViewModel.form.value != null) { serviceListViewModel.cancelEdit(); handled = true }
-                        handled
-                    }
-                    else -> false
-                }
-            },
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
-                    AppTab.entries.forEach { tab ->
-                        Tab(
-                            selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
-                            text = { Text(tab.label) },
-                        )
-                    }
-                }
 
-                Box(modifier = Modifier.weight(1f)) {
-                    when (selectedTab) {
-                        AppTab.QUOTE -> QuoteScreen(quoteViewModel)
-                        AppTab.HISTORY -> QuoteHistoryScreen(historyViewModel)
-                        AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
-                        AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
-                        AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
-                        AppTab.SERVICES -> ServiceListScreen(serviceListViewModel)
-                        AppTab.TEMPLATES -> TemplateListScreen(templateListViewModel)
-                        AppTab.SETTINGS -> SettingsScreen(settingsViewModel, brandingViewModel, themeViewModel)
+                    Box(modifier = Modifier.weight(1f)) {
+                        when (selectedTab) {
+                            AppTab.QUOTE -> QuoteScreen(quoteViewModel)
+                            AppTab.HISTORY -> QuoteHistoryScreen(historyViewModel)
+                            AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
+                            AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
+                            AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
+                            AppTab.SERVICES -> ServiceListScreen(serviceListViewModel)
+                            AppTab.TEMPLATES -> TemplateListScreen(templateListViewModel)
+                            AppTab.SETTINGS -> SettingsScreen(settingsViewModel, brandingViewModel, themeViewModel, currencyViewModel)
+                        }
                     }
-                }
 
-                AppFooter(onHelpClick = { showHelp = true })
+                    AppFooter(onHelpClick = { showHelp = true })
+                }
             }
-        }
 
-        if (showHelp) {
-            HelpDialog(onDismiss = { showHelp = false })
+            if (showHelp) {
+                HelpDialog(onDismiss = { showHelp = false })
+            }
         }
     }
 }

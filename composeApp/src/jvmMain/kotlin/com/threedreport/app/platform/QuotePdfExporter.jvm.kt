@@ -1,6 +1,7 @@
 package com.threedreport.app.platform
 
-import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.core.model.Currency
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
@@ -17,7 +18,12 @@ import javax.imageio.ImageIO
 import kotlin.math.cos
 import kotlin.math.sin
 
-actual fun renderSavedQuotesPdf(items: List<QuoteExportItem>, watermarkText: String?, footerText: String?): ByteArray {
+actual fun renderSavedQuotesPdf(
+    items: List<QuoteExportItem>,
+    watermarkText: String?,
+    footerText: String?,
+    currency: Currency,
+): ByteArray {
     PDDocument().use { document ->
         val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
         val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
@@ -25,7 +31,7 @@ actual fun renderSavedQuotesPdf(items: List<QuoteExportItem>, watermarkText: Str
         items.forEach { item ->
             val page = PDPage(PDRectangle.A4)
             document.addPage(page)
-            drawQuotePage(document, page, titleFont, bodyFont, item, watermarkText, footerText)
+            drawQuotePage(document, page, titleFont, bodyFont, item, watermarkText, footerText, currency)
         }
 
         val output = ByteArrayOutputStream()
@@ -43,6 +49,7 @@ private fun drawQuotePage(
     item: QuoteExportItem,
     watermarkText: String?,
     footerText: String?,
+    currency: Currency,
 ) {
     val margin = 50f
     val footerReserve = 50f
@@ -60,7 +67,7 @@ private fun drawQuotePage(
         content.beginText()
         content.setFont(bodyFont, 14f)
         content.newLineAtOffset(margin, cursorY)
-        content.showText("Venda: ${savedQuote.quote.salePrice.toBrl()}")
+        content.showText("Venda: ${savedQuote.quote.salePrice.toCurrencyText(currency)}")
         content.endText()
         cursorY -= 24f
 
@@ -69,7 +76,7 @@ private fun drawQuotePage(
                 content.beginText()
                 content.setFont(bodyFont, 12f)
                 content.newLineAtOffset(margin, cursorY)
-                content.showText("${service.name}: ${service.price.toBrl()}")
+                content.showText("${service.name}: ${service.price.toCurrencyText(currency)}")
                 content.endText()
                 cursorY -= 18f
             }
@@ -77,7 +84,7 @@ private fun drawQuotePage(
             content.beginText()
             content.setFont(titleFont, 14f)
             content.newLineAtOffset(margin, cursorY)
-            content.showText("Total: ${savedQuote.totalWithServices.toBrl()}")
+            content.showText("Total: ${savedQuote.totalWithServices.toCurrencyText(currency)}")
             content.endText()
             cursorY -= 24f
         }
@@ -107,7 +114,12 @@ private fun drawQuotePage(
     }
 }
 
-actual fun renderCatalogPdf(items: List<QuoteExportItem>, watermarkText: String?, footerText: String?): ByteArray {
+actual fun renderCatalogPdf(
+    items: List<QuoteExportItem>,
+    watermarkText: String?,
+    footerText: String?,
+    currency: Currency,
+): ByteArray {
     PDDocument().use { document ->
         val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
         val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
@@ -141,7 +153,7 @@ actual fun renderCatalogPdf(items: List<QuoteExportItem>, watermarkText: String?
                     val col = index % columns
                     val cellX = margin + col * (cellWidth + gutter)
                     val cellTop = top - headerHeight - row * (cellHeight + rowGap)
-                    drawCatalogCell(document, content, item, cellX, cellTop, cellWidth, photoSize, titleFont, bodyFont)
+                    drawCatalogCell(document, content, item, cellX, cellTop, cellWidth, photoSize, titleFont, bodyFont, currency)
                 }
 
                 if (!watermarkText.isNullOrBlank()) {
@@ -170,6 +182,7 @@ private fun drawCatalogCell(
     photoSize: Float,
     titleFont: PDType1Font,
     bodyFont: PDType1Font,
+    currency: Currency,
 ) {
     val savedQuote = item.savedQuote
     val bufferedImage = item.photoBytes?.let { ImageIO.read(ByteArrayInputStream(it)) }
@@ -194,7 +207,7 @@ private fun drawCatalogCell(
     content.beginText()
     content.setFont(bodyFont, 12f)
     content.newLineAtOffset(cellX, textY)
-    content.showText(savedQuote.totalWithServices.toBrl())
+    content.showText(savedQuote.totalWithServices.toCurrencyText(currency))
     content.endText()
 }
 

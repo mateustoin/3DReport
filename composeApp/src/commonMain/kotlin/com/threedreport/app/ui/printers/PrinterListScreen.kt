@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
-import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.PrinterProfile
 
 /** Tela de Impressoras: perfis salvos, escolhidos depois na tela de Orçamento. */
@@ -92,8 +93,8 @@ private fun PrinterRow(printer: PrinterProfile, onEdit: () -> Unit, onDelete: ()
             Column {
                 Text(printer.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "${printer.printerPowerWatts.toInt()} W · manutenção ${printer.maintenanceCostPerHour.toBrl()}/h · " +
-                        "máquina ${printer.machineInvestment.machinePrice.toBrl()}",
+                    "${printer.printerPowerWatts.toInt()} W · manutenção ${printer.maintenanceCostPerHour.toMoney()}/h · " +
+                        "máquina ${printer.machineInvestment.machinePrice.toMoney()}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -131,13 +132,13 @@ private fun PrinterForm(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.maintenanceCostPerHourText,
             onValueChange = { text -> onChange { it.copy(maintenanceCostPerHourText = text) } },
-            label = { Text("Manutenção por hora (R$)") },
+            label = { Text("Manutenção por hora (${LocalCurrency.current.symbol})") },
         )
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.machinePriceText,
             onValueChange = { text -> onChange { it.copy(machinePriceText = text) } },
-            label = { Text("Valor da máquina (R$)") },
+            label = { Text("Valor da máquina (${LocalCurrency.current.symbol})") },
         )
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),

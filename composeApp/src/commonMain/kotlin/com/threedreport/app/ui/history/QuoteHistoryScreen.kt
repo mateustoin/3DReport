@@ -39,7 +39,7 @@ import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.filaments.displayLabel
-import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
@@ -214,8 +214,8 @@ private fun SavedQuoteRow(
                 Text(formatDateTime(savedQuote.savedAtEpochMillis), style = MaterialTheme.typography.bodySmall)
                 Text(
                     "Peso: ${savedQuote.quote.filamentWeightGrams.toWeightText()} · " +
-                        "Produção: ${savedQuote.quote.productionCost.toBrl()} · Venda: ${savedQuote.quote.salePrice.toBrl()} · " +
-                        "Lucro: ${savedQuote.quote.profit.toBrl()}",
+                        "Produção: ${savedQuote.quote.productionCost.toMoney()} · Venda: ${savedQuote.quote.salePrice.toMoney()} · " +
+                        "Lucro: ${savedQuote.quote.profit.toMoney()}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 savedQuote.sourceLink?.let { link ->

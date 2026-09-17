@@ -2,6 +2,7 @@ package com.threedreport.app.platform
 
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
@@ -339,5 +340,35 @@ class QuotePdfExporterTest {
 
         assertTrue(text.contains("Suporte de celular"))
         assertTrue(text.contains("16,19"))
+    }
+
+    @Test
+    fun pdfUsesTheGivenCurrencyInsteadOfBrl() {
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+            currency = Currency.USD,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("16.19"))
+        assertFalse(text.contains("16,19"))
+    }
+
+    @Test
+    fun catalogPdfUsesTheGivenCurrencyInsteadOfBrl() {
+        val pdfBytes = renderCatalogPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+            currency = Currency.USD,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("16.19"))
+        assertFalse(text.contains("16,19"))
     }
 }

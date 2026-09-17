@@ -1,9 +1,29 @@
 package com.threedreport.app.ui.format
 
-/** Formata um valor em reais para exibição (ex.: `12.4` → `"R$ 12,40"`). */
-fun Double.toBrl(): String {
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import com.threedreport.core.model.Currency
+
+/** Moeda em uso na árvore de composição atual — ver [com.threedreport.app.ui.settings.CurrencyViewModel]. */
+val LocalCurrency = compositionLocalOf { Currency.BRL }
+
+/**
+ * Formata um valor monetário pra exibição, na convenção de [currency] (ex.:
+ * `1234.5` em BRL → `"R$ 1.234,50"`, em USD → `"$ 1,234.50"`).
+ */
+fun Double.toCurrencyText(currency: Currency = Currency.BRL): String {
     val cents = kotlin.math.round(this * 100).toLong()
     val sign = if (cents < 0) "-" else ""
     val absCents = kotlin.math.abs(cents)
-    return "${sign}R$ ${absCents / 100},${(absCents % 100).toString().padStart(2, '0')}"
+    val whole = groupThousands((absCents / 100).toString(), currency.thousandsSeparator)
+    val fraction = (absCents % 100).toString().padStart(2, '0')
+    return "${sign}${currency.symbol} $whole${currency.decimalSeparator}$fraction"
 }
+
+/** Ex.: `groupThousands("1234567", '.')` → `"1.234.567"`. */
+private fun groupThousands(digits: String, separator: Char): String =
+    digits.reversed().chunked(3).joinToString(separator.toString()).reversed()
+
+/** Como [toCurrencyText], usando a moeda configurada em [LocalCurrency]. */
+@Composable
+fun Double.toMoney(): String = toCurrencyText(LocalCurrency.current)

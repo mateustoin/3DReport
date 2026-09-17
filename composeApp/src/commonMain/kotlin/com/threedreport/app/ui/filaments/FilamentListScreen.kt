@@ -38,7 +38,8 @@ import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
-import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.Filament
 
 /** Tela de Filamentos: catálogo salvo, escolhido depois na tela de Orçamento. */
@@ -115,7 +116,7 @@ private fun FilamentRow(
                     Text(filament.name, style = MaterialTheme.typography.titleMedium)
                     Text(
                         buildString {
-                            append("${filament.pricePerKg.toBrl()}/kg · ${filament.densityGPerCm3} g/cm³")
+                            append("${filament.pricePerKg.toMoney()}/kg · ${filament.densityGPerCm3} g/cm³")
                             filament.brand?.let { append(" · $it") }
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -192,7 +193,7 @@ private fun FilamentForm(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.pricePerKgText,
             onValueChange = { text -> onChange { it.copy(pricePerKgText = text) } },
-            label = { Text("Preço por kg (R$)") },
+            label = { Text("Preço por kg (${LocalCurrency.current.symbol})") },
         )
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),

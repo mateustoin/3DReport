@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
-import com.threedreport.app.ui.format.toBrl
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.Service
 
 /** Tela de Serviços: catálogo salvo (pintura, lixamento, acabamento etc.), escolhido depois na tela de Orçamento. */
@@ -98,7 +99,7 @@ private fun ServiceRow(service: Service, onEdit: () -> Unit, onDelete: () -> Uni
         ) {
             Column {
                 Text(service.name, style = MaterialTheme.typography.titleMedium)
-                Text(service.price.toBrl(), style = MaterialTheme.typography.bodyMedium)
+                Text(service.price.toMoney(), style = MaterialTheme.typography.bodyMedium)
             }
             Row {
                 TextButton(onClick = onEdit) { Text("Editar") }
@@ -128,7 +129,7 @@ private fun ServiceForm(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.priceText,
             onValueChange = { text -> onChange { it.copy(priceText = text) } },
-            label = { Text("Preço cobrado do cliente (R$)") },
+            label = { Text("Preço cobrado do cliente (${LocalCurrency.current.symbol})") },
         )
 
         form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }

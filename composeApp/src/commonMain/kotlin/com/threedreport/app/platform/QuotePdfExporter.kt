@@ -1,5 +1,6 @@
 package com.threedreport.app.platform
 
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
 
 /** Um orçamento salvo a incluir na exportação em PDF, com sua foto (se houver) já carregada em memória. */
@@ -26,6 +27,7 @@ expect fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
     watermarkText: String?,
     footerText: String?,
+    currency: Currency = Currency.BRL,
 ): ByteArray
 
 /**
@@ -44,4 +46,5 @@ expect fun renderCatalogPdf(
     items: List<QuoteExportItem>,
     watermarkText: String?,
     footerText: String?,
+    currency: Currency = Currency.BRL,
 ): ByteArray

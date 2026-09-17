@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.history
 
 import com.threedreport.app.data.BrandingRepository
+import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.QuoteExportItem
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.update
 class QuoteHistoryViewModel(
     private val repository: QuoteHistoryRepository,
     private val brandingRepository: BrandingRepository,
+    private val currencyRepository: CurrencyRepository,
 ) {
 
     val savedQuotes: StateFlow<List<SavedQuote>> = repository.savedQuotes
@@ -77,12 +79,12 @@ class QuoteHistoryViewModel(
     fun exportPdf(savedQuote: SavedQuote) {
         val (watermarkText, footerText) = resolveWatermarkAndFooterText()
         val item = QuoteExportItem(savedQuote, photoBytes(savedQuote))
-        val pdfBytes = renderSavedQuotesPdf(listOf(item), watermarkText, footerText)
+        val pdfBytes = renderSavedQuotesPdf(listOf(item), watermarkText, footerText, currencyRepository.currency.value)
         saveBytesToFile(pdfBytes, "${sanitizeFileName(savedQuote.name)}.pdf", defaultDocumentsDirectory())
     }
 
     fun copyQuoteToClipboard(savedQuote: SavedQuote) {
-        copyToClipboard(savedQuote.toCopyPasteText())
+        copyToClipboard(savedQuote.toCopyPasteText(currencyRepository.currency.value))
         copiedIdState.value = savedQuote.id
     }
 
@@ -100,7 +102,7 @@ class QuoteHistoryViewModel(
 
         val (watermarkText, footerText) = resolveWatermarkAndFooterText()
         val items = selected.map { QuoteExportItem(it, photoBytes(it)) }
-        val pdfBytes = renderSavedQuotesPdf(items, watermarkText, footerText)
+        val pdfBytes = renderSavedQuotesPdf(items, watermarkText, footerText, currencyRepository.currency.value)
 
         saveBytesToFile(
             pdfBytes,
@@ -117,7 +119,7 @@ class QuoteHistoryViewModel(
 
         val (watermarkText, footerText) = resolveWatermarkAndFooterText()
         val items = selected.map { QuoteExportItem(it, photoBytes(it)) }
-        val pdfBytes = renderCatalogPdf(items, watermarkText, footerText)
+        val pdfBytes = renderCatalogPdf(items, watermarkText, footerText, currencyRepository.currency.value)
 
         saveBytesToFile(
             pdfBytes,

@@ -2,6 +2,7 @@ package com.threedreport.app.ui.history
 
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
@@ -80,5 +81,12 @@ class QuoteExportTextTest {
 
         assertFalse(text.contains("Total"))
         assertTrue(text.contains("Venda"))
+    }
+
+    @Test
+    fun usesTheGivenCurrencyInsteadOfBrl() {
+        val text = savedQuote.toCopyPasteText(Currency.USD)
+
+        assertEquals("Suporte de celular\nVenda: $ 16.19", text)
     }
 }

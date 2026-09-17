@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.history
 
 import com.threedreport.app.data.BrandingRepository
+import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.core.model.Client
@@ -43,7 +44,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun toggleSelectionAddsAndRemoves() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
 
         viewModel.toggleSelection("a")
         viewModel.toggleSelection("b")
@@ -55,7 +56,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun clearSelectionEmptiesIt() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
 
         viewModel.toggleSelection("a")
         viewModel.toggleSelection("b")
@@ -67,7 +68,7 @@ class QuoteHistoryViewModelTest {
     @Test
     fun deletingASelectedQuoteRemovesItFromSelection() {
         val repository = QuoteHistoryRepository()
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
         val saved = repository.save(name = "Peça", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         viewModel.toggleSelection(saved.id)
@@ -81,7 +82,7 @@ class QuoteHistoryViewModelTest {
     @Test
     fun updateStatusChangesTheSavedQuoteStatus() {
         val repository = QuoteHistoryRepository()
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
         val saved = repository.save(name = "Peça", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         viewModel.updateStatus(saved.id, OrderStatus.PRONTO)
@@ -91,7 +92,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesFiltersByQueryMatchingNameOrClient() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
         val byName = quote.let { SavedQuoteFixture.of(it, name = "Suporte de celular") }
         val byClient = quote.let { SavedQuoteFixture.of(it, name = "Vaso", client = Client(name = "João")) }
         val neither = quote.let { SavedQuoteFixture.of(it, name = "Chaveiro") }
@@ -104,7 +105,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesFiltersByStatus() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
         val orcado = SavedQuoteFixture.of(quote, name = "A", status = OrderStatus.ORCADO)
         val entregue = SavedQuoteFixture.of(quote, name = "B", status = OrderStatus.ENTREGUE)
 
@@ -115,7 +116,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesFiltersByPeriod() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
         val now = System.currentTimeMillis()
         val today = SavedQuoteFixture.of(quote, name = "Hoje", savedAtEpochMillis = now)
         val longAgo = SavedQuoteFixture.of(quote, name = "Antigo", savedAtEpochMillis = now - 60L * 24 * 60 * 60 * 1000)
@@ -127,7 +128,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesAreSortedByMostRecentFirst() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
         val older = SavedQuoteFixture.of(quote, name = "Mais antigo", savedAtEpochMillis = 1_000L)
         val newer = SavedQuoteFixture.of(quote, name = "Mais novo", savedAtEpochMillis = 2_000L)
 

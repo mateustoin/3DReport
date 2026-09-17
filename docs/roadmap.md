@@ -274,9 +274,14 @@ implementação.
   do PDF, que continua sendo o único editor da config em uso). Feito
   (2026-09-17): `core/model/QuoteTemplate`, `data/TemplateRepository`,
   `ui/templates/{TemplateFormState,TemplateListViewModel,TemplateListScreen}`.
-- [ ] **Múltiplas moedas/localização.** Hoje `R$` é fixo no PDF/UI. Só
-  relevante se houver intenção de distribuir o app fora do Brasil —
-  prioridade baixa, registrando a ideia caso surja demanda.
+- [x] **Múltiplas moedas/localização** (decisão 46). Nova seção "Moeda" em
+  Configurações — BRL, USD, EUR ou GBP, cada uma com seu próprio símbolo e
+  convenção de separador decimal/milhar (não é só trocar "R$" por "$").
+  Aplica em toda a interface, no PDF exportado e no copiar/colar. De
+  passagem, a formatação ganhou separador de milhar, que não existia antes.
+  Feito (2026-09-17): `core/model/Currency`, `data/CurrencyRepository`,
+  `ui/format/CurrencyFormat.kt` (`LocalCurrency`, `toMoney()`,
+  `toCurrencyText()`).
 
 ### Integrações
 

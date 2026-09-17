@@ -5,6 +5,18 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.7.0] - 2026-09-17
+
+### Adicionado
+- Múltiplas moedas: nova seção "Moeda" em Configurações (BRL, USD, EUR ou
+  GBP), aplicada em toda a interface, no PDF exportado e no copiar/colar
+  — cada moeda com seu próprio símbolo e convenção de separador decimal/
+  milhar, não é só trocar "R$" por "$".
+
+### Corrigido
+- Valores monetários agora usam separador de milhar (ex.: "R$ 1.234,50"),
+  que não existia antes.
+
 ## [1.6.0] - 2026-09-17
 
 ### Adicionado
