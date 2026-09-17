@@ -232,15 +232,21 @@ implementação.
 
 ### Produção e precificação
 
-- [x] **Controle de estoque de filamento — manual, não dedução automática**
-  (decisão 39). Cadastro de filamento ganha **marca** e **cor** (cor
-  visual — paleta de swatches + hex — e o nome da cor por escrito, ex.:
-  "Vermelho Fosco"), e um estado **"Em estoque" / "Acabou"** alternado
-  manualmente por linha na tela de Filamentos (sem tentar calcular
-  automaticamente pelo consumo). Filamento "Acabou" continua no catálogo,
-  acinzentado, mas some da seleção na tela de Orçamento. Feito
-  (2026-09-16): `core/model/Filament` (`brand`, `colorName`, `colorHex`,
-  `inStock`), `ui/filaments/FilamentColor.kt` (paleta + parse de hex).
+- [x] **Controle de estoque de filamento — manual, não dedução automática,
+  com várias cores por filamento** (decisões 39 e 40). Cadastro de
+  filamento ganha **marca** e uma lista de **cores** (cor visual — paleta
+  de swatches + campo de hex personalizado com prévia — e o nome da cor
+  por escrito, ex.: "Vermelho Fosco"), cada uma com seu próprio estado
+  **"Em estoque" / "Acabou"**, alternado direto na lista (clicar no chip
+  da cor), sem tentar calcular automaticamente pelo consumo. Várias cores
+  na mesma marca/preço evitam cadastro duplicado. Cor "Acabou" continua
+  na lista, acinzentada, mas some da seleção na tela de Orçamento (que
+  ganha um segundo dropdown "Cor" quando o filamento tem mais de uma
+  disponível — não afeta o cálculo, só fica registrado no orçamento/
+  histórico, uso interno). Feito (2026-09-16): `core/model/Filament`
+  (`brand`, `colors: List<FilamentColor>`, `hasStockAvailable`),
+  `core/model/FilamentColor`, `core/model/PrintJob.filamentColor`,
+  `ui/filaments/FilamentColor.kt` (paleta + parse de hex + `displayLabel`).
 - [ ] **Fila de impressão / agenda da impressora.** Visão de quanto tempo
   cada impressora cadastrada vai ficar ocupada (soma dos orçamentos com
   status "Em impressão", ver item de status acima) — ajuda a prometer prazo

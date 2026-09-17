@@ -20,7 +20,7 @@ com a margem de lucro desejada.
 | Salvar orçamento (nome, foto e link do modelo opcionais) | Pronto |
 | Histórico de orçamentos (consultar, filtrar, baixar foto, excluir) | Pronto |
 | Exportar orçamento — PDF e copiar/colar (nome + valor de venda + foto no PDF) | Pronto |
-| Cadastro de filamentos (catálogo salvo, com marca/cor e controle manual de estoque) | Pronto |
+| Cadastro de filamentos (catálogo salvo, com marca, várias cores e controle manual de estoque por cor) | Pronto |
 | Cadastro de impressoras (perfis salvos: consumo, manutenção, investimento) | Pronto |
 | Configurações gerais do negócio (energia, falhas, acabamento, margem) | Pronto |
 | Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos) | Pronto |

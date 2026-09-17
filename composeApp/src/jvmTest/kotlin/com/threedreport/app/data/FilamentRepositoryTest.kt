@@ -1,6 +1,7 @@
 package com.threedreport.app.data
 
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentColor
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -39,11 +40,11 @@ class FilamentRepositoryTest {
 
     @Test
     fun defaultFilamentsStartInStock() {
-        assertTrue(FilamentRepository().filaments.value.all { it.inStock })
+        assertTrue(FilamentRepository().filaments.value.all { it.hasStockAvailable })
     }
 
     @Test
-    fun brandAndColorSurviveNewRepositoryInstance() {
+    fun brandAndColorsSurviveNewRepositoryInstance() {
         val original = FilamentRepository()
         val newFilament = Filament(
             id = "custom-color",
@@ -51,26 +52,31 @@ class FilamentRepositoryTest {
             pricePerKg = 100.0,
             densityGPerCm3 = 1.24,
             brand = "Voolt",
-            colorName = "Vermelho Fosco",
-            colorHex = "#E53935",
+            colors = listOf(
+                FilamentColor(id = "red", name = "Vermelho Fosco", hex = "#E53935"),
+                FilamentColor(id = "blue", name = "Azul Fosco", hex = "#1E88E5"),
+            ),
         )
         original.add(newFilament)
 
         val reloaded = FilamentRepository().filaments.value.first { it.id == "custom-color" }
         assertEquals("Voolt", reloaded.brand)
-        assertEquals("Vermelho Fosco", reloaded.colorName)
-        assertEquals("#E53935", reloaded.colorHex)
+        assertEquals(2, reloaded.colors.size)
+        assertEquals("Vermelho Fosco", reloaded.colors.first { it.id == "red" }.name)
+        assertEquals("#1E88E5", reloaded.colors.first { it.id == "blue" }.hex)
     }
 
     @Test
-    fun inStockFlagPersistsChange() {
+    fun perColorInStockFlagPersistsChange() {
         val repository = FilamentRepository()
         val filament = repository.filaments.value.first()
+        val colorId = filament.colors.first().id
 
-        repository.update(filament.copy(inStock = false))
+        repository.update(filament.copy(colors = filament.colors.map { it.copy(inStock = false) }))
 
         val reloaded = FilamentRepository().filaments.value.first { it.id == filament.id }
-        assertEquals(false, reloaded.inStock)
+        assertEquals(false, reloaded.colors.first { it.id == colorId }.inStock)
+        assertEquals(false, reloaded.hasStockAvailable)
     }
 
     @Test

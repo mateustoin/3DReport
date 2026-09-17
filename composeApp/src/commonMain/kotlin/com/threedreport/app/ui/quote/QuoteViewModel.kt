@@ -47,7 +47,8 @@ class QuoteViewModel(
     private val saveFormState = MutableStateFlow(SaveQuoteFormState())
     val saveForm: StateFlow<SaveQuoteFormState> = saveFormState.asStateFlow()
 
-    fun selectFilament(id: String) = inputState.update { it.copy(filamentId = id) }
+    fun selectFilament(id: String) = inputState.update { it.copy(filamentId = id, filamentColorId = null) }
+    fun selectFilamentColor(id: String) = inputState.update { it.copy(filamentColorId = id) }
     fun selectPrinter(id: String) = inputState.update { it.copy(printerId = id) }
     fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text) }
     fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text) }
@@ -88,19 +89,21 @@ class QuoteViewModel(
         val filament = filaments.find { it.id == input.filamentId } ?: filaments.firstOrNull()
         val printer = printers.find { it.id == input.printerId } ?: printers.firstOrNull()
         val selectedServices = services.filter { it.id in input.selectedServiceIds }
+        val availableColors = filament?.colors?.filter { it.inStock }.orEmpty()
+        val filamentColor = availableColors.find { it.id == input.filamentColorId } ?: availableColors.firstOrNull()
         val length = parseDecimal(input.lengthMetersText)
         val time = parseDecimal(input.printTimeMinutesText)
 
         if (filament == null || printer == null || length == null || time == null) {
-            return QuoteResult(filament = filament, printer = printer, selectedServices = selectedServices)
+            return QuoteResult(filament = filament, filamentColor = filamentColor, printer = printer, selectedServices = selectedServices)
         }
 
-        val job = PrintJob(filament = filament, filamentLengthMeters = length, printTimeMinutes = time)
+        val job = PrintJob(filament = filament, filamentLengthMeters = length, printTimeMinutes = time, filamentColor = filamentColor)
         return runCatching {
             PricingCalculator.calculate(job, printer, settings, input.appliesMarketplaceFee)
         }.fold(
-            onSuccess = { QuoteResult(filament, printer, quote = it, selectedServices = selectedServices) },
-            onFailure = { QuoteResult(filament, printer, errorMessage = it.message, selectedServices = selectedServices) },
+            onSuccess = { QuoteResult(filament, filamentColor, printer, quote = it, selectedServices = selectedServices) },
+            onFailure = { QuoteResult(filament, filamentColor, printer, errorMessage = it.message, selectedServices = selectedServices) },
         )
     }
 }

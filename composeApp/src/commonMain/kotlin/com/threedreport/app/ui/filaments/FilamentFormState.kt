@@ -1,6 +1,15 @@
 package com.threedreport.app.ui.filaments
 
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentColor
+
+/** Rascunho de uma variante de cor dentro do formulário de filamento — ver [FilamentColor]. */
+data class FilamentColorFormState(
+    val id: String,
+    val name: String = "",
+    val hex: String? = null,
+    val inStock: Boolean = true,
+)
 
 /**
  * Rascunho do formulário de filamento. `id == null` significa que é um
@@ -13,9 +22,7 @@ data class FilamentFormState(
     val densityGPerCm3Text: String = "",
     val diameterMmText: String = Filament.DEFAULT_DIAMETER_MM.toString(),
     val brand: String = "",
-    val colorName: String = "",
-    val colorHex: String? = null,
-    val inStock: Boolean = true,
+    val colors: List<FilamentColorFormState> = emptyList(),
     val errorMessage: String? = null,
 )
 
@@ -26,7 +33,5 @@ internal fun Filament.toFormState() = FilamentFormState(
     densityGPerCm3Text = densityGPerCm3.toString(),
     diameterMmText = diameterMm.toString(),
     brand = brand.orEmpty(),
-    colorName = colorName.orEmpty(),
-    colorHex = colorHex,
-    inStock = inStock,
+    colors = colors.map { FilamentColorFormState(id = it.id, name = it.name.orEmpty(), hex = it.hex, inStock = it.inStock) },
 )

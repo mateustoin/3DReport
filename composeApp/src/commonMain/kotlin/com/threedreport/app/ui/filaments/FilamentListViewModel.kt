@@ -3,6 +3,7 @@ package com.threedreport.app.ui.filaments
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.ui.format.toRequiredDouble
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentColor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,7 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
     val form: StateFlow<FilamentFormState?> = formState.asStateFlow()
 
     fun startAdd() {
-        formState.value = FilamentFormState()
+        formState.value = FilamentFormState(colors = listOf(FilamentColorFormState(id = newColorId())))
     }
 
     fun startEdit(filament: Filament) {
@@ -36,6 +37,19 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
         formState.value = formState.value?.let { transform(it).copy(errorMessage = null) }
     }
 
+    fun addColorRow() {
+        updateForm { it.copy(colors = it.colors + FilamentColorFormState(id = newColorId())) }
+    }
+
+    /** Não faz nada se for a última cor restante — o filamento sempre precisa de ao menos uma. */
+    fun removeColorRow(colorId: String) {
+        updateForm { form -> if (form.colors.size <= 1) form else form.copy(colors = form.colors.filterNot { it.id == colorId }) }
+    }
+
+    fun updateColorRow(colorId: String, transform: (FilamentColorFormState) -> FilamentColorFormState) {
+        updateForm { form -> form.copy(colors = form.colors.map { if (it.id == colorId) transform(it) else it }) }
+    }
+
     @OptIn(ExperimentalUuidApi::class)
     fun save() {
         val current = formState.value ?: return
@@ -47,9 +61,9 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
                 densityGPerCm3 = current.densityGPerCm3Text.toRequiredDouble("Densidade"),
                 diameterMm = current.diameterMmText.toRequiredDouble("Diâmetro"),
                 brand = current.brand.trim().ifEmpty { null },
-                colorName = current.colorName.trim().ifEmpty { null },
-                colorHex = current.colorHex,
-                inStock = current.inStock,
+                colors = current.colors.ifEmpty { error("Cadastre ao menos uma cor") }.map {
+                    FilamentColor(id = it.id, name = it.name.trim().ifEmpty { null }, hex = it.hex, inStock = it.inStock)
+                },
             )
         }
 
@@ -67,9 +81,13 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
         if (formState.value?.id == id) formState.value = null
     }
 
-    /** Alterna manualmente entre "Em estoque" e "Acabou" — sem tentar calcular automaticamente. */
-    fun toggleInStock(id: String) {
-        val filament = repository.filaments.value.find { it.id == id } ?: return
-        repository.update(filament.copy(inStock = !filament.inStock))
+    /** Alterna manualmente "Em estoque"/"Acabou" de uma cor específica — sem tentar calcular automaticamente. */
+    fun toggleColorInStock(filamentId: String, colorId: String) {
+        val filament = repository.filaments.value.find { it.id == filamentId } ?: return
+        val updatedColors = filament.colors.map { if (it.id == colorId) it.copy(inStock = !it.inStock) else it }
+        repository.update(filament.copy(colors = updatedColors))
     }
+
+    @OptIn(ExperimentalUuidApi::class)
+    private fun newColorId(): String = Uuid.random().toString()
 }

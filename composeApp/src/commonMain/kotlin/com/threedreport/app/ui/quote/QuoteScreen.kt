@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.app.ui.format.toPercentText
@@ -42,7 +43,7 @@ import com.threedreport.app.ui.format.toPercentText
 @Composable
 fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
     val allFilaments by viewModel.filaments.collectAsState()
-    val filaments = allFilaments.filter { it.inStock }
+    val filaments = allFilaments.filter { it.hasStockAvailable }
     val printers by viewModel.printers.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val services by viewModel.services.collectAsState()
@@ -63,6 +64,18 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             displayText = { it.name },
             onSelect = { viewModel.selectFilament(it.id) },
         )
+
+        val availableColors = result.filament?.colors?.filter { it.inStock }.orEmpty()
+        if (availableColors.size > 1) {
+            LabeledDropdown(
+                label = "Cor",
+                items = availableColors,
+                selected = result.filamentColor,
+                itemLabel = { it.displayLabel() },
+                displayText = { it.displayLabel() },
+                onSelect = { viewModel.selectFilamentColor(it.id) },
+            )
+        }
 
         LabeledDropdown(
             label = "Impressora",

@@ -6,6 +6,7 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Service
@@ -197,5 +198,85 @@ class QuoteViewModelTest {
         assertTrue(withFee.salePrice > withoutFee.salePrice)
         // Margem real (lucro) não deve mudar mesmo com o preço de tabela maior.
         assertEquals(withoutFee.profit, withFee.profit, 1e-9)
+    }
+
+    @Test
+    fun calculateResolvesFirstAvailableColorWhenNoneSelected() {
+        val filamentRepository = FilamentRepository()
+        val filament = Filament(
+            id = "multi-color",
+            name = "PLA Voolt",
+            pricePerKg = 100.0,
+            densityGPerCm3 = 1.24,
+            colors = listOf(FilamentColor(id = "red", name = "Vermelho"), FilamentColor(id = "blue", name = "Azul")),
+        )
+        filamentRepository.add(filament)
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        viewModel.selectFilament("multi-color")
+
+        val result = viewModel.calculate(viewModel.filaments.value, viewModel.printers.value, viewModel.settings.value, viewModel.services.value, viewModel.input.value)
+
+        assertEquals("red", result.filamentColor?.id)
+    }
+
+    @Test
+    fun calculateUsesTheExplicitlySelectedColor() {
+        val filamentRepository = FilamentRepository()
+        val filament = Filament(
+            id = "multi-color",
+            name = "PLA Voolt",
+            pricePerKg = 100.0,
+            densityGPerCm3 = 1.24,
+            colors = listOf(FilamentColor(id = "red", name = "Vermelho"), FilamentColor(id = "blue", name = "Azul")),
+        )
+        filamentRepository.add(filament)
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        viewModel.selectFilament("multi-color")
+        viewModel.selectFilamentColor("blue")
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+
+        val result = viewModel.calculate(viewModel.filaments.value, viewModel.printers.value, viewModel.settings.value, viewModel.services.value, viewModel.input.value)
+
+        assertEquals("blue", result.filamentColor?.id)
+        assertEquals("blue", result.quote?.job?.filamentColor?.id)
+    }
+
+    @Test
+    fun calculateSkipsOutOfStockColorsWhenFallingBack() {
+        val filamentRepository = FilamentRepository()
+        val filament = Filament(
+            id = "multi-color",
+            name = "PLA Voolt",
+            pricePerKg = 100.0,
+            densityGPerCm3 = 1.24,
+            colors = listOf(
+                FilamentColor(id = "red", name = "Vermelho", inStock = false),
+                FilamentColor(id = "blue", name = "Azul", inStock = true),
+            ),
+        )
+        filamentRepository.add(filament)
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        viewModel.selectFilament("multi-color")
+
+        val result = viewModel.calculate(viewModel.filaments.value, viewModel.printers.value, viewModel.settings.value, viewModel.services.value, viewModel.input.value)
+
+        assertEquals("blue", result.filamentColor?.id)
+    }
+
+    @Test
+    fun selectingANewFilamentResetsTheChosenColor() {
+        val filamentRepository = FilamentRepository()
+        val first = Filament(id = "f1", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24, colors = listOf(FilamentColor(id = "red")))
+        val second = Filament(id = "f2", name = "ABS", pricePerKg = 90.0, densityGPerCm3 = 1.04, colors = listOf(FilamentColor(id = "blue")))
+        filamentRepository.add(first)
+        filamentRepository.add(second)
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        viewModel.selectFilament("f1")
+        viewModel.selectFilamentColor("red")
+
+        viewModel.selectFilament("f2")
+
+        assertEquals(null, viewModel.input.value.filamentColorId)
     }
 }

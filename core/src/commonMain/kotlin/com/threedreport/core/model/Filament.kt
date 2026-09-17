@@ -13,14 +13,16 @@ import kotlin.math.PI
  * @property densityGPerCm3 densidade do material, em g/cm³ (ex.: PLA ≈ 1,24; ABS ≈ 1,04; PETG ≈ 1,27).
  * @property diameterMm diâmetro nominal do filamento, em mm.
  * @property brand marca/fabricante do filamento, se houver (ex.: "Voolt").
- * @property colorName nome da cor por escrito (ex.: "Vermelho Fosco"), se houver.
- * @property colorHex cor visual do rolo, em hex (ex.: "#E53935"), se houver.
- * @property inStock controle **manual** de estoque (decisão: dedução
- *   automática pelo consumo é imprecisa na prática — falhas de impressão,
- *   testes e sobras consomem material sem virar um orçamento salvo). O
- *   criador alterna manualmente; quando `false` ("Acabou"), o filamento
- *   continua no catálogo (histórico de orçamentos antigos continua
- *   coerente) mas não aparece pra seleção na tela de Orçamento.
+ * @property colors variantes de cor deste filamento (mesma marca/preço/
+ *   densidade, rolos diferentes) — ver [FilamentColor]. Existe pra evitar
+ *   cadastro duplicado de filamentos idênticos que só diferem na cor.
+ *   Controle de estoque é **manual e por cor** (decisão: dedução automática
+ *   pelo consumo é imprecisa na prática — falhas de impressão, testes e
+ *   sobras consomem material sem virar um orçamento salvo). Uma cor com
+ *   `inStock = false` ("Acabou") continua na lista (histórico de orçamentos
+ *   antigos continua coerente) mas não aparece pra seleção na tela de
+ *   Orçamento. Nunca fica vazia depois de salvo pela UI — um filamento sem
+ *   necessidade de diferenciar cor tem uma única entrada sem nome/hex.
  */
 @Serializable
 data class Filament(
@@ -30,9 +32,7 @@ data class Filament(
     val densityGPerCm3: Double,
     val diameterMm: Double = DEFAULT_DIAMETER_MM,
     val brand: String? = null,
-    val colorName: String? = null,
-    val colorHex: String? = null,
-    val inStock: Boolean = true,
+    val colors: List<FilamentColor> = listOf(FilamentColor(id = "default")),
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
@@ -40,6 +40,10 @@ data class Filament(
         require(densityGPerCm3 > 0) { "densityGPerCm3 deve ser positivo: $densityGPerCm3" }
         require(diameterMm > 0) { "diameterMm deve ser positivo: $diameterMm" }
     }
+
+    /** Se há alguma cor em estoque — controla se o filamento aparece pra seleção na tela de Orçamento. */
+    val hasStockAvailable: Boolean
+        get() = colors.any { it.inStock }
 
     /** Área da seção transversal do filamento, em mm² (π · r²). */
     val crossSectionAreaMm2: Double

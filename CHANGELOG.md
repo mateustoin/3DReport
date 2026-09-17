@@ -5,6 +5,20 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.3.0] - 2026-09-16
+
+### Adicionado
+- Um filamento (mesma marca/preço/densidade) agora pode ter **várias
+  cores cadastradas**, cada uma com seu próprio controle de estoque
+  ("Em estoque"/"Acabou") — evita duplicar o cadastro só porque muda a
+  cor do rolo. Alternar o estoque de uma cor é um clique direto no chip
+  da cor na lista de Filamentos, sem abrir o formulário.
+- Campo de **cor personalizada** (hex, com prévia) no cadastro de
+  filamento, além da paleta de cores prontas.
+- Tela de Orçamento ganha um dropdown "Cor" quando o filamento escolhido
+  tem mais de uma cor em estoque — não afeta o cálculo, só fica
+  registrado no orçamento salvo e no Histórico (uso interno).
+
 ## [1.2.0] - 2026-09-16
 
 ### Adicionado

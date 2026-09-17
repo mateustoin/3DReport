@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.Service
@@ -15,6 +16,7 @@ import com.threedreport.core.model.Service
  */
 data class QuoteResult(
     val filament: Filament? = null,
+    val filamentColor: FilamentColor? = null,
     val printer: PrinterProfile? = null,
     val quote: Quote? = null,
     val errorMessage: String? = null,

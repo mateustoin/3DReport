@@ -38,6 +38,7 @@ import com.threedreport.app.platform.formatDateTime
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.format.toBrl
 import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.core.model.OrderStatus
@@ -227,6 +228,9 @@ private fun SavedQuoteRow(
                         "Cliente (uso interno): ${client.name}" + (client.contact?.let { " · $it" } ?: ""),
                         style = MaterialTheme.typography.bodySmall,
                     )
+                }
+                savedQuote.quote.job.filamentColor?.let { color ->
+                    Text("Cor: ${color.displayLabel()}", style = MaterialTheme.typography.bodySmall)
                 }
 
                 StatusDropdown(status = savedQuote.status, onStatusChange = onStatusChange)

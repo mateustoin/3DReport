@@ -11,12 +11,16 @@ import kotlinx.serialization.Serializable
  * @property filament filamento utilizado (com preço e densidade).
  * @property filamentLengthMeters comprimento de filamento consumido, em metros.
  * @property printTimeMinutes tempo de impressão, em minutos.
+ * @property filamentColor qual [FilamentColor] de [filament] foi usado nesta
+ *   peça, se o filamento tiver mais de uma cor cadastrada. Não afeta o
+ *   cálculo (preço/densidade são do filamento, não da cor) — é só registro.
  */
 @Serializable
 data class PrintJob(
     val filament: Filament,
     val filamentLengthMeters: Double,
     val printTimeMinutes: Double,
+    val filamentColor: FilamentColor? = null,
 ) {
     init {
         require(filamentLengthMeters >= 0) { "filamentLengthMeters não pode ser negativo: $filamentLengthMeters" }

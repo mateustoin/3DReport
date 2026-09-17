@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.filaments
 
 import androidx.compose.ui.graphics.Color
+import com.threedreport.core.model.FilamentColor
 
 /** Paleta de cores comuns de filamento, pra escolher rápido no cadastro (nome de exibição a hex). */
 val FILAMENT_COLOR_PRESETS: List<Pair<String, String>> = listOf(
@@ -29,3 +30,6 @@ fun parseHexColor(hex: String?): Color? {
         else -> null
     }
 }
+
+/** Texto de exibição de uma cor: nome escrito, ou o hex, ou um rótulo genérico se nenhum estiver preenchido. */
+fun FilamentColor.displayLabel(): String = name?.takeIf { it.isNotBlank() } ?: hex ?: "Sem nome"
