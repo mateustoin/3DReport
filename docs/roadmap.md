@@ -259,13 +259,21 @@ implementação.
 
 ### Vendas e divulgação
 
-- [ ] **Catálogo/portfólio exportável.** Gerar um PDF ou página simples com
-  foto + preço de peças "prontas" (não sob encomenda, ex. produtos de
-  prateleira), reaproveitando foto/preço que já existem no orçamento — pra
-  mandar pro cliente ou postar em grupo de venda.
-- [ ] **Templates de orçamento.** Mais de uma configuração de aparência do
-  PDF (além de marca d'água/rodapé) — ex. um template mais formal vs. mais
-  simples — com um nome pra identificar cada um em Configurações.
+- [x] **Catálogo/portfólio exportável** (decisão 44). No Histórico, marcar
+  1+ orçamentos mostra um botão "Exportar catálogo (PDF)" ao lado do
+  "Exportar selecionados (PDF)" que já existia — gera um PDF em grade
+  (2 colunas, foto+nome+preço por célula, várias peças por página, ao
+  contrário do "um orçamento por página" já existente), pra mandar pro
+  cliente ou postar em grupo de venda. Reaproveita a mesma seleção múltipla
+  do Histórico — nenhuma UI de seleção nova, nenhum campo novo pra marcar
+  "peça pronta". Feito (2026-09-17): `platform/QuotePdfExporter.renderCatalogPdf`,
+  `QuoteHistoryViewModel.exportCatalogPdf`.
+- [x] **Templates de orçamento** (decisão 45). Nova aba "Templates":
+  biblioteca de presets nomeados de marca d'água/rodapé — "Usar este" copia
+  o preset pra dentro da configuração ativa (Configurações → Marca d'água
+  do PDF, que continua sendo o único editor da config em uso). Feito
+  (2026-09-17): `core/model/QuoteTemplate`, `data/TemplateRepository`,
+  `ui/templates/{TemplateFormState,TemplateListViewModel,TemplateListScreen}`.
 - [ ] **Múltiplas moedas/localização.** Hoje `R$` é fixo no PDF/UI. Só
   relevante se houver intenção de distribuir o app fora do Brasil —
   prioridade baixa, registrando a ideia caso surja demanda.

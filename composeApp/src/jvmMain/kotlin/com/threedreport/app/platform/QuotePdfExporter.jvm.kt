@@ -107,6 +107,97 @@ private fun drawQuotePage(
     }
 }
 
+actual fun renderCatalogPdf(items: List<QuoteExportItem>, watermarkText: String?, footerText: String?): ByteArray {
+    PDDocument().use { document ->
+        val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
+        val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
+
+        val margin = 40f
+        val columns = 2
+        val gutter = 20f
+        val headerHeight = 50f
+        val photoSize = 180f
+        val cellHeight = photoSize + 44f
+        val rowGap = 20f
+        val cellWidth = (PDRectangle.A4.width - margin * 2 - gutter * (columns - 1)) / columns
+
+        val usableHeight = PDRectangle.A4.height - margin * 2 - headerHeight
+        val rowsPerPage = maxOf(1, ((usableHeight + rowGap) / (cellHeight + rowGap)).toInt())
+        val itemsPerPage = rowsPerPage * columns
+
+        items.chunked(itemsPerPage).forEach { pageItems ->
+            val page = PDPage(PDRectangle.A4)
+            document.addPage(page)
+            PDPageContentStream(document, page).use { content ->
+                val top = page.mediaBox.height - margin
+                content.beginText()
+                content.setFont(titleFont, 18f)
+                content.newLineAtOffset(margin, top - 14f)
+                content.showText("Catálogo de produtos")
+                content.endText()
+
+                pageItems.forEachIndexed { index, item ->
+                    val row = index / columns
+                    val col = index % columns
+                    val cellX = margin + col * (cellWidth + gutter)
+                    val cellTop = top - headerHeight - row * (cellHeight + rowGap)
+                    drawCatalogCell(document, content, item, cellX, cellTop, cellWidth, photoSize, titleFont, bodyFont)
+                }
+
+                if (!watermarkText.isNullOrBlank()) {
+                    drawWatermark(content, page, titleFont, watermarkText)
+                }
+                if (!footerText.isNullOrBlank()) {
+                    drawFooter(content, page, bodyFont, footerText, margin)
+                }
+            }
+        }
+
+        val output = ByteArrayOutputStream()
+        document.save(output)
+        return output.toByteArray()
+    }
+}
+
+/** Desenha uma célula da grade do catálogo: foto (se houver, centralizada e escalada até [photoSize]) + nome + venda. */
+private fun drawCatalogCell(
+    document: PDDocument,
+    content: PDPageContentStream,
+    item: QuoteExportItem,
+    cellX: Float,
+    cellTop: Float,
+    cellWidth: Float,
+    photoSize: Float,
+    titleFont: PDType1Font,
+    bodyFont: PDType1Font,
+) {
+    val savedQuote = item.savedQuote
+    val bufferedImage = item.photoBytes?.let { ImageIO.read(ByteArrayInputStream(it)) }
+    if (bufferedImage != null) {
+        val pdImage = LosslessFactory.createFromImage(document, bufferedImage)
+        val scale = minOf(photoSize / pdImage.width, photoSize / pdImage.height, 1f)
+        val drawWidth = pdImage.width * scale
+        val drawHeight = pdImage.height * scale
+        val offsetX = cellX + (cellWidth - drawWidth) / 2f
+        val offsetY = cellTop - photoSize + (photoSize - drawHeight) / 2f
+        content.drawImage(pdImage, offsetX, offsetY, drawWidth, drawHeight)
+    }
+
+    var textY = cellTop - photoSize - 16f
+    content.beginText()
+    content.setFont(titleFont, 12f)
+    content.newLineAtOffset(cellX, textY)
+    content.showText(savedQuote.name)
+    content.endText()
+    textY -= 16f
+
+    content.beginText()
+    content.setFont(bodyFont, 12f)
+    content.newLineAtOffset(cellX, textY)
+    content.showText(savedQuote.totalWithServices.toBrl())
+    content.endText()
+}
+
 /** Texto grande, cinza claro e diagonal, centralizado na página, por cima do resto do conteúdo. */
 private fun drawWatermark(content: PDPageContentStream, page: PDPage, font: PDType1Font, text: String) {
     val fontSize = 48f

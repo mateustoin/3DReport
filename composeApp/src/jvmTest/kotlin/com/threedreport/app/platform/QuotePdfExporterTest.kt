@@ -268,4 +268,76 @@ class QuotePdfExporterTest {
 
         assertFalse(text.contains("Total"))
     }
+
+    @Test
+    fun catalogPdfContainsNameAndPriceOfEachItemButNotInternalData() {
+        val pdfBytes = renderCatalogPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null), QuoteExportItem(otherSavedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("Suporte de celular"))
+        assertTrue(text.contains("16,19"))
+        assertTrue(text.contains("Vaso decorativo"))
+        assertTrue(text.contains("45,00"))
+        assertFalse(text.contains(savedQuote.sourceLink!!))
+        assertFalse(text.contains(savedQuote.client!!.name))
+        assertFalse(text.contains("8,09")) // custo de produção: não deve ir pro catálogo
+    }
+
+    @Test
+    fun catalogPdfFitsFewItemsOnOnePage() {
+        val pdfBytes = renderCatalogPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null), QuoteExportItem(otherSavedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val document = Loader.loadPDF(pdfBytes)
+        assertEquals(1, document.numberOfPages)
+        document.close()
+    }
+
+    @Test
+    fun catalogPdfPaginatesWhenThereAreMoreItemsThanFitOnOnePage() {
+        val items = (1..10).map { QuoteExportItem(savedQuote.copy(id = "item-$it", name = "Peça $it"), photoBytes = null) }
+
+        val pdfBytes = renderCatalogPdf(items, watermarkText = null, footerText = null)
+
+        val document = Loader.loadPDF(pdfBytes)
+        assertTrue(document.numberOfPages > 1)
+        document.close()
+    }
+
+    @Test
+    fun catalogPdfIncludesWatermarkAndFooterOnEveryPage() {
+        val items = (1..10).map { QuoteExportItem(savedQuote.copy(id = "item-$it", name = "Peça $it"), photoBytes = null) }
+
+        val pdfBytes = renderCatalogPdf(items, watermarkText = "Marca", footerText = "Marcenaria 3D do João")
+
+        val document = Loader.loadPDF(pdfBytes)
+        assertTrue(document.numberOfPages > 1)
+        for (pageIndex in 1..document.numberOfPages) {
+            val pageText = PDFTextStripper().apply { startPage = pageIndex; endPage = pageIndex }.getText(document)
+            assertTrue(pageText.contains("Marcenaria 3D do João"))
+        }
+        document.close()
+    }
+
+    @Test
+    fun catalogPdfWithNoPhotoStillShowsNameAndPrice() {
+        val pdfBytes = renderCatalogPdf(
+            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("Suporte de celular"))
+        assertTrue(text.contains("16,19"))
+    }
 }

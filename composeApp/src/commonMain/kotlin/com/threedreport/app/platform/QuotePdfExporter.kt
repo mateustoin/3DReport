@@ -27,3 +27,21 @@ expect fun renderSavedQuotesPdf(
     watermarkText: String?,
     footerText: String?,
 ): ByteArray
+
+/**
+ * Gera um catálogo em PDF pra divulgação (mandar pro cliente, postar em
+ * grupo de venda): uma grade com foto + nome + valor de venda de cada item
+ * de [items], vários por página (ao contrário de [renderSavedQuotesPdf],
+ * que é um orçamento por página, no formato de documento formal). Mesma
+ * regra de conteúdo do export normal: sem produção/lucro (uso interno) nem
+ * link do modelo. Item sem foto aparece só com nome + preço, sem quebrar o
+ * layout da grade.
+ *
+ * @param watermarkText ver [renderSavedQuotesPdf].
+ * @param footerText ver [renderSavedQuotesPdf].
+ */
+expect fun renderCatalogPdf(
+    items: List<QuoteExportItem>,
+    watermarkText: String?,
+    footerText: String?,
+): ByteArray

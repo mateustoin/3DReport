@@ -35,6 +35,9 @@ com a margem de lucro desejada.
 | Tema claro/escuro (segue o sistema por padrão) | Pronto |
 | Cliente e status do pedido no orçamento (uso interno, editável no Histórico) | Pronto |
 | Dashboard (total vendido, lucro e filamento mais usado, por período) | Pronto |
+| Atalhos de teclado (navegação entre abas, salvar/limpar orçamento) | Pronto |
+| Catálogo/portfólio exportável em PDF (grade, várias peças por página) | Pronto |
+| Templates de orçamento (presets nomeados de marca d'água/rodapé) | Pronto |
 
 ## Apoie o projeto
 

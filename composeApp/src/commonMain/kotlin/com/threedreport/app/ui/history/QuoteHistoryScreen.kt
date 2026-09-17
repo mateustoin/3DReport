@@ -77,6 +77,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("${selectedIds.size} selecionado(s)", style = MaterialTheme.typography.bodyMedium)
                 Button(onClick = viewModel::exportSelectedPdf) { Text("Exportar selecionados (PDF)") }
+                Button(onClick = viewModel::exportCatalogPdf) { Text("Exportar catálogo (PDF)") }
                 TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
             }
         }

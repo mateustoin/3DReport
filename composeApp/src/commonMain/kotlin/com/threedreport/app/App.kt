@@ -39,6 +39,7 @@ import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.data.ThemeRepository
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.dashboard.DashboardScreen
@@ -56,6 +57,8 @@ import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsViewModel
+import com.threedreport.app.ui.templates.TemplateListScreen
+import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.ThemeViewModel
 
@@ -70,6 +73,7 @@ private enum class AppTab(val label: String) {
     FILAMENTS("Filamentos"),
     PRINTERS("Impressoras"),
     SERVICES("Serviços"),
+    TEMPLATES("Templates"),
     SETTINGS("Configurações"),
 }
 
@@ -81,6 +85,7 @@ fun App() {
     val historyRepository = remember { QuoteHistoryRepository() }
     val brandingRepository = remember { BrandingRepository() }
     val serviceRepository = remember { ServiceRepository() }
+    val templateRepository = remember { TemplateRepository() }
     val themeRepository = remember { ThemeRepository() }
 
     val quoteViewModel = remember {
@@ -93,6 +98,7 @@ fun App() {
     val serviceListViewModel = remember { ServiceListViewModel(serviceRepository) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
     val brandingViewModel = remember { BrandingViewModel(brandingRepository) }
+    val templateListViewModel = remember { TemplateListViewModel(templateRepository, brandingRepository) }
     val themeViewModel = remember { ThemeViewModel(themeRepository) }
 
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
@@ -112,7 +118,8 @@ fun App() {
                     accel && event.key == Key.Four -> AppTab.FILAMENTS
                     accel && event.key == Key.Five -> AppTab.PRINTERS
                     accel && event.key == Key.Six -> AppTab.SERVICES
-                    accel && event.key == Key.Seven -> AppTab.SETTINGS
+                    accel && event.key == Key.Seven -> AppTab.TEMPLATES
+                    accel && event.key == Key.Eight -> AppTab.SETTINGS
                     else -> null
                 }
                 if (tabForKey != null) {
@@ -159,6 +166,7 @@ fun App() {
                         AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
                         AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
                         AppTab.SERVICES -> ServiceListScreen(serviceListViewModel)
+                        AppTab.TEMPLATES -> TemplateListScreen(templateListViewModel)
                         AppTab.SETTINGS -> SettingsScreen(settingsViewModel, brandingViewModel, themeViewModel)
                     }
                 }
@@ -210,9 +218,10 @@ private fun HelpDialog(onDismiss: () -> Unit) {
                 Text("• Histórico: consulte, filtre, exporte em PDF ou copie orçamentos salvos (1 ou vários juntos).")
                 Text("• Dashboard: total vendido, lucro e filamento mais usado no período.")
                 Text("• Filamentos, Impressoras e Serviços: seus catálogos, usados na tela de Orçamento.")
+                Text("• Templates: presets nomeados de marca d'água/rodapé — \"Usar este\" aplica na configuração ativa.")
                 Text("• Configurações: aparência (tema), parâmetros de custo, marca d'água do PDF e taxa de marketplace.")
                 Text("Atalhos de teclado", style = MaterialTheme.typography.titleSmall)
-                Text("• Ctrl/Cmd+1 a 7: pula direto para cada aba, nessa ordem.")
+                Text("• Ctrl/Cmd+1 a 8: pula direto para cada aba, nessa ordem.")
                 Text("• Ctrl/Cmd+S: salva o orçamento atual (aba Orçamento).")
                 Text("• Ctrl/Cmd+N: limpa a tela de Orçamento pra começar um novo.")
                 Text("• Esc: cancela o formulário aberto em Filamentos/Impressoras/Serviços.")

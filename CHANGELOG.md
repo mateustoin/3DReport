@@ -5,6 +5,19 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
 [docs/decisions.md](docs/decisions.md)).
 
+## [1.6.0] - 2026-09-17
+
+### Adicionado
+- Catálogo/portfólio exportável: no Histórico, com 1+ orçamentos
+  selecionados, um botão "Exportar catálogo (PDF)" gera um PDF em grade
+  (foto + nome + preço, várias peças por página) — pra mandar pro cliente
+  ou postar em grupo de venda, diferente do export "um orçamento por
+  página" que já existia.
+- Templates de orçamento: nova aba "Templates" com presets nomeados de
+  marca d'água/rodapé do PDF — "Usar este" aplica o preset na configuração
+  ativa (Configurações → Marca d'água do PDF), sem precisar reescrever o
+  texto toda vez que quiser trocar o visual.
+
 ## [1.5.0] - 2026-09-17
 
 ### Adicionado

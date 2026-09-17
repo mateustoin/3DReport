@@ -5,4 +5,4 @@ package com.threedreport.app
  * instalador. Mantenha em sincronia com `appVersion` em `gradle.properties`
  * (ver comentário lá — bump MINOR a cada leva de funcionalidades entregue).
  */
-const val APP_VERSION = "1.5.0"
+const val APP_VERSION = "1.6.0"

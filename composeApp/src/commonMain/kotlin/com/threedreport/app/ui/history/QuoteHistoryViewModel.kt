@@ -7,6 +7,7 @@ import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.copyToClipboard
 import com.threedreport.app.platform.defaultDocumentsDirectory
 import com.threedreport.app.platform.periodStartEpochMillis
+import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.saveBytesToFile
 import com.threedreport.core.model.BrandingSettings
@@ -104,6 +105,23 @@ class QuoteHistoryViewModel(
         saveBytesToFile(
             pdfBytes,
             "${sanitizeFileName("Orçamentos (${selected.size} itens)")}.pdf",
+            defaultDocumentsDirectory(),
+        )
+        clearSelection()
+    }
+
+    /** Catálogo pra divulgação (vários itens por página, com foto), não um orçamento formal por página. */
+    fun exportCatalogPdf() {
+        val selected = savedQuotes.value.filter { it.id in selectedIdsState.value }
+        if (selected.isEmpty()) return
+
+        val (watermarkText, footerText) = resolveWatermarkAndFooterText()
+        val items = selected.map { QuoteExportItem(it, photoBytes(it)) }
+        val pdfBytes = renderCatalogPdf(items, watermarkText, footerText)
+
+        saveBytesToFile(
+            pdfBytes,
+            "${sanitizeFileName("Catálogo (${selected.size} itens)")}.pdf",
             defaultDocumentsDirectory(),
         )
         clearSelection()
