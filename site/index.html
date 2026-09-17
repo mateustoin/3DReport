@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>3DReport: orçamento de impressão 3D grátis e open source</title>
-  <meta name="description" content="Calcule o preço de venda das suas impressões 3D com base no custo real: filamento, energia, manutenção e margem de lucro. App gratuito, open source, com PDF, histórico e catálogo de peças.">
+  <title>3DReport: orçamento e venda de impressão 3D grátis</title>
+  <meta name="description" content="App gratuito e open source para quem vende impressão 3D: calcule o orçamento e o preço de venda de cada peça a partir do custo real (filamento, energia, manutenção) e da margem de lucro, com histórico de vendas, PDF e catálogo.">
+  <meta name="keywords" content="orçamento impressão 3D, venda de impressão 3D, calculadora preço impressão 3D, vender impressão 3D, quanto cobrar impressão 3D">
   <link rel="canonical" href="https://mateustoin.github.io/3DReport/">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0b5fa8">
@@ -14,16 +15,16 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="3DReport">
-  <meta property="og:title" content="3DReport: orçamento de impressão 3D grátis e open source">
-  <meta property="og:description" content="Calcule o preço de venda das suas impressões 3D com base no custo real: filamento, energia, manutenção e margem de lucro. Grátis, open source, com PDF, histórico e catálogo.">
+  <meta property="og:title" content="3DReport: orçamento e venda de impressão 3D grátis">
+  <meta property="og:description" content="Calcule o orçamento e o preço de venda de cada peça a partir do custo real e da margem de lucro. Gratuito, open source, com histórico de vendas, PDF e catálogo de peças.">
   <meta property="og:url" content="https://mateustoin.github.io/3DReport/">
   <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/icon.png">
   <meta property="og:locale" content="pt_BR">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="3DReport: orçamento de impressão 3D grátis e open source">
-  <meta name="twitter:description" content="Calculadora de preço para quem vende impressão 3D. Grátis, open source, com PDF, histórico e catálogo de peças.">
+  <meta name="twitter:title" content="3DReport: orçamento e venda de impressão 3D grátis">
+  <meta name="twitter:description" content="Ferramenta gratuita e open source para quem vende impressão 3D: orçamento, preço de venda, histórico e catálogo de peças.">
   <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/icon.png">
 
   <link rel="stylesheet" href="assets/style.css">
@@ -35,7 +36,7 @@
     "name": "3DReport",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Windows, Linux, macOS",
-    "description": "Calculadora de preço e gestão de orçamentos para quem vende impressão 3D, grátis e open source, com PDF, histórico e catálogo de peças.",
+    "description": "Calculadora de orçamento e gestão de vendas para quem vende impressão 3D, grátis e open source, com histórico de vendas, PDF e catálogo de peças.",
     "url": "https://mateustoin.github.io/3DReport/",
     "downloadUrl": "https://github.com/mateustoin/3DReport/releases/latest",
     "license": "https://github.com/mateustoin/3DReport/blob/main/LICENSE",
@@ -83,6 +84,14 @@
           "@type": "Answer",
           "text": "Localmente, no seu computador, dentro da pasta pessoal do usuário. O 3DReport não envia nenhum dado para servidores externos."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "O 3DReport serve só para orçamento avulso ou também para gerenciar a venda de impressão 3D como negócio?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "As duas coisas. Além do cálculo do orçamento, cada venda tem cliente, status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) e entra no histórico e no dashboard, com total vendido, lucro acumulado e filamento mais usado por período."
+        }
       }
     ]
   }
@@ -97,6 +106,7 @@
       </a>
       <div class="nav-links">
         <a href="#funcionalidades">Funcionalidades</a>
+        <a href="#gestao-de-vendas">Gestão de vendas</a>
         <a href="#como-funciona">Como funciona</a>
         <a href="manual.html">Manual</a>
         <a href="#faq">Perguntas frequentes</a>
@@ -109,13 +119,15 @@
     <section class="hero">
       <div class="container">
         <div>
-          <p class="eyebrow">Orçamento de impressão 3D</p>
+          <p class="eyebrow">Orçamento e venda de impressão 3D</p>
           <h1>Saiba quanto cobrar em cada impressão 3D, sem planilha e sem chute</h1>
           <p class="lead">
             O 3DReport calcula o custo real de produção e sugere o valor de
             venda com a margem de lucro que você definir, a partir do
             filamento, da impressora usada e do tempo de impressão de cada
-            peça. Gratuito, open source e roda direto no seu computador.
+            peça. Feito para quem vive de vender impressão 3D: do orçamento
+            ao histórico de vendas, gratuito e open source, rodando direto no
+            seu computador.
           </p>
           <div class="btn-row">
             <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Baixar grátis</a>
@@ -197,6 +209,41 @@
       </div>
     </section>
 
+    <section id="gestao-de-vendas">
+      <div class="container">
+        <h2>Do orçamento à venda concluída</h2>
+        <p class="section-intro">
+          O 3DReport não para no cálculo do preço: acompanha a venda de
+          impressão 3D do primeiro contato com o cliente até a peça entregue.
+        </p>
+        <div class="pipeline">
+          <span class="pipeline-step">Orçado</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Aprovado</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Em impressão</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Pronto</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Entregue</span>
+        </div>
+        <div class="grid" style="margin-top: 28px;">
+          <div class="card">
+            <h3>Cliente vinculado ao orçamento</h3>
+            <p>Nome e contato ficam registrados em cada venda, prontos para consultar depois no histórico.</p>
+          </div>
+          <div class="card">
+            <h3>Status do pedido</h3>
+            <p>Atualize o andamento de cada venda direto na lista, sem planilha paralela pra controlar quem já pagou ou já recebeu.</p>
+          </div>
+          <div class="card">
+            <h3>Dashboard de vendas</h3>
+            <p>Total vendido, lucro acumulado e filamento mais usado, filtrados por período, pra acompanhar como vai o seu negócio de impressão 3D.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="como-funciona">
       <div class="container">
         <h2>Como o cálculo funciona</h2>
@@ -257,6 +304,10 @@ LUCRO              = venda − produção
         <details class="faq-item">
           <summary>Meus dados de orçamento ficam salvos onde?</summary>
           <p>Localmente, no seu computador. O 3DReport não envia nenhum dado para servidores externos.</p>
+        </details>
+        <details class="faq-item">
+          <summary>O 3DReport serve só para orçamento avulso ou também para gerenciar a venda de impressão 3D como negócio?</summary>
+          <p>As duas coisas. Além do cálculo do orçamento, cada venda tem cliente, status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) e entra no histórico e no dashboard, com total vendido, lucro acumulado e filamento mais usado por período.</p>
         </details>
         <details class="faq-item">
           <summary>Existe versão para Android ou celular?</summary>

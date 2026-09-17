@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Manual rápido: como usar o 3DReport para orçar impressão 3D</title>
-  <meta name="description" content="Passo a passo para configurar o 3DReport e gerar seu primeiro orçamento de impressão 3D: cadastro de impressora, filamento, cálculo de preço e exportação em PDF.">
+  <title>Manual do 3DReport: orçamento e venda de impressão 3D</title>
+  <meta name="description" content="Passo a passo para configurar o 3DReport, gerar seu primeiro orçamento de impressão 3D e acompanhar a venda até a entrega: cadastro de impressora, filamento, cálculo de preço, PDF e status do pedido.">
+  <meta name="keywords" content="como orçar impressão 3D, como vender impressão 3D, tutorial 3DReport, manual orçamento impressão 3D">
   <link rel="canonical" href="https://mateustoin.github.io/3DReport/manual.html">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0b5fa8">
@@ -13,8 +14,8 @@
 
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="3DReport">
-  <meta property="og:title" content="Manual rápido: como usar o 3DReport">
-  <meta property="og:description" content="Passo a passo para configurar o 3DReport e gerar seu primeiro orçamento de impressão 3D.">
+  <meta property="og:title" content="Manual do 3DReport: orçamento e venda de impressão 3D">
+  <meta property="og:description" content="Passo a passo para gerar seu primeiro orçamento de impressão 3D e acompanhar a venda até a entrega.">
   <meta property="og:url" content="https://mateustoin.github.io/3DReport/manual.html">
   <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/icon.png">
   <meta property="og:locale" content="pt_BR">
@@ -25,15 +26,16 @@
   {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    "name": "Como calcular o preço de uma impressão 3D com o 3DReport",
-    "description": "Passo a passo para configurar impressora, filamento e gerar um orçamento de impressão 3D no 3DReport.",
+    "name": "Como orçar e vender impressão 3D com o 3DReport",
+    "description": "Passo a passo para configurar impressora, filamento, gerar um orçamento de impressão 3D e acompanhar a venda até a entrega no 3DReport.",
     "step": [
       {"@type": "HowToStep", "name": "Instale o 3DReport", "text": "Baixe o instalador do seu sistema operacional na página de releases e instale normalmente."},
       {"@type": "HowToStep", "name": "Cadastre sua impressora", "text": "Em Impressoras, informe consumo de energia, custo de manutenção por hora e o investimento da máquina."},
       {"@type": "HowToStep", "name": "Cadastre seu filamento", "text": "Em Filamentos, informe marca, preço por kg, densidade e as cores disponíveis em estoque."},
       {"@type": "HowToStep", "name": "Ajuste as configurações do negócio", "text": "Em Configurações, defina preço do kWh, taxa de falhas, taxa de acabamento, custo administrativo e margem de lucro."},
       {"@type": "HowToStep", "name": "Gere o orçamento", "text": "Na aba Orçamento, escolha o filamento e a impressora, informe o comprimento de filamento e o tempo de impressão da peça."},
-      {"@type": "HowToStep", "name": "Salve e exporte", "text": "Salve o orçamento (com nome, foto e cliente opcionais) e exporte em PDF ou copie o texto para enviar ao cliente."}
+      {"@type": "HowToStep", "name": "Salve e exporte", "text": "Salve o orçamento (com nome, foto, cliente e link do modelo opcionais) e exporte em PDF ou copie o texto para enviar ao cliente."},
+      {"@type": "HowToStep", "name": "Acompanhe a venda até a entrega", "text": "No Histórico, atualize o status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) conforme a venda avança, e acompanhe o total vendido no Dashboard."}
     ]
   }
   </script>
@@ -58,10 +60,11 @@
     <section class="hero" style="padding-bottom: 20px;">
       <div class="container" style="display: block;">
         <p class="eyebrow">Manual rápido</p>
-        <h1>Do zero ao primeiro orçamento em 6 passos</h1>
+        <h1>Do orçamento à venda concluída em 7 passos</h1>
         <p class="lead">
-          Este guia cobre o essencial para começar a usar o 3DReport hoje
-          mesmo. Para a lista completa de funcionalidades, veja a
+          Este guia cobre o essencial para começar a orçar e vender impressão
+          3D com o 3DReport hoje mesmo. Para a lista completa de
+          funcionalidades, veja a
           <a href="index.html#funcionalidades">página inicial</a>.
         </p>
       </div>
@@ -110,6 +113,13 @@
             <div>
               <h3>Salve e exporte</h3>
               <p>Salve o orçamento (nome, foto e link do modelo são opcionais) e, na aba <strong>Histórico</strong>, exporte em PDF ou copie um texto resumido para colar numa conversa de WhatsApp ou marketplace.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">7</div>
+            <div>
+              <h3>Acompanhe a venda até a entrega</h3>
+              <p>No <strong>Histórico</strong>, atualize o status do pedido conforme a venda avança: Orçado → Aprovado → Em impressão → Pronto → Entregue. O <strong>Dashboard</strong> acompanha o total vendido, o lucro acumulado e o filamento mais usado por período.</p>
             </div>
           </div>
         </div>

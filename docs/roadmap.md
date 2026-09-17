@@ -411,9 +411,16 @@ implementação.
   `site/assets/screenshots/PLACEHOLDER.md`) — a página já degrada bem sem
   eles (caixa tracejada no lugar da imagem que falta). Feito (2026-09-17):
   `.github/workflows/pages.yml` publica `site/` a cada push em `main` que
-  muda a pasta (precisa de "Settings → Pages → Source: GitHub Actions"
-  habilitado, e o repositório ainda precisa ficar público pra release/
-  download linkados no site funcionarem — decisão 15).
+  muda a pasta. **No ar** desde que o repositório ficou público (decisão 50):
+  https://mateustoin.github.io/3DReport/.
+  - **Reforço de SEO pra "venda de impressão 3D" (decisão 51, 2026-09-17):**
+    além de "orçamento", title/meta description/Open Graph/JSON-LD passaram a
+    cobrir "venda"/"vender impressão 3D" também. Nova seção "Do orçamento à
+    venda concluída" expõe status do pedido, cliente vinculado e dashboard de
+    vendas (funcionalidades que já existiam no app, agora visíveis no site);
+    novo item de FAQ e um 7º passo no manual ("Acompanhe a venda até a
+    entrega"). Tópicos `venda-impressao-3d`/`vendas` adicionados ao
+    repositório GitHub pelo mesmo motivo.
 
 ## 3. Instaladores desktop
 

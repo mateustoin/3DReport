@@ -268,6 +268,29 @@ section.alt .card {
   font-size: 0.9rem;
 }
 
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.pipeline-step {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.pipeline-arrow {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
 .formula-box {
   background: var(--surface-variant);
   border-radius: var(--radius);
@@ -276,6 +299,7 @@ section.alt .card {
   font-family: "Courier New", monospace;
   font-size: 0.85rem;
   color: var(--text-muted);
+  white-space: pre-wrap;
 }
 
 details.faq-item {
