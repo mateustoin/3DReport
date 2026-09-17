@@ -232,10 +232,21 @@ implementação.
 
 ### Produção e precificação
 
-- [ ] **Controle de estoque de filamento.** Registrar rolos (peso
-  inicial/restante) por filamento cadastrado; ao salvar um orçamento, abater
-  o consumo estimado do rolo em uso. Evita começar uma impressão sem saber
-  se sobra material, e dá uma base de "quando comprar mais" no futuro.
+- [ ] **Controle de estoque de filamento — manual, não dedução automática
+  (revisado em 2026-09-16).** Deduzir consumo automaticamente pelo
+  comprimento usado no orçamento é impreciso na prática: falhas de
+  impressão, testes e sobras consomem material sem virar um orçamento
+  salvo, então o "estoque calculado" divergiria do real rapidinho. Em vez
+  disso, controle **manual e binário** por filamento cadastrado:
+  - Cadastro de filamento ganha **marca** e **cor** (cor visual — um
+    seletor/swatch — e o nome da cor por escrito, ex.: "Vermelho
+    Fosco"), pra diferenciar rolos do mesmo material/fornecedor.
+  - Cada filamento tem um estado **"Em estoque" / "Acabou"**, alternado
+    manualmente pelo criador (sem tentar calcular automaticamente).
+  - Filamento marcado como "Acabou" **continua na lista** (não é excluído)
+    mas aparece visualmente acinzentado/desabilitado — mantém o histórico
+    de orçamentos antigos que usaram aquele filamento coerente, e evita
+    escolher sem querer um filamento que não tem mais na tela de Orçamento.
 - [ ] **Fila de impressão / agenda da impressora.** Visão de quanto tempo
   cada impressora cadastrada vai ficar ocupada (soma dos orçamentos com
   status "Em impressão", ver item de status acima) — ajuda a prometer prazo
