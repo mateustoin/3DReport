@@ -121,6 +121,12 @@ PDFs (seção 1, "Vendas e divulgação").
   versão, nome do autor, link do GitHub, link do Buy Me a Coffee e um botão
   "Ajuda" que abre um diálogo com a versão, uma descrição curta e um resumo
   de cada aba. Feito (2026-09-15): `App.kt` (`AppFooter`/`HelpDialog`).
+  - **Regra de bump revisada (decisão 53, 2026-09-18):** de `0.1.0` até
+    `1.8.0`, todo bump foi MINOR — nunca PATCH, mesmo em levas que eram só
+    correção ou só documentação. Passa a valer: **PATCH** pra leva sem
+    funcionalidade nova (só correção e/ou só documentação); **MINOR** pra
+    leva com funcionalidade nova ou melhoria visível (regra completa em
+    [development.md](development.md#versionamento)).
 - [x] **Link do modelo clicável.** Na aba Orçamento (formulário de salvar) e
   no Histórico, o link do modelo vira um hyperlink de verdade — clicar abre
   no navegador padrão (`platform/openUrl`, `ui/components/LinkText`). Feito
@@ -261,6 +267,121 @@ implementação.
   de falha calibrado com dado real do próprio criador em vez de um chute
   inicial.
 
+### Presets de cadastro (impressoras e filamentos)
+
+Ideia trazida pelo responsável do projeto (2026-09-18): reduzir o trabalho de
+digitação inicial em Impressoras e Filamentos oferecendo listas pré-prontas
+pra escolher, no mesmo espírito do fatiador OrcaSlicer (que já vem com um
+catálogo enorme de impressoras/filamentos pra selecionar em vez de cadastrar
+do zero). Em ambos os casos, **escolher da lista nunca é obrigatório** — quem
+não achar o que precisa continua cadastrando manualmente, exatamente como
+funciona hoje.
+
+- [ ] **Preset de impressoras.** Lista embutida no app (sem rede/download,
+  só bundle local) com impressoras populares — a pessoa que vende impressão
+  3D só marca quais possui, e essas aparecem na tela de Orçamento; ela não
+  precisa ter cadastrado a impressora do zero. Um preset preenche só
+  `PrinterProfile.name` e `printerPowerWatts` — `maintenanceCostPerHour` e
+  `machineInvestment` (preço pago, prazo de payback, dias/horas de uso)
+  continuam manuais, porque dependem de quanto *aquele* vendedor pagou e de
+  como usa a própria máquina, não têm como vir de um preset genérico. Ao
+  escolher um preset, o watts vem preenchido mas continua editável (a
+  unidade específica do vendedor pode variar do catálogo).
+  - **Levantamento de consumo elétrico (pesquisado em 2026-09-18, fonte
+    manual/spec oficial quando encontrado):** confiança alta/média-alta em
+    Bambu Lab P1S (1000 W @220V / 350 W @110V, spec oficial — valor de PSU,
+    não consumo médio), Creality Ender 3 V3 SE (PSU 350 W, ~125 W típico
+    imprimindo), Creality K1 (PSU 350 W, 24V), Elegoo Neptune 4 (PSU 400 W;
+    fabricante recomenda não passar de ~320 W reais) e Prusa MK4 (13 W
+    ocioso, 80–130 W imprimindo, picos >325 W ao aquecer — sem um "watt
+    nominal" único de fábrica). Confiança média, só fonte secundária/fórum
+    (sem datasheet único): Bambu Lab A1 mini (~57 W médio), Bambu Lab A1
+    (~95 W médio, PSU até 350 W), Bambu Lab X1-Carbon (~100–200 W
+    imprimindo, pico ~400 W), Creality Ender 3 V2 (PSU 270–360 W, fontes
+    conflitantes), Creality CR-10 original (PSU 270 W), Anycubic Kobra 2
+    (~350 W citado, sem datasheet confirmado).
+  - **Marcas brasileiras (Voolt, GTMax3D, 3D Lab, Cliever) confirmadas como
+    reais e vendidas no Brasil, mas nenhuma publica o consumo em watts** nas
+    páginas de produto/spec (a página de specs da GTMax3D nem tem essa
+    coluna). Pra incluir essas marcas — importantes pro público-alvo
+    brasileiro — alguém precisa abrir o manual/etiqueta elétrica de cada
+    modelo, ou contatar o fabricante direto; não dá pra inventar o número.
+    Escopo de estreia sugerido: lançar só com os modelos de watts
+    confirmados acima, completar as marcas nacionais assim que o dado
+    elétrico for levantado manualmente (item fica pra uma leva seguinte, não
+    trava o lançamento da funcionalidade).
+  - **Estrutura e como adicionar impressoras novas.** Documentar em
+    [development.md](development.md) o formato do arquivo de presets e o
+    passo a passo pra propor uma impressora nova (útil pra manter a lista
+    crescendo em versões futuras, inclusive via contribuição externa de
+    quem tiver a impressora e o manual em mãos). Como referência de
+    organização — não pra copiar a complexidade toda, já que aqui bastam 2
+    campos por impressora, bem menos que um perfil de fatiamento completo —
+    o OrcaSlicer guarda um preset por fabricante em
+    `resources/profiles/<fabricante>/`, um arquivo por modelo.
+  - **Imagens das impressoras — decisão em aberto, não assumir que está
+    liberado.** Usar fotos reais de produto (site oficial/kit de imprensa
+    do fabricante) esbarra em licenciamento: kit de imprensa costuma cobrir
+    uso editorial, não redistribuição embutida dentro de outro produto —
+    ser Apache 2.0 não muda a licença da imagem em si, que é do fabricante.
+    Alternativas mais seguras a avaliar antes de implementar: (a) ícone
+    genérico por formato de impressora (cartesiana, CoreXY etc.), ou (b)
+    ilustração própria, desenhada pro projeto (mesmo caminho já usado pro
+    ícone do app, decisão 42 — sem depender de imagem de terceiros). Preciso
+    decidir isso antes de qualquer imagem entrar no repositório.
+- [ ] **Preset de marcas de filamento + tipo de material com densidade
+  automática.** Hoje `Filament` (`core/model/Filament.kt`) só tem `brand`
+  (texto livre, opcional) e `densityGPerCm3` digitada manualmente sem
+  nenhuma sugestão — não existe campo de "tipo" (PLA/PETG/etc.) hoje. Duas
+  melhorias, que podem entrar juntas ou em etapas:
+  - **Lista de marcas pré-cadastradas** (autocomplete/dropdown, com opção de
+    digitar uma marca nova de qualquer jeito, igual ao preset de
+    impressoras). Levantamento 2026-09-18 — internacionais confirmadas:
+    eSUN, Polymaker, Prusament, Overture, SUNLU, Hatchbox, ColorFabb, Bambu
+    Lab, Fillamentum, Elegoo, Inland. Brasileiras confirmadas: Voolt3D,
+    GTMax3D, 3D Lab, Cliever, 3D Fila (achada via listagem de revenda, sem
+    checar site próprio direto); Masterprint/Stllix/Conjure apareceram só
+    numa resenha de blog (2026) — confiança mais baixa, revisar antes de
+    entrar como marca "oficial" da lista de estreia.
+  - **Tipo de material com densidade padrão sugerida, sempre editável.**
+    Novo campo (não obrigatório de imediato, pra não quebrar filamentos já
+    salvos sem tipo definido) com densidade padrão pesquisada em
+    2026-09-18:
+    - Tipos "puros" (densidade confiável, faixa estreita): PLA 1,24 · PETG
+      1,27 · ABS 1,04 · ASA 1,07 · TPU 1,21 · Nylon/PA 1,14 · PC 1,20 · HIPS
+      1,04 · PVA 1,23.
+    - Tipos compostos/carregados (densidade varia bastante por fabricante e
+      % de carga — sugerir um valor representativo, deixando claro na UI
+      que costuma precisar ajuste): PLA-CF ≈1,25 (varia 1,22–1,30) ·
+      PETG-CF/PET-CF ≈1,28 (varia 1,26–1,32) · madeira (wood-fill)
+      ≈1,15–1,25.
+    - PA-CF/PAHT-CF e PC-CF: nenhum valor confiável encontrado — melhor não
+      sugerir densidade nenhuma nesses dois (campo em branco, preenchido à
+      mão, igual já funciona hoje pra qualquer tipo fora da lista).
+    - Metal-fill: variação enorme (1,8 a 3,5, dependendo do metal — cobre,
+      latão, bronze, aço) — não faz sentido um padrão único; se algum dia
+      entrar na lista, precisa ser por metal específico, nunca um
+      "metal-fill" genérico.
+    - Tipo escolhido preenche a densidade automaticamente, mas o campo
+      continua editável (pedido explícito: "a pessoa pode querer modificar
+      manualmente depois"). Tipo fora da lista: nome e densidade digitados
+      à mão, do jeito que já funciona hoje.
+  - **Diferença pro item já existente "Import/export de catálogo de
+    filamentos entre criadores"** (seção Integrações, abaixo): são coisas
+    complementares, não a mesma coisa. Aquele item é sobre a **comunidade**
+    compartilhar catálogos completos entre si (arquivo exportado por um
+    criador, importado por outro); este aqui é o app já vir com uma lista
+    base de marcas/tipos comuns, sem depender de ninguém ter compartilhado
+    nada antes. Os dois podem conviver.
+  - **Estrutura e como adicionar marcas/tipos novos:** mesma lógica do
+    preset de impressoras — o OrcaSlicer organiza presets de filamento em
+    `resources/profiles/<fabricante>/filament/`, um arquivo por perfil, com
+    nome de arquivo seguindo um padrão (`filament_<marca>_<nome>@<vendor>
+    <variante>.json`). 3DReport precisa de bem menos campo por preset (só
+    marca/tipo/densidade padrão), mas a ideia de pasta por marca + arquivo
+    por perfil serve de referência pro formato a documentar em
+    [development.md](development.md).
+
 ### Vendas e divulgação
 
 - [x] **Catálogo/portfólio exportável** (decisão 44). No Histórico, marcar
@@ -347,7 +468,10 @@ implementação.
 - [ ] **Import/export de catálogo de filamentos entre criadores.** Arquivo
   (JSON/CSV) com perfis de filamentos populares (ex. marcas/linhas comuns no
   Brasil) que a comunidade possa compartilhar/importar, evitando cadastro
-  manual do zero a cada filamento novo.
+  manual do zero a cada filamento novo. Complementar ao **preset de marcas de
+  filamento** (seção "Produção e precificação" acima) — aquele é uma lista
+  base já embutida no app; este é a comunidade compartilhando catálogos
+  próprios entre si por fora dela.
 
 ### UX extras
 

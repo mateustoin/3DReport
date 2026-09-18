@@ -184,8 +184,10 @@ Se isso for corrigido oficialmente numa versão futura do Compose
 Multiplatform, esse workaround pode ser removido.
 
 ### Versão do app e rodapé
-O app segue **SemVer** (decisão 27), com bump de MINOR a cada leva de
-funcionalidades entregue. A versão tem fonte única mantida manualmente em
+O app segue **SemVer** (decisão 53, que revisa a decisão 27): PATCH pra leva
+só de correção/documentação, MINOR pra leva com funcionalidade nova (ver
+[development.md](development.md#versionamento) pro critério completo). A
+versão tem fonte única mantida manualmente em
 sincronia em dois lugares (sem geração automática, pra não adicionar
 complexidade de build num projeto de um mantenedor só):
 - `gradle.properties` (`appVersion`) — usado como `packageVersion` do

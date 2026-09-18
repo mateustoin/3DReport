@@ -71,12 +71,20 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 
 ## Versionamento
 
-O app segue **SemVer** (decisão 27 em [decisions.md](decisions.md)), com bump
-de **MINOR a cada leva de funcionalidades entregue** (`PATCH` fica pra
-correções isoladas fora de uma leva; `MAJOR` fica pra quebras de
-compatibilidade, sem caso de uso previsto ainda). Ao fechar uma leva, atualize
-a versão **nos dois lugares** (fonte única mantida manualmente em sincronia,
-sem geração automática):
+O app segue **SemVer** (decisão 53 em [decisions.md](decisions.md), que revisa
+a decisão 27). O tipo de bump depende do que a leva entrega, não do tamanho
+dela:
+
+- **PATCH** (`z`) — leva que só corrige bug(s) e/ou só atualiza documentação,
+  sem funcionalidade nova nem mudança de comportamento visível ao usuário.
+- **MINOR** (`y`) — leva que entrega funcionalidade nova ou melhoria visível
+  (se a leva mistura correção com funcionalidade nova, o bump é MINOR — a
+  funcionalidade nova já exige isso; PATCH é só pra leva que **não** tem nada
+  de funcionalidade nova).
+- **MAJOR** (`x`) — quebra de compatibilidade; sem caso de uso previsto ainda.
+
+Ao fechar uma leva, atualize a versão **nos dois lugares** (fonte única
+mantida manualmente em sincronia, sem geração automática):
 
 - `gradle.properties` → `appVersion`
 - [`composeApp/.../app/AppVersion.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/AppVersion.kt) → `APP_VERSION`

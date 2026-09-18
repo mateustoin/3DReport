@@ -2,8 +2,8 @@
 
 Todas as mudanças notáveis deste projeto são documentadas aqui. O formato é
 baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
-projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 27 em
-[docs/decisions.md](docs/decisions.md)).
+projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
+[docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
 ## [1.8.0] - 2026-09-17
 
