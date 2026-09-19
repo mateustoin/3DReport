@@ -277,7 +277,7 @@ do zero). Em ambos os casos, **escolher da lista nunca é obrigatório** — que
 não achar o que precisa continua cadastrando manualmente, exatamente como
 funciona hoje.
 
-- [ ] **Preset de impressoras.** Lista embutida no app (sem rede/download,
+- [x] **Preset de impressoras.** Lista embutida no app (sem rede/download,
   só bundle local) com impressoras populares — a pessoa que vende impressão
   3D só marca quais possui, e essas aparecem na tela de Orçamento; ela não
   precisa ter cadastrado a impressora do zero. Um preset preenche só
@@ -329,7 +329,26 @@ funciona hoje.
     ilustração própria, desenhada pro projeto (mesmo caminho já usado pro
     ícone do app, decisão 42 — sem depender de imagem de terceiros). Preciso
     decidir isso antes de qualquer imagem entrar no repositório.
-- [ ] **Preset de marcas de filamento + tipo de material com densidade
+  - **Feito (2026-09-19, decisão 54):** `ui/printers/PrinterPresetDialog`
+    (botão "Escolher da lista" em Impressoras), `ui/printers/PrinterPresets.kt`.
+    Fotos de produto ficaram de fora, como já registrado acima (sem decisão
+    de licenciamento tomada) — sem ícone/ilustração também, ver observação
+    de ícones no item de filamentos abaixo. Depois de testar a primeira
+    versão (5 impressoras, consumo médio estimado), o responsável do projeto
+    pediu pra trocar de critério: catálogo ampliado pra **39 modelos** das 7
+    principais marcas (Bambu Lab, Creality, Prusa, Elegoo, Anycubic,
+    Flashforge, Snapmaker), usando a **potência máxima/nominal do manual ou
+    ficha técnica oficial** em vez de uma estimativa de consumo médio — mais
+    fácil de sourciar de forma confiável (a maioria das marcas não publica
+    consumo médio, só o nominal), à custa de poder superestimar o custo de
+    energia real se a pessoa não ajustar (o diálogo deixa isso explícito no
+    texto). Ficaram de fora modelos sem número oficial confiável (Anycubic
+    Vyper, Flashforge Creator Pro/Guider II, Anycubic Kobra original, CR-10
+    original) — não inventado. Marcas brasileiras continuam sem entrar por
+    falta de dado elétrico publicado (mesma limitação já registrada acima).
+    Com o catálogo maior, o diálogo ganhou um **campo de busca** (marca ou
+    modelo, mesmo filtro `contains`/case-insensitive do Histórico).
+- [x] **Preset de marcas de filamento + tipo de material com densidade
   automática.** Hoje `Filament` (`core/model/Filament.kt`) só tem `brand`
   (texto livre, opcional) e `densityGPerCm3` digitada manualmente sem
   nenhuma sugestão — não existe campo de "tipo" (PLA/PETG/etc.) hoje. Duas
@@ -381,6 +400,23 @@ funciona hoje.
     marca/tipo/densidade padrão), mas a ideia de pasta por marca + arquivo
     por perfil serve de referência pro formato a documentar em
     [development.md](development.md).
+  - **Feito (2026-09-19, decisão 54):** `core/model/Filament.materialType`
+    (texto livre, mesmo tratamento de `brand`); chips de "Tipo de material"
+    e de marca em `ui/filaments/FilamentListScreen`, dados em
+    `ui/filaments/FilamentPresets.kt`. Reusa o chip de texto já usado nas
+    cores de filamento em vez de um dropdown novo, pra manter uma única
+    linguagem de interação no formulário — nenhum ícone adicionado (ver
+    observação abaixo).
+  - **Ícones — avaliado e descartado por ora (decisão 54, 2026-09-19):** o
+    responsável do projeto perguntou se ícones deixariam as telas de
+    Filamentos/Impressoras mais bonitas. Avaliação: as 3 telas de catálogo
+    (Filamentos/Impressoras/Serviços) não usam nenhum ícone gráfico hoje —
+    introduzir um só nas duas telas novas criaria inconsistência com
+    Serviços (que já está no backlog técnico pra uma futura unificação das
+    3 telas, ver "Observações técnicas" no fim deste documento) e exigiria
+    uma dependência nova (nenhuma lib de ícones no projeto) só por um ganho
+    visual marginal. Revisitar junto da unificação das telas de catálogo,
+    se/quando ela acontecer.
 
 ### Vendas e divulgação
 

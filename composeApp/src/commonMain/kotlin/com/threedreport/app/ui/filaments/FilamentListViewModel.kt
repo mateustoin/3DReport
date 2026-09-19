@@ -61,6 +61,7 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
                 densityGPerCm3 = current.densityGPerCm3Text.toRequiredDouble("Densidade"),
                 diameterMm = current.diameterMmText.toRequiredDouble("Diâmetro"),
                 brand = current.brand.trim().ifEmpty { null },
+                materialType = current.materialType.trim().ifEmpty { null },
                 colors = current.colors.ifEmpty { error("Cadastre ao menos uma cor") }.map {
                     FilamentColor(id = it.id, name = it.name.trim().ifEmpty { null }, hex = it.hex, inStock = it.inStock)
                 },

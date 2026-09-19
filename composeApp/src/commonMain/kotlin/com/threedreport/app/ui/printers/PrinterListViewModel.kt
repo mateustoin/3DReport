@@ -26,6 +26,14 @@ class PrinterListViewModel(private val repository: PrinterRepository) {
         formState.value = PrinterFormState()
     }
 
+    /** Abre o formulário de nova impressora já preenchido com um preset — ver [PrinterPreset]. */
+    fun startAddFromPreset(preset: PrinterPreset) {
+        formState.value = PrinterFormState(
+            name = "${preset.brand} ${preset.model}",
+            printerPowerWattsText = preset.ratedPowerWatts.toString(),
+        )
+    }
+
     fun startEdit(printer: PrinterProfile) {
         formState.value = printer.toFormState()
     }

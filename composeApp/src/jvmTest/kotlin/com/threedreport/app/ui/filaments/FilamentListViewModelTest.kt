@@ -47,6 +47,26 @@ class FilamentListViewModelTest {
     }
 
     @Test
+    fun savingANewFilamentIncludesMaterialTypeWhenSet() {
+        val repository = FilamentRepository()
+        val viewModel = FilamentListViewModel(repository)
+
+        viewModel.startAdd()
+        viewModel.updateForm {
+            it.copy(
+                name = "PETG Cinza",
+                pricePerKgText = "120",
+                densityGPerCm3Text = "1.27",
+                materialType = "PETG",
+            )
+        }
+        viewModel.save()
+
+        val saved = repository.filaments.value.first { it.name == "PETG Cinza" }
+        assertEquals("PETG", saved.materialType)
+    }
+
+    @Test
     fun newFilamentDefaultsToOneColorInStock() {
         val repository = FilamentRepository()
         val viewModel = FilamentListViewModel(repository)

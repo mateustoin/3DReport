@@ -3,6 +3,7 @@ package com.threedreport.app.ui.filaments
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
+import com.threedreport.app.ui.components.PresetChip
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toMoney
@@ -116,6 +118,7 @@ private fun FilamentRow(
                     Text(filament.name, style = MaterialTheme.typography.titleMedium)
                     Text(
                         buildString {
+                            filament.materialType?.let { append("$it · ") }
                             append("${filament.pricePerKg.toMoney()}/kg · ${filament.densityGPerCm3} g/cm³")
                             filament.brand?.let { append(" · $it") }
                         },
@@ -189,6 +192,49 @@ private fun FilamentForm(
             onValueChange = { text -> onChange { it.copy(name = text) } },
             label = { Text("Nome") },
         )
+
+        Text("Tipo de material (opcional)", style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FILAMENT_MATERIAL_TYPE_PRESETS.forEach { preset ->
+                PresetChip(
+                    label = preset.label,
+                    selected = !form.isCustomMaterialType && form.materialType == preset.label,
+                    onClick = {
+                        onChange {
+                            it.copy(
+                                materialType = preset.label,
+                                isCustomMaterialType = false,
+                                densityGPerCm3Text = preset.defaultDensityGPerCm3?.toString() ?: it.densityGPerCm3Text,
+                            )
+                        }
+                    },
+                )
+            }
+            PresetChip(
+                label = CUSTOM_MATERIAL_TYPE_LABEL,
+                selected = form.isCustomMaterialType,
+                onClick = { onChange { it.copy(materialType = "", isCustomMaterialType = true) } },
+            )
+        }
+        if (form.isCustomMaterialType) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().tabToNavigate(),
+                value = form.materialType,
+                onValueChange = { text -> onChange { it.copy(materialType = text) } },
+                label = { Text("Nome do tipo personalizado") },
+            )
+        }
+        FILAMENT_MATERIAL_TYPE_PRESETS.find { it.label == form.materialType && it.defaultDensityGPerCm3 == null }?.let {
+            Text(
+                "Densidade varia bastante conforme o fabricante e o % de carga nesse tipo — confira a ficha " +
+                    "técnica do rolo e ajuste o campo abaixo.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.pricePerKgText,
@@ -213,6 +259,19 @@ private fun FilamentForm(
             onValueChange = { text -> onChange { it.copy(brand = text) } },
             label = { Text("Marca (opcional)") },
         )
+        Text("Marcas conhecidas:", style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            (FILAMENT_BRAND_PRESETS_INTERNATIONAL + FILAMENT_BRAND_PRESETS_BRAZIL).forEach { brand ->
+                PresetChip(
+                    label = brand,
+                    selected = form.brand == brand,
+                    onClick = { onChange { it.copy(brand = brand) } },
+                )
+            }
+        }
 
         HorizontalDivider()
 

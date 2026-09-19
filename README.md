@@ -66,8 +66,8 @@ com a margem de lucro desejada.
 - Dashboard — total vendido, lucro e filamento mais usado, por período
 
 **Catálogos**
-- Cadastro de filamentos — marca, várias cores e controle manual de estoque por cor
-- Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento)
+- Cadastro de filamentos — marca, tipo de material (com densidade sugerida), várias cores e controle manual de estoque por cor
+- Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento), com catálogo pré-cadastrado das principais marcas pra escolher
 
 **Personalização do PDF**
 - Marca d'água personalizada (texto, configurável em Configurações)

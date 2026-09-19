@@ -5,6 +5,23 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.9.0] - 2026-09-19
+
+### Adicionado
+- Preset de impressoras: botão "Escolher da lista" em Impressoras abre um
+  catálogo pré-cadastrado com 39 modelos das principais marcas (Bambu Lab,
+  Creality, Prusa, Elegoo, Anycubic, Flashforge, Snapmaker) — escolher um
+  preenche nome e consumo (potência máxima do manual/ficha técnica oficial)
+  no formulário de nova impressora, com busca por marca ou modelo. Escolher
+  da lista nunca é obrigatório — cadastro manual continua funcionando igual.
+- Tipo de material no cadastro de filamento (PLA, PETG, ABS, ASA, TPU,
+  Nylon, PC, HIPS, PVA, PLA-CF, PETG-CF, Madeira ou personalizado) — escolher
+  um tipo com densidade confiável já preenche o campo de densidade
+  automaticamente (continua editável); tipos compostos (CF, madeira) não têm
+  densidade sugerida, porque varia demais por fabricante.
+- Chips de marcas conhecidas de filamento (internacionais e brasileiras) no
+  cadastro, pra preencher o campo Marca sem digitar do zero.
+
 ## [1.8.0] - 2026-09-17
 
 ### Alterado

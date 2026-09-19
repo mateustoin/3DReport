@@ -36,6 +36,7 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
     val printers by viewModel.printers.collectAsState()
     val form by viewModel.form.collectAsState()
     var pendingDelete by remember { mutableStateOf<PrinterProfile?>(null) }
+    var showPresetPicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -57,7 +58,10 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
 
         val currentForm = form
         if (currentForm == null) {
-            Button(onClick = viewModel::startAdd) { Text("+ Nova impressora") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = viewModel::startAdd) { Text("+ Nova impressora") }
+                TextButton(onClick = { showPresetPicker = true }) { Text("Escolher da lista") }
+            }
         } else {
             HorizontalDivider()
             PrinterForm(
@@ -78,6 +82,16 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
                 pendingDelete = null
             },
             onDismiss = { pendingDelete = null },
+        )
+    }
+
+    if (showPresetPicker) {
+        PrinterPresetDialog(
+            onPick = { preset ->
+                viewModel.startAddFromPreset(preset)
+                showPresetPicker = false
+            },
+            onDismiss = { showPresetPicker = false },
         )
     }
 }

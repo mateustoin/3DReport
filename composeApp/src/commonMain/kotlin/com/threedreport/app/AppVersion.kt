@@ -3,6 +3,7 @@ package com.threedreport.app
 /**
  * Versão do app, exibida no rodapé e usada como `packageVersion` do
  * instalador. Mantenha em sincronia com `appVersion` em `gradle.properties`
- * (ver comentário lá — bump MINOR a cada leva de funcionalidades entregue).
+ * (ver comentário lá — PATCH pra leva sem funcionalidade nova, MINOR pra
+ * leva com funcionalidade nova).
  */
-const val APP_VERSION = "1.8.0"
+const val APP_VERSION = "1.9.0"
