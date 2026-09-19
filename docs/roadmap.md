@@ -109,6 +109,14 @@ PDFs (seção 1, "Vendas e divulgação").
   spray, por outro lado, **entra na aba Serviços** (é um valor fixo cobrado
   do cliente, cabe direto no que já existe — não precisou de aba nova).
   Feito (2026-09-15).
+  - **Múltiplos canais de venda com taxa própria (levantado em 2026-09-19,
+    pesquisa de concorrentes, ainda não implementado).** Hoje só existe uma
+    taxa de marketplace única. Quem vende em mais de um canal (Shopee,
+    Mercado Livre, Etsy etc., cada um com sua própria taxa) precisa trocar a
+    configuração manualmente antes de cada orçamento. Ideia: um pequeno
+    catálogo de canais (nome + taxa), mesmo padrão de Serviços, com o
+    checkbox da aba Orçamento virando um dropdown de canal quando houver mais
+    de um cadastrado.
 - [x] **Exclusão com confirmação.** "Excluir" agia na hora, sem diálogo de
   confirmação — risco de exclusão acidental de um item configurado com
   calma. Feito (2026-09-15): `ui/components/ConfirmDialog` (diálogo genérico,
@@ -175,6 +183,28 @@ implementação.
   do filtro do Histórico (decisão 38). Feito (2026-09-16):
   `core/report/QuoteReport` (agregação pura, mesmo estilo do
   `PricingCalculator`), `ui/dashboard/{DashboardViewModel,DashboardScreen}`.
+  - **Ranking de produto mais lucrativo (levantado em 2026-09-19, pesquisa de
+    concorrentes, ainda não implementado).** Hoje o Dashboard só destaca o
+    filamento mais *usado* (volume); adicionar um ranking por *lucro* (que
+    produto/orçamento deu mais margem, não só mais volume) — os dois podem
+    apontar pra peças diferentes. Reaproveita a mesma agregação de
+    `QuoteReport` sobre o período já filtrado.
+
+### Importar dados do slicer (G-code)
+
+- [ ] **Preencher peso de filamento e tempo de impressão a partir do G-code
+  exportado pelo slicer, em vez de digitar os dois campos na mão.** Levantado
+  em 2026-09-19 (pesquisa de concorrentes — PrintQuote3D, projeto open source
+  parecido, também prioriza isso antes de um parser de STL próprio). A
+  maioria dos slicers (PrusaSlicer, Cura, Bambu Studio) grava o consumo de
+  filamento e o tempo estimado como comentário no cabeçalho/rodapé do
+  arquivo `.gcode` — ler esse texto (sem precisar interpretar a malha 3D nem
+  desenhar nada) já cobre o essencial do que a Fase 2 abaixo tentaria
+  estimar geometricamente, e com mais precisão (o slicer já considera
+  suporte/purga, que uma estimativa por volume não considera). Os campos
+  continuam editáveis manualmente depois de importados — é um atalho pra
+  preencher, não uma trava. Não depende da Fase 1 (upload de STL) —
+  funciona mesmo sem visualizador 3D.
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 
@@ -204,7 +234,11 @@ implementação.
   camada, % de preenchimento, velocidade média — por impressora ou global),
   **sugerir** peso e tempo estimados; o criador continua podendo ajustar na
   mão (é um ponto de partida, não substitui o fatiador real, que considera
-  suporte/purga/etc.). Depende só da fase 1.
+  suporte/purga/etc.). Depende só da fase 1. **Prioridade reavaliada
+  (2026-09-19):** com o item "Importar dados do slicer" acima, boa parte do
+  valor desta fase (peso/tempo sem digitar na mão) já fica coberta com bem
+  menos esforço e mais precisão — avaliar se ainda compensa implementar a
+  estimativa geométrica própria antes de investir nela.
 - [ ] **Fase 3 — Análise de complexidade / nível de dificuldade.**
   **Motivação:** peças com geometria complexa (ex.: uma action figure) dão
   mais trabalho de configurar o fatiador (suporte, orientação) e têm mais
@@ -266,6 +300,19 @@ implementação.
   "falhou" (com motivo opcional) e, com histórico suficiente, sugerir um %
   de falha calibrado com dado real do próprio criador em vez de um chute
   inicial.
+- [ ] **Sinal/pagamento parcial no orçamento** (levantado em 2026-09-19,
+  pesquisa de comunidade — prática comum em encomenda sob medida em fóruns
+  de venda como Etsy: cobrar 25–50% adiantado, saldo na entrega). Complementa
+  o `OrderStatus` que já existe: registrar se o orçamento tem sinal
+  configurado, o valor/percentual do sinal e se já foi pago, sem virar um
+  controle financeiro completo (não é objetivo do app virar um sistema de
+  contas a receber).
+- [ ] **Lembrete de manutenção de impressora por horas acumuladas**
+  (levantado em 2026-09-19, pesquisa de concorrentes — FoxTrack tem
+  agendamento de manutenção). `PrinterProfile` já registra o custo de
+  manutenção da máquina; falta um aviso quando o total de horas impressas
+  (somadas pelos orçamentos daquela impressora) passar de um limiar
+  configurável, lembrando de fazer a manutenção preventiva.
 
 ### Presets de cadastro (impressoras e filamentos)
 
@@ -507,7 +554,24 @@ funciona hoje.
   manual do zero a cada filamento novo. Complementar ao **preset de marcas de
   filamento** (seção "Produção e precificação" acima) — aquele é uma lista
   base já embutida no app; este é a comunidade compartilhando catálogos
-  próprios entre si por fora dela.
+  próprios entre si por fora dela. **Compatibilidade com Spoolman (levantado
+  em 2026-09-19, pesquisa de concorrentes):** o formato/API do
+  [Spoolman](https://github.com/Donkie/Spoolman) virou o padrão de facto
+  open source pra banco de dados de carretel de filamento — vale avaliar ler
+  esse formato em vez de inventar um próprio. **Baixa prioridade — depende
+  de um serviço externo rodando** (o Spoolman roda como servidor à parte,
+  fora do escopo 100% local/arquivo do app hoje); fica pra depois do que é
+  local.
+- [ ] **Portal de acompanhamento pro cliente** (levantado em 2026-09-19,
+  pesquisa de concorrentes — visto na Printforge). Um link que o cliente
+  acessa pra ver o status do próprio pedido sem precisar perguntar. **Baixa
+  prioridade — depende de infraestrutura online** (hospedagem/backend), que
+  o app não tem hoje (é 100% local/desktop); só cabe se o projeto um dia
+  ganhar um componente online.
+- [ ] **Assistente de IA pra sugerir preço/descrição do produto** (levantado
+  em 2026-09-19, pesquisa de concorrentes — visto na Printforge). **Baixa
+  prioridade — depende de uma API de IA externa**, incompatível com o app
+  ser 100% local hoje; fica pra depois do que é local.
 
 ### UX extras
 
@@ -598,6 +662,20 @@ funciona hoje.
     e salvar de novo — mais trabalho (`QuoteViewModel` não tem hoje como se
     popular a partir de um `SavedQuote` existente), mas evita criar uma
     segunda forma de editar metadados de orçamento.
+- [ ] **Quadro Kanban de pedidos** (levantado em 2026-09-19, pesquisa de
+  concorrentes — FoxTrack e Printforge usam isso como visão principal).
+  Visão alternativa ao Histórico em lista: colunas por `OrderStatus`
+  (Orçado/Aprovado/Em impressão/Pronto/Entregue), arrastando o card do
+  orçamento entre colunas pra mudar o status — mais fácil de enxergar volume
+  quando há vários pedidos simultâneos do que o dropdown por linha que já
+  existe hoje. Não substitui a lista/filtro do Histórico, é uma aba/visão a
+  mais sobre o mesmo dado.
+- [ ] **Idioma da interface configurável** (levantado em 2026-09-19, pesquisa
+  de concorrentes — apps internacionais atendem público global). Hoje a UI é
+  fixa em português. Baixa prioridade dado o foco atual no mercado
+  brasileiro — mas é uma funcionalidade 100% local (só strings/tradução, sem
+  depender de nenhum serviço externo), diferente dos outros itens adiados
+  por dependerem de nuvem.
 
 ## 2. Site (GitHub Pages) — divulgação e instruções de uso
 
