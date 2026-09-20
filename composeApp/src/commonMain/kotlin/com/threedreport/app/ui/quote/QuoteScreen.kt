@@ -89,6 +89,11 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             onSelect = { viewModel.selectPrinter(it.id) },
         )
 
+        OutlinedButton(onClick = viewModel::pickAndImportGCode) { Text("Preencher a partir do G-code") }
+        input.gcodeImportMessage?.let { message ->
+            Text(message, style = MaterialTheme.typography.bodySmall)
+        }
+
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = input.lengthMetersText,

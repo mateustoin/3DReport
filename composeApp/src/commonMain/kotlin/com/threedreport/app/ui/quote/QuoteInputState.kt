@@ -9,4 +9,6 @@ data class QuoteInputState(
     val printTimeMinutesText: String = "",
     val selectedServiceIds: Set<String> = emptySet(),
     val appliesMarketplaceFee: Boolean = false,
+    /** Mensagem sobre a última tentativa de importar dados de um G-code, exibida abaixo do botão. */
+    val gcodeImportMessage: String? = null,
 )

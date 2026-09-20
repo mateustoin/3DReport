@@ -5,6 +5,15 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.10.0] - 2026-09-20
+
+### Adicionado
+- Botão "Preencher a partir do G-code" na tela de Orçamento: importa
+  comprimento de filamento e tempo de impressão direto dos comentários de
+  metadados do arquivo `.gcode` exportado pelo fatiador (PrusaSlicer, Bambu
+  Studio/OrcaSlicer e Cura), em vez de digitar os dois campos na mão. Os
+  campos continuam editáveis manualmente depois de importados.
+
 ## [1.9.0] - 2026-09-19
 
 ### Adicionado

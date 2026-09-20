@@ -192,19 +192,24 @@ implementação.
 
 ### Importar dados do slicer (G-code)
 
-- [ ] **Preencher peso de filamento e tempo de impressão a partir do G-code
-  exportado pelo slicer, em vez de digitar os dois campos na mão.** Levantado
-  em 2026-09-19 (pesquisa de concorrentes — PrintQuote3D, projeto open source
-  parecido, também prioriza isso antes de um parser de STL próprio). A
-  maioria dos slicers (PrusaSlicer, Cura, Bambu Studio) grava o consumo de
-  filamento e o tempo estimado como comentário no cabeçalho/rodapé do
-  arquivo `.gcode` — ler esse texto (sem precisar interpretar a malha 3D nem
-  desenhar nada) já cobre o essencial do que a Fase 2 abaixo tentaria
-  estimar geometricamente, e com mais precisão (o slicer já considera
-  suporte/purga, que uma estimativa por volume não considera). Os campos
-  continuam editáveis manualmente depois de importados — é um atalho pra
-  preencher, não uma trava. Não depende da Fase 1 (upload de STL) —
-  funciona mesmo sem visualizador 3D.
+- [x] **Preencher peso de filamento e tempo de impressão a partir do G-code
+  exportado pelo slicer, em vez de digitar os dois campos na mão** (decisão
+  55). Levantado em 2026-09-19 (pesquisa de concorrentes — PrintQuote3D,
+  projeto open source parecido, também prioriza isso antes de um parser de
+  STL próprio). A maioria dos slicers (PrusaSlicer, Cura, Bambu Studio)
+  grava o consumo de filamento e o tempo estimado como comentário no
+  cabeçalho/rodapé do arquivo `.gcode` — ler esse texto (sem precisar
+  interpretar a malha 3D nem desenhar nada) já cobre o essencial do que a
+  Fase 2 abaixo tentaria estimar geometricamente, e com mais precisão (o
+  slicer já considera suporte/purga, que uma estimativa por volume não
+  considera). Os campos continuam editáveis manualmente depois de
+  importados — é um atalho pra preencher, não uma trava. Não depende da
+  Fase 1 (upload de STL) — funciona mesmo sem visualizador 3D. Feito
+  (2026-09-20): `core/slicer/GCodeMetadataParser` (função pura, testada,
+  cobre os formatos PrusaSlicer/Bambu Studio/OrcaSlicer e Cura, com soma de
+  múltiplos extrusores), `platform/pickGCodeFile` (mesmo padrão de
+  `pickImageFile`), botão "Preencher a partir do G-code" na tela de
+  Orçamento (`QuoteViewModel.pickAndImportGCode`).
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 

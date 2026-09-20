@@ -5,6 +5,7 @@ import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.platform.pickGCodeFile
 import com.threedreport.app.platform.pickImageFile
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.Client
@@ -15,10 +16,13 @@ import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.slicer.GCodeMetadata
+import com.threedreport.core.slicer.GCodeMetadataParser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlin.math.round
 
 /**
  * ViewModel da tela de Orçamento.
@@ -50,8 +54,27 @@ class QuoteViewModel(
     fun selectFilament(id: String) = inputState.update { it.copy(filamentId = id, filamentColorId = null) }
     fun selectFilamentColor(id: String) = inputState.update { it.copy(filamentColorId = id) }
     fun selectPrinter(id: String) = inputState.update { it.copy(printerId = id) }
-    fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text) }
-    fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text) }
+    fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text, gcodeImportMessage = null) }
+    fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text, gcodeImportMessage = null) }
+
+    /**
+     * Abre o seletor de arquivo pra escolher um G-code exportado pelo fatiador e preenche
+     * comprimento de filamento / tempo de impressão a partir dos comentários de metadados dele
+     * ([GCodeMetadataParser]). Os campos continuam editáveis manualmente depois — é um atalho
+     * pra preencher, não uma trava, já que nem todo fatiador grava esses dados num formato
+     * reconhecido.
+     */
+    fun pickAndImportGCode() {
+        val picked = pickGCodeFile() ?: return
+        val metadata = GCodeMetadataParser.parse(picked.bytes.decodeToString())
+        inputState.update {
+            it.copy(
+                lengthMetersText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: it.lengthMetersText,
+                printTimeMinutesText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: it.printTimeMinutesText,
+                gcodeImportMessage = gcodeImportMessage(metadata),
+            )
+        }
+    }
 
     fun toggleService(id: String) = inputState.update {
         it.copy(selectedServiceIds = if (id in it.selectedServiceIds) it.selectedServiceIds - id else it.selectedServiceIds + id)
@@ -118,5 +141,21 @@ class QuoteViewModel(
             onSuccess = { QuoteResult(filament, filamentColor, printer, quote = it, selectedServices = selectedServices) },
             onFailure = { QuoteResult(filament, filamentColor, printer, errorMessage = it.message, selectedServices = selectedServices) },
         )
+    }
+
+    private fun gcodeImportMessage(metadata: GCodeMetadata): String = when {
+        metadata.isEmpty ->
+            "Não encontrei peso de filamento nem tempo de impressão nesse G-code — preencha manualmente."
+        metadata.filamentLengthMeters == null ->
+            "Tempo de impressão preenchido a partir do G-code; não encontrei o consumo de filamento nesse arquivo."
+        metadata.printTimeMinutes == null ->
+            "Comprimento de filamento preenchido a partir do G-code; não encontrei o tempo de impressão nesse arquivo."
+        else -> "Comprimento de filamento e tempo de impressão preenchidos a partir do G-code."
+    }
+
+    /** Arredonda pra 2 casas decimais e evita ".0" à toa (ex.: 5.0 vira "5", não "5.0"). */
+    private fun formatImportedNumber(value: Double): String {
+        val rounded = round(value * 100) / 100
+        return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
     }
 }
