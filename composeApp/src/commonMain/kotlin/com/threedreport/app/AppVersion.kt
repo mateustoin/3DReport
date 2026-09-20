@@ -6,4 +6,4 @@ package com.threedreport.app
  * (ver comentário lá — PATCH pra leva sem funcionalidade nova, MINOR pra
  * leva com funcionalidade nova).
  */
-const val APP_VERSION = "1.11.1"
+const val APP_VERSION = "1.11.2"

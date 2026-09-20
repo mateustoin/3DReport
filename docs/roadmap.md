@@ -222,12 +222,19 @@ implementação.
     aparece junto da mensagem de resultado — limpa comprimento/tempo e, se
     a foto atual também veio do G-code, remove ela também, caso o usuário
     desista do arquivo importado.
-  - **Correção (decisão 57, 2026-09-20):** o diálogo de escolher o G-code
-    mostrava todos os arquivos no Windows, ignorando o filtro de extensão
-    — bug antigo do AWT (o peer nativo do `FileDialog` no Windows não
-    chama o `filenameFilter` de volta). Corrigido definindo o padrão
-    wildcard (`*.gcode;*.gco;*.g`) direto em `FileDialog.file`, que o
-    Windows respeita de fato.
+  - **Correção, tentativa 1 (decisão 57, 2026-09-20, insuficiente):** o
+    diálogo de escolher o G-code mostrava todos os arquivos no Windows,
+    ignorando o filtro de extensão. Tentativa de corrigir definindo o
+    padrão wildcard (`*.gcode;*.gco;*.g`) em `FileDialog.file` não
+    resolveu — o responsável do projeto reportou que o texto do wildcard
+    ia parar na caixa de nome do arquivo, não num filtro de tipo de
+    verdade, então a lista de arquivos continuava sem filtrar.
+  - **Correção, tentativa 2 (decisão 58, 2026-09-20):** trocado
+    `java.awt.FileDialog` por `javax.swing.JFileChooser` (com
+    `FileNameExtensionFilter`) nos dois diálogos de escolher arquivo do
+    app — G-code e foto —, que tem um combo real de "Files of type"
+    respeitado em qualquer SO, diferente do diálogo nativo do AWT no
+    Windows.
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 

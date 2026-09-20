@@ -5,6 +5,17 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.11.2] - 2026-09-20
+
+### Corrigido
+- A correção da v1.11.1 não resolvia de fato: o diálogo de "Preencher a
+  partir do G-code" continuava mostrando todos os arquivos no Windows (o
+  texto do filtro ia parar na caixa de nome do arquivo, não num filtro de
+  tipo). Trocado o diálogo nativo (`java.awt.FileDialog`) por
+  `javax.swing.JFileChooser`, que tem um filtro de tipo de arquivo que
+  funciona de fato em qualquer sistema operacional — aplicado tanto no
+  diálogo de G-code quanto no de escolher foto.
+
 ## [1.11.1] - 2026-09-20
 
 ### Corrigido
@@ -12,6 +23,7 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
   Windows (mostrava todos os arquivos) — o filtro programático não é
   respeitado pelo diálogo nativo do Windows; corrigido definindo o padrão
   de busca (`*.gcode;*.gco;*.g`) diretamente, que o Windows respeita.
+  **Correção insuficiente — ver v1.11.2.**
 
 ## [1.11.0] - 2026-09-20
 
