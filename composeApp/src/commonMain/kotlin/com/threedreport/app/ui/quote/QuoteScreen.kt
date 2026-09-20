@@ -92,6 +92,7 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
         OutlinedButton(onClick = viewModel::pickAndImportGCode) { Text("Preencher a partir do G-code") }
         input.gcodeImportMessage?.let { message ->
             Text(message, style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = viewModel::undoGCodeImport) { Text("Desfazer importação do G-code") }
         }
 
         OutlinedTextField(

@@ -210,6 +210,18 @@ implementação.
   múltiplos extrusores), `platform/pickGCodeFile` (mesmo padrão de
   `pickImageFile`), botão "Preencher a partir do G-code" na tela de
   Orçamento (`QuoteViewModel.pickAndImportGCode`).
+  - **Miniatura do modelo + desfazer importação (decisão 56, 2026-09-20):**
+    fatiadores da família PrusaSlicer (PrusaSlicer, SuperSlicer, OrcaSlicer,
+    Bambu Studio) embutem uma prévia renderizada do modelo no próprio
+    G-code — o parser passou a extrair essa miniatura também
+    (`GCodeMetadata.thumbnail`, pega a maior entre as várias resoluções
+    presentes) e usá-la como a foto do orçamento, **só quando nenhuma foto
+    já tiver sido escolhida** (não sobrescreve uma foto própria do
+    usuário). Cura não embute miniatura em G-code puro, por isso fica sem
+    esse extra nesse fatiador. Botão "Desfazer importação do G-code"
+    aparece junto da mensagem de resultado — limpa comprimento/tempo e, se
+    a foto atual também veio do G-code, remove ela também, caso o usuário
+    desista do arquivo importado.
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 

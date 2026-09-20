@@ -5,6 +5,7 @@ import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.pickGCodeFile
 import com.threedreport.app.platform.pickImageFile
 import com.threedreport.app.ui.format.parseDecimal
@@ -60,19 +61,44 @@ class QuoteViewModel(
     /**
      * Abre o seletor de arquivo pra escolher um G-code exportado pelo fatiador e preenche
      * comprimento de filamento / tempo de impressão a partir dos comentários de metadados dele
-     * ([GCodeMetadataParser]). Os campos continuam editáveis manualmente depois — é um atalho
-     * pra preencher, não uma trava, já que nem todo fatiador grava esses dados num formato
-     * reconhecido.
+     * ([GCodeMetadataParser]) — e a foto do orçamento, se o arquivo tiver uma miniatura embutida
+     * e nenhuma foto já tiver sido escolhida (não sobrescreve uma foto própria do usuário). Tudo
+     * continua editável/removível manualmente depois — é um atalho pra preencher, não uma trava,
+     * já que nem todo fatiador grava esses dados num formato reconhecido. Ver [undoGCodeImport]
+     * pra desfazer de uma vez.
      */
     fun pickAndImportGCode() {
         val picked = pickGCodeFile() ?: return
         val metadata = GCodeMetadataParser.parse(picked.bytes.decodeToString())
+        val thumbnail = metadata.thumbnail
+        val photoApplied = thumbnail != null && saveFormState.value.photo == null
+        if (photoApplied) {
+            saveFormState.update {
+                it.copy(
+                    photo = PickedFile("miniatura_do_gcode.${thumbnail.fileExtension}", thumbnail.bytes),
+                    photoFromGCode = true,
+                    savedConfirmation = false,
+                )
+            }
+        }
         inputState.update {
             it.copy(
                 lengthMetersText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: it.lengthMetersText,
                 printTimeMinutesText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: it.printTimeMinutesText,
-                gcodeImportMessage = gcodeImportMessage(metadata),
+                gcodeImportMessage = gcodeImportMessage(metadata, photoApplied),
             )
+        }
+    }
+
+    /**
+     * Desfaz a última importação de G-code: limpa comprimento/tempo (volta pro texto em branco,
+     * não pro valor anterior a importar) e, se a foto atual também veio de lá, remove ela também
+     * — sem mexer numa foto que o usuário tenha escolhido manualmente antes ou depois.
+     */
+    fun undoGCodeImport() {
+        inputState.update { it.copy(lengthMetersText = "", printTimeMinutesText = "", gcodeImportMessage = null) }
+        if (saveFormState.value.photoFromGCode) {
+            saveFormState.update { it.copy(photo = null, photoFromGCode = false, savedConfirmation = false) }
         }
     }
 
@@ -86,11 +112,11 @@ class QuoteViewModel(
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
     fun setClientName(text: String) = saveFormState.update { it.copy(clientName = text, savedConfirmation = false) }
     fun setClientContact(text: String) = saveFormState.update { it.copy(clientContact = text, savedConfirmation = false) }
-    fun clearPhoto() = saveFormState.update { it.copy(photo = null, savedConfirmation = false) }
+    fun clearPhoto() = saveFormState.update { it.copy(photo = null, photoFromGCode = false, savedConfirmation = false) }
 
     fun pickPhoto() {
         val picked = pickImageFile() ?: return
-        saveFormState.update { it.copy(photo = picked, savedConfirmation = false) }
+        saveFormState.update { it.copy(photo = picked, photoFromGCode = false, savedConfirmation = false) }
     }
 
     fun saveQuote(quote: Quote, services: List<Service>) {
@@ -143,14 +169,22 @@ class QuoteViewModel(
         )
     }
 
-    private fun gcodeImportMessage(metadata: GCodeMetadata): String = when {
-        metadata.isEmpty ->
-            "Não encontrei peso de filamento nem tempo de impressão nesse G-code — preencha manualmente."
-        metadata.filamentLengthMeters == null ->
-            "Tempo de impressão preenchido a partir do G-code; não encontrei o consumo de filamento nesse arquivo."
-        metadata.printTimeMinutes == null ->
-            "Comprimento de filamento preenchido a partir do G-code; não encontrei o tempo de impressão nesse arquivo."
-        else -> "Comprimento de filamento e tempo de impressão preenchidos a partir do G-code."
+    private fun gcodeImportMessage(metadata: GCodeMetadata, photoApplied: Boolean): String {
+        val filled = buildList {
+            if (metadata.filamentLengthMeters != null) add("comprimento de filamento")
+            if (metadata.printTimeMinutes != null) add("tempo de impressão")
+            if (photoApplied) add("foto do modelo")
+        }
+        val skippedPhotoNote = if (metadata.thumbnail != null && !photoApplied) {
+            " Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido."
+        } else {
+            ""
+        }
+        return if (filled.isEmpty()) {
+            "Não encontrei nenhum dado reconhecido nesse G-code — preencha manualmente.$skippedPhotoNote"
+        } else {
+            "Preenchido a partir do G-code: ${filled.joinToString(", ")}.$skippedPhotoNote"
+        }
     }
 
     /** Arredonda pra 2 casas decimais e evita ".0" à toa (ex.: 5.0 vira "5", não "5.0"). */

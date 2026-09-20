@@ -1,30 +1,44 @@
 package com.threedreport.core.slicer
 
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+
 /**
  * Metadados lidos dos comentários de um G-code exportado por um fatiador.
  *
- * Qualquer um dos dois campos pode vir `null` se o fatiador usado não gravar
+ * Qualquer um dos três campos pode vir `null` se o fatiador usado não gravar
  * esse dado num formato reconhecido — nesse caso o campo correspondente na
- * tela de Orçamento simplesmente não é preenchido, continua editável na mão.
+ * tela de Orçamento simplesmente não é preenchido, continua editável/
+ * escolhível na mão.
  */
 data class GCodeMetadata(
     val filamentLengthMeters: Double?,
     val printTimeMinutes: Double?,
+    val thumbnail: GCodeThumbnail?,
 ) {
-    val isEmpty: Boolean get() = filamentLengthMeters == null && printTimeMinutes == null
+    val isEmpty: Boolean get() = filamentLengthMeters == null && printTimeMinutes == null && thumbnail == null
 }
+
+/**
+ * Miniatura do modelo (prévia renderizada pelo fatiador) embutida no G-code,
+ * já decodificada de base64 — pronta pra usar como foto do orçamento.
+ */
+data class GCodeThumbnail(val bytes: ByteArray, val fileExtension: String)
 
 /**
  * Lê os comentários de metadados que a maioria dos fatiadores (PrusaSlicer,
  * Bambu Studio/OrcaSlicer, Cura) grava no cabeçalho/rodapé do G-code —
- * consumo de filamento e tempo estimado de impressão. Não interpreta nenhum
- * comando de movimento, só os comentários de texto.
+ * consumo de filamento, tempo estimado de impressão e, quando presente, uma
+ * miniatura do modelo. Não interpreta nenhum comando de movimento, só os
+ * comentários de texto.
  */
 object GCodeMetadataParser {
 
+    @OptIn(ExperimentalEncodingApi::class)
     fun parse(text: String): GCodeMetadata = GCodeMetadata(
         filamentLengthMeters = parseFilamentLengthMeters(text),
         printTimeMinutes = parsePrintTimeMinutes(text),
+        thumbnail = parseThumbnail(text),
     )
 
     // PrusaSlicer/Bambu Studio/OrcaSlicer, ex.: "; filament used [mm] = 1234.56"
@@ -84,4 +98,28 @@ object GCodeMetadataParser {
         if (days == 0.0 && hours == 0.0 && minutes == 0.0 && seconds == 0.0) return null
         return days * 24 * 60 + hours * 60 + minutes + seconds / 60.0
     }
+
+    // PrusaSlicer/SuperSlicer/OrcaSlicer/Bambu Studio embutem uma ou mais prévias do modelo (em
+    // tamanhos diferentes) como PNG ou JPEG em base64, delimitadas por comentários "thumbnail
+    // begin"/"thumbnail end" — cada linha do bloco é ";" + um pedaço da string base64. Cura não usa
+    // esse formato em G-code puro, por isso não tem equivalente aqui.
+    private val thumbnailBlockRegex =
+        Regex("""(?is);\s*thumbnail(_png|_jpg)?\s+begin\s+(\d+)x(\d+)\s+\d+(.*?);\s*thumbnail(?:_png|_jpg)?\s+end""")
+
+    @OptIn(ExperimentalEncodingApi::class)
+    private fun parseThumbnail(text: String): GCodeThumbnail? =
+        thumbnailBlockRegex.findAll(text)
+            .mapNotNull { match ->
+                val width = match.groupValues[2].toIntOrNull() ?: return@mapNotNull null
+                val height = match.groupValues[3].toIntOrNull() ?: return@mapNotNull null
+                val isJpeg = match.groupValues[1].contains("jpg", ignoreCase = true)
+                val base64 = match.groupValues[4].lineSequence()
+                    .map { it.trim().removePrefix(";").trim() }
+                    .filter { it.isNotEmpty() }
+                    .joinToString("")
+                val bytes = runCatching { Base64.decode(base64) }.getOrNull() ?: return@mapNotNull null
+                Triple(width * height, bytes, if (isJpeg) "jpg" else "png")
+            }
+            .maxByOrNull { it.first }
+            ?.let { (_, bytes, extension) -> GCodeThumbnail(bytes, extension) }
 }

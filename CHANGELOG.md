@@ -5,6 +5,17 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.11.0] - 2026-09-20
+
+### Adicionado
+- A importação de G-code agora também extrai a miniatura do modelo, quando
+  o fatiador embute uma (PrusaSlicer, SuperSlicer, OrcaSlicer, Bambu
+  Studio), e usa como foto do orçamento — só se nenhuma foto já tiver sido
+  escolhida.
+- Botão "Desfazer importação do G-code": limpa comprimento/tempo
+  preenchidos automaticamente e remove a foto, se ela também tiver vindo
+  do G-code.
+
 ## [1.10.0] - 2026-09-20
 
 ### Adicionado

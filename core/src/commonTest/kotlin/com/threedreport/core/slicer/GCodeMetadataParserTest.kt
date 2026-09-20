@@ -1,10 +1,13 @@
 package com.threedreport.core.slicer
 
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalEncodingApi::class)
 class GCodeMetadataParserTest {
 
     @Test
@@ -68,6 +71,41 @@ class GCodeMetadataParserTest {
 
         assertNull(metadata.filamentLengthMeters)
         assertNull(metadata.printTimeMinutes)
+        assertNull(metadata.thumbnail)
         assertTrue(metadata.isEmpty)
+    }
+
+    @Test
+    fun parsesThumbnailAndPicksTheLargestWhenMultiplePresent() {
+        val smallPayload = "small-thumbnail".encodeToByteArray()
+        val bigPayload = "much-bigger-thumbnail-payload-data".encodeToByteArray()
+        val gcode = """
+            ; thumbnail begin 16x16 999
+            ; ${Base64.encode(smallPayload)}
+            ; thumbnail end
+            ; thumbnail begin 220x124 999
+            ; ${Base64.encode(bigPayload)}
+            ; thumbnail end
+        """.trimIndent()
+
+        val thumbnail = GCodeMetadataParser.parse(gcode).thumbnail
+
+        assertEquals("png", thumbnail?.fileExtension)
+        assertTrue(thumbnail!!.bytes.contentEquals(bigPayload))
+    }
+
+    @Test
+    fun detectsJpegThumbnailVariant() {
+        val payload = "jpeg-thumbnail-bytes".encodeToByteArray()
+        val gcode = """
+            ; thumbnail_JPG begin 300x300 123
+            ; ${Base64.encode(payload)}
+            ; thumbnail_JPG end
+        """.trimIndent()
+
+        val thumbnail = GCodeMetadataParser.parse(gcode).thumbnail
+
+        assertEquals("jpg", thumbnail?.fileExtension)
+        assertTrue(thumbnail!!.bytes.contentEquals(payload))
     }
 }
