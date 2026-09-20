@@ -222,6 +222,12 @@ implementação.
     aparece junto da mensagem de resultado — limpa comprimento/tempo e, se
     a foto atual também veio do G-code, remove ela também, caso o usuário
     desista do arquivo importado.
+  - **Correção (decisão 57, 2026-09-20):** o diálogo de escolher o G-code
+    mostrava todos os arquivos no Windows, ignorando o filtro de extensão
+    — bug antigo do AWT (o peer nativo do `FileDialog` no Windows não
+    chama o `filenameFilter` de volta). Corrigido definindo o padrão
+    wildcard (`*.gcode;*.gco;*.g`) direto em `FileDialog.file`, que o
+    Windows respeita de fato.
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 

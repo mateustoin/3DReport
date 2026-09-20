@@ -5,6 +5,14 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.11.1] - 2026-09-20
+
+### Corrigido
+- O diálogo de "Preencher a partir do G-code" não filtrava por extensão no
+  Windows (mostrava todos os arquivos) — o filtro programático não é
+  respeitado pelo diálogo nativo do Windows; corrigido definindo o padrão
+  de busca (`*.gcode;*.gco;*.g`) diretamente, que o Windows respeita.
+
 ## [1.11.0] - 2026-09-20
 
 ### Adicionado
