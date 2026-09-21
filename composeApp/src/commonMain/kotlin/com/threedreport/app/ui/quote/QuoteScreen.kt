@@ -42,8 +42,20 @@ import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
+import com.threedreport.app.platform.encodeImageBitmapToPng
 import com.threedreport.app.ui.viewer.Stl3DViewer
+import com.threedreport.app.ui.viewer.rememberStl3DViewerState
 import com.threedreport.core.stl.parseStl
+import com.threedreport.core.stl.peekStlTriangleCount
+
+/**
+ * Acima disso, o visualizador 3D não é exibido (só o STL é salvo, pra recuperar depois) — é um
+ * limite heurístico, não medido com benchmark real: o rasterizador em `Canvas` (decisão 61)
+ * recalcula a projeção de cada triângulo a cada frame durante o arrasto, então uma malha muito
+ * densa travava a interface por completo em vez de só ficar mais lenta. Ajustar se um caso real
+ * mostrar que o limite está conservador (ou generoso) demais.
+ */
+private const val MAX_RENDERABLE_STL_TRIANGLES = 500_000L
 
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
 @Composable
@@ -173,15 +185,18 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             else -> Text("Preencha os campos acima para calcular.", style = MaterialTheme.typography.bodyMedium)
         }
 
-        if (quote != null) {
-            HorizontalDivider()
-            SaveQuoteForm(saveForm, viewModel, onSave = { viewModel.saveQuote(quote, result.selectedServices) })
-        }
+        HorizontalDivider()
+        SaveQuoteForm(
+            form = saveForm,
+            viewModel = viewModel,
+            canSave = quote != null,
+            onSave = { quote?.let { viewModel.saveQuote(it, result.selectedServices) } },
+        )
     }
 }
 
 @Composable
-private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, onSave: () -> Unit) {
+private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, canSave: Boolean, onSave: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Salvar orçamento", style = MaterialTheme.typography.titleMedium)
 
@@ -213,20 +228,35 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
                 Text(stlFile.fileName, style = MaterialTheme.typography.bodyMedium)
                 OutlinedButton(onClick = viewModel::clearStlFile) { Text("Remover STL") }
             }
-            val mesh = remember(stlFile) { runCatching { parseStl(stlFile.bytes) }.getOrNull() }
-            if (mesh != null) {
+            val triangleCount = remember(stlFile) { runCatching { peekStlTriangleCount(stlFile.bytes) }.getOrDefault(0L) }
+            if (triangleCount > MAX_RENDERABLE_STL_TRIANGLES) {
                 Text(
-                    "Arraste pra girar, use a roda do mouse pra zoom.",
+                    "Esse modelo é muito complexo pra pré-visualizar (~$triangleCount triângulos) — " +
+                        "o arquivo foi salvo normalmente, mas sem prévia 3D nesta versão, pra não travar o app.",
                     style = MaterialTheme.typography.bodySmall,
                 )
-                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                    Stl3DViewer(mesh = mesh, modifier = Modifier.fillMaxWidth().height(280.dp))
-                }
             } else {
-                Text(
-                    "Não consegui ler esse arquivo STL — pode estar corrompido ou num formato não suportado.",
-                    color = MaterialTheme.colorScheme.error,
-                )
+                val mesh = remember(stlFile) { runCatching { parseStl(stlFile.bytes) }.getOrNull() }
+                if (mesh != null) {
+                    Text(
+                        "Arraste pra girar, use a roda do mouse pra zoom.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    val viewerState = rememberStl3DViewerState(mesh)
+                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                        Stl3DViewer(state = viewerState, mesh = mesh, modifier = Modifier.fillMaxWidth().height(280.dp))
+                    }
+                    val baseColor = MaterialTheme.colorScheme.primary
+                    OutlinedButton(onClick = {
+                        val snapshot = viewerState.captureSnapshot(baseColor, width = 1000, height = 1000)
+                        viewModel.setPhotoFromStlSnapshot(encodeImageBitmapToPng(snapshot))
+                    }) { Text("Capturar como foto do orçamento") }
+                } else {
+                    Text(
+                        "Não consegui ler esse arquivo STL — pode estar corrompido ou num formato não suportado.",
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         } else {
             OutlinedButton(onClick = viewModel::pickStl) { Text("Anexar arquivo STL (opcional)") }
@@ -260,7 +290,13 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
             label = { Text("Contato do cliente (opcional)") },
         )
 
-        Button(onClick = onSave) { Text("Salvar orçamento") }
+        Button(onClick = onSave, enabled = canSave) { Text("Salvar orçamento") }
+        if (!canSave) {
+            Text(
+                "Preencha filamento, impressora, comprimento e tempo (ou importe do G-code) pra poder salvar.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
 
         if (form.savedConfirmation) {
             Text("Orçamento salvo no histórico.", color = MaterialTheme.colorScheme.primary)

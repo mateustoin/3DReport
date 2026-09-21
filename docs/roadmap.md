@@ -302,10 +302,22 @@ implementação.
       (centenas de milhares de triângulos, mais comuns em scans 3D do que
       em produtos de venda) — otimização adicional (ex.: nível de detalhe)
       fica pra se um caso real precisar.
-  - **Exportar a visualização como imagem**: capturar o frame renderizado no
-    ângulo escolhido e salvar/anexar como a foto do orçamento — reusa o
-    campo de foto que já existe, sem precisar de campo novo no modelo de
-    dados do orçamento. Ainda não implementado — próximo passo desta fase.
+    - **STL muito pesado trava o app ao tentar pré-visualizar (decisão 63,
+      2026-09-21):** um STL com centenas de milhares/milhões de triângulos
+      travava a interface (parse + render de tudo isso na thread principal,
+      sem indicação de progresso). Corrigido com um limite heurístico de
+      500 mil triângulos (`peekStlTriangleCount`, conta os triângulos sem
+      montar a malha inteira — lê 4 bytes no caso binário): acima disso, o
+      app **não tenta renderizar** e mostra um aviso, mas o STL continua
+      sendo salvo/recuperável no Histórico normalmente. Limite ajustável
+      se um caso real mostrar que está conservador ou generoso demais.
+  - [x] **Exportar a visualização como imagem**: capturar o frame
+    renderizado no ângulo/zoom escolhido e usar como foto do orçamento —
+    reusa o campo de foto que já existe, sem campo novo no modelo de
+    dados. Feito (2026-09-21): `Stl3DViewerState.captureSnapshot`
+    (renderiza off-screen com `CanvasDrawScope`, mesmo ângulo da tela),
+    `platform/encodeImageBitmapToPng`, botão "Capturar como foto do
+    orçamento".
 - [ ] **Fase 2 — Estimativa automática de peso/tempo a partir do STL.** Hoje
   o criador digita comprimento de filamento e tempo de impressão na mão. Com
   a malha já carregada (fase 1), dá pra calcular o **volume** da peça
@@ -704,6 +716,11 @@ funciona hoje.
   `Cmd` (macOS) indistintamente. Listados no diálogo de Ajuda. Feito
   (2026-09-17): `App.kt` (`onPreviewKeyEvent` no `Surface` raiz),
   `QuoteViewModel.saveCurrentQuote`/`resetForm`.
+- [x] **Formulário de salvar (nome, foto, STL, link, cliente) sempre
+  visível na aba Orçamento** (decisão 63, 2026-09-21) — antes só aparecia
+  depois de um cálculo válido, o que impedia anexar STL/foto antes de
+  preencher filamento/impressora/comprimento/tempo. Só o botão "Salvar
+  orçamento" continua exigindo cálculo válido pra habilitar.
 - [ ] **Onboarding na primeira execução.** Assistente curto guiando o
   cadastro da primeira impressora/filamento/margem, em vez de abrir numa
   tela vazia sem nenhum dado cadastrado. Baixa prioridade — fica pra

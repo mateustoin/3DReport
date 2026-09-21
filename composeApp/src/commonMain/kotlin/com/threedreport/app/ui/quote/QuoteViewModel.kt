@@ -132,6 +132,13 @@ class QuoteViewModel(
         saveFormState.update { it.copy(stlFile = picked, savedConfirmation = false) }
     }
 
+    /** Usa uma captura do visualizador 3D (`Stl3DViewerState.captureSnapshot`) como foto do orçamento. */
+    fun setPhotoFromStlSnapshot(pngBytes: ByteArray) {
+        saveFormState.update {
+            it.copy(photo = PickedFile("captura_stl.png", pngBytes), photoFromGCode = false, savedConfirmation = false)
+        }
+    }
+
     fun saveQuote(quote: Quote, services: List<Service>) {
         val form = saveFormState.value
         val client = form.clientName.trim().ifEmpty { null }?.let { name ->

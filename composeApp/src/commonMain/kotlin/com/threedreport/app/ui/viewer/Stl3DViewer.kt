@@ -11,18 +11,50 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import com.threedreport.core.stl.StlMesh
 import com.threedreport.core.stl.Vec3
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.compose.ui.graphics.Canvas as ComposeGraphicsCanvas
+
+/**
+ * Estado do [Stl3DViewer] (ângulo/zoom da câmera), hoisted pra fora do Canvas interativo pra que
+ * [captureSnapshot] consiga renderizar um frame off-screen com o ângulo atual — usado pelo botão
+ * "Capturar como foto do orçamento".
+ */
+class Stl3DViewerState(private val mesh: StlMesh) {
+    var yawDegrees by mutableStateOf(35f)
+    var pitchDegrees by mutableStateOf(20f)
+    var zoom by mutableStateOf(1f)
+
+    /** Renderiza o frame atual (mesmo ângulo/zoom da tela) off-screen, em [width]×[height] pixels. */
+    fun captureSnapshot(baseColor: Color, width: Int, height: Int): ImageBitmap {
+        val bitmap = ImageBitmap(width, height)
+        val canvas = ComposeGraphicsCanvas(bitmap)
+        val pathPool = Array(mesh.triangles.size) { Path() }
+        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, canvas, Size(width.toFloat(), height.toFloat())) {
+            drawRect(Color.White)
+            drawStlMesh(mesh, yawDegrees, pitchDegrees, zoom, baseColor, pathPool)
+        }
+        return bitmap
+    }
+}
+
+@Composable
+fun rememberStl3DViewerState(mesh: StlMesh): Stl3DViewerState = remember(mesh) { Stl3DViewerState(mesh) }
 
 /**
  * Visualizador 3D de uma [StlMesh] — rasterizador simples desenhado no próprio `Canvas` do
@@ -35,11 +67,7 @@ import kotlin.math.sin
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun Stl3DViewer(mesh: StlMesh, modifier: Modifier = Modifier) {
-    var yawDegrees by remember(mesh) { mutableStateOf(35f) }
-    var pitchDegrees by remember(mesh) { mutableStateOf(20f) }
-    var zoom by remember(mesh) { mutableStateOf(1f) }
-
+fun Stl3DViewer(state: Stl3DViewerState, mesh: StlMesh, modifier: Modifier = Modifier) {
     val baseColor = MaterialTheme.colorScheme.primary
 
     // Reaproveitado entre frames: recriar um Path por triângulo a cada redesenho é o que mais
@@ -50,19 +78,19 @@ fun Stl3DViewer(mesh: StlMesh, modifier: Modifier = Modifier) {
         modifier = modifier
             .pointerInput(mesh) {
                 detectDragGestures { _, dragAmount ->
-                    yawDegrees += dragAmount.x * 0.4f
-                    pitchDegrees = (pitchDegrees + dragAmount.y * 0.4f).coerceIn(-89f, 89f)
+                    state.yawDegrees += dragAmount.x * 0.4f
+                    state.pitchDegrees = (state.pitchDegrees + dragAmount.y * 0.4f).coerceIn(-89f, 89f)
                 }
             }
             .onPointerEvent(PointerEventType.Scroll) { event ->
                 val change = event.changes.firstOrNull() ?: return@onPointerEvent
-                zoom = (zoom * (1f - change.scrollDelta.y * 0.1f)).coerceIn(0.2f, 6f)
+                state.zoom = (state.zoom * (1f - change.scrollDelta.y * 0.1f)).coerceIn(0.2f, 6f)
                 // Consome o evento pra não deixar a rolagem "vazar" pro Column com scroll da tela
                 // por trás do visualizador — sem isso, dar zoom também rolava a página inteira.
                 change.consume()
             },
     ) {
-        drawStlMesh(mesh, yawDegrees, pitchDegrees, zoom, baseColor, pathPool)
+        drawStlMesh(mesh, state.yawDegrees, state.pitchDegrees, state.zoom, baseColor, pathPool)
     }
 }
 

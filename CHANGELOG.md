@@ -5,6 +5,22 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.14.0] - 2026-09-21
+
+### Adicionado
+- Botão "Capturar como foto do orçamento": usa o ângulo/zoom atual do
+  visualizador 3D como foto do orçamento, sem precisar de câmera externa.
+- O formulário de salvar (nome, foto, STL, link, cliente) agora aparece
+  desde o início na aba Orçamento — antes só surgia depois de um cálculo
+  válido, o que impedia anexar STL/foto antes de preencher os outros
+  campos.
+
+### Corrigido
+- Um STL muito pesado (centenas de milhares de triângulos) travava o app
+  ao tentar pré-visualizar. Agora o app checa a complexidade antes de
+  tentar renderizar e, se for grande demais, avisa e não tenta desenhar
+  — o arquivo continua sendo salvo normalmente pra recuperar depois.
+
 ## [1.13.1] - 2026-09-21
 
 ### Corrigido

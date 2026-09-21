@@ -88,6 +88,37 @@ class StlParserTest {
     }
 
     @Test
+    fun peeksBinaryTriangleCountWithoutParsing() {
+        val bytes = binaryStlBytes(listOf(sampleTriangle, sampleTriangle, sampleTriangle))
+
+        assertEquals(3L, peekStlTriangleCount(bytes))
+    }
+
+    @Test
+    fun peeksAsciiTriangleCountWithoutParsing() {
+        val ascii = """
+            solid test
+            facet normal 0 0 1
+              outer loop
+                vertex 0 0 0
+                vertex 1 0 0
+                vertex 0 1 0
+              endloop
+            endfacet
+            facet normal 0 0 1
+              outer loop
+                vertex 0 0 0
+                vertex 1 0 0
+                vertex 0 1 0
+              endloop
+            endfacet
+            endsolid test
+        """.trimIndent()
+
+        assertEquals(2L, peekStlTriangleCount(ascii.encodeToByteArray()))
+    }
+
+    @Test
     fun throwsOnTruncatedBinaryFile() {
         val fullBytes = binaryStlBytes(listOf(sampleTriangle, sampleTriangle))
         val truncated = fullBytes.copyOf(fullBytes.size - 10)

@@ -12,9 +12,24 @@ package com.threedreport.core.stl
  * @throws IllegalArgumentException se o arquivo binário estiver truncado
  *   (menor do que a contagem de triângulos declarada permite).
  */
-fun parseStl(bytes: ByteArray): StlMesh {
+fun parseStl(bytes: ByteArray): StlMesh = if (isBinaryStl(bytes)) parseBinaryStl(bytes) else parseAsciiStl(bytes)
+
+/**
+ * Conta os triângulos de um STL **sem montar a malha inteira** — só lê os 4 bytes da contagem no
+ * caso binário, ou conta ocorrências de `endfacet` no caso ASCII (bem mais barato que criar um
+ * [Vec3]/[StlTriangle] por vértice). Pensado pra decidir **antes** de chamar [parseStl] se vale a
+ * pena renderizar o modelo (ver limite de triângulos do visualizador) sem já pagar o custo do
+ * parse completo num arquivo gigante.
+ */
+fun peekStlTriangleCount(bytes: ByteArray): Long = if (isBinaryStl(bytes)) {
+    if (bytes.size >= 84) readUInt32LE(bytes, 80) else 0L
+} else {
+    Regex("(?i)endfacet").findAll(bytes.decodeToString()).count().toLong()
+}
+
+private fun isBinaryStl(bytes: ByteArray): Boolean {
     val looksAscii = bytes.size >= 5 && bytes.decodeToString(0, minOf(bytes.size, 5)).trim().startsWith("solid", ignoreCase = true)
-    val isBinary = if (!looksAscii) {
+    return if (!looksAscii) {
         true
     } else if (bytes.size < 84) {
         false
@@ -22,7 +37,6 @@ fun parseStl(bytes: ByteArray): StlMesh {
         val triangleCount = readUInt32LE(bytes, 80)
         84L + triangleCount * 50L == bytes.size.toLong()
     }
-    return if (isBinary) parseBinaryStl(bytes) else parseAsciiStl(bytes)
 }
 
 private fun parseBinaryStl(bytes: ByteArray): StlMesh {
