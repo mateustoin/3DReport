@@ -5,6 +5,16 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.11.3] - 2026-09-20
+
+### Alterado
+- Revertido o diálogo de escolher arquivo (G-code e foto) de volta pro
+  nativo do sistema operacional (`java.awt.FileDialog`), como era antes da
+  v1.11.2 — a troca pra `JFileChooser` filtrava por tipo de arquivo, mas o
+  visual Swing destoava do resto do app. Aceita a limitação de não filtrar
+  por extensão no Windows: é só uma conveniência de busca, não impede
+  escolher o arquivo manualmente.
+
 ## [1.11.2] - 2026-09-20
 
 ### Corrigido

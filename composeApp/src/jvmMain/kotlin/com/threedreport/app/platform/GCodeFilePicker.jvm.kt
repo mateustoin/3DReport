@@ -1,22 +1,19 @@
 package com.threedreport.app.platform
 
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
+import java.awt.FileDialog
+import java.awt.Frame
+import java.io.File
+import java.io.FilenameFilter
 
-private val GCODE_EXTENSIONS = arrayOf("gcode", "gco", "g")
+private val GCODE_EXTENSIONS = setOf("gcode", "gco", "g")
 
 actual fun pickGCodeFile(): PickedFile? {
-    // JFileChooser (Swing), não java.awt.FileDialog: o filtro de tipo do FileDialog nativo não
-    // funciona de forma confiável no Windows (nem via FilenameFilter, nem via wildcard em `file`
-    // — cai na caixa de nome do arquivo em vez de filtrar a lista). JFileChooser resolve isso com
-    // um combo "Files of type" de verdade, em qualquer SO.
-    val chooser = JFileChooser().apply {
-        dialogTitle = "Escolher arquivo G-code"
-        fileFilter = FileNameExtensionFilter("Arquivos G-code (*.gcode, *.gco, *.g)", *GCODE_EXTENSIONS)
-        isAcceptAllFileFilterUsed = false
-    }
-    if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) return null
+    val dialog = FileDialog(null as Frame?, "Escolher arquivo G-code", FileDialog.LOAD)
+    dialog.filenameFilter = FilenameFilter { _, name -> name.substringAfterLast('.', "").lowercase() in GCODE_EXTENSIONS }
+    dialog.isVisible = true
 
-    val file = chooser.selectedFile ?: return null
+    val directory = dialog.directory ?: return null
+    val fileName = dialog.file ?: return null
+    val file = File(directory, fileName)
     return PickedFile(fileName = file.name, bytes = file.readBytes())
 }

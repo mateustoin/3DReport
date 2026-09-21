@@ -229,12 +229,19 @@ implementação.
     resolveu — o responsável do projeto reportou que o texto do wildcard
     ia parar na caixa de nome do arquivo, não num filtro de tipo de
     verdade, então a lista de arquivos continuava sem filtrar.
-  - **Correção, tentativa 2 (decisão 58, 2026-09-20):** trocado
+  - **Correção, tentativa 2 (decisão 58, 2026-09-20, revertida):** trocado
     `java.awt.FileDialog` por `javax.swing.JFileChooser` (com
     `FileNameExtensionFilter`) nos dois diálogos de escolher arquivo do
     app — G-code e foto —, que tem um combo real de "Files of type"
-    respeitado em qualquer SO, diferente do diálogo nativo do AWT no
-    Windows.
+    respeitado em qualquer SO. Funcionava, mas o responsável do projeto
+    não gostou do visual Swing (destoa do resto do app/SO) e preferiu
+    manter o diálogo nativo mesmo sem filtro garantido no Windows.
+  - **Decisão final (decisão 59, 2026-09-20):** revertido pro
+    `java.awt.FileDialog` nativo original (decisão 55), sem o wildcard da
+    tentativa 1. Filtro de tipo (`filenameFilter`) continua funcionando
+    nativamente no Linux/macOS; no Windows, a limitação de não filtrar
+    fica **aceita como está** — é só uma conveniência de busca, não
+    impede escolher o arquivo certo manualmente.
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 
