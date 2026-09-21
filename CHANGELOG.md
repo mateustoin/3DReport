@@ -5,6 +5,16 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.19.1] - 2026-09-21
+
+### Corrigido
+- Quadro Kanban: soltar um card em qualquer parte de uma coluna agora
+  muda o status (antes só funcionava perto do título da coluna, porque a
+  área "válida" da coluna era recortada pela rolagem da tela por trás).
+  Também passou a mostrar um destaque na coluna sob o ponteiro durante o
+  arrasto, indicando onde o card vai parar se for solto ali, e a exibir a
+  miniatura da foto do orçamento (quando houver) no topo do card.
+
 ## [1.19.0] - 2026-09-21
 
 ### Adicionado

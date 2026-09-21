@@ -135,6 +135,7 @@ fun QuoteHistoryScreen(
             val kanbanQuotes = viewModel.visibleQuotes(savedQuotes, filter.copy(status = null))
             KanbanBoard(
                 quotes = kanbanQuotes,
+                photoBytesFor = { savedQuote -> savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) } },
                 onStatusChange = viewModel::updateStatus,
                 onEdit = onEditQuote,
                 onDuplicate = onDuplicateQuote,

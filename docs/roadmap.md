@@ -805,6 +805,13 @@ funciona hoje.
   caso o arrasto não seja preciso o bastante num mouse/tela específico —
   os dois caminhos levam à mesma mudança de status. Sem scroll vertical
   próprio por coluna (reaproveita o scroll da página, mais simples).
+  Correções pós-teste (decisão 71, 2026-09-21): `boundsInWindow()` é
+  recortado pela área visível dos ancestrais, então soltar o card fora da
+  parte da coluna visível na tela (rolada pra fora pelo scroll por trás)
+  não contava — trocado por `positionInWindow()` + tamanho medido, sem
+  recorte. Adicionado destaque visual na coluna sob o ponteiro durante o
+  arrasto (indicando onde o card cairia) e miniatura da foto no topo do
+  card, quando o orçamento tiver uma.
 - [ ] **Idioma da interface configurável** (levantado em 2026-09-19, pesquisa
   de concorrentes — apps internacionais atendem público global). Hoje a UI é
   fixa em português. Baixa prioridade dado o foco atual no mercado

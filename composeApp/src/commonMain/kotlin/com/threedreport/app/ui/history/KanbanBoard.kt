@@ -1,5 +1,8 @@
 package com.threedreport.app.ui.history
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -7,10 +10,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -29,11 +34,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
+import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
@@ -47,20 +56,31 @@ import kotlin.math.roundToInt
  *
  * Sem scroll vertical próprio: a rolagem é a mesma da tela de Histórico por trás (evita rolagem
  * aninhada, mais simples e já suficiente pro volume de orçamentos esperado).
+ *
+ * As posições usadas pro hit-test do arrasto vêm de [LayoutCoordinates.positionInWindow] + o
+ * tamanho medido, não de `boundsInWindow()` — esse último é recortado pela área visível de todos
+ * os ancestrais (inclusive o scroll vertical da tela de Histórico), então uma coluna parcialmente
+ * fora da área visível reportava um retângulo bem menor que sua altura real (só o título "cabia"),
+ * e soltar o card mais abaixo na coluna não contava como estar "dentro" dela.
  */
 @Composable
 fun KanbanBoard(
     quotes: List<SavedQuote>,
+    photoBytesFor: (SavedQuote) -> ByteArray?,
     onStatusChange: (String, OrderStatus) -> Unit,
     onEdit: (SavedQuote) -> Unit,
     onDuplicate: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
 ) {
-    // boundsInWindow() de cada coluna, atualizado a cada posicionamento — usado como referência
-    // comum (independente de qual composable está aninhado onde) pra saber sobre qual coluna um
-    // card foi solto.
+    // Posição+tamanho (em coordenadas de janela) de cada coluna, atualizado a cada posicionamento —
+    // usado como referência comum (independente de qual composable está aninhado onde) pra saber
+    // sobre qual coluna um card foi solto ou está sendo arrastado por cima.
     val columnBounds = remember { mutableStateMapOf<OrderStatus, Rect>() }
     val quotesByStatus = remember(quotes) { quotes.groupBy { it.status } }
+    // Coluna sob o ponteiro durante um arrasto em andamento (null se nada está sendo arrastado, ou
+    // se o ponteiro não está sobre nenhuma coluna) — usado só pra desenhar o indicador visual.
+    var hoveredStatus by remember { mutableStateOf<OrderStatus?>(null) }
+    var draggedFromStatus by remember { mutableStateOf<OrderStatus?>(null) }
 
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -70,8 +90,12 @@ fun KanbanBoard(
             KanbanColumn(
                 status = status,
                 quotes = quotesByStatus[status].orEmpty(),
+                photoBytesFor = photoBytesFor,
                 columnBounds = columnBounds,
                 onBoundsChanged = { bounds -> columnBounds[status] = bounds },
+                isDropTarget = hoveredStatus == status && draggedFromStatus != status,
+                onDragHover = { hovered -> hoveredStatus = hovered },
+                onDragSourceChange = { source -> draggedFromStatus = source },
                 onStatusChange = { savedQuote, newStatus -> onStatusChange(savedQuote.id, newStatus) },
                 onEdit = onEdit,
                 onDuplicate = onDuplicate,
@@ -81,19 +105,32 @@ fun KanbanBoard(
     }
 }
 
+private fun LayoutCoordinates.fullBoundsInWindow(): Rect = Rect(positionInWindow(), size.toSize())
+
 @Composable
 private fun KanbanColumn(
     status: OrderStatus,
     quotes: List<SavedQuote>,
+    photoBytesFor: (SavedQuote) -> ByteArray?,
     columnBounds: Map<OrderStatus, Rect>,
     onBoundsChanged: (Rect) -> Unit,
+    isDropTarget: Boolean,
+    onDragHover: (OrderStatus?) -> Unit,
+    onDragSourceChange: (OrderStatus?) -> Unit,
     onStatusChange: (SavedQuote, OrderStatus) -> Unit,
     onEdit: (SavedQuote) -> Unit,
     onDuplicate: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
 ) {
     Column(
-        modifier = Modifier.width(260.dp).onGloballyPositioned { onBoundsChanged(it.boundsInWindow()) },
+        modifier = Modifier
+            .width(260.dp)
+            .background(
+                if (isDropTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                RoundedCornerShape(8.dp),
+            )
+            .padding(6.dp)
+            .onGloballyPositioned { onBoundsChanged(it.fullBoundsInWindow()) },
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("${status.label} (${quotes.size})", style = MaterialTheme.typography.titleMedium)
@@ -108,11 +145,22 @@ private fun KanbanColumn(
         quotes.forEach { savedQuote ->
             KanbanCard(
                 savedQuote = savedQuote,
+                photoBytes = photoBytesFor(savedQuote),
                 columnBounds = columnBounds,
+                onDragHover = onDragHover,
+                onDragSourceChange = onDragSourceChange,
                 onStatusChange = { newStatus -> onStatusChange(savedQuote, newStatus) },
                 onEdit = { onEdit(savedQuote) },
                 onDuplicate = { onDuplicate(savedQuote) },
                 onDelete = { onDelete(savedQuote) },
+            )
+        }
+        if (isDropTarget) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)),
             )
         }
     }
@@ -121,7 +169,10 @@ private fun KanbanColumn(
 @Composable
 private fun KanbanCard(
     savedQuote: SavedQuote,
+    photoBytes: ByteArray?,
     columnBounds: Map<OrderStatus, Rect>,
+    onDragHover: (OrderStatus?) -> Unit,
+    onDragSourceChange: (OrderStatus?) -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
@@ -132,51 +183,72 @@ private fun KanbanCard(
     var liveBounds by remember(savedQuote.id) { mutableStateOf<Rect?>(null) }
     var showMenu by remember(savedQuote.id) { mutableStateOf(false) }
 
+    fun targetStatusUnderPointer(): OrderStatus? {
+        val point = liveBounds?.center ?: return null
+        return columnBounds.entries.firstOrNull { it.value.contains(point) }?.key
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .zIndex(if (isDragging) 1f else 0f)
             .offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
-            .onGloballyPositioned { liveBounds = it.boundsInWindow() }
+            .onGloballyPositioned { liveBounds = it.fullBoundsInWindow() }
             .pointerInput(savedQuote.id) {
                 detectDragGestures(
-                    onDragStart = { isDragging = true },
+                    onDragStart = {
+                        isDragging = true
+                        onDragSourceChange(savedQuote.status)
+                        onDragHover(savedQuote.status)
+                    },
                     onDragEnd = {
                         isDragging = false
-                        val center = liveBounds?.center
-                        val targetStatus = center?.let { point ->
-                            columnBounds.entries.firstOrNull { it.value.contains(point) }?.key
-                        }
+                        val targetStatus = targetStatusUnderPointer()
                         if (targetStatus != null && targetStatus != savedQuote.status) {
                             onStatusChange(targetStatus)
                         }
                         dragOffset = Offset.Zero
+                        onDragHover(null)
+                        onDragSourceChange(null)
                     },
                     onDragCancel = {
                         isDragging = false
                         dragOffset = Offset.Zero
+                        onDragHover(null)
+                        onDragSourceChange(null)
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         dragOffset += dragAmount
+                        onDragHover(targetStatusUnderPointer())
                     },
                 )
             },
         elevation = CardDefaults.cardElevation(defaultElevation = if (isDragging) 8.dp else 1.dp),
     ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(savedQuote.name, style = MaterialTheme.typography.titleSmall)
-            savedQuote.client?.let { client ->
-                Text(client.name, style = MaterialTheme.typography.bodySmall)
+        Column {
+            if (photoBytes != null) {
+                Image(
+                    bitmap = decodeImageBitmap(photoBytes),
+                    contentDescription = savedQuote.name,
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    contentScale = ContentScale.Crop,
+                )
             }
-            Text(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(savedQuote.name, style = MaterialTheme.typography.titleSmall)
+                savedQuote.client?.let { client ->
+                    Text(client.name, style = MaterialTheme.typography.bodySmall)
+                }
+                Text(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
 
-            Box {
-                TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
-                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(text = { Text("Editar") }, onClick = { showMenu = false; onEdit() })
-                    DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
-                    DropdownMenuItem(text = { Text("Excluir") }, onClick = { showMenu = false; onDelete() })
+                Box {
+                    TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenuItem(text = { Text("Editar") }, onClick = { showMenu = false; onEdit() })
+                        DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                        DropdownMenuItem(text = { Text("Excluir") }, onClick = { showMenu = false; onDelete() })
+                    }
                 }
             }
         }
