@@ -94,6 +94,14 @@
           "@type": "Answer",
           "text": "As duas coisas. Além do cálculo do orçamento, cada venda tem cliente, status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) e entra no histórico e no dashboard, com total vendido, lucro acumulado e filamento mais usado por período."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "O que significa o \"nível de dificuldade\" que aparece ao anexar um STL?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ao anexar o arquivo STL do modelo, o 3DReport analisa a malha 3D e sugere um nível — Fácil, Médio ou Difícil — combinando quatro sinais: o quanto a forma foge de algo liso e compacto (tipo uma esfera) pro mesmo volume, quanta superfície fica pendurada precisando de suporte na impressão (overhang), quantos triângulos a malha tem, e se o arquivo tem várias peças soltas. É uma estimativa geométrica (não simula o fatiador de verdade) pra ajudar a decidir se vale cobrar uma margem extra por peças mais trabalhosas — a decisão de preço continua sua."
+        }
       }
     ]
   }
@@ -206,6 +214,10 @@
             <h3>Múltiplas moedas</h3>
             <p>BRL, USD, EUR ou GBP, com o símbolo e a formatação corretos em toda a interface, no PDF e no copiar e colar.</p>
           </div>
+          <div class="card">
+            <h3>Visualizador 3D e nível de dificuldade</h3>
+            <p>Anexe o STL do modelo pra girar e dar zoom nele dentro do próprio app, capturar uma foto automática do orçamento e ver um nível de dificuldade sugerido (Fácil, Médio ou Difícil) pra ajudar a precificar peças mais complexas.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -309,6 +321,10 @@ LUCRO              = venda − produção
         <details class="faq-item">
           <summary>O 3DReport serve só para orçamento avulso ou também para gerenciar a venda de impressão 3D como negócio?</summary>
           <p>As duas coisas. Além do cálculo do orçamento, cada venda tem cliente, status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) e entra no histórico e no dashboard, com total vendido, lucro acumulado e filamento mais usado por período.</p>
+        </details>
+        <details class="faq-item">
+          <summary>O que significa o "nível de dificuldade" que aparece ao anexar um STL?</summary>
+          <p>Ao anexar o arquivo STL do modelo, o 3DReport analisa a malha 3D e sugere um nível — Fácil, Médio ou Difícil — combinando quatro sinais: o quanto a forma foge de algo liso e compacto (tipo uma esfera) pro mesmo volume, quanta superfície fica "pendurada" precisando de suporte na impressão (overhang), quantos triângulos a malha tem, e se o arquivo tem várias peças soltas. É uma estimativa geométrica (não simula o fatiador de verdade) pra te ajudar a decidir se vale cobrar uma margem extra por peças mais trabalhosas — a decisão de preço continua sua. Detalhes das fórmulas em <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>.</p>
         </details>
         <details class="faq-item">
           <summary>Existe versão para Android ou celular?</summary>

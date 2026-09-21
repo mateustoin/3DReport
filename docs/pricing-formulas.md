@@ -91,6 +91,96 @@ Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.
 | **Produção** | **R$ 8,09** |
 | **Venda** | **R$ 16,19** |
 
+## Análise de STL (nível de dificuldade)
+
+Documento de referência: `core/.../stl/StlAnalyzer.kt`. Calculado a partir
+da malha de triângulos do arquivo STL anexado ao orçamento — sem depender
+de nenhum fatiador externo. **Uso só interno** (não entra no PDF nem no
+copiar-colar); serve pra decidir se cobra uma margem extra por
+complexidade — a decisão de preço em si continua manual. Assume que as
+coordenadas do STL estão em milímetros (convenção usual de fatiadores/
+impressão 3D).
+
+### Área de superfície e volume
+
+```
+área (mm²)   = Σ (triângulos) 0,5 · |produto vetorial dos dois lados do triângulo|
+volume (mm³) = | Σ (triângulos) v1 · (v2 × v3) | / 6
+```
+
+O volume usa o método clássico de soma de tetraedros a partir da origem
+(equivalente ao teorema da divergência aplicado a uma malha fechada) — só
+é exato pra uma malha **fechada** com orientação de normais consistente
+(ver "malha manifold" abaixo).
+
+### Razão de complexidade (quociente isoperimétrico)
+
+```
+razão = área da malha / área de uma esfera de mesmo volume
+área_esfera(V) = 4π · (3V / 4π)^(2/3)
+```
+
+Uma esfera perfeita tem a menor área de superfície possível pra um dado
+volume (razão = 1,0, o mínimo matemático). Formas com mais detalhe/
+reentrâncias/protuberâncias pro mesmo volume têm mais área de superfície,
+logo uma razão maior. Ao contrário de "área ÷ volume" bruta, essa razão
+não muda só por causa do **tamanho** do objeto (um cubo pequeno e um cubo
+grande têm a mesma razão) — mede forma, não escala.
+
+### % de superfície em overhang
+
+Pra cada triângulo, compara a normal geométrica com a direção "reto pra
+baixo" `(0,0,-1)`, assumindo que o eixo Z do STL é "pra cima" (convenção
+de mesa de impressão). Um triângulo conta como overhang se o ângulo entre
+sua normal e "reto pra baixo" for menor que `90° − ângulo_limite` — por
+padrão, `ângulo_limite = 45°` (mesmo espírito do parâmetro "ângulo de
+suporte" de fatiadores como Cura/PrusaSlicer).
+
+```
+overhang% = (soma da área dos triângulos em overhang) / (área total) × 100
+```
+
+### Componentes desconexos
+
+Conta quantas "peças soltas" existem no mesmo arquivo: triângulos que
+compartilham pelo menos um vértice (coordenadas arredondadas pra 0,001mm,
+pra tolerar ruído de ponto flutuante entre vértices que deveriam ser
+idênticos) entram no mesmo grupo, via união-busca. Uma peça "malha só"
+resulta em 1 componente.
+
+### Malha manifold
+
+Numa malha fechada e válida, toda aresta (par de vértices) deve ser
+compartilhada por **exatamente 2 triângulos**. Se alguma aresta aparece em
+só 1 triângulo (a malha tem um furo/está aberta) ou em 3+ triângulos
+(geometria não-manifold, ex. auto-interseção), o arquivo é sinalizado como
+"não-manifold" — aviso técnico separado do nível de dificuldade, avisando
+que o arquivo pode dar problema no fatiador.
+
+### Nível de dificuldade
+
+Cada uma das 4 métricas abaixo pontua **0 (fácil), 1 (médio) ou 2
+(difícil)**; a soma (0 a 8) decide o nível final. Limiares são uma
+heurística sem benchmark real — ajustáveis se um caso prático mostrar que
+estão errados.
+
+| Métrica | Fácil (0) | Médio (1) | Difícil (2) |
+|---|---|---|---|
+| Razão de complexidade | ≤ 1,5 | 1,5 – 3,0 | > 3,0 |
+| % overhang | ≤ 10% | 10% – 30% | > 30% |
+| Triângulos | ≤ 20.000 | 20.000 – 100.000 | > 100.000 |
+| Componentes desconexos | 1 | 2 – 3 | > 3 |
+
+| Soma dos pontos | Nível final |
+|---|---|
+| 0 – 2 | Fácil |
+| 3 – 5 | Médio |
+| 6 – 8 | Difícil |
+
+Modelos com mais de 500 mil triângulos não são pré-visualizados nem
+analisados nesta versão (decisão 63 em [decisions.md](decisions.md)) — o
+app avisa e o STL continua sendo salvo normalmente pra recuperar depois.
+
 ## Diferenças em relação à planilha
 
 - **Energia:** a planilha exibe o kWh como "1,2", mas o valor real usado é 1,23.
