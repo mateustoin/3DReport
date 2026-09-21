@@ -1,10 +1,14 @@
 package com.threedreport.app.ui.printers
 
 import com.threedreport.app.data.PrinterRepository
+import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.ui.format.toRequiredDouble
 import com.threedreport.app.ui.format.toRequiredInt
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.report.PrintQueueReport
+import com.threedreport.core.report.PrinterQueueEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,9 +19,14 @@ import kotlin.uuid.Uuid
  * ViewModel da tela de Impressoras: lista os perfis salvos e edita um por vez
  * em [form] (nulo quando nenhum formulário está aberto).
  */
-class PrinterListViewModel(private val repository: PrinterRepository) {
+class PrinterListViewModel(private val repository: PrinterRepository, historyRepository: QuoteHistoryRepository) {
 
     val printers: StateFlow<List<PrinterProfile>> = repository.printers
+    val savedQuotes: StateFlow<List<SavedQuote>> = historyRepository.savedQuotes
+
+    /** Função pura: quanto cada impressora está ocupada agora (ver [PrintQueueReport]). */
+    fun printQueue(printers: List<PrinterProfile>, savedQuotes: List<SavedQuote>): List<PrinterQueueEntry> =
+        PrintQueueReport.summarize(printers, savedQuotes)
 
     private val formState = MutableStateFlow<PrinterFormState?>(null)
     val form: StateFlow<PrinterFormState?> = formState.asStateFlow()

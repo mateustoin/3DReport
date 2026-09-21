@@ -407,10 +407,19 @@ implementação.
   (`brand`, `colors: List<FilamentColor>`, `hasStockAvailable`),
   `core/model/FilamentColor`, `core/model/PrintJob.filamentColor`,
   `ui/filaments/FilamentColor.kt` (paleta + parse de hex + `displayLabel`).
-- [ ] **Fila de impressão / agenda da impressora.** Visão de quanto tempo
-  cada impressora cadastrada vai ficar ocupada (soma dos orçamentos com
-  status "Em impressão", ver item de status acima) — ajuda a prometer prazo
-  com mais segurança pro cliente. Depende do item "Status do pedido".
+- [x] **Fila de impressão / agenda da impressora** (decisão 68, 2026-09-21).
+  Visão de quanto tempo cada impressora cadastrada vai ficar ocupada (soma
+  dos orçamentos com status "Em impressão", ver item de status acima) —
+  ajuda a prometer prazo com mais segurança pro cliente. Depende do item
+  "Status do pedido". Feito: `core/report/PrintQueueReport` (função pura,
+  mesmo estilo do `QuoteReport`/`PricingCalculator` — soma o tempo de
+  impressão dos orçamentos "Em impressão" que usaram cada impressora,
+  `Quote.printerId`), exibido direto na aba Impressoras, embaixo de cada
+  impressora ("Fila: X h em N pedido(s) 'Em impressão'" ou "Sem pedidos em
+  impressão no momento"). **Não considera o filtro de período do
+  Dashboard** — é sobre o estado atual, não uma janela de tempo passada.
+  Orçamentos salvos antes de `Quote.printerId` existir (decisão 64) não
+  têm como saber qual impressora usaram, então não entram em nenhuma fila.
 - [ ] **Custo de falha real acumulado.** Hoje a taxa de falha é um % fixo
   estimado nas Configurações. Permitir marcar um orçamento/impressão como
   "falhou" (com motivo opcional) e, com histórico suficiente, sugerir um %

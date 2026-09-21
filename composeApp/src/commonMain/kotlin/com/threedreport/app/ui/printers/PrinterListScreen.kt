@@ -27,16 +27,22 @@ import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.minutesToHoursText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.report.PrinterQueueEntry
 
 /** Tela de Impressoras: perfis salvos, escolhidos depois na tela de Orçamento. */
 @Composable
 fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modifier) {
     val printers by viewModel.printers.collectAsState()
+    val savedQuotes by viewModel.savedQuotes.collectAsState()
     val form by viewModel.form.collectAsState()
     var pendingDelete by remember { mutableStateOf<PrinterProfile?>(null) }
     var showPresetPicker by remember { mutableStateOf(false) }
+    val queueByPrinterId = remember(printers, savedQuotes) {
+        viewModel.printQueue(printers, savedQuotes).associateBy { it.printer.id }
+    }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -51,6 +57,7 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
         printers.forEach { printer ->
             PrinterRow(
                 printer = printer,
+                queueEntry = queueByPrinterId[printer.id],
                 onEdit = { viewModel.startEdit(printer) },
                 onDelete = { pendingDelete = printer },
             )
@@ -97,7 +104,7 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
 }
 
 @Composable
-private fun PrinterRow(printer: PrinterProfile, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun PrinterRow(printer: PrinterProfile, queueEntry: PrinterQueueEntry?, onEdit: () -> Unit, onDelete: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -110,6 +117,15 @@ private fun PrinterRow(printer: PrinterProfile, onEdit: () -> Unit, onDelete: ()
                     "${printer.printerPowerWatts.toInt()} W · manutenção ${printer.maintenanceCostPerHour.toMoney()}/h · " +
                         "máquina ${printer.machineInvestment.machinePrice.toMoney()}",
                     style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    if (queueEntry != null && queueEntry.queuedQuoteCount > 0) {
+                        "Fila: ${queueEntry.queuedMinutes.minutesToHoursText()} em " +
+                            "${queueEntry.queuedQuoteCount} pedido(s) \"Em impressão\""
+                    } else {
+                        "Sem pedidos em impressão no momento"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
             Row {

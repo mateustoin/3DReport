@@ -5,6 +5,14 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.17.0] - 2026-09-21
+
+### Adicionado
+- Fila de impressão na aba Impressoras: cada impressora mostra quanto
+  tempo está ocupada agora, somando os orçamentos com status "Em
+  impressão" que a usaram — ajuda a prometer prazo com mais segurança
+  pro cliente.
+
 ## [1.16.0] - 2026-09-21
 
 ### Adicionado
