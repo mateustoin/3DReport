@@ -5,6 +5,19 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.13.1] - 2026-09-21
+
+### Corrigido
+- Sentido do arrasto do visualizador 3D estava invertido (arrastar pra
+  direita girava a peça pra esquerda).
+- Dar zoom com a roda do mouse no visualizador também rolava a página
+  inteira por trás.
+- Visualizador 3D sem nenhuma borda/fundo — agora envolvido num card, pra
+  ficar clara a área interativa.
+- Desempenho em malhas STL densas: normal/centroide de cada triângulo
+  agora são calculados uma vez (não a cada frame) e os `Path` de desenho
+  são reaproveitados entre frames em vez de recriados a cada redesenho.
+
 ## [1.13.0] - 2026-09-21
 
 ### Adicionado

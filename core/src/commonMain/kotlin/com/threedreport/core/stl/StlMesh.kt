@@ -5,14 +5,17 @@ package com.threedreport.core.stl
  * exportador grava um valor confiável nela (alguns zeram), então o
  * visualizador usa [computedNormal] (calculada a partir dos vértices) pra
  * sombreamento, não [normal] diretamente.
+ *
+ * [computedNormal] e [centroid] são calculados uma vez na criação (não a
+ * cada acesso) — são propriedades só da geometria, não da câmera, então não
+ * precisam ser refeitas a cada frame do visualizador, que os lê pra cada
+ * triângulo em todo redesenho durante o arrasto.
  */
 data class StlTriangle(val normal: Vec3, val v1: Vec3, val v2: Vec3, val v3: Vec3) {
     /** Normal geométrica, calculada a partir dos vértices — mais confiável que [normal]. */
-    val computedNormal: Vec3
-        get() = ((v2 - v1) cross (v3 - v1)).normalized()
+    val computedNormal: Vec3 = ((v2 - v1) cross (v3 - v1)).normalized()
 
-    val centroid: Vec3
-        get() = (v1 + v2 + v3) / 3f
+    val centroid: Vec3 = (v1 + v2 + v3) / 3f
 }
 
 /**

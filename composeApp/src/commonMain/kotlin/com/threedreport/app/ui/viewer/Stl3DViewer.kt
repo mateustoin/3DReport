@@ -29,8 +29,9 @@ import kotlin.math.sin
  * Compose (decisão 61): sombreamento plano por triângulo (normal · direção da câmera), ordenação
  * pintor pra profundidade, câmera orbital. Sem OpenGL nem WebView — ver decisão 61 pro raciocínio.
  *
- * Controles: arrastar com o mouse orbita a câmera; a roda do mouse dá zoom. Pan ainda não
- * implementado (fica pra uma iteração seguinte, ver roadmap).
+ * Controles: arrastar com o mouse orbita a câmera (arrastar pra direita gira a peça pra direita,
+ * como se estivesse segurando ela); a roda do mouse dá zoom. Pan ainda não implementado (fica pra
+ * uma iteração seguinte, ver roadmap).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -41,26 +42,40 @@ fun Stl3DViewer(mesh: StlMesh, modifier: Modifier = Modifier) {
 
     val baseColor = MaterialTheme.colorScheme.primary
 
+    // Reaproveitado entre frames: recriar um Path por triângulo a cada redesenho é o que mais
+    // pesava em malhas densas (centenas de milhares de objetos novos por segundo ao arrastar).
+    val pathPool = remember(mesh) { Array(mesh.triangles.size) { Path() } }
+
     Canvas(
         modifier = modifier
             .pointerInput(mesh) {
                 detectDragGestures { _, dragAmount ->
-                    yawDegrees -= dragAmount.x * 0.4f
+                    yawDegrees += dragAmount.x * 0.4f
                     pitchDegrees = (pitchDegrees + dragAmount.y * 0.4f).coerceIn(-89f, 89f)
                 }
             }
             .onPointerEvent(PointerEventType.Scroll) { event ->
-                val scrollDelta = event.changes.firstOrNull()?.scrollDelta?.y ?: return@onPointerEvent
-                zoom = (zoom * (1f - scrollDelta * 0.1f)).coerceIn(0.2f, 6f)
+                val change = event.changes.firstOrNull() ?: return@onPointerEvent
+                zoom = (zoom * (1f - change.scrollDelta.y * 0.1f)).coerceIn(0.2f, 6f)
+                // Consome o evento pra não deixar a rolagem "vazar" pro Column com scroll da tela
+                // por trás do visualizador — sem isso, dar zoom também rolava a página inteira.
+                change.consume()
             },
     ) {
-        drawStlMesh(mesh, yawDegrees, pitchDegrees, zoom, baseColor)
+        drawStlMesh(mesh, yawDegrees, pitchDegrees, zoom, baseColor, pathPool)
     }
 }
 
 private class Renderable(val path: Path, val color: Color, val depth: Float)
 
-private fun DrawScope.drawStlMesh(mesh: StlMesh, yawDegrees: Float, pitchDegrees: Float, zoom: Float, baseColor: Color) {
+private fun DrawScope.drawStlMesh(
+    mesh: StlMesh,
+    yawDegrees: Float,
+    pitchDegrees: Float,
+    zoom: Float,
+    baseColor: Color,
+    pathPool: Array<Path>,
+) {
     if (mesh.triangles.isEmpty()) return
 
     val center = mesh.center
@@ -99,7 +114,8 @@ private fun DrawScope.drawStlMesh(mesh: StlMesh, yawDegrees: Float, pitchDegrees
 
     fun buildRenderables(cullBackfaces: Boolean): List<Renderable> {
         val renderables = ArrayList<Renderable>(mesh.triangles.size)
-        for (triangle in mesh.triangles) {
+        for (index in mesh.triangles.indices) {
+            val triangle = mesh.triangles[index]
             val facing = triangle.computedNormal dot (cameraPos - triangle.centroid).normalized()
             if (cullBackfaces && facing <= 0f) continue
 
@@ -109,7 +125,8 @@ private fun DrawScope.drawStlMesh(mesh: StlMesh, yawDegrees: Float, pitchDegrees
 
             val intensity = (0.25f + 0.75f * abs(facing)).coerceIn(0f, 1f)
             val color = Color(red = baseColor.red * intensity, green = baseColor.green * intensity, blue = baseColor.blue * intensity)
-            val path = Path().apply {
+            val path = pathPool[index].apply {
+                reset()
                 moveTo(p1.first.x, p1.first.y)
                 lineTo(p2.first.x, p2.first.y)
                 lineTo(p3.first.x, p3.first.y)

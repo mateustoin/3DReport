@@ -290,6 +290,18 @@ implementação.
     pra uma iteração seguinte se fizer falta na prática. Culling de face
     traseira com fallback automático pra STL com normais invertidas (evita
     tela em branco nesse caso).
+    - **Correções pós-teste com STL reais (decisão 62, 2026-09-21):**
+      sentido do arrasto invertido corrigido (arrastar pra direita agora
+      gira a peça pra direita); zoom com a roda do mouse não "vaza" mais
+      pra rolagem da página por trás; visualizador envolvido num
+      `OutlinedCard` pra deixar clara a área interativa; desempenho em
+      malhas densas melhorado (normal/centroide de cada triângulo
+      calculados uma vez na criação da malha, não a cada frame; `Path` de
+      cada triângulo reaproveitado entre frames em vez de recriado a cada
+      redesenho). Ainda pode ficar perceptível em malhas muito densas
+      (centenas de milhares de triângulos, mais comuns em scans 3D do que
+      em produtos de venda) — otimização adicional (ex.: nível de detalhe)
+      fica pra se um caso real precisar.
   - **Exportar a visualização como imagem**: capturar o frame renderizado no
     ângulo escolhido e salvar/anexar como a foto do orçamento — reusa o
     campo de foto que já existe, sem precisar de campo novo no modelo de

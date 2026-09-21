@@ -22,6 +22,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -218,7 +219,9 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
                     "Arraste pra girar, use a roda do mouse pra zoom.",
                     style = MaterialTheme.typography.bodySmall,
                 )
-                Stl3DViewer(mesh = mesh, modifier = Modifier.fillMaxWidth().height(280.dp))
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Stl3DViewer(mesh = mesh, modifier = Modifier.fillMaxWidth().height(280.dp))
+                }
             } else {
                 Text(
                     "Não consegui ler esse arquivo STL — pode estar corrompido ou num formato não suportado.",
