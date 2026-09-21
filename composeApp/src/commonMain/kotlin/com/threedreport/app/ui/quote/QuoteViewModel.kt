@@ -8,6 +8,7 @@ import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.pickGCodeFile
 import com.threedreport.app.platform.pickImageFile
+import com.threedreport.app.platform.pickStlFile
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Filament
@@ -119,12 +120,32 @@ class QuoteViewModel(
         saveFormState.update { it.copy(photo = picked, photoFromGCode = false, savedConfirmation = false) }
     }
 
+    fun clearStlFile() = saveFormState.update { it.copy(stlFile = null, savedConfirmation = false) }
+
+    /**
+     * Anexa o arquivo STL do modelo ao orçamento — guardado pra o criador recuperar depois no
+     * Histórico e reaproveitar numa venda futura da mesma peça (não usado pra visualização/cálculo
+     * ainda, ver Fase 1 do roadmap).
+     */
+    fun pickStl() {
+        val picked = pickStlFile() ?: return
+        saveFormState.update { it.copy(stlFile = picked, savedConfirmation = false) }
+    }
+
     fun saveQuote(quote: Quote, services: List<Service>) {
         val form = saveFormState.value
         val client = form.clientName.trim().ifEmpty { null }?.let { name ->
             Client(name = name, contact = form.clientContact.trim().ifEmpty { null })
         }
-        historyRepository.save(form.name, quote, services, form.photo, form.sourceLink, client)
+        historyRepository.save(
+            name = form.name,
+            quote = quote,
+            services = services,
+            photo = form.photo,
+            stlFile = form.stlFile,
+            sourceLink = form.sourceLink,
+            client = client,
+        )
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
     }
 

@@ -247,23 +247,46 @@ implementação.
 
 - [ ] **Fase 1 — Upload de STL + visualizador 3D.** Anexar o arquivo STL do
   modelo ao orçamento (além da foto que já existe hoje). Envolve:
+  - [x] **Anexar e guardar o arquivo STL no histórico** (decisão 61,
+    2026-09-21), independente do parser/visualizador abaixo — pedido do
+    responsável do projeto: organização de arquivo de modelo é uma dor real
+    de quem vende impressão 3D (encontrar o STL de uma peça já vendida pra
+    imprimir de novo pra outro cliente). Botão "Anexar arquivo STL
+    (opcional)" na tela de Orçamento (`platform/pickStlFile`, mesmo padrão
+    de `pickImageFile`/`pickGCodeFile`), persistido em
+    `~/.3dreport/models/` (mesmo tratamento de `~/.3dreport/photos/`), com
+    "Baixar STL" no Histórico. **Uso só interno** — nunca entra no PDF nem
+    no copiar-colar, mesmo tratamento do link do modelo. Ainda **não** é
+    usado pra visualização/cálculo — isso é o restante desta Fase 1,
+    abaixo. Feito: `core/model/SavedQuote.stlFileName`,
+    `data/QuoteHistoryRepository.stlBytes`.
+    - **Evolução futura (fora de escopo por ora, só registrando a ideia,
+      2026-09-21):** permitir guardar também o arquivo `.3mf` do projeto do
+      fatiador junto com o orçamento (opcional) — o `.3mf` carrega as
+      configurações de fatiamento usadas (perfil de impressora/filamento,
+      suportes, orientação etc.), então recuperar um projeto salvo pra uma
+      venda repetida da mesma peça pouparia reconfigurar tudo de novo no
+      fatiador, não só reimprimir com configuração genérica a partir do
+      STL puro. Mesmo tratamento de uso interno do STL/foto/link.
   - **Parser de STL** (formato binário e ASCII) pra ler a malha de
-    triângulos — vira a base de tudo que vem depois (fases 2 e 3).
+    triângulos — vira a base de tudo que vem depois (visualizador, fases 2
+    e 3). Ainda não implementado.
   - **Visualizador 3D** dentro do app: carregar a malha, rotacionar/zoom/pan,
-    escolher um ângulo e enquadramento de câmera. **Decisão técnica a
-    avaliar antes de começar**, porque não há nenhuma dependência de 3D no
-    projeto hoje: lib de renderização nativa compatível com Compose
-    Desktop/JVM (ex.: JOGL/LWJGL, um canvas OpenGL embutido via
-    `SwingPanel`/AWT) vs. embutir um visualizador web local com three.js
-    numa `WebView`/CEF. A primeira opção é mais leve e nativa; a segunda é
-    mais rápida de implementar (three.js já resolve parsing/render/câmera)
-    mas adiciona uma dependência pesada (engine web embarcada) só pra isso.
+    escolher um ângulo e enquadramento de câmera. **Decisão técnica
+    resolvida (2026-09-20):** rasterizador simples desenhado no próprio
+    `Canvas` do Compose (sem OpenGL/LWJGL nem WebView/three.js) — sombreamento
+    plano por triângulo (normal · luz), ordenação pintor pra profundidade,
+    câmera orbital (arrastar gira, scroll dá zoom). Escolhido por não somar
+    nenhuma dependência nova nem inflar o instalador (WebView+three.js
+    somaria 100+ MB por SO via JCEF; OpenGL nativo exigiria integrar um
+    componente pesado do AWT dentro da janela do Compose, historicamente
+    delicado) — ver decisão 61 pro raciocínio completo. Ainda não
+    implementado.
   - **Exportar a visualização como imagem**: capturar o frame renderizado no
     ângulo escolhido e salvar/anexar como a foto do orçamento — reusa o
     campo de foto que já existe, sem precisar de campo novo no modelo de
-    dados do orçamento.
-  - O arquivo STL em si fica guardado só pra reuso interno (fases seguintes)
-    — não entra no PDF/copiar-colar (mesmo tratamento do link do modelo).
+    dados do orçamento. Ainda não implementado (depende do visualizador
+    acima).
 - [ ] **Fase 2 — Estimativa automática de peso/tempo a partir do STL.** Hoje
   o criador digita comprimento de filamento e tempo de impressão na mão. Com
   a malha já carregada (fase 1), dá pra calcular o **volume** da peça

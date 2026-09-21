@@ -19,6 +19,11 @@ import kotlinx.serialization.Serializable
  *   (resolvido pela camada de persistência da UI — não é um caminho
  *   absoluto). Entra no PDF e fica disponível pra download no histórico;
  *   nunca entra no texto de copiar/colar.
+ * @property stlFileName nome do arquivo STL do modelo, se houver (mesmo
+ *   tratamento do [photoFileName] — resolvido pela camada de persistência,
+ *   não é um caminho absoluto). Guardado pra o criador recuperar depois e
+ *   reaproveitar numa venda futura da mesma peça — uso só interno, nunca
+ *   entra em nenhum export (PDF ou copiar/colar).
  * @property sourceLink link de onde o modelo 3D foi obtido, se houver. Uso
  *   **só interno**: nunca aparece em nenhum export (PDF ou copiar/colar).
  * @property savedAtEpochMillis quando foi salvo (epoch millis).
@@ -35,6 +40,7 @@ data class SavedQuote(
     val quote: Quote,
     val services: List<Service> = emptyList(),
     val photoFileName: String? = null,
+    val stlFileName: String? = null,
     val sourceLink: String? = null,
     val savedAtEpochMillis: Long,
     val client: Client? = null,

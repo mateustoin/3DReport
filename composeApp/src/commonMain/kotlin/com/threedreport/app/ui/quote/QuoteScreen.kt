@@ -203,6 +203,21 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
             OutlinedButton(onClick = viewModel::pickPhoto) { Text("Escolher foto (opcional)") }
         }
 
+        val stlFile = form.stlFile
+        if (stlFile != null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stlFile.fileName, style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = viewModel::clearStlFile) { Text("Remover STL") }
+            }
+        } else {
+            OutlinedButton(onClick = viewModel::pickStl) { Text("Anexar arquivo STL (opcional)") }
+        }
+        Text(
+            "Guardado pra você recuperar depois no Histórico e reaproveitar numa venda futura da " +
+                "mesma peça — não entra no PDF nem no copiar/colar.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.sourceLink,

@@ -76,6 +76,11 @@ class QuoteHistoryViewModel(
         saveBytesToFile(bytes, savedQuote.photoFileName ?: "foto.png")
     }
 
+    fun downloadStl(savedQuote: SavedQuote) {
+        val bytes = repository.stlBytes(savedQuote) ?: return
+        saveBytesToFile(bytes, savedQuote.stlFileName ?: "modelo.stl")
+    }
+
     fun exportPdf(savedQuote: SavedQuote) {
         val (watermarkText, footerText) = resolveWatermarkAndFooterText()
         val item = QuoteExportItem(savedQuote, photoBytes(savedQuote))

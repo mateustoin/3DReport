@@ -18,6 +18,7 @@ import kotlin.uuid.Uuid
 actual class QuoteHistoryRepository actual constructor() {
     private val file = File(appDataDir(), "quotes.json")
     private val photosDir = File(appDataDir(), "photos")
+    private val modelsDir = File(appDataDir(), "models")
     private val state = MutableStateFlow(readJsonFile(file, emptyList<SavedQuote>()))
 
     actual val savedQuotes: StateFlow<List<SavedQuote>> = state.asStateFlow()
@@ -28,6 +29,7 @@ actual class QuoteHistoryRepository actual constructor() {
         quote: Quote,
         services: List<Service>,
         photo: PickedFile?,
+        stlFile: PickedFile?,
         sourceLink: String?,
         client: Client?,
     ): SavedQuote {
@@ -38,12 +40,19 @@ actual class QuoteHistoryRepository actual constructor() {
         }
         photoFileName?.let { File(photosDir, it).writeBytes(photo.bytes) }
 
+        val stlFileName = stlFile?.let { picked ->
+            val extension = picked.fileName.substringAfterLast('.', "stl")
+            "$id.$extension".also { modelsDir.mkdirs() }
+        }
+        stlFileName?.let { File(modelsDir, it).writeBytes(stlFile.bytes) }
+
         val saved = SavedQuote(
             id = id,
             name = name.trim().ifEmpty { defaultName() },
             quote = quote,
             services = services,
             photoFileName = photoFileName,
+            stlFileName = stlFileName,
             sourceLink = sourceLink?.trim()?.ifEmpty { null },
             savedAtEpochMillis = System.currentTimeMillis(),
             client = client,
@@ -58,6 +67,7 @@ actual class QuoteHistoryRepository actual constructor() {
         state.value = state.value.filterNot { it.id == id }
         persist()
         removed?.photoFileName?.let { File(photosDir, it).delete() }
+        removed?.stlFileName?.let { File(modelsDir, it).delete() }
     }
 
     actual fun updateStatus(id: String, status: OrderStatus) {
@@ -69,6 +79,12 @@ actual class QuoteHistoryRepository actual constructor() {
         val fileName = savedQuote.photoFileName ?: return null
         val photoFile = File(photosDir, fileName)
         return if (photoFile.exists()) photoFile.readBytes() else null
+    }
+
+    actual fun stlBytes(savedQuote: SavedQuote): ByteArray? {
+        val fileName = savedQuote.stlFileName ?: return null
+        val stlFile = File(modelsDir, fileName)
+        return if (stlFile.exists()) stlFile.readBytes() else null
     }
 
     private fun persist() = writeJsonFile(file, state.value)

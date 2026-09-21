@@ -5,6 +5,15 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.12.0] - 2026-09-21
+
+### Adicionado
+- Anexar um arquivo STL (opcional) ao orçamento, na tela de Orçamento —
+  guardado no histórico (`~/.3dreport/models/`), com "Baixar STL" na aba
+  Histórico, pra recuperar o modelo depois e reaproveitar numa venda
+  futura da mesma peça. Uso só interno, nunca entra no PDF nem no
+  copiar/colar.
+
 ## [1.11.3] - 2026-09-20
 
 ### Alterado

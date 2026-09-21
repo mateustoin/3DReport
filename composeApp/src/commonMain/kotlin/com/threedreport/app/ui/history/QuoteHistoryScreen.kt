@@ -95,6 +95,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
                 selected = savedQuote.id in selectedIds,
                 onToggleSelected = { viewModel.toggleSelection(savedQuote.id) },
                 onDownloadPhoto = { viewModel.downloadPhoto(savedQuote) },
+                onDownloadStl = { viewModel.downloadStl(savedQuote) },
                 onExportPdf = { viewModel.exportPdf(savedQuote) },
                 onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
                 onDelete = { pendingDelete = savedQuote },
@@ -106,7 +107,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
     pendingDelete?.let { savedQuote ->
         ConfirmDialog(
             title = "Excluir orçamento?",
-            message = "\"${savedQuote.name}\" será removido do histórico, junto com a foto salva (se houver). Essa ação não pode ser desfeita.",
+            message = "\"${savedQuote.name}\" será removido do histórico, junto com a foto e o STL salvos (se houver). Essa ação não pode ser desfeita.",
             onConfirm = {
                 viewModel.delete(savedQuote.id)
                 pendingDelete = null
@@ -192,6 +193,7 @@ private fun SavedQuoteRow(
     selected: Boolean,
     onToggleSelected: () -> Unit,
     onDownloadPhoto: () -> Unit,
+    onDownloadStl: () -> Unit,
     onExportPdf: () -> Unit,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
@@ -241,6 +243,9 @@ private fun SavedQuoteRow(
                     TextButton(onClick = onCopy) { Text(if (justCopied) "Copiado!" else "Copiar") }
                     if (photoBytes != null) {
                         TextButton(onClick = onDownloadPhoto) { Text("Baixar foto") }
+                    }
+                    if (savedQuote.stlFileName != null) {
+                        TextButton(onClick = onDownloadStl) { Text("Baixar STL") }
                     }
                     TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
                 }

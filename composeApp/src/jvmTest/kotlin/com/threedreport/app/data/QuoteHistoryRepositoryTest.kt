@@ -90,6 +90,24 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
+    fun stlBytesSurviveNewRepositoryInstance() {
+        val repository = QuoteHistoryRepository()
+        val stlBytes = byteArrayOf(5, 6, 7, 8)
+        val saved = repository.save(
+            name = "Com STL",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = PickedFile(fileName = "modelo.stl", bytes = stlBytes),
+            sourceLink = null,
+        )
+
+        val reloadedRepository = QuoteHistoryRepository()
+        val reloaded = reloadedRepository.savedQuotes.value.first { it.id == saved.id }
+        assertContentEquals(stlBytes, reloadedRepository.stlBytes(reloaded))
+    }
+
+    @Test
     fun servicesSurviveNewRepositoryInstance() {
         val repository = QuoteHistoryRepository()
         val services = listOf(Service(id = "s1", name = "Pintura", price = 20.0))
@@ -161,5 +179,22 @@ class QuoteHistoryRepositoryTest {
 
         assertTrue(QuoteHistoryRepository().savedQuotes.value.none { it.id == saved.id })
         assertNull(repository.photoBytes(saved))
+    }
+
+    @Test
+    fun deleteRemovesStlFile() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(
+            name = "Pra excluir",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = PickedFile(fileName = "modelo.stl", bytes = byteArrayOf(9)),
+            sourceLink = null,
+        )
+
+        repository.delete(saved.id)
+
+        assertNull(repository.stlBytes(saved))
     }
 }
