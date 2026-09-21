@@ -71,6 +71,8 @@ ao final, com data.
 
 | 59 | 2026-09-20 | Revertida a decisão 58 (pedido do responsável do projeto, ao ver o resultado): o `javax.swing.JFileChooser` filtrava de fato, mas o visual Swing destoa do resto do app/SO — preferência explícita por manter o diálogo **nativo** (`java.awt.FileDialog`), mesmo que isso signifique não ter filtro de tipo garantido no Windows (limitação do peer nativo do AWT, ver decisões 57/58). Critério dado pelo responsável do projeto: filtro de arquivo é só uma conveniência de busca, não algo que impede escolher o arquivo certo manualmente — não vale trocar o componente visual nativo por causa disso. `pickGCodeFile`/`pickImageFile` voltam exatamente ao estado da decisão 55 (`FileDialog` + `filenameFilter`, sem o wildcard da decisão 57) | Aprovada |
 
+| 60 | 2026-09-20 | Instrução de instalação do macOS corrigida (testado na prática pelo responsável do projeto num Mac real, ao instalar a v1.11.3): "clique com o botão direito → Abrir" não bastou pra liberar o app no Gatekeeper — precisou ir em **Ajustes do Sistema → Privacidade e Segurança** e clicar em "Abrir mesmo assim" no aviso sobre o app bloqueado. Textos atualizados pra orientar os dois caminhos (clique direito primeiro, com o caminho de Ajustes como alternativa quando não resolver) em `README.md`, `site/index.html`, `docs/development.md` e no template de release notes (`.github/workflows/release.yml`) — esse último já corrige todo release futuro, não só o atual | Aprovada |
+
 ## Pendentes de aprovação
 
 Nenhuma no momento — ver [roadmap.md](roadmap.md) para as próximas evoluções.

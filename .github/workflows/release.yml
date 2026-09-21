@@ -112,8 +112,12 @@ jobs:
           - **Windows (`.msi`)** — o SmartScreen pode avisar "Editor
             desconhecido": clique em "Mais informações" → "Executar assim
             mesmo".
-          - **macOS (`.dmg`)** — pode bloquear na primeira abertura: clique
-            com o botão direito no app → "Abrir".
+          - **macOS (`.dmg`)** — pode bloquear a abertura. Tente clicar com
+            o botão direito no app → "Abrir"; se essa opção não resolver
+            (comum em versões mais recentes do macOS), vá em **Ajustes do
+            Sistema → Privacidade e Segurança**, role até o aviso de que o
+            app foi bloqueado e clique em **"Abrir mesmo assim"** (pode
+            pedir confirmação com senha/Touch ID).
           - **Linux (`.deb`)** — Debian/Ubuntu e derivados:
             `sudo dpkg -i threedreport_*.deb`.
           EOF

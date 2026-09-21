@@ -133,7 +133,10 @@ branch). Passo a passo:
 
 Sem assinatura de código: o `.msi` dispara aviso do SmartScreen do Windows
 ("Editor desconhecido" → "Mais informações → Executar assim mesmo") e o
-`.dmg` dispara aviso do Gatekeeper do macOS (clique direito → "Abrir"). Um
+`.dmg` dispara aviso do Gatekeeper do macOS — clique direito → "Abrir"
+costuma resolver, mas em versões mais recentes do macOS (confirmado na
+prática, decisão 60) só funciona indo em Ajustes do Sistema → Privacidade
+e Segurança → "Abrir mesmo assim". Um
 certificado de assinatura tem custo recorrente, o que não combina com o
 modelo 100% financiado por doação (decisão 15) — fica registrado como
 limitação conhecida, não como pendência.
