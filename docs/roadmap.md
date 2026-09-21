@@ -245,7 +245,7 @@ implementação.
 
 ### Visualização e análise de STL (funcionalidade grande, dividida em fases)
 
-- [ ] **Fase 1 — Upload de STL + visualizador 3D.** Anexar o arquivo STL do
+- [x] **Fase 1 — Upload de STL + visualizador 3D.** Anexar o arquivo STL do
   modelo ao orçamento (além da foto que já existe hoje). Envolve:
   - [x] **Anexar e guardar o arquivo STL no histórico** (decisão 61,
     2026-09-21), independente do parser/visualizador abaixo — pedido do
