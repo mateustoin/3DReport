@@ -666,48 +666,26 @@ funciona hoje.
 
 ### UX extras
 
-- [ ] **Fotos WebP não aparecem no PDF exportado (bug).** Reportado pelo
-  responsável do projeto (2026-09-17): a miniatura da foto aparece
-  normalmente no app, mas ela some do PDF exportado (orçamento individual e
-  catálogo) quando o upload original foi um arquivo `.webp`. Investigado
-  (sem implementar nada ainda) — causa raiz confirmada por leitura direta do
-  código, é um descompasso de decodificador entre a miniatura e a exportação:
-  - O seletor de arquivo (`platform/ImagePicker.jvm.kt`) aceita `webp` no
-    filtro de extensões hoje, e o repositório
-    (`data/QuoteHistoryRepository.jvm.kt`) grava os bytes originais em disco
-    sem reconverter.
-  - A miniatura no app decodifica via Skia (`platform/ImageDecoder.jvm.kt`,
-    `Image.makeFromEncoded`), que suporta WebP nativamente — por isso
-    funciona ali.
-  - A exportação de PDF (`platform/QuotePdfExporter.jvm.kt`, nas funções
-    `drawQuotePage` e `drawCatalogCell`) decodifica a foto via
-    `javax.imageio.ImageIO.read(...)` antes de entregar pro PDFBox
-    (`LosslessFactory.createFromImage`) — o JDK não tem leitor de WebP
-    registrado por padrão, então `ImageIO.read` retorna `null`
-    silenciosamente (não lança exceção, não existe try/catch escondendo
-    nada — é o contrato normal do método pra formato não suportado) e o
-    bloco que desenha a foto é pulado sem erro nenhum aparecer pro usuário.
-  - **Duas alternativas de correção, a decidir antes de implementar:**
-    - **(A) Suportar WebP na exportação de PDF.** Adicionar um leitor de
-      WebP ao classpath (ex.: plugin ImageIO como o `imageio-webp` do
-      TwelveMonkeys) como nova dependência Gradle — ImageIO passaria a
-      decodificar sozinho, sem mexer no resto do fluxo. Alternativa sem
-      dependência nova: trocar a decodificação nesse trecho pra reusar o
-      Skia (mesmo decoder já usado na miniatura) em vez do ImageIO,
-      convertendo o resultado pra algo que o PDFBox aceite — mais trabalho
-      de integração (converter bitmap do Skia pra `BufferedImage`/raster
-      compatível).
-    - **(B) Não aceitar WebP no upload.** Mais simples: remover `"webp"` do
-      filtro em `ImagePicker.jvm.kt` (o diálogo deixa de oferecer `.webp`
-      como opção). Variante melhor: continuar aceitando `.webp` na escolha
-      do arquivo, mas reconverter pra PNG/JPEG no momento de salvar
-      (`QuoteHistoryRepository.jvm.kt`, reaproveitando o próprio Skia, que já
-      decodifica WebP sem problema), garantindo que miniatura e PDF sempre
-      trabalhem com um formato universal a partir dali.
-    - Em qualquer variante de (B), orçamentos **já salvos hoje** com foto
-      `.webp` continuariam com o problema na exportação (arquivo já gravado
-      em disco) — precisaria de migração ou aviso separado se isso for
-      relevante na prática.
+- [x] **Fotos WebP não aparecem no PDF exportado (bug)** (decisão 65,
+  2026-09-21). Reportado pelo responsável do projeto (2026-09-17): a
+  miniatura da foto aparece normalmente no app, mas ela some do PDF
+  exportado (orçamento individual e catálogo) quando o upload original
+  foi um arquivo `.webp` — causa raiz: `platform/QuotePdfExporter.jvm.kt`
+  decodificava a foto via `javax.imageio.ImageIO.read(...)`, que não lê
+  WebP sem plugin e retorna `null` em silêncio (sem exceção), então o
+  bloco que desenha a foto era pulado sem erro nenhum aparecer. Corrigido
+  com a opção (A) sem dependência nova: a exportação passa a decodificar
+  via `decodeImageBitmap` (Skia, mesmo decoder já usado na miniatura do
+  app) + `ImageBitmap.toAwtImage()` (extensão do Compose Desktop) pra
+  virar o `BufferedImage` que o PDFBox espera — miniatura e PDF nunca mais
+  divergem em formato suportado. Escolhida em vez da opção (B) porque
+  corrige retroativamente **fotos já salvas** antes dessa correção (o
+  ajuste é só na leitura, não na gravação — nenhuma migração necessária),
+  e reaproveita infraestrutura Skia que o app já tinha (usada agora
+  também na captura do visualizador 3D). Feito:
+  `platform/QuotePdfExporter.decodePhotoAsBufferedImage`, teste de
+  regressão codificando um WebP de verdade via Skia e conferindo que a
+  imagem foi embutida no PDF (`QuotePdfExporterTest`).
 - [x] **Atalhos de teclado** (decisão 43). `Ctrl`/`Cmd+1` a `7` pula direto
   pra cada aba; `Ctrl`/`Cmd+S` salva o orçamento atual e `Ctrl`/`Cmd+N`
   limpa a tela de Orçamento pra começar um novo (os dois só na aba

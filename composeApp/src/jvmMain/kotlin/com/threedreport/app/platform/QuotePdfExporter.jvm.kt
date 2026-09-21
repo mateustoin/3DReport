@@ -1,5 +1,6 @@
 package com.threedreport.app.platform
 
+import androidx.compose.ui.graphics.toAwtImage
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.core.model.Currency
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -12,11 +13,20 @@ import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import org.apache.pdfbox.util.Matrix
 import java.awt.Color
-import java.io.ByteArrayInputStream
+import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 import kotlin.math.cos
 import kotlin.math.sin
+
+/**
+ * Decodifica a foto via Skia ([decodeImageBitmap], mesmo decoder da miniatura no app) em vez de
+ * `javax.imageio.ImageIO` — o JDK não tem leitor de WebP registrado por padrão, então `ImageIO.read`
+ * retornava `null` silenciosamente pra fotos `.webp` e a imagem sumia do PDF sem erro nenhum
+ * (bug corrigido aqui; ver docs/roadmap.md). Skia decodifica os mesmos formatos que a miniatura já
+ * usa, então os dois nunca mais divergem.
+ */
+private fun decodePhotoAsBufferedImage(bytes: ByteArray?): BufferedImage? =
+    bytes?.let { runCatching { decodeImageBitmap(it).toAwtImage() }.getOrNull() }
 
 actual fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
@@ -90,7 +100,7 @@ private fun drawQuotePage(
         }
         cursorY -= 6f
 
-        val bufferedImage = item.photoBytes?.let { ImageIO.read(ByteArrayInputStream(it)) }
+        val bufferedImage = decodePhotoAsBufferedImage(item.photoBytes)
         if (bufferedImage != null) {
             val pdImage = LosslessFactory.createFromImage(document, bufferedImage)
             val maxWidth = page.mediaBox.width - margin * 2
@@ -185,7 +195,7 @@ private fun drawCatalogCell(
     currency: Currency,
 ) {
     val savedQuote = item.savedQuote
-    val bufferedImage = item.photoBytes?.let { ImageIO.read(ByteArrayInputStream(it)) }
+    val bufferedImage = decodePhotoAsBufferedImage(item.photoBytes)
     if (bufferedImage != null) {
         val pdImage = LosslessFactory.createFromImage(document, bufferedImage)
         val scale = minOf(photoSize / pdImage.width, photoSize / pdImage.height, 1f)

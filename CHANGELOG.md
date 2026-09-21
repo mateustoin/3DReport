@@ -5,6 +5,15 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.15.1] - 2026-09-21
+
+### Corrigido
+- Fotos `.webp` sumiam do PDF exportado (orçamento individual e catálogo),
+  sem nenhum erro aparecer — a exportação usava um decodificador que não
+  lê WebP sem plugin extra. Corrigido reaproveitando o mesmo decodificador
+  (Skia) já usado pela miniatura no app, sem precisar de dependência nova.
+  Conserta retroativamente fotos WebP já salvas antes desta versão.
+
 ## [1.15.0] - 2026-09-21
 
 ### Adicionado

@@ -11,6 +11,9 @@ import com.threedreport.core.model.Service
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
+import org.jetbrains.skia.Bitmap
+import org.jetbrains.skia.EncodedImageFormat
+import org.jetbrains.skia.Image as SkiaImage
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -81,6 +84,30 @@ class QuotePdfExporterTest {
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.pages.count() == 1)
         document.close()
+    }
+
+    @Test
+    fun pdfEmbedsAWebpPhotoInsteadOfSilentlyDroppingIt() {
+        // Regressão: javax.imageio.ImageIO não lê WebP sem plugin, e retornava null em silêncio —
+        // a foto desaparecia do PDF sem erro nenhum. A exportação decodifica via Skia agora
+        // (mesmo decoder da miniatura no app), que lê WebP nativamente.
+        val skiaBitmap = Bitmap().apply {
+            allocN32Pixels(10, 10)
+            erase(0xFFFF0000.toInt())
+        }
+        val webpBytes = SkiaImage.makeFromBitmap(skiaBitmap).encodeToData(EncodedImageFormat.WEBP)!!.bytes
+
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(savedQuote, webpBytes)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val document = Loader.loadPDF(pdfBytes)
+        val embeddedImageCount = document.pages[0].resources.xObjectNames.count()
+        document.close()
+
+        assertTrue(embeddedImageCount > 0, "a foto WebP deveria ter sido embutida no PDF, não descartada em silêncio")
     }
 
     @Test
