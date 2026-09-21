@@ -46,7 +46,12 @@ import com.threedreport.core.model.SavedQuote
 
 /** Tela de Histórico: orçamentos salvos, com o retrato dos valores no momento em que foram salvos. */
 @Composable
-fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, onEditQuote: (SavedQuote) -> Unit, modifier: Modifier = Modifier) {
+fun QuoteHistoryScreen(
+    viewModel: QuoteHistoryViewModel,
+    onEditQuote: (SavedQuote) -> Unit,
+    onDuplicateQuote: (SavedQuote) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val copiedId by viewModel.copiedId.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
@@ -99,6 +104,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, onEditQuote: (SavedQuot
                 onExportPdf = { viewModel.exportPdf(savedQuote) },
                 onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
                 onEdit = { onEditQuote(savedQuote) },
+                onDuplicate = { onDuplicateQuote(savedQuote) },
                 onDelete = { pendingDelete = savedQuote },
                 onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
             )
@@ -198,6 +204,7 @@ private fun SavedQuoteRow(
     onExportPdf: () -> Unit,
     onCopy: () -> Unit,
     onEdit: () -> Unit,
+    onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
 ) {
@@ -253,6 +260,7 @@ private fun SavedQuoteRow(
                     TextButton(onClick = onExportPdf) { Text("Exportar PDF") }
                     TextButton(onClick = onCopy) { Text(if (justCopied) "Copiado!" else "Copiar") }
                     TextButton(onClick = onEdit) { Text("Editar") }
+                    TextButton(onClick = onDuplicate) { Text("Duplicar") }
                     if (photoBytes != null) {
                         TextButton(onClick = onDownloadPhoto) { Text("Baixar foto") }
                     }

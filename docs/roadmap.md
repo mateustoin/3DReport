@@ -438,6 +438,21 @@ implementação.
   manutenção da máquina; falta um aviso quando o total de horas impressas
   (somadas pelos orçamentos daquela impressora) passar de um limiar
   configurável, lembrando de fazer a manutenção preventiva.
+- [ ] **Histórico de manutenção/alterações por impressora** (levantado pelo
+  responsável do projeto, 2026-09-21). Um campo discreto no cadastro de
+  cada impressora (ex.: um botão/link "Histórico de manutenção" na linha
+  da impressora, ao lado de "Editar"/"Excluir") que abre uma janela com uma
+  lista dos itens já cadastrados: o que foi trocado/ajustado/consertado e
+  quando (ex.: "Trocado bico 0,4mm — 12/03/2026", "Nivelada a mesa —
+  20/01/2026", "Trocada correia do eixo X — 05/12/2025"). Serve só como
+  registro/lembrete pro próprio criador — não afeta nenhum cálculo (não é
+  o mesmo item que o "Lembrete de manutenção por horas" acima, que é um
+  aviso automático baseado em uso; este aqui é um diário manual de
+  manutenção, tipo um "log" da impressora). Complementar ao item acima —
+  os dois podem conviver: um lembra "já está na hora de mexer", o outro
+  registra "o que já foi mexido". Detalhes de implementação (ex.: se cada
+  entrada tem só texto+data ou também um tipo/categoria) ficam pra quando
+  for de fato implementar.
 
 ### Presets de cadastro (impressoras e filamentos)
 
@@ -748,42 +763,28 @@ funciona hoje.
   cadastro da primeira impressora/filamento/margem, em vez de abrir numa
   tela vazia sem nenhum dado cadastrado. Baixa prioridade — fica pra
   depois.
-- [ ] **Duplicar orçamento.** Pedido do responsável do projeto (2026-09-17):
-  vender a mesma peça, com os mesmos parâmetros, pra outra pessoa hoje exige
-  refazer o orçamento do zero. Um botão "Duplicar" no Histórico copiaria
-  tudo de um `SavedQuote` (filamento/impressora/comprimento/tempo/serviços/
-  taxa de marketplace, foto, link do modelo) pra um novo orçamento, deixando
-  só nome/cliente/contato pra ajustar antes de salvar pro cliente novo.
-  Duas regras específicas já definidas pelo responsável do projeto:
-  - **Data/hora do duplicado é a do momento da duplicação**, não a do
-    original — `savedAtEpochMillis` novo, não copiado (o duplicado é, pra
-    todos os efeitos, um orçamento novo no Histórico, só que reaproveitando
-    os números). Junto disso, o status também deveria voltar a `ORCADO`
-    (mesma regra de "todo orçamento nasce Orçado" que já vale pra um
-    orçamento criado do zero — o duplicado é um novo pedido, ainda não
-    andou).
-  - **Se a foto não mudar, reaproveitar o mesmo arquivo** — não duplicar o
-    arquivo de imagem em disco. Isso não é automático hoje: o nome do
-    arquivo é gerado como `"$id.$extensão"` (1 arquivo por `SavedQuote`,
-    `data/QuoteHistoryRepository.jvm.kt`), então duplicar exigiria **dois**
-    `SavedQuote` (ids diferentes) apontando pro **mesmo** `photoFileName` —
-    o que por sua vez exige mudar a exclusão (`delete()` hoje apaga o
-    arquivo de foto sem checar se outro orçamento salvo ainda referencia
-    esse mesmo nome de arquivo; precisaria checar antes de apagar).
-  - **Dependência resolvida (decisão 64, 2026-09-21):** a opção (b) cogitada
-    abaixo já existe agora — `QuoteViewModel.loadForEditing` popula a aba
-    Orçamento a partir de um `SavedQuote` existente. "Duplicar" fica bem
-    mais simples de implementar: é a mesma função, só sem marcar
-    `editingQuoteId` (pra "Salvar" criar um orçamento novo, com
-    `savedAtEpochMillis`/status novos, em vez de atualizar o original) — a
-    parte de reaproveitar o arquivo de foto (regra abaixo) ainda precisa
-    ser resolvida à parte.
-  - **Em aberto pra quando for implementar:** decidir entre (a) clonar
-    direto uma nova linha no Histórico e também adicionar uma edição leve
-    de nome/cliente/contato ali mesmo (feature pequena e genericamente
-    útil, não só pra esse caso), ou (b) reabrir o duplicado como rascunho
-    preenchido na aba Orçamento (ver dependência resolvida acima) pra
-    revisar e salvar de novo.
+- [x] **Duplicar orçamento** (decisão 69, 2026-09-21). Pedido do
+  responsável do projeto (2026-09-17): vender a mesma peça, com os mesmos
+  parâmetros, pra outra pessoa antes exigia refazer o orçamento do zero.
+  Botão "Duplicar" no Histórico (ao lado de "Editar") copia tudo de um
+  `SavedQuote` (filamento/cor/impressora/comprimento/tempo/serviços/
+  marketplace/nome/foto/STL/link/cliente) pra um rascunho na aba Orçamento,
+  pra revisar (nome/cliente/contato, tipicamente) e salvar pro cliente
+  novo. As duas regras já definidas foram implementadas como pedido:
+  - **Data/hora do duplicado é a do momento da duplicação**, status volta
+    a `ORCADO` — implementado reaproveitando `QuoteViewModel.loadForEditing`
+    (decisão 64) sem marcar `editingQuoteId`: "Salvar" cai no caminho de
+    criar um orçamento novo (`QuoteHistoryRepository.save`, não `update`),
+    com `savedAtEpochMillis`/status frescos.
+  - **Se a foto/STL não mudar, reaproveita o mesmo arquivo** — não duplica
+    o arquivo em disco. `save`/`update` ganharam `photoReferenceFileName`/
+    `stlReferenceFileName` (opcionais): quando presentes, o repositório usa
+    esse nome de arquivo existente direto, sem regravar; `delete` (e a
+    limpeza durante `update`) passam a checar se **outro** `SavedQuote`
+    ainda referencia aquele nome antes de apagar o arquivo, pra não quebrar
+    um duplicado que ainda depende dele. Esse mesmo mecanismo passou a
+    beneficiar edição também (decisão 64): editar sem trocar a foto/STL não
+    regrava mais o arquivo à toa.
 - [ ] **Quadro Kanban de pedidos** (levantado em 2026-09-19, pesquisa de
   concorrentes — FoxTrack e Printforge usam isso como visão principal).
   Visão alternativa ao Histórico em lista: colunas por `OrderStatus`

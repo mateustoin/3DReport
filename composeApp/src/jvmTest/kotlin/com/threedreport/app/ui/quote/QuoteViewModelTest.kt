@@ -332,6 +332,33 @@ class QuoteViewModelTest {
     }
 
     @Test
+    fun duplicateForNewQuoteCreatesANewEntryInsteadOfUpdatingTheOriginal() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.setSaveName("Peça original")
+        viewModel.saveCurrentQuote()
+        val original = historyRepository.savedQuotes.value.first()
+
+        viewModel.duplicateForNewQuote(original)
+
+        assertEquals(null, viewModel.saveForm.value.editingQuoteId)
+        assertEquals("Peça original", viewModel.saveForm.value.duplicatedFromName)
+        assertEquals("Peça original", viewModel.saveForm.value.name)
+        assertEquals("12", viewModel.input.value.lengthMetersText)
+
+        viewModel.setSaveName("Peça pro cliente novo")
+        viewModel.saveCurrentQuote()
+
+        assertEquals(2, historyRepository.savedQuotes.value.size)
+        val duplicate = historyRepository.savedQuotes.value.first { it.id != original.id }
+        assertEquals("Peça pro cliente novo", duplicate.name)
+        assertEquals(com.threedreport.core.model.OrderStatus.ORCADO, duplicate.status)
+        assertTrue(duplicate.savedAtEpochMillis >= original.savedAtEpochMillis)
+    }
+
+    @Test
     fun resetFormClearsInputAndSaveForm() {
         val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
         viewModel.setLengthMeters("12")

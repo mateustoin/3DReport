@@ -278,6 +278,142 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
+    fun saveWithPhotoReferenceReusesTheExistingFileInsteadOfDuplicating() {
+        // Simula duplicar um orçamento cuja foto não mudou.
+        val repository = QuoteHistoryRepository()
+        val original = repository.save(
+            name = "Original",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(1, 2, 3)),
+            sourceLink = null,
+        )
+
+        val duplicate = repository.save(
+            name = "Duplicado",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(1, 2, 3)),
+            photoReferenceFileName = original.photoFileName,
+            sourceLink = null,
+        )
+
+        assertEquals(original.photoFileName, duplicate.photoFileName)
+    }
+
+    @Test
+    fun saveWithStlReferenceReusesTheExistingFileInsteadOfDuplicating() {
+        val repository = QuoteHistoryRepository()
+        val original = repository.save(
+            name = "Original",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = PickedFile(fileName = "modelo.stl", bytes = byteArrayOf(9, 9)),
+            sourceLink = null,
+        )
+
+        val duplicate = repository.save(
+            name = "Duplicado",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = PickedFile(fileName = "modelo.stl", bytes = byteArrayOf(9, 9)),
+            stlReferenceFileName = original.stlFileName,
+            sourceLink = null,
+        )
+
+        assertEquals(original.stlFileName, duplicate.stlFileName)
+    }
+
+    @Test
+    fun deletingOneOfTwoQuotesSharingAPhotoKeepsTheFileForTheOther() {
+        val repository = QuoteHistoryRepository()
+        val photoBytes = byteArrayOf(1, 2, 3)
+        val original = repository.save(
+            name = "Original",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
+            sourceLink = null,
+        )
+        val duplicate = repository.save(
+            name = "Duplicado",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
+            photoReferenceFileName = original.photoFileName,
+            sourceLink = null,
+        )
+
+        repository.delete(original.id)
+
+        assertContentEquals(photoBytes, repository.photoBytes(duplicate))
+    }
+
+    @Test
+    fun deletingBothQuotesSharingAPhotoRemovesTheFile() {
+        val repository = QuoteHistoryRepository()
+        val original = repository.save(
+            name = "Original",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(1)),
+            sourceLink = null,
+        )
+        val duplicate = repository.save(
+            name = "Duplicado",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(1)),
+            photoReferenceFileName = original.photoFileName,
+            sourceLink = null,
+        )
+
+        repository.delete(original.id)
+        repository.delete(duplicate.id)
+
+        assertNull(repository.photoBytes(duplicate))
+    }
+
+    @Test
+    fun editingAQuoteWithoutTouchingItsSharedPhotoDoesNotBreakTheOtherReference() {
+        val repository = QuoteHistoryRepository()
+        val photoBytes = byteArrayOf(1, 2, 3)
+        val original = repository.save(
+            name = "Original",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
+            sourceLink = null,
+        )
+        val duplicate = repository.save(
+            name = "Duplicado",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
+            photoReferenceFileName = original.photoFileName,
+            sourceLink = null,
+        )
+
+        // Editar o duplicado sem trocar a foto (mesmo padrão do QuoteViewModel.loadForEditing):
+        // reenvia a mesma referência, não deveria apagar o arquivo que o original ainda usa.
+        repository.update(
+            id = duplicate.id,
+            name = "Duplicado editado",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
+            photoReferenceFileName = duplicate.photoFileName,
+            stlFile = null,
+            sourceLink = null,
+            client = null,
+        )
+
+        assertContentEquals(photoBytes, repository.photoBytes(original))
+    }
+
+    @Test
     fun deleteRemovesStlFile() {
         val repository = QuoteHistoryRepository()
         val saved = repository.save(

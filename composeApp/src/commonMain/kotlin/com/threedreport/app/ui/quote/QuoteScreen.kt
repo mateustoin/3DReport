@@ -220,6 +220,15 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, c
                 TextButton(onClick = viewModel::resetForm) { Text("Cancelar edição") }
             }
         }
+        form.duplicatedFromName?.let { originalName ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Duplicado de \"$originalName\" — revise os dados e clique em Salvar pra criar um orçamento novo.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(onClick = viewModel::resetForm) { Text("Cancelar") }
+            }
+        }
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),

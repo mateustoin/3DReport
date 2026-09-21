@@ -29,13 +29,15 @@ actual class QuoteHistoryRepository actual constructor() {
         quote: Quote,
         services: List<Service>,
         photo: PickedFile?,
+        photoReferenceFileName: String?,
         stlFile: PickedFile?,
+        stlReferenceFileName: String?,
         sourceLink: String?,
         client: Client?,
     ): SavedQuote {
         val id = Uuid.random().toString()
-        val photoFileName = writeAttachment(photosDir, id, photo, "img")
-        val stlFileName = writeAttachment(modelsDir, id, stlFile, "stl")
+        val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
+        val stlFileName = resolveAttachment(modelsDir, id, stlFile, stlReferenceFileName, "stl")
 
         val saved = SavedQuote(
             id = id,
@@ -59,13 +61,15 @@ actual class QuoteHistoryRepository actual constructor() {
         quote: Quote,
         services: List<Service>,
         photo: PickedFile?,
+        photoReferenceFileName: String?,
         stlFile: PickedFile?,
+        stlReferenceFileName: String?,
         sourceLink: String?,
         client: Client?,
     ): SavedQuote? {
         val existing = state.value.find { it.id == id } ?: return null
-        val photoFileName = writeAttachment(photosDir, id, photo, "img", existing.photoFileName)
-        val stlFileName = writeAttachment(modelsDir, id, stlFile, "stl", existing.stlFileName)
+        val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
+        val stlFileName = resolveAttachment(modelsDir, id, stlFile, stlReferenceFileName, "stl")
 
         val updated = existing.copy(
             name = name.trim().ifEmpty { defaultName() },
@@ -77,7 +81,11 @@ actual class QuoteHistoryRepository actual constructor() {
             client = client,
             lastEditedEpochMillis = System.currentTimeMillis(),
         )
+        // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
+        // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).
         state.value = state.value.map { if (it.id == id) updated else it }
+        cleanupIfOrphaned(photosDir, existing.photoFileName, photoFileName) { it.photoFileName }
+        cleanupIfOrphaned(modelsDir, existing.stlFileName, stlFileName) { it.stlFileName }
         persist()
         return updated
     }
@@ -86,17 +94,24 @@ actual class QuoteHistoryRepository actual constructor() {
         val removed = state.value.find { it.id == id }
         state.value = state.value.filterNot { it.id == id }
         persist()
-        removed?.photoFileName?.let { File(photosDir, it).delete() }
-        removed?.stlFileName?.let { File(modelsDir, it).delete() }
+        removed?.photoFileName?.let { fileName ->
+            if (state.value.none { it.photoFileName == fileName }) File(photosDir, fileName).delete()
+        }
+        removed?.stlFileName?.let { fileName ->
+            if (state.value.none { it.stlFileName == fileName }) File(modelsDir, fileName).delete()
+        }
     }
 
     /**
-     * Grava [picked] em [dir] como `"$id.extensão"`, apagando [previousFileName] primeiro (edição
-     * trocando o anexo, ou removendo — sem isso, o arquivo antigo ficaria órfão em disco). `null`
-     * de [picked] só apaga, sem gravar nada de novo.
+     * Resolve o nome do arquivo de um anexo (foto ou STL) a gravar num [SavedQuote]:
+     * - [referenceFileName] não-nulo: reaproveita esse arquivo já existente **sem** gravar nada de
+     *   novo (duplicar um orçamento cujo anexo não mudou, ou editar sem trocar o anexo) — evita
+     *   duplicar o mesmo arquivo em disco a cada duplicação/edição.
+     * - [picked] não-nulo (e sem referência): grava um arquivo novo, nomeado `"$id.extensão"`.
+     * - Nenhum dos dois: sem anexo.
      */
-    private fun writeAttachment(dir: File, id: String, picked: PickedFile?, defaultExtension: String, previousFileName: String? = null): String? {
-        previousFileName?.let { File(dir, it).delete() }
+    private fun resolveAttachment(dir: File, id: String, picked: PickedFile?, referenceFileName: String?, defaultExtension: String): String? {
+        if (referenceFileName != null) return referenceFileName
         if (picked == null) return null
 
         val extension = picked.fileName.substringAfterLast('.', defaultExtension)
@@ -104,6 +119,16 @@ actual class QuoteHistoryRepository actual constructor() {
         dir.mkdirs()
         File(dir, fileName).writeBytes(picked.bytes)
         return fileName
+    }
+
+    /**
+     * Apaga [oldFileName] de [dir] se ele mudou (não é mais igual a [newFileName]) **e** nenhum
+     * outro [SavedQuote] no histórico ainda referencia esse nome — do contrário apagaria o arquivo
+     * de um orçamento duplicado que ainda depende dele.
+     */
+    private fun cleanupIfOrphaned(dir: File, oldFileName: String?, newFileName: String?, fileNameOf: (SavedQuote) -> String?) {
+        if (oldFileName == null || oldFileName == newFileName) return
+        if (state.value.none { fileNameOf(it) == oldFileName }) File(dir, oldFileName).delete()
     }
 
     actual fun updateStatus(id: String, status: OrderStatus) {

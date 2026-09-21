@@ -79,6 +79,7 @@ class QuoteViewModel(
                 it.copy(
                     photo = PickedFile("miniatura_do_gcode.${thumbnail.fileExtension}", thumbnail.bytes),
                     photoFromGCode = true,
+                    photoReferenceFileName = null,
                     savedConfirmation = false,
                 )
             }
@@ -114,14 +115,20 @@ class QuoteViewModel(
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
     fun setClientName(text: String) = saveFormState.update { it.copy(clientName = text, savedConfirmation = false) }
     fun setClientContact(text: String) = saveFormState.update { it.copy(clientContact = text, savedConfirmation = false) }
-    fun clearPhoto() = saveFormState.update { it.copy(photo = null, photoFromGCode = false, savedConfirmation = false) }
+    fun clearPhoto() = saveFormState.update {
+        it.copy(photo = null, photoFromGCode = false, photoReferenceFileName = null, savedConfirmation = false)
+    }
 
     fun pickPhoto() {
         val picked = pickImageFile() ?: return
-        saveFormState.update { it.copy(photo = picked, photoFromGCode = false, savedConfirmation = false) }
+        saveFormState.update {
+            it.copy(photo = picked, photoFromGCode = false, photoReferenceFileName = null, savedConfirmation = false)
+        }
     }
 
-    fun clearStlFile() = saveFormState.update { it.copy(stlFile = null, savedConfirmation = false) }
+    fun clearStlFile() = saveFormState.update {
+        it.copy(stlFile = null, stlReferenceFileName = null, savedConfirmation = false)
+    }
 
     /**
      * Anexa o arquivo STL do modelo ao orçamento — guardado pra o criador recuperar depois no
@@ -130,13 +137,18 @@ class QuoteViewModel(
      */
     fun pickStl() {
         val picked = pickStlFile() ?: return
-        saveFormState.update { it.copy(stlFile = picked, savedConfirmation = false) }
+        saveFormState.update { it.copy(stlFile = picked, stlReferenceFileName = null, savedConfirmation = false) }
     }
 
     /** Usa uma captura do visualizador 3D (`Stl3DViewerState.captureSnapshot`) como foto do orçamento. */
     fun setPhotoFromStlSnapshot(pngBytes: ByteArray) {
         saveFormState.update {
-            it.copy(photo = PickedFile("captura_stl.png", pngBytes), photoFromGCode = false, savedConfirmation = false)
+            it.copy(
+                photo = PickedFile("captura_stl.png", pngBytes),
+                photoFromGCode = false,
+                photoReferenceFileName = null,
+                savedConfirmation = false,
+            )
         }
     }
 
@@ -153,7 +165,9 @@ class QuoteViewModel(
                 quote = quote,
                 services = services,
                 photo = form.photo,
+                photoReferenceFileName = form.photoReferenceFileName,
                 stlFile = form.stlFile,
+                stlReferenceFileName = form.stlReferenceFileName,
                 sourceLink = form.sourceLink,
                 client = client,
             )
@@ -163,7 +177,9 @@ class QuoteViewModel(
                 quote = quote,
                 services = services,
                 photo = form.photo,
+                photoReferenceFileName = form.photoReferenceFileName,
                 stlFile = form.stlFile,
+                stlReferenceFileName = form.stlReferenceFileName,
                 sourceLink = form.sourceLink,
                 client = client,
             )
@@ -179,10 +195,27 @@ class QuoteViewModel(
      * muda [SavedQuote.savedAtEpochMillis], só marca [SavedQuote.lastEditedEpochMillis].
      */
     fun loadForEditing(savedQuote: SavedQuote) {
+        inputState.value = inputStateFrom(savedQuote)
+        saveFormState.value = saveFormFrom(savedQuote).copy(editingQuoteId = savedQuote.id)
+    }
+
+    /**
+     * Reabre [savedQuote] como um **orçamento novo** na aba Orçamento — mesmos dados de
+     * [loadForEditing] (filamento/impressora/comprimento/tempo/serviços/nome/foto/STL/link/
+     * cliente, prontos pra ajustar), mas sem marcar `editingQuoteId`: salvar cria uma linha nova no
+     * Histórico (data de criação e status `ORCADO` novos), em vez de sobrescrever o original. Se a
+     * foto/STL não mudarem antes de salvar, o arquivo em disco é reaproveitado, não duplicado (ver
+     * `QuoteHistoryRepository.save`).
+     */
+    fun duplicateForNewQuote(savedQuote: SavedQuote) {
+        inputState.value = inputStateFrom(savedQuote)
+        saveFormState.value = saveFormFrom(savedQuote).copy(duplicatedFromName = savedQuote.name)
+    }
+
+    private fun inputStateFrom(savedQuote: SavedQuote): QuoteInputState {
         val quote = savedQuote.quote
         val job = quote.job
-
-        inputState.value = QuoteInputState(
+        return QuoteInputState(
             filamentId = job.filament.id,
             filamentColorId = job.filamentColor?.id,
             printerId = quote.printerId,
@@ -191,22 +224,24 @@ class QuoteViewModel(
             selectedServiceIds = savedQuote.services.map { it.id }.toSet(),
             appliesMarketplaceFee = quote.marketplaceFeeRate > 0.0,
         )
+    }
 
+    private fun saveFormFrom(savedQuote: SavedQuote): SaveQuoteFormState {
         val photo = savedQuote.photoFileName?.let { fileName ->
             historyRepository.photoBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
         }
         val stlFile = savedQuote.stlFileName?.let { fileName ->
             historyRepository.stlBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
         }
-
-        saveFormState.value = SaveQuoteFormState(
+        return SaveQuoteFormState(
             name = savedQuote.name,
             photo = photo,
+            photoReferenceFileName = if (photo != null) savedQuote.photoFileName else null,
             stlFile = stlFile,
+            stlReferenceFileName = if (stlFile != null) savedQuote.stlFileName else null,
             sourceLink = savedQuote.sourceLink.orEmpty(),
             clientName = savedQuote.client?.name.orEmpty(),
             clientContact = savedQuote.client?.contact.orEmpty(),
-            editingQuoteId = savedQuote.id,
         )
     }
 

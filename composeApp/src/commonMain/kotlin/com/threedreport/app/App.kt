@@ -172,6 +172,10 @@ fun App() {
                                     quoteViewModel.loadForEditing(savedQuote)
                                     selectedTab = AppTab.QUOTE
                                 },
+                                onDuplicateQuote = { savedQuote ->
+                                    quoteViewModel.duplicateForNewQuote(savedQuote)
+                                    selectedTab = AppTab.QUOTE
+                                },
                             )
                             AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
                             AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)

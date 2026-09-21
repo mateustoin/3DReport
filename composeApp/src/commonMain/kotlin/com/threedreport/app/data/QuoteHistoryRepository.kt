@@ -24,13 +24,20 @@ expect class QuoteHistoryRepository() {
      * [services] escolhidos (retrato do preço no momento), [photo],
      * [stlFile], [sourceLink] e [client] opcionais. Nasce com
      * [OrderStatus.ORCADO].
+     *
+     * [photoReferenceFileName]/[stlReferenceFileName]: quando não-nulo (ex.: duplicando um
+     * orçamento cuja foto/STL não mudou), reaproveita esse arquivo já existente em vez de gravar
+     * [photo]/[stlFile] de novo em disco — evita duplicar o mesmo arquivo de imagem/modelo a cada
+     * duplicação. Ignorado se o [photo]/[stlFile] correspondente for `null`.
      */
     fun save(
         name: String,
         quote: Quote,
         services: List<Service>,
         photo: PickedFile?,
+        photoReferenceFileName: String? = null,
         stlFile: PickedFile? = null,
+        stlReferenceFileName: String? = null,
         sourceLink: String?,
         client: Client? = null,
     ): SavedQuote
@@ -41,8 +48,9 @@ expect class QuoteHistoryRepository() {
      * Reabre e salva de novo o orçamento [id] (edição explícita, pela aba Orçamento) — troca o
      * retrato por um novo com os valores atuais, preservando [SavedQuote.savedAtEpochMillis] (data
      * de criação original) e marcando [SavedQuote.lastEditedEpochMillis]. `null` de [photo]/[stlFile]
-     * remove o anexo existente; não-nulo substitui (mesmo que os bytes sejam os mesmos de antes).
-     * Retorna `null` sem fazer nada se [id] não existir.
+     * remove o anexo existente; não-nulo substitui. [photoReferenceFileName]/[stlReferenceFileName]
+     * (ver [save]) evitam regravar o arquivo em disco quando o anexo não mudou desde que foi
+     * carregado pra edição. Retorna `null` sem fazer nada se [id] não existir.
      */
     fun update(
         id: String,
@@ -50,7 +58,9 @@ expect class QuoteHistoryRepository() {
         quote: Quote,
         services: List<Service>,
         photo: PickedFile?,
+        photoReferenceFileName: String? = null,
         stlFile: PickedFile?,
+        stlReferenceFileName: String? = null,
         sourceLink: String?,
         client: Client?,
     ): SavedQuote?

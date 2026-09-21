@@ -5,6 +5,18 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.18.0] - 2026-09-21
+
+### Adicionado
+- Botão "Duplicar" no Histórico: reabre um orçamento salvo como rascunho
+  na aba Orçamento (revise nome/cliente e outros dados antes de salvar),
+  criando um orçamento novo em vez de sobrescrever o original. Se a foto
+  ou o STL não mudarem, o arquivo em disco é reaproveitado, não duplicado.
+
+### Corrigido
+- Editar um orçamento sem trocar a foto/STL não regrava mais o arquivo à
+  toa (mesma otimização usada pra duplicar).
+
 ## [1.17.0] - 2026-09-21
 
 ### Adicionado
