@@ -44,6 +44,8 @@ import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
 
+private enum class HistoryViewMode { LIST, KANBAN }
+
 /** Tela de Histórico: orçamentos salvos, com o retrato dos valores no momento em que foram salvos. */
 @Composable
 fun QuoteHistoryScreen(
@@ -57,6 +59,7 @@ fun QuoteHistoryScreen(
     val selectedIds by viewModel.selectedIds.collectAsState()
     val filter by viewModel.filter.collectAsState()
     var pendingDelete by remember { mutableStateOf<SavedQuote?>(null) }
+    var viewMode by remember { mutableStateOf(HistoryViewMode.LIST) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -70,43 +73,72 @@ fun QuoteHistoryScreen(
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {
-            Text(
-                "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-
-            HistoryFilterBar(filter = filter, viewModel = viewModel)
-        }
-
-        if (selectedIds.isNotEmpty()) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${selectedIds.size} selecionado(s)", style = MaterialTheme.typography.bodyMedium)
-                Button(onClick = viewModel::exportSelectedPdf) { Text("Exportar selecionados (PDF)") }
-                Button(onClick = viewModel::exportCatalogPdf) { Text("Exportar catálogo (PDF)") }
-                TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = viewMode == HistoryViewMode.LIST, onClick = { viewMode = HistoryViewMode.LIST }, label = { Text("Lista") })
+                FilterChip(
+                    selected = viewMode == HistoryViewMode.KANBAN,
+                    onClick = { viewMode = HistoryViewMode.KANBAN },
+                    label = { Text("Kanban") },
+                )
             }
+
+            if (viewMode == HistoryViewMode.LIST) {
+                Text(
+                    "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                Text(
+                    "Arraste um card pra outra coluna pra mudar o status (ou use o menu \"⋮\" do card).",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            // No Kanban, o status já é a própria organização em colunas — filtrar por status ali
+            // deixaria as outras colunas vazias sem explicação, então esse filtro some nesse modo.
+            HistoryFilterBar(filter = filter, viewModel = viewModel, showStatusFilter = viewMode == HistoryViewMode.LIST)
         }
 
-        val visibleQuotes = viewModel.visibleQuotes(savedQuotes, filter)
-        if (savedQuotes.isNotEmpty() && visibleQuotes.isEmpty()) {
-            EmptyState("Nenhum orçamento encontrado com esse filtro.")
-        }
+        if (viewMode == HistoryViewMode.LIST) {
+            if (selectedIds.isNotEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("${selectedIds.size} selecionado(s)", style = MaterialTheme.typography.bodyMedium)
+                    Button(onClick = viewModel::exportSelectedPdf) { Text("Exportar selecionados (PDF)") }
+                    Button(onClick = viewModel::exportCatalogPdf) { Text("Exportar catálogo (PDF)") }
+                    TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
+                }
+            }
 
-        visibleQuotes.forEach { savedQuote ->
-            SavedQuoteRow(
-                savedQuote = savedQuote,
-                photoBytes = savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) },
-                justCopied = copiedId == savedQuote.id,
-                selected = savedQuote.id in selectedIds,
-                onToggleSelected = { viewModel.toggleSelection(savedQuote.id) },
-                onDownloadPhoto = { viewModel.downloadPhoto(savedQuote) },
-                onDownloadStl = { viewModel.downloadStl(savedQuote) },
-                onExportPdf = { viewModel.exportPdf(savedQuote) },
-                onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
-                onEdit = { onEditQuote(savedQuote) },
-                onDuplicate = { onDuplicateQuote(savedQuote) },
-                onDelete = { pendingDelete = savedQuote },
-                onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
+            val visibleQuotes = viewModel.visibleQuotes(savedQuotes, filter)
+            if (savedQuotes.isNotEmpty() && visibleQuotes.isEmpty()) {
+                EmptyState("Nenhum orçamento encontrado com esse filtro.")
+            }
+
+            visibleQuotes.forEach { savedQuote ->
+                SavedQuoteRow(
+                    savedQuote = savedQuote,
+                    photoBytes = savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) },
+                    justCopied = copiedId == savedQuote.id,
+                    selected = savedQuote.id in selectedIds,
+                    onToggleSelected = { viewModel.toggleSelection(savedQuote.id) },
+                    onDownloadPhoto = { viewModel.downloadPhoto(savedQuote) },
+                    onDownloadStl = { viewModel.downloadStl(savedQuote) },
+                    onExportPdf = { viewModel.exportPdf(savedQuote) },
+                    onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
+                    onEdit = { onEditQuote(savedQuote) },
+                    onDuplicate = { onDuplicateQuote(savedQuote) },
+                    onDelete = { pendingDelete = savedQuote },
+                    onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
+                )
+            }
+        } else if (savedQuotes.isNotEmpty()) {
+            val kanbanQuotes = viewModel.visibleQuotes(savedQuotes, filter.copy(status = null))
+            KanbanBoard(
+                quotes = kanbanQuotes,
+                onStatusChange = viewModel::updateStatus,
+                onEdit = onEditQuote,
+                onDuplicate = onDuplicateQuote,
+                onDelete = { pendingDelete = it },
             )
         }
     }
@@ -125,7 +157,7 @@ fun QuoteHistoryScreen(
 }
 
 @Composable
-private fun HistoryFilterBar(filter: HistoryFilter, viewModel: QuoteHistoryViewModel) {
+private fun HistoryFilterBar(filter: HistoryFilter, viewModel: QuoteHistoryViewModel, showStatusFilter: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
@@ -144,7 +176,9 @@ private fun HistoryFilterBar(filter: HistoryFilter, viewModel: QuoteHistoryViewM
             }
         }
 
-        StatusFilterDropdown(selected = filter.status, onSelect = viewModel::setStatusFilter)
+        if (showStatusFilter) {
+            StatusFilterDropdown(selected = filter.status, onSelect = viewModel::setStatusFilter)
+        }
     }
 }
 

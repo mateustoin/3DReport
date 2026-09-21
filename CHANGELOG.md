@@ -5,6 +5,14 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.19.0] - 2026-09-21
+
+### Adicionado
+- Quadro Kanban no Histórico: alterne entre "Lista" e "Kanban" pra ver os
+  orçamentos organizados em colunas por status (Orçado, Aprovado, Em
+  impressão, Pronto, Entregue). Arraste um card pra outra coluna pra
+  mudar o status, ou use o menu "⋮" do card (Editar/Duplicar/Excluir).
+
 ## [1.18.0] - 2026-09-21
 
 ### Adicionado

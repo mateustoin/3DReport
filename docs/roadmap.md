@@ -785,14 +785,26 @@ funciona hoje.
     um duplicado que ainda depende dele. Esse mesmo mecanismo passou a
     beneficiar edição também (decisão 64): editar sem trocar a foto/STL não
     regrava mais o arquivo à toa.
-- [ ] **Quadro Kanban de pedidos** (levantado em 2026-09-19, pesquisa de
-  concorrentes — FoxTrack e Printforge usam isso como visão principal).
-  Visão alternativa ao Histórico em lista: colunas por `OrderStatus`
-  (Orçado/Aprovado/Em impressão/Pronto/Entregue), arrastando o card do
-  orçamento entre colunas pra mudar o status — mais fácil de enxergar volume
-  quando há vários pedidos simultâneos do que o dropdown por linha que já
-  existe hoje. Não substitui a lista/filtro do Histórico, é uma aba/visão a
-  mais sobre o mesmo dado.
+- [x] **Quadro Kanban de pedidos** (decisão 70, 2026-09-21; levantado em
+  2026-09-19, pesquisa de concorrentes — FoxTrack e Printforge usam isso
+  como visão principal). Visão alternativa ao Histórico em lista: colunas
+  por `OrderStatus` (Orçado/Aprovado/Em impressão/Pronto/Entregue),
+  arrastando o card do orçamento entre colunas pra mudar o status — mais
+  fácil de enxergar volume quando há vários pedidos simultâneos do que o
+  dropdown por linha que já existe na lista. Não substitui a lista/filtro
+  do Histórico: é um alternador "Lista"/"Kanban" **dentro** da própria aba
+  Histórico (não uma 8ª aba nova) — os dois modos leem o mesmo
+  `savedQuotes`, busca/período continuam valendo nos dois; o filtro de
+  status especificamente some no modo Kanban (as colunas já são a
+  organização por status, filtrar deixaria colunas vazias sem explicação).
+  Feito: `ui/history/KanbanBoard.kt` — arrasto de verdade via
+  `pointerInput`/`detectDragGestures`, usando `boundsInWindow()` de cada
+  coluna como referência comum pra decidir sobre qual coluna o card foi
+  solto. Cada card também tem um menu "⋮" (Editar/Duplicar/Excluir,
+  reaproveitando os mesmos callbacks da lista) como caminho alternativo
+  caso o arrasto não seja preciso o bastante num mouse/tela específico —
+  os dois caminhos levam à mesma mudança de status. Sem scroll vertical
+  próprio por coluna (reaproveita o scroll da página, mais simples).
 - [ ] **Idioma da interface configurável** (levantado em 2026-09-19, pesquisa
   de concorrentes — apps internacionais atendem público global). Hoje a UI é
   fixa em português. Baixa prioridade dado o foco atual no mercado
