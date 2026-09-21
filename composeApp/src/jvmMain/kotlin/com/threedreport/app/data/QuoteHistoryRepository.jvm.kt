@@ -34,17 +34,8 @@ actual class QuoteHistoryRepository actual constructor() {
         client: Client?,
     ): SavedQuote {
         val id = Uuid.random().toString()
-        val photoFileName = photo?.let { picked ->
-            val extension = picked.fileName.substringAfterLast('.', "img")
-            "$id.$extension".also { photosDir.mkdirs() }
-        }
-        photoFileName?.let { File(photosDir, it).writeBytes(photo.bytes) }
-
-        val stlFileName = stlFile?.let { picked ->
-            val extension = picked.fileName.substringAfterLast('.', "stl")
-            "$id.$extension".also { modelsDir.mkdirs() }
-        }
-        stlFileName?.let { File(modelsDir, it).writeBytes(stlFile.bytes) }
+        val photoFileName = writeAttachment(photosDir, id, photo, "img")
+        val stlFileName = writeAttachment(modelsDir, id, stlFile, "stl")
 
         val saved = SavedQuote(
             id = id,
@@ -62,12 +53,57 @@ actual class QuoteHistoryRepository actual constructor() {
         return saved
     }
 
+    actual fun update(
+        id: String,
+        name: String,
+        quote: Quote,
+        services: List<Service>,
+        photo: PickedFile?,
+        stlFile: PickedFile?,
+        sourceLink: String?,
+        client: Client?,
+    ): SavedQuote? {
+        val existing = state.value.find { it.id == id } ?: return null
+        val photoFileName = writeAttachment(photosDir, id, photo, "img", existing.photoFileName)
+        val stlFileName = writeAttachment(modelsDir, id, stlFile, "stl", existing.stlFileName)
+
+        val updated = existing.copy(
+            name = name.trim().ifEmpty { defaultName() },
+            quote = quote,
+            services = services,
+            photoFileName = photoFileName,
+            stlFileName = stlFileName,
+            sourceLink = sourceLink?.trim()?.ifEmpty { null },
+            client = client,
+            lastEditedEpochMillis = System.currentTimeMillis(),
+        )
+        state.value = state.value.map { if (it.id == id) updated else it }
+        persist()
+        return updated
+    }
+
     actual fun delete(id: String) {
         val removed = state.value.find { it.id == id }
         state.value = state.value.filterNot { it.id == id }
         persist()
         removed?.photoFileName?.let { File(photosDir, it).delete() }
         removed?.stlFileName?.let { File(modelsDir, it).delete() }
+    }
+
+    /**
+     * Grava [picked] em [dir] como `"$id.extensão"`, apagando [previousFileName] primeiro (edição
+     * trocando o anexo, ou removendo — sem isso, o arquivo antigo ficaria órfão em disco). `null`
+     * de [picked] só apaga, sem gravar nada de novo.
+     */
+    private fun writeAttachment(dir: File, id: String, picked: PickedFile?, defaultExtension: String, previousFileName: String? = null): String? {
+        previousFileName?.let { File(dir, it).delete() }
+        if (picked == null) return null
+
+        val extension = picked.fileName.substringAfterLast('.', defaultExtension)
+        val fileName = "$id.$extension"
+        dir.mkdirs()
+        File(dir, fileName).writeBytes(picked.bytes)
+        return fileName
     }
 
     actual fun updateStatus(id: String, status: OrderStatus) {

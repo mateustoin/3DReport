@@ -5,6 +5,16 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.15.0] - 2026-09-21
+
+### Adicionado
+- Editar um orçamento já salvo: botão "Editar" no Histórico reabre tudo
+  na aba Orçamento (filamento, impressora, comprimento, tempo, serviços,
+  marketplace, nome, foto, STL, link, cliente) pra corrigir sem refazer
+  do zero. Salvar de novo atualiza o mesmo item — a data de criação
+  original não muda, só aparece uma marca discreta "Editado em" ao lado
+  dela no Histórico.
+
 ## [1.14.0] - 2026-09-21
 
 ### Adicionado

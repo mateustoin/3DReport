@@ -7,8 +7,11 @@ import kotlinx.serialization.Serializable
  * [services] escolhidos, com o preço deles no momento) — editar depois o
  * filamento/impressora/configurações/serviços usados não muda os valores
  * aqui, porque o que já foi cotado para o cliente não deve mudar
- * retroativamente.
+ * retroativamente. Reabrir e salvar de novo este mesmo orçamento (edição
+ * explícita, pela aba Orçamento) é diferente disso — troca o retrato por
+ * um novo, mantendo [id]/[savedAtEpochMillis], e marca [lastEditedEpochMillis].
  *
+
  * @property id identificador único, atribuído ao salvar.
  * @property name nome do orçamento; nunca vazio (a UI gera um nome genérico
  *   automaticamente se o usuário deixar em branco ao salvar).
@@ -32,6 +35,10 @@ import kotlinx.serialization.Serializable
  * @property status andamento do pedido, editável no Histórico. Todo
  *   orçamento nasce [OrderStatus.ORCADO] (o ato de salvar já é o orçamento
  *   "feito"). Uso só interno, nunca exportado.
+ * @property lastEditedEpochMillis quando este orçamento foi editado e salvo
+ *   de novo pela última vez (ver KDoc acima), ou `null` se nunca foi
+ *   editado desde que foi criado. [savedAtEpochMillis] **não muda** numa
+ *   edição — continua sendo a data de criação original.
  */
 @Serializable
 data class SavedQuote(
@@ -45,6 +52,7 @@ data class SavedQuote(
     val savedAtEpochMillis: Long,
     val client: Client? = null,
     val status: OrderStatus = OrderStatus.ORCADO,
+    val lastEditedEpochMillis: Long? = null,
 ) {
     /** Total de fato cobrado do cliente: valor de venda + soma dos serviços escolhidos. */
     val totalWithServices: Double

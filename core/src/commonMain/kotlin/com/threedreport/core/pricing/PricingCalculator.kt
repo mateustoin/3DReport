@@ -54,6 +54,8 @@ object PricingCalculator {
             productionCost = productionCost,
             salePrice = salePrice,
             marketplaceFeeRate = feeRate,
+            printerId = printer.id,
+            printerName = printer.name,
         )
     }
 

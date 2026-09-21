@@ -182,6 +182,102 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
+    fun updateKeepsIdAndSavedAtButChangesFieldsAndMarksLastEdited() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(name = "Original", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        val updated = repository.update(
+            id = saved.id,
+            name = "Corrigido",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = null,
+            sourceLink = "https://example.com/novo-link",
+            client = null,
+        )
+
+        assertEquals(saved.id, updated?.id)
+        assertEquals(saved.savedAtEpochMillis, updated?.savedAtEpochMillis)
+        assertEquals("Corrigido", updated?.name)
+        assertEquals("https://example.com/novo-link", updated?.sourceLink)
+        assertTrue((updated?.lastEditedEpochMillis ?: 0) > 0)
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }
+        assertEquals("Corrigido", reloaded.name)
+    }
+
+    @Test
+    fun updateReturnsNullWhenIdDoesNotExist() {
+        val repository = QuoteHistoryRepository()
+
+        val result = repository.update(
+            id = "nao-existe",
+            name = "X",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = null,
+            sourceLink = null,
+            client = null,
+        )
+
+        assertNull(result)
+    }
+
+    @Test
+    fun updateReplacesPhotoAndRemovesTheOldFile() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(
+            name = "Com foto",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "antiga.png", bytes = byteArrayOf(1)),
+            sourceLink = null,
+        )
+
+        val newPhotoBytes = byteArrayOf(2, 2, 2)
+        val updated = repository.update(
+            id = saved.id,
+            name = saved.name,
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "nova.jpg", bytes = newPhotoBytes),
+            stlFile = null,
+            sourceLink = null,
+            client = null,
+        )
+
+        assertContentEquals(newPhotoBytes, updated?.let { repository.photoBytes(it) })
+    }
+
+    @Test
+    fun updateWithNullPhotoRemovesExistingPhoto() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(
+            name = "Com foto",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(1)),
+            sourceLink = null,
+        )
+
+        val updated = repository.update(
+            id = saved.id,
+            name = saved.name,
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = null,
+            sourceLink = null,
+            client = null,
+        )
+
+        assertNull(updated?.photoFileName)
+        assertNull(updated?.let { repository.photoBytes(it) })
+    }
+
+    @Test
     fun deleteRemovesStlFile() {
         val repository = QuoteHistoryRepository()
         val saved = repository.save(

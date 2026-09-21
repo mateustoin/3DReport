@@ -14,4 +14,6 @@ data class SaveQuoteFormState(
     val clientName: String = "",
     val clientContact: String = "",
     val savedConfirmation: Boolean = false,
+    /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
+    val editingQuoteId: String? = null,
 )

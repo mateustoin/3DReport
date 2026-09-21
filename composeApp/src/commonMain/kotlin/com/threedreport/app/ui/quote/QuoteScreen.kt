@@ -25,6 +25,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -198,7 +199,16 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
 @Composable
 private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, canSave: Boolean, onSave: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Salvar orçamento", style = MaterialTheme.typography.titleMedium)
+        Text(if (form.editingQuoteId != null) "Editar orçamento salvo" else "Salvar orçamento", style = MaterialTheme.typography.titleMedium)
+        if (form.editingQuoteId != null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Editando um orçamento já salvo — a data de criação original é mantida.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(onClick = viewModel::resetForm) { Text("Cancelar edição") }
+            }
+        }
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
@@ -290,7 +300,7 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, c
             label = { Text("Contato do cliente (opcional)") },
         )
 
-        Button(onClick = onSave, enabled = canSave) { Text("Salvar orçamento") }
+        Button(onClick = onSave, enabled = canSave) { Text(if (form.editingQuoteId != null) "Salvar alterações" else "Salvar orçamento") }
         if (!canSave) {
             Text(
                 "Preencha filamento, impressora, comprimento e tempo (ou importe do G-code) pra poder salvar.",

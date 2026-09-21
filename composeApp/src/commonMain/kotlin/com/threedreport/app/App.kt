@@ -166,7 +166,13 @@ fun App() {
                     Box(modifier = Modifier.weight(1f)) {
                         when (selectedTab) {
                             AppTab.QUOTE -> QuoteScreen(quoteViewModel)
-                            AppTab.HISTORY -> QuoteHistoryScreen(historyViewModel)
+                            AppTab.HISTORY -> QuoteHistoryScreen(
+                                historyViewModel,
+                                onEditQuote = { savedQuote ->
+                                    quoteViewModel.loadForEditing(savedQuote)
+                                    selectedTab = AppTab.QUOTE
+                                },
+                            )
                             AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
                             AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
                             AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)

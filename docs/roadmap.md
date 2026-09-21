@@ -721,6 +721,17 @@ funciona hoje.
   depois de um cálculo válido, o que impedia anexar STL/foto antes de
   preencher filamento/impressora/comprimento/tempo. Só o botão "Salvar
   orçamento" continua exigindo cálculo válido pra habilitar.
+- [x] **Editar um orçamento já salvo** (decisão 64, 2026-09-21) — pedido do
+  responsável do projeto: refazer o orçamento inteiro do zero por causa de
+  um erro de digitação era uma UX ruim. Botão "Editar" no Histórico reabre
+  o orçamento na aba Orçamento (`QuoteViewModel.loadForEditing`), com tudo
+  repopulado (filamento/cor/impressora/comprimento/tempo/serviços/
+  marketplace/nome/foto/STL/link/cliente); salvar de novo atualiza o mesmo
+  registro (`QuoteHistoryRepository.update`) em vez de criar um novo —
+  **mantém a data de criação original**, e marca discretamente "· Editado
+  em DD/MM/AAAA HH:mm" ao lado dela no Histórico. `Quote` ganhou
+  `printerId`/`printerName` (não existia antes — sem isso não dava pra
+  restaurar a impressora usada ao editar).
 - [ ] **Onboarding na primeira execução.** Assistente curto guiando o
   cadastro da primeira impressora/filamento/margem, em vez de abrir numa
   tela vazia sem nenhum dado cadastrado. Baixa prioridade — fica pra
@@ -747,17 +758,20 @@ funciona hoje.
     o que por sua vez exige mudar a exclusão (`delete()` hoje apaga o
     arquivo de foto sem checar se outro orçamento salvo ainda referencia
     esse mesmo nome de arquivo; precisaria checar antes de apagar).
-  - **Em aberto pra quando for implementar:** como não existe hoje edição
-    de um orçamento já salvo (só o status é editável no Histórico — o resto
-    é retrato congelado, ver KDoc de `SavedQuote`), duplicar precisa decidir
-    entre (a) clonar direto uma nova linha no Histórico e também adicionar uma
-    edição leve de nome/cliente/contato ali mesmo (feature pequena e
-    genericamente útil, não só pra esse caso), ou (b) reabrir o duplicado
-    como rascunho preenchido na aba Orçamento (reaproveitando o próprio
-    formulário de salvar, que já pede nome/cliente/contato/link) pra revisar
-    e salvar de novo — mais trabalho (`QuoteViewModel` não tem hoje como se
-    popular a partir de um `SavedQuote` existente), mas evita criar uma
-    segunda forma de editar metadados de orçamento.
+  - **Dependência resolvida (decisão 64, 2026-09-21):** a opção (b) cogitada
+    abaixo já existe agora — `QuoteViewModel.loadForEditing` popula a aba
+    Orçamento a partir de um `SavedQuote` existente. "Duplicar" fica bem
+    mais simples de implementar: é a mesma função, só sem marcar
+    `editingQuoteId` (pra "Salvar" criar um orçamento novo, com
+    `savedAtEpochMillis`/status novos, em vez de atualizar o original) — a
+    parte de reaproveitar o arquivo de foto (regra abaixo) ainda precisa
+    ser resolvida à parte.
+  - **Em aberto pra quando for implementar:** decidir entre (a) clonar
+    direto uma nova linha no Histórico e também adicionar uma edição leve
+    de nome/cliente/contato ali mesmo (feature pequena e genericamente
+    útil, não só pra esse caso), ou (b) reabrir o duplicado como rascunho
+    preenchido na aba Orçamento (ver dependência resolvida acima) pra
+    revisar e salvar de novo.
 - [ ] **Quadro Kanban de pedidos** (levantado em 2026-09-19, pesquisa de
   concorrentes — FoxTrack e Printforge usam isso como visão principal).
   Visão alternativa ao Histórico em lista: colunas por `OrderStatus`

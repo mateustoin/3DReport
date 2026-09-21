@@ -37,6 +37,24 @@ expect class QuoteHistoryRepository() {
 
     fun delete(id: String)
 
+    /**
+     * Reabre e salva de novo o orçamento [id] (edição explícita, pela aba Orçamento) — troca o
+     * retrato por um novo com os valores atuais, preservando [SavedQuote.savedAtEpochMillis] (data
+     * de criação original) e marcando [SavedQuote.lastEditedEpochMillis]. `null` de [photo]/[stlFile]
+     * remove o anexo existente; não-nulo substitui (mesmo que os bytes sejam os mesmos de antes).
+     * Retorna `null` sem fazer nada se [id] não existir.
+     */
+    fun update(
+        id: String,
+        name: String,
+        quote: Quote,
+        services: List<Service>,
+        photo: PickedFile?,
+        stlFile: PickedFile?,
+        sourceLink: String?,
+        client: Client?,
+    ): SavedQuote?
+
     /** Atualiza o andamento do pedido [id] pra [status]. Não faz nada se [id] não existir. */
     fun updateStatus(id: String, status: OrderStatus)
 

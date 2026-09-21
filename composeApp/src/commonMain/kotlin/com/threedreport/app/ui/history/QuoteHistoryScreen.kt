@@ -46,7 +46,7 @@ import com.threedreport.core.model.SavedQuote
 
 /** Tela de Histórico: orçamentos salvos, com o retrato dos valores no momento em que foram salvos. */
 @Composable
-fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Modifier) {
+fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, onEditQuote: (SavedQuote) -> Unit, modifier: Modifier = Modifier) {
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val copiedId by viewModel.copiedId.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
@@ -98,6 +98,7 @@ fun QuoteHistoryScreen(viewModel: QuoteHistoryViewModel, modifier: Modifier = Mo
                 onDownloadStl = { viewModel.downloadStl(savedQuote) },
                 onExportPdf = { viewModel.exportPdf(savedQuote) },
                 onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
+                onEdit = { onEditQuote(savedQuote) },
                 onDelete = { pendingDelete = savedQuote },
                 onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
             )
@@ -196,6 +197,7 @@ private fun SavedQuoteRow(
     onDownloadStl: () -> Unit,
     onExportPdf: () -> Unit,
     onCopy: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
 ) {
@@ -213,7 +215,16 @@ private fun SavedQuoteRow(
 
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(savedQuote.name, style = MaterialTheme.typography.titleMedium)
-                Text(formatDateTime(savedQuote.savedAtEpochMillis), style = MaterialTheme.typography.bodySmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(formatDateTime(savedQuote.savedAtEpochMillis), style = MaterialTheme.typography.bodySmall)
+                    savedQuote.lastEditedEpochMillis?.let { editedAt ->
+                        Text(
+                            "· Editado em ${formatDateTime(editedAt)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
                 Text(
                     "Peso: ${savedQuote.quote.filamentWeightGrams.toWeightText()} · " +
                         "Produção: ${savedQuote.quote.productionCost.toMoney()} · Venda: ${savedQuote.quote.salePrice.toMoney()} · " +
@@ -241,6 +252,7 @@ private fun SavedQuoteRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = onExportPdf) { Text("Exportar PDF") }
                     TextButton(onClick = onCopy) { Text(if (justCopied) "Copiado!" else "Copiar") }
+                    TextButton(onClick = onEdit) { Text("Editar") }
                     if (photoBytes != null) {
                         TextButton(onClick = onDownloadPhoto) { Text("Baixar foto") }
                     }

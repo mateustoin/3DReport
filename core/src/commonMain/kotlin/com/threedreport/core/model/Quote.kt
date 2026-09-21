@@ -34,6 +34,12 @@ data class CostBreakdown(
  *   cobrado do cliente, o marketplace não aparece pra ele).
  * @property marketplaceFeeRate percentual do marketplace já embutido em
  *   [salePrice] para este orçamento (`0.0` se não vendido por marketplace).
+ * @property printerId/[printerName] identificam a impressora usada no
+ *   cálculo (nome guardado à parte porque o perfil pode ser editado/
+ *   excluído do catálogo depois) — uso interno, principalmente pra
+ *   conseguir reabrir um orçamento salvo pra edição já com a mesma
+ *   impressora selecionada. `null` em orçamentos salvos antes desse campo
+ *   existir.
  */
 @Serializable
 data class Quote(
@@ -43,6 +49,8 @@ data class Quote(
     val productionCost: Double,
     val salePrice: Double,
     val marketplaceFeeRate: Double = 0.0,
+    val printerId: String? = null,
+    val printerName: String? = null,
 ) {
     /**
      * Lucro líquido real: o que sobra depois do marketplace descontar sua

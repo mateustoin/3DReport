@@ -16,6 +16,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
 import com.threedreport.core.slicer.GCodeMetadata
@@ -144,16 +145,69 @@ class QuoteViewModel(
         val client = form.clientName.trim().ifEmpty { null }?.let { name ->
             Client(name = name, contact = form.clientContact.trim().ifEmpty { null })
         }
-        historyRepository.save(
-            name = form.name,
-            quote = quote,
-            services = services,
-            photo = form.photo,
-            stlFile = form.stlFile,
-            sourceLink = form.sourceLink,
-            client = client,
-        )
+        val editingId = form.editingQuoteId
+        if (editingId != null) {
+            historyRepository.update(
+                id = editingId,
+                name = form.name,
+                quote = quote,
+                services = services,
+                photo = form.photo,
+                stlFile = form.stlFile,
+                sourceLink = form.sourceLink,
+                client = client,
+            )
+        } else {
+            historyRepository.save(
+                name = form.name,
+                quote = quote,
+                services = services,
+                photo = form.photo,
+                stlFile = form.stlFile,
+                sourceLink = form.sourceLink,
+                client = client,
+            )
+        }
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
+    }
+
+    /**
+     * Reabre [savedQuote] pra edição na aba Orçamento: preenche filamento/cor/impressora/
+     * comprimento/tempo/serviços/marketplace com os valores salvos, e o formulário de salvar
+     * (nome/foto/STL/link/cliente) com os anexos recarregados do disco. Salvar depois disso
+     * atualiza o mesmo orçamento no histórico (ver [saveQuote]) em vez de criar um novo — não
+     * muda [SavedQuote.savedAtEpochMillis], só marca [SavedQuote.lastEditedEpochMillis].
+     */
+    fun loadForEditing(savedQuote: SavedQuote) {
+        val quote = savedQuote.quote
+        val job = quote.job
+
+        inputState.value = QuoteInputState(
+            filamentId = job.filament.id,
+            filamentColorId = job.filamentColor?.id,
+            printerId = quote.printerId,
+            lengthMetersText = formatImportedNumber(job.filamentLengthMeters),
+            printTimeMinutesText = formatImportedNumber(job.printTimeMinutes),
+            selectedServiceIds = savedQuote.services.map { it.id }.toSet(),
+            appliesMarketplaceFee = quote.marketplaceFeeRate > 0.0,
+        )
+
+        val photo = savedQuote.photoFileName?.let { fileName ->
+            historyRepository.photoBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
+        }
+        val stlFile = savedQuote.stlFileName?.let { fileName ->
+            historyRepository.stlBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
+        }
+
+        saveFormState.value = SaveQuoteFormState(
+            name = savedQuote.name,
+            photo = photo,
+            stlFile = stlFile,
+            sourceLink = savedQuote.sourceLink.orEmpty(),
+            clientName = savedQuote.client?.name.orEmpty(),
+            clientContact = savedQuote.client?.contact.orEmpty(),
+            editingQuoteId = savedQuote.id,
+        )
     }
 
     /** Atalho de teclado (Ctrl/Cmd+S): recalcula com os valores atuais e salva, se houver um orçamento válido. */

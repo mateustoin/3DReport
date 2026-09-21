@@ -304,6 +304,34 @@ class QuoteViewModelTest {
     }
 
     @Test
+    fun loadForEditingRepopulatesFormAndUpdatesInsteadOfDuplicating() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.setSaveName("Peça original")
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.first()
+
+        viewModel.resetForm()
+        viewModel.loadForEditing(saved)
+
+        assertEquals("12", viewModel.input.value.lengthMetersText)
+        assertEquals("190", viewModel.input.value.printTimeMinutesText)
+        assertEquals(saved.id, viewModel.saveForm.value.editingQuoteId)
+        assertEquals("Peça original", viewModel.saveForm.value.name)
+
+        viewModel.setSaveName("Peça corrigida")
+        viewModel.saveCurrentQuote()
+
+        assertEquals(1, historyRepository.savedQuotes.value.size)
+        val updated = historyRepository.savedQuotes.value.first()
+        assertEquals("Peça corrigida", updated.name)
+        assertEquals(saved.savedAtEpochMillis, updated.savedAtEpochMillis)
+        assertTrue(updated.lastEditedEpochMillis != null)
+    }
+
+    @Test
     fun resetFormClearsInputAndSaveForm() {
         val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
         viewModel.setLengthMeters("12")
