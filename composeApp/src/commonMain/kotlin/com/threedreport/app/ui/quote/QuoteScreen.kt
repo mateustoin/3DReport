@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +41,8 @@ import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
+import com.threedreport.app.ui.viewer.Stl3DViewer
+import com.threedreport.core.stl.parseStl
 
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
 @Composable
@@ -208,6 +211,19 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, o
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stlFile.fileName, style = MaterialTheme.typography.bodyMedium)
                 OutlinedButton(onClick = viewModel::clearStlFile) { Text("Remover STL") }
+            }
+            val mesh = remember(stlFile) { runCatching { parseStl(stlFile.bytes) }.getOrNull() }
+            if (mesh != null) {
+                Text(
+                    "Arraste pra girar, use a roda do mouse pra zoom.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Stl3DViewer(mesh = mesh, modifier = Modifier.fillMaxWidth().height(280.dp))
+            } else {
+                Text(
+                    "Não consegui ler esse arquivo STL — pode estar corrompido ou num formato não suportado.",
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
         } else {
             OutlinedButton(onClick = viewModel::pickStl) { Text("Anexar arquivo STL (opcional)") }

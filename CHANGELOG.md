@@ -5,6 +5,13 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.13.0] - 2026-09-21
+
+### Adicionado
+- Visualizador 3D do modelo STL anexado ao orçamento: gire com o mouse e
+  dê zoom com a roda pra conferir a peça antes de fechar a venda.
+  Renderizado no próprio app (sem depender de nenhum programa externo).
+
 ## [1.12.0] - 2026-09-21
 
 ### Adicionado

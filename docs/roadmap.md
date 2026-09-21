@@ -268,25 +268,32 @@ implementação.
       venda repetida da mesma peça pouparia reconfigurar tudo de novo no
       fatiador, não só reimprimir com configuração genérica a partir do
       STL puro. Mesmo tratamento de uso interno do STL/foto/link.
-  - **Parser de STL** (formato binário e ASCII) pra ler a malha de
-    triângulos — vira a base de tudo que vem depois (visualizador, fases 2
-    e 3). Ainda não implementado.
-  - **Visualizador 3D** dentro do app: carregar a malha, rotacionar/zoom/pan,
-    escolher um ângulo e enquadramento de câmera. **Decisão técnica
-    resolvida (2026-09-20):** rasterizador simples desenhado no próprio
-    `Canvas` do Compose (sem OpenGL/LWJGL nem WebView/three.js) — sombreamento
-    plano por triângulo (normal · luz), ordenação pintor pra profundidade,
-    câmera orbital (arrastar gira, scroll dá zoom). Escolhido por não somar
-    nenhuma dependência nova nem inflar o instalador (WebView+three.js
-    somaria 100+ MB por SO via JCEF; OpenGL nativo exigiria integrar um
-    componente pesado do AWT dentro da janela do Compose, historicamente
-    delicado) — ver decisão 61 pro raciocínio completo. Ainda não
-    implementado.
+  - [x] **Parser de STL** (formato binário e ASCII) pra ler a malha de
+    triângulos — vira a base de tudo que vem depois (fases 2 e 3). Feito
+    (2026-09-21): `core/stl/StlParser.parseStl` (função pura, testada —
+    binário e ASCII, inclusive o caso de um binário cujo cabeçalho começa
+    com o texto "solid" por engano do exportador), `core/stl/{Vec3,StlMesh}`.
+  - [x] **Visualizador 3D** dentro do app: carregar a malha, rotacionar/zoom,
+    escolher um ângulo de câmera. **Decisão técnica resolvida (2026-09-20,
+    decisão 61):** rasterizador simples desenhado no próprio `Canvas` do
+    Compose (sem OpenGL/LWJGL nem WebView/three.js) — sombreamento plano por
+    triângulo (normal geométrica · direção da câmera), ordenação pintor pra
+    profundidade, câmera orbital (arrastar gira, scroll dá zoom). Escolhido
+    por não somar nenhuma dependência nova nem inflar o instalador
+    (WebView+three.js somaria 100+ MB por SO via JCEF; OpenGL nativo exigiria
+    integrar um componente pesado do AWT dentro da janela do Compose,
+    historicamente delicado). Feito (2026-09-21):
+    `ui/viewer/Stl3DViewer`, aparece na tela de Orçamento assim que um STL é
+    anexado. **Pan não implementado nesta primeira versão** (só orbitar e
+    zoom) — detectar arrasto com botão direito/modificador de teclado
+    dentro do Compose exige API de mais baixo nível que a usada aqui; fica
+    pra uma iteração seguinte se fizer falta na prática. Culling de face
+    traseira com fallback automático pra STL com normais invertidas (evita
+    tela em branco nesse caso).
   - **Exportar a visualização como imagem**: capturar o frame renderizado no
     ângulo escolhido e salvar/anexar como a foto do orçamento — reusa o
     campo de foto que já existe, sem precisar de campo novo no modelo de
-    dados do orçamento. Ainda não implementado (depende do visualizador
-    acima).
+    dados do orçamento. Ainda não implementado — próximo passo desta fase.
 - [ ] **Fase 2 — Estimativa automática de peso/tempo a partir do STL.** Hoje
   o criador digita comprimento de filamento e tempo de impressão na mão. Com
   a malha já carregada (fase 1), dá pra calcular o **volume** da peça
