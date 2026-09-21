@@ -5,6 +5,16 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.16.0] - 2026-09-21
+
+### Adicionado
+- Nível de dificuldade de impressão sugerido (Fácil/Médio/Difícil),
+  calculado a partir do STL anexado — combina forma (área vs. volume),
+  % de overhang, contagem de triângulos e partes soltas no arquivo.
+  Exibido ao vivo na tela de Orçamento, junto com área, volume, overhang
+  e um aviso se a malha tiver furos/geometria não-manifold. Uso só
+  interno, não entra no PDF nem no copiar/colar.
+
 ## [1.15.1] - 2026-09-21
 
 ### Corrigido

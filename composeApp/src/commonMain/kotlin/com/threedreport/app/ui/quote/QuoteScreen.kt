@@ -46,8 +46,11 @@ import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.platform.encodeImageBitmapToPng
 import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
+import com.threedreport.core.stl.StlAnalyzer
 import com.threedreport.core.stl.parseStl
 import com.threedreport.core.stl.peekStlTriangleCount
+import kotlin.math.abs
+import kotlin.math.round
 
 /**
  * Acima disso, o visualizador 3D não é exibido (só o STL é salvo, pra recuperar depois) — é um
@@ -57,6 +60,14 @@ import com.threedreport.core.stl.peekStlTriangleCount
  * mostrar que o limite está conservador (ou generoso) demais.
  */
 private const val MAX_RENDERABLE_STL_TRIANGLES = 500_000L
+
+/** Arredonda pra 1 casa decimal, separador decimal brasileiro (vírgula) — mesmo estilo de `toWeightText()`. */
+private fun Double.formatOneDecimal(): String {
+    val tenths = round(this * 10).toLong()
+    val whole = tenths / 10
+    val decimal = abs(tenths % 10)
+    return if (decimal == 0L) "$whole" else "$whole,$decimal"
+}
 
 /** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
 @Composable
@@ -261,6 +272,33 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, c
                         val snapshot = viewerState.captureSnapshot(baseColor, width = 1000, height = 1000)
                         viewModel.setPhotoFromStlSnapshot(encodeImageBitmapToPng(snapshot))
                     }) { Text("Capturar como foto do orçamento") }
+
+                    val analysis = remember(mesh) { StlAnalyzer.analyze(mesh) }
+                    Text(
+                        "Nível de dificuldade sugerido: ${analysis.difficulty.label}",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        "Área: ${(analysis.surfaceAreaMm2 / 100).formatOneDecimal()} cm² · " +
+                            "Volume: ${(analysis.volumeMm3 / 1000).formatOneDecimal()} cm³ · " +
+                            "Overhang: ${(analysis.overhangPercentage / 100).toPercentText()} · " +
+                            "Peças no arquivo: ${analysis.disconnectedComponents}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    if (!analysis.isManifold) {
+                        Text(
+                            "⚠ Esse arquivo STL tem geometria com furos ou normais invertidas (não-manifold) " +
+                                "— pode dar problema na hora de fatiar.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    Text(
+                        "Nível de dificuldade e medidas são estimativas (não substituem o fatiador real) e uso " +
+                            "só interno — não entram no PDF nem no copiar-colar; servem só pra decidir se cobra " +
+                            "uma margem extra por complexidade.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 } else {
                     Text(
                         "Não consegui ler esse arquivo STL — pode estar corrompido ou num formato não suportado.",

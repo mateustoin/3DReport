@@ -329,8 +329,15 @@ implementação.
   (2026-09-19):** com o item "Importar dados do slicer" acima, boa parte do
   valor desta fase (peso/tempo sem digitar na mão) já fica coberta com bem
   menos esforço e mais precisão — avaliar se ainda compensa implementar a
-  estimativa geométrica própria antes de investir nela.
-- [ ] **Fase 3 — Análise de complexidade / nível de dificuldade.**
+  estimativa geométrica própria antes de investir nela. **Pulada por ora
+  (decisão 66, 2026-09-21):** o responsável do projeto decidiu ir direto
+  pra Fase 3 (abaixo), que não depende da Fase 2 e cobre um problema que a
+  importação de G-code não resolve (nível de dificuldade, não peso/tempo)
+  — volta pro topo da fila só se um pedido concreto justificar o esforço
+  de estimar peso/tempo pela geometria mesmo já tendo o G-code.
+- [x] **Fase 3 — Análise de complexidade / nível de dificuldade** (decisão
+  66, 2026-09-21; Fase 2 pulada de propósito — dependência resolvida pelo
+  item "Importar dados do slicer" acima, ver nota lá).
   **Motivação:** peças com geometria complexa (ex.: uma action figure) dão
   mais trabalho de configurar o fatiador (suporte, orientação) e têm mais
   risco de falha durante a impressão do que uma peça simples de peso/tempo
@@ -342,7 +349,13 @@ implementação.
   um fatiador real embutido):
   - **Razão área de superfície ÷ volume** — proxy de quantidade de detalhe
     (formas lisas tendem a um valor baixo; formas com muitos
-    relevos/reentrâncias, um valor alto, pro mesmo volume).
+    relevos/reentrâncias, um valor alto, pro mesmo volume). **Ajuste na
+    implementação:** razão bruta cai com o tamanho do objeto pra qualquer
+    forma (um cubo pequeno tem razão maior que um cubo grande, sem ser
+    mais "complexo") — usada em vez disso a razão contra a área de uma
+    **esfera do mesmo volume** (quociente isoperimétrico, sempre ≥ 1,
+    independente de escala), que mede complexidade de forma sem confundir
+    com tamanho.
   - **% de superfície em overhang** (faces cuja normal aponta abaixo de um
     ângulo limite configurável, ex. 45°) — proxy de necessidade de suporte.
   - **Contagem de triângulos** (proxy grosseiro de nível de detalhe) e
@@ -362,8 +375,20 @@ implementação.
     ideia): detecção de suporte mais precisa que a heurística de ângulo
     (simulação real de fatiamento), sugestão de melhor orientação de
     impressão pra minimizar suporte, estimativa de quantidade de material
-    de suporte gerado, e — combinando com a fase 2 — um "custo extra
-    sugerido" automático em cima do nível de dificuldade.
+    de suporte gerado, e — combinando com a fase 2, se algum dia for
+    implementada — um "custo extra sugerido" automático em cima do nível
+    de dificuldade.
+  - **Não persistido no Histórico por ora** — o nível de dificuldade e as
+    medidas só aparecem ao vivo na tela de Orçamento, enquanto o STL está
+    carregado (decisão de precificação já fica registrada no valor de
+    venda salvo; a análise em si é descartada depois). Guardar isso junto
+    do `SavedQuote` fica de fora por ora, sem pedido concreto pra isso
+    ainda — fácil de adicionar depois se fizer falta.
+  - Feito (2026-09-21): `core/stl/StlAnalyzer` (função pura, testada com
+    um tetraedro verificado à mão — área/volume/manifold/componentes — e
+    casos isolados de overhang), exibido na tela de Orçamento logo abaixo
+    do visualizador 3D (mesma condição de "não muito pesado pra
+    renderizar").
 
 ### Produção e precificação
 
