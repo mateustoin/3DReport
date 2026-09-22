@@ -81,6 +81,22 @@
       },
       {
         "@type": "Question",
+        "name": "Dá pra orçar mais de uma peça igual de uma vez?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Dá. Informe a quantidade no orçamento e o app multiplica o custo de cada peça, mostrando o total e quanto fica cada unidade. O preparo do pedido (preparar o arquivo, fatiar, montar a mesa) é cobrado uma vez só, então o preço por peça cai sozinho no lote, sem desconto inventado. O comprimento de filamento e o tempo que você informa são de uma peça; se você fatiou a mesa cheia de uma vez, deixe a quantidade em 1."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Existe versão para Android ou celular?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ainda não. É uma possibilidade futura no roadmap, sem previsão de data."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "O 3DReport funciona em quais sistemas operacionais?",
         "acceptedAnswer": {
           "@type": "Answer",
@@ -274,12 +290,15 @@
           <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>.
         </p>
         <div class="formula-box">
-CUSTO REFEITO     = material + energia + manutenção
+CUSTO POR PEÇA    = material + energia + manutenção
                     + retorno do investimento + custo fixo + seu trabalho
+
+CUSTO REFEITO     = custo por peça × quantidade + preparo do pedido
 
 VALOR DE PRODUÇÃO = custo refeito + reserva de falhas + administrativo
 
 VALOR DE VENDA    = produção × (1 + margem de lucro)
+PREÇO UNITÁRIO    = venda / quantidade
 LUCRO             = venda − produção
         </div>
       </div>
@@ -323,6 +342,10 @@ LUCRO             = venda − produção
         <details class="faq-item">
           <summary>O app cobra o meu tempo de trabalho?</summary>
           <p>Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquela peça deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Enquanto você não informar o valor da sua hora, nada muda e o app continua cobrando acabamento como percentual do material, como antes.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Dá pra orçar mais de uma peça igual de uma vez?</summary>
+          <p>Dá. Informe a quantidade no orçamento e o app multiplica o custo de cada peça, mostrando o total e quanto fica cada unidade. O preparo do pedido (preparar o arquivo, fatiar, montar a mesa) é cobrado uma vez só, então o preço por peça cai sozinho no lote, sem desconto inventado. O comprimento de filamento e o tempo que você informa são de uma peça; se você fatiou a mesa cheia de uma vez, deixe a quantidade em 1.</p>
         </details>
         <details class="faq-item">
           <summary>O 3DReport funciona em quais sistemas operacionais?</summary>

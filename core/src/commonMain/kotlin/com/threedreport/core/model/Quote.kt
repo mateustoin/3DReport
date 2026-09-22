@@ -3,11 +3,15 @@ package com.threedreport.core.model
 import kotlinx.serialization.Serializable
 
 /**
- * Detalhamento dos custos de produção de uma peça, em R$.
+ * Detalhamento dos custos de produção, em R$.
  *
- * Os valores não são arredondados; arredonde apenas na exibição.
+ * Os valores são do **pedido inteiro** (já multiplicados pela quantidade do
+ * orçamento, ver [Quote]), e não de uma unidade. Não são arredondados;
+ * arredonde apenas na exibição.
  *
- * @property labor seu tempo de trabalho na peça (ver [PrintJob.laborMinutes]). `0.0` em orçamentos
+ * @property labor seu tempo de trabalho: o de cada peça (ver
+ *   [PrintJob.laborMinutes]) multiplicado pela quantidade, mais o preparo
+ *   cobrado uma vez pelo pedido (ver [Quote.setupMinutes]). `0.0` em orçamentos
  *   salvos antes deste campo existir e para quem não configurou taxa de mão de obra.
  * @property fixedCost parcela do custo fixo mensal do negócio que esta peça paga, proporcional às
  *   horas de impressão (ver [PricingSettings.fixedCostPerHour]).
@@ -37,10 +41,22 @@ data class CostBreakdown(
 /**
  * Resultado de um orçamento.
  *
- * @property job peça orçada.
- * @property filamentWeightGrams massa estimada de filamento, em gramas.
- * @property costs detalhamento dos custos.
- * @property productionCost valor de produção (= [CostBreakdown.total]).
+ * **Todos os valores em dinheiro e de massa aqui são do pedido inteiro**, já
+ * multiplicados por [quantity] — é o que o cliente paga e o que sai do seu
+ * carretel. O preço de uma unidade é [unitSalePrice]. O que continua sendo
+ * "de uma peça só" é o [job] (comprimento, tempo e minutos de trabalho por
+ * unidade), porque é assim que o fatiador informa.
+ *
+ * @property job peça orçada (dados de **uma** unidade).
+ * @property quantity quantas peças iguais este orçamento cobre.
+ * @property setupMinutes minutos de preparo cobrados **uma vez** pelo pedido
+ *   inteiro (preparar o arquivo, fatiar, montar a mesa), independente de
+ *   [quantity]. É o que faz o preço por unidade cair conforme a quantidade
+ *   sobe, sem precisar inventar um desconto.
+ * @property filamentWeightGrams massa estimada de filamento do pedido
+ *   inteiro, em gramas.
+ * @property costs detalhamento dos custos do pedido inteiro.
+ * @property productionCost valor de produção do pedido (= [CostBreakdown.total]).
  * @property salePrice valor de venda (= produção · (1 + margem), já ajustado
  *   pra compensar [marketplaceFeeRate] quando aplicável — é o preço de fato
  *   cobrado do cliente, o marketplace não aparece pra ele).
@@ -63,12 +79,23 @@ data class Quote(
     val marketplaceFeeRate: Double = 0.0,
     val printerId: String? = null,
     val printerName: String? = null,
+    val quantity: Int = 1,
+    val setupMinutes: Double = 0.0,
 ) {
+    init {
+        require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
+        require(setupMinutes >= 0) { "setupMinutes não pode ser negativo: $setupMinutes" }
+    }
+
     /**
-     * Lucro líquido real: o que sobra depois do marketplace descontar sua
-     * parte de [salePrice] (quando [marketplaceFeeRate] > 0), menos a
-     * produção. Sem marketplace, é só venda − produção.
+     * Lucro líquido real do pedido: o que sobra depois do marketplace
+     * descontar sua parte de [salePrice] (quando [marketplaceFeeRate] > 0),
+     * menos a produção. Sem marketplace, é só venda − produção.
      */
     val profit: Double
         get() = salePrice * (1 - marketplaceFeeRate) - productionCost
+
+    /** Preço de uma unidade: [salePrice] dividido por [quantity]. */
+    val unitSalePrice: Double
+        get() = salePrice / quantity
 }

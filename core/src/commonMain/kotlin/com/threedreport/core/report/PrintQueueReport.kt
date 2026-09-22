@@ -10,7 +10,9 @@ import com.threedreport.core.model.SavedQuote
  * prometer prazo com mais segurança pro cliente (roadmap: "Fila de impressão / agenda da
  * impressora").
  *
- * @property queuedMinutes soma de `quote.job.printTimeMinutes` dos orçamentos em fila.
+ * @property queuedMinutes soma do tempo de impressão dos orçamentos em fila, **já multiplicado
+ *   pela quantidade de cada um**: um pedido de 10 peças de 30 min ocupa a impressora por 300 min,
+ *   não por 30.
  */
 data class PrinterQueueEntry(
     val printer: PrinterProfile,
@@ -36,7 +38,7 @@ object PrintQueueReport {
             val queued = printingQuotes.filter { it.quote.printerId == printer.id }
             PrinterQueueEntry(
                 printer = printer,
-                queuedMinutes = queued.sumOf { it.quote.job.printTimeMinutes },
+                queuedMinutes = queued.sumOf { it.quote.job.printTimeMinutes * it.quote.quantity },
                 queuedQuoteCount = queued.size,
             )
         }

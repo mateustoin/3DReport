@@ -285,6 +285,30 @@ class QuotePdfExporterTest {
     }
 
     @Test
+    fun pdfShowsQuantityUnitPriceAndMultipliedServiceWhenQuantityIsGreaterThanOne() {
+        val quoteWithQuantity = savedQuote.copy(
+            quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
+            services = listOf(Service(id = "paint", name = "Pintura", price = 15.0)),
+        )
+
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(quoteWithQuantity, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("60,20"))
+        assertTrue(text.contains("10 peças"))
+        assertTrue(text.contains("Pintura"))
+        assertTrue(text.contains("150,00")) // 15,00 (por peça) × 10 = 150,00
+        assertTrue(text.contains("210,20")) // total: 60,20 (venda) + 150,00 (serviço)
+        // O preço por unidade sai do total que o cliente paga (210,20 / 10), igual à tela.
+        assertTrue(text.contains("21,02"))
+    }
+
+    @Test
     fun noTotalLineInPdfWhenThereAreNoServices() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),

@@ -50,7 +50,12 @@ actual fun renderSavedQuotesPdf(
     }
 }
 
-/** Desenha nome, valor de venda (+ serviços/total, se houver), foto (se houver) e marca d'água/rodapé (se configurados) numa única página. */
+/**
+ * Desenha nome, valor de venda (+ serviços/total, se houver), o preço por
+ * unidade quando a quantidade é maior que 1, foto (se houver) e marca
+ * d'água/rodapé (se configurados) numa única página. Com quantidade 1 (o
+ * padrão), a saída é idêntica à de antes desse campo existir.
+ */
 private fun drawQuotePage(
     document: PDDocument,
     page: PDPage,
@@ -74,6 +79,8 @@ private fun drawQuotePage(
         content.endText()
         cursorY -= 30f
 
+        val quantity = savedQuote.quote.quantity
+
         content.beginText()
         content.setFont(bodyFont, 14f)
         content.newLineAtOffset(margin, cursorY)
@@ -86,7 +93,8 @@ private fun drawQuotePage(
                 content.beginText()
                 content.setFont(bodyFont, 12f)
                 content.newLineAtOffset(margin, cursorY)
-                content.showText("${service.name}: ${service.price.toCurrencyText(currency)}")
+                val label = if (quantity > 1) "${service.name} (× $quantity)" else service.name
+                content.showText("$label: ${(service.price * quantity).toCurrencyText(currency)}")
                 content.endText()
                 cursorY -= 18f
             }
@@ -97,6 +105,18 @@ private fun drawQuotePage(
             content.showText("Total: ${savedQuote.totalWithServices.toCurrencyText(currency)}")
             content.endText()
             cursorY -= 24f
+        }
+
+        // Sempre sobre o total que o cliente paga (com serviços), igual à tela de Orçamento: se
+        // fosse sobre o valor de venda, a mesma peça teria dois preços unitários diferentes.
+        if (quantity > 1) {
+            content.beginText()
+            content.setFont(bodyFont, 11f)
+            content.newLineAtOffset(margin, cursorY)
+            val unitPrice = savedQuote.totalWithServices / quantity
+            content.showText("$quantity peças · ${unitPrice.toCurrencyText(currency)} cada")
+            content.endText()
+            cursorY -= 18f
         }
         cursorY -= 6f
 

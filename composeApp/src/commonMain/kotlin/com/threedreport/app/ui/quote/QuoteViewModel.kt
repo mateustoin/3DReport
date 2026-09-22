@@ -61,6 +61,8 @@ class QuoteViewModel(
     fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text, gcodeImportMessage = null) }
     fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text, gcodeImportMessage = null) }
     fun setLaborMinutes(text: String) = inputState.update { it.copy(laborMinutesText = text) }
+    fun setQuantity(text: String) = inputState.update { it.copy(quantityText = text) }
+    fun setSetupMinutes(text: String) = inputState.update { it.copy(setupMinutesText = text) }
 
     /**
      * Abre o seletor de arquivo pra escolher um G-code exportado pelo fatiador e preenche
@@ -246,6 +248,8 @@ class QuoteViewModel(
             lengthMetersText = formatImportedNumber(job.filamentLengthMeters),
             printTimeMinutesText = formatImportedNumber(job.printTimeMinutes),
             laborMinutesText = if (job.laborMinutes > 0) formatImportedNumber(job.laborMinutes) else "",
+            quantityText = if (quote.quantity > 1) quote.quantity.toString() else "",
+            setupMinutesText = if (quote.setupMinutes > 0) formatImportedNumber(quote.setupMinutes) else "",
             selectedServiceIds = savedQuote.services.map { it.id }.toSet(),
             appliesMarketplaceFee = quote.marketplaceFeeRate > 0.0,
         )
@@ -311,7 +315,14 @@ class QuoteViewModel(
             laborMinutes = parseDecimal(input.laborMinutesText) ?: 0.0,
         )
         return runCatching {
-            PricingCalculator.calculate(job, printer, settings, input.appliesMarketplaceFee)
+            PricingCalculator.calculate(
+                job = job,
+                printer = printer,
+                settings = settings,
+                appliesMarketplaceFee = input.appliesMarketplaceFee,
+                quantity = input.quantity,
+                setupMinutes = parseDecimal(input.setupMinutesText) ?: 0.0,
+            )
         }.fold(
             onSuccess = { QuoteResult(filament, filamentColor, printer, quote = it, selectedServices = selectedServices) },
             onFailure = { QuoteResult(filament, filamentColor, printer, errorMessage = it.message, selectedServices = selectedServices) },

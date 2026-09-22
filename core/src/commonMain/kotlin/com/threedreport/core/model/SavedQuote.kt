@@ -59,7 +59,10 @@ data class SavedQuote(
     val lastEditedEpochMillis: Long? = null,
     val printSettings: PrintSettings? = null,
 ) {
-    /** Total de fato cobrado do cliente: valor de venda + soma dos serviços escolhidos. */
+    /**
+     * Total de fato cobrado do cliente: valor de venda do pedido + serviços escolhidos, estes
+     * multiplicados pela quantidade (são trabalho por peça, ver `QuoteResult.servicesTotal`).
+     */
     val totalWithServices: Double
-        get() = quote.salePrice + services.sumOf { it.price }
+        get() = quote.salePrice + services.sumOf { it.price } * quote.quantity
 }

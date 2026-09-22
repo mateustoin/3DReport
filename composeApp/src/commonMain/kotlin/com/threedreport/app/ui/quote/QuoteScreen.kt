@@ -153,12 +153,40 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
                 modifier = Modifier.fillMaxWidth().tabToNavigate(),
                 value = input.laborMinutesText,
                 onValueChange = viewModel::setLaborMinutes,
-                label = { Text("Seu tempo de trabalho (min)") },
+                label = { Text("Seu tempo de trabalho por peça (min)") },
             )
             Text(
-                "Quanto esta peça dá de trabalho seu, fora o tempo de máquina: preparar o arquivo, " +
-                    "fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Cobrado a " +
+                "Quanto cada peça dá de trabalho seu, fora o tempo de máquina: tirar da mesa, " +
+                    "remover suporte, lixar, pintar, embalar. Cobrado a " +
                     "${settings.laborRatePerHour.toCurrencyText(currency)}/h (ajustável em Configurações).",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = input.quantityText,
+            onValueChange = viewModel::setQuantity,
+            label = { Text("Quantidade de peças") },
+        )
+        Text(
+            "Comprimento e tempo acima são de UMA peça: o app multiplica pela quantidade. Se você " +
+                "fatiou a mesa inteira de uma vez e os números já são do lote todo, deixe a " +
+                "quantidade em 1. Vazio conta como 1.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        if (settings.chargesLaborByTime) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().tabToNavigate(),
+                value = input.setupMinutesText,
+                onValueChange = viewModel::setSetupMinutes,
+                label = { Text("Preparo do pedido (min)") },
+            )
+            Text(
+                "O que você faz uma vez só, não importa quantas peças: preparar o arquivo, fatiar, " +
+                    "montar a mesa. É isso que faz a peça sair mais barata no lote, sem precisar " +
+                    "inventar desconto.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -241,6 +269,13 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTot
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
             )
+            if (quote.quantity > 1) {
+                Text(
+                    "${quote.quantity} peças · ${(grandTotal / quote.quantity).toMoney()} cada",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (quote.marketplaceFeeRate > 0.0) {
                 Text(
                     "Já inclui a taxa de marketplace (${quote.marketplaceFeeRate.toPercentText()}) — " +
@@ -251,7 +286,10 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTot
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             ReceiptLine("Custo de produção", quote.productionCost.toMoney())
             ReceiptLine("Lucro", quote.profit.toMoney())
-            selectedServices.forEach { service -> ReceiptLine(service.name, service.price.toMoney()) }
+            selectedServices.forEach { service ->
+                val label = if (quote.quantity > 1) "${service.name} (× ${quote.quantity})" else service.name
+                ReceiptLine(label, (service.price * quote.quantity).toMoney())
+            }
         }
     }
 }

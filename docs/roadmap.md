@@ -143,7 +143,7 @@ preencher.
 
 ### Leva 2 — Quantidade e lote
 
-- [ ] **Campo de quantidade no orçamento.** Conferido em 2026-09-22:
+- [x] **Campo de quantidade no orçamento** (decisão 77, 2026-09-22). Conferido em 2026-09-22:
   `PrintJob`, `Quote` e `SavedQuote` não têm nenhum campo de quantidade.
   "Quero 10 chaveiros" é provavelmente o pedido mais comum do mercado, e
   hoje o vendedor resolve na calculadora do celular, fora do app. Toca o
@@ -151,7 +151,7 @@ preencher.
   agregação do Dashboard — por isso vem depois da leva 1 (a conta por
   unidade precisa estar certa antes de multiplicar) e antes das telas serem
   redesenhadas.
-- [ ] **Regra de lote, não multiplicação simples.** 10 peças na mesma mesa
+- [x] **Regra de lote, não multiplicação simples** (decisão 77, 2026-09-22). 10 peças na mesma mesa
   não custam 10 impressões separadas: o tempo de setup/preparo se dilui, e
   normalmente o vendedor dá desconto por volume. Mínimo viável: mostrar
   "preço unitário" e "total", com um desconto por quantidade opcional
@@ -159,6 +159,19 @@ preencher.
   total. O tempo de mão de obra fixo (leva 1) deve ser cobrado uma vez por
   lote, não por peça — é justamente isso que torna o lote mais barato por
   unidade.
+  - **Feito:** `Quote.quantity` + `Quote.setupMinutes`. O desconto percentual
+    por volume citado acima **não** foi implementado: o preço por unidade já
+    cai sozinho porque o preparo é cobrado uma vez só, e ter dois mecanismos
+    de desconto (um de custo, um de negociação) confundiria. O desconto
+    explícito fica pra leva 4, junto do preço alvo. A semântica escolhida
+    (entradas são de uma peça, o app multiplica) está na decisão 77.
+- [ ] **Serviço cobrado por pedido em vez de por peça** (levantado em
+  2026-09-22, decisão 77). Hoje todo serviço marcado multiplica pela
+  quantidade, porque pintura/lixamento/embalagem são trabalho peça a peça.
+  Um serviço como "entrega" ou "projeto/modelagem" deveria ser cobrado uma
+  vez pelo pedido. Se aparecer caso real, `Service` ganha um marcador de
+  "por peça / por pedido" e a tela de Serviços um seletor. Não implementado
+  por ora pra não somar campo e tela antes de existir a necessidade.
 
 ### Leva 3 — O preço final correto (deduções e acréscimos da venda)
 

@@ -22,9 +22,13 @@ data class QuoteResult(
     val errorMessage: String? = null,
     val selectedServices: List<Service> = emptyList(),
 ) {
-    /** Soma dos serviços escolhidos. */
+    /**
+     * Soma dos serviços escolhidos, multiplicada pela quantidade do orçamento: pintar, lixar e
+     * embalar são trabalho feito peça a peça, então 10 unidades custam 10 pinturas. A tela mostra
+     * o "× N" explicitamente pra isso nunca virar surpresa na conta.
+     */
     val servicesTotal: Double
-        get() = selectedServices.sumOf { it.price }
+        get() = selectedServices.sumOf { it.price } * (quote?.quantity ?: 1)
 
     /** Valor de venda + serviços — o que de fato será cobrado do cliente. */
     val grandTotal: Double?

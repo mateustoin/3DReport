@@ -14,7 +14,8 @@ import kotlinx.serialization.Serializable
  * @property filamentColor qual [FilamentColor] de [filament] foi usado nesta
  *   peça, se o filamento tiver mais de uma cor cadastrada. Não afeta o
  *   cálculo (preço/densidade são do filamento, não da cor) — é só registro.
- * @property laborMinutes minutos do **seu** trabalho nesta peça, somando tudo
+ * @property laborMinutes minutos do **seu** trabalho em **uma** peça (num
+ *   orçamento de 10 unidades, esse tempo é cobrado 10 vezes), somando tudo
  *   que a impressora não faz sozinha: preparar o arquivo, fatiar, tirar da
  *   mesa, remover suporte, lixar, pintar, embalar. Diferente de
  *   [printTimeMinutes], que é a máquina trabalhando enquanto você faz outra

@@ -303,6 +303,13 @@ private fun SavedQuoteRow(
                         withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.salePrice.toMoney()) }
                         append(" · Lucro: ")
                         withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.profit.toMoney()) }
+                        if (savedQuote.quote.quantity > 1) {
+                            append(" · Quantidade: ")
+                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append("${savedQuote.quote.quantity}") }
+                            append(" (")
+                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.unitSalePrice.toMoney()) }
+                            append(" cada)")
+                        }
                     },
                     style = MaterialTheme.typography.bodyMedium,
                 )

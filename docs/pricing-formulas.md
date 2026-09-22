@@ -71,14 +71,24 @@ mão_de_obra        = horas_trabalho · valor_hora_trabalho
 acabamento         = material · taxa_acabamento   (0 se há valor_hora_trabalho)
 administrativo     = custo_administrativo
 
-CUSTO REFEITO      = material + energia + manutenção + retorno_invest.
+custo_por_peça     = material + energia + manutenção + retorno_invest.
                      + custo_fixo + mão_de_obra + acabamento
+preparo            = minutos_preparo / 60 · valor_hora_trabalho
+
+CUSTO REFEITO      = custo_por_peça · quantidade + preparo
 falhas             = CUSTO REFEITO · taxa_falhas
 
 VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
 VALOR DE VENDA     = produção · (1 + margem_lucro)
+PREÇO UNITÁRIO     = venda / quantidade
 LUCRO              = venda − produção
 ```
+
+Todos os valores acima são do **pedido inteiro**. As entradas de peça
+(comprimento, tempo de impressão, minutos de trabalho) são de **uma
+unidade**, e é o app que multiplica pela quantidade: é assim que o fatiador
+informa quando você fatia uma peça só. Se você fatiou a mesa cheia de uma
+vez e os números já são do lote todo, mantenha a quantidade em 1.
 
 Os valores são mantidos em `Double` sem arredondamento; o arredondamento para
 centavos acontece apenas na exibição.
@@ -113,6 +123,32 @@ A mão de obra cobre o serviço inteiro que a peça dá e que não aparece em
 nenhum outro custo: preparar o arquivo, fatiar, tirar da mesa, remover
 suporte, lixar, pintar, embalar e atender o cliente. É diferente do tempo de
 impressão, em que a máquina trabalha enquanto você faz outra coisa.
+
+## Quantidade e lote (2026-09-22, decisão 77)
+
+Duas parcelas se comportam de formas diferentes quando a quantidade sobe, e é
+essa diferença que faz o preço por unidade cair sozinho:
+
+| Parcela | Multiplica pela quantidade? |
+|---|---|
+| Material, energia, manutenção, retorno da máquina, custo fixo | Sim, cada peça consome o seu |
+| Mão de obra por peça (`PrintJob.laborMinutes`) | Sim, você lixa e embala cada uma |
+| Preparo do pedido (`Quote.setupMinutes`) | **Não**, se faz uma vez só |
+| Custo administrativo (ex.: modelagem) | **Não**, é por orçamento |
+| Serviços opcionais (pintura, lixamento) | Sim, são trabalho por peça |
+
+Exemplo com R$ 30,00/h de mão de obra, 3 min de trabalho por peça e 20 min de
+preparo do pedido:
+
+| Quantidade | Trabalho cobrado | Custo de trabalho |
+|---|---|---|
+| 1 peça | 20 min de preparo + 3 min | R$ 11,50 (R$ 11,50 por peça) |
+| 10 peças | 20 min de preparo + 30 min | R$ 25,00 (R$ 2,50 por peça) |
+
+Não existe percentual de desconto por volume em lugar nenhum do app: o lote
+sai mais barato por unidade porque o preparo realmente é feito uma vez só.
+Isso é mais honesto do que um desconto inventado, e continua verdadeiro
+quando a peça é grande o bastante pra o preparo não pesar tanto.
 
 ## Exemplo de referência (planilha)
 

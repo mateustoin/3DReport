@@ -52,6 +52,7 @@ com a margem de lucro desejada.
 **Orçamento**
 - Cálculo de custo de produção e preço de venda (`core`)
 - Tela de orçamento — escolhe filamento + impressora, informa comprimento/tempo → produção/venda
+- Quantidade por orçamento, com preço unitário e preparo do pedido cobrado uma vez só (lote sai mais barato por peça)
 - Salvar orçamento (nome, foto e link do modelo opcionais)
 - Serviços opcionais no orçamento (pintura, lixamento, embalagem/spray etc.)
 - Taxa de marketplace (ex.: Shopee) — ajusta o valor de venda automaticamente

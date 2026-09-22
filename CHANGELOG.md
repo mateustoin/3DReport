@@ -5,6 +5,32 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.25.0] - 2026-09-22
+
+### Adicionado
+- **Quantidade no orçamento.** "Quero 10 chaveiros" agora se resolve dentro
+  do app, sem calculadora do celular. O comprimento de filamento e o tempo
+  que você informa continuam sendo de uma peça (é assim que o fatiador
+  entrega), e o app multiplica pela quantidade. Se você fatiou a mesa
+  inteira de uma vez e os números já são do lote todo, deixe a quantidade
+  em 1. O resultado mostra o total e quanto fica cada peça.
+- **Preparo do pedido, cobrado uma vez só.** Preparar o arquivo, fatiar e
+  montar a mesa você faz uma vez, não uma vez por peça. Informando esses
+  minutos, o preço por unidade cai sozinho conforme a quantidade sobe, sem
+  desconto inventado: 10 peças com 20 min de preparo e 3 min de trabalho
+  cada saem por R$ 2,50 de trabalho por peça, contra R$ 11,50 na unidade
+  avulsa. O campo só aparece pra quem configurou o valor da própria hora.
+
+### Alterado
+- Serviços opcionais (pintura, lixamento, embalagem) passam a ser
+  multiplicados pela quantidade, porque são trabalho feito peça a peça. O
+  resultado e os exports mostram o "× 10" na linha do serviço, pra ficar
+  claro de onde vem o valor.
+- A fila de cada impressora, na aba Impressoras, passa a considerar a
+  quantidade: um pedido de 10 peças de 30 min ocupa a máquina por 300 min,
+  não por 30.
+- Orçamentos antigos não mudam de valor: eles têm quantidade 1.
+
 ## [1.24.0] - 2026-09-22
 
 ### Adicionado

@@ -89,4 +89,38 @@ class QuoteExportTextTest {
 
         assertEquals("Suporte de celular\nVenda: $ 16.19", text)
     }
+
+    @Test
+    fun includesQuantityUnitPriceAndMultipliedServiceWhenQuantityIsGreaterThanOne() {
+        val withQuantity = savedQuote.copy(
+            quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
+            services = listOf(Service(id = "paint", name = "Pintura", price = 15.0)),
+        )
+
+        val text = withQuantity.toCopyPasteText()
+
+        // O "cada" fecha o texto e sai do total que o cliente paga (R$ 210,20 / 10), não do valor
+        // de venda: é o mesmo número que a tela de Orçamento mostra pro mesmo orçamento.
+        assertEquals(
+            "Suporte de celular\nVenda: R$ 60,20\nPintura (× 10): R$ 150,00\nTotal: R$ 210,20\n10 peças · R$ 21,02 cada",
+            text,
+        )
+        // A soma exibida bate com o total de fato cobrado (venda + serviços × quantidade).
+        assertEquals(withQuantity.totalWithServices, 60.20 + 150.0, 0.001)
+    }
+
+    @Test
+    fun quantityOneKeepsTheOutputExactlyAsBeforeQuantityExisted() {
+        val quantityOne = savedQuote.copy(
+            services = listOf(Service(id = "paint", name = "Pintura", price = 20.0)),
+        )
+        check(quantityOne.quote.quantity == 1)
+
+        val text = quantityOne.toCopyPasteText()
+
+        assertEquals("Suporte de celular\nVenda: R$ 16,19\nPintura: R$ 20,00\nTotal: R$ 36,19", text)
+        assertFalse(text.contains("peças"))
+        assertFalse(text.contains("cada"))
+        assertFalse(text.contains("×"))
+    }
 }

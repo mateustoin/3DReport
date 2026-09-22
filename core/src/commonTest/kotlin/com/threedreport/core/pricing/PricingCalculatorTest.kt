@@ -8,6 +8,7 @@ import com.threedreport.core.model.PrintJob
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 /**
  * Valida o motor de cálculo contra os valores da planilha de referência
@@ -185,6 +186,60 @@ class PricingCalculatorTest {
         assertEquals(0.0, costs.labor, 1e-9)
         assertEquals(0.0, costs.fixedCost, 1e-9)
         assertEquals(0.36, costs.finishing, CENT_TOLERANCE)
+    }
+
+    @Test
+    fun quantityMultipliesEveryPerPieceCostButNotTheAdministrativeOne() {
+        val settings = spreadsheetSettings.copy(administrativeCost = 50.0)
+
+        val one = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings)
+        val ten = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, quantity = 10)
+
+        assertEquals(one.costs.material * 10, ten.costs.material, 1e-9)
+        assertEquals(one.costs.energy * 10, ten.costs.energy, 1e-9)
+        assertEquals(one.costs.investmentReturn * 10, ten.costs.investmentReturn, 1e-9)
+        assertEquals(one.filamentWeightGrams * 10, ten.filamentWeightGrams, 1e-9)
+        // A modelagem é feita uma vez pro pedido, não uma vez por peça.
+        assertEquals(50.0, ten.costs.administrative, 1e-9)
+        assertEquals(10, ten.quantity)
+    }
+
+    @Test
+    fun setupTimeIsChargedOncePerOrderSoTheUnitPriceFallsWithQuantity() {
+        val settings = spreadsheetSettings.copy(laborRatePerHour = 30.0)
+        val job = spreadsheetJob.copy(laborMinutes = 3.0)
+
+        val one = PricingCalculator.calculate(settings = settings, job = job, printer = spreadsheetPrinter, quantity = 1, setupMinutes = 20.0)
+        val ten = PricingCalculator.calculate(settings = settings, job = job, printer = spreadsheetPrinter, quantity = 10, setupMinutes = 20.0)
+
+        // Preparo (20 min) cobrado uma vez nos dois; o trabalho por peça (3 min) é que multiplica.
+        // Números iguais aos da tabela "Quantidade e lote" de docs/pricing-formulas.md.
+        assertEquals(11.50, one.costs.labor, CENT_TOLERANCE)
+        assertEquals(25.00, ten.costs.labor, CENT_TOLERANCE)
+        assertEquals(2.50, ten.costs.labor / 10, CENT_TOLERANCE)
+
+        // É isso que faz a unidade sair mais barata no lote, sem desconto artificial nenhum.
+        assertTrue(ten.unitSalePrice < one.unitSalePrice)
+        assertEquals(ten.salePrice / 10, ten.unitSalePrice, 1e-9)
+    }
+
+    @Test
+    fun quantityOfOneKeepsTheExactSameResultAsBefore() {
+        val explicit = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, quantity = 1)
+        val default = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+
+        assertEquals(default.productionCost, explicit.productionCost, 1e-9)
+        assertEquals(default.salePrice, explicit.unitSalePrice, 1e-9)
+    }
+
+    @Test
+    fun invalidQuantityOrSetupTimeIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, quantity = 0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, setupMinutes = -1.0)
+        }
     }
 
     @Test
