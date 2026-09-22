@@ -310,6 +310,14 @@ private fun SavedQuoteRow(
                             withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.unitSalePrice.toMoney()) }
                             append(" cada)")
                         }
+                        savedQuote.quote.channelName?.let { channelName ->
+                            append(" · Canal: ")
+                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(channelName) }
+                        }
+                        if (savedQuote.shippingCost > 0) {
+                            append(" · Frete: ")
+                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.shippingCost.toMoney()) }
+                        }
                     },
                     style = MaterialTheme.typography.bodyMedium,
                 )

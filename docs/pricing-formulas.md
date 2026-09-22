@@ -79,9 +79,14 @@ CUSTO REFEITO      = custo_por_peça · quantidade + preparo
 falhas             = CUSTO REFEITO · taxa_falhas
 
 VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
-VALOR DE VENDA     = produção · (1 + margem_lucro)
-PREÇO UNITÁRIO     = venda / quantidade
-LUCRO              = venda − produção
+PREÇO BASE         = produção · (1 + margem_lucro)
+
+deduções           = taxa_do_canal + imposto
+VALOR DE VENDA     = PREÇO BASE / (1 − deduções)
+PREÇO UNITÁRIO     = (venda + serviços + frete) / quantidade
+LUCRO              = venda · (1 − deduções) − produção
+
+TOTAL DO CLIENTE   = venda + serviços · quantidade + frete
 ```
 
 Todos os valores acima são do **pedido inteiro**. As entradas de peça
@@ -149,6 +154,44 @@ Não existe percentual de desconto por volume em lugar nenhum do app: o lote
 sai mais barato por unidade porque o preparo realmente é feito uma vez só.
 Isso é mais honesto do que um desconto inventado, e continua verdadeiro
 quando a peça é grande o bastante pra o preparo não pesar tanto.
+
+## Deduções da venda e frete (2026-09-22, decisão 78)
+
+Três coisas saem do valor que o cliente paga antes de o dinheiro virar seu, e
+elas **não** se comportam do mesmo jeito.
+
+**Taxa do canal e imposto são descontados**, então o preço sobe pra
+compensar. Vender a P deixa `P · (1 − canal − imposto)` na sua mão; o app
+calcula P de trás pra frente, de forma que sobre exatamente a mesma coisa de
+uma venda sem dedução nenhuma. O lucro mostrado já é o líquido.
+
+**Canal de venda e forma de pagamento são o mesmo campo, de propósito.**
+Somar "Shopee 20%" com "cartão 4%" cobraria em dobro, porque a taxa do
+marketplace já embute o processamento do pagamento. Cada canal cadastrado é
+uma taxa só: "Shopee" 20%, "Cartão" 4%, "Pix" 0%. Quem paga os dois de
+verdade (loja própria com maquininha, por exemplo) cadastra um canal com a
+soma que de fato paga.
+
+**Imposto: MEI não entra como percentual.** O DAS do MEI é um valor fixo por
+mês, não um percentual da venda, então o lugar dele é o custo fixo mensal
+(que já é diluído por hora de impressão). O campo de imposto serve pra quem
+paga percentual sobre o faturamento, como o Simples Nacional.
+
+**Frete não passa por nada disso.** É repasse, não produto seu: entra como
+linha própria no total do cliente, não multiplica pela quantidade, não passa
+pela margem e não sofre dedução. Sai do preço da peça de propósito, pra o
+cliente ver o que é peça e o que é entrega.
+
+| | Multiplica pela quantidade? | Passa pela margem? | Sofre dedução? |
+|---|---|---|---|
+| Peça (produção) | Sim | Sim | Sim |
+| Serviços | Sim | Não | Não |
+| Frete | Não | Não | Não |
+
+Exemplo: peça de R$ 17,02 (venda direta) vendida pela Shopee (20%) por quem
+paga 6% de Simples. As deduções somam 26%, então o preço vira
+`17,02 / 0,74 = R$ 23,00`. O cliente paga R$ 23,00, a Shopee e o imposto
+levam R$ 5,98, e sobram os mesmos R$ 17,02 de antes.
 
 ## Exemplo de referência (planilha)
 

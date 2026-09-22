@@ -37,6 +37,7 @@ import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.templates.TemplateListDialog
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
@@ -58,6 +59,7 @@ fun SettingsScreen(
     themeViewModel: ThemeViewModel,
     currencyViewModel: CurrencyViewModel,
     backupViewModel: BackupViewModel,
+    salesChannelViewModel: SalesChannelViewModel,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -155,13 +157,13 @@ fun SettingsScreen(
             viewModel.update { s -> s.copy(profitMarginPercentText = it) }
         }
 
-        Text("Marketplace", style = MaterialTheme.typography.titleMedium)
-        LabeledField("Taxa de marketplace (%, ex.: Shopee)", state.marketplaceFeeRatePercentText) {
-            viewModel.update { s -> s.copy(marketplaceFeeRatePercentText = it) }
+        Text("Imposto", style = MaterialTheme.typography.titleMedium)
+        LabeledField("Imposto sobre a venda (%)", state.taxRatePercentText) {
+            viewModel.update { s -> s.copy(taxRatePercentText = it) }
         }
         Text(
-            "Marcada por orçamento na aba Orçamento, quando aquela venda for por um marketplace. " +
-                "O valor de venda sobe o suficiente pra sua margem de lucro real não mudar.",
+            "Percentual que sai da venda, como o Simples Nacional. Se você é MEI, deixe zero aqui: " +
+                "o DAS é um valor fixo por mês, então o lugar dele é o custo fixo mensal, logo acima.",
             style = MaterialTheme.typography.bodySmall,
         )
 
@@ -206,12 +208,59 @@ fun SettingsScreen(
 
         HorizontalDivider()
 
+        SalesChannelSection(salesChannelViewModel)
+
+        HorizontalDivider()
+
         BackupSection(backupViewModel)
     }
 
     if (showTemplatesDialog) {
         TemplateListDialog(templateListViewModel, onDismiss = { showTemplatesDialog = false })
     }
+}
+
+@Composable
+private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
+    val channels by viewModel.channels.collectAsState()
+    val form by viewModel.form.collectAsState()
+
+    Text("Canais de venda", style = MaterialTheme.typography.titleMedium)
+    Text(
+        "Onde a venda acontece e quanto isso desconta do que você recebe: Shopee, Mercado Livre, " +
+            "cartão, Pix. Em cada orçamento você escolhe o canal, e o preço sobe o suficiente pra " +
+            "sua margem não mudar. Marketplace e forma de pagamento entram aqui juntos de propósito: " +
+            "somar a taxa da Shopee com a do cartão cobraria em dobro, porque o marketplace já " +
+            "embute o processamento do pagamento.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    channels.forEach { channel ->
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("${channel.name} · ${channel.feeRate.toPercentText()}", style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = { viewModel.startEditing(channel) }) { Text("Editar") }
+            TextButton(onClick = { viewModel.delete(channel.id) }) {
+                Text("Excluir", color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+    if (channels.isEmpty()) {
+        Text(
+            "Nenhum canal cadastrado: todo orçamento sai como venda direta, sem taxa.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    LabeledField("Nome do canal (ex.: Shopee, Cartão)", form.nameText, viewModel::setName)
+    LabeledField("Taxa do canal (%)", form.feeRatePercentText, viewModel::setFeeRate)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = viewModel::save) { Text(if (form.editingId != null) "Salvar canal" else "Adicionar canal") }
+        if (form.editingId != null) {
+            TextButton(onClick = viewModel::cancelEditing) { Text("Cancelar") }
+        }
+    }
+    form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 }
 
 @Composable

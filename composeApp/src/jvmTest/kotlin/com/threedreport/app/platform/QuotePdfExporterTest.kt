@@ -309,6 +309,24 @@ class QuotePdfExporterTest {
     }
 
     @Test
+    fun pdfShowsShippingAndTotalEvenWithNoServices() {
+        val quoteWithShipping = savedQuote.copy(shippingCost = 12.0)
+
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(quoteWithShipping, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("Frete"))
+        assertTrue(text.contains("12,00"))
+        assertTrue(text.contains("Total"))
+        assertTrue(text.contains("28,19")) // 16,19 (venda) + 12,00 (frete)
+    }
+
+    @Test
     fun noTotalLineInPdfWhenThereAreNoServices() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),

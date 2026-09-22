@@ -5,6 +5,7 @@ import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.SalesChannel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -253,38 +254,73 @@ class PricingCalculatorTest {
     }
 
     @Test
-    fun marketplaceFeeRaisesSalePriceButKeepsRealProfitUnchanged() {
-        val settingsWithFee = spreadsheetSettings.copy(marketplaceFeeRate = 0.15)
+    fun channelFeeRaisesSalePriceButKeepsRealProfitUnchanged() {
+        val shopee = SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.15)
 
-        val withoutMarketplace = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settingsWithFee)
-        val withMarketplace = PricingCalculator.calculate(
-            spreadsheetJob,
-            spreadsheetPrinter,
-            settingsWithFee,
-            appliesMarketplaceFee = true,
-        )
+        val direct = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+        val viaShopee = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, channel = shopee)
 
-        // Preço de tabela sobe pra compensar o desconto do marketplace...
-        assertEquals(17.02, withoutMarketplace.salePrice, CENT_TOLERANCE)
-        assertEquals(17.02 / 0.85, withMarketplace.salePrice, CENT_TOLERANCE)
-        // ...mas o lucro real (depois do marketplace descontar a parte dele) fica igual.
-        assertEquals(withoutMarketplace.profit, withMarketplace.profit, 1e-9)
+        // Preço de tabela sobe pra compensar o desconto do canal...
+        assertEquals(17.02, direct.salePrice, CENT_TOLERANCE)
+        assertEquals(17.02 / 0.85, viaShopee.salePrice, CENT_TOLERANCE)
+        // ...mas o lucro real (depois de o canal descontar a parte dele) fica igual.
+        assertEquals(direct.profit, viaShopee.profit, 1e-9)
+        assertEquals("Shopee", viaShopee.channelName)
     }
 
     @Test
-    fun marketplaceFeeNotAppliedWhenFlagIsFalseEvenIfConfigured() {
-        val settingsWithFee = spreadsheetSettings.copy(marketplaceFeeRate = 0.15)
+    fun directSaleHasNoDeductionEvenWithChannelsRegistered() {
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, channel = null)
 
-        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settingsWithFee)
-
-        assertEquals(0.0, quote.marketplaceFeeRate, 1e-9)
+        assertEquals(0.0, quote.totalDeductionRate, 1e-9)
         assertEquals(17.02, quote.salePrice, CENT_TOLERANCE)
+        assertEquals(null, quote.channelName)
     }
 
     @Test
-    fun invalidMarketplaceFeeRateIsRejected() {
-        assertFailsWith<IllegalArgumentException> { spreadsheetSettings.copy(marketplaceFeeRate = -0.1) }
-        assertFailsWith<IllegalArgumentException> { spreadsheetSettings.copy(marketplaceFeeRate = 1.0) }
+    fun taxAndChannelFeeAddUpBeforeRaisingThePrice() {
+        val shopee = SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.15)
+        val withTax = spreadsheetSettings.copy(taxRate = 0.06)
+
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, withTax, channel = shopee)
+
+        // Vender a P deixa P · (1 − 0,15 − 0,06) na mão; o preço sobe o bastante pra sobrar a
+        // mesma coisa de uma venda sem dedução nenhuma.
+        assertEquals(0.21, quote.totalDeductionRate, 1e-9)
+        assertEquals(17.02 / 0.79, quote.salePrice, CENT_TOLERANCE)
+        val direct = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+        assertEquals(direct.profit, quote.profit, 1e-9)
+    }
+
+    /** Trava o exemplo da seção "Deduções da venda e frete" de pricing-formulas.md. */
+    @Test
+    fun documentedDeductionExampleMatches() {
+        val shopee = SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.20)
+        val settings = spreadsheetSettings.copy(taxRate = 0.06)
+
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, channel = shopee)
+
+        assertEquals(0.26, quote.totalDeductionRate, 1e-9)
+        assertEquals(23.00, quote.salePrice, CENT_TOLERANCE)
+        // Sobra o mesmo da venda direta: R$ 17,02 menos o custo de produção.
+        assertEquals(17.02 - 8.51, quote.profit, CENT_TOLERANCE)
+    }
+
+    @Test
+    fun deductionsThatEatTheWholeSaleAreRejected() {
+        val absurdChannel = SalesChannel(id = "x", name = "Canal impossível", feeRate = 0.95)
+        val withTax = spreadsheetSettings.copy(taxRate = 0.06)
+
+        assertFailsWith<IllegalArgumentException> {
+            PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, withTax, channel = absurdChannel)
+        }
+    }
+
+    @Test
+    fun invalidRatesAreRejected() {
+        assertFailsWith<IllegalArgumentException> { SalesChannel(id = "x", name = "X", feeRate = -0.1) }
+        assertFailsWith<IllegalArgumentException> { SalesChannel(id = "x", name = "X", feeRate = 1.0) }
+        assertFailsWith<IllegalArgumentException> { spreadsheetSettings.copy(taxRate = 1.0) }
     }
 
     private companion object {

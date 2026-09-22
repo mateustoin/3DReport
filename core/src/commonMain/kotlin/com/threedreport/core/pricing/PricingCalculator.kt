@@ -5,6 +5,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.SalesChannel
 
 /**
  * Motor de cálculo de orçamento de impressão 3D.
@@ -15,16 +16,18 @@ import com.threedreport.core.model.Quote
 object PricingCalculator {
 
     /**
-     * @param appliesMarketplaceFee se `true`, aumenta o valor de venda o
-     *   suficiente para compensar `settings.marketplaceFeeRate` — a margem
-     *   de lucro real (ver [Quote.profit]) fica igual à de uma venda sem
-     *   marketplace, só o preço de tabela muda.
+     * @param channel canal de venda escolhido pra este orçamento, ou `null`
+     *   na venda direta. A taxa dele, somada ao imposto de
+     *   [PricingSettings.taxRate], aumenta o valor de venda o suficiente pra
+     *   compensar o que é descontado — a margem de lucro real (ver
+     *   [Quote.profit]) fica igual à de uma venda sem dedução nenhuma, só o
+     *   preço de tabela muda.
      */
     fun calculate(
         job: PrintJob,
         printer: PrinterProfile,
         settings: PricingSettings,
-        appliesMarketplaceFee: Boolean = false,
+        channel: SalesChannel? = null,
         quantity: Int = 1,
         setupMinutes: Double = 0.0,
     ): Quote {
@@ -68,8 +71,16 @@ object PricingCalculator {
 
         val productionCost = costs.total
         val baseSalePrice = productionCost * (1 + settings.profitMargin)
-        val feeRate = if (appliesMarketplaceFee) settings.marketplaceFeeRate else 0.0
-        val salePrice = if (feeRate > 0.0) baseSalePrice / (1 - feeRate) else baseSalePrice
+
+        // Canal e imposto são descontados do mesmo valor recebido, então somam antes de dividir:
+        // vender a P deixa P · (1 − canal − imposto) na sua mão.
+        val channelFeeRate = channel?.feeRate ?: 0.0
+        val deductionRate = channelFeeRate + settings.taxRate
+        require(deductionRate < 1) {
+            "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. " +
+                "Revise a taxa do canal ou o imposto em Configurações."
+        }
+        val salePrice = if (deductionRate > 0.0) baseSalePrice / (1 - deductionRate) else baseSalePrice
 
         return Quote(
             job = job,
@@ -77,11 +88,13 @@ object PricingCalculator {
             costs = costs,
             productionCost = productionCost,
             salePrice = salePrice,
-            marketplaceFeeRate = feeRate,
+            marketplaceFeeRate = channelFeeRate,
             printerId = printer.id,
             printerName = printer.name,
             quantity = quantity,
             setupMinutes = setupMinutes,
+            channelName = channel?.name,
+            taxRate = settings.taxRate,
         )
     }
 

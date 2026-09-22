@@ -36,6 +36,7 @@ actual class QuoteHistoryRepository actual constructor() {
         sourceLink: String?,
         client: Client?,
         printSettings: PrintSettings?,
+        shippingCost: Double,
     ): SavedQuote {
         val id = Uuid.random().toString()
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
@@ -52,6 +53,7 @@ actual class QuoteHistoryRepository actual constructor() {
             savedAtEpochMillis = System.currentTimeMillis(),
             client = client,
             printSettings = printSettings,
+            shippingCost = shippingCost,
         )
         state.value = state.value + saved
         persist()
@@ -70,6 +72,7 @@ actual class QuoteHistoryRepository actual constructor() {
         sourceLink: String?,
         client: Client?,
         printSettings: PrintSettings?,
+        shippingCost: Double,
     ): SavedQuote? {
         val existing = state.value.find { it.id == id } ?: return null
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
@@ -85,6 +88,7 @@ actual class QuoteHistoryRepository actual constructor() {
             client = client,
             lastEditedEpochMillis = System.currentTimeMillis(),
             printSettings = printSettings,
+            shippingCost = shippingCost,
         )
         // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
         // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).

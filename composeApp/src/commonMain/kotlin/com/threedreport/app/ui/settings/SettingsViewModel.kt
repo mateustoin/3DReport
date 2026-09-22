@@ -34,7 +34,10 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository) {
                 productiveHoursPerMonth = current.productiveHoursPerMonthText.toRequiredDouble("Horas de impressão por mês"),
                 administrativeCost = current.administrativeCostText.toRequiredDouble("Custo administrativo"),
                 profitMargin = current.profitMarginPercentText.toRequiredDouble("Margem de lucro") / 100.0,
-                marketplaceFeeRate = current.marketplaceFeeRatePercentText.toRequiredDouble("Taxa de marketplace") / 100.0,
+                taxRate = current.taxRatePercentText.toRequiredDouble("Imposto sobre a venda") / 100.0,
+                // Preservado como estava: o cálculo não usa mais, mas apagar faria a migração pro
+                // catálogo de canais perder a referência de quem ainda não abriu o app.
+                marketplaceFeeRate = settingsRepository.settings.value.marketplaceFeeRate,
             )
         }
 
@@ -57,5 +60,5 @@ private fun PricingSettings.toUiState() = SettingsUiState(
     productiveHoursPerMonthText = productiveHoursPerMonth.toString(),
     administrativeCostText = administrativeCost.toString(),
     profitMarginPercentText = (profitMargin * 100).toString(),
-    marketplaceFeeRatePercentText = (marketplaceFeeRate * 100).toString(),
+    taxRatePercentText = (taxRate * 100).toString(),
 )

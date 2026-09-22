@@ -175,24 +175,32 @@ preencher.
 
 ### Leva 3 — O preço final correto (deduções e acréscimos da venda)
 
-- [ ] **Canais de venda com taxa própria.** Item já registrado (ver
+- [x] **Canais de venda com taxa própria** (decisão 78, 2026-09-22). Item já registrado (ver
   "Taxa de marketplace" na seção 1) — agendado aqui, porque é a base pros
   dois itens seguintes: em vez de uma taxa única em Configurações, um
   catálogo de canais (nome + taxa), no mesmo padrão de Serviços.
-- [ ] **Imposto e taxa de pagamento.** Faltam duas deduções que todo
+- [x] **Imposto** (decisão 78, 2026-09-22). A taxa de pagamento **não** virou campo separado: foi absorvida pelo canal de venda, porque somar a taxa do marketplace com a do cartão cobraria em dobro (o marketplace já embute o processamento). Texto original abaixo. Faltam duas deduções que todo
   vendedor brasileiro sente: imposto (MEI/Simples) e taxa de recebimento
   (maquininha ou link de pagamento, tipicamente ~4%; Pix, zero). Mesma
   mecânica já implementada pra marketplace (decisão 26: o preço de venda
   sobe o suficiente pra margem real não mudar), aplicada a mais duas
   parcelas. Junto com os canais de venda, é o que faz o "Você cobra" virar
   de fato o que entra na conta do vendedor.
-- [ ] **Frete.** Pra venda online, frete é metade da conversa com o cliente
+- [x] **Frete** (decisão 78, 2026-09-22), sem a opção de frete grátis, que virou item próprio abaixo. Pra venda online, frete é metade da conversa com o cliente
   e hoje não existe em lugar nenhum do app. Escopo mínimo: valor informado
   na mão por orçamento, somado ao total do cliente como linha própria no PDF
   e no copiar/colar (nunca embutido no preço da peça, pra não parecer que a
   peça ficou mais cara), com a opção "frete grátis" descontando do lucro
   explicitamente — assim o vendedor vê quanto o "frete grátis" custou de
   verdade.
+
+- [ ] **Frete grátis descontando do lucro** (separado da leva 3 em
+  2026-09-22, decisão 78). A ideia é registrar que o vendedor absorveu o
+  frete e mostrar quanto isso custou de lucro. Ficou de fora porque exigiria
+  recalcular o lucro fora do `PricingCalculator`, e ter dois números de
+  lucro no app (um do motor, outro ajustado na tela) é exatamente como
+  Dashboard e Histórico passam a divergir entre si. Precisa de decisão
+  própria sobre onde o lucro líquido passa a ser calculado.
 
 ### Leva 4 — Negociação (depende de a conta estar completa)
 

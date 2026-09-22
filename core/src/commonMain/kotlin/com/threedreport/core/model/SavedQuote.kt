@@ -39,6 +39,11 @@ import kotlinx.serialization.Serializable
  *   de novo pela última vez (ver KDoc acima), ou `null` se nunca foi
  *   editado desde que foi criado. [savedAtEpochMillis] **não muda** numa
  *   edição — continua sendo a data de criação original.
+ * @property shippingCost frete cobrado do cliente neste pedido, em R$.
+ *   Entra como linha própria no total e nos exports, **nunca embutido no
+ *   preço da peça**: não passa pela margem, não multiplica pela quantidade
+ *   e não sofre a taxa do canal, porque é um valor repassado, não um
+ *   produto seu. `0.0` quando não há frete (retirada, entrega em mãos).
  * @property printSettings configurações de fatiamento usadas pra imprimir
  *   (altura de camada, preenchimento, suporte), se informadas — ver KDoc de
  *   [PrintSettings]. Editável direto no Histórico, sem precisar reabrir a
@@ -58,11 +63,17 @@ data class SavedQuote(
     val status: OrderStatus = OrderStatus.ORCADO,
     val lastEditedEpochMillis: Long? = null,
     val printSettings: PrintSettings? = null,
+    val shippingCost: Double = 0.0,
 ) {
+    init {
+        require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
+    }
+
     /**
-     * Total de fato cobrado do cliente: valor de venda do pedido + serviços escolhidos, estes
-     * multiplicados pela quantidade (são trabalho por peça, ver `QuoteResult.servicesTotal`).
+     * Total de fato cobrado do cliente: valor de venda do pedido + serviços escolhidos (estes
+     * multiplicados pela quantidade, são trabalho por peça, ver `QuoteResult.servicesTotal`) +
+     * [shippingCost].
      */
     val totalWithServices: Double
-        get() = quote.salePrice + services.sumOf { it.price } * quote.quantity
+        get() = quote.salePrice + services.sumOf { it.price } * quote.quantity + shippingCost
 }

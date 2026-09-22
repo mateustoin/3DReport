@@ -65,6 +65,9 @@ import kotlin.math.round
  */
 private const val MAX_RENDERABLE_STL_TRIANGLES = 500_000L
 
+/** Opção padrão do seletor de canal: venda sem intermediário e sem taxa (Pix, dinheiro, entrega em mãos). */
+private const val DIRECT_SALE_LABEL = "Venda direta (sem taxa)"
+
 /** Arredonda pra 1 casa decimal, separador decimal brasileiro (vírgula) — mesmo estilo de `toWeightText()`. */
 private fun Double.formatOneDecimal(): String {
     val tenths = round(this * 10).toLong()
@@ -86,10 +89,11 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
     val printers by viewModel.printers.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val services by viewModel.services.collectAsState()
+    val salesChannels by viewModel.salesChannels.collectAsState()
     val input by viewModel.input.collectAsState()
     val saveForm by viewModel.saveForm.collectAsState()
 
-    val result = viewModel.calculate(filaments, printers, settings, services, input)
+    val result = viewModel.calculate(filaments, printers, settings, services, input, salesChannels)
     val currency = LocalCurrency.current
 
     Column(
@@ -204,15 +208,34 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
             }
         }
 
-        if (settings.marketplaceFeeRate > 0.0) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = input.appliesMarketplaceFee,
-                    onCheckedChange = viewModel::setAppliesMarketplaceFee,
-                )
-                Text("Vender por marketplace (taxa de ${settings.marketplaceFeeRate.toPercentText()})")
-            }
+        if (salesChannels.isNotEmpty()) {
+            LabeledDropdown(
+                label = "Canal de venda",
+                items = listOf(null) + salesChannels,
+                selected = result.salesChannel,
+                itemLabel = { it?.let { channel -> "${channel.name} · ${channel.feeRate.toPercentText()}" } ?: DIRECT_SALE_LABEL },
+                displayText = { it?.name ?: DIRECT_SALE_LABEL },
+                onSelect = { viewModel.selectSalesChannel(it?.id) },
+                emptyText = DIRECT_SALE_LABEL,
+            )
+            Text(
+                "A taxa do canal é descontada do que você recebe, então o preço de venda sobe o " +
+                    "suficiente pra sua margem não mudar. Cadastre os canais em Configurações.",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = input.shippingCostText,
+            onValueChange = viewModel::setShippingCost,
+            label = { Text("Frete (${currency.symbol}, opcional)") },
+        )
+        Text(
+            "Somado ao total como linha própria, nunca embutido no preço da peça: frete é repasse, " +
+                "não produto seu. Não multiplica pela quantidade nem entra na margem.",
+            style = MaterialTheme.typography.bodySmall,
+        )
 
         HorizontalDivider()
 
@@ -276,10 +299,14 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTot
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (quote.marketplaceFeeRate > 0.0) {
+            if (quote.totalDeductionRate > 0.0) {
+                val parts = buildList {
+                    quote.channelName?.let { add("$it ${quote.marketplaceFeeRate.toPercentText()}") }
+                    if (quote.taxRate > 0.0) add("imposto ${quote.taxRate.toPercentText()}")
+                }
                 Text(
-                    "Já inclui a taxa de marketplace (${quote.marketplaceFeeRate.toPercentText()}) — " +
-                        "o cliente paga esse valor normalmente.",
+                    "Preço já elevado pra absorver ${parts.joinToString(" e ")}: o cliente paga esse " +
+                        "valor normalmente, e o lucro abaixo já é o que sobra pra você.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -483,6 +510,9 @@ private fun <T> LabeledDropdown(
     itemLabel: (T) -> String,
     displayText: (T) -> String,
     onSelect: (T) -> Unit,
+    // Pro seletor de canal, `null` não é "ainda não escolheu": é a venda direta, uma opção de
+    // verdade que precisa aparecer escrita em vez de deixar o campo em branco.
+    emptyText: String = "",
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -490,7 +520,7 @@ private fun <T> LabeledDropdown(
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
             readOnly = true,
-            value = selected?.let(displayText).orEmpty(),
+            value = selected?.let(displayText) ?: emptyText,
             onValueChange = {},
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },

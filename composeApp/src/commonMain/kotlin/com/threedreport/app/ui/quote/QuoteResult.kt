@@ -4,6 +4,7 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
 
 /**
@@ -21,6 +22,8 @@ data class QuoteResult(
     val quote: Quote? = null,
     val errorMessage: String? = null,
     val selectedServices: List<Service> = emptyList(),
+    val salesChannel: SalesChannel? = null,
+    val shippingCost: Double = 0.0,
 ) {
     /**
      * Soma dos serviços escolhidos, multiplicada pela quantidade do orçamento: pintar, lixar e
@@ -30,7 +33,7 @@ data class QuoteResult(
     val servicesTotal: Double
         get() = selectedServices.sumOf { it.price } * (quote?.quantity ?: 1)
 
-    /** Valor de venda + serviços — o que de fato será cobrado do cliente. */
+    /** Valor de venda + serviços + frete — o que de fato será cobrado do cliente. */
     val grandTotal: Double?
-        get() = quote?.let { it.salePrice + servicesTotal }
+        get() = quote?.let { it.salePrice + servicesTotal + shippingCost }
 }

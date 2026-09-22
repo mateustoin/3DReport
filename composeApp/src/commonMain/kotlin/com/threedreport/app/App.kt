@@ -40,6 +40,7 @@ import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.TemplateRepository
@@ -63,6 +64,7 @@ import com.threedreport.app.ui.settings.BackupViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.CurrencyViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
+import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsViewModel
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
@@ -94,9 +96,13 @@ fun App() {
     val themeRepository = remember { ThemeRepository() }
     val currencyRepository = remember { CurrencyRepository() }
     val backupRepository = remember { BackupRepository() }
+    val salesChannelRepository = remember { SalesChannelRepository() }
 
     val quoteViewModel = remember {
-        QuoteViewModel(filamentRepository, printerRepository, settingsRepository, serviceRepository, historyRepository)
+        QuoteViewModel(
+            filamentRepository, printerRepository, settingsRepository, serviceRepository,
+            salesChannelRepository, historyRepository,
+        )
     }
     val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository, currencyRepository) }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository) }
@@ -109,6 +115,7 @@ fun App() {
     val themeViewModel = remember { ThemeViewModel(themeRepository) }
     val currencyViewModel = remember { CurrencyViewModel(currencyRepository) }
     val backupViewModel = remember { BackupViewModel(backupRepository) }
+    val salesChannelViewModel = remember { SalesChannelViewModel(salesChannelRepository) }
 
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var showHelp by remember { mutableStateOf(false) }
@@ -191,6 +198,7 @@ fun App() {
                                 themeViewModel,
                                 currencyViewModel,
                                 backupViewModel,
+                                salesChannelViewModel,
                             )
                         }
                     }

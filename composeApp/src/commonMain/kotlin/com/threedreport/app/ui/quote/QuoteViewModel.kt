@@ -3,6 +3,7 @@ package com.threedreport.app.ui.quote
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.PickedFile
@@ -17,6 +18,7 @@ import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
@@ -42,12 +44,14 @@ class QuoteViewModel(
     printerRepository: PrinterRepository,
     settingsRepository: SettingsRepository,
     serviceRepository: ServiceRepository,
+    salesChannelRepository: SalesChannelRepository,
     private val historyRepository: QuoteHistoryRepository,
 ) {
     val filaments: StateFlow<List<Filament>> = filamentRepository.filaments
     val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
     val settings: StateFlow<PricingSettings> = settingsRepository.settings
     val services: StateFlow<List<Service>> = serviceRepository.services
+    val salesChannels: StateFlow<List<SalesChannel>> = salesChannelRepository.channels
 
     private val inputState = MutableStateFlow(QuoteInputState())
     val input: StateFlow<QuoteInputState> = inputState.asStateFlow()
@@ -133,7 +137,8 @@ class QuoteViewModel(
         it.copy(selectedServiceIds = if (id in it.selectedServiceIds) it.selectedServiceIds - id else it.selectedServiceIds + id)
     }
 
-    fun setAppliesMarketplaceFee(applies: Boolean) = inputState.update { it.copy(appliesMarketplaceFee = applies) }
+    fun selectSalesChannel(id: String?) = inputState.update { it.copy(salesChannelId = id) }
+    fun setShippingCost(text: String) = inputState.update { it.copy(shippingCostText = text) }
 
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
@@ -195,6 +200,7 @@ class QuoteViewModel(
                 sourceLink = form.sourceLink,
                 client = client,
                 printSettings = form.printSettings.takeUnless { it.isEmpty },
+                shippingCost = parseDecimal(inputState.value.shippingCostText) ?: 0.0,
             )
         } else {
             historyRepository.save(
@@ -208,6 +214,7 @@ class QuoteViewModel(
                 sourceLink = form.sourceLink,
                 client = client,
                 printSettings = form.printSettings.takeUnless { it.isEmpty },
+                shippingCost = parseDecimal(inputState.value.shippingCostText) ?: 0.0,
             )
         }
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
@@ -251,7 +258,8 @@ class QuoteViewModel(
             quantityText = if (quote.quantity > 1) quote.quantity.toString() else "",
             setupMinutesText = if (quote.setupMinutes > 0) formatImportedNumber(quote.setupMinutes) else "",
             selectedServiceIds = savedQuote.services.map { it.id }.toSet(),
-            appliesMarketplaceFee = quote.marketplaceFeeRate > 0.0,
+            salesChannelId = salesChannels.value.firstOrNull { it.name == quote.channelName }?.id,
+            shippingCostText = if (savedQuote.shippingCost > 0) formatImportedNumber(savedQuote.shippingCost) else "",
         )
     }
 
@@ -294,6 +302,7 @@ class QuoteViewModel(
         settings: PricingSettings,
         services: List<Service>,
         input: QuoteInputState,
+        channels: List<SalesChannel> = salesChannels.value,
     ): QuoteResult {
         val filament = filaments.find { it.id == input.filamentId } ?: filaments.firstOrNull()
         val printer = printers.find { it.id == input.printerId } ?: printers.firstOrNull()
@@ -302,9 +311,18 @@ class QuoteViewModel(
         val filamentColor = availableColors.find { it.id == input.filamentColorId } ?: availableColors.firstOrNull()
         val length = parseDecimal(input.lengthMetersText)
         val time = parseDecimal(input.printTimeMinutesText)
+        val channel = channels.find { it.id == input.salesChannelId }
+        val shippingCost = parseDecimal(input.shippingCostText) ?: 0.0
 
         if (filament == null || printer == null || length == null || time == null) {
-            return QuoteResult(filament = filament, filamentColor = filamentColor, printer = printer, selectedServices = selectedServices)
+            return QuoteResult(
+                filament = filament,
+                filamentColor = filamentColor,
+                printer = printer,
+                selectedServices = selectedServices,
+                salesChannel = channel,
+                shippingCost = shippingCost,
+            )
         }
 
         val job = PrintJob(
@@ -319,13 +337,23 @@ class QuoteViewModel(
                 job = job,
                 printer = printer,
                 settings = settings,
-                appliesMarketplaceFee = input.appliesMarketplaceFee,
+                channel = channel,
                 quantity = input.quantity,
                 setupMinutes = parseDecimal(input.setupMinutesText) ?: 0.0,
             )
         }.fold(
-            onSuccess = { QuoteResult(filament, filamentColor, printer, quote = it, selectedServices = selectedServices) },
-            onFailure = { QuoteResult(filament, filamentColor, printer, errorMessage = it.message, selectedServices = selectedServices) },
+            onSuccess = {
+                QuoteResult(
+                    filament, filamentColor, printer, quote = it, selectedServices = selectedServices,
+                    salesChannel = channel, shippingCost = shippingCost,
+                )
+            },
+            onFailure = {
+                QuoteResult(
+                    filament, filamentColor, printer, errorMessage = it.message, selectedServices = selectedServices,
+                    salesChannel = channel, shippingCost = shippingCost,
+                )
+            },
         )
     }
 

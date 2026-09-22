@@ -60,8 +60,15 @@ data class CostBreakdown(
  * @property salePrice valor de venda (= produção · (1 + margem), já ajustado
  *   pra compensar [marketplaceFeeRate] quando aplicável — é o preço de fato
  *   cobrado do cliente, o marketplace não aparece pra ele).
- * @property marketplaceFeeRate percentual do marketplace já embutido em
- *   [salePrice] para este orçamento (`0.0` se não vendido por marketplace).
+ * @property marketplaceFeeRate taxa do canal de venda escolhido (ver
+ *   [SalesChannel]) já embutida em [salePrice] (`0.0` na venda direta). O
+ *   nome do campo é o antigo de propósito: renomear faria orçamentos já
+ *   salvos perderem a taxa e passarem a exibir um lucro maior do que o real.
+ * @property channelName nome do canal usado, guardado à parte porque o
+ *   catálogo pode mudar depois (mesmo motivo de [printerName]). `null` em
+ *   venda direta e em orçamentos salvos antes deste campo existir.
+ * @property taxRate imposto sobre a venda já embutido em [salePrice]
+ *   (ver [PricingSettings.taxRate]).
  * @property printerId/[printerName] identificam a impressora usada no
  *   cálculo (nome guardado à parte porque o perfil pode ser editado/
  *   excluído do catálogo depois) — uso interno, principalmente pra
@@ -81,19 +88,25 @@ data class Quote(
     val printerName: String? = null,
     val quantity: Int = 1,
     val setupMinutes: Double = 0.0,
+    val channelName: String? = null,
+    val taxRate: Double = 0.0,
 ) {
     init {
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
         require(setupMinutes >= 0) { "setupMinutes não pode ser negativo: $setupMinutes" }
     }
 
+    /** Tudo que é descontado da venda antes de o dinheiro chegar em você. */
+    val totalDeductionRate: Double
+        get() = marketplaceFeeRate + taxRate
+
     /**
-     * Lucro líquido real do pedido: o que sobra depois do marketplace
-     * descontar sua parte de [salePrice] (quando [marketplaceFeeRate] > 0),
-     * menos a produção. Sem marketplace, é só venda − produção.
+     * Lucro líquido real do pedido: o que sobra depois de canal e imposto
+     * descontarem suas partes de [salePrice], menos a produção. Sem
+     * deduções, é só venda − produção.
      */
     val profit: Double
-        get() = salePrice * (1 - marketplaceFeeRate) - productionCost
+        get() = salePrice * (1 - totalDeductionRate) - productionCost
 
     /** Preço de uma unidade: [salePrice] dividido por [quantity]. */
     val unitSalePrice: Double

@@ -5,6 +5,31 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.26.0] - 2026-09-22
+
+### Adicionado
+- **Canais de venda.** No lugar de uma taxa única de marketplace, agora você
+  cadastra os canais que usa (Shopee, Mercado Livre, cartão, Pix) em
+  Configurações, cada um com a sua taxa, e escolhe o canal em cada
+  orçamento. O preço sobe o suficiente pra sua margem não mudar, e o lucro
+  mostrado já é o que sobra depois do desconto. Quem já tinha uma taxa de
+  marketplace configurada ganha um canal "Marketplace" com a mesma taxa na
+  primeira vez que abrir o app, sem precisar refazer nada.
+  Marketplace e forma de pagamento entram juntos de propósito: somar a taxa
+  da Shopee com a do cartão cobraria em dobro, porque o marketplace já
+  embute o processamento do pagamento.
+- **Imposto sobre a venda.** Percentual que sai do faturamento, como o
+  Simples Nacional, descontado junto com a taxa do canal. Se você é MEI,
+  deixe zero: o DAS é valor fixo por mês, então o lugar dele é o custo fixo
+  mensal, que já existe.
+- **Frete.** Valor por orçamento, somado ao total como linha própria no PDF
+  e no copiar/colar, nunca embutido no preço da peça. Não multiplica pela
+  quantidade e não passa pela margem, porque frete é repasse e não produto
+  seu. O cliente vê separado o que é peça e o que é entrega.
+
+### Alterado
+- O Histórico passa a mostrar o canal de venda e o frete de cada pedido.
+
 ## [1.25.0] - 2026-09-22
 
 ### Adicionado

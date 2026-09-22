@@ -30,11 +30,13 @@ import kotlinx.serialization.Serializable
  *   custo fixo por completo.
  * @property administrativeCost custo fixo administrativo por orçamento (ex.: modelagem 3D), em R$.
  * @property profitMargin margem de lucro aplicada sobre o custo de produção.
- * @property marketplaceFeeRate percentual que um marketplace (ex.: Shopee) desconta da venda,
- *   quando o orçamento marcar que a peça será vendida por lá. Diferente de um serviço extra: não
- *   é somado ao total cobrado do cliente, é descontado do que o criador recebe — por isso o valor
- *   de venda aumenta o suficiente para que a margem de lucro real não mude (ver
- *   `pricing/PricingCalculator`).
+ * @property taxRate percentual de imposto sobre a venda (ex.: Simples Nacional), descontado do
+ *   que você recebe junto com a taxa do canal. **MEI não entra aqui:** o DAS é um valor fixo por
+ *   mês, então o lugar dele é [monthlyFixedCost], não este percentual.
+ * @property marketplaceFeeRate **legado.** Era a taxa única de marketplace, hoje substituída pelo
+ *   catálogo de canais de venda ([SalesChannel]), escolhido por orçamento. Mantido só pra
+ *   converter a configuração de quem já usava o app (a primeira execução cria um canal com esse
+ *   valor) e pra não perder o dado de orçamentos antigos; o cálculo não usa mais este campo.
  */
 @Serializable
 data class PricingSettings(
@@ -44,6 +46,7 @@ data class PricingSettings(
     val laborRatePerHour: Double = 0.0,
     val monthlyFixedCost: Double = 0.0,
     val productiveHoursPerMonth: Double = 0.0,
+    val taxRate: Double = 0.0,
     val administrativeCost: Double = 0.0,
     val profitMargin: Double,
     val marketplaceFeeRate: Double = 0.0,
@@ -55,6 +58,7 @@ data class PricingSettings(
         require(laborRatePerHour >= 0) { "laborRatePerHour não pode ser negativo" }
         require(monthlyFixedCost >= 0) { "monthlyFixedCost não pode ser negativo" }
         require(productiveHoursPerMonth >= 0) { "productiveHoursPerMonth não pode ser negativo" }
+        require(taxRate >= 0 && taxRate < 1) { "taxRate deve estar entre 0 (inclusive) e 1 (exclusive)" }
         require(administrativeCost >= 0) { "administrativeCost não pode ser negativo" }
         require(profitMargin >= 0) { "profitMargin não pode ser negativo" }
         require(marketplaceFeeRate >= 0 && marketplaceFeeRate < 1) {

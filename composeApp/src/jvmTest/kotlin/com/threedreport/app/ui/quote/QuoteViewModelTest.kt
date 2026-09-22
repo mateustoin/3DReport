@@ -3,6 +3,7 @@ package com.threedreport.app.ui.quote
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.core.model.Filament
@@ -10,6 +11,7 @@ import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -44,6 +46,7 @@ class QuoteViewModelTest {
             PrinterRepository(),
             SettingsRepository(),
             ServiceRepository(),
+            SalesChannelRepository(),
             QuoteHistoryRepository(),
         )
 
@@ -61,6 +64,7 @@ class QuoteViewModelTest {
             printerRepository,
             SettingsRepository(),
             ServiceRepository(),
+            SalesChannelRepository(),
             QuoteHistoryRepository(),
         )
 
@@ -98,6 +102,7 @@ class QuoteViewModelTest {
             printerRepository,
             SettingsRepository(),
             ServiceRepository(),
+            SalesChannelRepository(),
             QuoteHistoryRepository(),
         )
         val firstPrinter = printerRepository.printers.value.first()
@@ -125,6 +130,7 @@ class QuoteViewModelTest {
             PrinterRepository(),
             SettingsRepository(),
             serviceRepository,
+            SalesChannelRepository(),
             QuoteHistoryRepository(),
         )
 
@@ -145,6 +151,7 @@ class QuoteViewModelTest {
             PrinterRepository(),
             SettingsRepository(),
             serviceRepository,
+            SalesChannelRepository(),
             QuoteHistoryRepository(),
         )
         viewModel.toggleService("paint")
@@ -168,14 +175,15 @@ class QuoteViewModelTest {
     }
 
     @Test
-    fun marketplaceFeeOnlyAppliesWhenToggled() {
-        val settingsRepository = SettingsRepository()
-        settingsRepository.update(settingsRepository.settings.value.copy(marketplaceFeeRate = 0.15))
+    fun salesChannelFeeOnlyAppliesToTheQuoteThatSelectsIt() {
+        val channelRepository = SalesChannelRepository()
+        channelRepository.add(SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.15))
         val viewModel = QuoteViewModel(
             FilamentRepository(),
             PrinterRepository(),
-            settingsRepository,
+            SettingsRepository(),
             ServiceRepository(),
+            channelRepository,
             QuoteHistoryRepository(),
         )
         viewModel.setLengthMeters("12")
@@ -187,18 +195,21 @@ class QuoteViewModelTest {
             viewModel.settings.value,
             viewModel.services.value,
             viewModel.input.value,
+            viewModel.salesChannels.value,
         ).quote!!
 
-        val withoutFee = currentQuote()
-        assertEquals(0.0, withoutFee.marketplaceFeeRate)
+        // Venda direta é o padrão: cadastrar um canal não cobra taxa de ninguém sozinho.
+        val direct = currentQuote()
+        assertEquals(0.0, direct.marketplaceFeeRate)
 
-        viewModel.setAppliesMarketplaceFee(true)
-        val withFee = currentQuote()
+        viewModel.selectSalesChannel("shopee")
+        val viaShopee = currentQuote()
 
-        assertEquals(0.15, withFee.marketplaceFeeRate)
-        assertTrue(withFee.salePrice > withoutFee.salePrice)
-        // Margem real (lucro) não deve mudar mesmo com o preço de tabela maior.
-        assertEquals(withoutFee.profit, withFee.profit, 1e-9)
+        assertEquals(0.15, viaShopee.marketplaceFeeRate)
+        assertEquals("Shopee", viaShopee.channelName)
+        assertTrue(viaShopee.salePrice > direct.salePrice)
+        // Margem real (lucro) não muda mesmo com o preço de tabela maior.
+        assertEquals(direct.profit, viaShopee.profit, 1e-9)
     }
 
     @Test
@@ -212,7 +223,7 @@ class QuoteViewModelTest {
             colors = listOf(FilamentColor(id = "red", name = "Vermelho"), FilamentColor(id = "blue", name = "Azul")),
         )
         filamentRepository.add(filament)
-        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
         viewModel.selectFilament("multi-color")
 
         val result = viewModel.calculate(viewModel.filaments.value, viewModel.printers.value, viewModel.settings.value, viewModel.services.value, viewModel.input.value)
@@ -231,7 +242,7 @@ class QuoteViewModelTest {
             colors = listOf(FilamentColor(id = "red", name = "Vermelho"), FilamentColor(id = "blue", name = "Azul")),
         )
         filamentRepository.add(filament)
-        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
         viewModel.selectFilament("multi-color")
         viewModel.selectFilamentColor("blue")
         viewModel.setLengthMeters("12")
@@ -257,7 +268,7 @@ class QuoteViewModelTest {
             ),
         )
         filamentRepository.add(filament)
-        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
         viewModel.selectFilament("multi-color")
 
         val result = viewModel.calculate(viewModel.filaments.value, viewModel.printers.value, viewModel.settings.value, viewModel.services.value, viewModel.input.value)
@@ -272,7 +283,7 @@ class QuoteViewModelTest {
         val second = Filament(id = "f2", name = "ABS", pricePerKg = 90.0, densityGPerCm3 = 1.04, colors = listOf(FilamentColor(id = "blue")))
         filamentRepository.add(first)
         filamentRepository.add(second)
-        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
         viewModel.selectFilament("f1")
         viewModel.selectFilamentColor("red")
 
@@ -284,7 +295,7 @@ class QuoteViewModelTest {
     @Test
     fun saveCurrentQuoteSavesWhenThereIsAValidQuote() {
         val historyRepository = QuoteHistoryRepository()
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
 
@@ -296,7 +307,7 @@ class QuoteViewModelTest {
     @Test
     fun saveCurrentQuoteDoesNothingWithoutAValidQuote() {
         val historyRepository = QuoteHistoryRepository()
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
         // comprimento/tempo em branco: sem orçamento calculado
 
         viewModel.saveCurrentQuote()
@@ -307,7 +318,7 @@ class QuoteViewModelTest {
     @Test
     fun loadForEditingRepopulatesFormAndUpdatesInsteadOfDuplicating() {
         val historyRepository = QuoteHistoryRepository()
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
         viewModel.setSaveName("Peça original")
@@ -335,7 +346,7 @@ class QuoteViewModelTest {
     @Test
     fun duplicateForNewQuoteCreatesANewEntryInsteadOfUpdatingTheOriginal() {
         val historyRepository = QuoteHistoryRepository()
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
         viewModel.setSaveName("Peça original")
@@ -362,7 +373,7 @@ class QuoteViewModelTest {
     @Test
     fun setPrintSettingsIsPersistedOnSaveAndRestoredOnEdit() {
         val historyRepository = QuoteHistoryRepository()
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
         val settings = PrintSettings(layerHeightMm = 0.2, infillPercentage = 15.0, infillPattern = "gyroid", supportsEnabled = true)
@@ -382,7 +393,7 @@ class QuoteViewModelTest {
     @Test
     fun emptyPrintSettingsAreSavedAsNull() {
         val historyRepository = QuoteHistoryRepository()
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
 
@@ -393,7 +404,7 @@ class QuoteViewModelTest {
 
     @Test
     fun resetFormClearsInputAndSaveForm() {
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), QuoteHistoryRepository())
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
         viewModel.setSaveName("Peça de teste")

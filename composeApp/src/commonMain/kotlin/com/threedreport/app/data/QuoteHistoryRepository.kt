@@ -42,6 +42,7 @@ expect class QuoteHistoryRepository() {
         sourceLink: String?,
         client: Client? = null,
         printSettings: PrintSettings? = null,
+        shippingCost: Double = 0.0,
     ): SavedQuote
 
     fun delete(id: String)
@@ -66,6 +67,7 @@ expect class QuoteHistoryRepository() {
         sourceLink: String?,
         client: Client?,
         printSettings: PrintSettings? = null,
+        shippingCost: Double = 0.0,
     ): SavedQuote?
 
     /** Atualiza o andamento do pedido [id] pra [status]. Não faz nada se [id] não existir. */

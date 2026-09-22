@@ -16,7 +16,7 @@ data class SettingsUiState(
     val productiveHoursPerMonthText: String = "",
     val administrativeCostText: String = "",
     val profitMarginPercentText: String = "",
-    val marketplaceFeeRatePercentText: String = "",
+    val taxRatePercentText: String = "",
     val errorMessage: String? = null,
     val savedConfirmation: Boolean = false,
 )

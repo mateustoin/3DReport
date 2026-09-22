@@ -14,7 +14,10 @@ data class QuoteInputState(
     /** Minutos de preparo cobrados uma vez pelo pedido inteiro (ver `Quote.setupMinutes`). */
     val setupMinutesText: String = "",
     val selectedServiceIds: Set<String> = emptySet(),
-    val appliesMarketplaceFee: Boolean = false,
+    /** Canal de venda escolhido, ou `null` na venda direta (sem taxa). */
+    val salesChannelId: String? = null,
+    /** Frete cobrado do cliente neste pedido (ver `SavedQuote.shippingCost`). */
+    val shippingCostText: String = "",
     /** Mensagem sobre a última tentativa de importar dados de um G-code, exibida abaixo do botão. */
     val gcodeImportMessage: String? = null,
 ) {

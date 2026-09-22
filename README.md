@@ -55,7 +55,8 @@ com a margem de lucro desejada.
 - Quantidade por orçamento, com preço unitário e preparo do pedido cobrado uma vez só (lote sai mais barato por peça)
 - Salvar orçamento (nome, foto e link do modelo opcionais)
 - Serviços opcionais no orçamento (pintura, lixamento, embalagem/spray etc.)
-- Taxa de marketplace (ex.: Shopee) — ajusta o valor de venda automaticamente
+- Canais de venda com taxa própria (Shopee, Mercado Livre, cartão, Pix), escolhidos por orçamento
+- Imposto sobre a venda e frete como linha própria, sem embutir no preço da peça
 - Link do modelo clicável (abre no navegador) e peso da peça (uso interno)
 
 **Histórico & Dashboard**

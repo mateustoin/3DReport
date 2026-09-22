@@ -110,6 +110,34 @@ class QuoteExportTextTest {
     }
 
     @Test
+    fun includesShippingAndTotalEvenWithNoServices() {
+        val withShipping = savedQuote.copy(shippingCost = 12.0)
+
+        val text = withShipping.toCopyPasteText()
+
+        assertEquals("Suporte de celular\nVenda: R$ 16,19\nFrete: R$ 12,00\nTotal: R$ 28,19", text)
+        assertEquals(withShipping.totalWithServices, 16.19 + 12.0, 0.001)
+    }
+
+    @Test
+    fun includesShippingAfterServicesAndBeforeTotalWhenQuantityIsGreaterThanOne() {
+        val withShippingAndServices = savedQuote.copy(
+            quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
+            services = listOf(Service(id = "paint", name = "Pintura", price = 15.0)),
+            shippingCost = 25.0,
+        )
+
+        val text = withShippingAndServices.toCopyPasteText()
+
+        assertEquals(
+            "Suporte de celular\nVenda: R$ 60,20\nPintura (× 10): R$ 150,00\nFrete: R$ 25,00\nTotal: R$ 235,20\n" +
+                "10 peças · R$ 23,52 cada",
+            text,
+        )
+        assertEquals(withShippingAndServices.totalWithServices, 60.20 + 150.0 + 25.0, 0.001)
+    }
+
+    @Test
     fun quantityOneKeepsTheOutputExactlyAsBeforeQuantityExisted() {
         val quantityOne = savedQuote.copy(
             services = listOf(Service(id = "paint", name = "Pintura", price = 20.0)),

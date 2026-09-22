@@ -51,10 +51,10 @@ actual fun renderSavedQuotesPdf(
 }
 
 /**
- * Desenha nome, valor de venda (+ serviços/total, se houver), o preço por
- * unidade quando a quantidade é maior que 1, foto (se houver) e marca
- * d'água/rodapé (se configurados) numa única página. Com quantidade 1 (o
- * padrão), a saída é idêntica à de antes desse campo existir.
+ * Desenha nome, valor de venda (+ serviços/frete/total, se houver), o preço
+ * por unidade quando a quantidade é maior que 1, foto (se houver) e marca
+ * d'água/rodapé (se configurados) numa única página. Com quantidade 1 e sem
+ * frete (os padrões), a saída é idêntica à de antes desses campos existirem.
  */
 private fun drawQuotePage(
     document: PDDocument,
@@ -88,17 +88,28 @@ private fun drawQuotePage(
         content.endText()
         cursorY -= 24f
 
-        if (savedQuote.services.isNotEmpty()) {
-            savedQuote.services.forEach { service ->
-                content.beginText()
-                content.setFont(bodyFont, 12f)
-                content.newLineAtOffset(margin, cursorY)
-                val label = if (quantity > 1) "${service.name} (× $quantity)" else service.name
-                content.showText("$label: ${(service.price * quantity).toCurrencyText(currency)}")
-                content.endText()
-                cursorY -= 18f
-            }
+        savedQuote.services.forEach { service ->
+            content.beginText()
+            content.setFont(bodyFont, 12f)
+            content.newLineAtOffset(margin, cursorY)
+            val label = if (quantity > 1) "${service.name} (× $quantity)" else service.name
+            content.showText("$label: ${(service.price * quantity).toCurrencyText(currency)}")
+            content.endText()
+            cursorY -= 18f
+        }
 
+        if (savedQuote.shippingCost > 0) {
+            content.beginText()
+            content.setFont(bodyFont, 12f)
+            content.newLineAtOffset(margin, cursorY)
+            content.showText("Frete: ${savedQuote.shippingCost.toCurrencyText(currency)}")
+            content.endText()
+            cursorY -= 18f
+        }
+
+        // O "Total" precisa aparecer mesmo com frete e sem nenhum serviço, senão o cliente vê
+        // "Venda" e "Frete" soltos, sem a soma.
+        if (savedQuote.services.isNotEmpty() || savedQuote.shippingCost > 0) {
             content.beginText()
             content.setFont(titleFont, 14f)
             content.newLineAtOffset(margin, cursorY)
