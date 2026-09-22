@@ -5,6 +5,25 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.23.0] - 2026-09-22
+
+### Adicionado
+- Backup e restauração dos seus dados, em Configurações. "Fazer backup"
+  junta tudo que o app guarda (orçamentos, clientes, catálogos,
+  configurações, fotos e arquivos STL) num único arquivo `.zip`, pra você
+  guardar em outro lugar, levar pro notebook ou recuperar depois de
+  formatar o computador. "Restaurar backup" traz tudo de volta a partir
+  desse arquivo, pedindo confirmação antes e guardando automaticamente uma
+  cópia dos dados que existiam, caso você restaure o arquivo errado. O app
+  se fecha ao final de uma restauração, pra reabrir já com os dados
+  restaurados.
+
+### Alterado
+- A linha de cada orçamento no Histórico ficou mais limpa: "Exportar PDF",
+  "Copiar" e "Editar" continuam à vista, e as demais ações (Duplicar,
+  Configurações de impressão, Baixar foto, Baixar STL e Excluir) passaram
+  para um menu "⋮ Ações", como já acontecia nos cards do Kanban.
+
 ## [1.22.0] - 2026-09-22
 
 ### Adicionado

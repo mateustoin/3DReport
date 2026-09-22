@@ -34,6 +34,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
@@ -58,6 +59,7 @@ import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListScreen
 import com.threedreport.app.ui.services.ServiceListViewModel
+import com.threedreport.app.ui.settings.BackupViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.CurrencyViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
@@ -91,6 +93,7 @@ fun App() {
     val templateRepository = remember { TemplateRepository() }
     val themeRepository = remember { ThemeRepository() }
     val currencyRepository = remember { CurrencyRepository() }
+    val backupRepository = remember { BackupRepository() }
 
     val quoteViewModel = remember {
         QuoteViewModel(filamentRepository, printerRepository, settingsRepository, serviceRepository, historyRepository)
@@ -105,6 +108,7 @@ fun App() {
     val templateListViewModel = remember { TemplateListViewModel(templateRepository, brandingRepository) }
     val themeViewModel = remember { ThemeViewModel(themeRepository) }
     val currencyViewModel = remember { CurrencyViewModel(currencyRepository) }
+    val backupViewModel = remember { BackupViewModel(backupRepository) }
 
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var showHelp by remember { mutableStateOf(false) }
@@ -186,6 +190,7 @@ fun App() {
                                 templateListViewModel,
                                 themeViewModel,
                                 currencyViewModel,
+                                backupViewModel,
                             )
                         }
                     }

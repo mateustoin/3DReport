@@ -267,6 +267,7 @@ private fun SavedQuoteRow(
     onUpdatePrintSettings: (PrintSettings?) -> Unit,
 ) {
     var showPrintSettingsDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -327,17 +328,26 @@ private fun SavedQuoteRow(
                     TextButton(onClick = onExportPdf) { Text("Exportar PDF") }
                     TextButton(onClick = onCopy) { Text(if (justCopied) "Copiado!" else "Copiar") }
                     TextButton(onClick = onEdit) { Text("Editar") }
-                    TextButton(onClick = onDuplicate) { Text("Duplicar") }
-                    TextButton(onClick = { showPrintSettingsDialog = true }) {
-                        Text(if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão")
+                    Box {
+                        TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                            DropdownMenuItem(
+                                text = { Text(if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão") },
+                                onClick = { showMenu = false; showPrintSettingsDialog = true },
+                            )
+                            if (photoBytes != null) {
+                                DropdownMenuItem(text = { Text("Baixar foto") }, onClick = { showMenu = false; onDownloadPhoto() })
+                            }
+                            if (savedQuote.stlFileName != null) {
+                                DropdownMenuItem(text = { Text("Baixar STL") }, onClick = { showMenu = false; onDownloadStl() })
+                            }
+                            DropdownMenuItem(
+                                text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
+                                onClick = { showMenu = false; onDelete() },
+                            )
+                        }
                     }
-                    if (photoBytes != null) {
-                        TextButton(onClick = onDownloadPhoto) { Text("Baixar foto") }
-                    }
-                    if (savedQuote.stlFileName != null) {
-                        TextButton(onClick = onDownloadStl) { Text("Baixar STL") }
-                    }
-                    TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
                 }
             }
         }

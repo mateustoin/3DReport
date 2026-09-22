@@ -51,25 +51,34 @@ verdade.
 
 ### Leva 0 — Rede de proteção (antes de mexer no modelo de dados)
 
-- [ ] **Backup e restauração dos dados locais.** Hoje o negócio inteiro do
-  vendedor (histórico, clientes, catálogos, fotos, STLs) vive só em
-  `~/.3dreport/`. Formatar o computador, trocar de máquina ou corromper um
-  arquivo significa perder tudo, sem nenhum caminho de recuperação dentro do
-  app — é o maior risco silencioso do produto hoje. **Vem primeiro de
-  propósito:** as levas 1 a 3 mudam o formato dos dados salvos, e não se
-  mexe no arquivo do negócio de alguém sem oferecer um botão de backup
-  antes.
+- [x] **Backup e restauração dos dados locais** (decisão 75, 2026-09-22).
+  Hoje o negócio inteiro do vendedor (histórico, clientes, catálogos, fotos,
+  STLs) vive só em `~/.3dreport/`. Formatar o computador, trocar de máquina
+  ou corromper um arquivo significa perder tudo, sem nenhum caminho de
+  recuperação dentro do app — é o maior risco silencioso do produto hoje.
+  **Vem primeiro de propósito:** as levas 1 a 3 mudam o formato dos dados
+  salvos, e não se mexe no arquivo do negócio de alguém sem oferecer um
+  botão de backup antes.
   - Escopo sugerido: Configurações ganha "Fazer backup" (gera um `.zip` com
     todos os JSONs + `photos/` + `models/`, nome com data) e "Restaurar
     backup" (substitui tudo, com `ConfirmDialog` explícito, mesmo padrão já
     usado nas exclusões). Resolve de uma vez os três casos: perda de dados,
     troca de computador e "quero levar meu histórico pro notebook".
-- [ ] **Menu "⋮" na linha do Histórico.** A lista já chegou a 8 botões de
-  texto lado a lado (Exportar PDF, Copiar, Editar, Duplicar, Configurações
-  de impressão, Baixar foto, Baixar STL, Excluir) e as levas seguintes ainda
-  somam mais (WhatsApp, imagem, comparar impressoras). O card do Kanban já
-  resolveu isso com um menu "⋮" — a lista deve seguir o mesmo padrão: 2 ou 3
-  ações principais visíveis, o resto no menu. Item pequeno, entra junto do
+  - **Feito:** `data/BackupRepository` (expect/actual),
+    `platform/pickBackupFile`, `platform/exitApp` e a seção "Backup" em
+    Configurações. A restauração é transacional (extrai numa pasta
+    temporária e só troca no fim), guarda os
+    dados substituídos numa pasta `.3dreport-anterior-<data>` em vez de
+    apagá-los, recusa `.zip` que não seja backup do app ou que tente gravar
+    fora da pasta de dados, e fecha o app ao final (ver decisão 75 pro
+    porquê).
+- [x] **Menu "⋮" na linha do Histórico** (decisão 75, 2026-09-22). A lista
+  já chegou a 8 botões de texto lado a lado (Exportar PDF, Copiar, Editar,
+  Duplicar, Configurações de impressão, Baixar foto, Baixar STL, Excluir) e
+  as levas seguintes ainda somam mais (WhatsApp, imagem, comparar
+  impressoras). O card do Kanban já resolveu isso com um menu "⋮" — a lista
+  deve seguir o mesmo padrão: 2 ou 3 ações principais visíveis, o resto no
+  menu. Item pequeno, entra junto do
   backup por ser arrumação de casa antes da obra.
 
 ### Leva 1 — O custo real do trabalho (maior impacto no bolso)

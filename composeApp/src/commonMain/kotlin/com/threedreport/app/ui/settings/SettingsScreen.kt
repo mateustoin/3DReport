@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -32,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.templates.TemplateListDialog
@@ -54,6 +56,7 @@ fun SettingsScreen(
     templateListViewModel: TemplateListViewModel,
     themeViewModel: ThemeViewModel,
     currencyViewModel: CurrencyViewModel,
+    backupViewModel: BackupViewModel,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -150,10 +153,64 @@ fun SettingsScreen(
         if (branding.templateSavedConfirmation) {
             Text("Template salvo.", color = MaterialTheme.colorScheme.primary)
         }
+
+        HorizontalDivider()
+
+        BackupSection(backupViewModel)
     }
 
     if (showTemplatesDialog) {
         TemplateListDialog(templateListViewModel, onDismiss = { showTemplatesDialog = false })
+    }
+}
+
+@Composable
+private fun BackupSection(viewModel: BackupViewModel) {
+    val state by viewModel.uiState.collectAsState()
+
+    Text("Backup", style = MaterialTheme.typography.titleMedium)
+    Text(
+        "Seus orçamentos, clientes, catálogos, fotos e arquivos STL ficam só neste computador. " +
+            "O backup junta tudo isso num arquivo .zip, pra você guardar em outro lugar ou levar " +
+            "pra outra máquina.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = viewModel::createBackup) { Text("Fazer backup") }
+        TextButton(onClick = viewModel::pickBackupToRestore) { Text("Restaurar backup") }
+    }
+    state.message?.let { message ->
+        Text(
+            message,
+            color = if (state.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+        )
+    }
+
+    state.fileNameToRestore?.let { fileName ->
+        ConfirmDialog(
+            title = "Restaurar este backup?",
+            message = "Todos os dados atuais do app (orçamentos, clientes, catálogos, configurações, " +
+                "fotos e STLs) serão substituídos pelo conteúdo de \"$fileName\". Uma cópia dos dados " +
+                "atuais é guardada automaticamente, e o app será fechado ao final pra carregar os " +
+                "dados restaurados.",
+            confirmLabel = "Restaurar",
+            onConfirm = viewModel::confirmRestore,
+            onDismiss = viewModel::cancelRestore,
+        )
+    }
+
+    state.restoredFromPreviousDataAt?.let { previousDataPath ->
+        AlertDialog(
+            onDismissRequest = viewModel::closeApp,
+            title = { Text("Backup restaurado") },
+            text = {
+                Text(
+                    "O app precisa ser fechado agora pra carregar os dados restaurados. " +
+                        "Os dados que existiam antes foram guardados em:\n\n$previousDataPath",
+                )
+            },
+            confirmButton = { TextButton(onClick = viewModel::closeApp) { Text("Fechar o app") } },
+        )
     }
 }
 
