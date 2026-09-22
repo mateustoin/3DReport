@@ -8,11 +8,14 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
@@ -61,7 +65,11 @@ import kotlin.math.roundToInt
  * tamanho medido, não de `boundsInWindow()` — esse último é recortado pela área visível de todos
  * os ancestrais (inclusive o scroll vertical da tela de Histórico), então uma coluna parcialmente
  * fora da área visível reportava um retângulo bem menor que sua altura real (só o título "cabia"),
- * e soltar o card mais abaixo na coluna não contava como estar "dentro" dela.
+ * e soltar o card mais abaixo na coluna não contava como estar "dentro" dela. Além disso, cada
+ * coluna esticada pra altura da mais alta (`Row(Modifier.height(IntrinsicSize.Max))` +
+ * `fillMaxHeight()` em cada [KanbanColumn]) — sem isso, uma coluna com poucos cards media só a
+ * altura do próprio conteúdo, então soltar num espaço "vazio" da coluna (abaixo do último card, ou
+ * numa coluna sem nenhum item) caía fora do retângulo conhecido.
  */
 @Composable
 fun KanbanBoard(
@@ -82,8 +90,11 @@ fun KanbanBoard(
     var hoveredStatus by remember { mutableStateOf<OrderStatus?>(null) }
     var draggedFromStatus by remember { mutableStateOf<OrderStatus?>(null) }
 
+    // IntrinsicSize.Max faz o Row medir a altura da coluna mais alta e esticar as outras até lá
+    // (fillMaxHeight em cada KanbanColumn) — sem isso, uma coluna com poucos cards tinha uma área
+    // de soltar bem menor que as vizinhas mais cheias, mesmo ocupando a mesma largura na tela.
     Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max).horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         OrderStatus.entries.forEach { status ->
@@ -125,6 +136,7 @@ private fun KanbanColumn(
     Column(
         modifier = Modifier
             .width(260.dp)
+            .fillMaxHeight()
             .background(
                 if (isDropTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
                 RoundedCornerShape(8.dp),
@@ -226,29 +238,31 @@ private fun KanbanCard(
             },
         elevation = CardDefaults.cardElevation(defaultElevation = if (isDragging) 8.dp else 1.dp),
     ) {
-        Column {
-            if (photoBytes != null) {
-                Image(
-                    bitmap = decodeImageBitmap(photoBytes),
-                    contentDescription = savedQuote.name,
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(savedQuote.name, style = MaterialTheme.typography.titleSmall)
-                savedQuote.client?.let { client ->
-                    Text(client.name, style = MaterialTheme.typography.bodySmall)
+        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (photoBytes != null) {
+                    Image(
+                        bitmap = decodeImageBitmap(photoBytes),
+                        contentDescription = savedQuote.name,
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(6.dp)),
+                        contentScale = ContentScale.Crop,
+                    )
                 }
-                Text(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
-
-                Box {
-                    TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
-                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(text = { Text("Editar") }, onClick = { showMenu = false; onEdit() })
-                        DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
-                        DropdownMenuItem(text = { Text("Excluir") }, onClick = { showMenu = false; onDelete() })
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(savedQuote.name, style = MaterialTheme.typography.titleSmall)
+                    savedQuote.client?.let { client ->
+                        Text(client.name, style = MaterialTheme.typography.bodySmall)
                     }
+                    Text(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Box {
+                TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    DropdownMenuItem(text = { Text("Editar") }, onClick = { showMenu = false; onEdit() })
+                    DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                    DropdownMenuItem(text = { Text("Excluir") }, onClick = { showMenu = false; onDelete() })
                 }
             }
         }

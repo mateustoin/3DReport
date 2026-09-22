@@ -53,6 +53,7 @@ import com.threedreport.app.ui.history.QuoteHistoryScreen
 import com.threedreport.app.ui.history.QuoteHistoryViewModel
 import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
+import com.threedreport.app.ui.quote.EditQuoteDialog
 import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListScreen
@@ -146,6 +147,7 @@ fun App() {
                             if (filamentListViewModel.form.value != null) { filamentListViewModel.cancelEdit(); handled = true }
                             if (printerListViewModel.form.value != null) { printerListViewModel.cancelEdit(); handled = true }
                             if (serviceListViewModel.form.value != null) { serviceListViewModel.cancelEdit(); handled = true }
+                            if (quoteViewModel.saveForm.value.editingQuoteId != null) { quoteViewModel.resetForm(); handled = true }
                             handled
                         }
                         else -> false
@@ -168,10 +170,7 @@ fun App() {
                             AppTab.QUOTE -> QuoteScreen(quoteViewModel)
                             AppTab.HISTORY -> QuoteHistoryScreen(
                                 historyViewModel,
-                                onEditQuote = { savedQuote ->
-                                    quoteViewModel.loadForEditing(savedQuote)
-                                    selectedTab = AppTab.QUOTE
-                                },
+                                onEditQuote = { savedQuote -> quoteViewModel.loadForEditing(savedQuote) },
                                 onDuplicateQuote = { savedQuote ->
                                     quoteViewModel.duplicateForNewQuote(savedQuote)
                                     selectedTab = AppTab.QUOTE
@@ -197,6 +196,11 @@ fun App() {
 
             if (showHelp) {
                 HelpDialog(onDismiss = { showHelp = false })
+            }
+
+            val quoteSaveForm by quoteViewModel.saveForm.collectAsState()
+            if (quoteSaveForm.editingQuoteId != null) {
+                EditQuoteDialog(viewModel = quoteViewModel, onDismiss = quoteViewModel::resetForm)
             }
         }
     }

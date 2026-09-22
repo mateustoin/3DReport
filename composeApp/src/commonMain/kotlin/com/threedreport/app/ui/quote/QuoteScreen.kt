@@ -69,9 +69,14 @@ private fun Double.formatOneDecimal(): String {
     return if (decimal == 0L) "$whole" else "$whole,$decimal"
 }
 
-/** Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado calculado. */
+/**
+ * Tela de Orçamento: dados da peça (filamento, impressora, comprimento, tempo) e resultado
+ * calculado. [onEditingFinished] é chamado quando uma edição de orçamento salvo (iniciada fora
+ * daqui, ver [EditQuoteDialog]) termina — seja por cancelamento, seja por salvar com sucesso; não
+ * tem efeito num orçamento novo (não editando nada).
+ */
 @Composable
-fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
+fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEditingFinished: () -> Unit = {}) {
     val allFilaments by viewModel.filaments.collectAsState()
     val filaments = allFilaments.filter { it.hasStockAvailable }
     val printers by viewModel.printers.collectAsState()
@@ -202,13 +207,26 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier) {
             form = saveForm,
             viewModel = viewModel,
             canSave = quote != null,
-            onSave = { quote?.let { viewModel.saveQuote(it, result.selectedServices) } },
+            onSave = {
+                quote?.let {
+                    val wasEditing = saveForm.editingQuoteId != null
+                    viewModel.saveQuote(it, result.selectedServices)
+                    if (wasEditing) onEditingFinished()
+                }
+            },
+            onEditingFinished = onEditingFinished,
         )
     }
 }
 
 @Composable
-private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, canSave: Boolean, onSave: () -> Unit) {
+private fun SaveQuoteForm(
+    form: SaveQuoteFormState,
+    viewModel: QuoteViewModel,
+    canSave: Boolean,
+    onSave: () -> Unit,
+    onEditingFinished: () -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(if (form.editingQuoteId != null) "Editar orçamento salvo" else "Salvar orçamento", style = MaterialTheme.typography.titleMedium)
         if (form.editingQuoteId != null) {
@@ -217,7 +235,7 @@ private fun SaveQuoteForm(form: SaveQuoteFormState, viewModel: QuoteViewModel, c
                     "Editando um orçamento já salvo — a data de criação original é mantida.",
                     style = MaterialTheme.typography.bodySmall,
                 )
-                TextButton(onClick = viewModel::resetForm) { Text("Cancelar edição") }
+                TextButton(onClick = { viewModel.resetForm(); onEditingFinished() }) { Text("Cancelar edição") }
             }
         }
         form.duplicatedFromName?.let { originalName ->

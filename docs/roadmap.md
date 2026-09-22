@@ -759,6 +759,14 @@ funciona hoje.
   em DD/MM/AAAA HH:mm" ao lado dela no Histórico. `Quote` ganhou
   `printerId`/`printerName` (não existia antes — sem isso não dava pra
   restaurar a impressora usada ao editar).
+  Correção pós-teste (decisão 72, 2026-09-21): editar levava direto pra
+  aba Orçamento, e a única forma de desistir era rolar até o fim do
+  formulário achar "Cancelar edição" (ou acabar salvando sem querer) —
+  ruim pra quem só queria começar um orçamento novo. `EditQuoteDialog`
+  passa a abrir o mesmo formulário (reaproveita `QuoteScreen` inteiro)
+  num diálogo sobre o Histórico, com "Cancelar edição" sempre visível no
+  topo; Duplicar continua indo pra aba Orçamento (nada é sobrescrito ali,
+  então o risco que motivou essa mudança não se aplica).
 - [ ] **Onboarding na primeira execução.** Assistente curto guiando o
   cadastro da primeira impressora/filamento/margem, em vez de abrir numa
   tela vazia sem nenhum dado cadastrado. Baixa prioridade — fica pra
@@ -812,6 +820,16 @@ funciona hoje.
   recorte. Adicionado destaque visual na coluna sob o ponteiro durante o
   arrasto (indicando onde o card cairia) e miniatura da foto no topo do
   card, quando o orçamento tiver uma.
+  Mais correções pós-teste (decisão 72, 2026-09-21): soltar num espaço
+  vazio de uma coluna (abaixo do último card, ou em qualquer parte de uma
+  coluna sem itens) ainda não funcionava — cada coluna só media a altura
+  do próprio conteúdo, então o espaço "vazio" visual não fazia parte do
+  retângulo conhecido pra hit-test. Corrigido esticando todas as colunas
+  até a altura da mais alta (`Row(Modifier.height(IntrinsicSize.Max))` +
+  `fillMaxHeight()` por coluna). A miniatura de foto também deixou os
+  cards grandes demais — trocada de um banner no topo (largura total,
+  100dp de altura) pra uma miniatura pequena (48dp) ao lado do texto,
+  card bem mais compacto.
 - [ ] **Idioma da interface configurável** (levantado em 2026-09-19, pesquisa
   de concorrentes — apps internacionais atendem público global). Hoje a UI é
   fixa em português. Baixa prioridade dado o foco atual no mercado

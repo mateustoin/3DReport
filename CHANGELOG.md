@@ -5,6 +5,26 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.20.0] - 2026-09-21
+
+### Adicionado
+- Editar um orçamento salvo (Histórico → "Editar") agora abre um diálogo
+  com o formulário completo, sem sair da tela de Histórico e sem trocar
+  de aba — um botão "Cancelar edição" sempre visível no topo permite
+  desistir sem precisar salvar antes. Antes, editar levava pra aba
+  Orçamento e a única forma de desistir era rolar até o fim do
+  formulário achar o botão de cancelar (ou salvar mesmo sem querer).
+
+### Corrigido
+- Quadro Kanban: soltar um card num espaço "vazio" de uma coluna (abaixo
+  do último card, ou em qualquer parte de uma coluna sem nenhum item)
+  agora também muda o status — antes só funcionava exatamente em cima de
+  um card existente ou do título, porque cada coluna só tinha a altura
+  do próprio conteúdo. Colunas agora esticam até a altura da mais alta.
+- Cards do Kanban ficaram grandes demais depois da miniatura de foto
+  (v1.19.1) — foto e texto agora ficam lado a lado, card bem mais
+  compacto, mantendo a foto.
+
 ## [1.19.1] - 2026-09-21
 
 ### Corrigido
