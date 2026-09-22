@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>3DReport: orçamento e venda de impressão 3D grátis</title>
-  <meta name="description" content="App gratuito e open source para quem vende impressão 3D: calcule o orçamento e o preço de venda de cada peça a partir do custo real (filamento, energia, manutenção) e da margem de lucro, com histórico de vendas, PDF e catálogo.">
+  <meta name="description" content="App gratuito e open source para quem vende impressão 3D: calcule o orçamento e o preço de venda de cada peça a partir do custo real (filamento, energia, manutenção, seu tempo de trabalho) e da margem de lucro, com histórico de vendas, PDF e catálogo.">
   <meta name="keywords" content="orçamento impressão 3D, venda de impressão 3D, calculadora preço impressão 3D, vender impressão 3D, quanto cobrar impressão 3D">
   <link rel="canonical" href="https://mateustoin.github.io/3DReport/">
   <meta name="robots" content="index, follow">
@@ -68,7 +68,15 @@
         "name": "Como o 3DReport calcula o preço de uma impressão 3D?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "A partir do filamento usado (preço por kg, densidade), do perfil da impressora (consumo de energia, manutenção, retorno de investimento) e dos parâmetros do seu negócio (energia, taxa de falhas, acabamento, margem de lucro), o app calcula o valor de produção e sugere o valor de venda com a margem desejada."
+          "text": "A partir do filamento usado (preço por kg, densidade), do perfil da impressora (consumo de energia, manutenção, retorno de investimento) e dos parâmetros do seu negócio (energia, custo fixo mensal, valor da sua hora de trabalho, reserva para falhas e margem de lucro), o app calcula o valor de produção e sugere o valor de venda com a margem desejada."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "O app cobra o meu tempo de trabalho?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquela peça deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Enquanto você não informar o valor da sua hora, nada muda e o app continua cobrando acabamento como percentual do material, como antes."
         }
       },
       {
@@ -192,7 +200,7 @@
         <div class="grid">
           <div class="card">
             <h3>Cálculo de custo e preço de venda</h3>
-            <p>Considera filamento, energia, manutenção, falhas, acabamento, retorno do investimento da impressora e margem de lucro.</p>
+            <p>Considera filamento, energia, manutenção, retorno do investimento da impressora, custo fixo do negócio, o seu tempo de trabalho, reserva para falhas e margem de lucro.</p>
           </div>
           <div class="card">
             <h3>Várias impressoras e filamentos</h3>
@@ -266,11 +274,13 @@
           <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>.
         </p>
         <div class="formula-box">
-VALOR DE PRODUÇÃO = material + energia + manutenção + falhas
-                     + acabamento + retorno do investimento + administrativo
+CUSTO REFEITO     = material + energia + manutenção
+                    + retorno do investimento + custo fixo + seu trabalho
 
-VALOR DE VENDA     = produção × (1 + margem de lucro)
-LUCRO              = venda − produção
+VALOR DE PRODUÇÃO = custo refeito + reserva de falhas + administrativo
+
+VALOR DE VENDA    = produção × (1 + margem de lucro)
+LUCRO             = venda − produção
         </div>
       </div>
     </section>
@@ -308,7 +318,11 @@ LUCRO              = venda − produção
         </details>
         <details class="faq-item">
           <summary>Como o 3DReport calcula o preço de uma impressão 3D?</summary>
-          <p>A partir do filamento usado, do perfil da impressora e dos parâmetros do seu negócio (energia, falhas, acabamento, margem), o app calcula o valor de produção e sugere o valor de venda. Veja a fórmula completa acima ou no manual.</p>
+          <p>A partir do filamento usado (preço por kg, densidade), do perfil da impressora (consumo de energia, manutenção, retorno de investimento) e dos parâmetros do seu negócio (energia, custo fixo mensal, valor da sua hora de trabalho, reserva para falhas e margem de lucro), o app calcula o valor de produção e sugere o valor de venda com a margem desejada.</p>
+        </details>
+        <details class="faq-item">
+          <summary>O app cobra o meu tempo de trabalho?</summary>
+          <p>Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquela peça deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Enquanto você não informar o valor da sua hora, nada muda e o app continua cobrando acabamento como percentual do material, como antes.</p>
         </details>
         <details class="faq-item">
           <summary>O 3DReport funciona em quais sistemas operacionais?</summary>

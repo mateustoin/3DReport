@@ -6,6 +6,15 @@ import kotlinx.serialization.Serializable
  * Detalhamento dos custos de produção de uma peça, em R$.
  *
  * Os valores não são arredondados; arredonde apenas na exibição.
+ *
+ * @property labor seu tempo de trabalho na peça (ver [PrintJob.laborMinutes]). `0.0` em orçamentos
+ *   salvos antes deste campo existir e para quem não configurou taxa de mão de obra.
+ * @property fixedCost parcela do custo fixo mensal do negócio que esta peça paga, proporcional às
+ *   horas de impressão (ver [PricingSettings.fixedCostPerHour]).
+ * @property finishing acabamento no modelo antigo (percentual sobre o material); fica `0.0` quando
+ *   há taxa de mão de obra configurada, porque aí o acabamento entra em [labor].
+ * @property failures reserva de falha, que incide sobre todos os outros custos menos
+ *   [administrative] (ver [PricingSettings.failureRate]).
  */
 @Serializable
 data class CostBreakdown(
@@ -16,10 +25,13 @@ data class CostBreakdown(
     val finishing: Double,
     val investmentReturn: Double,
     val administrative: Double,
+    val labor: Double = 0.0,
+    val fixedCost: Double = 0.0,
 ) {
     /** Soma de todos os custos: o valor de produção. */
     val total: Double
-        get() = material + energy + maintenance + failures + finishing + investmentReturn + administrative
+        get() = material + energy + maintenance + failures + finishing + investmentReturn +
+            administrative + labor + fixedCost
 }
 
 /**

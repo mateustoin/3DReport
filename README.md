@@ -74,7 +74,8 @@ com a margem de lucro desejada.
 - Templates — fotos salvas de marca d'água/rodapé, com indicador do template ativo
 
 **Configurações & plataforma**
-- Configurações gerais do negócio (energia, falhas, acabamento, margem)
+- Configurações gerais do negócio (energia, valor da sua hora de trabalho, custo fixo mensal, falhas, margem)
+- Backup e restauração dos seus dados num arquivo `.zip` (levar pro outro computador, recuperar depois de formatar)
 - Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
 - Tema claro/escuro (segue o sistema por padrão)
 - Atalhos de teclado (navegação entre abas, salvar/limpar orçamento)

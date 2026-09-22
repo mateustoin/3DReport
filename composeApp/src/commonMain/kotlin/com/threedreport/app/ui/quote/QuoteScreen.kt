@@ -146,6 +146,23 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
             label = { Text("Tempo de impressão (min)") },
         )
 
+        // Só aparece pra quem configurou quanto vale a própria hora: sem isso, o campo não teria
+        // efeito nenhum no preço e seria só mais uma caixa pra ignorar.
+        if (settings.chargesLaborByTime) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().tabToNavigate(),
+                value = input.laborMinutesText,
+                onValueChange = viewModel::setLaborMinutes,
+                label = { Text("Seu tempo de trabalho (min)") },
+            )
+            Text(
+                "Quanto esta peça dá de trabalho seu, fora o tempo de máquina: preparar o arquivo, " +
+                    "fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Cobrado a " +
+                    "${settings.laborRatePerHour.toCurrencyText(currency)}/h (ajustável em Configurações).",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
         if (services.isNotEmpty()) {
             Text("Serviços opcionais", style = MaterialTheme.typography.titleMedium)
             services.forEach { service ->

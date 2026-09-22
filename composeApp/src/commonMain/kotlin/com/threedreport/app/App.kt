@@ -244,13 +244,17 @@ private fun HelpDialog(onDismiss: () -> Unit) {
                     "Aplicativo gratuito e de código aberto para orçamentos de impressão 3D.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Text("• Orçamento: escolha filamento/impressora, informe comprimento e tempo, e calcule.")
+                Text(
+                    "• Orçamento: escolha filamento/impressora, informe comprimento e tempo, e calcule. " +
+                        "Com uma hora de trabalho configurada, informe também os minutos de trabalho da peça.",
+                )
                 Text("• Histórico: consulte, filtre, exporte em PDF ou copie orçamentos salvos (1 ou vários juntos).")
                 Text("• Dashboard: total vendido, lucro e filamento mais usado no período.")
                 Text("• Filamentos, Impressoras e Serviços: seus catálogos, usados na tela de Orçamento.")
                 Text(
-                    "• Configurações: aparência (tema), parâmetros de custo, marca d'água do PDF (com templates " +
-                        "salvos — fotos nomeadas pra voltar rápido a uma configuração) e taxa de marketplace.",
+                    "• Configurações: aparência (tema), parâmetros de custo (incluindo o valor da sua hora de " +
+                        "trabalho e o custo fixo mensal), marca d'água do PDF (com templates salvos — fotos " +
+                        "nomeadas pra voltar rápido a uma configuração), taxa de marketplace e backup dos dados.",
                 )
                 Text("Atalhos de teclado", style = MaterialTheme.typography.titleSmall)
                 Text("• Ctrl/Cmd+1 a 7: pula direto para cada aba, nessa ordem.")

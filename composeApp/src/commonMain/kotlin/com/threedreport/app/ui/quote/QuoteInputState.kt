@@ -7,6 +7,8 @@ data class QuoteInputState(
     val printerId: String? = null,
     val lengthMetersText: String = "",
     val printTimeMinutesText: String = "",
+    /** Minutos do seu trabalho nesta peça (ver `PrintJob.laborMinutes`); só afeta o preço se houver taxa horária configurada. */
+    val laborMinutesText: String = "",
     val selectedServiceIds: Set<String> = emptySet(),
     val appliesMarketplaceFee: Boolean = false,
     /** Mensagem sobre a última tentativa de importar dados de um G-code, exibida abaixo do botão. */

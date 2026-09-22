@@ -7,13 +7,16 @@ As fórmulas foram derivadas da planilha de precificação usada atualmente
 
 ## Entradas
 
-### Por peça (`PrintJob`) — vêm do fatiador
+### Por peça (`PrintJob`)
+
+Os três primeiros vêm do fatiador; o tempo de trabalho é você quem informa.
 
 | Parâmetro | Campo | Unidade |
 |---|---|---|
 | Filamento (nome, preço/kg, densidade, diâmetro) | `filament` | R$/kg, g/cm³, mm |
 | Comprimento de filamento | `filamentLengthMeters` | m |
 | Tempo de impressão | `printTimeMinutes` | min |
+| Seu tempo de trabalho na peça | `laborMinutes` | min |
 
 ### Perfil da impressora escolhida (`PrinterProfile`) — uma por orçamento
 
@@ -35,14 +38,24 @@ salvo (tela Impressoras) e o orçamento escolhe qual usar.
 |---|---|---|
 | Preço do kWh | `energyPricePerKwh` | R$ |
 | Taxa de falhas | `failureRate` | fração (0,10 = 10%) |
-| Taxa de acabamento | `finishingRate` | fração |
+| Taxa de acabamento (legado, ver abaixo) | `finishingRate` | fração |
+| Valor da sua hora de trabalho | `laborRatePerHour` | R$/h |
+| Custo fixo mensal do negócio | `monthlyFixedCost` | R$ por mês |
+| Horas de impressão por mês (todas as impressoras) | `productiveHoursPerMonth` | h |
 | Custo administrativo (ex.: modelagem) | `administrativeCost` | R$ por orçamento |
 | Margem de lucro | `profitMargin` | fração (1,0 = 100%) |
+
+Os três campos novos (`laborRatePerHour`, `monthlyFixedCost`,
+`productiveHoursPerMonth`) nascem zerados, e zero desliga a parcela
+correspondente. Quem atualiza o app e não mexe em nada continua com o
+mesmo preço de antes, exceto pela reserva de falha (ver "Duas regras que
+mudaram" abaixo).
 
 ## Cálculos
 
 ```
 horas              = tempo_min / 60
+horas_trabalho     = minutos_trabalho / 60
 área (mm²)         = π · (diâmetro / 2)²
 volume (cm³)       = comprimento_m · 1000 · área / 1000
 peso (g)           = volume · densidade
@@ -50,20 +63,56 @@ peso (g)           = volume · densidade
 material           = peso / 1000 · preço_kg
 energia            = horas · (W / 1000) · preço_kWh
 manutenção         = horas · manutenção_por_hora
-falhas             = material · taxa_falhas
-acabamento         = material · taxa_acabamento
 valor_hora_máquina = valor_máquina / (meses · dias_mês · horas_dia)
 retorno_invest.    = horas · valor_hora_máquina
+custo_fixo_hora    = custo_fixo_mensal / horas_produtivas_mês   (0 se horas = 0)
+custo_fixo         = horas · custo_fixo_hora
+mão_de_obra        = horas_trabalho · valor_hora_trabalho
+acabamento         = material · taxa_acabamento   (0 se há valor_hora_trabalho)
 administrativo     = custo_administrativo
 
-VALOR DE PRODUÇÃO  = material + energia + manutenção + falhas
-                     + acabamento + retorno_invest. + administrativo
+CUSTO REFEITO      = material + energia + manutenção + retorno_invest.
+                     + custo_fixo + mão_de_obra + acabamento
+falhas             = CUSTO REFEITO · taxa_falhas
+
+VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
 VALOR DE VENDA     = produção · (1 + margem_lucro)
 LUCRO              = venda − produção
 ```
 
 Os valores são mantidos em `Double` sem arredondamento; o arredondamento para
 centavos acontece apenas na exibição.
+
+## Duas regras que mudaram (2026-09-22, decisão 76)
+
+**1. A reserva de falha incide sobre tudo que é refeito, não só sobre o
+material.** Antes, `falhas = material · taxa`. Só que uma impressão de 8 h que
+falha no fim não desperdiça apenas plástico: desperdiça energia, desgaste da
+máquina, hora de máquina, custo fixo e o seu tempo. Reservar um percentual só
+do material subestimava a perda real em várias vezes. Agora a taxa incide
+sobre o "custo refeito" — tudo que você paga de novo pra refazer a peça. O
+**custo administrativo fica de fora** porque é a única parcela que não se
+refaz: uma modelagem já entregue continua pronta, a impressão falhando ou não.
+
+**2. Acabamento agora é trabalho, não percentual de material.** Antes,
+`acabamento = material · taxa`. Isso cobrava errado na prática: uma action
+figure de 30 g pode dar 40 min de lixa e pintura, enquanto um suporte de
+parede liso de 200 g dá 2 min — mas o suporte "pagava" quase 7x mais
+acabamento, só por pesar mais. Acabamento escala com tempo, não com gramas.
+
+Pra não mudar o preço de ninguém sem aviso, a troca é opcional e você controla
+quando acontece:
+
+- **Enquanto `laborRatePerHour` for zero**, nada muda: a taxa de acabamento
+  continua valendo exatamente como antes.
+- **Assim que você informar o valor da sua hora**, o acabamento passa a ser
+  cobrado pelos minutos de trabalho informados em cada orçamento, e a taxa de
+  acabamento deixa de ter efeito (a tela de Configurações avisa isso na hora).
+
+A mão de obra cobre o serviço inteiro que a peça dá e que não aparece em
+nenhum outro custo: preparar o arquivo, fatiar, tirar da mesa, remover
+suporte, lixar, pintar, embalar e atender o cliente. É diferente do tempo de
+impressão, em que a máquina trabalha enquanto você faz outra coisa.
 
 ## Exemplo de referência (planilha)
 
@@ -79,17 +128,46 @@ Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.
 | Máquina | R$ 2.700, 12 meses, 25 dias/mês, 16 h/dia |
 | Margem | 100% |
 
+Sem mão de obra nem custo fixo configurados (os dois zerados), que é como o
+app se comporta logo depois de atualizar:
+
 | Resultado | Valor |
 |---|---|
 | Área / peso | 2,405 mm² / 35,79 g |
 | Material | R$ 3,58 |
 | Energia | R$ 1,48 |
 | Manutenção | R$ 0,54 |
-| Falhas | R$ 0,36 |
-| Acabamento | R$ 0,36 |
 | Retorno de investimento (R$ 0,5625/h) | R$ 1,78 |
-| **Produção** | **R$ 8,09** |
-| **Venda** | **R$ 16,19** |
+| Acabamento (legado, 10% do material) | R$ 0,36 |
+| Custo refeito (soma das linhas acima) | R$ 7,74 |
+| Falhas (10% do custo refeito) | R$ 0,77 |
+| **Produção** | **R$ 8,51** |
+| **Venda** | **R$ 17,02** |
+
+A planilha original chegava a R$ 8,09 de produção porque reservava falha só
+sobre o material (R$ 0,36 em vez de R$ 0,77). A diferença de R$ 0,42 é
+exatamente a reserva que faltava.
+
+### O mesmo exemplo, cobrando o próprio trabalho
+
+Agora com R$ 30,00/h de mão de obra, 40 min de trabalho na peça, R$ 800,00 de
+custo fixo mensal e 200 h de impressão por mês:
+
+| Resultado | Valor |
+|---|---|
+| Material + energia + manutenção + retorno | R$ 7,38 |
+| Custo fixo (R$ 4,00/h × 3,17 h) | R$ 12,67 |
+| Mão de obra (R$ 30,00/h × 0,67 h) | R$ 20,00 |
+| Acabamento | R$ 0,00 (substituído pela mão de obra) |
+| Falhas (10% do custo refeito) | R$ 4,00 |
+| **Produção** | **R$ 44,05** |
+| **Venda** | **R$ 88,10** |
+
+O salto de R$ 17,02 para R$ 88,10 não é o app ficando caro: é o custo que já
+existia e não estava sendo cobrado de ninguém. As 3,17 h de impressão e os 40
+min de trabalho sempre estiveram lá — só saíam do seu bolso em vez do bolso do
+cliente. Se o seu mercado não paga esse valor, o caminho é reduzir tempo de
+trabalho ou de máquina por peça, não fingir que eles custam zero.
 
 ## Análise de STL (nível de dificuldade)
 

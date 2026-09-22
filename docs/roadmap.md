@@ -92,7 +92,7 @@ coerente, só os orçamentos novos usam a fórmula nova. Campos novos em
 app não mude o preço de ninguém em silêncio: a conta só muda quando a pessoa
 preencher.
 
-- [ ] **Mão de obra do vendedor entra no cálculo.** É o furo mais grave do
+- [x] **Mão de obra do vendedor entra no cálculo** (decisão 76, 2026-09-22). É o furo mais grave do
   motor hoje: o custo de produção soma material, energia, manutenção, falha,
   acabamento, retorno da máquina e administrativo, e **nenhuma dessas
   parcelas é o tempo da pessoa**. Preparar o arquivo, fatiar, tirar da mesa,
@@ -104,7 +104,7 @@ preencher.
   trabalho por orçamento (campo na tela de Orçamento), e — opcionalmente —
   minutos embutidos em cada `Service` cadastrado, pra "Pintura" já trazer
   seus 30 min por padrão quando marcada.
-- [ ] **Acabamento deixa de ser percentual do material.** Hoje
+- [x] **Acabamento deixa de ser percentual do material** (decisão 76, 2026-09-22). Hoje
   `acabamento = material × taxa`, o que está matematicamente errado pro caso
   real: uma action figure de 30 g dá 40 min de pós-processamento; um suporte
   de parede liso de 200 g dá 2 min — mas o suporte "paga" quase 7x mais
@@ -115,7 +115,7 @@ preencher.
   configurada (fallback, ninguém perde nada) e tratá-lo como legado; **(B)**
   remover o campo e avisar na atualização que acabamento agora se informa em
   minutos. A opção A é menos traumática pra quem já usa o app hoje.
-- [ ] **Reserva de falha passa a incidir sobre o custo de produção inteiro.**
+- [x] **Reserva de falha passa a incidir sobre o custo refeito inteiro** (decisão 76, 2026-09-22).
   Hoje `falhas = material × taxa`. Quando uma impressão de 8 h falha no fim,
   o prejuízo foi material **e** energia **e** hora de máquina **e** o tempo
   de recomeçar — aplicar a taxa só sobre o material subestima a reserva em
@@ -123,7 +123,7 @@ preencher.
   `PricingCalculator`, com efeito real no bolso. Atenção à ordem de cálculo
   pra não gerar referência circular (a reserva incide sobre as parcelas de
   custo, não sobre si mesma).
-- [ ] **Custos fixos mensais do negócio diluídos por hora produtiva.**
+- [x] **Custos fixos mensais do negócio diluídos por hora produtiva** (decisão 76, 2026-09-22).
   Aluguel do espaço, internet, prateleira/embalagem, assinatura de modelos
   (Patreon de STL é gasto real de quem revende), energia fora da impressão.
   Quem precifica só o custo variável quebra devagar. O padrão pra resolver
@@ -131,6 +131,15 @@ preencher.
   valor da máquina por hora de impressão — basta aplicar a mesma fórmula a
   um "custo fixo mensal do negócio ÷ horas produtivas por mês". Fica em
   `PricingSettings` (é do negócio, não de uma impressora específica).
+- [ ] **Minutos de trabalho embutidos em cada serviço cadastrado** (separado
+  da leva 1 em 2026-09-22, decisão 76). A ideia original era "Pintura" já
+  trazer seus 30 min por padrão ao ser marcada num orçamento. Ficou de fora
+  porque esbarra na decisão 25: hoje um `Service` só entra no total cobrado
+  do cliente, sem custo modelado e sem afetar o lucro. Fazer os minutos do
+  serviço entrarem no custo de produção muda essa regra, e isso merece uma
+  decisão própria em vez de entrar de carona. Alternativa mais barata a
+  avaliar junto: os minutos do serviço só **sugerirem** o preenchimento do
+  campo de tempo de trabalho do orçamento, sem entrar sozinhos na conta.
 
 ### Leva 2 — Quantidade e lote
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.templates.TemplateListDialog
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
@@ -64,6 +65,9 @@ fun SettingsScreen(
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
     var showTemplatesDialog by remember { mutableStateOf(false) }
+    // Lido do rascunho (e não das configurações salvas) pra que o aviso sobre o acabamento mude
+    // junto com o que está sendo digitado, não só depois de salvar.
+    val chargesLaborByTime = (parseDecimal(state.laborRatePerHourText) ?: 0.0) > 0.0
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -87,13 +91,59 @@ fun SettingsScreen(
             viewModel.update { s -> s.copy(energyPricePerKwhText = it) }
         }
 
+        Text("Seu trabalho", style = MaterialTheme.typography.titleMedium)
+        LabeledField("Valor da sua hora de trabalho (${LocalCurrency.current.symbol}/h)", state.laborRatePerHourText) {
+            viewModel.update { s -> s.copy(laborRatePerHourText = it) }
+        }
+        Text(
+            "Preparar o arquivo, fatiar, tirar a peça da mesa, remover suporte, lixar, pintar, " +
+                "embalar e atender o cliente é trabalho seu, e some do preço se não for cobrado. " +
+                "Informe quanto vale a sua hora aqui e, em cada orçamento, quantos minutos aquela " +
+                "peça deu de trabalho. Deixe zero pra não cobrar mão de obra.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        Text("Custos fixos do negócio", style = MaterialTheme.typography.titleMedium)
+        LabeledField("Custo fixo mensal (${LocalCurrency.current.symbol})", state.monthlyFixedCostText) {
+            viewModel.update { s -> s.copy(monthlyFixedCostText = it) }
+        }
+        LabeledField("Horas de impressão por mês (todas as impressoras)", state.productiveHoursPerMonthText) {
+            viewModel.update { s -> s.copy(productiveHoursPerMonthText = it) }
+        }
+        Text(
+            "Aluguel do espaço, internet, assinaturas e embalagem não aparecem em nenhuma peça " +
+                "específica, mas você paga todo mês. O valor é dividido pelas horas de impressão " +
+                "do mês e cada peça paga a parte dela. Deixe zero pra não usar.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
         Text("Falhas e acabamento", style = MaterialTheme.typography.titleMedium)
         LabeledField("Taxa de falhas (%)", state.failureRatePercentText) {
             viewModel.update { s -> s.copy(failureRatePercentText = it) }
         }
+        Text(
+            "Reserva pra quando uma impressão falha. Incide sobre tudo que você gasta de novo pra " +
+                "refazer a peça (material, energia, manutenção, retorno da máquina, custo fixo e " +
+                "mão de obra) — só o custo administrativo fica de fora, porque uma modelagem já " +
+                "feita não precisa ser refeita.",
+            style = MaterialTheme.typography.bodySmall,
+        )
         LabeledField("Taxa de acabamento (%)", state.finishingRatePercentText) {
             viewModel.update { s -> s.copy(finishingRatePercentText = it) }
         }
+        Text(
+            if (chargesLaborByTime) {
+                "Sem efeito no momento: com uma hora de trabalho configurada acima, o acabamento " +
+                    "passa a ser cobrado pelos minutos informados em cada orçamento, e não mais " +
+                    "por este percentual sobre o material."
+            } else {
+                "Percentual sobre o custo do material. Ele existe pra quem ainda não cobra por " +
+                    "hora: assim que você informar o valor da sua hora de trabalho acima, o " +
+                    "acabamento passa a ser cobrado por tempo e esta taxa deixa de ter efeito."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = if (chargesLaborByTime) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+        )
 
         Text("Custos administrativos", style = MaterialTheme.typography.titleMedium)
         LabeledField("Custo administrativo por orçamento (${LocalCurrency.current.symbol})", state.administrativeCostText) {

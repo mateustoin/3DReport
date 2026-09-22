@@ -58,18 +58,20 @@ class PricingCalculatorTest {
         assertEquals(3.58, costs.material, CENT_TOLERANCE)
         assertEquals(1.48, costs.energy, CENT_TOLERANCE)
         assertEquals(0.54, costs.maintenance, CENT_TOLERANCE)
-        assertEquals(0.36, costs.failures, CENT_TOLERANCE)
+        assertEquals(0.77, costs.failures, CENT_TOLERANCE)
         assertEquals(0.36, costs.finishing, CENT_TOLERANCE)
         assertEquals(1.78, costs.investmentReturn, CENT_TOLERANCE)
         assertEquals(0.0, costs.administrative, CENT_TOLERANCE)
+        assertEquals(0.0, costs.labor, CENT_TOLERANCE)
+        assertEquals(0.0, costs.fixedCost, CENT_TOLERANCE)
     }
 
     @Test
     fun productionAndSalePriceMatchSpreadsheet() {
         val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
 
-        assertEquals(8.09, quote.productionCost, CENT_TOLERANCE)
-        assertEquals(16.19, quote.salePrice, CENT_TOLERANCE)
+        assertEquals(8.51, quote.productionCost, CENT_TOLERANCE)
+        assertEquals(17.02, quote.salePrice, CENT_TOLERANCE)
         assertEquals(quote.productionCost, quote.profit, 1e-9)
     }
 
@@ -90,6 +92,99 @@ class PricingCalculatorTest {
 
         assertEquals(5.0, quote.productionCost, 1e-9)
         assertEquals(10.0, quote.salePrice, 1e-9)
+    }
+
+    /** Trava os números da seção "O mesmo exemplo, cobrando o próprio trabalho" de pricing-formulas.md. */
+    @Test
+    fun documentedExampleWithLaborAndFixedCostMatches() {
+        val settings = spreadsheetSettings.copy(
+            laborRatePerHour = 30.0,
+            monthlyFixedCost = 800.0,
+            productiveHoursPerMonth = 200.0,
+        )
+        val job = spreadsheetJob.copy(laborMinutes = 40.0)
+
+        val quote = PricingCalculator.calculate(job, spreadsheetPrinter, settings)
+
+        assertEquals(12.67, quote.costs.fixedCost, CENT_TOLERANCE)
+        assertEquals(20.00, quote.costs.labor, CENT_TOLERANCE)
+        assertEquals(0.0, quote.costs.finishing, 1e-9)
+        assertEquals(4.00, quote.costs.failures, CENT_TOLERANCE)
+        assertEquals(44.05, quote.productionCost, CENT_TOLERANCE)
+        assertEquals(88.10, quote.salePrice, CENT_TOLERANCE)
+    }
+
+    @Test
+    fun laborIsChargedByTheTimeInformedInTheJob() {
+        val settings = spreadsheetSettings.copy(laborRatePerHour = 30.0)
+        val job = spreadsheetJob.copy(laborMinutes = 40.0)
+
+        val costs = PricingCalculator.calculate(job, spreadsheetPrinter, settings).costs
+
+        assertEquals(20.0, costs.labor, 1e-9)
+    }
+
+    @Test
+    fun finishingPercentageIsReplacedByLaborWhenAnHourlyRateIsConfigured() {
+        val job = spreadsheetJob.copy(laborMinutes = 40.0)
+
+        val legacy = PricingCalculator.calculate(job, spreadsheetPrinter, spreadsheetSettings).costs
+        val byTime = PricingCalculator.calculate(
+            job,
+            spreadsheetPrinter,
+            spreadsheetSettings.copy(laborRatePerHour = 30.0),
+        ).costs
+
+        // Sem taxa horária, o acabamento continua sendo o percentual sobre o material (legado)...
+        assertEquals(0.36, legacy.finishing, CENT_TOLERANCE)
+        assertEquals(0.0, legacy.labor, 1e-9)
+        // ...com taxa horária, o acabamento passa a ser cobrado dentro da mão de obra.
+        assertEquals(0.0, byTime.finishing, 1e-9)
+        assertEquals(20.0, byTime.labor, 1e-9)
+    }
+
+    @Test
+    fun failureReserveCoversEveryCostExceptTheAdministrativeOne() {
+        val settings = spreadsheetSettings.copy(administrativeCost = 50.0, laborRatePerHour = 30.0)
+        val job = spreadsheetJob.copy(laborMinutes = 40.0)
+
+        val costs = PricingCalculator.calculate(job, spreadsheetPrinter, settings).costs
+
+        val reprintable = costs.material + costs.energy + costs.maintenance +
+            costs.investmentReturn + costs.fixedCost + costs.labor + costs.finishing
+        assertEquals(reprintable * 0.10, costs.failures, 1e-9)
+        // A modelagem já feita não é refeita quando a impressão falha, então não entra na reserva.
+        assertEquals(50.0, costs.administrative, 1e-9)
+    }
+
+    @Test
+    fun monthlyFixedCostIsDilutedPerPrintingHour() {
+        val settings = spreadsheetSettings.copy(monthlyFixedCost = 800.0, productiveHoursPerMonth = 200.0)
+
+        val costs = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings).costs
+
+        // R$ 800 / 200 h = R$ 4,00 por hora de impressão; a peça leva 190 min.
+        assertEquals(4.0 * (190.0 / 60.0), costs.fixedCost, 1e-9)
+    }
+
+    @Test
+    fun fixedCostIsIgnoredWhenProductiveHoursWereNotInformed() {
+        val settings = spreadsheetSettings.copy(monthlyFixedCost = 800.0, productiveHoursPerMonth = 0.0)
+
+        val costs = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings).costs
+
+        assertEquals(0.0, costs.fixedCost, 1e-9)
+    }
+
+    @Test
+    fun defaultSettingsKeepTheOldBehaviourUntilTheNewFieldsAreFilled() {
+        // Atualizar o app não pode mudar o preço de ninguém em silêncio: sem taxa horária, sem
+        // custo fixo e sem minutos de trabalho, as parcelas novas ficam zeradas.
+        val costs = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings).costs
+
+        assertEquals(0.0, costs.labor, 1e-9)
+        assertEquals(0.0, costs.fixedCost, 1e-9)
+        assertEquals(0.36, costs.finishing, CENT_TOLERANCE)
     }
 
     @Test
@@ -115,8 +210,8 @@ class PricingCalculatorTest {
         )
 
         // Preço de tabela sobe pra compensar o desconto do marketplace...
-        assertEquals(16.19, withoutMarketplace.salePrice, CENT_TOLERANCE)
-        assertEquals(16.19 / 0.85, withMarketplace.salePrice, CENT_TOLERANCE)
+        assertEquals(17.02, withoutMarketplace.salePrice, CENT_TOLERANCE)
+        assertEquals(17.02 / 0.85, withMarketplace.salePrice, CENT_TOLERANCE)
         // ...mas o lucro real (depois do marketplace descontar a parte dele) fica igual.
         assertEquals(withoutMarketplace.profit, withMarketplace.profit, 1e-9)
     }
@@ -128,7 +223,7 @@ class PricingCalculatorTest {
         val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settingsWithFee)
 
         assertEquals(0.0, quote.marketplaceFeeRate, 1e-9)
-        assertEquals(16.19, quote.salePrice, CENT_TOLERANCE)
+        assertEquals(17.02, quote.salePrice, CENT_TOLERANCE)
     }
 
     @Test

@@ -5,6 +5,35 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.24.0] - 2026-09-22
+
+### Adicionado
+- **O seu tempo de trabalho agora entra no preço.** Em Configurações você
+  informa quanto vale a sua hora e, em cada orçamento, quantos minutos
+  aquela peça deu de trabalho (preparar o arquivo, fatiar, tirar da mesa,
+  remover suporte, lixar, pintar, embalar, atender o cliente). Era o maior
+  custo que sumia da conta: a máquina trabalha sozinha, mas todo o resto é
+  você. Deixe o valor da hora zerado pra manter o comportamento antigo.
+- **Custo fixo mensal do negócio.** Aluguel do espaço, internet,
+  assinaturas e embalagem não aparecem em nenhuma peça específica, mas
+  você paga todo mês. Informando o valor mensal e quantas horas suas
+  impressoras rodam no mês, cada peça passa a pagar a parte dela.
+
+### Alterado
+- **A reserva para falhas passou a cobrir tudo que é refeito**, não só o
+  material. Uma impressão de 8 horas que falha no fim desperdiça energia,
+  desgaste da máquina, hora de máquina, custo fixo e o seu tempo, não
+  apenas plástico. Só o custo administrativo fica de fora, porque uma
+  modelagem já feita não precisa ser refeita. Na prática isso sobe um
+  pouco o preço de todas as peças novas, e era uma reserva que faltava.
+- **Acabamento deixou de ser percentual do material** para quem cobra por
+  hora. Uma peça pequena e detalhada dá muito mais trabalho de acabamento
+  que uma peça grande e lisa, então cobrar por peso estava errado. A troca
+  só acontece quando você informa o valor da sua hora: até lá, a taxa de
+  acabamento continua funcionando exatamente como antes.
+- Orçamentos já salvos não mudam de valor: continuam sendo o retrato do
+  que foi cotado na época. As mudanças valem para orçamentos novos.
+
 ## [1.23.0] - 2026-09-22
 
 ### Adicionado

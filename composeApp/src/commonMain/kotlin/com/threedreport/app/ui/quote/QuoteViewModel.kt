@@ -60,6 +60,7 @@ class QuoteViewModel(
     fun selectPrinter(id: String) = inputState.update { it.copy(printerId = id) }
     fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text, gcodeImportMessage = null) }
     fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text, gcodeImportMessage = null) }
+    fun setLaborMinutes(text: String) = inputState.update { it.copy(laborMinutesText = text) }
 
     /**
      * Abre o seletor de arquivo pra escolher um G-code exportado pelo fatiador e preenche
@@ -244,6 +245,7 @@ class QuoteViewModel(
             printerId = quote.printerId,
             lengthMetersText = formatImportedNumber(job.filamentLengthMeters),
             printTimeMinutesText = formatImportedNumber(job.printTimeMinutes),
+            laborMinutesText = if (job.laborMinutes > 0) formatImportedNumber(job.laborMinutes) else "",
             selectedServiceIds = savedQuote.services.map { it.id }.toSet(),
             appliesMarketplaceFee = quote.marketplaceFeeRate > 0.0,
         )
@@ -301,7 +303,13 @@ class QuoteViewModel(
             return QuoteResult(filament = filament, filamentColor = filamentColor, printer = printer, selectedServices = selectedServices)
         }
 
-        val job = PrintJob(filament = filament, filamentLengthMeters = length, printTimeMinutes = time, filamentColor = filamentColor)
+        val job = PrintJob(
+            filament = filament,
+            filamentLengthMeters = length,
+            printTimeMinutes = time,
+            filamentColor = filamentColor,
+            laborMinutes = parseDecimal(input.laborMinutesText) ?: 0.0,
+        )
         return runCatching {
             PricingCalculator.calculate(job, printer, settings, input.appliesMarketplaceFee)
         }.fold(
