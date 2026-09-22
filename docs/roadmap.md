@@ -17,6 +17,295 @@ ainda sem previsão. O repositório ficou **público** em 2026-09-17 (decisão
 downloads da página de releases e a assinatura "Gerado com 3DReport" nos
 PDFs (seção 1, "Vendas e divulgação").
 
+**Ordem de implementação dos itens pendentes:** ver "Plano de evolução"
+logo abaixo — ele organiza em levas o que ainda está aberto (inclusive
+itens que já estavam registrados nas seções seguintes). As seções numeradas
+continuam sendo o catálogo completo, por assunto.
+
+## Plano de evolução (revisão de 2026-09-22)
+
+Revisão do produto inteiro feita em 2026-09-22, a pedido do responsável do
+projeto: olhar o app com a cabeça de quem vende impressão 3D
+profissionalmente, revisitar as decisões já tomadas e comparar com o que o
+mercado de software do setor oferece. O diagnóstico foi que o app já é bem
+mais do que uma calculadora (histórico, clientes, kanban, fila por
+impressora, catálogos com preset, viewer 3D, análise de STL), e que o que
+falta se concentra em três frentes: **o motor de precificação tem erros
+conceituais que fazem o vendedor cobrar barato sem perceber**, **falta o que
+o vendedor faz o dia inteiro (vender quantidade, negociar, mandar no
+WhatsApp)** e **o posicionamento ainda é "calculadora", quando o que existe
+já é "o sistema do vendedor"**.
+
+As levas abaixo estão **em ordem de implementação sugerida**. A ordem foi
+escolhida pra evitar retrabalho, não por tamanho: proteger os dados antes de
+mudar o formato deles, acertar a conta antes de construir em cima dela,
+fechar o conjunto de campos antes de redesenhar as telas, e deixar o app bom
+antes de empurrar divulgação. Itens que já estavam registrados em outras
+seções deste documento aparecem aqui só como agendamento, com link — a
+descrição completa continua no lugar original, pra não haver duas fontes de
+verdade.
+
+**Resumo da ordem:** rede de proteção → custo real do trabalho → quantidade
+→ preço final correto → negociação → saída pro cliente → leitura do negócio
+→ UI/UX → crescimento → apostas maiores.
+
+### Leva 0 — Rede de proteção (antes de mexer no modelo de dados)
+
+- [ ] **Backup e restauração dos dados locais.** Hoje o negócio inteiro do
+  vendedor (histórico, clientes, catálogos, fotos, STLs) vive só em
+  `~/.3dreport/`. Formatar o computador, trocar de máquina ou corromper um
+  arquivo significa perder tudo, sem nenhum caminho de recuperação dentro do
+  app — é o maior risco silencioso do produto hoje. **Vem primeiro de
+  propósito:** as levas 1 a 3 mudam o formato dos dados salvos, e não se
+  mexe no arquivo do negócio de alguém sem oferecer um botão de backup
+  antes.
+  - Escopo sugerido: Configurações ganha "Fazer backup" (gera um `.zip` com
+    todos os JSONs + `photos/` + `models/`, nome com data) e "Restaurar
+    backup" (substitui tudo, com `ConfirmDialog` explícito, mesmo padrão já
+    usado nas exclusões). Resolve de uma vez os três casos: perda de dados,
+    troca de computador e "quero levar meu histórico pro notebook".
+- [ ] **Menu "⋮" na linha do Histórico.** A lista já chegou a 8 botões de
+  texto lado a lado (Exportar PDF, Copiar, Editar, Duplicar, Configurações
+  de impressão, Baixar foto, Baixar STL, Excluir) e as levas seguintes ainda
+  somam mais (WhatsApp, imagem, comparar impressoras). O card do Kanban já
+  resolveu isso com um menu "⋮" — a lista deve seguir o mesmo padrão: 2 ou 3
+  ações principais visíveis, o resto no menu. Item pequeno, entra junto do
+  backup por ser arrumação de casa antes da obra.
+
+### Leva 1 — O custo real do trabalho (maior impacto no bolso)
+
+As quatro mudanças abaixo devem entrar **na mesma leva**: todas alteram o
+custo de produção, e soltá-las separadas obrigaria o vendedor a recalibrar a
+tabela de preços quatro vezes seguidas. Nenhuma delas mexe em orçamento já
+salvo (`SavedQuote` é um retrato congelado, ver KDoc) — o histórico continua
+coerente, só os orçamentos novos usam a fórmula nova. Campos novos em
+`PricingSettings` devem nascer com valor neutro (zero), pra que atualizar o
+app não mude o preço de ninguém em silêncio: a conta só muda quando a pessoa
+preencher.
+
+- [ ] **Mão de obra do vendedor entra no cálculo.** É o furo mais grave do
+  motor hoje: o custo de produção soma material, energia, manutenção, falha,
+  acabamento, retorno da máquina e administrativo, e **nenhuma dessas
+  parcelas é o tempo da pessoa**. Preparar o arquivo, fatiar, tirar da mesa,
+  remover suporte, lixar, pintar, embalar, responder o cliente e ir ao
+  correio são o trabalho de verdade de quem vende impressão 3D. Ficando de
+  fora, toda peça pequena e trabalhosa sai subprecificada, e o vendedor
+  descobre isso só quando percebe que trabalhou o mês inteiro sem sobrar
+  nada. Proposta: taxa horária do operador em `PricingSettings` + minutos de
+  trabalho por orçamento (campo na tela de Orçamento), e — opcionalmente —
+  minutos embutidos em cada `Service` cadastrado, pra "Pintura" já trazer
+  seus 30 min por padrão quando marcada.
+- [ ] **Acabamento deixa de ser percentual do material.** Hoje
+  `acabamento = material × taxa`, o que está matematicamente errado pro caso
+  real: uma action figure de 30 g dá 40 min de pós-processamento; um suporte
+  de parede liso de 200 g dá 2 min — mas o suporte "paga" quase 7x mais
+  acabamento que a action figure. Acabamento escala com tempo de trabalho,
+  não com gramas, então vira uma aplicação do item de mão de obra acima.
+  Duas opções de migração, a decidir na implementação: **(A)** manter
+  `finishingRate` funcionando como está quando nenhuma mão de obra estiver
+  configurada (fallback, ninguém perde nada) e tratá-lo como legado; **(B)**
+  remover o campo e avisar na atualização que acabamento agora se informa em
+  minutos. A opção A é menos traumática pra quem já usa o app hoje.
+- [ ] **Reserva de falha passa a incidir sobre o custo de produção inteiro.**
+  Hoje `falhas = material × taxa`. Quando uma impressão de 8 h falha no fim,
+  o prejuízo foi material **e** energia **e** hora de máquina **e** o tempo
+  de recomeçar — aplicar a taxa só sobre o material subestima a reserva em
+  algo entre 2x e 4x, dependendo da peça. Mudança de uma linha no
+  `PricingCalculator`, com efeito real no bolso. Atenção à ordem de cálculo
+  pra não gerar referência circular (a reserva incide sobre as parcelas de
+  custo, não sobre si mesma).
+- [ ] **Custos fixos mensais do negócio diluídos por hora produtiva.**
+  Aluguel do espaço, internet, prateleira/embalagem, assinatura de modelos
+  (Patreon de STL é gasto real de quem revende), energia fora da impressão.
+  Quem precifica só o custo variável quebra devagar. O padrão pra resolver
+  isso já existe pronto no código: `MachineInvestment.costPerHour` dilui o
+  valor da máquina por hora de impressão — basta aplicar a mesma fórmula a
+  um "custo fixo mensal do negócio ÷ horas produtivas por mês". Fica em
+  `PricingSettings` (é do negócio, não de uma impressora específica).
+
+### Leva 2 — Quantidade e lote
+
+- [ ] **Campo de quantidade no orçamento.** Conferido em 2026-09-22:
+  `PrintJob`, `Quote` e `SavedQuote` não têm nenhum campo de quantidade.
+  "Quero 10 chaveiros" é provavelmente o pedido mais comum do mercado, e
+  hoje o vendedor resolve na calculadora do celular, fora do app. Toca o
+  modelo, o resultado na tela, o PDF, o copiar/colar, o Histórico e a
+  agregação do Dashboard — por isso vem depois da leva 1 (a conta por
+  unidade precisa estar certa antes de multiplicar) e antes das telas serem
+  redesenhadas.
+- [ ] **Regra de lote, não multiplicação simples.** 10 peças na mesma mesa
+  não custam 10 impressões separadas: o tempo de setup/preparo se dilui, e
+  normalmente o vendedor dá desconto por volume. Mínimo viável: mostrar
+  "preço unitário" e "total", com um desconto por quantidade opcional
+  (percentual ou valor), deixando claro no PDF o que é unitário e o que é
+  total. O tempo de mão de obra fixo (leva 1) deve ser cobrado uma vez por
+  lote, não por peça — é justamente isso que torna o lote mais barato por
+  unidade.
+
+### Leva 3 — O preço final correto (deduções e acréscimos da venda)
+
+- [ ] **Canais de venda com taxa própria.** Item já registrado (ver
+  "Taxa de marketplace" na seção 1) — agendado aqui, porque é a base pros
+  dois itens seguintes: em vez de uma taxa única em Configurações, um
+  catálogo de canais (nome + taxa), no mesmo padrão de Serviços.
+- [ ] **Imposto e taxa de pagamento.** Faltam duas deduções que todo
+  vendedor brasileiro sente: imposto (MEI/Simples) e taxa de recebimento
+  (maquininha ou link de pagamento, tipicamente ~4%; Pix, zero). Mesma
+  mecânica já implementada pra marketplace (decisão 26: o preço de venda
+  sobe o suficiente pra margem real não mudar), aplicada a mais duas
+  parcelas. Junto com os canais de venda, é o que faz o "Você cobra" virar
+  de fato o que entra na conta do vendedor.
+- [ ] **Frete.** Pra venda online, frete é metade da conversa com o cliente
+  e hoje não existe em lugar nenhum do app. Escopo mínimo: valor informado
+  na mão por orçamento, somado ao total do cliente como linha própria no PDF
+  e no copiar/colar (nunca embutido no preço da peça, pra não parecer que a
+  peça ficou mais cara), com a opção "frete grátis" descontando do lucro
+  explicitamente — assim o vendedor vê quanto o "frete grátis" custou de
+  verdade.
+
+### Leva 4 — Negociação (depende de a conta estar completa)
+
+Só faz sentido depois das levas 1 a 3: uma calculadora reversa em cima de
+uma conta incompleta mente com mais confiança.
+
+- [ ] **Preço alvo (negociação reversa).** "O cliente quer pagar R$ 30,
+  quanto sobra?" e "quanto preciso cobrar pra ter 40% de lucro real depois
+  da taxa da Shopee?". Um campo de preço alvo (ou um slider) que recalcula
+  margem e lucro ao vivo, em cima do preço já calculado. Vendedor negocia
+  todo dia e nenhuma ferramenta do setor faz isso bem.
+- [ ] **Preço mínimo com aviso de prejuízo.** O custo de produção já é
+  calculado; falta usá-lo como piso: quando o preço negociado cair abaixo
+  dele, avisar visualmente ("abaixo disso você paga pra imprimir"). Depende
+  do item acima e reaproveita `Quote.productionCost`.
+- [ ] **Comparar impressoras no mesmo orçamento.** "Essa peça sai R$ 16,19
+  na K1 e R$ 14,80 na Ender." Todos os dados já estão cadastrados — é rodar
+  o `PricingCalculator` (função pura, sem estado) uma vez por impressora
+  cadastrada e mostrar o resultado lado a lado. Barato de implementar,
+  ajuda a decidir em qual máquina imprimir e rende ótima screenshot.
+
+### Leva 5 — Saída pro cliente
+
+- [ ] **WhatsApp de verdade.** O copiar/colar já existe, mas o passo
+  seguinte é abrir a conversa pronta: botão que monta um link `wa.me` com o
+  texto do orçamento já preenchido, usando o contato que já está salvo em
+  `Client` (100% local, é só abrir uma URL — reaproveita o
+  `platform/openUrl` que já existe).
+- [ ] **Imagem quadrada pro WhatsApp/Instagram.** Foto da peça + preço +
+  prazo numa imagem pronta pra mandar no zap ou postar no status, em vez de
+  um PDF anexado. A maior parte das vendas no Brasil acontece em conversa,
+  não em documento formal. Reaproveita o mesmo caminho de renderização já
+  usado na captura do visualizador 3D (`encodeImageBitmapToPng`, decisão
+  63) e a assinatura discreta do item de divulgação (leva 8) cabe no
+  rodapé dessa imagem também.
+
+### Leva 6 — Leitura do negócio (Dashboard vira consultor, não relatório)
+
+- [ ] **Lucro por hora de impressão e por hora de trabalho.** Total vendido
+  e lucro acumulado são contabilidade; "sua máquina te paga R$ X por hora" e
+  "seu trabalho te paga R$ Y por hora" são gestão — é a métrica que diz se o
+  negócio funciona e qual tipo de peça vale a pena repetir. Depende da mão
+  de obra (leva 1) pra segunda métrica existir; a primeira já é possível
+  hoje com `printTimeMinutes` + lucro.
+- [ ] **Ranking de produto mais lucrativo.** Item já registrado (ver
+  "Dashboard/relatório simples" na seção 1) — agendado aqui, por ser a mesma
+  leva de leitura do negócio e reaproveitar a mesma agregação.
+
+### Leva 7 — UI/UX (depois que o conjunto de campos parar de mudar)
+
+Deliberadamente **depois** das levas 1 a 5: elas somam campos na tela de
+Orçamento (mão de obra, quantidade, desconto, imposto, frete). Redesenhar o
+layout antes disso significa redesenhar duas vezes.
+
+- [ ] **Layout de duas colunas na tela de Orçamento.** Hoje é um app desktop
+  com layout de celular: uma coluna só, rolando por três assuntos diferentes
+  (calcular, anexar arquivos, salvar), e na janela padrão não dá pra ver o
+  preço e os campos ao mesmo tempo. Proposta: entradas à esquerda, a "nota"
+  fixa à direita recalculando ao vivo enquanto se digita. É a maior melhoria
+  visual disponível e finalmente usa o formato de tela que o app escolheu.
+- [ ] **Barra de composição do preço.** O "Você cobra R$ 16,19" não mostra
+  onde o dinheiro está. Uma barra empilhada pequena (material, energia,
+  máquina, mão de obra, lucro) ensina o vendedor a precificar, dá sentido a
+  todas as parcelas somadas nas levas 1 a 3 e rende boa screenshot pro site.
+- [ ] **Onboarding de 3 perguntas na primeira execução.** Substitui o item
+  de onboarding já registrado (ver "UX extras"), agora com escopo definido:
+  impressora (pelo preset que já existe), preço do kWh e margem. Detalhe
+  local que vale a pena: **sugerir o kWh por estado brasileiro** a partir de
+  uma tabela estática embutida (sem rede, no mesmo espírito dos presets de
+  impressora) — é o tipo de carinho que faz a pessoa sentir que o app foi
+  feito pra ela. Vem antes da leva de crescimento de propósito: não adianta
+  atrair gente nova pra uma tela vazia.
+- [ ] **Unificar as telas de catálogo e migrar pra Scaffold/Snackbar.** Itens
+  já registrados em "Observações técnicas" (fim deste documento) — agendados
+  aqui porque são a mesma obra de UI: as 3 telas quase idênticas
+  (Filamentos/Impressoras/Serviços) podem virar uma aba "Catálogos" só,
+  liberando espaço na barra de 7 abas, e o feedback inline vira snackbar.
+  Atenção: mexer na quantidade de abas mexe na numeração dos atalhos de
+  teclado (decisões 43 e 45).
+
+### Leva 8 — Crescimento (com o produto já bom)
+
+- [ ] **Assinatura discreta "Gerado com 3DReport" nos PDFs.** Item já
+  registrado e detalhado (ver "Vendas e divulgação") — **é a maior alavanca
+  de distribuição do projeto inteiro e continua sem implementação.** Cada
+  orçamento que um vendedor manda pro cliente é uma chance de outro vendedor
+  conhecer o app, e é a única divulgação orgânica disponível pra um projeto
+  sem verba de marketing (decisão 15).
+- [ ] **Reposicionar a comunicação: de "calculadora" pra "o sistema de quem
+  vende impressão 3D".** Site e README hoje lideram com orçamento/
+  calculadora, categoria em que existem centenas de páginas web gratuitas
+  concorrendo. O que está construído já é outra coisa: histórico, clientes,
+  kanban, fila de impressora, catálogos, reimpressão com a mesma
+  configuração. A diferenciação defensável tem duas pernas: **ser o sistema
+  completo** e **ser 100% local, grátis e offline** ("seus preços e seus
+  clientes não saem do seu computador"), contra concorrentes SaaS de
+  mensalidade. O fosso competitivo é justamente ser brasileiro: MEI, Pix,
+  maquininha, Shopee/ML, kWh por estado, WhatsApp — coisas que as levas 3, 5
+  e 7 constroem e que nenhuma ferramenta internacional vai fazer bem.
+- [ ] **Arrastar o G-code na janela e sair um orçamento completo.** Hoje a
+  importação preenche dois campos, mas o fluxo ainda exige escolher
+  impressora e filamento na mão. O bloco de configuração do G-code das
+  famílias PrusaSlicer/Bambu/Orca também traz o **modelo da impressora** e o
+  **tipo/marca do filamento** — dá pra casar automaticamente com o que está
+  cadastrado nos catálogos e deixar o orçamento pronto num arrasto só.
+  Primeiro passo obrigatório: conferir em arquivos reais de cada fatiador
+  quais chaves existem de fato (mesma disciplina das decisões 55 e 56, que
+  não inventaram formato). É o "wow" demonstrável em 10 segundos que nenhuma
+  planilha responde — por isso está na leva de crescimento, e não na de
+  importação.
+
+### Leva 9 — Apostas maiores (por último)
+
+- [ ] **Peça com mais de um filamento (multicolor/AMS).** `PrintJob` tem um
+  único `filament`, então uma peça com 3 cores não é representável — pior: o
+  parser de G-code **soma** os extrusores num total só, então uma peça com
+  PLA + PETG é cobrada como se tudo fosse do mesmo preço/kg, em silêncio.
+  Com AMS virando comum, isso vira uma limitação de verdade. Fica por último
+  por ser a mudança mais profunda do modelo (`PrintJob`/`Quote` + todos os
+  exports). **Nota de sequenciamento:** se houver intenção real de fazer
+  isso, fazer junto da leva 2 (quantidade, que também mexe em
+  `PrintJob`/`Quote`) economiza metade do trabalho de migração.
+- [ ] **Calculadora web no próprio site, reaproveitando o módulo `core`.**
+  O `core` é Kotlin Multiplatform puro, sem dependência de desktop — dá pra
+  publicar uma calculadora simples no GitHub Pages que já existe (alvo
+  Wasm/JS) usando exatamente a mesma fórmula, sem segunda fonte de verdade.
+  Serve de funil: quem pesquisa "calcular preço impressão 3D" no Google cai
+  na calculadora e termina com "quer salvar histórico, clientes e PDF? baixe
+  o app". Por último por ser a maior incógnita técnica da lista (alvo de
+  build novo, pipeline de publicação, e uma versão web que precisa não
+  canibalizar o app).
+
+### Fora das levas
+
+Continuam no backlog, sem posição definida nesta revisão (nenhum foi
+descartado): Fase 2 do STL (estimativa geométrica de peso/tempo, pulada pela
+decisão 66), custo de falha real acumulado, sinal/pagamento parcial,
+lembrete e histórico de manutenção por impressora, guardar o `.3mf` do
+projeto do fatiador, exportar histórico pra CSV/Excel, compatibilidade com
+Spoolman, portal de acompanhamento pro cliente, assistente de IA, idioma da
+interface configurável, banner dedicado pro compartilhamento do site,
+`CODE_OF_CONDUCT.md` e Android. Os três primeiros da lista encaixariam
+naturalmente nas levas 1 e 6, se em algum momento virarem prioridade.
+
 ## 1. Funcionalidades do produto e UI/UX
 
 - [x] **Salvar um orçamento**, com:
