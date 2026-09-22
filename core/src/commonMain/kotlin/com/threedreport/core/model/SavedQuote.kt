@@ -39,6 +39,10 @@ import kotlinx.serialization.Serializable
  *   de novo pela última vez (ver KDoc acima), ou `null` se nunca foi
  *   editado desde que foi criado. [savedAtEpochMillis] **não muda** numa
  *   edição — continua sendo a data de criação original.
+ * @property printSettings configurações de fatiamento usadas pra imprimir
+ *   (altura de camada, preenchimento, suporte), se informadas — ver KDoc de
+ *   [PrintSettings]. Editável direto no Histórico, sem precisar reabrir a
+ *   edição completa do orçamento (mesmo tratamento de [status]).
  */
 @Serializable
 data class SavedQuote(
@@ -53,6 +57,7 @@ data class SavedQuote(
     val client: Client? = null,
     val status: OrderStatus = OrderStatus.ORCADO,
     val lastEditedEpochMillis: Long? = null,
+    val printSettings: PrintSettings? = null,
 ) {
     /** Total de fato cobrado do cliente: valor de venda + soma dos serviços escolhidos. */
     val totalWithServices: Double

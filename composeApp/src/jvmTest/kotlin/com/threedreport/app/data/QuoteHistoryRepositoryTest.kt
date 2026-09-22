@@ -8,6 +8,7 @@ import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
 import kotlin.io.path.createTempDirectory
@@ -411,6 +412,45 @@ class QuoteHistoryRepositoryTest {
         )
 
         assertContentEquals(photoBytes, repository.photoBytes(original))
+    }
+
+    @Test
+    fun printSettingsSurviveNewRepositoryInstance() {
+        val repository = QuoteHistoryRepository()
+        val settings = PrintSettings(layerHeightMm = 0.2, infillPercentage = 15.0, infillPattern = "gyroid", supportsEnabled = true)
+        val saved = repository.save(
+            name = "Com configurações",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            sourceLink = null,
+            printSettings = settings,
+        )
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }
+        assertEquals(settings, reloaded.printSettings)
+    }
+
+    @Test
+    fun savedQuoteWithoutPrintSettingsHasNullPrintSettings() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(name = "Sem configurações", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        assertNull(saved.printSettings)
+    }
+
+    @Test
+    fun updatePrintSettingsChangesOnlyTheTargetQuoteAndSurvivesReload() {
+        val repository = QuoteHistoryRepository()
+        val target = repository.save(name = "Alvo", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val other = repository.save(name = "Outro", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val settings = PrintSettings(layerHeightMm = 0.16, supportsEnabled = false)
+
+        repository.updatePrintSettings(target.id, settings)
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value
+        assertEquals(settings, reloaded.first { it.id == target.id }.printSettings)
+        assertNull(reloaded.first { it.id == other.id }.printSettings)
     }
 
     @Test

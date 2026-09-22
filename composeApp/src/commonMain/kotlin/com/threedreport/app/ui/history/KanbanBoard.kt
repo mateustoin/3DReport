@@ -51,8 +51,10 @@ import androidx.compose.ui.zIndex
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.quote.PrintSettingsDialog
 import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.SavedQuote
 import kotlin.math.roundToInt
 
@@ -83,6 +85,7 @@ fun KanbanBoard(
     onEdit: (SavedQuote) -> Unit,
     onDuplicate: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
+    onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
 ) {
     // Posição+tamanho (em coordenadas de janela) de cada coluna, atualizado a cada posicionamento —
     // usado como referência comum (independente de qual composable está aninhado onde) pra saber
@@ -115,6 +118,7 @@ fun KanbanBoard(
                 onEdit = onEdit,
                 onDuplicate = onDuplicate,
                 onDelete = onDelete,
+                onUpdatePrintSettings = onUpdatePrintSettings,
             )
         }
     }
@@ -136,6 +140,7 @@ private fun KanbanColumn(
     onEdit: (SavedQuote) -> Unit,
     onDuplicate: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
+    onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -172,6 +177,7 @@ private fun KanbanColumn(
                 onEdit = { onEdit(savedQuote) },
                 onDuplicate = { onDuplicate(savedQuote) },
                 onDelete = { onDelete(savedQuote) },
+                onUpdatePrintSettings = { settings -> onUpdatePrintSettings(savedQuote, settings) },
             )
         }
         if (isDropTarget) {
@@ -196,11 +202,13 @@ private fun KanbanCard(
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    onUpdatePrintSettings: (PrintSettings?) -> Unit,
 ) {
     var dragOffset by remember(savedQuote.id) { mutableStateOf(Offset.Zero) }
     var isDragging by remember(savedQuote.id) { mutableStateOf(false) }
     var liveBounds by remember(savedQuote.id) { mutableStateOf<Rect?>(null) }
     var showMenu by remember(savedQuote.id) { mutableStateOf(false) }
+    var showPrintSettingsDialog by remember(savedQuote.id) { mutableStateOf(false) }
 
     fun targetStatusUnderPointer(): OrderStatus? {
         val point = liveBounds?.center ?: return null
@@ -269,9 +277,21 @@ private fun KanbanCard(
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     DropdownMenuItem(text = { Text("Editar") }, onClick = { showMenu = false; onEdit() })
                     DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                    DropdownMenuItem(
+                        text = { Text("Configurações de impressão") },
+                        onClick = { showMenu = false; showPrintSettingsDialog = true },
+                    )
                     DropdownMenuItem(text = { Text("Excluir") }, onClick = { showMenu = false; onDelete() })
                 }
             }
         }
+    }
+
+    if (showPrintSettingsDialog) {
+        PrintSettingsDialog(
+            initial = savedQuote.printSettings ?: PrintSettings(),
+            onDismiss = { showPrintSettingsDialog = false },
+            onSave = { settings -> onUpdatePrintSettings(settings.takeUnless { it.isEmpty }) },
+        )
     }
 }

@@ -13,6 +13,7 @@ import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.saveBytesToFile
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +64,8 @@ class QuoteHistoryViewModel(
         name.contains(query, ignoreCase = true) || client?.name?.contains(query, ignoreCase = true) == true
 
     fun updateStatus(id: String, status: OrderStatus) = repository.updateStatus(id, status)
+
+    fun updatePrintSettings(id: String, printSettings: PrintSettings?) = repository.updatePrintSettings(id, printSettings)
 
     fun delete(id: String) {
         repository.delete(id)

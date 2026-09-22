@@ -370,6 +370,18 @@ private fun SaveQuoteForm(
             style = MaterialTheme.typography.bodySmall,
         )
 
+        var showPrintSettingsDialog by remember { mutableStateOf(false) }
+        OutlinedButton(onClick = { showPrintSettingsDialog = true }) {
+            Text(if (form.printSettings.isEmpty) "Adicionar configurações de impressão" else "Editar configurações de impressão")
+        }
+        if (showPrintSettingsDialog) {
+            PrintSettingsDialog(
+                initial = form.printSettings,
+                onDismiss = { showPrintSettingsDialog = false },
+                onSave = viewModel::setPrintSettings,
+            )
+        }
+
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.sourceLink,

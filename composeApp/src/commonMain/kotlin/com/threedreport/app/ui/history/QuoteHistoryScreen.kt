@@ -48,8 +48,10 @@ import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toWeightText
+import com.threedreport.app.ui.quote.PrintSettingsDialog
 import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.SavedQuote
 
 private enum class HistoryViewMode { LIST, KANBAN }
@@ -137,6 +139,7 @@ fun QuoteHistoryScreen(
                     onDuplicate = { onDuplicateQuote(savedQuote) },
                     onDelete = { pendingDelete = savedQuote },
                     onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
+                    onUpdatePrintSettings = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
                 )
             }
         } else if (savedQuotes.isNotEmpty()) {
@@ -148,6 +151,7 @@ fun QuoteHistoryScreen(
                 onEdit = onEditQuote,
                 onDuplicate = onDuplicateQuote,
                 onDelete = { pendingDelete = it },
+                onUpdatePrintSettings = { savedQuote, settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
             )
         }
     }
@@ -260,7 +264,10 @@ private fun SavedQuoteRow(
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
+    onUpdatePrintSettings: (PrintSettings?) -> Unit,
 ) {
+    var showPrintSettingsDialog by remember { mutableStateOf(false) }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Checkbox(checked = selected, onCheckedChange = { onToggleSelected() })
@@ -321,6 +328,9 @@ private fun SavedQuoteRow(
                     TextButton(onClick = onCopy) { Text(if (justCopied) "Copiado!" else "Copiar") }
                     TextButton(onClick = onEdit) { Text("Editar") }
                     TextButton(onClick = onDuplicate) { Text("Duplicar") }
+                    TextButton(onClick = { showPrintSettingsDialog = true }) {
+                        Text(if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão")
+                    }
                     if (photoBytes != null) {
                         TextButton(onClick = onDownloadPhoto) { Text("Baixar foto") }
                     }
@@ -331,5 +341,13 @@ private fun SavedQuoteRow(
                 }
             }
         }
+    }
+
+    if (showPrintSettingsDialog) {
+        PrintSettingsDialog(
+            initial = savedQuote.printSettings ?: PrintSettings(),
+            onDismiss = { showPrintSettingsDialog = false },
+            onSave = { settings -> onUpdatePrintSettings(settings.takeUnless { it.isEmpty }) },
+        )
     }
 }

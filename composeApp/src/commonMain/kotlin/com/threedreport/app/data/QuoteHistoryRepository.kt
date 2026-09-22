@@ -3,6 +3,7 @@ package com.threedreport.app.data
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -40,6 +41,7 @@ expect class QuoteHistoryRepository() {
         stlReferenceFileName: String? = null,
         sourceLink: String?,
         client: Client? = null,
+        printSettings: PrintSettings? = null,
     ): SavedQuote
 
     fun delete(id: String)
@@ -63,10 +65,18 @@ expect class QuoteHistoryRepository() {
         stlReferenceFileName: String? = null,
         sourceLink: String?,
         client: Client?,
+        printSettings: PrintSettings? = null,
     ): SavedQuote?
 
     /** Atualiza o andamento do pedido [id] pra [status]. Não faz nada se [id] não existir. */
     fun updateStatus(id: String, status: OrderStatus)
+
+    /**
+     * Atualiza só as configurações de impressão do pedido [id] pra [printSettings] (`null` remove),
+     * sem tocar em mais nada — edição rápida direto no Histórico, mesmo tratamento de [updateStatus].
+     * Não faz nada se [id] não existir.
+     */
+    fun updatePrintSettings(id: String, printSettings: PrintSettings?)
 
     /** Bytes da foto de [savedQuote], ou `null` se não houver foto salva. */
     fun photoBytes(savedQuote: SavedQuote): ByteArray?

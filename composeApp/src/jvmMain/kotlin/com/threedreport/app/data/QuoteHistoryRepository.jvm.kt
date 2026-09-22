@@ -3,6 +3,7 @@ package com.threedreport.app.data
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -34,6 +35,7 @@ actual class QuoteHistoryRepository actual constructor() {
         stlReferenceFileName: String?,
         sourceLink: String?,
         client: Client?,
+        printSettings: PrintSettings?,
     ): SavedQuote {
         val id = Uuid.random().toString()
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
@@ -49,6 +51,7 @@ actual class QuoteHistoryRepository actual constructor() {
             sourceLink = sourceLink?.trim()?.ifEmpty { null },
             savedAtEpochMillis = System.currentTimeMillis(),
             client = client,
+            printSettings = printSettings,
         )
         state.value = state.value + saved
         persist()
@@ -66,6 +69,7 @@ actual class QuoteHistoryRepository actual constructor() {
         stlReferenceFileName: String?,
         sourceLink: String?,
         client: Client?,
+        printSettings: PrintSettings?,
     ): SavedQuote? {
         val existing = state.value.find { it.id == id } ?: return null
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
@@ -80,6 +84,7 @@ actual class QuoteHistoryRepository actual constructor() {
             sourceLink = sourceLink?.trim()?.ifEmpty { null },
             client = client,
             lastEditedEpochMillis = System.currentTimeMillis(),
+            printSettings = printSettings,
         )
         // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
         // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).
@@ -133,6 +138,11 @@ actual class QuoteHistoryRepository actual constructor() {
 
     actual fun updateStatus(id: String, status: OrderStatus) {
         state.value = state.value.map { if (it.id == id) it.copy(status = status) else it }
+        persist()
+    }
+
+    actual fun updatePrintSettings(id: String, printSettings: PrintSettings?) {
+        state.value = state.value.map { if (it.id == id) it.copy(printSettings = printSettings) else it }
         persist()
     }
 

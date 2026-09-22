@@ -5,6 +5,22 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.22.0] - 2026-09-22
+
+### Adicionado
+- Configurações de impressão (altura de camada, % de preenchimento, padrão
+  de preenchimento e uso de suporte) agora podem ser guardadas junto com
+  cada orçamento, pra recuperar depois no Histórico e replicar o mesmo
+  padrão numa impressão futura da mesma peça, sem precisar lembrar de
+  cabeça ou reabrir o fatiador. São preenchidas automaticamente ao
+  importar um G-code do PrusaSlicer/Bambu Studio/OrcaSlicer (quando o
+  arquivo gravar esses dados), ou manualmente pelo botão "Adicionar
+  configurações de impressão" no Orçamento. No Histórico (lista ou
+  Kanban), um botão "Configurações de impressão" no card permite
+  consultar e editar direto ali, sem precisar reabrir a edição completa
+  do orçamento. Uso só interno: não entra no cálculo do preço nem em
+  nenhum export (PDF ou copiar/colar).
+
 ## [1.21.0] - 2026-09-21
 
 ### Adicionado

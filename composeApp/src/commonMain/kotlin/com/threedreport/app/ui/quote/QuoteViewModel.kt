@@ -15,6 +15,7 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -62,24 +63,33 @@ class QuoteViewModel(
 
     /**
      * Abre o seletor de arquivo pra escolher um G-code exportado pelo fatiador e preenche
-     * comprimento de filamento / tempo de impressão a partir dos comentários de metadados dele
-     * ([GCodeMetadataParser]) — e a foto do orçamento, se o arquivo tiver uma miniatura embutida
-     * e nenhuma foto já tiver sido escolhida (não sobrescreve uma foto própria do usuário). Tudo
-     * continua editável/removível manualmente depois — é um atalho pra preencher, não uma trava,
-     * já que nem todo fatiador grava esses dados num formato reconhecido. Ver [undoGCodeImport]
-     * pra desfazer de uma vez.
+     * comprimento de filamento / tempo de impressão / configurações de impressão (altura de
+     * camada, preenchimento, suporte — ver [PrintSettings]) a partir dos comentários de metadados
+     * dele ([GCodeMetadataParser]) — e a foto do orçamento, se o arquivo tiver uma miniatura
+     * embutida e nenhuma foto já tiver sido escolhida (não sobrescreve uma foto própria do
+     * usuário). Tudo continua editável/removível manualmente depois — é um atalho pra preencher,
+     * não uma trava, já que nem todo fatiador grava esses dados num formato reconhecido. Ver
+     * [undoGCodeImport] pra desfazer de uma vez.
      */
     fun pickAndImportGCode() {
         val picked = pickGCodeFile() ?: return
         val metadata = GCodeMetadataParser.parse(picked.bytes.decodeToString())
         val thumbnail = metadata.thumbnail
         val photoApplied = thumbnail != null && saveFormState.value.photo == null
-        if (photoApplied) {
-            saveFormState.update {
-                it.copy(
-                    photo = PickedFile("miniatura_do_gcode.${thumbnail.fileExtension}", thumbnail.bytes),
-                    photoFromGCode = true,
-                    photoReferenceFileName = null,
+        val printSettingsApplied = metadata.layerHeightMm != null || metadata.infillPercentage != null ||
+            metadata.infillPattern != null || metadata.supportsEnabled != null
+        if (photoApplied || printSettingsApplied) {
+            saveFormState.update { form ->
+                form.copy(
+                    photo = if (photoApplied) PickedFile("miniatura_do_gcode.${thumbnail.fileExtension}", thumbnail.bytes) else form.photo,
+                    photoFromGCode = if (photoApplied) true else form.photoFromGCode,
+                    photoReferenceFileName = if (photoApplied) null else form.photoReferenceFileName,
+                    printSettings = form.printSettings.copy(
+                        layerHeightMm = metadata.layerHeightMm ?: form.printSettings.layerHeightMm,
+                        infillPercentage = metadata.infillPercentage ?: form.printSettings.infillPercentage,
+                        infillPattern = metadata.infillPattern ?: form.printSettings.infillPattern,
+                        supportsEnabled = metadata.supportsEnabled ?: form.printSettings.supportsEnabled,
+                    ),
                     savedConfirmation = false,
                 )
             }
@@ -94,15 +104,26 @@ class QuoteViewModel(
     }
 
     /**
-     * Desfaz a última importação de G-code: limpa comprimento/tempo (volta pro texto em branco,
-     * não pro valor anterior a importar) e, se a foto atual também veio de lá, remove ela também
-     * — sem mexer numa foto que o usuário tenha escolhido manualmente antes ou depois.
+     * Desfaz a última importação de G-code: limpa comprimento/tempo/configurações de impressão
+     * (volta pro texto em branco/vazio, não pro valor anterior a importar) e, se a foto atual
+     * também veio de lá, remove ela também — sem mexer numa foto que o usuário tenha escolhido
+     * manualmente antes ou depois.
      */
     fun undoGCodeImport() {
         inputState.update { it.copy(lengthMetersText = "", printTimeMinutesText = "", gcodeImportMessage = null) }
-        if (saveFormState.value.photoFromGCode) {
-            saveFormState.update { it.copy(photo = null, photoFromGCode = false, savedConfirmation = false) }
+        saveFormState.update {
+            it.copy(
+                photo = if (it.photoFromGCode) null else it.photo,
+                photoFromGCode = if (it.photoFromGCode) false else it.photoFromGCode,
+                printSettings = PrintSettings(),
+                savedConfirmation = false,
+            )
         }
+    }
+
+    /** Substitui as configurações de impressão do formulário de salvar (ver [PrintSettings]). */
+    fun setPrintSettings(printSettings: PrintSettings) = saveFormState.update {
+        it.copy(printSettings = printSettings, savedConfirmation = false)
     }
 
     fun toggleService(id: String) = inputState.update {
@@ -170,6 +191,7 @@ class QuoteViewModel(
                 stlReferenceFileName = form.stlReferenceFileName,
                 sourceLink = form.sourceLink,
                 client = client,
+                printSettings = form.printSettings.takeUnless { it.isEmpty },
             )
         } else {
             historyRepository.save(
@@ -182,6 +204,7 @@ class QuoteViewModel(
                 stlReferenceFileName = form.stlReferenceFileName,
                 sourceLink = form.sourceLink,
                 client = client,
+                printSettings = form.printSettings.takeUnless { it.isEmpty },
             )
         }
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
@@ -242,6 +265,7 @@ class QuoteViewModel(
             sourceLink = savedQuote.sourceLink.orEmpty(),
             clientName = savedQuote.client?.name.orEmpty(),
             clientContact = savedQuote.client?.contact.orEmpty(),
+            printSettings = savedQuote.printSettings ?: PrintSettings(),
         )
     }
 
@@ -291,6 +315,11 @@ class QuoteViewModel(
             if (metadata.filamentLengthMeters != null) add("comprimento de filamento")
             if (metadata.printTimeMinutes != null) add("tempo de impressão")
             if (photoApplied) add("foto do modelo")
+            if (metadata.layerHeightMm != null || metadata.infillPercentage != null ||
+                metadata.infillPattern != null || metadata.supportsEnabled != null
+            ) {
+                add("configurações de impressão")
+            }
         }
         val skippedPhotoNote = if (metadata.thumbnail != null && !photoApplied) {
             " Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido."

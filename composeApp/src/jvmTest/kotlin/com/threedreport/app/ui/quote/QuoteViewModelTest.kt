@@ -9,6 +9,7 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Service
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -356,6 +357,38 @@ class QuoteViewModelTest {
         assertEquals("Peça pro cliente novo", duplicate.name)
         assertEquals(com.threedreport.core.model.OrderStatus.ORCADO, duplicate.status)
         assertTrue(duplicate.savedAtEpochMillis >= original.savedAtEpochMillis)
+    }
+
+    @Test
+    fun setPrintSettingsIsPersistedOnSaveAndRestoredOnEdit() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        val settings = PrintSettings(layerHeightMm = 0.2, infillPercentage = 15.0, infillPattern = "gyroid", supportsEnabled = true)
+        viewModel.setPrintSettings(settings)
+
+        viewModel.saveCurrentQuote()
+
+        val saved = historyRepository.savedQuotes.value.first()
+        assertEquals(settings, saved.printSettings)
+
+        viewModel.resetForm()
+        viewModel.loadForEditing(saved)
+
+        assertEquals(settings, viewModel.saveForm.value.printSettings)
+    }
+
+    @Test
+    fun emptyPrintSettingsAreSavedAsNull() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+
+        viewModel.saveCurrentQuote()
+
+        assertEquals(null, historyRepository.savedQuotes.value.first().printSettings)
     }
 
     @Test

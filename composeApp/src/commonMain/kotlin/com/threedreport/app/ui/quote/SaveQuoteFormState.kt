@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.core.model.PrintSettings
 
 /** Campos opcionais preenchidos ao salvar o orçamento atual no histórico. */
 data class SaveQuoteFormState(
@@ -22,6 +23,8 @@ data class SaveQuoteFormState(
     val sourceLink: String = "",
     val clientName: String = "",
     val clientContact: String = "",
+    /** Configurações de fatiamento (altura de camada, preenchimento, suporte), opcionais — ver KDoc de [PrintSettings]. */
+    val printSettings: PrintSettings = PrintSettings(),
     val savedConfirmation: Boolean = false,
     /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
     val editingQuoteId: String? = null,
