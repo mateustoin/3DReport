@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,6 +34,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -47,7 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
 import kotlin.math.roundToInt
@@ -145,7 +149,10 @@ private fun KanbanColumn(
             .onGloballyPositioned { onBoundsChanged(it.fullBoundsInWindow()) },
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("${status.label} (${quotes.size})", style = MaterialTheme.typography.titleMedium)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(modifier = Modifier.size(8.dp).background(status.progressColor(), CircleShape))
+            Text("${status.label} (${quotes.size})", style = MaterialTheme.typography.titleMedium)
+        }
         HorizontalDivider()
         if (quotes.isEmpty()) {
             Text(
@@ -253,7 +260,7 @@ private fun KanbanCard(
                     savedQuote.client?.let { client ->
                         Text(client.name, style = MaterialTheme.typography.bodySmall)
                     }
-                    Text(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
+                    NumericText(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
                 }
             }
 

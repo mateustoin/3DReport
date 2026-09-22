@@ -34,18 +34,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.platform.encodeImageBitmapToPng
 import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
+import com.threedreport.core.model.Quote
+import com.threedreport.core.model.Service
 import com.threedreport.core.stl.StlAnalyzer
 import com.threedreport.core.stl.parseStl
 import com.threedreport.core.stl.peekStlTriangleCount
@@ -172,27 +176,7 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
         val quote = result.quote
         when {
             result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
-            quote != null -> {
-                Text("Produção: ${quote.productionCost.toMoney()}")
-                Text("Venda: ${quote.salePrice.toMoney()}")
-                if (quote.marketplaceFeeRate > 0.0) {
-                    Text(
-                        "Já inclui a taxa de marketplace (${quote.marketplaceFeeRate.toPercentText()}) — " +
-                            "o cliente paga esse valor normalmente.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-                Text("Lucro: ${quote.profit.toMoney()}")
-                if (result.selectedServices.isNotEmpty()) {
-                    result.selectedServices.forEach { service ->
-                        Text("${service.name}: ${service.price.toMoney()}")
-                    }
-                    Text(
-                        "Total (venda + serviços): ${result.grandTotal!!.toMoney()}",
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                }
-            }
+            quote != null -> QuoteReceipt(quote = quote, selectedServices = result.selectedServices, grandTotal = result.grandTotal ?: quote.salePrice)
             filaments.isEmpty() && allFilaments.isNotEmpty() -> Text(
                 "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" na aba Filamentos.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -216,6 +200,50 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
             },
             onEditingFinished = onEditingFinished,
         )
+    }
+}
+
+/**
+ * Resultado do cálculo como uma "nota": o valor que de fato é cobrado do cliente
+ * ([grandTotal] — venda + serviços) em destaque no topo, com a composição do preço (custo de
+ * produção, lucro, cada serviço) como itens de nota abaixo. Antes disso era uma pilha de `Text`
+ * do mesmo peso, sem indicar qual número é o que realmente importa pra fechar a venda.
+ */
+@Composable
+private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTotal: Double) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "Você cobra",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            NumericText(
+                text = grandTotal.toMoney(),
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            if (quote.marketplaceFeeRate > 0.0) {
+                Text(
+                    "Já inclui a taxa de marketplace (${quote.marketplaceFeeRate.toPercentText()}) — " +
+                        "o cliente paga esse valor normalmente.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            ReceiptLine("Custo de produção", quote.productionCost.toMoney())
+            ReceiptLine("Lucro", quote.profit.toMoney())
+            selectedServices.forEach { service -> ReceiptLine(service.name, service.price.toMoney()) }
+        }
+    }
+}
+
+@Composable
+private fun ReceiptLine(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        NumericText(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

@@ -1,13 +1,16 @@
 package com.threedreport.app.ui.history
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,6 +34,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.decodeImageBitmap
@@ -41,6 +48,7 @@ import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toWeightText
+import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
 
@@ -212,11 +220,21 @@ private fun StatusDropdown(status: OrderStatus, onStatusChange: (OrderStatus) ->
     var expanded by remember { mutableStateOf(false) }
 
     Column {
-        TextButton(onClick = { expanded = true }) { Text("Status: ${status.label}") }
+        TextButton(onClick = { expanded = true }) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(modifier = Modifier.size(8.dp).background(status.progressColor(), CircleShape))
+                Text("Status: ${status.label}")
+            }
+        }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             OrderStatus.entries.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option.label) },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Box(modifier = Modifier.size(8.dp).background(option.progressColor(), CircleShape))
+                            Text(option.label)
+                        }
+                    },
                     onClick = {
                         onStatusChange(option)
                         expanded = false
@@ -268,9 +286,16 @@ private fun SavedQuoteRow(
                     }
                 }
                 Text(
-                    "Peso: ${savedQuote.quote.filamentWeightGrams.toWeightText()} · " +
-                        "Produção: ${savedQuote.quote.productionCost.toMoney()} · Venda: ${savedQuote.quote.salePrice.toMoney()} · " +
-                        "Lucro: ${savedQuote.quote.profit.toMoney()}",
+                    buildAnnotatedString {
+                        append("Peso: ")
+                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.filamentWeightGrams.toWeightText()) }
+                        append(" · Produção: ")
+                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.productionCost.toMoney()) }
+                        append(" · Venda: ")
+                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.salePrice.toMoney()) }
+                        append(" · Lucro: ")
+                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.profit.toMoney()) }
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 savedQuote.sourceLink?.let { link ->

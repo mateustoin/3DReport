@@ -5,6 +5,22 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.21.0] - 2026-09-21
+
+### Adicionado
+- Refinamento visual (decisão 73): números (preço, peso, tempo) passam a
+  usar fonte monoespaçada em todo o app — Orçamento, Dashboard, Kanban e
+  Histórico — dando aos valores uma leitura de "instrumento de medição",
+  consistente em qualquer tela. O resultado do cálculo no Orçamento virou
+  uma "nota": o valor cobrado do cliente em destaque no topo, com custo/
+  lucro/serviços como itens abaixo, em vez de uma lista de linhas do
+  mesmo peso visual. Cartões de estatística do Dashboard trocaram os 4
+  blocos brancos com sombra por uma leitura em régua (número grande +
+  rótulo, separados por uma linha fina). Status de pedido (Orçado →
+  Entregue) ganhou uma cor de progresso fria→quente (reaproveitando as
+  cores já existentes do app), visível como um ponto colorido no Kanban
+  e no seletor de status do Histórico.
+
 ## [1.20.0] - 2026-09-21
 
 ### Adicionado

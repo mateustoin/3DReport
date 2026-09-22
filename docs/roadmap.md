@@ -165,6 +165,18 @@ implementação.
   `Scaffold`/`SnackbarHost` ficaram de fora, registrados em "Observações
   técnicas" abaixo. Feito (2026-09-16): `ui/theme/Color.kt`,
   `ui/components/EmptyState.kt`.
+  Segunda leva (decisão 73, 2026-09-21, pedida pelo responsável do
+  projeto via `/frontend-design`): números (preço, peso, tempo) em fonte
+  monoespaçada em todo o app — Orçamento, Dashboard, Kanban, Histórico —
+  pra ter uma leitura consistente de "instrumento de medição", já que
+  produzir esses números é o motivo do app existir. Resultado do cálculo
+  vira uma "nota" (valor cobrado em destaque no topo, custo/lucro/
+  serviços como itens abaixo) em vez de uma pilha de texto do mesmo peso.
+  Cartões de estatística do Dashboard trocam 4 blocos brancos com sombra
+  por uma leitura em régua. Status do pedido ganha uma cor de progresso
+  fria→quente (reaproveita `primary`/`secondary` já existentes, sem cores
+  novas), visível como um ponto no Kanban e no seletor do Histórico.
+  Feito: `ui/format/NumericText.kt`, `ui/theme/OrderStatusColor.kt`.
 - [x] **Cliente vinculado ao orçamento.** Campo opcional (`Client(name,
   contact?)`) embutido em `SavedQuote`, mesmo tratamento do link do modelo —
   uso só interno, nunca exportado (decisão 37). Feito (2026-09-16):
