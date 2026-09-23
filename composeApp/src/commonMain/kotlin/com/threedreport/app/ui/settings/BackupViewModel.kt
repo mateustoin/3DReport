@@ -9,6 +9,7 @@ import com.threedreport.app.platform.saveBytesToFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Estado da seção "Backup" das Configurações.
@@ -45,6 +46,9 @@ class BackupViewModel(private val repository: BackupRepository) {
             else -> BackupUiState()
         }
     }
+
+    /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
+    fun consumeMessage() = state.update { it.copy(message = null) }
 
     /** Escolhe o arquivo e **só** pede confirmação — restaurar de fato é [confirmRestore]. */
     fun pickBackupToRestore() {

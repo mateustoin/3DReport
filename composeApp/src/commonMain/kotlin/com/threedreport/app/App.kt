@@ -13,6 +13,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -47,6 +49,7 @@ import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.data.ThemeRepository
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.dashboard.DashboardScreen
 import com.threedreport.app.ui.dashboard.DashboardViewModel
 import com.threedreport.app.ui.filaments.FilamentListScreen
@@ -126,8 +129,10 @@ fun App() {
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     AppTheme(themeMode) {
-        CompositionLocalProvider(LocalCurrency provides currency) {
+        CompositionLocalProvider(LocalCurrency provides currency, LocalSnackbarHostState provides snackbarHostState) {
             Surface(
                 modifier = Modifier.fillMaxSize().onPreviewKeyEvent { event ->
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
@@ -169,6 +174,7 @@ fun App() {
                     }
                 },
             ) {
+                Box(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
                         AppTab.entries.forEach { tab ->
@@ -208,6 +214,12 @@ fun App() {
                     }
 
                     AppFooter(onHelpClick = { showHelp = true })
+                }
+
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 56.dp),
+                )
                 }
             }
 

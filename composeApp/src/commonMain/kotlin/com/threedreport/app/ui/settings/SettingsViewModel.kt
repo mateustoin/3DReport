@@ -22,6 +22,11 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository) {
         state.value = transform(state.value).copy(savedConfirmation = false)
     }
 
+    /** Chamado depois de o aviso de sucesso aparecer, pra um novo salvamento poder avisar de novo. */
+    fun consumeSavedConfirmation() {
+        state.value = state.value.copy(savedConfirmation = false)
+    }
+
     fun save() {
         val current = state.value
         val settings = runCatching {

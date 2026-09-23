@@ -5,6 +5,17 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.30.0] - 2026-09-23
+
+### Alterado
+- **Avisos de sucesso agora aparecem sempre no mesmo lugar.** "Orçamento
+  salvo", "Configurações salvas", "Marca d'água salva", "Template salvo" e
+  "Backup salvo" passaram de um texto solto embaixo do botão para um aviso
+  no rodapé da janela, que some sozinho. No layout de duas colunas o texto
+  antigo podia nascer fora da parte visível, e a confirmação de uma ação que
+  deu certo simplesmente não aparecia. Mensagens de erro continuam ao lado
+  do campo, de propósito: elas precisam ficar visíveis enquanto você corrige.
+
 ## [1.29.0] - 2026-09-22
 
 ### Adicionado

@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.parseDecimal
@@ -170,9 +171,7 @@ fun SettingsScreen(
         Button(onClick = viewModel::save) { Text("Salvar") }
 
         state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (state.savedConfirmation) {
-            Text("Configurações salvas.", color = MaterialTheme.colorScheme.primary)
-        }
+        ShowSnackbarOnce(state.savedConfirmation, "Configurações salvas.", viewModel::consumeSavedConfirmation)
 
         HorizontalDivider()
 
@@ -185,9 +184,7 @@ fun SettingsScreen(
         Button(onClick = brandingViewModel::save) { Text("Salvar") }
 
         branding.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (branding.savedConfirmation) {
-            Text("Marca d'água salva.", color = MaterialTheme.colorScheme.primary)
-        }
+        ShowSnackbarOnce(branding.savedConfirmation, "Marca d'água salva.", brandingViewModel::consumeSavedConfirmation)
 
         if (branding.isSavingAsTemplate) {
             LabeledField("Nome do template (ex.: Formal, Simples)", branding.templateNameInput, brandingViewModel::updateTemplateName)
@@ -202,9 +199,11 @@ fun SettingsScreen(
                 TextButton(onClick = { showTemplatesDialog = true }) { Text("Ver templates salvos") }
             }
         }
-        if (branding.templateSavedConfirmation) {
-            Text("Template salvo.", color = MaterialTheme.colorScheme.primary)
-        }
+        ShowSnackbarOnce(
+            branding.templateSavedConfirmation,
+            "Template salvo.",
+            brandingViewModel::consumeTemplateSavedConfirmation,
+        )
 
         HorizontalDivider()
 
@@ -278,12 +277,8 @@ private fun BackupSection(viewModel: BackupViewModel) {
         Button(onClick = viewModel::createBackup) { Text("Fazer backup") }
         TextButton(onClick = viewModel::pickBackupToRestore) { Text("Restaurar backup") }
     }
-    state.message?.let { message ->
-        Text(
-            message,
-            color = if (state.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-        )
-    }
+    state.message?.takeIf { state.isError }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    ShowSnackbarOnce(state.message != null && !state.isError, state.message.orEmpty(), viewModel::consumeMessage)
 
     state.fileNameToRestore?.let { fileName ->
         ConfirmDialog(

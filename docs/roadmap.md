@@ -292,7 +292,17 @@ layout antes disso significa redesenhar duas vezes.
   impressora) — é o tipo de carinho que faz a pessoa sentir que o app foi
   feito pra ela. Vem antes da leva de crescimento de propósito: não adianta
   atrair gente nova pra uma tela vazia.
-- [ ] **Unificar as telas de catálogo e migrar pra Scaffold/Snackbar.** Tirado da leva 7 em 2026-09-22 (decisão 81) e proposto como leva própria: é refactor interno grande, muda a navegação e mexe nos atalhos de teclado, então merece decisão separada em vez de entrar junto de melhorias visuais. Itens
+- [x] **Snackbar no lugar do feedback inline** (decisão 82, 2026-09-23). Só
+  confirmações de sucesso; erro de validação continua ao lado do campo.
+  Entrou como sobreposição no layout que já existia, sem migrar pra
+  `Scaffold`: os slots dele (barra superior/inferior, FAB) não são usados.
+- [ ] ~~Unificar o código das três telas de catálogo~~ e ~~fundir as abas
+  num "Catálogos"~~ — **descartados na decisão 82**, depois de conferir a
+  premissa. As telas deixaram de ser "quase idênticas" (362/199/142 linhas,
+  com conteúdo próprio vindo das decisões 39/40, 54 e 68), e a fusão das
+  abas custaria um clique diário e a renumeração dos atalhos pra liberar
+  espaço que a janela de 1280dp (decisão 81) não precisa mais. Fica
+  registrado pra não voltar à fila sem argumento novo. Itens
   já registrados em "Observações técnicas" (fim deste documento) — agendados
   aqui porque são a mesma obra de UI: as 3 telas quase idênticas
   (Filamentos/Impressoras/Serviços) podem virar uma aba "Catálogos" só,

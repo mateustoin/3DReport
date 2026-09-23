@@ -182,6 +182,9 @@ class QuoteViewModel(
         }
     }
 
+    /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
+    fun consumeSavedConfirmation() = saveFormState.update { it.copy(savedConfirmation = false) }
+
     fun saveQuote(quote: Quote, services: List<Service>) {
         val form = saveFormState.value
         val client = form.clientName.trim().ifEmpty { null }?.let { name ->

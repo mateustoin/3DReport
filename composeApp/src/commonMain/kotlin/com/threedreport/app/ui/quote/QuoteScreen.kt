@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
@@ -717,9 +718,7 @@ private fun SaveQuoteForm(
             )
         }
 
-        if (form.savedConfirmation) {
-            Text("Orçamento salvo no histórico.", color = MaterialTheme.colorScheme.primary)
-        }
+        ShowSnackbarOnce(form.savedConfirmation, "Orçamento salvo no histórico.", viewModel::consumeSavedConfirmation)
     }
 }
 

@@ -38,6 +38,15 @@ class BrandingViewModel(
         state.value = state.value.copy(showFooter = show, errorMessage = null, savedConfirmation = false)
     }
 
+    /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
+    fun consumeSavedConfirmation() {
+        state.value = state.value.copy(savedConfirmation = false)
+    }
+
+    fun consumeTemplateSavedConfirmation() {
+        state.value = state.value.copy(templateSavedConfirmation = false)
+    }
+
     fun save() {
         val current = state.value
         current.toSettingsOrError().fold(
