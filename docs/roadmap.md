@@ -22,6 +22,15 @@ logo abaixo — ele organiza em levas o que ainda está aberto (inclusive
 itens que já estavam registrados nas seções seguintes). As seções numeradas
 continuam sendo o catálogo completo, por assunto.
 
+**Como uma ideia de fora entra aqui** (decisão 83): sugestões de quem usa ou
+testa o app chegam como **issue no GitHub**, uma ideia por issue (template
+"Sugerir uma funcionalidade", ver [CONTRIBUTING.md](../CONTRIBUTING.md#sugerindo-ideias)).
+O responsável do projeto faz a triagem e a ideia vira item novo, complementa
+um item existente, é fechada como "já existe" ou é descartada com o motivo
+registrado aqui. Este documento continua sendo a única fonte de verdade: não
+existe arquivo paralelo de ideias. Itens vindos de fora levam o crédito no
+texto, no padrão "(sugerido por Fulano na issue #N, data)".
+
 ## Plano de evolução (revisão de 2026-09-22)
 
 Revisão do produto inteiro feita em 2026-09-22, a pedido do responsável do
@@ -255,6 +264,41 @@ uma conta incompleta mente com mais confiança.
   promessa de entrega). Encaixa bem com a fila por impressora que já existe
   na aba Impressoras: ela sabe quanto tempo cada máquina está ocupada, que é
   metade da conta de um prazo honesto.
+  - **Pedido também em teste externo** (sugerido por João Antonio,
+    2026-09-23, decisão 83): o prazo deve aparecer **em destaque** no PDF,
+    porque é o que o cliente usa para decidir se autoriza a fabricação.
+    Segunda fonte pedindo o mesmo item, sem mudança de escopo.
+- [ ] **Identidade do vendedor no PDF: logo, contato e borda** (sugerido por
+  João Antonio em teste externo, 2026-09-23, decisão 83). Hoje o PDF só
+  carrega a marca do vendedor como texto (marca d'água diagonal e rodapé,
+  `BrandingSettings`), e a versão com imagem já estava registrada como
+  "iteração futura" no item de marca d'água (seção 1). Três acréscimos
+  opcionais: **logomarca** (imagem, no cabeçalho), **contato do vendedor**
+  (telefone/WhatsApp, e-mail, Instagram) e uma **borda** simples na página.
+  Cabe em `BrandingSettings` e, por consequência, nos templates (decisões
+  45/47), que já guardam essa configuração. Cuidados: o contato do
+  **vendedor** é público e diferente de `Client.contact`, que é do cliente e
+  só de uso interno (decisão 37); e o rodapé precisa ser desenhado junto com
+  a assinatura "Gerado com 3DReport" (leva 8), pra os dois não disputarem o
+  mesmo espaço. O mesmo contato serve pro rodapé da imagem quadrada
+  (decisão 80).
+- [ ] **Tempo de fabricação no orçamento do cliente** (sugerido por João
+  Antonio em teste externo, 2026-09-23, decisão 83). O tempo de impressão
+  já existe em todo orçamento (`Quote.printTimeMinutes`, importado do G-code
+  ou digitado), mas não aparece no PDF nem no copiar/colar. Mostrar como
+  opção ("Tempo de fabricação: 6 h 30 min") não fere a decisão 19, porque
+  tempo não é custo nem margem. Item pequeno. Não confundir com prazo de
+  entrega (item acima): tempo de máquina não é promessa de entrega.
+- [ ] **Orçamento com opções: rápido × acabamento fino** (sugerido por João
+  Antonio em teste externo, 2026-09-23, decisão 83). O mesmo pedido em duas
+  (ou mais) variantes, cada uma com o próprio G-code/tempo e preço, lado a
+  lado no PDF, pro cliente escolher. Tem valor educativo: quem é leigo
+  normalmente não sabe que dá pra trocar qualidade de acabamento por prazo
+  e preço. Parente do "Comparar impressoras" (decisão 79), que já roda o
+  `PricingCalculator` várias vezes e mostra lado a lado, mas aqui as
+  variantes vão **pro cliente** e precisam ficar salvas, então mexe no
+  formato de `SavedQuote`. Por isso é bem maior que o item anterior e merece
+  decisão própria sobre o modelo de dados antes de implementar.
 
 ### Leva 6 — Leitura do negócio (Dashboard vira consultor, não relatório)
 
@@ -267,6 +311,28 @@ uma conta incompleta mente com mais confiança.
 - [ ] **Ranking de produto mais lucrativo.** Item já registrado (ver
   "Dashboard/relatório simples" na seção 1) — agendado aqui, por ser a mesma
   leva de leitura do negócio e reaproveitar a mesma agregação.
+- [ ] **Manutenção por impressora** (promovido de "Fora das levas" em
+  2026-09-23, decisão 83, depois de pedido em teste externo por João
+  Antonio). Junta dois itens que já estavam registrados em "Produção e
+  precificação" (seção 1): o **lembrete por horas acumuladas** e o
+  **histórico/diário de manutenção**. Continuam lá descritos; aqui entra o
+  agendamento e os refinamentos que o teste externo trouxe:
+  - **Alertas por componente, cada um com seu intervalo** (ex.: trocar bico
+    a cada X h, lubrificar eixos a cada Y h), em vez de um limiar único por
+    impressora. Registrar a manutenção no diário zera o contador daquele
+    componente, e é assim que os dois itens se ligam.
+  - **Horas de uso fora de orçamento.** As horas vêm dos orçamentos daquela
+    impressora, mas teste de calibração, reimpressão de peça que falhou e uso
+    próprio também gastam a máquina. Sem um jeito de registrar essas horas
+    avulsas, o alerta chega atrasado.
+  - **Não vira aba nova.** Fica na aba Impressoras, onde a fila de impressão
+    já mostra o estado de cada máquina (decisão 68). Mais uma aba mexeria na
+    barra e nos atalhos, que a decisão 82 acabou de defender. A parte "saber
+    que o orçamento foi aprovado e impresso" do pedido já existe no
+    `OrderStatus`.
+  - Encaixa nesta leva porque reaproveita a mesma soma por impressora do
+    `PrintQueueReport` e é leitura do negócio: quanto a máquina rodou e o
+    que ela está pedindo.
 
 ### Leva 7 — UI/UX (depois que o conjunto de campos parar de mudar)
 
@@ -309,6 +375,39 @@ layout antes disso significa redesenhar duas vezes.
   liberando espaço na barra de 7 abas, e o feedback inline vira snackbar.
   Atenção: mexer na quantidade de abas mexe na numeração dos atalhos de
   teclado (decisões 43 e 45).
+- [ ] **Ícones junto dos textos, pra orientar quem usa** (sugerido por João
+  Antonio em teste externo, 2026-09-23; decisão 83, que revisa a 54). Hoje o
+  app não tem nenhum ícone: 7 abas só texto, 12 seções empilhadas em
+  Configurações e dezenas de botões só texto. A decisão 54 descartou ícones
+  perguntando "fica mais bonito?"; a pergunta do teste externo é outra,
+  "fica mais fácil de usar?", e a resposta das referências é sim, **desde
+  que o ícone acompanhe o texto e nunca o substitua**: a Nielsen Norman Group
+  mostra que quase nenhum ícone é universal e que o ganho dele é servir de
+  âncora pra varrer a tela e reconhecer o que já foi visto; o Material
+  Design 3 (que o app segue) prevê ícone + rótulo em abas e navegação, com
+  cautela pra ícone sozinho. Os dois motivos da decisão 54 caem: a
+  inconsistência some se a aplicação for sistemática em todas as telas, e
+  dá pra não somar dependência copiando os Material Symbols (Apache 2.0)
+  como vetores no próprio código.
+  - **Escopo:** (1) abas principais, ícone + texto; (2) títulos de seção das
+    telas longas (Configurações e Orçamento), ícone à esquerda, que é
+    exatamente o pedido ("rolinho ao lado de Filamento"); (3) ações do
+    Histórico e do Kanban, nos botões e no menu "⋮".
+  - **Fora do escopo:** ícone em cada rótulo de campo (vira ruído e perde o
+    efeito de âncora) e qualquer botão só com ícone.
+  - **Ícones do domínio 3D são o ponto fraco:** o ícone "print" do Material
+    é uma impressora **de papel** e confundiria justamente a aba
+    Impressoras, e não existe carretel de filamento pronto. Esses poucos
+    devem ser desenhados pro projeto, no mesmo caminho do ícone do app
+    (decisão 42) e no mesmo traço dos Material Symbols. O ícone de
+    impressora 3D desenhado aqui serve também pro item "Imagens das
+    impressoras" (Presets, seção 1).
+  - **Um conjunto, um estilo:** contornado, preenchido só na aba ativa (padrão
+    do M3); ícone ao lado de texto é decorativo pra leitor de tela
+    (`contentDescription = null`), contraste mínimo de 3:1.
+  - **Validação antes de fechar:** teste de reconhecimento com 3 a 5 pessoas
+    (mostrar só os ícones do domínio e perguntar o que significam),
+    incluindo quem sugeriu. Não muda aba nem atalho de teclado.
 
 ### Leva 8 — Crescimento (com o produto já bom)
 
@@ -367,12 +466,14 @@ layout antes disso significa redesenhar duas vezes.
 Continuam no backlog, sem posição definida nesta revisão (nenhum foi
 descartado): Fase 2 do STL (estimativa geométrica de peso/tempo, pulada pela
 decisão 66), custo de falha real acumulado, sinal/pagamento parcial,
-lembrete e histórico de manutenção por impressora, guardar o `.3mf` do
+guardar o `.3mf` do
 projeto do fatiador, exportar histórico pra CSV/Excel, compatibilidade com
 Spoolman, portal de acompanhamento pro cliente, assistente de IA, idioma da
 interface configurável, banner dedicado pro compartilhamento do site,
 `CODE_OF_CONDUCT.md` e Android. Os três primeiros da lista encaixariam
-naturalmente nas levas 1 e 6, se em algum momento virarem prioridade.
+naturalmente nas levas 1 e 6, se em algum momento virarem prioridade. O
+lembrete e o histórico de manutenção por impressora saíram desta lista na
+decisão 83 e foram pra leva 6.
 
 ## 1. Funcionalidades do produto e UI/UX
 
@@ -806,7 +907,8 @@ implementação.
   agendamento de manutenção). `PrinterProfile` já registra o custo de
   manutenção da máquina; falta um aviso quando o total de horas impressas
   (somadas pelos orçamentos daquela impressora) passar de um limiar
-  configurável, lembrando de fazer a manutenção preventiva.
+  configurável, lembrando de fazer a manutenção preventiva. **Agendado na
+  leva 6** junto do item abaixo, com alertas por componente (decisão 83).
 - [ ] **Histórico de manutenção/alterações por impressora** (levantado pelo
   responsável do projeto, 2026-09-21). Um campo discreto no cadastro de
   cada impressora (ex.: um botão/link "Histórico de manutenção" na linha
@@ -821,7 +923,9 @@ implementação.
   os dois podem conviver: um lembra "já está na hora de mexer", o outro
   registra "o que já foi mexido". Detalhes de implementação (ex.: se cada
   entrada tem só texto+data ou também um tipo/categoria) ficam pra quando
-  for de fato implementar.
+  for de fato implementar. **Agendado na leva 6** como "Manutenção por
+  impressora" (decisão 83): o tipo/categoria da entrada passa a importar,
+  porque é o que zera o contador do componente certo.
 
 ### Presets de cadastro (impressoras e filamentos)
 
@@ -885,6 +989,14 @@ funciona hoje.
     ilustração própria, desenhada pro projeto (mesmo caminho já usado pro
     ícone do app, decisão 42 — sem depender de imagem de terceiros). Preciso
     decidir isso antes de qualquer imagem entrar no repositório.
+    **Pedido também em teste externo** (João Antonio, 2026-09-23, decisão
+    83), citando o OrcaSlicer e o próprio risco de direito autoral: imagem
+    na escolha do preset e na lista de impressoras cadastradas, porque se
+    reconhece uma imagem mais rápido que um nome. Soma uma terceira
+    alternativa, sem problema de licença: (c) **foto da própria impressora**,
+    enviada pelo vendedor no cadastro, pelo mesmo caminho da foto do
+    orçamento. A alternativa (a) sai de graça do item de ícones da leva 7,
+    que desenha um ícone de impressora 3D pro projeto.
   - **Feito (2026-09-19, decisão 54):** `ui/printers/PrinterPresetDialog`
     (botão "Escolher da lista" em Impressoras), `ui/printers/PrinterPresets.kt`.
     Fotos de produto ficaram de fora, como já registrado acima (sem decisão
@@ -972,7 +1084,10 @@ funciona hoje.
     3 telas, ver "Observações técnicas" no fim deste documento) e exigiria
     uma dependência nova (nenhuma lib de ícones no projeto) só por um ganho
     visual marginal. Revisitar junto da unificação das telas de catálogo,
-    se/quando ela acontecer.
+    se/quando ela acontecer. **Revisto na decisão 83 (2026-09-23):** a
+    unificação foi descartada (decisão 82), e um teste externo trouxe o
+    argumento de usabilidade que faltava. Virou item da leva 7 ("Ícones
+    junto dos textos"), aplicado em todas as telas.
 
 ### Vendas e divulgação
 
@@ -1136,10 +1251,10 @@ funciona hoje.
   num diálogo sobre o Histórico, com "Cancelar edição" sempre visível no
   topo; Duplicar continua indo pra aba Orçamento (nada é sobrescrito ali,
   então o risco que motivou essa mudança não se aplica).
-- [ ] **Onboarding na primeira execução.** Assistente curto guiando o
+- [x] **Onboarding na primeira execução.** Assistente curto guiando o
   cadastro da primeira impressora/filamento/margem, em vez de abrir numa
-  tela vazia sem nenhum dado cadastrado. Baixa prioridade — fica pra
-  depois.
+  tela vazia sem nenhum dado cadastrado. Feito na leva 7 (decisão 81), com
+  escopo ajustado lá; marcado aqui só na revisão de 2026-09-23.
 - [x] **Duplicar orçamento** (decisão 69, 2026-09-21). Pedido do
   responsável do projeto (2026-09-17): vender a mesma peça, com os mesmos
   parâmetros, pra outra pessoa antes exigia refazer o orçamento do zero.

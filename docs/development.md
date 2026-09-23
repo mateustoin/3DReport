@@ -68,6 +68,10 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 4. Ao fechar uma leva de funcionalidades, sempre: bump de versão (ver
    "Versionamento" abaixo) + entrada nova em [`CHANGELOG.md`](../CHANGELOG.md)
    — não é opcional, mesmo pra levas pequenas.
+5. Ideias de fora chegam como issue com a label `triagem` (decisão 83). A
+   triagem responde na issue (aceita, mesclada, já existe ou descartada),
+   registra o resultado no [roadmap](roadmap.md) com crédito a quem sugeriu
+   e tira a label. Ver [CONTRIBUTING.md](../CONTRIBUTING.md#sugerindo-ideias).
 
 ## Versionamento
 
