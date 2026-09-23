@@ -5,6 +5,27 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.29.0] - 2026-09-22
+
+### Adicionado
+- **Barra de composição do preço.** Junto do valor cobrado, uma barra
+  mostra para onde o dinheiro vai: material, energia, máquina, seu
+  trabalho, reserva de falha e lucro, cada um com seu valor. Ver que a
+  máquina pesa mais que o plástico, ou que o seu trabalho é a maior fatia,
+  é o que ajuda a decidir onde mexer quando o cliente acha o preço alto.
+- **Três perguntas na primeira execução.** Preço do kWh, valor da sua hora
+  de trabalho e margem de lucro, que são os números que mais mudam o preço
+  e que ninguém adivinha por padrão. Dá pra pular, e tudo continua editável
+  em Configurações.
+
+### Alterado
+- **A tela de Orçamento abre em duas colunas**: os campos à esquerda e o
+  resultado à direita, recalculando enquanto você digita. Antes era uma
+  coluna só e não dava pra ver o preço e os campos ao mesmo tempo sem
+  rolar. Em janela estreita a tela volta sozinha para uma coluna.
+- A janela do app passa a abrir maior (1280×820), para as duas colunas
+  caberem sem você precisar redimensionar na mão.
+
 ## [1.28.0] - 2026-09-22
 
 ### Adicionado

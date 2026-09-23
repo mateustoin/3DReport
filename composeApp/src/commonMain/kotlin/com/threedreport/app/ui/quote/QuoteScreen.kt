@@ -1,9 +1,15 @@
 package com.threedreport.app.ui.quote
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +31,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,6 +41,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
@@ -48,6 +57,10 @@ import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.platform.encodeImageBitmapToPng
 import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
+import com.threedreport.core.model.Currency
+import com.threedreport.core.model.Filament
+import com.threedreport.core.model.PricingSettings
+import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.Service
@@ -68,6 +81,13 @@ private const val MAX_RENDERABLE_STL_TRIANGLES = 500_000L
 
 /** Opção padrão do seletor de canal: venda sem intermediário e sem taxa (Pix, dinheiro, entrega em mãos). */
 private const val DIRECT_SALE_LABEL = "Venda direta (sem taxa)"
+
+/**
+ * Abaixo disso a tela volta pra uma coluna só. O valor cobre a janela padrão do app com folga e
+ * ainda deixa as duas colunas legíveis; espremer mais faria os campos e a nota ficarem estreitos
+ * demais pra ler de relance, que é justamente o que o layout de duas colunas tenta resolver.
+ */
+private val TWO_COLUMN_MIN_WIDTH = 1100.dp
 
 /** Arredonda pra 1 casa decimal, separador decimal brasileiro (vírgula) — mesmo estilo de `toWeightText()`. */
 private fun Double.formatOneDecimal(): String {
@@ -96,196 +116,261 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
 
     val result = viewModel.calculate(filaments, printers, settings, services, input, salesChannels)
     val currency = LocalCurrency.current
+    val quote = result.quote
 
-    Column(
-        modifier = modifier.padding(24.dp).fillMaxSize().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        LabeledDropdown(
-            label = "Filamento",
-            items = filaments,
-            selected = result.filament,
-            itemLabel = { "${it.name} · ${it.pricePerKg.toCurrencyText(currency)}/kg" },
-            displayText = { it.name },
-            onSelect = { viewModel.selectFilament(it.id) },
-        )
-
-        val availableColors = result.filament?.colors?.filter { it.inStock }.orEmpty()
-        if (availableColors.size > 1) {
-            LabeledDropdown(
-                label = "Cor",
-                items = availableColors,
-                selected = result.filamentColor,
-                itemLabel = { it.displayLabel() },
-                displayText = { it.displayLabel() },
-                onSelect = { viewModel.selectFilamentColor(it.id) },
-            )
-        }
-
-        LabeledDropdown(
-            label = "Impressora",
-            items = printers,
-            selected = result.printer,
-            itemLabel = { it.name },
-            displayText = { it.name },
-            onSelect = { viewModel.selectPrinter(it.id) },
-        )
-
-        OutlinedButton(onClick = viewModel::pickAndImportGCode) { Text("Preencher a partir do G-code") }
-        input.gcodeImportMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodySmall)
-            OutlinedButton(onClick = viewModel::undoGCodeImport) { Text("Desfazer importação do G-code") }
-        }
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.lengthMetersText,
-            onValueChange = viewModel::setLengthMeters,
-            label = { Text("Comprimento de filamento (m)") },
-        )
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.printTimeMinutesText,
-            onValueChange = viewModel::setPrintTimeMinutes,
-            label = { Text("Tempo de impressão (min)") },
-        )
-
-        // Só aparece pra quem configurou quanto vale a própria hora: sem isso, o campo não teria
-        // efeito nenhum no preço e seria só mais uma caixa pra ignorar.
-        if (settings.chargesLaborByTime) {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().tabToNavigate(),
-                value = input.laborMinutesText,
-                onValueChange = viewModel::setLaborMinutes,
-                label = { Text("Seu tempo de trabalho por peça (min)") },
-            )
-            Text(
-                "Quanto cada peça dá de trabalho seu, fora o tempo de máquina: tirar da mesa, " +
-                    "remover suporte, lixar, pintar, embalar. Cobrado a " +
-                    "${settings.laborRatePerHour.toCurrencyText(currency)}/h (ajustável em Configurações).",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.quantityText,
-            onValueChange = viewModel::setQuantity,
-            label = { Text("Quantidade de peças") },
-        )
-        Text(
-            "Comprimento e tempo acima são de UMA peça: o app multiplica pela quantidade. Se você " +
-                "fatiou a mesa inteira de uma vez e os números já são do lote todo, deixe a " +
-                "quantidade em 1. Vazio conta como 1.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        if (settings.chargesLaborByTime) {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().tabToNavigate(),
-                value = input.setupMinutesText,
-                onValueChange = viewModel::setSetupMinutes,
-                label = { Text("Preparo do pedido (min)") },
-            )
-            Text(
-                "O que você faz uma vez só, não importa quantas peças: preparar o arquivo, fatiar, " +
-                    "montar a mesa. É isso que faz a peça sair mais barata no lote, sem precisar " +
-                    "inventar desconto.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-
-        if (services.isNotEmpty()) {
-            Text("Serviços opcionais", style = MaterialTheme.typography.titleMedium)
-            services.forEach { service ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = service.id in input.selectedServiceIds,
-                        onCheckedChange = { viewModel.toggleService(service.id) },
-                    )
-                    Text("${service.name} · ${service.price.toMoney()}")
+    // Em tela larga, entradas à esquerda e o dinheiro à direita, recalculando enquanto se digita:
+    // antes era uma coluna só e não dava pra ver o preço e os campos ao mesmo tempo. Janela
+    // estreita volta pra coluna única, que continua sendo o layout que sempre funcionou.
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        if (maxWidth >= TWO_COLUMN_MIN_WIDTH) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    QuoteInputs(viewModel, filaments, printers, services, salesChannels, settings, input, result, currency)
+                    HorizontalDivider()
+                    SaveQuoteFormSection(viewModel, saveForm, result, onEditingFinished)
+                }
+                VerticalDivider()
+                Column(
+                    modifier = Modifier.weight(0.8f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    QuoteResultSection(viewModel, filaments, allFilaments, printers, services, salesChannels, settings, input, result)
                 }
             }
-        }
-
-        if (salesChannels.isNotEmpty()) {
-            LabeledDropdown(
-                label = "Canal de venda",
-                items = listOf(null) + salesChannels,
-                selected = result.salesChannel,
-                itemLabel = { it?.let { channel -> "${channel.name} · ${channel.feeRate.toPercentText()}" } ?: DIRECT_SALE_LABEL },
-                displayText = { it?.name ?: DIRECT_SALE_LABEL },
-                onSelect = { viewModel.selectSalesChannel(it?.id) },
-                emptyText = DIRECT_SALE_LABEL,
-            )
-            Text(
-                "A taxa do canal é descontada do que você recebe, então o preço de venda sobe o " +
-                    "suficiente pra sua margem não mudar. Cadastre os canais em Configurações.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.shippingCostText,
-            onValueChange = viewModel::setShippingCost,
-            label = { Text("Frete (${currency.symbol}, opcional)") },
-        )
-        Text(
-            "Somado ao total como linha própria, nunca embutido no preço da peça: frete é repasse, " +
-                "não produto seu. Não multiplica pela quantidade nem entra na margem.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        HorizontalDivider()
-
-        Text("Resultado", style = MaterialTheme.typography.titleMedium)
-
-        val quote = result.quote
-        when {
-            result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
-            quote != null -> QuoteReceipt(quote = quote, selectedServices = result.selectedServices, grandTotal = result.grandTotal ?: quote.salePrice)
-            filaments.isEmpty() && allFilaments.isNotEmpty() -> Text(
-                "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" na aba Filamentos.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            filaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
-            printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
-            else -> Text("Preencha os campos acima para calcular.", style = MaterialTheme.typography.bodyMedium)
-        }
-
-        if (quote != null) {
-            NegotiationSection(
-                quote = quote,
-                extras = result.servicesTotal + result.shippingCost,
-                targetTotalText = input.targetTotalText,
-                onTargetTotalChange = viewModel::setTargetTotal,
-            )
-
-            val comparison = viewModel.comparePrinters(filaments, printers, settings, services, input, salesChannels)
-            if (comparison.size > 1) {
-                PrinterComparison(comparison = comparison, extras = result.servicesTotal + result.shippingCost)
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                QuoteInputs(viewModel, filaments, printers, services, salesChannels, settings, input, result, currency)
+                HorizontalDivider()
+                QuoteResultSection(viewModel, filaments, allFilaments, printers, services, salesChannels, settings, input, result)
+                HorizontalDivider()
+                SaveQuoteFormSection(viewModel, saveForm, result, onEditingFinished)
             }
         }
-
-        HorizontalDivider()
-        SaveQuoteForm(
-            form = saveForm,
-            viewModel = viewModel,
-            canSave = quote != null,
-            onSave = {
-                quote?.let {
-                    val wasEditing = saveForm.editingQuoteId != null
-                    viewModel.saveQuote(it, result.selectedServices)
-                    if (wasEditing) onEditingFinished()
-                }
-            },
-            onEditingFinished = onEditingFinished,
-        )
     }
 }
 
+/** Dados da peça: o que o criador preenche pra o cálculo acontecer. */
+@Composable
+private fun QuoteInputs(
+    viewModel: QuoteViewModel,
+    filaments: List<Filament>,
+    printers: List<PrinterProfile>,
+    services: List<Service>,
+    salesChannels: List<SalesChannel>,
+    settings: PricingSettings,
+    input: QuoteInputState,
+    result: QuoteResult,
+    currency: Currency,
+) {
+    LabeledDropdown(
+        label = "Filamento",
+        items = filaments,
+        selected = result.filament,
+        itemLabel = { "${it.name} · ${it.pricePerKg.toCurrencyText(currency)}/kg" },
+        displayText = { it.name },
+        onSelect = { viewModel.selectFilament(it.id) },
+    )
+
+    val availableColors = result.filament?.colors?.filter { it.inStock }.orEmpty()
+    if (availableColors.size > 1) {
+        LabeledDropdown(
+            label = "Cor",
+            items = availableColors,
+            selected = result.filamentColor,
+            itemLabel = { it.displayLabel() },
+            displayText = { it.displayLabel() },
+            onSelect = { viewModel.selectFilamentColor(it.id) },
+        )
+    }
+
+    LabeledDropdown(
+        label = "Impressora",
+        items = printers,
+        selected = result.printer,
+        itemLabel = { it.name },
+        displayText = { it.name },
+        onSelect = { viewModel.selectPrinter(it.id) },
+    )
+
+    OutlinedButton(onClick = viewModel::pickAndImportGCode) { Text("Preencher a partir do G-code") }
+    input.gcodeImportMessage?.let { message ->
+        Text(message, style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(onClick = viewModel::undoGCodeImport) { Text("Desfazer importação do G-code") }
+    }
+
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        value = input.lengthMetersText,
+        onValueChange = viewModel::setLengthMeters,
+        label = { Text("Comprimento de filamento (m)") },
+    )
+
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        value = input.printTimeMinutesText,
+        onValueChange = viewModel::setPrintTimeMinutes,
+        label = { Text("Tempo de impressão (min)") },
+    )
+
+    // Só aparece pra quem configurou quanto vale a própria hora: sem isso, o campo não teria
+    // efeito nenhum no preço e seria só mais uma caixa pra ignorar.
+    if (settings.chargesLaborByTime) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = input.laborMinutesText,
+            onValueChange = viewModel::setLaborMinutes,
+            label = { Text("Seu tempo de trabalho por peça (min)") },
+        )
+        Text(
+            "Quanto cada peça dá de trabalho seu, fora o tempo de máquina: tirar da mesa, " +
+                "remover suporte, lixar, pintar, embalar. Cobrado a " +
+                "${settings.laborRatePerHour.toCurrencyText(currency)}/h (ajustável em Configurações).",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        value = input.quantityText,
+        onValueChange = viewModel::setQuantity,
+        label = { Text("Quantidade de peças") },
+    )
+    Text(
+        "Comprimento e tempo acima são de UMA peça: o app multiplica pela quantidade. Se você " +
+            "fatiou a mesa inteira de uma vez e os números já são do lote todo, deixe a " +
+            "quantidade em 1. Vazio conta como 1.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    if (settings.chargesLaborByTime) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = input.setupMinutesText,
+            onValueChange = viewModel::setSetupMinutes,
+            label = { Text("Preparo do pedido (min)") },
+        )
+        Text(
+            "O que você faz uma vez só, não importa quantas peças: preparar o arquivo, fatiar, " +
+                "montar a mesa. É isso que faz a peça sair mais barata no lote, sem precisar " +
+                "inventar desconto.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+
+    if (services.isNotEmpty()) {
+        Text("Serviços opcionais", style = MaterialTheme.typography.titleMedium)
+        services.forEach { service ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = service.id in input.selectedServiceIds,
+                    onCheckedChange = { viewModel.toggleService(service.id) },
+                )
+                Text("${service.name} · ${service.price.toMoney()}")
+            }
+        }
+    }
+
+    if (salesChannels.isNotEmpty()) {
+        LabeledDropdown(
+            label = "Canal de venda",
+            items = listOf(null) + salesChannels,
+            selected = result.salesChannel,
+            itemLabel = { it?.let { channel -> "${channel.name} · ${channel.feeRate.toPercentText()}" } ?: DIRECT_SALE_LABEL },
+            displayText = { it?.name ?: DIRECT_SALE_LABEL },
+            onSelect = { viewModel.selectSalesChannel(it?.id) },
+            emptyText = DIRECT_SALE_LABEL,
+        )
+        Text(
+            "A taxa do canal é descontada do que você recebe, então o preço de venda sobe o " +
+                "suficiente pra sua margem não mudar. Cadastre os canais em Configurações.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        value = input.shippingCostText,
+        onValueChange = viewModel::setShippingCost,
+        label = { Text("Frete (${currency.symbol}, opcional)") },
+    )
+    Text(
+        "Somado ao total como linha própria, nunca embutido no preço da peça: frete é repasse, " +
+            "não produto seu. Não multiplica pela quantidade nem entra na margem.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+}
+
+/** O lado do dinheiro: quanto cobrar, o que sobra e como isso muda numa negociação. */
+@Composable
+private fun QuoteResultSection(
+    viewModel: QuoteViewModel,
+    filaments: List<Filament>,
+    allFilaments: List<Filament>,
+    printers: List<PrinterProfile>,
+    services: List<Service>,
+    salesChannels: List<SalesChannel>,
+    settings: PricingSettings,
+    input: QuoteInputState,
+    result: QuoteResult,
+) {
+    Text("Resultado", style = MaterialTheme.typography.titleMedium)
+
+    val quote = result.quote
+    when {
+        result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
+        quote != null -> QuoteReceipt(quote = quote, selectedServices = result.selectedServices, grandTotal = result.grandTotal ?: quote.salePrice)
+        filaments.isEmpty() && allFilaments.isNotEmpty() -> Text(
+            "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" na aba Filamentos.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        filaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
+        printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
+        else -> Text("Preencha os campos acima para calcular.", style = MaterialTheme.typography.bodyMedium)
+    }
+
+    if (quote != null) {
+        NegotiationSection(
+            quote = quote,
+            extras = result.servicesTotal + result.shippingCost,
+            targetTotalText = input.targetTotalText,
+            onTargetTotalChange = viewModel::setTargetTotal,
+        )
+
+        val comparison = viewModel.comparePrinters(filaments, printers, settings, services, input, salesChannels)
+        if (comparison.size > 1) {
+            PrinterComparison(comparison = comparison, extras = result.servicesTotal + result.shippingCost)
+        }
+    }
+}
+
+@Composable
+private fun SaveQuoteFormSection(
+    viewModel: QuoteViewModel,
+    saveForm: SaveQuoteFormState,
+    result: QuoteResult,
+    onEditingFinished: () -> Unit,
+) {
+    val quote = result.quote
+    SaveQuoteForm(
+        form = saveForm,
+        viewModel = viewModel,
+        canSave = quote != null,
+        onSave = {
+            quote?.let {
+                val wasEditing = saveForm.editingQuoteId != null
+                viewModel.saveQuote(it, result.selectedServices)
+                if (wasEditing) onEditingFinished()
+            }
+        },
+        onEditingFinished = onEditingFinished,
+    )
+}
 /**
  * Resultado do cálculo como uma "nota": o valor que de fato é cobrado do cliente
  * ([grandTotal] — venda + serviços) em destaque no topo, com a composição do preço (custo de
@@ -325,6 +410,8 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTot
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            PriceCompositionBar(quote)
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             ReceiptLine("Custo de produção", quote.productionCost.toMoney())
             ReceiptLine("Lucro", quote.profit.toMoney())
@@ -404,6 +491,57 @@ private fun PrinterComparison(comparison: List<Pair<PrinterProfile, Quote>>, ext
         style = MaterialTheme.typography.bodySmall,
     )
 }
+
+/**
+ * Onde o dinheiro do preço está, em barra empilhada mais legenda. Existe porque "custo de produção
+ * + lucro" não conta o suficiente: ver que a máquina pesa mais que o plástico, ou que o próprio
+ * trabalho é a maior fatia, é o que ensina a precificar e a saber onde mexer quando o preço ficar
+ * alto demais pro cliente.
+ *
+ * Fatias zeradas são omitidas: `Modifier.weight` não aceita zero, e uma legenda cheia de "R$ 0,00"
+ * só atrapalharia a leitura.
+ */
+@Composable
+private fun PriceCompositionBar(quote: Quote) {
+    val costs = quote.costs
+    val slices = listOf(
+        CompositionSlice("Material", costs.material, MaterialTheme.colorScheme.primary),
+        CompositionSlice("Energia", costs.energy, MaterialTheme.colorScheme.tertiary),
+        CompositionSlice(
+            "Máquina",
+            costs.maintenance + costs.investmentReturn + costs.fixedCost,
+            MaterialTheme.colorScheme.secondary,
+        ),
+        CompositionSlice("Seu trabalho", costs.labor + costs.finishing, MaterialTheme.colorScheme.error),
+        CompositionSlice("Reserva de falha", costs.failures, MaterialTheme.colorScheme.outline),
+        CompositionSlice("Administrativo", costs.administrative, MaterialTheme.colorScheme.outlineVariant),
+        CompositionSlice("Lucro", quote.profit, MaterialTheme.colorScheme.primaryContainer),
+    ).filter { it.value > 0.0 }
+
+    if (slices.isEmpty()) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(7.dp)),
+    ) {
+        slices.forEach { slice ->
+            Box(modifier = Modifier.weight(slice.value.toFloat()).fillMaxHeight().background(slice.color))
+        }
+    }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        slices.forEach { slice ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(modifier = Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(slice.color))
+                Text(
+                    "${slice.label} ${slice.value.toMoney()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+private data class CompositionSlice(val label: String, val value: Double, val color: Color)
 
 @Composable
 private fun ReceiptLine(label: String, value: String) {

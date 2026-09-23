@@ -274,17 +274,17 @@ Deliberadamente **depois** das levas 1 a 5: elas somam campos na tela de
 Orçamento (mão de obra, quantidade, desconto, imposto, frete). Redesenhar o
 layout antes disso significa redesenhar duas vezes.
 
-- [ ] **Layout de duas colunas na tela de Orçamento.** Hoje é um app desktop
+- [x] **Layout de duas colunas na tela de Orçamento** (decisão 81, 2026-09-22). Hoje é um app desktop
   com layout de celular: uma coluna só, rolando por três assuntos diferentes
   (calcular, anexar arquivos, salvar), e na janela padrão não dá pra ver o
   preço e os campos ao mesmo tempo. Proposta: entradas à esquerda, a "nota"
   fixa à direita recalculando ao vivo enquanto se digita. É a maior melhoria
   visual disponível e finalmente usa o formato de tela que o app escolheu.
-- [ ] **Barra de composição do preço.** O "Você cobra R$ 16,19" não mostra
+- [x] **Barra de composição do preço** (decisão 81, 2026-09-22). O "Você cobra R$ 16,19" não mostra
   onde o dinheiro está. Uma barra empilhada pequena (material, energia,
   máquina, mão de obra, lucro) ensina o vendedor a precificar, dá sentido a
   todas as parcelas somadas nas levas 1 a 3 e rende boa screenshot pro site.
-- [ ] **Onboarding de 3 perguntas na primeira execução.** Substitui o item
+- [x] **Onboarding de 3 perguntas na primeira execução** (decisão 81, 2026-09-22). Perguntas ajustadas: kWh, valor da hora de trabalho e margem, e sem sugestão de kWh por estado (ver decisão). Substitui o item
   de onboarding já registrado (ver "UX extras"), agora com escopo definido:
   impressora (pelo preset que já existe), preço do kWh e margem. Detalhe
   local que vale a pena: **sugerir o kWh por estado brasileiro** a partir de
@@ -292,7 +292,7 @@ layout antes disso significa redesenhar duas vezes.
   impressora) — é o tipo de carinho que faz a pessoa sentir que o app foi
   feito pra ela. Vem antes da leva de crescimento de propósito: não adianta
   atrair gente nova pra uma tela vazia.
-- [ ] **Unificar as telas de catálogo e migrar pra Scaffold/Snackbar.** Itens
+- [ ] **Unificar as telas de catálogo e migrar pra Scaffold/Snackbar.** Tirado da leva 7 em 2026-09-22 (decisão 81) e proposto como leva própria: é refactor interno grande, muda a navegação e mexe nos atalhos de teclado, então merece decisão separada em vez de entrar junto de melhorias visuais. Itens
   já registrados em "Observações técnicas" (fim deste documento) — agendados
   aqui porque são a mesma obra de UI: as 3 telas quase idênticas
   (Filamentos/Impressoras/Serviços) podem virar uma aba "Catálogos" só,

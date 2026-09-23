@@ -38,6 +38,7 @@ import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.OnboardingRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
@@ -53,6 +54,7 @@ import com.threedreport.app.ui.filaments.FilamentListViewModel
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.history.QuoteHistoryScreen
 import com.threedreport.app.ui.history.QuoteHistoryViewModel
+import com.threedreport.app.ui.onboarding.OnboardingDialog
 import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
 import com.threedreport.app.ui.quote.EditQuoteDialog
@@ -97,6 +99,7 @@ fun App() {
     val currencyRepository = remember { CurrencyRepository() }
     val backupRepository = remember { BackupRepository() }
     val salesChannelRepository = remember { SalesChannelRepository() }
+    val onboardingRepository = remember { OnboardingRepository() }
 
     val quoteViewModel = remember {
         QuoteViewModel(
@@ -117,6 +120,7 @@ fun App() {
     val backupViewModel = remember { BackupViewModel(backupRepository) }
     val salesChannelViewModel = remember { SalesChannelViewModel(salesChannelRepository) }
 
+    val onboardingCompleted by onboardingRepository.completed.collectAsState()
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var showHelp by remember { mutableStateOf(false) }
     val themeMode by themeViewModel.mode.collectAsState()
@@ -209,6 +213,17 @@ fun App() {
 
             if (showHelp) {
                 HelpDialog(onDismiss = { showHelp = false })
+            }
+
+            if (!onboardingCompleted) {
+                OnboardingDialog(
+                    currentSettings = settingsRepository.settings.value,
+                    onFinish = {
+                        settingsRepository.update(it)
+                        onboardingRepository.markCompleted()
+                    },
+                    onSkip = onboardingRepository::markCompleted,
+                )
             }
 
             val quoteSaveForm by quoteViewModel.saveForm.collectAsState()
