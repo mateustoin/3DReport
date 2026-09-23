@@ -6,11 +6,14 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.copyToClipboard
+import com.threedreport.app.platform.openUrl
+import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.defaultDocumentsDirectory
 import com.threedreport.app.platform.periodStartEpochMillis
 import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.saveBytesToFile
+import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
@@ -89,6 +92,32 @@ class QuoteHistoryViewModel(
         val item = QuoteExportItem(savedQuote, photoBytes(savedQuote))
         val pdfBytes = renderSavedQuotesPdf(listOf(item), watermarkText, footerText, currencyRepository.currency.value)
         saveBytesToFile(pdfBytes, "${sanitizeFileName(savedQuote.name)}.pdf", defaultDocumentsDirectory())
+    }
+
+    /** Abre a conversa do cliente no WhatsApp com o orçamento já escrito (ver [toWhatsAppLink]). */
+    fun openInWhatsApp(savedQuote: SavedQuote) {
+        openUrl(savedQuote.toWhatsAppLink(currencyRepository.currency.value))
+    }
+
+    /**
+     * Gera a imagem quadrada pra mandar no WhatsApp/status e abre o "salvar como". Usa o mesmo
+     * texto de marca da marca d'água do PDF, pra o material do vendedor sair coerente entre os dois.
+     */
+    fun saveShareableImage(savedQuote: SavedQuote) {
+        val currency = currencyRepository.currency.value
+        val quantity = savedQuote.quote.quantity
+        val bytes = renderQuoteImage(
+            title = savedQuote.name,
+            priceText = savedQuote.totalWithServices.toCurrencyText(currency),
+            unitPriceText = if (quantity > 1) {
+                "$quantity peças · ${(savedQuote.totalWithServices / quantity).toCurrencyText(currency)} cada"
+            } else {
+                null
+            },
+            photoBytes = photoBytes(savedQuote),
+            brandText = brandingRepository.branding.value.watermarkText,
+        )
+        saveBytesToFile(bytes, "${sanitizeFileName(savedQuote.name)}.png", defaultDocumentsDirectory())
     }
 
     fun copyQuoteToClipboard(savedQuote: SavedQuote) {

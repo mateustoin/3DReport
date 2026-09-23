@@ -65,6 +65,7 @@ com a margem de lucro desejada.
 - Histórico de orçamentos — consultar, filtrar, baixar foto, excluir
 - Cliente e status do pedido por orçamento
 - Exportar em PDF ou copiar/colar (nome + valor de venda + foto no PDF)
+- Abrir a conversa no WhatsApp com o orçamento já escrito, e gerar uma imagem quadrada da peça pro zap ou pro status
 - Exportar vários orçamentos selecionados num PDF só (um por página)
 - Catálogo/portfólio exportável em PDF (grade, várias peças por página)
 - Dashboard — total vendido, lucro e filamento mais usado, por período

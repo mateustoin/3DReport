@@ -140,6 +140,8 @@ fun QuoteHistoryScreen(
                     onDelete = { pendingDelete = savedQuote },
                     onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
                     onUpdatePrintSettings = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
+                    onOpenWhatsApp = { viewModel.openInWhatsApp(savedQuote) },
+                    onSaveImage = { viewModel.saveShareableImage(savedQuote) },
                 )
             }
         } else if (savedQuotes.isNotEmpty()) {
@@ -265,6 +267,8 @@ private fun SavedQuoteRow(
     onDelete: () -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
     onUpdatePrintSettings: (PrintSettings?) -> Unit,
+    onOpenWhatsApp: () -> Unit,
+    onSaveImage: () -> Unit,
 ) {
     var showPrintSettingsDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -357,6 +361,14 @@ private fun SavedQuoteRow(
                             if (savedQuote.stlFileName != null) {
                                 DropdownMenuItem(text = { Text("Baixar STL") }, onClick = { showMenu = false; onDownloadStl() })
                             }
+                            DropdownMenuItem(
+                                text = { Text("Abrir no WhatsApp") },
+                                onClick = { showMenu = false; onOpenWhatsApp() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Salvar imagem pro WhatsApp") },
+                                onClick = { showMenu = false; onSaveImage() },
+                            )
                             DropdownMenuItem(
                                 text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
                                 onClick = { showMenu = false; onDelete() },

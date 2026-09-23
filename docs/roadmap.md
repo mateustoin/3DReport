@@ -235,18 +235,26 @@ uma conta incompleta mente com mais confiança.
 
 ### Leva 5 — Saída pro cliente
 
-- [ ] **WhatsApp de verdade.** O copiar/colar já existe, mas o passo
+- [x] **WhatsApp de verdade** (decisão 80, 2026-09-22). O copiar/colar já existe, mas o passo
   seguinte é abrir a conversa pronta: botão que monta um link `wa.me` com o
   texto do orçamento já preenchido, usando o contato que já está salvo em
   `Client` (100% local, é só abrir uma URL — reaproveita o
   `platform/openUrl` que já existe).
-- [ ] **Imagem quadrada pro WhatsApp/Instagram.** Foto da peça + preço +
+- [x] **Imagem quadrada pro WhatsApp/Instagram** (decisão 80, 2026-09-22). Foto da peça + preço +
   prazo numa imagem pronta pra mandar no zap ou postar no status, em vez de
   um PDF anexado. A maior parte das vendas no Brasil acontece em conversa,
   não em documento formal. Reaproveita o mesmo caminho de renderização já
   usado na captura do visualizador 3D (`encodeImageBitmapToPng`, decisão
   63) e a assinatura discreta do item de divulgação (leva 8) cabe no
   rodapé dessa imagem também.
+
+- [ ] **Prazo de entrega no orçamento** (levantado em 2026-09-22, decisão
+  80). A imagem de divulgação pediria "foto + preço + prazo", mas prazo não
+  existe como campo em lugar nenhum do modelo, então ficou de fora em vez de
+  ser inventado a partir do tempo de impressão (que é tempo de máquina, não
+  promessa de entrega). Encaixa bem com a fila por impressora que já existe
+  na aba Impressoras: ela sabe quanto tempo cada máquina está ocupada, que é
+  metade da conta de um prazo honesto.
 
 ### Leva 6 — Leitura do negócio (Dashboard vira consultor, não relatório)
 

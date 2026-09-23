@@ -5,6 +5,21 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.28.0] - 2026-09-22
+
+### Adicionado
+- **Abrir no WhatsApp.** No menu de ações de cada orçamento do Histórico, um
+  item abre a conversa do cliente já com o orçamento escrito, pronto pra
+  enviar. Usa o contato que você salvou; quando ele não é um telefone
+  reconhecível, o WhatsApp abre perguntando pra quem enviar, com o texto já
+  pronto do mesmo jeito.
+- **Imagem pro WhatsApp e status.** Gera uma imagem quadrada (1080×1080) com
+  a foto da peça, o nome e o valor, pra mandar numa conversa ou postar no
+  status, em vez de anexar um PDF. Mostra o mesmo que o cliente já vê no
+  PDF: custo de produção, lucro e link do modelo continuam sendo uso
+  interno. Se você configurou o nome da sua marca na marca d'água do PDF,
+  ele aparece discreto na imagem também.
+
 ## [1.27.0] - 2026-09-22
 
 ### Adicionado
