@@ -53,6 +53,20 @@ class QuoteReportTest {
     }
 
     @Test
+    fun negotiatedDiscountIsSummedNetOfPricesAboveTheTable() {
+        val plain = quoteOf("PLA", salePrice = 20.0, productionCost = 10.0)
+        val discounted = quoteOf("PLA", salePrice = 25.0, productionCost = 10.0)
+            .let { it.copy(quote = it.quote.copy(tableSalePrice = 30.0)) }
+        val above = quoteOf("PLA", salePrice = 32.0, productionCost = 10.0)
+            .let { it.copy(quote = it.quote.copy(tableSalePrice = 30.0)) }
+
+        val summary = QuoteReport.summarize(listOf(plain, discounted, above))
+
+        assertEquals(2, summary.negotiatedCount)
+        assertEquals(3.0, summary.totalNegotiatedDiscount, 1e-9)
+    }
+
+    @Test
     fun mostUsedFilamentIsTheOneWithMostQuotes() {
         val quotes = listOf(
             quoteOf("PLA", salePrice = 20.0, productionCost = 10.0),

@@ -26,6 +26,8 @@ object QuoteReport {
             totalProfit = quotes.sumOf { it.quote.profit },
             mostUsedFilamentName = mostUsedFilament?.key,
             mostUsedFilamentCount = mostUsedFilament?.value ?: 0,
+            negotiatedCount = quotes.count { it.quote.isNegotiated },
+            totalNegotiatedDiscount = quotes.sumOf { it.quote.negotiatedDiscount },
         )
     }
 }

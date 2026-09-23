@@ -10,6 +10,10 @@ package com.threedreport.core.model
  * @property mostUsedFilamentName nome do filamento mais usado no período, ou
  *   `null` se não houver nenhum orçamento.
  * @property mostUsedFilamentCount quantos orçamentos usaram [mostUsedFilamentName].
+ * @property negotiatedCount quantos orçamentos tiveram o preço fechado com o cliente
+ *   (ver [Quote.isNegotiated]).
+ * @property totalNegotiatedDiscount soma de [Quote.negotiatedDiscount]: desconto líquido
+ *   concedido na negociação (preços fechados acima da tabela abatem desta soma).
  */
 data class QuoteSummary(
     val quoteCount: Int,
@@ -17,6 +21,8 @@ data class QuoteSummary(
     val totalProfit: Double,
     val mostUsedFilamentName: String?,
     val mostUsedFilamentCount: Int,
+    val negotiatedCount: Int = 0,
+    val totalNegotiatedDiscount: Double = 0.0,
 ) {
     companion object {
         val EMPTY = QuoteSummary(

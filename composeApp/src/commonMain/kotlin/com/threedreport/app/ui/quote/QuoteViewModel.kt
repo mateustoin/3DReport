@@ -264,6 +264,9 @@ class QuoteViewModel(
             selectedServiceIds = savedQuote.services.map { it.id }.toSet(),
             salesChannelId = salesChannels.value.firstOrNull { it.name == quote.channelName }?.id,
             shippingCostText = if (savedQuote.shippingCost > 0) formatImportedNumber(savedQuote.shippingCost) else "",
+            // Sem isso, reabrir um orçamento negociado e salvar de novo voltaria em silêncio pro preço
+            // de tabela. O campo recebe o total do cliente, igual ao que foi digitado (ver `calculate`).
+            targetTotalText = if (quote.isNegotiated) formatImportedNumber(savedQuote.totalWithServices) else "",
         )
     }
 

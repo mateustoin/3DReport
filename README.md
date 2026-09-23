@@ -53,7 +53,7 @@ com a margem de lucro desejada.
 - Cálculo de custo de produção e preço de venda (`core`)
 - Tela de orçamento — escolhe filamento + impressora, informa comprimento/tempo → produção/venda
 - Quantidade por orçamento, com preço unitário e preparo do pedido cobrado uma vez só (lote sai mais barato por peça)
-- Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista
+- Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
 - Comparação entre as suas impressoras: quanto a mesma peça custa em cada máquina
 - Salvar orçamento (nome, foto e link do modelo opcionais)
 - Serviços opcionais no orçamento (pintura, lixamento, embalagem/spray etc.)

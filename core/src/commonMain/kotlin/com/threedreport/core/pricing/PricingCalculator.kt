@@ -106,6 +106,7 @@ object PricingCalculator {
             setupMinutes = setupMinutes,
             channelName = channel?.name,
             taxRate = settings.taxRate,
+            tableSalePrice = tableSalePrice.takeIf { negotiatedSalePrice != null },
         )
     }
 

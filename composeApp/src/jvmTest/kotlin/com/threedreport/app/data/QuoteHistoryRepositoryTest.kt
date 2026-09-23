@@ -432,6 +432,17 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
+    fun negotiatedTablePriceSurvivesNewRepositoryInstance() {
+        val repository = QuoteHistoryRepository()
+        val negotiated = quote.copy(salePrice = quote.salePrice - 5.0, tableSalePrice = quote.salePrice)
+        val saved = repository.save(name = "Negociado", quote = negotiated, services = emptyList(), photo = null, sourceLink = null)
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }
+        assertEquals(quote.salePrice, reloaded.quote.tableSalePrice)
+        assertEquals(5.0, reloaded.quote.negotiatedDiscount, 1e-9)
+    }
+
+    @Test
     fun savedQuoteWithoutPrintSettingsHasNullPrintSettings() {
         val repository = QuoteHistoryRepository()
         val saved = repository.save(name = "Sem configurações", quote = quote, services = emptyList(), photo = null, sourceLink = null)

@@ -75,6 +75,11 @@ data class CostBreakdown(
  *   conseguir reabrir um orçamento salvo pra edição já com a mesma
  *   impressora selecionada. `null` em orçamentos salvos antes desse campo
  *   existir.
+ * @property tableSalePrice valor de venda que a margem configurada daria,
+ *   guardado **só quando o preço foi negociado** com o cliente (aí
+ *   [salePrice] é o preço fechado). `null` quando não houve negociação e em
+ *   orçamentos salvos antes deste campo existir. Uso interno: nunca entra
+ *   em nenhum export.
  */
 @Serializable
 data class Quote(
@@ -90,6 +95,7 @@ data class Quote(
     val setupMinutes: Double = 0.0,
     val channelName: String? = null,
     val taxRate: Double = 0.0,
+    val tableSalePrice: Double? = null,
 ) {
     init {
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
@@ -121,6 +127,18 @@ data class Quote(
      */
     val breakEvenSalePrice: Double
         get() = productionCost / (1 - totalDeductionRate)
+
+    /** Se o preço foi fechado com o cliente em vez de vir da margem (ver [tableSalePrice]). */
+    val isNegotiated: Boolean
+        get() = tableSalePrice != null
+
+    /**
+     * Quanto o preço fechado ficou abaixo do de tabela: positivo quando houve
+     * desconto, negativo quando o cliente pagou acima da tabela, zero sem
+     * negociação. Somar isso num período dá o desconto líquido concedido.
+     */
+    val negotiatedDiscount: Double
+        get() = (tableSalePrice ?: salePrice) - salePrice
 
     /** Lucro como fração do custo de produção, que é a margem de fato obtida neste orçamento. */
     val actualProfitMargin: Double

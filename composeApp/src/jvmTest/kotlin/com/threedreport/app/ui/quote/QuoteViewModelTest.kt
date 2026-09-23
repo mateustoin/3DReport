@@ -344,6 +344,29 @@ class QuoteViewModelTest {
     }
 
     @Test
+    fun editingANegotiatedQuoteKeepsTheNegotiatedPrice() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.setTargetTotal("30")
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.first()
+        assertTrue(saved.quote.isNegotiated)
+
+        viewModel.resetForm()
+        viewModel.loadForEditing(saved)
+
+        // Regressão: o preço fechado não voltava pro campo, e salvar de novo trocava em silêncio
+        // o valor cobrado pelo de tabela.
+        assertEquals("30", viewModel.input.value.targetTotalText)
+        viewModel.saveCurrentQuote()
+        val updated = historyRepository.savedQuotes.value.first()
+        assertEquals(30.0, updated.quote.salePrice, 1e-9)
+        assertEquals(saved.quote.tableSalePrice, updated.quote.tableSalePrice)
+    }
+
+    @Test
     fun duplicateForNewQuoteCreatesANewEntryInsteadOfUpdatingTheOriginal() {
         val historyRepository = QuoteHistoryRepository()
         val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)

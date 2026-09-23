@@ -214,6 +214,12 @@ fecha por R$ 30 e o histórico guarda os R$ 38,91 da tabela, o Dashboard passa
 a somar um faturamento que nunca existiu. Um número só, usado em todo lugar,
 é a única forma de os relatórios continuarem verdadeiros.
 
+**O preço de tabela fica guardado junto** (decisão 84): quando há preço
+fechado, `Quote.tableSalePrice` guarda o valor que a margem daria, só pra uso
+interno. O desconto de cada orçamento é `tabela − preço_fechado` (negativo
+quando o cliente pagou acima da tabela), e o Dashboard soma esse valor no
+período. Nenhuma conta de lucro usa o preço de tabela.
+
 ### Preço mínimo (ponto de equilíbrio)
 
 ```

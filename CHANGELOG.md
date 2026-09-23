@@ -5,6 +5,24 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.31.0] - 2026-09-23
+
+### Adicionado
+- **O app lembra quando o preço foi negociado.** Ao salvar um orçamento com
+  preço fechado com o cliente, o preço da sua tabela fica guardado junto. O
+  Histórico mostra "Negociado (tabela R$ X)" no orçamento, e o Dashboard
+  ganha "Descontos dados", com quanto você deixou na mesa no período. Quando
+  o cliente paga acima da tabela, a diferença abate desse total. O preço de
+  tabela é só pra você: não aparece no PDF, na imagem nem no texto pro
+  cliente. Orçamentos salvos antes desta versão não têm como saber se foram
+  negociados e aparecem como preço de tabela.
+
+### Corrigido
+- **Editar um orçamento negociado não perde mais o preço fechado.** Antes, ao
+  reabrir um orçamento pra editar, o campo de preço fechado vinha vazio, e
+  salvar de novo trocava o valor combinado com o cliente pelo da tabela sem
+  avisar.
+
 ## [1.30.0] - 2026-09-23
 
 ### Alterado

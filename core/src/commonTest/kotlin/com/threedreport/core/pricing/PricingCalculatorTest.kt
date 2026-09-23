@@ -8,6 +8,7 @@ import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.SalesChannel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
@@ -323,6 +324,30 @@ class PricingCalculatorTest {
         assertEquals(12.00 - table.productionCost, negotiated.profit, CENT_TOLERANCE)
         assertTrue(negotiated.profit < table.profit)
         assertEquals(table.productionCost, negotiated.productionCost, 1e-9)
+    }
+
+    @Test
+    fun tablePriceIsKeptOnlyWhenThePriceIsNegotiated() {
+        val table = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+        val discounted = PricingCalculator.calculate(
+            spreadsheetJob,
+            spreadsheetPrinter,
+            spreadsheetSettings,
+            negotiatedSalePrice = table.salePrice - 3.0,
+        )
+        val above = PricingCalculator.calculate(
+            spreadsheetJob,
+            spreadsheetPrinter,
+            spreadsheetSettings,
+            negotiatedSalePrice = table.salePrice + 2.0,
+        )
+
+        assertNull(table.tableSalePrice)
+        assertEquals(0.0, table.negotiatedDiscount)
+        assertEquals(table.salePrice, discounted.tableSalePrice!!, 1e-9)
+        assertEquals(3.0, discounted.negotiatedDiscount, 1e-9)
+        // Cobrar acima da tabela entra como desconto negativo, pra a soma do período bater com o faturamento.
+        assertEquals(-2.0, above.negotiatedDiscount, 1e-9)
     }
 
     @Test

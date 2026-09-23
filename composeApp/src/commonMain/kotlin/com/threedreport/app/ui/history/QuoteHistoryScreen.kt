@@ -305,6 +305,11 @@ private fun SavedQuoteRow(
                         withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.productionCost.toMoney()) }
                         append(" · Venda: ")
                         withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.salePrice.toMoney()) }
+                        savedQuote.quote.tableSalePrice?.let { tablePrice ->
+                            append(if (savedQuote.quote.negotiatedDiscount < 0) " · Acima da tabela (" else " · Negociado (tabela ")
+                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(tablePrice.toMoney()) }
+                            append(")")
+                        }
                         append(" · Lucro: ")
                         withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.profit.toMoney()) }
                         if (savedQuote.quote.quantity > 1) {

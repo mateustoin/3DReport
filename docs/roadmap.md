@@ -231,12 +231,19 @@ uma conta incompleta mente com mais confiança.
   cadastrada e mostrar o resultado lado a lado. Barato de implementar,
   ajuda a decidir em qual máquina imprimir e rende ótima screenshot.
 
-- [ ] **Registrar que o preço foi negociado** (levantado em 2026-09-22,
-  decisão 79). Hoje o preço fechado com o cliente substitui o de tabela e
+- [x] **Registrar que o preço foi negociado** (decisão 84, 2026-09-23;
+  levantado em 2026-09-22, decisão 79). Hoje o preço fechado com o cliente substitui o de tabela e
   fica indistinguível dele no orçamento salvo. Guardar essa marca (e o preço
   que a tabela daria) permitiria responder "quanto de desconto eu dei esse
   mês" e "quais clientes puxam mais o preço pra baixo". Custa um campo novo
   em `Quote`, então só vale com um pedido concreto.
+  - **Feito:** o pedido concreto apareceu como bug: reabrir um orçamento
+    negociado pra editar não restaurava o preço fechado, e salvar de novo
+    voltava pro preço de tabela. `Quote.tableSalePrice` resolve as duas
+    coisas. O Histórico mostra a marca e o Dashboard soma "Descontos dados"
+    (líquido: preço acima da tabela abate). O ranking de clientes que mais
+    puxam o preço pra baixo não entrou; se fizer falta, cabe na leva 6,
+    reaproveitando o mesmo campo.
 - [ ] **Desconto percentual por volume.** Descartado na decisão 79: quem quer
   dar desconto digita o preço fechado e vê o efeito na hora. Fica aqui só
   como registro de que foi avaliado e por quê, pra não voltar à fila sem

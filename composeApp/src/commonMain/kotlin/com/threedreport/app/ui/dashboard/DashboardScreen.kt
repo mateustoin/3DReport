@@ -64,6 +64,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 StatDivider()
                 StatTicker("Lucro", summary.totalProfit.toMoney())
                 StatDivider()
+                if (summary.negotiatedCount > 0) {
+                    StatTicker(
+                        label = "Descontos dados (${summary.negotiatedCount} " +
+                            (if (summary.negotiatedCount == 1) "negociado)" else "negociados)"),
+                        value = summary.totalNegotiatedDiscount.toMoney(),
+                    )
+                    StatDivider()
+                }
                 StatTicker(
                     label = "Filamento mais usado",
                     value = summary.mostUsedFilamentName?.let { "$it (${summary.mostUsedFilamentCount}x)" } ?: "—",
