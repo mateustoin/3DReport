@@ -1,13 +1,33 @@
 name: Sugerir uma funcionalidade
 description: Ideia de melhoria ou funcionalidade nova para o 3DReport
-labels: ["enhancement"]
+labels: ["enhancement", "triagem"]
 body:
   - type: markdown
     attributes:
       value: |
-        Antes de abrir, dá uma olhada no
-        [backlog](https://github.com/mateustoin/3DReport/blob/main/docs/roadmap.md),
-        a ideia pode já estar planejada.
+        Obrigado por sugerir! **Uma ideia por issue**, assim cada uma pode ser
+        aceita, mesclada ou descartada separadamente. Como a triagem funciona:
+        [CONTRIBUTING](https://github.com/mateustoin/3DReport/blob/main/CONTRIBUTING.md#sugerindo-ideias).
+  - type: checkboxes
+    id: roadmap
+    attributes:
+      label: Roadmap
+      options:
+        - label: Procurei no [roadmap](https://github.com/mateustoin/3DReport/blob/main/docs/roadmap.md) e a ideia não está lá, ou quero complementar um item que já existe.
+          required: true
+  - type: input
+    id: item_relacionado
+    attributes:
+      label: Item do roadmap relacionado (opcional)
+      description: Se a ideia complementa um item que já existe, cole o nome dele aqui.
+  - type: dropdown
+    id: uso
+    attributes:
+      label: Como você usa o 3DReport? (opcional)
+      options:
+        - Vendo impressão 3D
+        - Imprimo por hobby
+        - Só estou testando
   - type: textarea
     id: problema
     attributes:
