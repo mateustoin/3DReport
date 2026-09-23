@@ -139,6 +139,7 @@ class QuoteViewModel(
 
     fun selectSalesChannel(id: String?) = inputState.update { it.copy(salesChannelId = id) }
     fun setShippingCost(text: String) = inputState.update { it.copy(shippingCostText = text) }
+    fun setTargetTotal(text: String) = inputState.update { it.copy(targetTotalText = text) }
 
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
@@ -313,6 +314,12 @@ class QuoteViewModel(
         val time = parseDecimal(input.printTimeMinutesText)
         val channel = channels.find { it.id == input.salesChannelId }
         val shippingCost = parseDecimal(input.shippingCostText) ?: 0.0
+        // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
+        // que de fato é a peça. Se o alvo nem cobre os extras, a peça vale zero e o prejuízo
+        // aparece no lucro, que é justamente o aviso.
+        val servicesTotal = selectedServices.sumOf { it.price } * input.quantity
+        val negotiatedSalePrice = parseDecimal(input.targetTotalText)
+            ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
 
         if (filament == null || printer == null || length == null || time == null) {
             return QuoteResult(
@@ -340,6 +347,7 @@ class QuoteViewModel(
                 channel = channel,
                 quantity = input.quantity,
                 setupMinutes = parseDecimal(input.setupMinutesText) ?: 0.0,
+                negotiatedSalePrice = negotiatedSalePrice,
             )
         }.fold(
             onSuccess = {
@@ -355,6 +363,26 @@ class QuoteViewModel(
                 )
             },
         )
+    }
+
+    /**
+     * O mesmo orçamento calculado em cada impressora cadastrada, pra responder "em qual máquina
+     * essa peça sai mais barata". Só faz sentido com mais de uma impressora; devolve lista vazia
+     * quando não há o que comparar ou quando os dados da peça ainda não dão um cálculo válido.
+     */
+    fun comparePrinters(
+        filaments: List<Filament>,
+        printers: List<PrinterProfile>,
+        settings: PricingSettings,
+        services: List<Service>,
+        input: QuoteInputState,
+        channels: List<SalesChannel> = salesChannels.value,
+    ): List<Pair<PrinterProfile, Quote>> {
+        if (printers.size < 2) return emptyList()
+        return printers.mapNotNull { printer ->
+            val result = calculate(filaments, listOf(printer), settings, services, input.copy(printerId = printer.id), channels)
+            result.quote?.let { printer to it }
+        }
     }
 
     private fun gcodeImportMessage(metadata: GCodeMetadata, photoApplied: Boolean): String {

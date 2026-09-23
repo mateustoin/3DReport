@@ -5,6 +5,24 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.27.0] - 2026-09-22
+
+### Adicionado
+- **Negociação com o cliente.** Um campo novo no Orçamento recebe o preço
+  que o cliente propôs e mostra na hora o que sobra: lucro, margem obtida e,
+  quando o valor não cobre o custo, um aviso em vermelho dizendo quanto você
+  estaria pagando pra imprimir. O preço fechado vira o valor de verdade do
+  orçamento, então é ele que vai pro PDF, pro histórico e pro Dashboard: seu
+  faturamento continua batendo com o que você realmente cobrou.
+- **Preço mínimo sempre à vista.** O valor abaixo do qual a venda dá
+  prejuízo (já considerando a taxa do canal e o imposto) fica visível junto
+  do resultado, que é o número que você precisa ter na cabeça no meio da
+  conversa.
+- **Comparar impressoras.** Com mais de uma impressora cadastrada, o app
+  mostra quanto a mesma peça custaria em cada uma, destacando a mais barata.
+  A diferença vem do consumo de energia, da manutenção e do retorno do
+  investimento de cada máquina.
+
 ## [1.26.0] - 2026-09-22
 
 ### Adicionado

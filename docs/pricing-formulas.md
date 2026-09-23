@@ -193,6 +193,42 @@ paga 6% de Simples. As deduções somam 26%, então o preço vira
 `17,02 / 0,74 = R$ 23,00`. O cliente paga R$ 23,00, a Shopee e o imposto
 levam R$ 5,98, e sobram os mesmos R$ 17,02 de antes.
 
+## Negociação e preço mínimo (2026-09-22, decisão 79)
+
+O preço que a margem produz é um ponto de partida, não o fim da conversa. Ao
+informar um **preço fechado com o cliente**, ele vira o valor de venda de
+verdade do orçamento, e não um número de simulação à parte:
+
+```
+preço_da_peça  = preço_fechado − serviços · quantidade − frete
+LUCRO          = preço_da_peça · (1 − deduções) − produção
+MARGEM OBTIDA  = lucro / produção
+```
+
+O custo de produção não muda, então um preço abaixo dele vira lucro negativo.
+É de propósito: o app avisa em vermelho quanto você está pagando pra imprimir,
+em vez de deixar o prejuízo passar despercebido.
+
+**Por que virar o preço de verdade, e não uma simulação:** se o vendedor
+fecha por R$ 30 e o histórico guarda os R$ 38,91 da tabela, o Dashboard passa
+a somar um faturamento que nunca existiu. Um número só, usado em todo lugar,
+é a única forma de os relatórios continuarem verdadeiros.
+
+### Preço mínimo (ponto de equilíbrio)
+
+```
+mínimo_da_peça  = produção / (1 − deduções)
+mínimo_total    = mínimo_da_peça + serviços · quantidade + frete
+```
+
+Vender exatamente por esse valor significa trabalhar de graça: cobre custo e
+deduções, e sobra zero. Fica sempre visível na tela, porque é o número que
+você precisa ter na cabeça no meio da conversa com o cliente.
+
+Não existe desconto percentual por volume em campo separado: quem quer dar
+desconto digita o preço fechado e vê na hora o que sobra. Ter duas formas de
+chegar ao mesmo número (um percentual e um valor) só criaria divergência.
+
 ## Exemplo de referência (planilha)
 
 Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.

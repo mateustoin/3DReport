@@ -307,6 +307,70 @@ class PricingCalculatorTest {
     }
 
     @Test
+    fun negotiatedPriceReplacesTheTablePriceAndReflectsInTheProfit() {
+        val table = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+
+        val negotiated = PricingCalculator.calculate(
+            spreadsheetJob,
+            spreadsheetPrinter,
+            spreadsheetSettings,
+            negotiatedSalePrice = 12.00,
+        )
+
+        // Vira o preço de verdade, não uma simulação à parte: é o que vai pro histórico e pro
+        // Dashboard, então lucro e margem têm que acompanhar.
+        assertEquals(12.00, negotiated.salePrice, 1e-9)
+        assertEquals(12.00 - table.productionCost, negotiated.profit, CENT_TOLERANCE)
+        assertTrue(negotiated.profit < table.profit)
+        assertEquals(table.productionCost, negotiated.productionCost, 1e-9)
+    }
+
+    @Test
+    fun negotiatingBelowTheProductionCostShowsUpAsNegativeProfit() {
+        val quote = PricingCalculator.calculate(
+            spreadsheetJob,
+            spreadsheetPrinter,
+            spreadsheetSettings,
+            negotiatedSalePrice = 5.00,
+        )
+
+        assertTrue(quote.profit < 0, "vender abaixo do custo tem que aparecer como prejuízo")
+    }
+
+    @Test
+    fun breakEvenPriceCoversProductionAfterDeductions() {
+        val shopee = SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.20)
+        val settings = spreadsheetSettings.copy(taxRate = 0.06)
+
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, channel = shopee)
+
+        // Vender exatamente pelo ponto de equilíbrio zera o lucro, nem um centavo a mais.
+        val atBreakEven = PricingCalculator.calculate(
+            spreadsheetJob,
+            spreadsheetPrinter,
+            settings,
+            channel = shopee,
+            negotiatedSalePrice = quote.breakEvenSalePrice,
+        )
+        assertEquals(0.0, atBreakEven.profit, 1e-9)
+    }
+
+    @Test
+    fun actualMarginMatchesTheConfiguredOneWhenThePriceIsNotNegotiated() {
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+
+        // Margem configurada de 100% precisa aparecer como 100% obtidos.
+        assertEquals(1.0, quote.actualProfitMargin, 1e-9)
+    }
+
+    @Test
+    fun negativeNegotiatedPriceIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, negotiatedSalePrice = -1.0)
+        }
+    }
+
+    @Test
     fun deductionsThatEatTheWholeSaleAreRejected() {
         val absurdChannel = SalesChannel(id = "x", name = "Canal impossível", feeRate = 0.95)
         val withTax = spreadsheetSettings.copy(taxRate = 0.06)

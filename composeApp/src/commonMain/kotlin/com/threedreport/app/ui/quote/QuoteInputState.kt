@@ -18,6 +18,11 @@ data class QuoteInputState(
     val salesChannelId: String? = null,
     /** Frete cobrado do cliente neste pedido (ver `SavedQuote.shippingCost`). */
     val shippingCostText: String = "",
+    /**
+     * Preço total fechado com o cliente na conversa, quando diferente do que a margem daria.
+     * Vazio significa usar o preço de tabela. Ver `PricingCalculator.calculate`.
+     */
+    val targetTotalText: String = "",
     /** Mensagem sobre a última tentativa de importar dados de um G-code, exibida abaixo do botão. */
     val gcodeImportMessage: String? = null,
 ) {

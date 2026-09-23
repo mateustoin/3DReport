@@ -207,20 +207,31 @@ preencher.
 Só faz sentido depois das levas 1 a 3: uma calculadora reversa em cima de
 uma conta incompleta mente com mais confiança.
 
-- [ ] **Preço alvo (negociação reversa).** "O cliente quer pagar R$ 30,
+- [x] **Preço alvo (negociação reversa)** (decisão 79, 2026-09-22). "O cliente quer pagar R$ 30,
   quanto sobra?" e "quanto preciso cobrar pra ter 40% de lucro real depois
   da taxa da Shopee?". Um campo de preço alvo (ou um slider) que recalcula
   margem e lucro ao vivo, em cima do preço já calculado. Vendedor negocia
   todo dia e nenhuma ferramenta do setor faz isso bem.
-- [ ] **Preço mínimo com aviso de prejuízo.** O custo de produção já é
+- [x] **Preço mínimo com aviso de prejuízo** (decisão 79, 2026-09-22). O custo de produção já é
   calculado; falta usá-lo como piso: quando o preço negociado cair abaixo
   dele, avisar visualmente ("abaixo disso você paga pra imprimir"). Depende
   do item acima e reaproveita `Quote.productionCost`.
-- [ ] **Comparar impressoras no mesmo orçamento.** "Essa peça sai R$ 16,19
+- [x] **Comparar impressoras no mesmo orçamento** (decisão 79, 2026-09-22). "Essa peça sai R$ 16,19
   na K1 e R$ 14,80 na Ender." Todos os dados já estão cadastrados — é rodar
   o `PricingCalculator` (função pura, sem estado) uma vez por impressora
   cadastrada e mostrar o resultado lado a lado. Barato de implementar,
   ajuda a decidir em qual máquina imprimir e rende ótima screenshot.
+
+- [ ] **Registrar que o preço foi negociado** (levantado em 2026-09-22,
+  decisão 79). Hoje o preço fechado com o cliente substitui o de tabela e
+  fica indistinguível dele no orçamento salvo. Guardar essa marca (e o preço
+  que a tabela daria) permitiria responder "quanto de desconto eu dei esse
+  mês" e "quais clientes puxam mais o preço pra baixo". Custa um campo novo
+  em `Quote`, então só vale com um pedido concreto.
+- [ ] **Desconto percentual por volume.** Descartado na decisão 79: quem quer
+  dar desconto digita o preço fechado e vê o efeito na hora. Fica aqui só
+  como registro de que foi avaliado e por quê, pra não voltar à fila sem
+  argumento novo.
 
 ### Leva 5 — Saída pro cliente
 

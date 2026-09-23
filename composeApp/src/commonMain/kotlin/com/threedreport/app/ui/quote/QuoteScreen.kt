@@ -48,6 +48,7 @@ import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.platform.encodeImageBitmapToPng
 import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
+import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.Service
 import com.threedreport.core.stl.StlAnalyzer
@@ -254,6 +255,20 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
             else -> Text("Preencha os campos acima para calcular.", style = MaterialTheme.typography.bodyMedium)
         }
 
+        if (quote != null) {
+            NegotiationSection(
+                quote = quote,
+                extras = result.servicesTotal + result.shippingCost,
+                targetTotalText = input.targetTotalText,
+                onTargetTotalChange = viewModel::setTargetTotal,
+            )
+
+            val comparison = viewModel.comparePrinters(filaments, printers, settings, services, input, salesChannels)
+            if (comparison.size > 1) {
+                PrinterComparison(comparison = comparison, extras = result.servicesTotal + result.shippingCost)
+            }
+        }
+
         HorizontalDivider()
         SaveQuoteForm(
             form = saveForm,
@@ -319,6 +334,75 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTot
             }
         }
     }
+}
+
+/**
+ * Ferramenta de negociação: o vendedor digita o valor que o cliente propôs e vê na hora o que
+ * sobra. O piso (venda + extras que não passam pela margem) fica sempre à vista, porque é o
+ * número que ele precisa ter na cabeça no meio da conversa.
+ *
+ * [extras] são serviços e frete: entram no total cobrado, mas não no preço da peça.
+ */
+@Composable
+private fun NegotiationSection(
+    quote: Quote,
+    extras: Double,
+    targetTotalText: String,
+    onTargetTotalChange: (String) -> Unit,
+) {
+    Text("Negociação", style = MaterialTheme.typography.titleMedium)
+
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        value = targetTotalText,
+        onValueChange = onTargetTotalChange,
+        label = { Text("Preço fechado com o cliente (opcional)") },
+    )
+    Text(
+        "Digite aqui o valor que o cliente propôs e veja o que sobra. Ele passa a ser o preço de " +
+            "verdade do orçamento: é o que vai pro PDF, pro histórico e pro Dashboard. Deixe vazio " +
+            "pra usar o preço da sua margem.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    val breakEvenTotal = quote.breakEvenSalePrice + extras
+    if (quote.profit < 0) {
+        Text(
+            "Prejuízo: nesse valor você paga ${(-quote.profit).toMoney()} pra imprimir. " +
+                "O mínimo pra não sair no negativo é ${breakEvenTotal.toMoney()}.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
+    } else {
+        Text(
+            "Mínimo pra não ter prejuízo: ${breakEvenTotal.toMoney()}. " +
+                "Margem obtida neste preço: ${quote.actualProfitMargin.toPercentText()}.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+/** Mesma peça calculada em cada impressora cadastrada: responde "em qual máquina sai mais barato". */
+@Composable
+private fun PrinterComparison(comparison: List<Pair<PrinterProfile, Quote>>, extras: Double) {
+    val cheapest = comparison.minByOrNull { it.second.salePrice }?.first?.id
+
+    Text("Comparar impressoras", style = MaterialTheme.typography.titleMedium)
+    comparison.forEach { (printer, quote) ->
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                if (printer.id == cheapest) "${printer.name} (mais barata)" else printer.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (printer.id == cheapest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+            NumericText((quote.salePrice + extras).toMoney(), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+    Text(
+        "Mesma peça, mesmas configurações, trocando só a máquina. A diferença vem do consumo de " +
+            "energia, da manutenção e do retorno do investimento de cada uma.",
+        style = MaterialTheme.typography.bodySmall,
+    )
 }
 
 @Composable

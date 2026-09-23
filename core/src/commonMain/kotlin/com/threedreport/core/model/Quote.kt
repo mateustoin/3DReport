@@ -111,4 +111,18 @@ data class Quote(
     /** Preço de uma unidade: [salePrice] dividido por [quantity]. */
     val unitSalePrice: Double
         get() = salePrice / quantity
+
+    /**
+     * Menor valor de venda que ainda não dá prejuízo: cobre o custo de
+     * produção depois de canal e imposto levarem a parte deles. Vender
+     * exatamente por isso significa trabalhar de graça; abaixo disso, você
+     * paga pra imprimir. É a referência pra negociar sem ter que refazer a
+     * conta de cabeça.
+     */
+    val breakEvenSalePrice: Double
+        get() = productionCost / (1 - totalDeductionRate)
+
+    /** Lucro como fração do custo de produção, que é a margem de fato obtida neste orçamento. */
+    val actualProfitMargin: Double
+        get() = if (productionCost > 0) profit / productionCost else 0.0
 }

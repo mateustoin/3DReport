@@ -22,6 +22,12 @@ object PricingCalculator {
      *   compensar o que é descontado — a margem de lucro real (ver
      *   [Quote.profit]) fica igual à de uma venda sem dedução nenhuma, só o
      *   preço de tabela muda.
+     * @param negotiatedSalePrice preço fechado na conversa com o cliente, em
+     *   vez do que a margem configurada daria. Quando informado, vira o
+     *   [Quote.salePrice] de verdade, e não um número só de simulação: assim
+     *   o lucro, o histórico e o Dashboard passam a falar do valor que foi
+     *   realmente cobrado. O custo de produção não muda, então um preço
+     *   abaixo dele aparece como lucro negativo, que é o aviso de prejuízo.
      */
     fun calculate(
         job: PrintJob,
@@ -30,7 +36,11 @@ object PricingCalculator {
         channel: SalesChannel? = null,
         quantity: Int = 1,
         setupMinutes: Double = 0.0,
+        negotiatedSalePrice: Double? = null,
     ): Quote {
+        require(negotiatedSalePrice == null || negotiatedSalePrice >= 0) {
+            "negotiatedSalePrice não pode ser negativo: $negotiatedSalePrice"
+        }
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
         require(setupMinutes >= 0) { "setupMinutes não pode ser negativo: $setupMinutes" }
 
@@ -80,7 +90,8 @@ object PricingCalculator {
             "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. " +
                 "Revise a taxa do canal ou o imposto em Configurações."
         }
-        val salePrice = if (deductionRate > 0.0) baseSalePrice / (1 - deductionRate) else baseSalePrice
+        val tableSalePrice = if (deductionRate > 0.0) baseSalePrice / (1 - deductionRate) else baseSalePrice
+        val salePrice = negotiatedSalePrice ?: tableSalePrice
 
         return Quote(
             job = job,
