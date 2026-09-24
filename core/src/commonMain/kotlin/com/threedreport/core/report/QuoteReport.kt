@@ -1,5 +1,7 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.model.ClientDiscountRanking
+import com.threedreport.core.model.ProductRanking
 import com.threedreport.core.model.QuoteSummary
 import com.threedreport.core.model.SavedQuote
 
@@ -8,26 +10,82 @@ import com.threedreport.core.model.SavedQuote
  *
  * Função pura e sem estado, igual a [com.threedreport.core.pricing.PricingCalculator]:
  * mesma entrada, mesma saída. Quem filtra por período (ex.: só os últimos 30
- * dias) é quem chama, passando a lista já filtrada.
+ * dias) é quem chama, passando a lista já filtrada. Quem separa venda de orçamento em aberto é
+ * esta função ([com.threedreport.core.model.OrderStatus.isSold]).
  */
 object QuoteReport {
 
     fun summarize(quotes: List<SavedQuote>): QuoteSummary {
         if (quotes.isEmpty()) return QuoteSummary.EMPTY
 
-        val mostUsedFilament = quotes
+        val (sold, open) = quotes.partition { it.status.isSold }
+
+        val mostUsedFilament = sold
             .groupingBy { it.quote.job.filament.name }
             .eachCount()
             .maxByOrNull { it.value }
 
+        val totalProfit = sold.sumOf { it.quote.profit }
+        val printHours = sold.sumOf { it.totalPrintTimeMinutes } / 60.0
+
+        val withLabor = sold.filter { it.quote.totalLaborMinutes > 0 }
+        val laborHours = withLabor.sumOf { it.quote.totalLaborMinutes } / 60.0
+        val laborEarnings = withLabor.sumOf { it.quote.profit + it.quote.costs.labor }
+
         return QuoteSummary(
-            quoteCount = quotes.size,
-            totalSalePrice = quotes.sumOf { it.totalWithServices },
-            totalProfit = quotes.sumOf { it.quote.profit },
+            quoteCount = sold.size,
+            totalSalePrice = sold.sumOf { it.totalWithServices },
+            totalProfit = totalProfit,
             mostUsedFilamentName = mostUsedFilament?.key,
             mostUsedFilamentCount = mostUsedFilament?.value ?: 0,
-            negotiatedCount = quotes.count { it.quote.isNegotiated },
-            totalNegotiatedDiscount = quotes.sumOf { it.quote.negotiatedDiscount },
+            negotiatedCount = sold.count { it.quote.isNegotiated },
+            totalNegotiatedDiscount = sold.sumOf { it.quote.negotiatedDiscount },
+            openQuoteCount = open.size,
+            openQuoteTotal = open.sumOf { it.totalWithServices },
+            conversionRate = sold.size.toDouble() / quotes.size,
+            printHours = printHours,
+            profitPerPrintHour = perHour(totalProfit, printHours),
+            laborHours = laborHours,
+            earningsPerLaborHour = perHour(laborEarnings, laborHours),
+            topProducts = topProducts(sold),
+            topDiscountClients = topDiscountClients(sold),
         )
     }
+
+    /**
+     * Nome automático ("Orçamento - 24/09/2026 14:30") fica fora: cada um seria uma "peça"
+     * diferente e o ranking viraria uma lista de datas.
+     */
+    private fun topProducts(sold: List<SavedQuote>): List<ProductRanking> =
+        sold.filterNot { it.hasAutoName }
+            .groupBy { it.name.trim().lowercase() }
+            .values
+            .map { orders ->
+                val profit = orders.sumOf { it.quote.profit }
+                ProductRanking(
+                    name = orders.maxBy { it.savedAtEpochMillis }.name.trim(),
+                    orderCount = orders.size,
+                    totalProfit = profit,
+                    profitPerPrintHour = perHour(profit, orders.sumOf { it.totalPrintTimeMinutes } / 60.0),
+                )
+            }
+            .sortedByDescending { it.totalProfit }
+            .take(QuoteSummary.RANKING_SIZE)
+
+    private fun topDiscountClients(sold: List<SavedQuote>): List<ClientDiscountRanking> =
+        sold.filter { it.client != null && it.quote.isNegotiated }
+            .groupBy { it.client!!.name.trim().lowercase() }
+            .values
+            .map { orders ->
+                ClientDiscountRanking(
+                    clientName = orders.maxBy { it.savedAtEpochMillis }.client!!.name.trim(),
+                    negotiatedCount = orders.size,
+                    totalDiscount = orders.sumOf { it.quote.negotiatedDiscount },
+                )
+            }
+            .filter { it.totalDiscount > 0 }
+            .sortedByDescending { it.totalDiscount }
+            .take(QuoteSummary.RANKING_SIZE)
+
+    private fun perHour(amount: Double, hours: Double): Double? = if (hours > 0) amount / hours else null
 }

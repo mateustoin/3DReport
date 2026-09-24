@@ -1,9 +1,12 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteSummary
 import com.threedreport.core.model.SavedQuote
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,13 +14,21 @@ import kotlin.test.assertNull
 
 class QuoteReportTest {
 
-    private fun quoteOf(filamentName: String, salePrice: Double, productionCost: Double): SavedQuote {
+    private fun quoteOf(
+        filamentName: String,
+        salePrice: Double,
+        productionCost: Double,
+        status: OrderStatus = OrderStatus.APROVADO,
+        name: String = "Peça",
+        printTimeMinutes: Double = 10.0,
+    ): SavedQuote {
         val filament = Filament(id = filamentName, name = filamentName, pricePerKg = 100.0, densityGPerCm3 = 1.24)
         return SavedQuote(
             id = filamentName + salePrice,
-            name = "Peça",
+            name = name,
+            status = status,
             quote = Quote(
-                job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = 10.0),
+                job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes),
                 filamentWeightGrams = 5.0,
                 costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0).copy(material = productionCost),
                 productionCost = productionCost,
@@ -88,5 +99,133 @@ class QuoteReportTest {
         val summary = QuoteReport.summarize(listOf(withServices))
 
         assertEquals(25.0, summary.totalSalePrice)
+    }
+
+    @Test
+    fun openQuotesStayOutOfSalesAndFeedConversion() {
+        val quotes = listOf(
+            quoteOf("PLA", salePrice = 20.0, productionCost = 10.0),
+            quoteOf("PLA", salePrice = 50.0, productionCost = 10.0, status = OrderStatus.ORCADO),
+            quoteOf("PLA", salePrice = 30.0, productionCost = 10.0, status = OrderStatus.ORCADO),
+            quoteOf("PLA", salePrice = 40.0, productionCost = 10.0, status = OrderStatus.ENTREGUE),
+        )
+
+        val summary = QuoteReport.summarize(quotes)
+
+        assertEquals(2, summary.quoteCount)
+        assertEquals(60.0, summary.totalSalePrice)
+        assertEquals(40.0, summary.totalProfit)
+        assertEquals(2, summary.openQuoteCount)
+        assertEquals(80.0, summary.openQuoteTotal)
+        assertEquals(0.5, summary.conversionRate)
+    }
+
+    @Test
+    fun onlyOpenQuotesMeansNoSalesButStillCountsThem() {
+        val summary = QuoteReport.summarize(listOf(quoteOf("PLA", 20.0, 10.0, status = OrderStatus.ORCADO)))
+
+        assertEquals(0, summary.quoteCount)
+        assertEquals(1, summary.openQuoteCount)
+        assertEquals(0.0, summary.conversionRate)
+        assertNull(summary.mostUsedFilamentName)
+        assertNull(summary.profitPerPrintHour)
+    }
+
+    @Test
+    fun profitPerPrintHourUsesMachineTimeTimesQuantity() {
+        // 2 peças de 30 min = 1 h de máquina; lucro 10 + 20 = 30 em 1 h + 0,5 h.
+        val batch = quoteOf("PLA", salePrice = 20.0, productionCost = 10.0, printTimeMinutes = 30.0)
+            .let { it.copy(quote = it.quote.copy(quantity = 2)) }
+        val single = quoteOf("PLA", salePrice = 30.0, productionCost = 10.0, printTimeMinutes = 30.0)
+
+        val summary = QuoteReport.summarize(listOf(batch, single))
+
+        assertEquals(1.5, summary.printHours, 1e-9)
+        assertEquals(20.0, summary.profitPerPrintHour!!, 1e-9)
+    }
+
+    @Test
+    fun profitPerPrintHourIsNullWithoutPrintTime() {
+        val summary = QuoteReport.summarize(listOf(quoteOf("PLA", 20.0, 10.0, printTimeMinutes = 0.0)))
+
+        assertNull(summary.profitPerPrintHour)
+    }
+
+    @Test
+    fun earningsPerLaborHourAddsLaborBackAndIgnoresOrdersWithoutLaborTime() {
+        // 60 min de trabalho, R$ 25 de mão de obra dentro do custo, lucro 10: levou R$ 35 na hora.
+        val withLabor = quoteOf("PLA", salePrice = 50.0, productionCost = 40.0).let {
+            it.copy(quote = it.quote.copy(setupMinutes = 60.0, costs = it.quote.costs.copy(material = 15.0, labor = 25.0)))
+        }
+        val withoutLabor = quoteOf("PLA", salePrice = 100.0, productionCost = 10.0)
+
+        val summary = QuoteReport.summarize(listOf(withLabor, withoutLabor))
+
+        assertEquals(1.0, summary.laborHours, 1e-9)
+        assertEquals(35.0, summary.earningsPerLaborHour!!, 1e-9)
+    }
+
+    @Test
+    fun earningsPerLaborHourIsNullWhenNoOrderHasLaborTime() {
+        assertNull(QuoteReport.summarize(listOf(quoteOf("PLA", 20.0, 10.0))).earningsPerLaborHour)
+    }
+
+    @Test
+    fun productRankingGroupsSameNameIgnoringCaseAndSpaces() {
+        val quotes = listOf(
+            quoteOf("PLA", 20.0, 10.0, name = "Vaso"),
+            quoteOf("PLA", 30.0, 10.0, name = " vaso ").copy(savedAtEpochMillis = 5L),
+            quoteOf("PLA", 110.0, 70.0, name = "Chaveiro"),
+            quoteOf("PLA", 90.0, 10.0, name = "Orçado", status = OrderStatus.ORCADO),
+        )
+
+        val ranking = QuoteReport.summarize(quotes).topProducts
+
+        assertEquals(listOf("Chaveiro", "vaso"), ranking.map { it.name })
+        assertEquals(2, ranking[1].orderCount)
+        assertEquals(30.0, ranking[1].totalProfit)
+        assertEquals(90.0, ranking[1].profitPerPrintHour!!, 1e-9)
+    }
+
+    @Test
+    fun productRankingSkipsAutomaticNames() {
+        val quotes = listOf(
+            quoteOf("PLA", 20.0, 10.0, name = "Orçamento - 24/09/2026 14:30"),
+            quoteOf("PLA", 20.0, 10.0, name = "Orçamento - suporte de fone"),
+        )
+
+        val ranking = QuoteReport.summarize(quotes).topProducts
+
+        assertEquals(listOf("Orçamento - suporte de fone"), ranking.map { it.name })
+    }
+
+    @Test
+    fun productRankingKeepsTopFive() {
+        val quotes = (1..7).map { quoteOf("PLA", 10.0 + it, 10.0, name = "Peça $it") }
+
+        val ranking = QuoteReport.summarize(quotes).topProducts
+
+        assertEquals(QuoteSummary.RANKING_SIZE, ranking.size)
+        assertEquals("Peça 7", ranking.first().name)
+    }
+
+    @Test
+    fun discountRankingSumsNegotiatedDiscountPerClientAndDropsNetZeroOrBelow() {
+        fun negotiated(client: String?, sale: Double, table: Double) = quoteOf("PLA", sale, 10.0).let {
+            it.copy(client = client?.let(::Client), quote = it.quote.copy(tableSalePrice = table))
+        }
+        val quotes = listOf(
+            negotiated("Ana", sale = 25.0, table = 30.0),
+            negotiated("ana", sale = 27.0, table = 30.0),
+            negotiated("Bruno", sale = 35.0, table = 30.0),
+            negotiated(null, sale = 10.0, table = 30.0),
+            quoteOf("PLA", 20.0, 10.0).copy(client = Client("Carla")),
+        )
+
+        val ranking = QuoteReport.summarize(quotes).topDiscountClients
+
+        assertEquals(1, ranking.size)
+        assertEquals(2, ranking[0].negotiatedCount)
+        assertEquals(8.0, ranking[0].totalDiscount, 1e-9)
     }
 }

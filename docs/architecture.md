@@ -105,8 +105,10 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     link do modelo e cliente nunca aparecem. Envio com prazo vencido pede
     confirmação antes (decisão 85). Seleção múltipla exporta vários
     orçamentos num PDF ou um catálogo em grade.
-  - **Dashboard** (`ui/dashboard`): total vendido, lucro, descontos dados e
-    filamento mais usado no período (`QuoteReport`).
+  - **Dashboard** (`ui/dashboard`): só vendas (`OrderStatus.isSold`, decisão
+    95): total vendido, lucro, descontos dados, filamento mais usado, lucro
+    por hora de máquina e de trabalho, ranking de peças e de clientes com
+    desconto; orçamentos em aberto numa linha à parte (`QuoteReport`).
   - **Filamentos** (`ui/filaments`), **Impressoras** (`ui/printers`) e
     **Serviços** (`ui/services`): catálogos usados no Orçamento, cada um com
     lista + formulário. Filamentos têm marca, tipo, várias cores e estoque

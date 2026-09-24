@@ -1,6 +1,8 @@
 package com.threedreport.app.ui.dashboard
 
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.data.SettingsRepository
+import com.threedreport.core.model.PricingSettings
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.periodStartEpochMillis
 import com.threedreport.core.model.QuoteSummary
@@ -10,10 +12,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** ViewModel da tela de Dashboard: total vendido, lucro e filamento mais usado, recortado por período. */
-class DashboardViewModel(repository: QuoteHistoryRepository) {
+/**
+ * ViewModel da tela de Dashboard: vendas, lucro por hora e rankings, recortados por período. Lê as
+ * configurações só pra comparar o que o seu trabalho rendeu com a hora que você configurou.
+ */
+class DashboardViewModel(repository: QuoteHistoryRepository, settingsRepository: SettingsRepository) {
 
     val savedQuotes: StateFlow<List<SavedQuote>> = repository.savedQuotes
+    val settings: StateFlow<PricingSettings> = settingsRepository.settings
 
     private val periodState = MutableStateFlow(PeriodPreset.ALL)
     val period: StateFlow<PeriodPreset> = periodState.asStateFlow()

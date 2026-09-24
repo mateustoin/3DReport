@@ -174,5 +174,5 @@ actual class QuoteHistoryRepository actual constructor() {
     private fun persist() = writeJsonFile(file, state.value)
 
     private fun defaultName(): String =
-        "Orçamento - " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+        SavedQuote.AUTO_NAME_PREFIX + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
 }

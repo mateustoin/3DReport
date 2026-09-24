@@ -249,7 +249,7 @@ uma conta incompleta mente com mais confiança.
     voltava pro preço de tabela. `Quote.tableSalePrice` resolve as duas
     coisas. O Histórico mostra a marca e o Dashboard soma "Descontos dados"
     (líquido: preço acima da tabela abate). O ranking de clientes que mais
-    puxam o preço pra baixo não entrou; se fizer falta, cabe na leva 6,
+    puxam o preço pra baixo não entrou aqui; entrou na leva 6 (decisão 95),
     reaproveitando o mesmo campo.
 - **Descartado (decisão 79): desconto percentual por volume.** Quem quer
   dar desconto digita o preço fechado e vê o efeito na hora. Fica aqui só
@@ -331,13 +331,23 @@ uma conta incompleta mente com mais confiança.
 
 ### Leva 6 — Leitura do negócio (Dashboard vira consultor, não relatório)
 
-- [ ] **Lucro por hora de impressão e por hora de trabalho.** Total vendido
+- [x] **Lucro por hora de impressão e por hora de trabalho** (decisão 95,
+  2026-09-24). **Feito:** "Lucro por hora de máquina" (lucro ÷ horas de
+  impressão) e "Seu trabalho rendeu por hora" ((lucro + mão de obra) ÷ seu
+  tempo, só nos pedidos com tempo informado, ao lado da hora configurada).
+  De quebra, o Dashboard inteiro passou a contar só vendas: orçamento ainda
+  "Orçado" sai das somas e aparece numa linha à parte, com a conversão.
+  Texto original: Total vendido
   e lucro acumulado são contabilidade; "sua máquina te paga R$ X por hora" e
   "seu trabalho te paga R$ Y por hora" são gestão — é a métrica que diz se o
   negócio funciona e qual tipo de peça vale a pena repetir. Depende da mão
   de obra (leva 1) pra segunda métrica existir; a primeira já é possível
   hoje com `printTimeMinutes` + lucro.
-- [ ] **Ranking de produto mais lucrativo.** Item já registrado (ver
+- [x] **Ranking de produto mais lucrativo** (decisão 95, 2026-09-24).
+  **Feito:** top 5 por lucro, agrupando pedidos de mesmo nome, com o lucro
+  por hora de máquina de cada peça; nome automático fica de fora. Junto
+  entrou o ranking de clientes que mais puxam o preço pra baixo (sobra da
+  decisão 84). Texto original: item já registrado (ver
   "Dashboard/relatório simples" na seção 1) — agendado aqui, por ser a mesma
   leva de leitura do negócio e reaproveitar a mesma agregação.
 - [ ] **Manutenção por impressora** (promovido de "Fora das levas" em
@@ -719,7 +729,7 @@ implementação.
   `core/report/QuoteReport` (agregação pura, mesmo estilo do
   `PricingCalculator`), `ui/dashboard/{DashboardViewModel,DashboardScreen}`.
   - **Ranking de produto mais lucrativo (levantado em 2026-09-19, pesquisa de
-    concorrentes, ainda não implementado).** Hoje o Dashboard só destaca o
+    concorrentes; feito na decisão 95, 2026-09-24).** Hoje o Dashboard só destaca o
     filamento mais *usado* (volume); adicionar um ranking por *lucro* (que
     produto/orçamento deu mais margem, não só mais volume) — os dois podem
     apontar pra peças diferentes. Reaproveita a mesma agregação de

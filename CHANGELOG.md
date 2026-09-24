@@ -5,6 +5,29 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.40.0] - 2026-09-24
+
+### Alterado
+- **O Dashboard agora conta só o que foi vendido.** Antes ele somava todo
+  orçamento salvo, inclusive os que o cliente nunca aprovou, então o total
+  vendido e o lucro podiam estar maiores do que o dinheiro que de fato
+  entrou. Agora só entram pedidos a partir de "Aprovado". Os orçamentos em
+  aberto aparecem numa linha à parte, com o valor e quantos orçamentos do
+  período viraram venda. Os números do seu Dashboard podem mudar depois de
+  atualizar; é isso.
+
+### Adicionado
+- **Quanto cada hora rendeu.** "Lucro por hora de máquina" mostra quanto
+  cada hora de impressão deixou de lucro. "Seu trabalho rendeu por hora"
+  mostra o que você levou por hora trabalhada (lucro mais a sua mão de obra),
+  ao lado da hora que você configurou. Só entram os pedidos com tempo de
+  trabalho informado.
+- **Peças que mais deram lucro.** As 5 peças que mais deram lucro no
+  período, com o lucro por hora de máquina de cada uma, pra saber qual vale
+  a pena repetir. Pedidos com o mesmo nome contam como a mesma peça.
+- **Clientes que mais puxam o preço pra baixo.** Quem mais recebeu desconto
+  na negociação no período. Só aparece pra você, nunca vai pro cliente.
+
 ## [1.39.0] - 2026-09-24
 
 ### Corrigido

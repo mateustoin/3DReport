@@ -66,7 +66,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Prazo de entrega no orçamento, em destaque no PDF, na mensagem e na imagem, com aviso no Histórico quando o prazo vence
 - Exportar vários orçamentos selecionados num PDF só (um por página)
 - Catálogo/portfólio exportável em PDF (grade, várias peças por página)
-- Dashboard — total vendido, lucro e filamento mais usado, por período
+- Dashboard: o que foi vendido no período (orçamento só conta quando o cliente aprova), quanto cada hora de máquina e de trabalho rendeu, as peças que mais dão lucro e os clientes que mais pedem desconto
 
 **Catálogos**
 - Cadastro de filamentos — marca, tipo de material (com densidade sugerida), várias cores e controle manual de estoque por cor

@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 
 /**
  * Texto pra um valor numérico (preço, peso, tempo, %) em fonte monoespaçada — dá aos números do
@@ -23,6 +24,7 @@ fun NumericText(
     style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
     fontWeight: FontWeight? = null,
+    textAlign: TextAlign? = null,
 ) {
     Text(
         text = text,
@@ -30,5 +32,6 @@ fun NumericText(
         style = style.copy(fontFamily = FontFamily.Monospace),
         color = color,
         fontWeight = fontWeight,
+        textAlign = textAlign,
     )
 }

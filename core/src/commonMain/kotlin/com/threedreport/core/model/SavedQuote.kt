@@ -98,4 +98,19 @@ data class SavedQuote(
         val deadline = deliveryDateEpochDay ?: return false
         return deadline < todayEpochDay && status != OrderStatus.ENTREGUE
     }
+
+    /** Se [name] foi gerado pelo app porque o campo ficou em branco (ver [AUTO_NAME_PREFIX]). */
+    val hasAutoName: Boolean
+        get() = AUTO_NAME_PATTERN.matches(name)
+
+    companion object {
+        /**
+         * Começo do nome que o app dá quando o campo fica em branco, seguido de data e hora
+         * ("Orçamento - 24/09/2026 14:30"). Fica aqui, e não só em quem salva, porque o ranking do
+         * Dashboard precisa reconhecer esses nomes pra não tratar cada um como uma peça diferente.
+         */
+        const val AUTO_NAME_PREFIX = "Orçamento - "
+
+        private val AUTO_NAME_PATTERN = Regex("""^Orçamento - \d{2}/\d{2}/\d{4} \d{2}:\d{2}$""")
+    }
 }
