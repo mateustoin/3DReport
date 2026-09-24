@@ -168,3 +168,6 @@ fluxo de setup, testes e envio de PR.
 
 Código aberto sob [Apache License 2.0](LICENSE). Gratuito, sem edição paga —
 veja [Apoie o projeto](#apoie-o-projeto).
+
+Os ícones da interface vêm do Material Symbols (Google, Apache 2.0); detalhes em
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

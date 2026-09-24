@@ -5,6 +5,22 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.34.0] - 2026-09-23
+
+### Adicionado
+- **Ícones ao lado dos textos, pra achar as coisas mais rápido.** As abas,
+  os títulos das seções de Configurações e da tela de Orçamento, e as ações
+  do Histórico e do Kanban ganharam um ícone à esquerda do texto. O texto
+  continua sempre lá: nenhum botão virou só ícone. A aba aberta mostra o
+  ícone preenchido.
+- **Ícones próprios de impressão 3D:** um carretel de filamento na aba
+  Filamentos e uma impressora 3D na aba Impressoras.
+
+### Alterado
+- O botão "⋮ Ações" dos orçamentos virou ícone + "Ações".
+- Em janelas estreitas (menos de 1160 de largura), as abas aparecem só com
+  o texto, pra nenhum nome quebrar no meio da palavra.
+
 ## [1.33.0] - 2026-09-23
 
 ### Adicionado

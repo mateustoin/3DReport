@@ -50,7 +50,10 @@ import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.components.SectionTitle
 import com.threedreport.app.ui.components.ShowSnackbarOnce
+import com.threedreport.app.ui.components.SubsectionTitle
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
@@ -269,7 +272,7 @@ private fun QuoteInputs(
     }
 
     if (services.isNotEmpty()) {
-        Text("Serviços opcionais", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Handyman, "Serviços opcionais")
         services.forEach { service ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
@@ -324,7 +327,7 @@ private fun QuoteResultSection(
     input: QuoteInputState,
     result: QuoteResult,
 ) {
-    Text("Resultado", style = MaterialTheme.typography.titleMedium)
+    SectionTitle(AppIcons.Calculate, "Resultado")
 
     val saveForm by viewModel.saveForm.collectAsState()
 
@@ -472,7 +475,7 @@ private fun NegotiationSection(
     targetTotalText: String,
     onTargetTotalChange: (String) -> Unit,
 ) {
-    Text("Negociação", style = MaterialTheme.typography.titleMedium)
+    SectionTitle(AppIcons.Handshake, "Negociação")
 
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth().tabToNavigate(),
@@ -509,7 +512,7 @@ private fun NegotiationSection(
 private fun PrinterComparison(comparison: List<Pair<PrinterProfile, Quote>>, extras: Double) {
     val cheapest = comparison.minByOrNull { it.second.salePrice }?.first?.id
 
-    Text("Comparar impressoras", style = MaterialTheme.typography.titleMedium)
+    SectionTitle(AppIcons.Printer3d, "Comparar impressoras")
     comparison.forEach { (printer, quote) ->
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
@@ -596,7 +599,7 @@ private fun SaveQuoteForm(
     onEditingFinished: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(if (form.editingQuoteId != null) "Editar orçamento salvo" else "Salvar orçamento", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Save, if (form.editingQuoteId != null) "Editar orçamento salvo" else "Salvar orçamento")
         if (form.editingQuoteId != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -616,7 +619,7 @@ private fun SaveQuoteForm(
             }
         }
 
-        Text("O que o cliente vê", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+        SubsectionTitle(AppIcons.Visibility, "O que o cliente vê", modifier = Modifier.padding(top = 8.dp))
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
@@ -646,7 +649,7 @@ private fun SaveQuoteForm(
 
         // Daqui pra baixo nada vai pro cliente. O título separa as duas metades do formulário, em
         // vez de depender de cada rótulo dizer "(uso interno)".
-        Text("Só pra você (não sai no PDF nem na mensagem)", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+        SubsectionTitle(AppIcons.Lock, "Só pra você (não sai no PDF nem na mensagem)", modifier = Modifier.padding(top = 8.dp))
 
         val stlFile = form.stlFile
         if (stlFile != null) {

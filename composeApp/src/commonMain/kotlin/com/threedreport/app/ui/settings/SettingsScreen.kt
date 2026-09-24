@@ -34,7 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.SectionTitle
 import com.threedreport.app.ui.components.ShowSnackbarOnce
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.parseDecimal
@@ -75,10 +77,10 @@ fun SettingsScreen(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Aparência", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Palette, "Aparência")
         ThemeModeSelector(selected = themeMode, onSelect = themeViewModel::setMode)
 
-        Text("Moeda", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Payments, "Moeda")
         CurrencySelector(selected = currency, onSelect = currencyViewModel::setCurrency)
         Text(
             "Muda o símbolo e o formato dos valores em toda a interface, no PDF exportado e no " +
@@ -88,12 +90,12 @@ fun SettingsScreen(
 
         HorizontalDivider()
 
-        Text("Energia", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Bolt, "Energia")
         LabeledField("Preço do kWh (${LocalCurrency.current.symbol})", state.energyPricePerKwhText) {
             viewModel.update { s -> s.copy(energyPricePerKwhText = it) }
         }
 
-        Text("Seu trabalho", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Schedule, "Seu trabalho")
         LabeledField("Valor da sua hora de trabalho (${LocalCurrency.current.symbol}/h)", state.laborRatePerHourText) {
             viewModel.update { s -> s.copy(laborRatePerHourText = it) }
         }
@@ -105,7 +107,7 @@ fun SettingsScreen(
             style = MaterialTheme.typography.bodySmall,
         )
 
-        Text("Custos fixos do negócio", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Storefront, "Custos fixos do negócio")
         LabeledField("Custo fixo mensal (${LocalCurrency.current.symbol})", state.monthlyFixedCostText) {
             viewModel.update { s -> s.copy(monthlyFixedCostText = it) }
         }
@@ -119,7 +121,7 @@ fun SettingsScreen(
             style = MaterialTheme.typography.bodySmall,
         )
 
-        Text("Falhas e acabamento", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.Build, "Falhas e acabamento")
         LabeledField("Taxa de falhas (%)", state.failureRatePercentText) {
             viewModel.update { s -> s.copy(failureRatePercentText = it) }
         }
@@ -147,17 +149,17 @@ fun SettingsScreen(
             color = if (chargesLaborByTime) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
         )
 
-        Text("Custos administrativos", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.ReceiptLong, "Custos administrativos")
         LabeledField("Custo administrativo por orçamento (${LocalCurrency.current.symbol})", state.administrativeCostText) {
             viewModel.update { s -> s.copy(administrativeCostText = it) }
         }
 
-        Text("Margem", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.TrendingUp, "Margem")
         LabeledField("Margem de lucro (%)", state.profitMarginPercentText) {
             viewModel.update { s -> s.copy(profitMarginPercentText = it) }
         }
 
-        Text("Imposto", style = MaterialTheme.typography.titleMedium)
+        SectionTitle(AppIcons.AccountBalance, "Imposto")
         LabeledField("Imposto sobre a venda (%)", state.taxRatePercentText) {
             viewModel.update { s -> s.copy(taxRatePercentText = it) }
         }
@@ -195,7 +197,7 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
     val channels by viewModel.channels.collectAsState()
     val form by viewModel.form.collectAsState()
 
-    Text("Canais de venda", style = MaterialTheme.typography.titleMedium)
+    SectionTitle(AppIcons.ShoppingBag, "Canais de venda")
     Text(
         "Onde a venda acontece e quanto isso desconta do que você recebe: Shopee, Mercado Livre, " +
             "cartão, Pix. Em cada orçamento você escolhe o canal, e o preço sobe o suficiente pra " +
@@ -237,7 +239,7 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
 private fun BackupSection(viewModel: BackupViewModel) {
     val state by viewModel.uiState.collectAsState()
 
-    Text("Backup", style = MaterialTheme.typography.titleMedium)
+    SectionTitle(AppIcons.Inventory2, "Backup")
     Text(
         "Seus orçamentos, clientes, catálogos, fotos e arquivos STL ficam só neste computador. " +
             "O backup junta tudo isso num arquivo .zip, pra você guardar em outro lugar ou levar " +

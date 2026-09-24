@@ -25,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.ui.components.IconLabel
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.quote.PrintSettingsDialog
@@ -60,7 +63,7 @@ import kotlin.math.roundToInt
 
 /**
  * Quadro Kanban do Histórico: uma coluna por [OrderStatus], arrastando o card entre colunas pra
- * mudar o status — visão alternativa à lista, sobre o mesmo dado (não a substitui). O menu "⋮" de
+ * mudar o status — visão alternativa à lista, sobre o mesmo dado (não a substitui). O menu "Ações" de
  * cada card cobre o mesmo caso caso o arrasto não seja preciso o bastante numa tela/mouse
  * específico — ambos os caminhos levam à mesma mudança de status.
  *
@@ -284,19 +287,25 @@ private fun KanbanCard(
             }
 
             Box {
-                TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
+                TextButton(onClick = { showMenu = true }) { IconLabel(AppIcons.MoreVert, "Ações") }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(text = { Text("Editar") }, onClick = { showMenu = false; onEdit() })
-                    DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                    DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(AppIcons.Edit, contentDescription = null) }, onClick = { showMenu = false; onEdit() })
+                    DropdownMenuItem(text = { Text("Duplicar") }, leadingIcon = { Icon(AppIcons.FileCopy, contentDescription = null) }, onClick = { showMenu = false; onDuplicate() })
                     DropdownMenuItem(
                         text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
+                        leadingIcon = { Icon(AppIcons.Event, contentDescription = null) },
                         onClick = { showMenu = false; onEditDeliveryDate() },
                     )
                     DropdownMenuItem(
                         text = { Text("Configurações de impressão") },
+                        leadingIcon = { Icon(AppIcons.Tune, contentDescription = null) },
                         onClick = { showMenu = false; showPrintSettingsDialog = true },
                     )
-                    DropdownMenuItem(text = { Text("Excluir") }, onClick = { showMenu = false; onDelete() })
+                    DropdownMenuItem(
+                        text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
+                        leadingIcon = { Icon(AppIcons.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                        onClick = { showMenu = false; onDelete() },
+                    )
                 }
             }
         }

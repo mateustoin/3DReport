@@ -2,12 +2,14 @@ package com.threedreport.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -16,6 +18,8 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +39,7 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.BrandingRepository
@@ -48,6 +53,7 @@ import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.data.ThemeRepository
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.dashboard.DashboardScreen
@@ -86,7 +92,33 @@ private enum class AppTab(val label: String) {
     FILAMENTS("Filamentos"),
     PRINTERS("Impressoras"),
     SERVICES("Serviços"),
-    SETTINGS("Configurações"),
+    SETTINGS("Configurações");
+
+    /**
+     * Ícone contornado das abas inativas e o preenchido da aba ativa (padrão do Material 3). Por
+     * `when`, e não no construtor, pra nenhum vetor ser montado antes de a barra aparecer.
+     */
+    val icon: ImageVector
+        get() = when (this) {
+            QUOTE -> AppIcons.RequestQuote
+            HISTORY -> AppIcons.History
+            DASHBOARD -> AppIcons.BarChart
+            FILAMENTS -> AppIcons.Spool
+            PRINTERS -> AppIcons.Printer3d
+            SERVICES -> AppIcons.Handyman
+            SETTINGS -> AppIcons.Settings
+        }
+
+    val selectedIcon: ImageVector
+        get() = when (this) {
+            QUOTE -> AppIcons.RequestQuoteFilled
+            HISTORY -> AppIcons.HistoryFilled
+            DASHBOARD -> AppIcons.BarChartFilled
+            FILAMENTS -> AppIcons.SpoolFilled
+            PRINTERS -> AppIcons.Printer3dFilled
+            SERVICES -> AppIcons.HandymanFilled
+            SETTINGS -> AppIcons.SettingsFilled
+        }
 }
 
 @Composable
@@ -176,15 +208,7 @@ fun App() {
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
-                        AppTab.entries.forEach { tab ->
-                            Tab(
-                                selected = selectedTab == tab,
-                                onClick = { selectedTab = tab },
-                                text = { Text(tab.label) },
-                            )
-                        }
-                    }
+                    AppTabBar(selected = selectedTab, onSelect = { selectedTab = it })
 
                     Box(modifier = Modifier.weight(1f)) {
                         when (selectedTab) {
@@ -301,4 +325,39 @@ private fun HelpDialog(onDismiss: () -> Unit) {
             }
         },
     )
+}
+
+/**
+ * Abaixo disso, as sete abas não cabem com ícone sem quebrar o rótulo no meio da palavra
+ * ("Orçament/o"), e a barra volta a ser só texto. O texto é o principal e o ícone é apoio
+ * (decisão 87), então é o ícone que sai quando falta espaço.
+ */
+private val TAB_ICONS_MIN_WIDTH = 1160.dp
+
+@Composable
+private fun AppTabBar(selected: AppTab, onSelect: (AppTab) -> Unit) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val showIcons = maxWidth >= TAB_ICONS_MIN_WIDTH
+        PrimaryTabRow(selectedTabIndex = selected.ordinal) {
+            AppTab.entries.forEach { tab ->
+                if (showIcons) {
+                    // Ícone à esquerda, e não em cima, pra barra continuar com 48 dp de altura.
+                    LeadingIconTab(
+                        selected = selected == tab,
+                        onClick = { onSelect(tab) },
+                        text = { Text(tab.label, maxLines = 1) },
+                        icon = {
+                            Icon(
+                                if (selected == tab) tab.selectedIcon else tab.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                    )
+                } else {
+                    Tab(selected = selected == tab, onClick = { onSelect(tab) }, text = { Text(tab.label) })
+                }
+            }
+        }
+    }
 }

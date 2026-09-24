@@ -27,7 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.ui.components.SectionTitle
 import com.threedreport.app.ui.components.ShowSnackbarOnce
+import com.threedreport.app.ui.components.SubsectionTitle
+import com.threedreport.app.ui.icons.AppIcons
 
 /**
  * Seção "Documentos pro cliente" de Configurações, em três blocos: **sua marca** (nome, logo e
@@ -39,13 +42,13 @@ import com.threedreport.app.ui.components.ShowSnackbarOnce
 internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplates: () -> Unit) {
     val branding by viewModel.uiState.collectAsState()
 
-    Text("Documentos pro cliente", style = MaterialTheme.typography.titleMedium)
+    SectionTitle(AppIcons.Description, "Documentos pro cliente")
     Text(
         "O que aparece no PDF, na imagem quadrada e na mensagem que você manda pro cliente.",
         style = MaterialTheme.typography.bodySmall,
     )
 
-    Text("Sua marca", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp))
+    SubsectionTitle(AppIcons.Badge, "Sua marca", modifier = Modifier.padding(top = 4.dp))
     LabeledField("Nome da sua marca (opcional)", branding.watermarkTextInput, viewModel::update)
 
     LogoPicker(branding, viewModel)
@@ -59,7 +62,7 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplate
     LabeledField("E-mail (opcional)", branding.contactEmailInput, viewModel::setContactEmail)
     LabeledField("Instagram (opcional, ex.: @minhaloja)", branding.contactInstagramInput, viewModel::setContactInstagram)
 
-    Text("Aparência do PDF", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp))
+    SubsectionTitle(AppIcons.FormatPaint, "Aparência do PDF", modifier = Modifier.padding(top = 4.dp))
     CheckboxRow("Marca d'água diagonal com o nome", branding.showWatermark, viewModel::setShowWatermark)
     CheckboxRow("Rodapé com o nome", branding.showFooter, viewModel::setShowFooter)
     CheckboxRow("Borda em volta da página", branding.showBorder, viewModel::setShowBorder)

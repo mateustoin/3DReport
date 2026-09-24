@@ -398,7 +398,14 @@ layout antes disso significa redesenhar duas vezes.
   Atenção: mexer na quantidade de abas mexe na numeração dos atalhos de
   teclado (decisões 43 e 45).
 - [ ] **Ícones junto dos textos, pra orientar quem usa** (sugerido por João
-  Antonio em teste externo, 2026-09-23; decisão 83, que revisa a 54). Hoje o
+  Antonio em teste externo, 2026-09-23; decisão 83, que revisa a 54).
+  **Implementado (decisão 87, 2026-09-23), aguardando o teste de
+  reconhecimento** com 3 a 5 pessoas, com a folha
+  [`docs/assets/teste-reconhecimento-icones.png`](assets/teste-reconhecimento-icones.png).
+  O item só fecha depois dele; ícone não reconhecido se troca só no
+  `AppIcons`. Campos de formulário ficaram sem ícone (inclusive
+  "Filamento"), confirmado pelo responsável do projeto. Texto original
+  abaixo. Hoje o
   app não tem nenhum ícone: 7 abas só texto, 12 seções empilhadas em
   Configurações e dezenas de botões só texto. A decisão 54 descartou ícones
   perguntando "fica mais bonito?"; a pergunta do teste externo é outra,

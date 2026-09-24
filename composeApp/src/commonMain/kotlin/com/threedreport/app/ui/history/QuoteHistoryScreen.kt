@@ -23,6 +23,7 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -42,6 +43,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.ui.components.IconLabel
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.formatDateTime
 import com.threedreport.app.ui.components.ConfirmDialog
@@ -105,7 +108,7 @@ fun QuoteHistoryScreen(
                 )
             } else {
                 Text(
-                    "Arraste um card pra outra coluna pra mudar o status (ou use o menu \"⋮\" do card).",
+                    "Arraste um card pra outra coluna pra mudar o status (ou use o menu \"Ações\" do card).",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -119,8 +122,8 @@ fun QuoteHistoryScreen(
             if (selectedIds.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("${selectedIds.size} selecionado(s)", style = MaterialTheme.typography.bodyMedium)
-                    Button(onClick = viewModel::exportSelectedPdf) { Text("Exportar selecionados (PDF)") }
-                    Button(onClick = viewModel::exportCatalogPdf) { Text("Exportar catálogo (PDF)") }
+                    Button(onClick = viewModel::exportSelectedPdf) { IconLabel(AppIcons.PictureAsPdf, "Exportar selecionados (PDF)") }
+                    Button(onClick = viewModel::exportCatalogPdf) { IconLabel(AppIcons.GridView, "Exportar catálogo (PDF)") }
                     TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
                 }
             }
@@ -412,37 +415,42 @@ private fun SavedQuoteRow(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onExportPdf) { Text("Exportar PDF") }
-                    TextButton(onClick = onCopy) { Text(if (justCopied) "Copiado!" else "Copiar") }
-                    TextButton(onClick = onEdit) { Text("Editar") }
+                    TextButton(onClick = onExportPdf) { IconLabel(AppIcons.PictureAsPdf, "Exportar PDF") }
+                    TextButton(onClick = onCopy) { IconLabel(AppIcons.ContentCopy, if (justCopied) "Copiado!" else "Copiar") }
+                    TextButton(onClick = onEdit) { IconLabel(AppIcons.Edit, "Editar") }
                     Box {
-                        TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
+                        TextButton(onClick = { showMenu = true }) { IconLabel(AppIcons.MoreVert, "Ações") }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                            DropdownMenuItem(text = { Text("Duplicar") }, leadingIcon = { Icon(AppIcons.FileCopy, contentDescription = null) }, onClick = { showMenu = false; onDuplicate() })
                             DropdownMenuItem(
                                 text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
+                                leadingIcon = { Icon(AppIcons.Event, contentDescription = null) },
                                 onClick = { showMenu = false; onEditDeliveryDate() },
                             )
                             DropdownMenuItem(
                                 text = { Text(if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão") },
+                                leadingIcon = { Icon(AppIcons.Tune, contentDescription = null) },
                                 onClick = { showMenu = false; showPrintSettingsDialog = true },
                             )
                             if (photoBytes != null) {
-                                DropdownMenuItem(text = { Text("Baixar foto") }, onClick = { showMenu = false; onDownloadPhoto() })
+                                DropdownMenuItem(text = { Text("Baixar foto") }, leadingIcon = { Icon(AppIcons.Image, contentDescription = null) }, onClick = { showMenu = false; onDownloadPhoto() })
                             }
                             if (savedQuote.stlFileName != null) {
-                                DropdownMenuItem(text = { Text("Baixar STL") }, onClick = { showMenu = false; onDownloadStl() })
+                                DropdownMenuItem(text = { Text("Baixar STL") }, leadingIcon = { Icon(AppIcons.Download, contentDescription = null) }, onClick = { showMenu = false; onDownloadStl() })
                             }
                             DropdownMenuItem(
                                 text = { Text("Abrir no WhatsApp") },
+                                leadingIcon = { Icon(AppIcons.Chat, contentDescription = null) },
                                 onClick = { showMenu = false; onOpenWhatsApp() },
                             )
                             DropdownMenuItem(
                                 text = { Text("Salvar imagem pro WhatsApp") },
+                                leadingIcon = { Icon(AppIcons.AddPhotoAlternate, contentDescription = null) },
                                 onClick = { showMenu = false; onSaveImage() },
                             )
                             DropdownMenuItem(
                                 text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(AppIcons.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = { showMenu = false; onDelete() },
                             )
                         }
