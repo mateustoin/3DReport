@@ -56,7 +56,7 @@ verdade.
 
 **Resumo da ordem:** rede de proteção → custo real do trabalho → quantidade
 → preço final correto → negociação → saída pro cliente → leitura do negócio
-→ UI/UX → crescimento → apostas maiores.
+→ UI/UX → produtos sem venda → crescimento → apostas maiores.
 
 ### Leva 0 — Rede de proteção (antes de mexer no modelo de dados)
 
@@ -460,6 +460,119 @@ layout antes disso significa redesenhar duas vezes.
   - **Validação antes de fechar:** teste de reconhecimento com 3 a 5 pessoas
     (mostrar só os ícones do domínio e perguntar o que significam),
     incluindo quem sugeriu. Não muda aba nem atalho de teclado.
+
+### Leva 7B — Produtos sem venda (quem está começando)
+
+Levantado pelo responsável do projeto em 2026-09-24. Hoje todo orçamento
+salvo nasce `OrderStatus.ORCADO`, então qualquer peça registrada só pra
+precificar ou pra montar portfólio entra no Kanban, na linha "Orçado" e na
+conversão do Dashboard e no filtro de status do Histórico. O app é voltado
+pra quem vende, mas dois públicos ficam desamparados: **quem está começando**
+e ainda não tem cliente (quer saber quanto cobrar e guardar o que já sabe
+fazer) e **o vendedor profissional que monta vitrine/portfólio** (peças que
+oferece, não pedidos que recebeu). Os dois acabam obrigados a usar o fluxo de
+venda sem ter venda, e isso ainda suja as métricas de quem vende.
+
+A proposta separa **produto** (registro com preço, sem cliente nem
+andamento) de **pedido** (venda, com status). Um produto vira pedido pelo
+botão "Vender". Não é uma mudança de paradigma: calcular sem salvar, o
+Duplicar, o catálogo em PDF (decisão 44) e o Dashboard que já conta só
+vendas (decisão 95) existem, e falta um conceito só. Vem antes da Leva 8 de
+propósito: não adianta atrair gente nova se quem ainda não vende tem que
+fingir que vende. Revisita a decisão 44, que recusou um campo pra marcar o
+item, com um argumento novo: um público que ela não considerou.
+
+Decidido com o responsável do projeto (2026-09-24): os produtos ficam
+**dentro do Histórico**, num seletor `Pedidos | Produtos`, sem aba nova (a
+barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
+**dois botões**, "Salvar no catálogo" e "Salvar como pedido".
+
+**Fase 1: separar produto de pedido (o núcleo)**
+
+- [ ] **`SavedQuote.kind` (Produto | Pedido)**, com padrão Pedido: os JSONs
+  antigos continuam iguais e nenhum pedido existente muda. Campo no mesmo
+  `SavedQuote`, e não modelo novo, pra reaproveitar foto, STL, configurações
+  de impressão, PDF, imagem quadrada, WhatsApp, edição e comparar
+  impressoras sem duplicar código. Produto guarda cliente, frete e prazo
+  vazios e ignora o `status`.
+- [ ] **Uma regra só pra "o que é pedido"**, no mesmo espírito do `isSold`
+  (um lugar só, pra tela e relatório não divergirem). Produto fica fora do
+  Kanban, do Dashboard (inclusive da linha "Orçado" e da conversão), da fila
+  de impressão (`PrintQueueReport`), das horas de manutenção
+  (`MaintenanceReport`), da etiqueta de prazo e do filtro de status.
+- [ ] **Seletor `Pedidos | Produtos` no Histórico**, ao lado de
+  Lista/Kanban. No modo Produtos o Kanban não aparece (produto não tem
+  andamento); busca e seleção múltipla continuam funcionando.
+- [ ] **Dois botões ao salvar:** "Salvar no catálogo" e "Salvar como
+  pedido". O destacado segue o perfil do onboarding (Fase 3). No modo
+  catálogo, cliente, frete e prazo somem do formulário, porque não fazem
+  sentido sem venda.
+- [ ] **"Vender" como ação principal do card do produto.** Abre o Orçamento
+  preenchido (mesmo caminho de `QuoteViewModel.duplicateForNewQuote`), com
+  aviso "a partir do produto X". O pedido nasce Orçado e segue o fluxo
+  normal: cliente, serviços, negociação, prazo. O produto continua no
+  catálogo, intacto.
+- [ ] **Mover entre os dois:** "Guardar no catálogo" num pedido cria uma
+  cópia como produto, sem mexer no pedido (que é histórico de venda);
+  "Transformar em pedido" num produto que nunca foi vendido, pra quem salvou
+  no lugar errado.
+- [ ] **Catálogo em PDF parte dos produtos:** no modo Produtos, "Exportar
+  catálogo" já sugere todos, sem obrigar a marcar um por um. A seleção
+  manual continua valendo pra quem quer um recorte.
+
+**Fase 2: catálogo vivo (preço que não envelhece)**
+
+- [ ] **Atualizar o preço com os cadastros de hoje.** O pedido é um retrato
+  congelado (KDoc de `SavedQuote`), e isso está certo pra venda. O produto
+  de catálogo precisa acompanhar o filamento que subiu e a hora de trabalho
+  que mudou: "Atualizar preço" roda o `PricingCalculator` de novo e mostra
+  antes e depois antes de gravar. Produto antigo ganha um aviso discreto
+  ("preço de N meses atrás").
+- [ ] **Preço de vitrine:** calculado R$ 18,37, anunciado R$ 18,90. Mesma
+  ideia do `tableSalePrice` (decisão 84): o anunciado vai pro catálogo, e o
+  aviso de prejuízo (decisão 79) avisa se o arredondamento ficou abaixo do
+  custo.
+- [ ] **Categorias simples** (Chaveiros, Decoração, Utilidades) pra filtrar
+  a lista e separar o PDF do catálogo em seções. Texto livre com sugestão
+  das já usadas, sem tela de cadastro nova.
+
+**Fase 3: quem está começando**
+
+- [ ] **Onboarding pergunta como a pessoa usa o app:** "Já vendo sob
+  encomenda" ou "Estou começando / quero precificar e montar portfólio". A
+  resposta só define **padrões** (botão de salvar em destaque, vista inicial
+  do Histórico); nada fica escondido e a escolha muda em Configurações.
+  Entra no onboarding da decisão 81 sem transformá-lo em formulário.
+- [ ] **Dashboard sem vendas não fica vazio:** quem ainda não tem pedido vê
+  o resumo do catálogo (quantos produtos, faixa de preço, lucro por hora de
+  máquina de cada um) e o convite "quando aparecer um cliente, é só clicar
+  em Vender". O lucro por hora responde a pergunta de quem está começando:
+  qual peça vale a pena oferecer primeiro.
+- [ ] **Produto mais vendido do catálogo:** o pedido guarda de qual produto
+  veio (id de origem), e o ranking da decisão 95 passa a juntar por produto
+  de origem, e não só pelo nome.
+
+**Ideias registradas, fora da leva (sem posição):**
+
+- **Estoque de pronta-entrega:** quantidade já feita por produto, que baixa
+  ao vender. É o caso da feira e do evento, onde se imprime antes e vende
+  depois. Mexe nas horas de máquina (peça impressa sem pedido) e merece
+  decisão própria.
+- **Variações do mesmo produto** (cor, tamanho), parente do "orçamento com
+  opções" da Leva 5.
+- **Portfólio como imagem em grade** pro Instagram, reaproveitando a imagem
+  quadrada (decisão 80).
+- **Importar vários G-codes de uma vez** como produtos, pra quem chega com
+  portfólio pronto.
+
+**Cuidados de usabilidade na implementação:**
+
+- Na tela, as palavras são "produto" e "catálogo", nunca "rascunho":
+  produto não é pedido incompleto, é um item com vida própria.
+- Nenhuma função some por perfil; o perfil só muda o que vem em destaque.
+- Vender a partir do catálogo é um clique a partir do card.
+- Atualizar o app não muda nada no que já está salvo: tudo continua pedido,
+  e produto só existe quando alguém cria um.
 
 ### Leva 8 — Crescimento (com o produto já bom)
 
