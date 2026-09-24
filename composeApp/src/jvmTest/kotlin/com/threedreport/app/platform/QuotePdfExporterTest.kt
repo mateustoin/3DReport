@@ -552,4 +552,37 @@ class QuotePdfExporterTest {
 
         (0 until 7).forEach { assertTrue(text.contains("Peça $it")) }
     }
+
+    @Test
+    fun appSignatureLinksToTheSiteOnEveryPage() {
+        val options = com.threedreport.core.model.BrandingSettings().resolvePdfBranding(null).options
+        check(options.showAppSignature) { "a assinatura nasce ligada" }
+
+        val pdf = renderSavedQuotesPdf(List(2) { QuoteExportItem(savedQuote, null) }, null, null, options = options)
+
+        Loader.loadPDF(pdf).use { document ->
+            assertTrue(PDFTextStripper().getText(document).contains("Gerado com 3DReport"))
+            document.pages.forEach { page ->
+                val uris = page.annotations
+                    .filterIsInstance<org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink>()
+                    .mapNotNull { (it.action as? org.apache.pdfbox.pdmodel.interactive.action.PDActionURI)?.uri }
+                assertEquals(listOf("https://mateustoin.github.io/3DReport/"), uris)
+            }
+        }
+    }
+
+    @Test
+    fun appSignatureCanBeTurnedOffAndIsOffWithoutOptions() {
+        val off = com.threedreport.core.model.BrandingSettings(showAppSignature = false).resolvePdfBranding(null).options
+
+        assertFalse(textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = off)).contains("3DReport"))
+        assertFalse(textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null)).contains("3DReport"))
+    }
+
+    @Test
+    fun catalogAlsoCarriesTheSignature() {
+        val options = PdfLayoutOptions(showAppSignature = true, showBorder = true)
+
+        assertTrue(textOf(renderCatalogPdf(listOf(QuoteExportItem(savedQuote, null)), null, "Loja", options = options)).contains("Gerado com 3DReport"))
+    }
 }

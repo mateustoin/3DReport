@@ -18,6 +18,7 @@ data class BrandingUiState(
     val showFooter: Boolean = true,
     val showPrintTime: Boolean = false,
     val showBorder: Boolean = false,
+    val showAppSignature: Boolean = true,
     val contactWhatsAppInput: String = "",
     val contactEmailInput: String = "",
     val contactInstagramInput: String = "",

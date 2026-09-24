@@ -25,6 +25,11 @@ import kotlinx.serialization.Serializable
  *   cliente responder. Diferente de `Client.contact`, que é do cliente e só de uso interno
  *   (decisão 37). Texto livre, como a pessoa digitou.
  * @property showBorder desenha uma borda fina em volta da página do PDF.
+ * @property showAppSignature assinatura discreta "Gerado com 3DReport" no canto do PDF, com link
+ *   pro site. Ligada por padrão, inclusive pra quem atualiza (o campo falta no JSON antigo): é a
+ *   única divulgação de um app gratuito e sem verba (decisão 15), e o app avisa uma vez quem já
+ *   usava (decisão 88). Preferência do app, não aparência de documento, então não entra em
+ *   [QuoteTemplate].
  */
 @Serializable
 data class BrandingSettings(
@@ -37,6 +42,7 @@ data class BrandingSettings(
     val contactEmail: String? = null,
     val contactInstagram: String? = null,
     val showBorder: Boolean = false,
+    val showAppSignature: Boolean = true,
 ) {
     /** Instagram sempre com "@" na frente, que é como ele é reconhecido; `null` se vazio. */
     val instagramHandle: String?

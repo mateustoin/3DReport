@@ -5,6 +5,19 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.35.0] - 2026-09-23
+
+### Adicionado
+- **Assinatura discreta nos PDFs.** Os PDFs (orçamento, vários orçamentos e
+  catálogo) ganham uma linha pequena no canto de baixo, "Gerado com
+  3DReport", com link pro site do app. Fica longe do seu nome e da sua logo e
+  não aparece na imagem nem na mensagem do WhatsApp. O app é gratuito e sem
+  propaganda: é assim que outros vendedores conhecem o 3DReport. Dá pra
+  desligar em Configurações → Documentos pro cliente → Aparência do PDF.
+- **Aviso de novidade pra quem já usava.** Na primeira abertura depois de
+  atualizar, o app mostra o que mudou nos PDFs, com "Ver como fica" e
+  "Desligar". Quem instala agora não vê o aviso.
+
 ## [1.34.0] - 2026-09-23
 
 ### Adicionado

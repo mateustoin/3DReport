@@ -440,9 +440,12 @@ layout antes disso significa redesenhar duas vezes.
 
 ### Leva 8 — Crescimento (com o produto já bom)
 
-- [ ] **Assinatura discreta "Gerado com 3DReport" nos PDFs.** Item já
-  registrado e detalhado (ver "Vendas e divulgação") — **é a maior alavanca
-  de distribuição do projeto inteiro e continua sem implementação.** Cada
+- [x] **Assinatura discreta "Gerado com 3DReport" nos PDFs** (decisão 88,
+  2026-09-23). **Feito:** canto inferior direito, link só pro site, ligada
+  por padrão com aviso único pra quem já usava, desligável em
+  Configurações. Detalhe no item de "Vendas e divulgação". Texto original:
+  item já registrado e detalhado (ver "Vendas e divulgação") — é a maior alavanca
+  de distribuição do projeto inteiro. Cada
   orçamento que um vendedor manda pro cliente é uma chance de outro vendedor
   conhecer o app, e é a única divulgação orgânica disponível pra um projeto
   sem verba de marketing (decisão 15).
@@ -1168,7 +1171,14 @@ funciona hoje.
   Feito (2026-09-17): `core/model/Currency`, `data/CurrencyRepository`,
   `ui/format/CurrencyFormat.kt` (`LocalCurrency`, `toMoney()`,
   `toCurrencyText()`).
-- [ ] **Assinatura discreta "Gerado com 3DReport" nos PDFs exportados.**
+- [x] **Assinatura discreta "Gerado com 3DReport" nos PDFs exportados**
+  (decisão 88, 2026-09-23). **Feito:** "Gerado com 3DReport" em 7 pt no
+  canto inferior direito (espaço reservado pela decisão 86), link só pro
+  site (o link de apoio ficou de fora por decisão do responsável do
+  projeto), em todo PDF (orçamento, lote, catálogo), fora da imagem e do
+  texto. Ligada por padrão inclusive pra quem atualiza, com um aviso único
+  ("Ver como fica / Desligar / Manter") pra quem já usava; instalação nova
+  pula o aviso. Texto original abaixo.
   Ideia trazida pelo responsável do projeto (2026-09-17): já que o projeto
   vive só de doação voluntária, sem verba de marketing (decisão 15), cada
   PDF gerado (orçamento individual, múltiplos orçamentos e catálogo —
@@ -1200,7 +1210,7 @@ funciona hoje.
     institucional em GitHub Pages (seção 2) já existem e estão públicos, então
     o link pode apontar direto pro site (`https://mateustoin.github.io/3DReport/`),
     com o repositório como alternativa. Item segue no backlog só pela
-    implementação em si (ainda não entrou no código).
+    implementação em si, que entrou na decisão 88.
 
 ### Integrações
 

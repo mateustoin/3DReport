@@ -72,6 +72,12 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplate
             "entender o trabalho, mas também pode virar argumento pra pedir desconto, por isso começa desligado.",
         style = MaterialTheme.typography.bodySmall,
     )
+    CheckboxRow("Assinatura discreta \"Gerado com 3DReport\" no canto do PDF", branding.showAppSignature, viewModel::setShowAppSignature)
+    Text(
+        "Uma linha pequena no canto de baixo, com link pro site do app. Ajuda outros vendedores a conhecer " +
+            "o 3DReport, que é gratuito e vive de indicação. Pode desligar quando quiser.",
+        style = MaterialTheme.typography.bodySmall,
+    )
 
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = viewModel::save) { Text("Salvar") }

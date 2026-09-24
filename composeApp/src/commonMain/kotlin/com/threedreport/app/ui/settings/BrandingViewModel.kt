@@ -56,6 +56,7 @@ class BrandingViewModel(
     fun setShowFooter(show: Boolean) = edit { it.copy(showFooter = show) }
     fun setShowPrintTime(show: Boolean) = edit { it.copy(showPrintTime = show) }
     fun setShowBorder(show: Boolean) = edit { it.copy(showBorder = show) }
+    fun setShowAppSignature(show: Boolean) = edit { it.copy(showAppSignature = show) }
     fun setContactWhatsApp(text: String) = edit { it.copy(contactWhatsAppInput = text) }
     fun setContactEmail(text: String) = edit { it.copy(contactEmailInput = text) }
     fun setContactInstagram(text: String) = edit { it.copy(contactInstagramInput = text) }
@@ -76,6 +77,16 @@ class BrandingViewModel(
     }
 
     fun removeLogo() = edit { it.copy(logoBytes = null, logoChange = LogoChange.Remove, logoError = null, logoMissing = false) }
+
+    /**
+     * "Desligar" no aviso da assinatura: grava na hora só essa opção, a partir do que está salvo (e
+     * não do rascunho do formulário, que pode ter outras edições pela metade), e acerta o
+     * formulário pra ele não religar a assinatura no próximo "Salvar".
+     */
+    fun disableAppSignature() {
+        repository.update(repository.branding.value.copy(showAppSignature = false))
+        state.update { it.copy(showAppSignature = false) }
+    }
 
     /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
     fun consumeSavedConfirmation() {
@@ -180,6 +191,7 @@ private fun BrandingUiState.toSettings() = BrandingSettings(
     contactEmail = contactEmailInput.trim().ifEmpty { null },
     contactInstagram = contactInstagramInput.trim().ifEmpty { null },
     showBorder = showBorder,
+    showAppSignature = showAppSignature,
 )
 
 /**
@@ -201,6 +213,7 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
     showFooter = showFooter,
     showPrintTime = showPrintTime,
     showBorder = showBorder,
+    showAppSignature = showAppSignature,
     contactWhatsAppInput = contactWhatsApp.orEmpty(),
     contactEmailInput = contactEmail.orEmpty(),
     contactInstagramInput = contactInstagram.orEmpty(),

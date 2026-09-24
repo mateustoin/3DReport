@@ -15,6 +15,9 @@ import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
+import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDBorderStyleDictionary
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.util.Matrix
@@ -244,13 +247,40 @@ private fun drawPageDecorations(
     footerText: String?,
     margin: Float,
 ) {
+    // Com borda, rodapé e assinatura sobem um pouco pra não encostar nela.
+    val footerY = if (context.options.showBorder) 36f else 28f
     if (context.options.showBorder) drawBorder(content, page)
     if (!watermarkText.isNullOrBlank()) drawWatermark(content, page, context.titleFont, watermarkText)
-    if (!footerText.isNullOrBlank()) {
-        // Com borda, o rodapé sobe um pouco pra não encostar nela.
-        drawFooter(content, page, context.bodyFont, footerText, margin, textY = if (context.options.showBorder) 36f else 28f)
-    }
+    if (!footerText.isNullOrBlank()) drawFooter(content, page, context.bodyFont, footerText, margin, textY = footerY)
+    if (context.options.showAppSignature) drawAppSignature(content, page, context.bodyFont, margin, baselineY = footerY)
 }
+
+/**
+ * "Gerado com 3DReport" no canto inferior direito, o espaço que a decisão 86 deixou livre no
+ * rodapé pra isso: fica na mesma linha do nome da marca (centralizado), sem disputar com ele.
+ * Pequeno e claro de propósito: o documento é do vendedor, a assinatura é só uma porta pra outro
+ * vendedor conhecer o app. O texto inteiro é um link pro site (decisão 88).
+ */
+private fun drawAppSignature(content: PDPageContentStream, page: PDPage, font: PDFont, margin: Float, baselineY: Float) {
+    val fontSize = 7f
+    val textWidth = font.widthOf(APP_SIGNATURE_TEXT, fontSize)
+    val x = page.mediaBox.width - margin - textWidth
+
+    content.saveGraphicsState()
+    content.setNonStrokingColor(Color(165, 165, 165))
+    content.text(font, fontSize, x, baselineY, APP_SIGNATURE_TEXT)
+    content.restoreGraphicsState()
+
+    val link = PDAnnotationLink().apply {
+        rectangle = PDRectangle(x, baselineY - 2f, textWidth, fontSize + 4f)
+        borderStyle = PDBorderStyleDictionary().apply { width = 0f }
+        action = PDActionURI().apply { uri = APP_SITE_URL }
+    }
+    page.annotations.add(link)
+}
+
+private const val APP_SIGNATURE_TEXT = "Gerado com 3DReport"
+private const val APP_SITE_URL = "https://mateustoin.github.io/3DReport/"
 
 /**
  * Cabeçalho de papel timbrado: à esquerda a logo (ou, sem logo, o nome da marca em destaque), à

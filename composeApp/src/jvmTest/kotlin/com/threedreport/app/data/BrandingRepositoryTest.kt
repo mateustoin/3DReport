@@ -120,5 +120,6 @@ class BrandingRepositoryTest {
         assertNull(loaded.logoFileName)
         assertTrue(loaded.contactLines.isEmpty())
         assertFalse(loaded.showBorder)
+        assertTrue(loaded.showAppSignature, "quem atualiza recebe a assinatura ligada, com o aviso único (decisão 88)")
     }
 }
