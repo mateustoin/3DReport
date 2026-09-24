@@ -7,7 +7,7 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
-import com.threedreport.core.model.Service
+import com.threedreport.core.model.QuoteService
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
@@ -267,7 +267,7 @@ class QuotePdfExporterTest {
     @Test
     fun pdfListsEachServiceAndTheGrandTotalWhenPresent() {
         val quoteWithServices = savedQuote.copy(
-            services = listOf(Service(id = "paint", name = "Pintura", price = 20.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0)),
         )
 
         val pdfBytes = renderSavedQuotesPdf(
@@ -285,10 +285,30 @@ class QuotePdfExporterTest {
     }
 
     @Test
+    fun pdfShowsPerOrderServiceOnceAndWithoutMultiplier() {
+        val quoteWithQuantity = savedQuote.copy(
+            quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
+            services = listOf(QuoteService(id = "delivery", name = "Entrega", price = 15.0, chargedPerOrder = true)),
+        )
+
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(quoteWithQuantity, photoBytes = null)),
+            watermarkText = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("Entrega: R$ 15,00"))
+        assertFalse(text.contains("Entrega (×"))
+        assertTrue(text.contains("75,20")) // total: 60,20 (venda) + 15,00 (entrega, uma vez)
+    }
+
+    @Test
     fun pdfShowsQuantityUnitPriceAndMultipliedServiceWhenQuantityIsGreaterThanOne() {
         val quoteWithQuantity = savedQuote.copy(
             quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
-            services = listOf(Service(id = "paint", name = "Pintura", price = 15.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0)),
         )
 
         val pdfBytes = renderSavedQuotesPdf(

@@ -5,6 +5,35 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.38.0] - 2026-09-24
+
+### Alterado
+- **O valor do serviço agora é de cada pedido.** Pintar uma peça grande não
+  custa o mesmo que pintar um chaveiro, então o preço fixo do cadastro de
+  Serviços virou um **valor sugerido opcional**. Ao marcar um serviço no
+  orçamento, aparece um campo pra digitar quanto você vai cobrar por ele
+  naquele pedido (já preenchido com o sugerido, se houver). Serviço marcado
+  sem valor impede de salvar, pra nunca virar R$ 0 sem você perceber. Os
+  serviços que você já tinha cadastrado continuam com o mesmo valor, agora
+  como sugestão.
+
+### Adicionado
+- **Serviço cobrado uma vez pelo pedido.** Entrega e modelagem não
+  multiplicam pela quantidade como pintura e lixamento. No cadastro de cada
+  serviço você escolhe o padrão ("Por peça" ou "Uma vez no pedido"), e no
+  orçamento com mais de uma peça dá pra trocar, vendo o total do serviço ao
+  lado. No PDF e no texto pro cliente, o serviço por peça aparece com
+  "× N" e o por pedido só com o nome.
+
+### Corrigido
+- **Reabrir um orçamento não muda mais o valor dos serviços.** Antes, editar
+  um orçamento salvo e salvar de novo trocava o valor de cada serviço pelo
+  preço atual do cadastro, sem avisar. Agora vale o que foi salvo no pedido.
+  Um serviço que foi excluído do cadastro também continua no orçamento
+  reaberto, em vez de sumir. Frete, comprimento, tempos e valores também
+  voltam como foram salvos, sem arredondar pra duas casas: antes, um frete de
+  R$ 19,999 voltava como 20 e mudava o total ao salvar de novo.
+
 ## [1.37.0] - 2026-09-23
 
 ### Alterado

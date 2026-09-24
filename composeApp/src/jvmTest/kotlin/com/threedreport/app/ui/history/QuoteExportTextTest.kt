@@ -7,7 +7,7 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
-import com.threedreport.core.model.Service
+import com.threedreport.core.model.QuoteService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -67,7 +67,7 @@ class QuoteExportTextTest {
     @Test
     fun includesEachServiceAndTheGrandTotalWhenPresent() {
         val withServices = savedQuote.copy(
-            services = listOf(Service(id = "paint", name = "Pintura", price = 20.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0)),
         )
 
         val text = withServices.toCopyPasteText()
@@ -91,10 +91,28 @@ class QuoteExportTextTest {
     }
 
     @Test
+    fun perOrderServiceShowsWithoutMultiplierAndIsCountedOnce() {
+        val withQuantity = savedQuote.copy(
+            quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
+            services = listOf(
+                QuoteService(id = "paint", name = "Pintura", price = 1.0),
+                QuoteService(id = "delivery", name = "Entrega", price = 15.0, chargedPerOrder = true),
+            ),
+        )
+
+        val text = withQuantity.toCopyPasteText()
+
+        assertEquals(
+            "Suporte de celular\nVenda: R$ 60,20\nPintura (× 10): R$ 10,00\nEntrega: R$ 15,00\nTotal: R$ 85,20\n10 peças · R$ 8,52 cada",
+            text,
+        )
+    }
+
+    @Test
     fun includesQuantityUnitPriceAndMultipliedServiceWhenQuantityIsGreaterThanOne() {
         val withQuantity = savedQuote.copy(
             quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
-            services = listOf(Service(id = "paint", name = "Pintura", price = 15.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0)),
         )
 
         val text = withQuantity.toCopyPasteText()
@@ -123,7 +141,7 @@ class QuoteExportTextTest {
     fun includesShippingAfterServicesAndBeforeTotalWhenQuantityIsGreaterThanOne() {
         val withShippingAndServices = savedQuote.copy(
             quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
-            services = listOf(Service(id = "paint", name = "Pintura", price = 15.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0)),
             shippingCost = 25.0,
         )
 
@@ -140,7 +158,7 @@ class QuoteExportTextTest {
     @Test
     fun quantityOneKeepsTheOutputExactlyAsBeforeQuantityExisted() {
         val quantityOne = savedQuote.copy(
-            services = listOf(Service(id = "paint", name = "Pintura", price = 20.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0)),
         )
         check(quantityOne.quote.quantity == 1)
 

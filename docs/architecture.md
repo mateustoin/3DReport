@@ -111,7 +111,10 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     **Serviços** (`ui/services`): catálogos usados no Orçamento, cada um com
     lista + formulário. Filamentos têm marca, tipo, várias cores e estoque
     manual por cor; Impressoras têm presets de fabricante e mostram a fila de
-    impressão de cada máquina.
+    impressão de cada máquina. Em Serviços, o valor é só uma sugestão
+    opcional e cada um tem um padrão "por peça / uma vez no pedido": o que
+    vale é o digitado no orçamento (`ServiceInput`), congelado em
+    `QuoteService` (decisão 92).
   - **Configurações** (`ui/settings`): parâmetros do negócio
     (`PricingSettings`, gravados só no "Salvar"), canais de venda, moeda,
     tema, backup/restauração, e "Documentos pro cliente" (`BrandingViewModel`:

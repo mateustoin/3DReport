@@ -6,7 +6,7 @@ import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
-import com.threedreport.core.model.Service
+import com.threedreport.core.model.QuoteService
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -34,7 +34,7 @@ expect class QuoteHistoryRepository() {
     fun save(
         name: String,
         quote: Quote,
-        services: List<Service>,
+        services: List<QuoteService>,
         photo: PickedFile?,
         photoReferenceFileName: String? = null,
         stlFile: PickedFile? = null,
@@ -60,7 +60,7 @@ expect class QuoteHistoryRepository() {
         id: String,
         name: String,
         quote: Quote,
-        services: List<Service>,
+        services: List<QuoteService>,
         photo: PickedFile?,
         photoReferenceFileName: String? = null,
         stlFile: PickedFile?,

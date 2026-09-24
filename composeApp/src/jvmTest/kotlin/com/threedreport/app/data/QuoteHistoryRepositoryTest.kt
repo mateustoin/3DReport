@@ -9,7 +9,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
-import com.threedreport.core.model.Service
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.pricing.PricingCalculator
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -111,7 +111,7 @@ class QuoteHistoryRepositoryTest {
     @Test
     fun servicesSurviveNewRepositoryInstance() {
         val repository = QuoteHistoryRepository()
-        val services = listOf(Service(id = "s1", name = "Pintura", price = 20.0))
+        val services = listOf(QuoteService(id = "s1", name = "Pintura", price = 20.0))
 
         val saved = repository.save(name = "Com serviço", quote = quote, services = services, photo = null, sourceLink = null)
 

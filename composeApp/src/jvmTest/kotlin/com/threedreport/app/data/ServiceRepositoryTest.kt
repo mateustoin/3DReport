@@ -1,6 +1,9 @@
 package com.threedreport.app.data
 
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.Service
+import kotlinx.serialization.json.Json
+import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -58,5 +61,36 @@ class ServiceRepositoryTest {
 
         val reloaded = ServiceRepository().services.value
         assertTrue(reloaded.none { it.id == service.id })
+    }
+
+    @Test
+    fun catalogFromOlderVersionsStillLoadsWithItsPriceAsTheSuggestion() {
+        // Formato de antes do valor por pedido: price obrigatório, sem forma de cobrança.
+        File(System.getProperty("threedreport.dataDir"), "services.json")
+            .writeText("""[{"id": "paint", "name": "Pintura", "price": 20.0}]""")
+
+        val service = ServiceRepository().services.value.single()
+
+        assertEquals(20.0, service.price)
+        assertEquals(false, service.chargedPerOrder)
+    }
+
+    @Test
+    fun serviceSavedInOlderQuotesDecodesAsChargedPerPiece() {
+        // Mesmo formato do `Service` que o histórico guardava antes: continua cobrando por peça,
+        // que é como aquele orçamento foi calculado.
+        val decoded = Json.decodeFromString<List<QuoteService>>("""[{"id": "paint", "name": "Pintura", "price": 15.0}]""")
+
+        assertEquals(listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0, chargedPerOrder = false)), decoded)
+    }
+
+    @Test
+    fun serviceWithoutSuggestedPriceSurvivesReload() {
+        ServiceRepository().add(Service(id = "delivery", name = "Entrega", chargedPerOrder = true))
+
+        val reloaded = ServiceRepository().services.value.single()
+
+        assertEquals(null, reloaded.price)
+        assertEquals(true, reloaded.chargedPerOrder)
     }
 }

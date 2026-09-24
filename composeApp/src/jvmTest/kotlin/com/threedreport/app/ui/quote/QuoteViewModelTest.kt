@@ -11,6 +11,7 @@ import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
 import kotlin.io.path.createTempDirectory
@@ -121,57 +122,218 @@ class QuoteViewModelTest {
         assertEquals("second", result.printer?.id)
     }
 
-    @Test
-    fun toggleServiceAddsAndRemovesFromSelection() {
+    private fun viewModelWith(
+        vararg services: Service,
+        historyRepository: QuoteHistoryRepository = QuoteHistoryRepository(),
+    ): QuoteViewModel {
         val serviceRepository = ServiceRepository()
-        serviceRepository.add(Service(id = "paint", name = "Pintura", price = 20.0))
-        val viewModel = QuoteViewModel(
+        services.forEach(serviceRepository::add)
+        return QuoteViewModel(
             FilamentRepository(),
             PrinterRepository(),
             SettingsRepository(),
             serviceRepository,
             SalesChannelRepository(),
-            QuoteHistoryRepository(),
+            historyRepository,
+        ).apply {
+            setLengthMeters("12")
+            setPrintTimeMinutes("190")
+        }
+    }
+
+    private fun QuoteViewModel.currentResult() =
+        calculate(filaments.value, printers.value, settings.value, services.value, input.value)
+
+    @Test
+    fun toggleServiceAddsAndRemovesFromSelection() {
+        val viewModel = viewModelWith(Service(id = "paint", name = "Pintura", price = 20.0))
+
+        viewModel.toggleService("paint")
+        assertEquals(setOf("paint"), viewModel.input.value.selectedServices.keys)
+
+        viewModel.toggleService("paint")
+        assertTrue(viewModel.input.value.selectedServices.isEmpty())
+    }
+
+    @Test
+    fun checkingAServicePrefillsTheSuggestedPriceAndChargeMode() {
+        val viewModel = viewModelWith(
+            Service(id = "paint", name = "Pintura", price = 20.0),
+            Service(id = "delivery", name = "Entrega", chargedPerOrder = true),
         )
 
         viewModel.toggleService("paint")
-        assertEquals(setOf("paint"), viewModel.input.value.selectedServiceIds)
+        viewModel.toggleService("delivery")
 
-        viewModel.toggleService("paint")
-        assertTrue(viewModel.input.value.selectedServiceIds.isEmpty())
+        val selected = viewModel.input.value.selectedServices
+        assertEquals(ServiceInput(name = "Pintura", priceText = "20", chargedPerOrder = false), selected["paint"])
+        assertEquals(ServiceInput(name = "Entrega", priceText = "", chargedPerOrder = true), selected["delivery"])
     }
 
     @Test
     fun calculateIncludesSelectedServicesInResultButNotInProfit() {
-        val serviceRepository = ServiceRepository()
-        val paint = Service(id = "paint", name = "Pintura", price = 20.0)
-        serviceRepository.add(paint)
-        val viewModel = QuoteViewModel(
-            FilamentRepository(),
-            PrinterRepository(),
-            SettingsRepository(),
-            serviceRepository,
-            SalesChannelRepository(),
-            QuoteHistoryRepository(),
-        )
+        val viewModel = viewModelWith(Service(id = "paint", name = "Pintura", price = 20.0))
         viewModel.toggleService("paint")
-        viewModel.setLengthMeters("12")
-        viewModel.setPrintTimeMinutes("190")
 
-        val result = viewModel.calculate(
-            viewModel.filaments.value,
-            viewModel.printers.value,
-            viewModel.settings.value,
-            viewModel.services.value,
-            viewModel.input.value,
-        )
+        val result = viewModel.currentResult()
 
         val quote = result.quote!!
-        assertEquals(listOf(paint), result.selectedServices)
+        assertEquals(listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0)), result.selectedServices)
         assertEquals(20.0, result.servicesTotal)
         assertEquals(quote.salePrice + 20.0, result.grandTotal)
         // Lucro não deve mudar por causa de serviços (decisão: só entram no total, não no lucro).
         assertEquals(quote.profit, quote.salePrice - quote.productionCost)
+    }
+
+    @Test
+    fun priceTypedInTheQuoteOverridesTheSuggestion() {
+        val viewModel = viewModelWith(Service(id = "paint", name = "Pintura", price = 20.0))
+        viewModel.toggleService("paint")
+
+        viewModel.setServicePrice("paint", "35,50")
+
+        assertEquals(35.5, viewModel.currentResult().servicesTotal, 1e-9)
+    }
+
+    @Test
+    fun perOrderServiceIsNotMultipliedByQuantity() {
+        val viewModel = viewModelWith(
+            Service(id = "paint", name = "Pintura", price = 2.0),
+            Service(id = "delivery", name = "Entrega", price = 15.0, chargedPerOrder = true),
+        )
+        viewModel.setQuantity("10")
+        viewModel.toggleService("paint")
+        viewModel.toggleService("delivery")
+
+        val result = viewModel.currentResult()
+
+        assertEquals(2.0 * 10 + 15.0, result.servicesTotal, 1e-9)
+        assertEquals(result.quote!!.salePrice + 35.0, result.grandTotal!!, 1e-9)
+    }
+
+    @Test
+    fun chargeModeCanBeChangedInTheQuote() {
+        val viewModel = viewModelWith(Service(id = "paint", name = "Pintura", price = 30.0))
+        viewModel.setQuantity("10")
+        viewModel.toggleService("paint")
+
+        viewModel.setServiceChargedPerOrder("paint", true)
+
+        assertEquals(30.0, viewModel.currentResult().servicesTotal, 1e-9)
+    }
+
+    @Test
+    fun targetTotalSubtractsPerOrderServiceOnlyOnce() {
+        val viewModel = viewModelWith(Service(id = "delivery", name = "Entrega", price = 15.0, chargedPerOrder = true))
+        viewModel.setQuantity("10")
+        viewModel.toggleService("delivery")
+        viewModel.setTargetTotal("100")
+
+        val result = viewModel.currentResult()
+
+        assertEquals(85.0, result.quote!!.salePrice, 1e-9)
+        assertEquals(100.0, result.grandTotal!!, 1e-9)
+    }
+
+    @Test
+    fun serviceWithoutPriceBlocksSavingInsteadOfCountingAsZero() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(Service(id = "paint", name = "Pintura"), historyRepository = historyRepository)
+        viewModel.toggleService("paint")
+
+        val result = viewModel.currentResult()
+        assertTrue(result.missingServicePrice)
+        assertTrue(result.selectedServices.isEmpty())
+
+        viewModel.saveCurrentQuote()
+        assertTrue(historyRepository.savedQuotes.value.isEmpty())
+
+        viewModel.setServicePrice("paint", "25")
+        viewModel.saveCurrentQuote()
+        assertEquals(25.0, historyRepository.savedQuotes.value.single().services.single().price)
+    }
+
+    @Test
+    fun reopeningAQuoteUsesTheSavedServicePriceNotTheCurrentCatalog() {
+        val historyRepository = QuoteHistoryRepository()
+        val serviceRepository = ServiceRepository()
+        serviceRepository.add(Service(id = "paint", name = "Pintura", price = 20.0))
+        val viewModel = QuoteViewModel(
+            FilamentRepository(), PrinterRepository(), SettingsRepository(), serviceRepository,
+            SalesChannelRepository(), historyRepository,
+        )
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.setQuantity("3")
+        viewModel.toggleService("paint")
+        viewModel.setServicePrice("paint", "40")
+        viewModel.setServiceChargedPerOrder("paint", true)
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+
+        serviceRepository.update(Service(id = "paint", name = "Pintura", price = 99.0))
+        viewModel.resetForm()
+        viewModel.loadForEditing(saved)
+
+        assertEquals(ServiceInput(name = "Pintura", priceText = "40", chargedPerOrder = true), viewModel.input.value.selectedServices["paint"])
+        viewModel.saveCurrentQuote()
+        assertEquals(saved.totalWithServices, historyRepository.savedQuotes.value.single().totalWithServices, 1e-9)
+    }
+
+    @Test
+    fun reopeningKeepsServicePriceWithMoreThanTwoDecimals() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(Service(id = "paint", name = "Pintura"), historyRepository = historyRepository)
+        viewModel.setQuantity("1000")
+        viewModel.toggleService("paint")
+        viewModel.setServicePrice("paint", "2.345")
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+
+        viewModel.loadForEditing(saved)
+        viewModel.saveCurrentQuote()
+
+        assertEquals(2.345, historyRepository.savedQuotes.value.single().services.single().price)
+    }
+
+    @Test
+    fun reopeningKeepsShippingAndPartDataWithoutRounding() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setLengthMeters("12.3456")
+        viewModel.setShippingCost("19.999")
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+
+        viewModel.resetForm()
+        viewModel.loadForEditing(saved)
+
+        assertEquals("12.3456", viewModel.input.value.lengthMetersText)
+        assertEquals("19.999", viewModel.input.value.shippingCostText)
+        viewModel.saveCurrentQuote()
+        assertEquals(saved.totalWithServices, historyRepository.savedQuotes.value.single().totalWithServices)
+    }
+
+    @Test
+    fun serviceRemovedFromCatalogStaysInAReopenedQuote() {
+        val historyRepository = QuoteHistoryRepository()
+        val serviceRepository = ServiceRepository()
+        serviceRepository.add(Service(id = "paint", name = "Pintura", price = 20.0))
+        val viewModel = QuoteViewModel(
+            FilamentRepository(), PrinterRepository(), SettingsRepository(), serviceRepository,
+            SalesChannelRepository(), historyRepository,
+        )
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.toggleService("paint")
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+
+        serviceRepository.delete("paint")
+        viewModel.loadForEditing(saved)
+        viewModel.saveCurrentQuote()
+
+        assertEquals(saved.services, historyRepository.savedQuotes.value.single().services)
     }
 
     @Test

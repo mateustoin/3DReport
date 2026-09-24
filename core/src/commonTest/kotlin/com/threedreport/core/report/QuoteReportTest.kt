@@ -83,7 +83,7 @@ class QuoteReportTest {
     @Test
     fun includesServicesInTotalSalePrice() {
         val withServices = quoteOf("PLA", salePrice = 20.0, productionCost = 10.0)
-            .copy(services = listOf(com.threedreport.core.model.Service(id = "s", name = "Pintura", price = 5.0)))
+            .copy(services = listOf(com.threedreport.core.model.QuoteService(id = "s", name = "Pintura", price = 5.0)))
 
         val summary = QuoteReport.summarize(listOf(withServices))
 

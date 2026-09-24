@@ -16,8 +16,8 @@ import kotlinx.serialization.Serializable
  * @property name nome do orçamento; nunca vazio (a UI gera um nome genérico
  *   automaticamente se o usuário deixar em branco ao salvar).
  * @property quote retrato do cálculo no momento em que foi salvo.
- * @property services serviços opcionais escolhidos para esta peça (retrato
- *   do nome/preço no momento em que foi salvo — ver [Service]).
+ * @property services serviços cobrados neste pedido (retrato do nome, do
+ *   valor e da forma de cobrança no momento em que foi salvo, ver [QuoteService]).
  * @property photoFileName nome do arquivo da foto do produto, se houver
  *   (resolvido pela camada de persistência da UI — não é um caminho
  *   absoluto). Entra no PDF e fica disponível pra download no histórico;
@@ -61,7 +61,7 @@ data class SavedQuote(
     val id: String,
     val name: String,
     val quote: Quote,
-    val services: List<Service> = emptyList(),
+    val services: List<QuoteService> = emptyList(),
     val photoFileName: String? = null,
     val stlFileName: String? = null,
     val sourceLink: String? = null,
@@ -78,12 +78,12 @@ data class SavedQuote(
     }
 
     /**
-     * Total de fato cobrado do cliente: valor de venda do pedido + serviços escolhidos (estes
-     * multiplicados pela quantidade, são trabalho por peça, ver `QuoteResult.servicesTotal`) +
+     * Total de fato cobrado do cliente: valor de venda do pedido + serviços (os por peça
+     * multiplicados pela quantidade, os por pedido uma vez só, ver [QuoteService.total]) +
      * [shippingCost].
      */
     val totalWithServices: Double
-        get() = quote.salePrice + services.sumOf { it.price } * quote.quantity + shippingCost
+        get() = quote.salePrice + services.sumOf { it.total(quote.quantity) } + shippingCost
 
     /** Tempo de máquina do pedido inteiro: o de uma peça vezes a quantidade (mesma conta da fila de impressão). */
     val totalPrintTimeMinutes: Double

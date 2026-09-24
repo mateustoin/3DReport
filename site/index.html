@@ -288,7 +288,7 @@
           </div>
           <div class="card">
             <h3>Catálogo que conversa com o orçamento</h3>
-            <p>Impressoras com presets das principais marcas, filamentos com marca, tipo, cores e estoque por cor, serviços como pintura e lixamento, e canais de venda com a taxa de cada um.</p>
+            <p>Impressoras com presets das principais marcas, filamentos com marca, tipo, cores e estoque por cor, serviços como pintura, lixamento e entrega (com o valor de cada pedido, por peça ou uma vez só), e canais de venda com a taxa de cada um.</p>
           </div>
           <div class="card">
             <h3>Visualizador 3D e nível de dificuldade</h3>
@@ -375,7 +375,8 @@ VALOR DE PRODUÇÃO = custo refeito + reserva de falhas + administrativo
 PREÇO BASE        = produção × (1 + margem de lucro)
 
 VALOR DE VENDA    = preço base / (1 − taxa do canal − imposto)
-TOTAL DO CLIENTE  = venda + serviços × quantidade + frete
+TOTAL DO CLIENTE  = venda + serviços por peça × quantidade
+                    + serviços por pedido + frete
 LUCRO             = venda − produção
         </div>
       </div>

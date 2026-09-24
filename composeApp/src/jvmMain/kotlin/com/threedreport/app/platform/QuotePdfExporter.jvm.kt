@@ -179,8 +179,8 @@ private fun drawQuotePage(
         cursorY -= 24f
 
         savedQuote.services.forEach { service ->
-            val label = if (quantity > 1) "${service.name} (× $quantity)" else service.name
-            content.text(bodyFont, 12f, margin, cursorY, "$label: ${(service.price * quantity).toCurrencyText(currency)}")
+            val label = if (quantity > 1 && !service.chargedPerOrder) "${service.name} (× $quantity)" else service.name
+            content.text(bodyFont, 12f, margin, cursorY, "$label: ${service.total(quantity).toCurrencyText(currency)}")
             cursorY -= 18f
         }
 

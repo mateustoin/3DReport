@@ -4,26 +4,35 @@ import kotlinx.serialization.Serializable
 
 /**
  * Serviço opcional oferecido junto com a impressão (ex.: pintura, lixamento,
- * acabamento). Salvo em catálogo — cada criador tem os seus, com o preço que
- * quiser cobrar; um orçamento escolhe quais se aplicam àquela peça.
+ * entrega). Salvo em catálogo, cada criador tem os seus; um orçamento escolhe
+ * quais se aplicam àquele pedido e **digita o valor ali**, porque pintar uma
+ * peça grande não custa o mesmo que pintar um chaveiro. O que o orçamento
+ * cobrou fica congelado em [QuoteService].
  *
- * Diferente de [Filament]/[PrinterProfile], não tem custo próprio modelado
- * — [price] já é o valor cobrado do cliente, então soma direto no valor de
- * venda do orçamento, sem passar pela margem de lucro (ver
+ * Não tem custo próprio modelado: o valor já é o que se cobra do cliente,
+ * então soma direto no total do pedido, sem passar pela margem de lucro (ver
  * `pricing/PricingCalculator`, que não conhece serviços).
  *
  * @property id identificador único, atribuído por quem cria o serviço (UI).
- * @property name nome livre para identificação (ex.: "Pintura", "Lixamento").
- * @property price valor cobrado do cliente por este serviço, em R$.
+ * @property name nome livre para identificação (ex.: "Pintura", "Entrega").
+ * @property price valor sugerido, em R$: só preenche o campo quando o serviço
+ *   é marcado num orçamento, e pode ser mudado ali. `null` quando o valor
+ *   muda a cada pedido. Mantém o nome `price` pra `services.json` de versões
+ *   anteriores, em que ele era um preço fixo, continuar abrindo igual.
+ * @property chargedPerOrder padrão de cobrança ao marcar este serviço:
+ *   `false` multiplica pela quantidade (pintura, lixamento: trabalho peça a
+ *   peça), `true` cobra uma vez pelo pedido (entrega, modelagem). O
+ *   orçamento pode trocar.
  */
 @Serializable
 data class Service(
     val id: String,
     val name: String,
-    val price: Double,
+    val price: Double? = null,
+    val chargedPerOrder: Boolean = false,
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
-        require(price >= 0) { "price não pode ser negativo" }
+        require(price == null || price >= 0) { "price não pode ser negativo" }
     }
 }

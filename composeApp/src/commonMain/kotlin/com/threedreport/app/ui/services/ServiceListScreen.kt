@@ -99,7 +99,8 @@ private fun ServiceRow(service: Service, onEdit: () -> Unit, onDelete: () -> Uni
         ) {
             Column {
                 Text(service.name, style = MaterialTheme.typography.titleMedium)
-                Text(service.price.toMoney(), style = MaterialTheme.typography.bodyMedium)
+                val details = listOfNotNull(chargeLabel(service.chargedPerOrder), service.price?.let { "sugerido ${it.toMoney()}" })
+                Text(details.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
             }
             Row {
                 TextButton(onClick = onEdit) { Text("Editar") }
@@ -129,7 +130,22 @@ private fun ServiceForm(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.priceText,
             onValueChange = { text -> onChange { it.copy(priceText = text) } },
-            label = { Text("Preço cobrado do cliente (${LocalCurrency.current.symbol})") },
+            label = { Text("Valor sugerido (${LocalCurrency.current.symbol}, opcional)") },
+        )
+        Text(
+            "Deixe em branco se o valor muda a cada peça. Se preencher, ele já vem no orçamento " +
+                "quando você marcar o serviço, e dá pra mudar ali.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text("Como cobrar quando o pedido tem várias peças", style = MaterialTheme.typography.labelLarge)
+        ServiceChargeSelector(
+            chargedPerOrder = form.chargedPerOrder,
+            onChange = { value -> onChange { it.copy(chargedPerOrder = value) } },
+        )
+        Text(
+            "Pintura e lixamento costumam ser por peça; entrega e modelagem, uma vez no pedido. " +
+                "Dá pra trocar em cada orçamento.",
+            style = MaterialTheme.typography.bodySmall,
         )
 
         form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }

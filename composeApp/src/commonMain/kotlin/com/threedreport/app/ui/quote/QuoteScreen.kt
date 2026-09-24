@@ -59,9 +59,11 @@ import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.minutesToDurationText
+import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
+import com.threedreport.app.ui.services.ServiceChargeSelector
 import com.threedreport.app.platform.encodeImageBitmapToPng
 import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
@@ -71,6 +73,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.Service
 import com.threedreport.core.stl.StlAnalyzer
 import com.threedreport.core.stl.parseStl
@@ -271,17 +274,28 @@ private fun QuoteInputs(
         )
     }
 
-    if (services.isNotEmpty()) {
+    // Serviço marcado num orçamento reaberto que já saiu do catálogo continua aparecendo, pra não
+    // sumir do pedido ao salvar de novo.
+    val orphanServices = input.selectedServices.filterKeys { id -> services.none { it.id == id } }
+    if (services.isNotEmpty() || orphanServices.isNotEmpty()) {
         SectionTitle(AppIcons.Handyman, "Serviços opcionais")
         services.forEach { service ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = service.id in input.selectedServiceIds,
-                    onCheckedChange = { viewModel.toggleService(service.id) },
-                )
-                Text("${service.name} · ${service.price.toMoney()}")
-            }
+            ServiceRow(
+                viewModel = viewModel,
+                id = service.id,
+                name = service.name,
+                suggestedPrice = service.price,
+                serviceInput = input.selectedServices[service.id],
+                quantity = input.quantity,
+            )
         }
+        orphanServices.forEach { (id, serviceInput) ->
+            ServiceRow(viewModel, id, serviceInput.name, suggestedPrice = null, serviceInput, input.quantity)
+        }
+        Text(
+            "O valor é deste pedido: marque o serviço e digite quanto vai cobrar por ele.",
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 
     if (salesChannels.isNotEmpty()) {
@@ -312,6 +326,56 @@ private fun QuoteInputs(
             "não produto seu. Não multiplica pela quantidade nem entra na margem.",
         style = MaterialTheme.typography.bodySmall,
     )
+}
+
+/**
+ * Um serviço na lista do orçamento. Desmarcado, só o nome (e o valor sugerido, se houver).
+ * Marcado, ganha o campo de valor deste pedido e, com mais de uma peça, a escolha entre cobrar por
+ * peça ou uma vez no pedido, com o total ao lado pra conta nunca virar surpresa.
+ */
+@Composable
+private fun ServiceRow(
+    viewModel: QuoteViewModel,
+    id: String,
+    name: String,
+    suggestedPrice: Double?,
+    serviceInput: ServiceInput?,
+    quantity: Int,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = serviceInput != null, onCheckedChange = { viewModel.toggleService(id) })
+            Text(if (serviceInput == null && suggestedPrice != null) "$name · sugerido ${suggestedPrice.toMoney()}" else name)
+        }
+        if (serviceInput == null) return@Column
+
+        val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 }
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().padding(start = 48.dp).tabToNavigate(),
+            value = serviceInput.priceText,
+            onValueChange = { viewModel.setServicePrice(id, it) },
+            label = { Text(if (quantity > 1 && !serviceInput.chargedPerOrder) "Valor por peça" else "Valor") },
+            isError = price == null,
+            supportingText = if (price == null) ({ Text("Informe o valor") }) else null,
+            singleLine = true,
+        )
+        if (quantity > 1) {
+            Row(
+                modifier = Modifier.padding(start = 48.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ServiceChargeSelector(
+                    chargedPerOrder = serviceInput.chargedPerOrder,
+                    onChange = { viewModel.setServiceChargedPerOrder(id, it) },
+                )
+                if (price != null) {
+                    val total = if (serviceInput.chargedPerOrder) price else price * quantity
+                    NumericText("= ${total.toMoney()}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
 }
 
 /** O lado do dinheiro: quanto cobrar, o que sobra e como isso muda numa negociação. */
@@ -387,7 +451,12 @@ private fun SaveQuoteFormSection(
     SaveQuoteForm(
         form = saveForm,
         viewModel = viewModel,
-        canSave = quote != null,
+        canSave = quote != null && !result.missingServicePrice,
+        cannotSaveReason = if (quote != null && result.missingServicePrice) {
+            "Informe o valor de cada serviço marcado (ou desmarque) pra poder salvar."
+        } else {
+            "Preencha filamento, impressora, comprimento e tempo (ou importe do G-code) pra poder salvar."
+        },
         queueHint = queueHint,
         onSave = {
             quote?.let {
@@ -406,7 +475,7 @@ private fun SaveQuoteFormSection(
  * do mesmo peso, sem indicar qual número é o que realmente importa pra fechar a venda.
  */
 @Composable
-private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTotal: Double, deliveryDateEpochDay: Long?) {
+private fun QuoteReceipt(quote: Quote, selectedServices: List<QuoteService>, grandTotal: Double, deliveryDateEpochDay: Long?) {
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -454,8 +523,9 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTot
             ReceiptLine("Custo de produção", quote.productionCost.toMoney())
             ReceiptLine("Lucro", quote.profit.toMoney())
             selectedServices.forEach { service ->
-                val label = if (quote.quantity > 1) "${service.name} (× ${quote.quantity})" else service.name
-                ReceiptLine(label, (service.price * quote.quantity).toMoney())
+                val multiplied = quote.quantity > 1 && !service.chargedPerOrder
+                val label = if (multiplied) "${service.name} (× ${quote.quantity})" else service.name
+                ReceiptLine(label, service.total(quote.quantity).toMoney())
             }
         }
     }
@@ -595,6 +665,7 @@ private fun SaveQuoteForm(
     viewModel: QuoteViewModel,
     canSave: Boolean,
     queueHint: String?,
+    cannotSaveReason: String,
     onSave: () -> Unit,
     onEditingFinished: () -> Unit,
 ) {
@@ -760,10 +831,7 @@ private fun SaveQuoteForm(
 
         Button(onClick = onSave, enabled = canSave) { Text(if (form.editingQuoteId != null) "Salvar alterações" else "Salvar orçamento") }
         if (!canSave) {
-            Text(
-                "Preencha filamento, impressora, comprimento e tempo (ou importe do G-code) pra poder salvar.",
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Text(cannotSaveReason, style = MaterialTheme.typography.bodySmall)
         }
 
         ShowSnackbarOnce(form.savedConfirmation, "Orçamento salvo no histórico.", viewModel::consumeSavedConfirmation)

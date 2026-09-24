@@ -43,7 +43,10 @@ class ServiceListViewModel(private val repository: ServiceRepository) {
             Service(
                 id = current.id ?: Uuid.random().toString(),
                 name = current.name.trim().ifEmpty { error("Nome não pode ser vazio") },
-                price = current.priceText.toRequiredDouble("Preço"),
+                price = current.priceText.trim().ifEmpty { null }
+                    ?.toRequiredDouble("Valor sugerido")
+                    ?.also { if (it < 0) error("Valor sugerido não pode ser negativo") },
+                chargedPerOrder = current.chargedPerOrder,
             )
         }
 

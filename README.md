@@ -53,7 +53,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
 - Comparação entre as suas impressoras: quanto a mesma peça custa em cada máquina
 - Salvar orçamento (nome, foto e link do modelo opcionais)
-- Serviços opcionais no orçamento (pintura, lixamento, embalagem/spray etc.)
+- Serviços opcionais no orçamento (pintura, lixamento, entrega etc.), com o valor digitado em cada pedido e cobrança por peça ou uma vez pelo pedido
 - Canais de venda com taxa própria (Shopee, Mercado Livre, cartão, Pix), escolhidos por orçamento
 - Imposto sobre a venda e frete como linha própria, sem embutir no preço da peça
 - Link do modelo clicável (abre no navegador) e peso da peça (uso interno)

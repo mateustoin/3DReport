@@ -174,8 +174,11 @@ preencher.
     de desconto (um de custo, um de negociação) confundiria. O desconto
     explícito fica pra leva 4, junto do preço alvo. A semântica escolhida
     (entradas são de uma peça, o app multiplica) está na decisão 77.
-- [ ] **Serviço cobrado por pedido em vez de por peça** (levantado em
-  2026-09-22, decisão 77). Hoje todo serviço marcado multiplica pela
+- [x] **Serviço cobrado por pedido em vez de por peça** (decisão 92,
+  2026-09-24). Feito junto com o valor do serviço digitado em cada
+  orçamento: o preço do cadastro virou só uma sugestão, e cada serviço tem
+  um padrão "por peça / uma vez no pedido", ajustável no orçamento quando a
+  quantidade passa de 1. Texto original abaixo. Hoje todo serviço marcado multiplica pela
   quantidade, porque pintura/lixamento/embalagem são trabalho peça a peça.
   Um serviço como "entrega" ou "projeto/modelagem" deveria ser cobrado uma
   vez pelo pedido. Se aparecer caso real, `Service` ganha um marcador de

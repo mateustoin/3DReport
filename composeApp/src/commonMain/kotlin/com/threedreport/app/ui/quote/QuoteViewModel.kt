@@ -20,6 +20,7 @@ import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -196,8 +197,29 @@ class QuoteViewModel(
         it.copy(printSettings = printSettings, savedConfirmation = false)
     }
 
-    fun toggleService(id: String) = inputState.update {
-        it.copy(selectedServiceIds = if (id in it.selectedServiceIds) it.selectedServiceIds - id else it.selectedServiceIds + id)
+    /**
+     * Marca ou desmarca o serviço [id]. Ao marcar, o valor vem preenchido com o sugerido do
+     * catálogo (ou vazio, pra digitar) e a forma de cobrança com o padrão do cadastro.
+     */
+    fun toggleService(id: String) = inputState.update { input ->
+        if (id in input.selectedServices) return@update input.copy(selectedServices = input.selectedServices - id)
+        val service = services.value.find { it.id == id } ?: return@update input
+        val serviceInput = ServiceInput(
+            name = service.name,
+            priceText = service.price?.let(::formatSavedNumber).orEmpty(),
+            chargedPerOrder = service.chargedPerOrder,
+        )
+        input.copy(selectedServices = input.selectedServices + (id to serviceInput))
+    }
+
+    fun setServicePrice(id: String, text: String) = updateServiceInput(id) { it.copy(priceText = text) }
+
+    fun setServiceChargedPerOrder(id: String, chargedPerOrder: Boolean) =
+        updateServiceInput(id) { it.copy(chargedPerOrder = chargedPerOrder) }
+
+    private fun updateServiceInput(id: String, transform: (ServiceInput) -> ServiceInput) = inputState.update { input ->
+        val current = input.selectedServices[id] ?: return@update input
+        input.copy(selectedServices = input.selectedServices + (id to transform(current)))
     }
 
     fun selectSalesChannel(id: String?) = inputState.update { it.copy(salesChannelId = id) }
@@ -249,7 +271,7 @@ class QuoteViewModel(
     /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
     fun consumeSavedConfirmation() = saveFormState.update { it.copy(savedConfirmation = false) }
 
-    fun saveQuote(quote: Quote, services: List<Service>) {
+    fun saveQuote(quote: Quote, services: List<QuoteService>) {
         val form = saveFormState.value
         val client = form.clientName.trim().ifEmpty { null }?.let { name ->
             Client(name = name, contact = form.clientContact.trim().ifEmpty { null })
@@ -324,17 +346,25 @@ class QuoteViewModel(
             filamentId = job.filament.id,
             filamentColorId = job.filamentColor?.id,
             printerId = quote.printerId,
-            lengthMetersText = formatImportedNumber(job.filamentLengthMeters),
-            printTimeMinutesText = formatImportedNumber(job.printTimeMinutes),
-            laborMinutesText = if (job.laborMinutes > 0) formatImportedNumber(job.laborMinutes) else "",
+            lengthMetersText = formatSavedNumber(job.filamentLengthMeters),
+            printTimeMinutesText = formatSavedNumber(job.printTimeMinutes),
+            laborMinutesText = if (job.laborMinutes > 0) formatSavedNumber(job.laborMinutes) else "",
             quantityText = if (quote.quantity > 1) quote.quantity.toString() else "",
-            setupMinutesText = if (quote.setupMinutes > 0) formatImportedNumber(quote.setupMinutes) else "",
-            selectedServiceIds = savedQuote.services.map { it.id }.toSet(),
+            setupMinutesText = if (quote.setupMinutes > 0) formatSavedNumber(quote.setupMinutes) else "",
+            // Valor e forma de cobrança vêm do retrato salvo, não do catálogo atual: reabrir e salvar
+            // não pode reprecificar o pedido em silêncio.
+            selectedServices = savedQuote.services.associate { service ->
+                service.id to ServiceInput(
+                    name = service.name,
+                    priceText = formatSavedNumber(service.price),
+                    chargedPerOrder = service.chargedPerOrder,
+                )
+            },
             salesChannelId = salesChannels.value.firstOrNull { it.name == quote.channelName }?.id,
-            shippingCostText = if (savedQuote.shippingCost > 0) formatImportedNumber(savedQuote.shippingCost) else "",
+            shippingCostText = if (savedQuote.shippingCost > 0) formatSavedNumber(savedQuote.shippingCost) else "",
             // Sem isso, reabrir um orçamento negociado e salvar de novo voltaria em silêncio pro preço
             // de tabela. O campo recebe o total do cliente, igual ao que foi digitado (ver `calculate`).
-            targetTotalText = if (quote.isNegotiated) formatImportedNumber(savedQuote.totalWithServices) else "",
+            targetTotalText = if (quote.isNegotiated) formatSavedNumber(savedQuote.totalWithServices) else "",
         )
     }
 
@@ -363,6 +393,7 @@ class QuoteViewModel(
     fun saveCurrentQuote() {
         val result = calculate(filaments.value, printers.value, settings.value, services.value, input.value)
         val quote = result.quote ?: return
+        if (result.missingServicePrice) return
         saveQuote(quote, result.selectedServices)
     }
 
@@ -382,7 +413,16 @@ class QuoteViewModel(
     ): QuoteResult {
         val filament = filaments.find { it.id == input.filamentId } ?: filaments.firstOrNull()
         val printer = printers.find { it.id == input.printerId } ?: printers.firstOrNull()
-        val selectedServices = services.filter { it.id in input.selectedServiceIds }
+        val selectedServices = input.selectedServices.mapNotNull { (id, serviceInput) ->
+            val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 } ?: return@mapNotNull null
+            QuoteService(
+                id = id,
+                name = services.find { it.id == id }?.name ?: serviceInput.name,
+                price = price,
+                chargedPerOrder = serviceInput.chargedPerOrder,
+            )
+        }
+        val missingServicePrice = selectedServices.size < input.selectedServices.size
         val availableColors = filament?.colors?.filter { it.inStock }.orEmpty()
         val filamentColor = availableColors.find { it.id == input.filamentColorId } ?: availableColors.firstOrNull()
         val length = parseDecimal(input.lengthMetersText)
@@ -392,7 +432,7 @@ class QuoteViewModel(
         // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
         // que de fato é a peça. Se o alvo nem cobre os extras, a peça vale zero e o prejuízo
         // aparece no lucro, que é justamente o aviso.
-        val servicesTotal = selectedServices.sumOf { it.price } * input.quantity
+        val servicesTotal = selectedServices.sumOf { it.total(input.quantity) }
         val negotiatedSalePrice = parseDecimal(input.targetTotalText)
             ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
 
@@ -404,6 +444,7 @@ class QuoteViewModel(
                 selectedServices = selectedServices,
                 salesChannel = channel,
                 shippingCost = shippingCost,
+                missingServicePrice = missingServicePrice,
             )
         }
 
@@ -428,13 +469,13 @@ class QuoteViewModel(
             onSuccess = {
                 QuoteResult(
                     filament, filamentColor, printer, quote = it, selectedServices = selectedServices,
-                    salesChannel = channel, shippingCost = shippingCost,
+                    salesChannel = channel, shippingCost = shippingCost, missingServicePrice = missingServicePrice,
                 )
             },
             onFailure = {
                 QuoteResult(
                     filament, filamentColor, printer, errorMessage = it.message, selectedServices = selectedServices,
-                    salesChannel = channel, shippingCost = shippingCost,
+                    salesChannel = channel, shippingCost = shippingCost, missingServicePrice = missingServicePrice,
                 )
             },
         )
@@ -527,6 +568,20 @@ class QuoteViewModel(
                 "\"$fileName\" não é um G-code. Use o arquivo .gcode exportado pelo fatiador."
             else -> null
         }
+    }
+
+    /**
+     * Número salvo de volta num campo, ao reabrir um orçamento ou marcar um serviço. Mantém até 6
+     * casas, e não 2 como [formatImportedNumber]: arredondar mudaria o valor ao salvar de novo
+     * (2,345 por peça em 1000 peças viraria R$ 5 a mais só por reabrir). As 6 casas ainda limpam o
+     * ruído de ponto flutuante de somas (36.190000000000005) e nunca caem em notação científica,
+     * que o campo não entenderia. Valores são sempre >= 0.
+     */
+    private fun formatSavedNumber(value: Double): String {
+        val scaled = round(value * 1_000_000).toLong()
+        val integerPart = (scaled / 1_000_000).toString()
+        val fraction = (scaled % 1_000_000).toString().padStart(6, '0').trimEnd('0')
+        return if (fraction.isEmpty()) integerPart else "$integerPart.$fraction"
     }
 
     /** Arredonda pra 2 casas decimais e evita ".0" à toa (ex.: 5.0 vira "5", não "5.0"). */

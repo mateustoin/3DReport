@@ -9,8 +9,8 @@ import com.threedreport.core.model.SavedQuote
 
 /**
  * Texto simplificado pra copiar/colar (ex.: WhatsApp, marketplace): nome,
- * valor de venda e, se houver serviços escolhidos, cada um deles
- * (multiplicados pela quantidade, ver [SavedQuote.totalWithServices]), o
+ * valor de venda e, se houver serviços escolhidos, cada um deles (os por
+ * peça com "× N", os por pedido só com o nome, ver [SavedQuote.totalWithServices]), o
  * frete (se houver) e o total. Sem foto nem link interno.
  *
  * A linha "Total" aparece sempre que há serviço ou frete, mesmo que só um
@@ -36,8 +36,8 @@ internal fun SavedQuote.toCopyPasteText(currency: Currency = Currency.BRL, showP
     services.forEach { service ->
         appendLine()
         append(service.name)
-        if (quantity > 1) append(" (× ").append(quantity).append(")")
-        append(": ").append((service.price * quantity).toCurrencyText(currency))
+        if (quantity > 1 && !service.chargedPerOrder) append(" (× ").append(quantity).append(")")
+        append(": ").append(service.total(quantity).toCurrencyText(currency))
     }
     if (shippingCost > 0) {
         appendLine()

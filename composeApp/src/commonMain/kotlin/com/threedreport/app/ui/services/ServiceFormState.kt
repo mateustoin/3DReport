@@ -9,12 +9,15 @@ import com.threedreport.core.model.Service
 data class ServiceFormState(
     val id: String? = null,
     val name: String = "",
+    /** Valor sugerido; vazio quando muda a cada pedido. */
     val priceText: String = "",
+    val chargedPerOrder: Boolean = false,
     val errorMessage: String? = null,
 )
 
 internal fun Service.toFormState() = ServiceFormState(
     id = id,
     name = name,
-    priceText = price.toString(),
+    priceText = price?.toString().orEmpty(),
+    chargedPerOrder = chargedPerOrder,
 )

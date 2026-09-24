@@ -86,7 +86,7 @@ VALOR DE VENDA     = PREÇO BASE / (1 − deduções)
 PREÇO UNITÁRIO     = (venda + serviços + frete) / quantidade
 LUCRO              = venda · (1 − deduções) − produção
 
-TOTAL DO CLIENTE   = venda + serviços · quantidade + frete
+TOTAL DO CLIENTE   = venda + serviços_por_peça · quantidade + serviços_por_pedido + frete
 ```
 
 Todos os valores acima são do **pedido inteiro**. As entradas de peça
@@ -140,7 +140,14 @@ essa diferença que faz o preço por unidade cair sozinho:
 | Mão de obra por peça (`PrintJob.laborMinutes`) | Sim, você lixa e embala cada uma |
 | Preparo do pedido (`Quote.setupMinutes`) | **Não**, se faz uma vez só |
 | Custo administrativo (ex.: modelagem) | **Não**, é por orçamento |
-| Serviços opcionais (pintura, lixamento) | Sim, são trabalho por peça |
+| Serviços por peça (pintura, lixamento) | Sim, são trabalho peça a peça |
+| Serviços por pedido (entrega, modelagem) | **Não**, cobrados uma vez (decisão 92) |
+
+O valor de cada serviço é digitado no orçamento (o cadastro guarda só uma
+sugestão), e cada serviço marcado diz se é por peça ou por pedido. Nas
+fórmulas abaixo, "serviços" é sempre essa soma já pronta:
+`Σ (valor × quantidade)` dos por peça + `Σ valor` dos por pedido
+(`QuoteService.total`).
 
 Exemplo com R$ 30,00/h de mão de obra, 3 min de trabalho por peça e 20 min de
 preparo do pedido:
@@ -185,7 +192,7 @@ cliente ver o que é peça e o que é entrega.
 | | Multiplica pela quantidade? | Passa pela margem? | Sofre dedução? |
 |---|---|---|---|
 | Peça (produção) | Sim | Sim | Sim |
-| Serviços | Sim | Não | Não |
+| Serviços | Os por peça sim, os por pedido não | Não | Não |
 | Frete | Não | Não | Não |
 
 Exemplo: peça de R$ 17,02 (venda direta) vendida pela Shopee (20%) por quem
@@ -200,7 +207,7 @@ informar um **preço fechado com o cliente**, ele vira o valor de venda de
 verdade do orçamento, e não um número de simulação à parte:
 
 ```
-preço_da_peça  = preço_fechado − serviços · quantidade − frete
+preço_da_peça  = preço_fechado − serviços − frete
 LUCRO          = preço_da_peça · (1 − deduções) − produção
 MARGEM OBTIDA  = lucro / produção
 ```
@@ -224,7 +231,7 @@ período. Nenhuma conta de lucro usa o preço de tabela.
 
 ```
 mínimo_da_peça  = produção / (1 − deduções)
-mínimo_total    = mínimo_da_peça + serviços · quantidade + frete
+mínimo_total    = mínimo_da_peça + serviços + frete
 ```
 
 Vender exatamente por esse valor significa trabalhar de graça: cobre custo e
