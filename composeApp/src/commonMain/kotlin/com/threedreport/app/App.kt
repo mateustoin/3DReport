@@ -1,6 +1,10 @@
 package com.threedreport.app
 
 import androidx.compose.foundation.layout.Arrangement
+import com.threedreport.app.platform.fileDropTarget
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -162,6 +166,7 @@ fun App() {
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
     val seenNotices by noticesRepository.seen.collectAsState()
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
+    var draggingFile by remember { mutableStateOf(false) }
     var showHelp by remember { mutableStateOf(false) }
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
@@ -211,7 +216,16 @@ fun App() {
                     }
                 },
             ) {
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().fileDropTarget(
+                        onDragActive = { draggingFile = it },
+                        onDrop = { file ->
+                            // Seja qual for a aba aberta, o G-code vai pro Orçamento, que é onde o resultado aparece.
+                            selectedTab = AppTab.QUOTE
+                            quoteViewModel.importGCode(file)
+                        },
+                    ),
+                ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     AppTabBar(selected = selectedTab, onSelect = { selectedTab = it })
 
@@ -249,6 +263,8 @@ fun App() {
                     hostState = snackbarHostState,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 56.dp),
                 )
+
+                if (draggingFile) GCodeDropOverlay()
                 }
             }
 
@@ -383,6 +399,32 @@ private fun AppTabBar(selected: AppTab, onSelect: (AppTab) -> Unit) {
                     Tab(selected = selected == tab, onClick = { onSelect(tab) }, text = { Text(tab.label) })
                 }
             }
+        }
+    }
+}
+
+/**
+ * Aviso por cima da janela enquanto um arquivo é arrastado: diz onde soltar e o que vai acontecer.
+ * Sem ele, arrastar um G-code pra janela não dá nenhum sinal de que funciona até soltar.
+ */
+@Composable
+private fun GCodeDropOverlay() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f))
+            .padding(32.dp)
+            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(AppIcons.RequestQuote, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+            Text("Solte o G-code pra montar o orçamento", style = MaterialTheme.typography.titleLarge)
+            Text(
+                "Comprimento, tempo, foto, impressora e filamento vêm do arquivo, quando batem com o que está cadastrado.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

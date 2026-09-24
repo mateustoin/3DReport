@@ -460,7 +460,19 @@ layout antes disso significa redesenhar duas vezes.
   mensalidade. O fosso competitivo é justamente ser brasileiro: MEI, Pix,
   maquininha, Shopee/ML, kWh por estado, WhatsApp — coisas que as levas 3, 5
   e 7 constroem e que nenhuma ferramenta internacional vai fazer bem.
-- [ ] **Arrastar o G-code na janela e sair um orçamento completo.** Hoje a
+- [x] **Arrastar o G-code na janela e sair um orçamento completo** (decisão
+  89, 2026-09-23). **Feito:** arrastar pra qualquer lugar da janela (ou o
+  botão de sempre) preenche comprimento, tempo, foto e configurações, e
+  escolhe impressora e filamento quando o nome bate com o cadastrado;
+  parecido vira sugestão, nunca escolha. Chaves conferidas em G-codes reais
+  de Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer e Cura (este último
+  só informa a impressora). De quebra, os arquivos reais mostraram que o
+  tempo do Bambu Studio 2.x não era importado, e isso foi corrigido.
+  - [ ] **Ler o `.gcode.3mf` do Bambu Studio** ("Exportar arquivo fatiado da
+    placa", um zip com `Metadata/plate_N.gcode` dentro). Ficou de fora porque
+    nenhum exemplo público confirmou a estrutura; pela regra de não inventar
+    formato, entra quando houver um arquivo real pra conferir.
+  Texto original: hoje a
   importação preenche dois campos, mas o fluxo ainda exige escolher
   impressora e filamento na mão. O bloco de configuração do G-code das
   famílias PrusaSlicer/Bambu/Orca também traz o **modelo da impressora** e o
@@ -480,7 +492,10 @@ layout antes disso significa redesenhar duas vezes.
   PLA + PETG é cobrada como se tudo fosse do mesmo preço/kg, em silêncio.
   Com AMS virando comum, isso vira uma limitação de verdade. Fica por último
   por ser a mudança mais profunda do modelo (`PrintJob`/`Quote` + todos os
-  exports). **Nota de sequenciamento:** se houver intenção real de fazer
+  exports). Desde a decisão 89, importar um G-code com materiais diferentes
+  em extrusores diferentes pelo menos **avisa** e não escolhe filamento
+  sozinho, em vez de orçar tudo como um material só em silêncio; o consumo
+  continua somado. **Nota de sequenciamento:** se houver intenção real de fazer
   isso, fazer junto da leva 2 (quantidade, que também mexe em
   `PrintJob`/`Quote`) economiza metade do trabalho de migração.
 - [ ] **Calculadora web no próprio site, reaproveitando o módulo `core`.**

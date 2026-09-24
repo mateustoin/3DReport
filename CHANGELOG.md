@@ -5,6 +5,30 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.36.0] - 2026-09-23
+
+### Adicionado
+- **Arraste o G-code pra janela e o orçamento se monta.** Solte o arquivo
+  `.gcode` em qualquer lugar do app: ele vai pra aba Orçamento e preenche
+  comprimento, tempo, foto e configurações de impressão, como o botão
+  "Preencher a partir do G-code" já fazia.
+- **O app escolhe a impressora e o filamento do G-code.** Quando o nome da
+  impressora gravado pelo fatiador é igual ao de uma impressora cadastrada, e
+  o tipo (e a marca, se o fatiador informar) bate com um filamento em
+  estoque, os dois já vêm escolhidos, inclusive a cor mais parecida. Nome só
+  parecido não é escolhido sozinho: a mensagem sugere e você confirma. Vale
+  pro botão também. Funciona com Bambu Studio, OrcaSlicer, PrusaSlicer e
+  SuperSlicer; do Cura, só a impressora (ele não grava o filamento).
+- "Desfazer importação" agora devolve também a impressora e o filamento que
+  estavam escolhidos antes.
+
+### Corrigido
+- **O tempo de impressão do Bambu Studio 2.x voltou a ser importado.** As
+  versões atuais gravam o tempo numa linha que o app não reconhecia, e o
+  campo ficava vazio.
+- Arquivo `.bgcode`, `.3mf` ou que não é G-code agora recebe uma mensagem
+  explicando o que fazer, em vez de "nenhum dado encontrado".
+
 ## [1.35.0] - 2026-09-23
 
 ### Adicionado

@@ -14,6 +14,15 @@ import kotlin.io.encoding.ExperimentalEncodingApi
  * Bambu Studio/OrcaSlicer gravam no fim do arquivo — o Cura não grava esse
  * bloco por padrão, então esses quatro campos ficam sempre `null` pra G-codes
  * exportados dele (mesma limitação de [thumbnail]).
+ *
+ * @property printerModel modelo da impressora como o fatiador grava: `printer_model` na família
+ *   PrusaSlicer/Orca/Bambu, e `machine_name` (ou, na falta dele, a `definition`) no bloco
+ *   `;SETTING_3` do Cura. Conferido em arquivos reais (decisão 89).
+ * @property printerSettingsName nome do perfil de impressora (`printer_settings_id`), já sem o
+ *   bico ("0.4 nozzle") e sem o "- Copy" que o fatiador acrescenta a perfis copiados: às vezes é
+ *   mais legível que [printerModel], que pode ser um identificador interno.
+ * @property filaments um item por extrusor/slot, na ordem do fatiador. Vazio no Cura, que não
+ *   grava tipo nem marca de filamento no G-code.
  */
 data class GCodeMetadata(
     val filamentLengthMeters: Double?,
@@ -23,11 +32,23 @@ data class GCodeMetadata(
     val infillPercentage: Double? = null,
     val infillPattern: String? = null,
     val supportsEnabled: Boolean? = null,
+    val printerModel: String? = null,
+    val printerSettingsName: String? = null,
+    val filaments: List<GCodeFilament> = emptyList(),
 ) {
     val isEmpty: Boolean
         get() = filamentLengthMeters == null && printTimeMinutes == null && thumbnail == null &&
-            layerHeightMm == null && infillPercentage == null && infillPattern == null && supportsEnabled == null
+            layerHeightMm == null && infillPercentage == null && infillPattern == null && supportsEnabled == null &&
+            printerModel == null && printerSettingsName == null && filaments.isEmpty()
 }
+
+/**
+ * Filamento de um extrusor, como o fatiador grava (`filament_type`, `filament_vendor`,
+ * `filament_colour`). [vendor] vem `null` quando o fatiador grava um marcador genérico no lugar
+ * da marca ("Generic", "(Undefined)", "(Unknown)", vistos em arquivos reais): isso não é uma marca
+ * e não pode ser comparado com a marca cadastrada.
+ */
+data class GCodeFilament(val type: String?, val vendor: String?, val colorHex: String?)
 
 /**
  * Miniatura do modelo (prévia renderizada pelo fatiador) embutida no G-code,
@@ -53,6 +74,9 @@ object GCodeMetadataParser {
         infillPercentage = infillDensityRegex.find(text)?.groupValues?.get(1)?.toDoubleOrNull(),
         infillPattern = infillPatternRegex.find(text)?.groupValues?.get(1)?.trim(),
         supportsEnabled = supportsRegex.find(text)?.groupValues?.get(1)?.let(::parseBooleanFlag),
+        printerModel = parsePrinterModel(text),
+        printerSettingsName = printerSettingsRegex.find(text)?.groupValues?.get(1)?.let(::cleanPrinterSettingsName),
+        filaments = parseFilaments(text),
     )
 
     // PrusaSlicer/Bambu Studio/OrcaSlicer, ex.: "; filament used [mm] = 1234.56"
@@ -74,10 +98,14 @@ object GCodeMetadataParser {
         return null
     }
 
-    // PrusaSlicer/Bambu Studio/OrcaSlicer, ex.:
-    // "; estimated printing time (normal mode) = 1h 23m 45s" ou "; total estimated time: 1h23m45s".
+    // PrusaSlicer/OrcaSlicer, ex.: "; estimated printing time (normal mode) = 1h 23m 45s".
+    // Bambu Studio 2.x grava tudo numa linha só, ex.:
+    // "; model printing time: 1m 6s; total estimated time: 9m 3s" (conferido em arquivos reais,
+    // decisão 89). Antes a busca exigia o rótulo no começo da linha e o tempo do Bambu não era lido;
+    // agora aceita o rótulo no meio, e usa o "total estimated time", que inclui o preparo da máquina
+    // (é o tempo em que ela fica ocupada).
     private val durationLabelRegex =
-        Regex("""(?im)^;\s*(?:estimated printing time|total estimated time)\s*(?:\([^)]*\))?\s*[:=]\s*(.+)$""")
+        Regex("""(?im)^;.*?\b(?:estimated printing time|total estimated time)\s*(?:\([^)]*\))?\s*[:=]\s*([^;\n]+)""")
 
     // Cura, ex.: ";TIME:12345" (segundos).
     private val secondsRegex = Regex("""(?im)^;\s*TIME\s*:\s*(\d+)\s*$""")
@@ -156,4 +184,66 @@ object GCodeMetadataParser {
             }
             .maxByOrNull { it.first }
             ?.let { (_, bytes, extension) -> GCodeThumbnail(bytes, extension) }
+
+    // Família PrusaSlicer/SuperSlicer/OrcaSlicer/Bambu Studio, no bloco de configuração (conferido
+    // em arquivos reais de cada um, decisão 89), ex.:
+    // "; printer_model = Bambu Lab X1 Carbon" e "; printer_settings_id = Bambu Lab X1 Carbon 0.4 nozzle".
+    private val printerModelRegex = Regex("""(?im)^;\s*printer_model\s*=\s*(.*)$""")
+    private val printerSettingsRegex = Regex("""(?im)^;\s*printer_settings_id\s*=\s*(.*)$""")
+
+    // Cura não tem esse bloco: a impressora só aparece dentro do JSON de ";SETTING_3", quebrado em
+    // várias linhas (inclusive no meio de uma palavra). "machine_name" só vem quando o perfil mexeu
+    // no nome; "definition" (ex.: "creality_ender3") vem sempre.
+    private val curaSettingsLineRegex = Regex("""(?m)^;SETTING_3 (.*)$""")
+    // Termina na próxima quebra escapada do JSON ("\\n", uma barra seguida de "n") ou no fim da linha.
+    private val curaMachineNameRegex = Regex("""machine_name = ([^\\\r\n]+)""")
+    private val curaDefinitionRegex = Regex("""definition = ([A-Za-z0-9_]+)""")
+
+    private fun parsePrinterModel(text: String): String? {
+        printerModelRegex.find(text)?.groupValues?.get(1)?.let(::unquote)?.let { return it }
+        val curaSettings = curaSettingsLineRegex.findAll(text).joinToString("") { it.groupValues[1].trimEnd('\r') }
+        if (curaSettings.isEmpty()) return null
+        curaMachineNameRegex.find(curaSettings)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+        return curaDefinitionRegex.find(curaSettings)?.groupValues?.get(1)?.replace('_', ' ')
+    }
+
+    /**
+     * "test_bed.3mf (Voron_v2_300_afterburner 0.4 nozzle - Copy)" vira "Voron_v2_300_afterburner":
+     * o fatiador embrulha o perfil no nome do projeto quando ele vem de um .3mf, acrescenta
+     * "- Copy" a perfis copiados e sempre termina com o bico. Nada disso é o nome da impressora.
+     */
+    private fun cleanPrinterSettingsName(raw: String): String? {
+        var name = unquote(raw) ?: return null
+        Regex("""\(([^()]*)\)\s*$""").find(name)?.let { name = it.groupValues[1] }
+        name = name.replace(Regex("""\s*-\s*Copy\s*$""", RegexOption.IGNORE_CASE), "")
+        name = name.replace(Regex("""\s+[0-9]+(?:\.[0-9]+)?\s*nozzle.*$""", RegexOption.IGNORE_CASE), "")
+        return name.trim().takeIf { it.isNotEmpty() }
+    }
+
+    private val filamentTypeRegex = Regex("""(?im)^;\s*filament_type\s*=\s*(.*)$""")
+    private val filamentVendorRegex = Regex("""(?im)^;\s*filament_vendor\s*=\s*(.*)$""")
+    private val filamentColourRegex = Regex("""(?im)^;\s*filament_colou?r\s*=\s*(.*)$""")
+
+    /** Marcadores que os fatiadores gravam no lugar da marca quando o perfil não tem uma (vistos em arquivos reais). */
+    private val placeholderVendors = setOf("generic", "(undefined)", "(unknown)", "undefined", "unknown")
+
+    /** Um valor por extrusor, separados por ";" (ex.: "PLA;PETG"), como a família Prusa grava. */
+    private fun parseFilaments(text: String): List<GCodeFilament> {
+        val types = splitPerExtruder(filamentTypeRegex.find(text)?.groupValues?.get(1))
+        val vendors = splitPerExtruder(filamentVendorRegex.find(text)?.groupValues?.get(1))
+        val colours = splitPerExtruder(filamentColourRegex.find(text)?.groupValues?.get(1))
+        val count = maxOf(types.size, vendors.size, colours.size)
+        return (0 until count).map { index ->
+            GCodeFilament(
+                type = types.getOrNull(index),
+                vendor = vendors.getOrNull(index)?.takeUnless { it.lowercase() in placeholderVendors },
+                colorHex = colours.getOrNull(index)?.takeIf { it.startsWith("#") },
+            )
+        }.filter { it.type != null || it.vendor != null || it.colorHex != null }
+    }
+
+    private fun splitPerExtruder(raw: String?): List<String?> =
+        raw?.split(';')?.map { unquote(it) } ?: emptyList()
+
+    private fun unquote(raw: String): String? = raw.trim().trim('"').trim().takeIf { it.isNotEmpty() }
 }

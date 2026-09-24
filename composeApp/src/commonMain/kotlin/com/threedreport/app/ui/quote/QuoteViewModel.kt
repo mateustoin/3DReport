@@ -10,6 +10,7 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.pickGCodeFile
 import com.threedreport.app.platform.pickImageFile
 import com.threedreport.app.platform.pickStlFile
+import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Filament
@@ -25,8 +26,11 @@ import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
+import com.threedreport.core.slicer.CatalogMatcher
+import com.threedreport.core.slicer.FilamentMatch
 import com.threedreport.core.slicer.GCodeMetadata
 import com.threedreport.core.slicer.GCodeMetadataParser
+import com.threedreport.core.slicer.PrinterMatch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,19 +93,30 @@ class QuoteViewModel(
     fun setQuantity(text: String) = inputState.update { it.copy(quantityText = text) }
     fun setSetupMinutes(text: String) = inputState.update { it.copy(setupMinutesText = text) }
 
-    /**
-     * Abre o seletor de arquivo pra escolher um G-code exportado pelo fatiador e preenche
-     * comprimento de filamento / tempo de impressão / configurações de impressão (altura de
-     * camada, preenchimento, suporte — ver [PrintSettings]) a partir dos comentários de metadados
-     * dele ([GCodeMetadataParser]) — e a foto do orçamento, se o arquivo tiver uma miniatura
-     * embutida e nenhuma foto já tiver sido escolhida (não sobrescreve uma foto própria do
-     * usuário). Tudo continua editável/removível manualmente depois — é um atalho pra preencher,
-     * não uma trava, já que nem todo fatiador grava esses dados num formato reconhecido. Ver
-     * [undoGCodeImport] pra desfazer de uma vez.
-     */
+    /** Abre o seletor de arquivo e importa o G-code escolhido (ver [importGCode]). */
     fun pickAndImportGCode() {
         val picked = pickGCodeFile() ?: return
-        val metadata = GCodeMetadataParser.parse(picked.bytes.decodeToString())
+        importGCode(picked)
+    }
+
+    /**
+     * Monta o orçamento a partir de um G-code, escolhido pelo botão ou arrastado pra janela
+     * (decisão 89): preenche comprimento de filamento, tempo de impressão, configurações de
+     * impressão (ver [PrintSettings]) e a foto, se o arquivo tiver miniatura e nenhuma foto já
+     * tiver sido escolhida (não sobrescreve uma foto própria). Além disso, escolhe a impressora e
+     * o filamento que o fatiador gravou, **quando batem com os cadastrados** ([CatalogMatcher]):
+     * o que só parece ou não está cadastrado vira explicação na mensagem, nunca escolha.
+     *
+     * Tudo continua editável depois — é um atalho pra preencher, não uma trava. [undoGCodeImport]
+     * desfaz de uma vez, inclusive a impressora e o filamento que estavam escolhidos antes.
+     */
+    fun importGCode(file: PickedFile) {
+        unsupportedGCodeMessage(file.fileName)?.let { message ->
+            inputState.update { it.copy(gcodeImportMessage = message) }
+            return
+        }
+
+        val metadata = GCodeMetadataParser.parse(file.bytes.decodeToString())
         val thumbnail = metadata.thumbnail
         val photoApplied = thumbnail != null && saveFormState.value.photo == null
         val printSettingsApplied = metadata.layerHeightMm != null || metadata.infillPercentage != null ||
@@ -122,23 +137,50 @@ class QuoteViewModel(
                 )
             }
         }
-        inputState.update {
-            it.copy(
-                lengthMetersText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: it.lengthMetersText,
-                printTimeMinutesText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: it.printTimeMinutesText,
-                gcodeImportMessage = gcodeImportMessage(metadata, photoApplied),
-            )
-        }
+
+        val current = inputState.value
+        val inStock = filaments.value.filter { it.hasStockAvailable }
+        val currentFilamentId = current.filamentId ?: inStock.firstOrNull()?.id
+        val printerMatch = CatalogMatcher.matchPrinter(metadata, printers.value)
+        val filamentMatch = CatalogMatcher.matchFilament(metadata, filaments.value, currentFilamentId)
+        val chosenPrinter = (printerMatch as? PrinterMatch.Found)?.printer
+        val chosenFilament = filamentMatch as? FilamentMatch.Found
+
+        inputState.value = current.copy(
+            lengthMetersText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: current.lengthMetersText,
+            printTimeMinutesText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: current.printTimeMinutesText,
+            printerId = chosenPrinter?.id ?: current.printerId,
+            filamentId = chosenFilament?.filament?.id ?: current.filamentId,
+            filamentColorId = when {
+                chosenFilament == null -> current.filamentColorId
+                else -> chosenFilament.color?.id
+            },
+            selectionBeforeGCode = current.selectionBeforeGCode
+                ?: SelectionBeforeGCode(current.filamentId, current.filamentColorId, current.printerId),
+            gcodeImportMessage = gcodeImportMessage(metadata, photoApplied, printerMatch, filamentMatch),
+        )
     }
 
     /**
      * Desfaz a última importação de G-code: limpa comprimento/tempo/configurações de impressão
-     * (volta pro texto em branco/vazio, não pro valor anterior a importar) e, se a foto atual
-     * também veio de lá, remove ela também — sem mexer numa foto que o usuário tenha escolhido
-     * manualmente antes ou depois.
+     * (volta pro texto em branco/vazio, não pro valor anterior a importar), devolve a impressora,
+     * o filamento e a cor que estavam escolhidos antes e, se a foto atual também veio de lá,
+     * remove ela também — sem mexer numa foto que o usuário tenha escolhido manualmente antes ou
+     * depois.
      */
     fun undoGCodeImport() {
-        inputState.update { it.copy(lengthMetersText = "", printTimeMinutesText = "", gcodeImportMessage = null) }
+        inputState.update {
+            val before = it.selectionBeforeGCode
+            it.copy(
+                lengthMetersText = "",
+                printTimeMinutesText = "",
+                gcodeImportMessage = null,
+                filamentId = before?.filamentId ?: it.filamentId,
+                filamentColorId = if (before != null) before.filamentColorId else it.filamentColorId,
+                printerId = before?.printerId ?: it.printerId,
+                selectionBeforeGCode = null,
+            )
+        }
         saveFormState.update {
             it.copy(
                 photo = if (it.photoFromGCode) null else it.photo,
@@ -418,7 +460,12 @@ class QuoteViewModel(
         }
     }
 
-    private fun gcodeImportMessage(metadata: GCodeMetadata, photoApplied: Boolean): String {
+    private fun gcodeImportMessage(
+        metadata: GCodeMetadata,
+        photoApplied: Boolean,
+        printerMatch: PrinterMatch,
+        filamentMatch: FilamentMatch,
+    ): String {
         val filled = buildList {
             if (metadata.filamentLengthMeters != null) add("comprimento de filamento")
             if (metadata.printTimeMinutes != null) add("tempo de impressão")
@@ -429,15 +476,56 @@ class QuoteViewModel(
                 add("configurações de impressão")
             }
         }
-        val skippedPhotoNote = if (metadata.thumbnail != null && !photoApplied) {
-            " Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido."
-        } else {
-            ""
+        val sentences = buildList {
+            add(
+                if (filled.isEmpty()) {
+                    "Não encontrei comprimento nem tempo nesse G-code — preencha manualmente."
+                } else {
+                    "Preenchido a partir do G-code: ${filled.joinToString(", ")}."
+                },
+            )
+            printerSentence(printerMatch)?.let(::add)
+            filamentSentence(filamentMatch)?.let(::add)
+            if (metadata.thumbnail != null && !photoApplied) add("Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido.")
         }
-        return if (filled.isEmpty()) {
-            "Não encontrei nenhum dado reconhecido nesse G-code — preencha manualmente.$skippedPhotoNote"
-        } else {
-            "Preenchido a partir do G-code: ${filled.joinToString(", ")}.$skippedPhotoNote"
+        return sentences.joinToString(" ")
+    }
+
+    private fun printerSentence(match: PrinterMatch): String? = when (match) {
+        is PrinterMatch.Found -> "Impressora: ${match.printer.name}."
+        is PrinterMatch.Similar ->
+            "O G-code é de uma \"${match.gcodeName}\"; a mais parecida cadastrada é \"${match.printer.name}\" — escolha na lista se for ela."
+        is PrinterMatch.NotRegistered ->
+            "O G-code é de uma \"${match.gcodeName}\", que não está cadastrada (Impressoras → Escolher da lista)."
+        PrinterMatch.Unknown -> null
+    }
+
+    private fun filamentSentence(match: FilamentMatch): String? = when (match) {
+        is FilamentMatch.Found -> "Filamento: ${match.filament.name}" + (match.color?.let { ", cor ${it.displayLabel()}" } ?: "") + "."
+        is FilamentMatch.Ambiguous -> "Há ${match.count} filamentos ${match.type} em estoque — escolha qual usou."
+        is FilamentMatch.NotRegistered ->
+            "O G-code usa ${match.type}" + (match.vendor?.let { " da $it" } ?: "") + ", que não está cadastrado em estoque."
+        is FilamentMatch.Multimaterial ->
+            "O G-code usa mais de um material (${match.types.joinToString(", ")}); o orçamento ainda considera um filamento só — escolha o principal."
+        FilamentMatch.Unknown -> null
+    }
+
+    /**
+     * Arquivos que parecem G-code mas o app ainda não lê, com o caminho pra resolver. `null`
+     * quando dá pra tentar ler (inclusive extensão desconhecida, que o parser decide).
+     */
+    private fun unsupportedGCodeMessage(fileName: String): String? {
+        val name = fileName.lowercase()
+        return when {
+            name.endsWith(".bgcode") ->
+                "G-code binário (.bgcode) ainda não é lido. No PrusaSlicer, desligue \"G-code binário\" nas " +
+                    "configurações da impressora e exporte de novo."
+            name.endsWith(".3mf") ->
+                "Esse é um arquivo de projeto (.3mf), não um G-code. No fatiador, use \"Exportar G-code\" e " +
+                    "arraste o arquivo .gcode."
+            GCODE_EXTENSIONS.none { name.endsWith(it) } ->
+                "\"$fileName\" não é um G-code. Use o arquivo .gcode exportado pelo fatiador."
+            else -> null
         }
     }
 
@@ -447,3 +535,6 @@ class QuoteViewModel(
         return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
     }
 }
+
+/** Extensões de G-code em texto que os fatiadores exportam. */
+private val GCODE_EXTENSIONS = listOf(".gcode", ".gco", ".g")

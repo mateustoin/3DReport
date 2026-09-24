@@ -480,4 +480,71 @@ class QuoteViewModelTest {
         assertEquals(120.0, ahead?.queuedMinutes)
         assertEquals(null, viewModel.queueAheadOf(printer, emptyList(), editingQuoteId = null), "fila vazia não mostra dica")
     }
+
+    /** Linhas de um G-code real do Bambu Studio 02.03 (ver `RealGCodeFixtures` no módulo core). */
+    private val bambuX1cGCode = """
+        ; BambuStudio 02.03.01.51
+        ; model printing time: 4m 48s; total estimated time: 11m 36s
+        ; total filament length [mm] : 325.49
+        ; filament_colour = #00AE42
+        ; filament_type = PLA
+        ; filament_vendor = (Undefined)
+        ; printer_model = Bambu Lab X1 Carbon
+        ; printer_settings_id = Bambu Lab X1 Carbon 0.4 nozzle
+    """.trimIndent()
+
+    private fun gcodeFile(text: String, name: String = "peca.gcode") = com.threedreport.app.platform.PickedFile(name, text.encodeToByteArray())
+
+    @Test
+    fun importingAGCodePicksTheMatchingPrinterAndFilamentAndUndoGivesThemBack() {
+        val printerRepository = PrinterRepository()
+        val filamentRepository = FilamentRepository()
+        val originalPrinter = printerRepository.printers.value.first()
+        val x1c = originalPrinter.copy(id = "x1c", name = "Bambu Lab X1 Carbon")
+        printerRepository.add(x1c)
+        val green = FilamentColor(id = "verde", name = "Verde", hex = "#00AA40")
+        val pla = Filament(id = "pla-verde", name = "PLA Verde", pricePerKg = 120.0, densityGPerCm3 = 1.24, materialType = "PLA", colors = listOf(FilamentColor(id = "preto", hex = "#000000"), green))
+        filamentRepository.filaments.value.forEach { filamentRepository.delete(it.id) }
+        filamentRepository.add(pla)
+        val viewModel = QuoteViewModel(filamentRepository, printerRepository, SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
+        viewModel.selectPrinter(originalPrinter.id)
+
+        viewModel.importGCode(gcodeFile(bambuX1cGCode))
+
+        val input = viewModel.input.value
+        assertEquals("x1c", input.printerId)
+        assertEquals("pla-verde", input.filamentId)
+        assertEquals("verde", input.filamentColorId)
+        assertEquals("11.6", input.printTimeMinutesText)
+        assertTrue(input.gcodeImportMessage!!.contains("Impressora: Bambu Lab X1 Carbon"))
+
+        viewModel.undoGCodeImport()
+
+        assertEquals(originalPrinter.id, viewModel.input.value.printerId)
+        assertEquals("", viewModel.input.value.printTimeMinutesText)
+    }
+
+    @Test
+    fun aSimilarPrinterIsOnlyMentionedNotSelected() {
+        val printerRepository = PrinterRepository()
+        val current = printerRepository.printers.value.first()
+        printerRepository.add(current.copy(id = "x1", name = "Bambu Lab X1"))
+        val viewModel = QuoteViewModel(FilamentRepository(), printerRepository, SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
+        viewModel.selectPrinter(current.id)
+
+        viewModel.importGCode(gcodeFile(bambuX1cGCode))
+
+        assertEquals(current.id, viewModel.input.value.printerId)
+        assertTrue(viewModel.input.value.gcodeImportMessage!!.contains("a mais parecida cadastrada é \"Bambu Lab X1\""))
+    }
+
+    @Test
+    fun binaryGCodeIsRejectedWithAWayOut() {
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
+
+        viewModel.importGCode(gcodeFile("GCDE binário", name = "peca.bgcode"))
+
+        assertTrue(viewModel.input.value.gcodeImportMessage!!.contains("binário"))
+        assertEquals("", viewModel.input.value.lengthMetersText)
+    }
 }

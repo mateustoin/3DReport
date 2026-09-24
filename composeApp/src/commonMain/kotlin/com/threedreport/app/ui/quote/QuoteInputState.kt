@@ -25,8 +25,13 @@ data class QuoteInputState(
     val targetTotalText: String = "",
     /** Mensagem sobre a última tentativa de importar dados de um G-code, exibida abaixo do botão. */
     val gcodeImportMessage: String? = null,
+    /** O que estava escolhido antes da última importação de G-code, pra "Desfazer" devolver. */
+    val selectionBeforeGCode: SelectionBeforeGCode? = null,
 ) {
     /** [quantityText] como número; campo vazio, texto inválido ou zero contam como uma peça. */
     val quantity: Int
         get() = quantityText.trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
 }
+
+/** Impressora, filamento e cor escolhidos antes de importar um G-code (ver `QuoteViewModel.undoGCodeImport`). */
+data class SelectionBeforeGCode(val filamentId: String?, val filamentColorId: String?, val printerId: String?)
