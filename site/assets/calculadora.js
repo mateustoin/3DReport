@@ -149,6 +149,8 @@
     out.innerHTML = '<p class="result-error">' + escapeHtml(message) + "</p>";
   }
 
+  var APP_ONLY_COSTS = ["Manutenção da impressora", "Retorno da máquina", "Custo fixo do mês"];
+
   function renderResult(result, quantity) {
     var out = getEl("calc-output");
     if (!out) return;
@@ -161,7 +163,7 @@
     if (result.labor > 0) breakdown.push(["Seu trabalho", result.labor]);
 
     var html = "";
-    html += '<p class="result-label">Valor de venda</p>';
+    html += '<p class="result-label">Preço de venda parcial</p>';
     html += '<p class="result-total">' + formatMoney(result.salePrice) + "</p>";
     if (quantity > 1) {
       html += '<p class="result-unit">' + formatMoney(result.unitSalePrice) + " por unidade</p>";
@@ -169,15 +171,18 @@
     html += '<dl class="result-lines">';
     html += "<div><dt>Custo de produção</dt><dd>" + formatMoney(result.productionCost) + "</dd></div>";
     html += "<div><dt>Lucro</dt><dd>" + formatMoney(result.profit) + "</dd></div>";
+    html += "<div><dt>Preço mínimo sem prejuízo</dt><dd>" + formatMoney(result.breakEvenSalePrice) + "</dd></div>";
     html += "</dl>";
-    html += '<p class="result-breakeven">Abaixo de ' + formatMoney(result.breakEvenSalePrice) + " você tem prejuízo.</p>";
-    if (breakdown.length > 0) {
-      html += '<ul class="result-breakdown">';
-      breakdown.forEach(function (line) {
-        html += "<li><span>" + line[0] + "</span><span>" + formatMoney(line[1]) + "</span></li>";
-      });
-      html += "</ul>";
-    }
+    html += '<ul class="result-breakdown">';
+    breakdown.forEach(function (line) {
+      html += "<li><span>" + line[0] + "</span><span>" + formatMoney(line[1]) + "</span></li>";
+    });
+    // Custos que o app cobra e esta calculadora não: ficam à vista, pra ninguém achar que o preço está completo.
+    APP_ONLY_COSTS.forEach(function (name) {
+      html += '<li class="app-only"><span>' + name + '</span><span class="app-only-tag">só no app</span></li>';
+    });
+    html += "</ul>";
+    html += '<p class="result-note">Esses custos só aumentam o preço. O app calcula todos.</p>';
     out.innerHTML = html;
   }
 

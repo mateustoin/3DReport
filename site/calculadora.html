@@ -29,7 +29,7 @@
   <meta name="twitter:description" content="Calculadora online e gratuita de preço de impressão 3D, direto no navegador, sem cadastro.">
   <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/orcamento.png">
 
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=dev">
 
   <script type="application/ld+json">
   {
@@ -86,7 +86,7 @@
   </noscript>
 
   <main>
-    <section class="hero" style="padding-bottom: 20px;">
+    <section class="hero calc-hero">
       <div class="container" style="display: block;">
         <p class="eyebrow">Ferramenta grátis</p>
         <h1>Calculadora de preço de impressão 3D</h1>
@@ -100,88 +100,77 @@
       </div>
     </section>
 
-    <section id="calculadora">
+    <section id="calculadora" class="calc-section">
       <div class="container calc-layout">
         <form class="calc-form" id="calc-form" novalidate>
           <fieldset>
             <legend>Dados da peça</legend>
-
+            <div class="field-grid">
             <div class="field">
               <label for="peso">Peso da peça (g)</label>
               <input type="text" inputmode="decimal" id="peso" name="peso" placeholder="50" autocomplete="off">
             </div>
-
-            <div class="field-row">
-              <div class="field">
-                <label for="horas">Tempo de impressão: horas</label>
-                <input type="text" inputmode="decimal" id="horas" name="horas" placeholder="0" autocomplete="off">
-              </div>
-              <div class="field">
-                <label for="minutos">minutos</label>
-                <input type="text" inputmode="decimal" id="minutos" name="minutos" placeholder="0" autocomplete="off">
+            <div class="field">
+              <label for="horas">Tempo de impressão</label>
+              <div class="input-pair">
+                <span class="input-unit"><input type="text" inputmode="decimal" id="horas" name="horas" placeholder="0" autocomplete="off"><span aria-hidden="true">h</span></span>
+                <label for="minutos" class="sr-only">Minutos de impressão</label>
+                <span class="input-unit"><input type="text" inputmode="decimal" id="minutos" name="minutos" placeholder="0" autocomplete="off"><span aria-hidden="true">min</span></span>
               </div>
             </div>
-
             <div class="field">
-              <label for="precoFilamento">Preço do filamento (R$/kg)</label>
+              <label for="precoFilamento">Filamento (R$/kg)</label>
               <input type="text" inputmode="decimal" id="precoFilamento" name="precoFilamento" value="120" autocomplete="off">
             </div>
-
             <div class="field">
               <label for="potencia">Potência da impressora (W)</label>
               <input type="text" inputmode="decimal" id="potencia" name="potencia" value="350" autocomplete="off">
-              <p class="field-hint">Use o valor da ficha técnica; o consumo real costuma ser menor.</p>
+              <p class="field-hint">Da ficha técnica; o consumo real costuma ser menor.</p>
             </div>
-
             <div class="field">
               <label for="precoKwh">Preço do kWh (R$)</label>
               <input type="text" inputmode="decimal" id="precoKwh" name="precoKwh" value="1,23" autocomplete="off">
             </div>
-
             <div class="field">
               <label for="margem">Margem de lucro (%)</label>
               <input type="text" inputmode="decimal" id="margem" name="margem" value="100" autocomplete="off">
+            </div>
             </div>
           </fieldset>
 
           <details class="calc-advanced" id="calc-advanced">
             <summary>Mais custos</summary>
-
+            <div class="field-grid">
             <div class="field">
               <label for="falhas">Reserva para falhas (%)</label>
               <input type="text" inputmode="decimal" id="falhas" name="falhas" value="10" autocomplete="off">
             </div>
-
             <div class="field">
               <label for="acabamento">Acabamento (% do material)</label>
               <input type="text" inputmode="decimal" id="acabamento" name="acabamento" value="10" autocomplete="off">
             </div>
-
             <div class="field">
               <label for="valorHora">Valor da sua hora (R$/h)</label>
               <input type="text" inputmode="decimal" id="valorHora" name="valorHora" value="0" autocomplete="off">
             </div>
-
             <div class="field">
-              <label for="tempoTrabalho">Seu tempo de trabalho no pedido (min)</label>
+              <label for="tempoTrabalho">Seu trabalho no pedido (min)</label>
               <input type="text" inputmode="decimal" id="tempoTrabalho" name="tempoTrabalho" value="0" autocomplete="off">
             </div>
-
-            <div class="field">
-              <label for="quantidade">Quantidade de peças</label>
-              <input type="text" inputmode="numeric" id="quantidade" name="quantidade" value="1" autocomplete="off">
-            </div>
-
             <div class="field">
               <label for="taxaCanal">Taxa do canal de venda (%)</label>
               <input type="text" inputmode="decimal" id="taxaCanal" name="taxaCanal" value="0" autocomplete="off">
               <p class="field-hint">Shopee, Mercado Livre, maquininha.</p>
             </div>
-
             <div class="field">
               <label for="imposto">Imposto sobre a venda (%)</label>
               <input type="text" inputmode="decimal" id="imposto" name="imposto" value="0" autocomplete="off">
               <p class="field-hint">MEI deixa em zero.</p>
+            </div>
+            <div class="field">
+              <label for="quantidade">Quantidade de peças</label>
+              <input type="text" inputmode="numeric" id="quantidade" name="quantidade" value="1" autocomplete="off">
+            </div>
             </div>
           </details>
         </form>
@@ -190,25 +179,47 @@
           <div class="result-panel" id="calc-output" aria-live="polite">
             <p class="result-placeholder">Preencha o peso da peça e o tempo de impressão para ver o preço.</p>
           </div>
-
-          <div class="cta-box">
-            <h3>Quer guardar esse orçamento?</h3>
-            <p>O app 3DReport soma a essa conta:</p>
-            <ul>
-              <li>Salvar orçamento e histórico</li>
-              <li>Clientes</li>
-              <li>PDF com a sua marca</li>
-              <li>Arraste o G-code e o orçamento sai pronto</li>
-              <li>Catálogo de impressoras e filamentos</li>
-              <li>Custo de máquina e custo fixo mensal, que esta calculadora não inclui</li>
-            </ul>
-            <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Baixar grátis</a>
-          </div>
+          <p class="calc-result-more"><a href="#calculadora-x-app">O que o app calcula a mais</a></p>
         </aside>
       </div>
     </section>
 
-    <section class="alt">
+    <section id="calculadora-x-app" class="alt">
+      <div class="container">
+        <h2>A calculadora é uma parte do 3DReport</h2>
+        <p class="section-intro">
+          Ela serve pra uma conta rápida. O app, também gratuito, calcula o
+          preço com todos os custos e cuida da venda do orçamento à entrega.
+        </p>
+        <div class="compare-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col"><span class="sr-only">Recurso</span></th>
+                <th scope="col">Calculadora</th>
+                <th scope="col">App 3DReport</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Preço de uma peça: material, energia, falhas, acabamento, seu trabalho, canal e imposto</th><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+              <tr><th scope="row">Manutenção da impressora, retorno da máquina e custo fixo do mês</th><td class="no">Não</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+              <tr><th scope="row">Arrastar o G-code e o orçamento se montar sozinho</th><td class="no">Não</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+              <tr><th scope="row">Catálogo de impressoras e filamentos, com estoque por cor</th><td class="no">Não</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+              <tr><th scope="row">Salvar orçamentos, histórico e clientes</th><td class="no">Não</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+              <tr><th scope="row">PDF com a sua marca e envio pelo WhatsApp</th><td class="no">Não</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+              <tr><th scope="row">Status dos pedidos e Dashboard do negócio</th><td class="no">Não</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+              <tr><th scope="row">Grátis</th><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Sim</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="compare-cta">
+          <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Baixar o app grátis</a>
+          <span class="compare-cta-note">Windows, Linux e macOS. Seus dados ficam no seu computador.</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <div class="container">
         <h2>Onde encontrar o peso e o tempo no seu fatiador</h2>
         <p class="section-intro">
@@ -232,7 +243,7 @@
       </div>
     </section>
 
-    <section>
+    <section class="alt">
       <div class="container">
         <h2>O que cada custo significa</h2>
         <p class="section-intro">
@@ -286,8 +297,8 @@
     </div>
   </footer>
 
-  <script src="assets/calc/web.js" defer></script>
-  <script src="assets/calculadora.js" defer></script>
-  <script src="assets/nav.js" defer></script>
+  <script src="assets/calc/web.js?v=dev" defer></script>
+  <script src="assets/calculadora.js?v=dev" defer></script>
+  <script src="assets/nav.js?v=dev" defer></script>
 </body>
 </html>
