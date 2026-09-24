@@ -9,14 +9,22 @@ As fórmulas foram derivadas da planilha de precificação usada atualmente
 
 ### Por peça (`PrintJob`)
 
-Os três primeiros vêm do fatiador; o tempo de trabalho é você quem informa.
+Vêm do fatiador. O seu tempo de trabalho não entra aqui: é do pedido
+inteiro (ver "Quantidade e lote").
 
 | Parâmetro | Campo | Unidade |
 |---|---|---|
 | Filamento (nome, preço/kg, densidade, diâmetro) | `filament` | R$/kg, g/cm³, mm |
 | Comprimento de filamento | `filamentLengthMeters` | m |
 | Tempo de impressão | `printTimeMinutes` | min |
-| Seu tempo de trabalho na peça | `laborMinutes` | min |
+| Tempo de trabalho por peça (só histórico e uso do `core` como biblioteca; o app grava 0) | `laborMinutes` | min |
+
+### Por pedido (`Quote`)
+
+| Parâmetro | Campo | Unidade |
+|---|---|---|
+| Quantidade de peças | `quantity` | un. |
+| Seu tempo de trabalho no pedido inteiro (decisão 94) | `setupMinutes` | min |
 
 ### Perfil da impressora escolhida (`PrinterProfile`) — uma por orçamento
 
@@ -38,7 +46,7 @@ salvo (tela Impressoras) e o orçamento escolhe qual usar.
 |---|---|---|
 | Preço do kWh | `energyPricePerKwh` | R$ |
 | Taxa de falhas | `failureRate` | fração (0,10 = 10%) |
-| Taxa de acabamento (legado, ver abaixo) | `finishingRate` | fração |
+| Taxa de acabamento | `finishingRate` | fração |
 | Valor da sua hora de trabalho | `laborRatePerHour` | R$/h |
 | Custo fixo mensal do negócio | `monthlyFixedCost` | R$ por mês |
 | Horas de impressão por mês (todas as impressoras) | `productiveHoursPerMonth` | h |
@@ -67,15 +75,15 @@ valor_hora_máquina = valor_máquina / (meses · dias_mês · horas_dia)
 retorno_invest.    = horas · valor_hora_máquina
 custo_fixo_hora    = custo_fixo_mensal / horas_produtivas_mês   (0 se horas = 0)
 custo_fixo         = horas · custo_fixo_hora
-mão_de_obra        = horas_trabalho · valor_hora_trabalho
-acabamento         = material · taxa_acabamento   (0 se há valor_hora_trabalho)
+mão_de_obra        = horas_trabalho · valor_hora_trabalho   (por peça; 0 no app)
+acabamento         = material · taxa_acabamento
 administrativo     = custo_administrativo
 
 custo_por_peça     = material + energia + manutenção + retorno_invest.
                      + custo_fixo + mão_de_obra + acabamento
-preparo            = minutos_preparo / 60 · valor_hora_trabalho
+trabalho_pedido    = minutos_trabalho_pedido / 60 · valor_hora_trabalho
 
-CUSTO REFEITO      = custo_por_peça · quantidade + preparo
+CUSTO REFEITO      = custo_por_peça · quantidade + trabalho_pedido
 falhas             = CUSTO REFEITO · taxa_falhas
 
 VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
@@ -109,20 +117,28 @@ sobre o "custo refeito" — tudo que você paga de novo pra refazer a peça. O
 **custo administrativo fica de fora** porque é a única parcela que não se
 refaz: uma modelagem já entregue continua pronta, a impressão falhando ou não.
 
-**2. Acabamento agora é trabalho, não percentual de material.** Antes,
-`acabamento = material · taxa`. Isso cobrava errado na prática: uma action
+**2. Acabamento pode ser cobrado por tempo, e a hora de trabalho só soma.**
+`acabamento = material · taxa` cobra errado em muitos casos: uma action
 figure de 30 g pode dar 40 min de lixa e pintura, enquanto um suporte de
-parede liso de 200 g dá 2 min — mas o suporte "pagava" quase 7x mais
+parede liso de 200 g dá 2 min, mas o suporte "pagava" quase 7x mais
 acabamento, só por pesar mais. Acabamento escala com tempo, não com gramas.
 
-Pra não mudar o preço de ninguém sem aviso, a troca é opcional e você controla
-quando acontece:
+Por isso existem as duas formas, e elas são independentes (decisão 93):
 
-- **Enquanto `laborRatePerHour` for zero**, nada muda: a taxa de acabamento
-  continua valendo exatamente como antes.
-- **Assim que você informar o valor da sua hora**, o acabamento passa a ser
-  cobrado pelos minutos de trabalho informados em cada orçamento, e a taxa de
-  acabamento deixa de ter efeito (a tela de Configurações avisa isso na hora).
+- **Taxa de acabamento:** percentual do material, sempre soma. Serve pra
+  quem não quer cronometrar cada peça.
+- **Minutos de trabalho** (com o valor da hora configurado): o que você
+  informa em cada orçamento, incluindo lixar e pintar, se quiser.
+
+Quem conta o acabamento nos minutos deixa a taxa em 0, pra não cobrar o mesmo
+trabalho duas vezes. Configurar o valor da hora nunca baixa o preço: ele só
+soma mão de obra.
+
+Até a v1.38.0, informar o valor da hora zerava a taxa de acabamento sozinho,
+e o preço caía até alguém preencher os minutos. Na atualização para a 1.39.0,
+quem já tinha a hora configurada teve a taxa de acabamento zerada uma vez
+(`PricingSettings.migrated`), que é exatamente o que o cálculo antigo fazia:
+o preço dessas pessoas não mudou.
 
 A mão de obra cobre o serviço inteiro que a peça dá e que não aparece em
 nenhum outro custo: preparar o arquivo, fatiar, tirar da mesa, remover
@@ -137,8 +153,7 @@ essa diferença que faz o preço por unidade cair sozinho:
 | Parcela | Multiplica pela quantidade? |
 |---|---|
 | Material, energia, manutenção, retorno da máquina, custo fixo | Sim, cada peça consome o seu |
-| Mão de obra por peça (`PrintJob.laborMinutes`) | Sim, você lixa e embala cada uma |
-| Preparo do pedido (`Quote.setupMinutes`) | **Não**, se faz uma vez só |
+| Seu tempo de trabalho no pedido (`Quote.setupMinutes`) | **Não**, você já informa o total do pedido |
 | Custo administrativo (ex.: modelagem) | **Não**, é por orçamento |
 | Serviços por peça (pintura, lixamento) | Sim, são trabalho peça a peça |
 | Serviços por pedido (entrega, modelagem) | **Não**, cobrados uma vez (decisão 92) |
@@ -149,18 +164,25 @@ fórmulas abaixo, "serviços" é sempre essa soma já pronta:
 `Σ (valor × quantidade)` dos por peça + `Σ valor` dos por pedido
 (`QuoteService.total`).
 
-Exemplo com R$ 30,00/h de mão de obra, 3 min de trabalho por peça e 20 min de
-preparo do pedido:
+**Tempo de trabalho num campo só (decisão 94).** Até a v1.38.0 havia dois
+campos: tempo por peça (multiplicado pela quantidade) e preparo do pedido
+(cobrado uma vez). Com 1 peça eles davam no mesmo, e com várias a pessoa
+precisava separar de cabeça uma conta que ela faz como um número só. Agora é
+um campo, "Seu tempo de trabalho no pedido", com o total. Exemplo com
+R$ 30,00/h, 20 min pra fatiar e montar a mesa e 3 min de acabamento por peça:
 
-| Quantidade | Trabalho cobrado | Custo de trabalho |
+| Quantidade | Você informa | Custo de trabalho |
 |---|---|---|
-| 1 peça | 20 min de preparo + 3 min | R$ 11,50 (R$ 11,50 por peça) |
-| 10 peças | 20 min de preparo + 30 min | R$ 25,00 (R$ 2,50 por peça) |
+| 1 peça | 23 min | R$ 11,50 (R$ 11,50 por peça) |
+| 10 peças | 50 min (20 + 10 × 3) | R$ 25,00 (R$ 2,50 por peça) |
+
+Se a quantidade mudar depois, o tempo não se ajusta sozinho: a tela lembra de
+revisar. Orçamentos salvos com os dois campos abrem com o total já somado
+(`Quote.totalLaborMinutes`) e mantêm o preço.
 
 Não existe percentual de desconto por volume em lugar nenhum do app: o lote
-sai mais barato por unidade porque o preparo realmente é feito uma vez só.
-Isso é mais honesto do que um desconto inventado, e continua verdadeiro
-quando a peça é grande o bastante pra o preparo não pesar tanto.
+sai mais barato por unidade porque o trabalho do pedido não cresce na mesma
+proporção das peças. Isso é mais honesto do que um desconto inventado.
 
 ## Deduções da venda e frete (2026-09-22, decisão 78)
 
@@ -266,7 +288,7 @@ app se comporta logo depois de atualizar:
 | Energia | R$ 1,48 |
 | Manutenção | R$ 0,54 |
 | Retorno de investimento (R$ 0,5625/h) | R$ 1,78 |
-| Acabamento (legado, 10% do material) | R$ 0,36 |
+| Acabamento (10% do material) | R$ 0,36 |
 | Custo refeito (soma das linhas acima) | R$ 7,74 |
 | Falhas (10% do custo refeito) | R$ 0,77 |
 | **Produção** | **R$ 8,51** |
@@ -278,15 +300,16 @@ exatamente a reserva que faltava.
 
 ### O mesmo exemplo, cobrando o próprio trabalho
 
-Agora com R$ 30,00/h de mão de obra, 40 min de trabalho na peça, R$ 800,00 de
-custo fixo mensal e 200 h de impressão por mês:
+Agora com R$ 30,00/h de mão de obra, 40 min de trabalho na peça (já contando
+o acabamento, então a taxa de acabamento vai a 0), R$ 800,00 de custo fixo
+mensal e 200 h de impressão por mês:
 
 | Resultado | Valor |
 |---|---|
 | Material + energia + manutenção + retorno | R$ 7,38 |
 | Custo fixo (R$ 4,00/h × 3,17 h) | R$ 12,67 |
 | Mão de obra (R$ 30,00/h × 0,67 h) | R$ 20,00 |
-| Acabamento | R$ 0,00 (substituído pela mão de obra) |
+| Acabamento | R$ 0,00 (taxa em 0, entra nos minutos) |
 | Falhas (10% do custo refeito) | R$ 4,00 |
 | **Produção** | **R$ 44,05** |
 | **Venda** | **R$ 88,10** |

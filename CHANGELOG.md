@@ -5,6 +5,33 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.39.0] - 2026-09-24
+
+### Corrigido
+- **Configurar o valor da sua hora de trabalho não baixa mais o preço.**
+  Antes, informar a hora desligava sozinho a taxa de acabamento (o percentual
+  sobre o material) e passava a cobrar acabamento pelos minutos de trabalho de
+  cada orçamento. Como esses minutos começavam vazios, o preço caía até você
+  preenchê-los. Agora a hora só soma mão de obra ao preço, e a taxa de
+  acabamento vale sempre. Se você conta lixar e pintar nos minutos de cada
+  orçamento, deixe a taxa de acabamento em 0 pra não cobrar duas vezes.
+  Quem já tinha o valor da hora configurado teve a taxa de acabamento
+  zerada automaticamente ao atualizar, então os preços continuam iguais.
+
+### Alterado
+- **Tempo de trabalho num campo só.** "Seu tempo de trabalho por peça" e
+  "Preparo do pedido" viraram um campo, "Seu tempo de trabalho no pedido",
+  onde você informa o total: fatiar, montar a mesa, tirar da mesa, remover
+  suporte, lixar, pintar, embalar, tudo junto. O app não multiplica esse
+  tempo pela quantidade; se a quantidade mudar, revise o tempo. Orçamentos
+  salvos abrem com os dois tempos antigos já somados, com o mesmo preço.
+
+### Adicionado
+- **Lembrete quando o seu trabalho não está no preço.** Com o valor da hora
+  configurado, se o orçamento ainda não tem tempo de trabalho, a tela avisa:
+  "Seu trabalho ainda não entra no preço". O valor da hora só vira dinheiro
+  quando você informa quanto tempo o pedido te dá.
+
 ## [1.38.0] - 2026-09-24
 
 ### Alterado

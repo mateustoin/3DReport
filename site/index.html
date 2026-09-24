@@ -76,7 +76,7 @@
         "name": "O app cobra o meu tempo de trabalho?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquela peça deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Enquanto você não informar o valor da sua hora, nada muda e o app continua cobrando acabamento como percentual do material, como antes."
+          "text": "Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquele pedido te deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Informar o valor da sua hora só soma ao preço. Se você já conta lixar e pintar nesses minutos, deixe a taxa de acabamento em 0 pra não cobrar duas vezes."
         }
       },
       {
@@ -92,7 +92,7 @@
         "name": "Dá pra orçar mais de uma peça igual de uma vez?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Dá. Informe a quantidade no orçamento e o app multiplica o custo de cada peça, mostrando o total e quanto fica cada unidade. O preparo do pedido (preparar o arquivo, fatiar, montar a mesa) é cobrado uma vez só, então o preço por peça cai sozinho no lote, sem desconto inventado. O comprimento de filamento e o tempo que você informa são de uma peça; se você fatiou a mesa cheia de uma vez, deixe a quantidade em 1."
+          "text": "Dá. Informe a quantidade no orçamento e o app multiplica o custo de cada peça, mostrando o total e quanto fica cada unidade. O seu tempo de trabalho você informa pelo pedido inteiro, e fatiar ou montar a mesa não cresce com o número de peças, então o preço por peça cai no lote sem desconto inventado. O comprimento de filamento e o tempo que você informa são de uma peça; se você fatiou a mesa cheia de uma vez, deixe a quantidade em 1."
         }
       },
       {
@@ -367,9 +367,9 @@
         </p>
         <div class="formula-box">
 CUSTO POR PEÇA    = material + energia + manutenção
-                    + retorno do investimento + custo fixo + seu trabalho
+                    + retorno do investimento + custo fixo + acabamento
 
-CUSTO REFEITO     = custo por peça × quantidade + preparo do pedido
+CUSTO REFEITO     = custo por peça × quantidade + seu trabalho no pedido
 
 VALOR DE PRODUÇÃO = custo refeito + reserva de falhas + administrativo
 PREÇO BASE        = produção × (1 + margem de lucro)
@@ -419,7 +419,7 @@ LUCRO             = venda − produção
         </details>
         <details class="faq-item">
           <summary>O app cobra o meu tempo de trabalho?</summary>
-          <p>Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquela peça deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Enquanto você não informar o valor da sua hora, nada muda e o app continua cobrando acabamento como percentual do material, como antes.</p>
+          <p>Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquele pedido te deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Informar o valor da sua hora só soma ao preço. Se você já conta lixar e pintar nesses minutos, deixe a taxa de acabamento em 0 pra não cobrar duas vezes.</p>
         </details>
         <details class="faq-item">
           <summary>Preciso digitar o comprimento e o tempo de cada peça?</summary>
@@ -427,7 +427,7 @@ LUCRO             = venda − produção
         </details>
         <details class="faq-item">
           <summary>Dá pra orçar mais de uma peça igual de uma vez?</summary>
-          <p>Dá. Informe a quantidade no orçamento e o app multiplica o custo de cada peça, mostrando o total e quanto fica cada unidade. O preparo do pedido (preparar o arquivo, fatiar, montar a mesa) é cobrado uma vez só, então o preço por peça cai sozinho no lote, sem desconto inventado. O comprimento de filamento e o tempo que você informa são de uma peça; se você fatiou a mesa cheia de uma vez, deixe a quantidade em 1.</p>
+          <p>Dá. Informe a quantidade no orçamento e o app multiplica o custo de cada peça, mostrando o total e quanto fica cada unidade. O seu tempo de trabalho você informa pelo pedido inteiro, e fatiar ou montar a mesa não cresce com o número de peças, então o preço por peça cai no lote sem desconto inventado. O comprimento de filamento e o tempo que você informa são de uma peça; se você fatiou a mesa cheia de uma vez, deixe a quantidade em 1.</p>
         </details>
         <details class="faq-item">
           <summary>O 3DReport funciona em quais sistemas operacionais?</summary>

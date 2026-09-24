@@ -19,6 +19,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -708,5 +709,46 @@ class QuoteViewModelTest {
 
         assertTrue(viewModel.input.value.gcodeImportMessage!!.contains("binário"))
         assertEquals("", viewModel.input.value.lengthMetersText)
+    }
+
+    @Test
+    fun laborTimeCountsAsMissingOnlyWhenNoMinutesWereInformed() {
+        assertTrue(QuoteInputState().isLaborTimeMissing)
+        assertTrue(QuoteInputState(laborMinutesText = "0").isLaborTimeMissing)
+        assertFalse(QuoteInputState(laborMinutesText = "15").isLaborTimeMissing)
+    }
+
+    @Test
+    fun laborTimeIsTheWholeOrderAndIsNotMultipliedByQuantity() {
+        SettingsRepository().let { it.update(it.settings.value.copy(laborRatePerHour = 60.0)) }
+        val viewModel = viewModelWith()
+        viewModel.setQuantity("10")
+        viewModel.setLaborMinutes("90")
+
+        val quote = viewModel.currentResult().quote!!
+
+        assertEquals(90.0, quote.costs.labor, 1e-9)
+        assertEquals(90.0, quote.totalLaborMinutes, 1e-9)
+    }
+
+    /** Orçamento salvo antes da decisão 94, com tempo por peça e preparo separados. */
+    @Test
+    fun reopeningAQuoteWithPerPieceAndSetupTimeShowsTheTotalAndKeepsThePrice() {
+        SettingsRepository().let { it.update(it.settings.value.copy(laborRatePerHour = 60.0)) }
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setQuantity("10")
+        viewModel.setLaborMinutes("90")
+        viewModel.saveCurrentQuote()
+        val current = historyRepository.savedQuotes.value.single()
+        val legacy = current.copy(
+            quote = current.quote.copy(job = current.quote.job.copy(laborMinutes = 6.0), setupMinutes = 30.0),
+        )
+
+        viewModel.resetForm()
+        viewModel.loadForEditing(legacy)
+
+        assertEquals("90", viewModel.input.value.laborMinutesText)
+        assertEquals(current.quote.salePrice, viewModel.currentResult().quote!!.salePrice, 1e-9)
     }
 }

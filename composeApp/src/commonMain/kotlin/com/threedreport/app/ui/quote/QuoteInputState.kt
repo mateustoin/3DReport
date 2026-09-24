@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.ui.format.parseDecimal
+
 /** Entradas da tela de Orçamento controladas pelo usuário (o resto vem dos repositórios). */
 data class QuoteInputState(
     val filamentId: String? = null,
@@ -7,12 +9,13 @@ data class QuoteInputState(
     val printerId: String? = null,
     val lengthMetersText: String = "",
     val printTimeMinutesText: String = "",
-    /** Minutos do seu trabalho nesta peça (ver `PrintJob.laborMinutes`); só afeta o preço se houver taxa horária configurada. */
+    /**
+     * Minutos do seu trabalho no pedido **inteiro**, sem multiplicar pela quantidade (ver
+     * `Quote.totalLaborMinutes`); só afeta o preço se houver taxa horária configurada.
+     */
     val laborMinutesText: String = "",
     /** Quantas peças iguais o cliente quer. Vazio ou inválido conta como 1. */
     val quantityText: String = "",
-    /** Minutos de preparo cobrados uma vez pelo pedido inteiro (ver `Quote.setupMinutes`). */
-    val setupMinutesText: String = "",
     /**
      * Serviços marcados neste orçamento, pelo id do `Service` no catálogo, na ordem em que foram
      * marcados. O valor é digitado aqui (ver [ServiceInput]).
@@ -35,6 +38,13 @@ data class QuoteInputState(
     /** [quantityText] como número; campo vazio, texto inválido ou zero contam como uma peça. */
     val quantity: Int
         get() = quantityText.trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
+
+    /**
+     * Nenhum minuto de trabalho informado: com a hora configurada, é o caso em que ela não muda o
+     * preço. Só faz sentido mostrar com `laborRatePerHour > 0`.
+     */
+    val isLaborTimeMissing: Boolean
+        get() = (parseDecimal(laborMinutesText) ?: 0.0) <= 0.0
 }
 
 /** Impressora, filamento e cor escolhidos antes de importar um G-code (ver `QuoteViewModel.undoGCodeImport`). */

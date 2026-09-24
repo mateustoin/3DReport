@@ -39,7 +39,6 @@ import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
-import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.templates.TemplateListDialog
 import com.threedreport.app.ui.templates.TemplateListViewModel
@@ -69,9 +68,6 @@ fun SettingsScreen(
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
     var showTemplatesDialog by remember { mutableStateOf(false) }
-    // Lido do rascunho (e não das configurações salvas) pra que o aviso sobre o acabamento mude
-    // junto com o que está sendo digitado, não só depois de salvar.
-    val chargesLaborByTime = (parseDecimal(state.laborRatePerHourText) ?: 0.0) > 0.0
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -100,10 +96,9 @@ fun SettingsScreen(
             viewModel.update { s -> s.copy(laborRatePerHourText = it) }
         }
         Text(
-            "Preparar o arquivo, fatiar, tirar a peça da mesa, remover suporte, lixar, pintar, " +
-                "embalar e atender o cliente é trabalho seu, e some do preço se não for cobrado. " +
-                "Informe quanto vale a sua hora aqui e, em cada orçamento, quantos minutos aquela " +
-                "peça deu de trabalho. Deixe zero pra não cobrar mão de obra.",
+            "Cobrado pelos minutos que você informa em cada orçamento (tirar da mesa, remover " +
+                "suporte, lixar, pintar, embalar). Só soma ao preço. Deixe zero pra não cobrar mão " +
+                "de obra.",
             style = MaterialTheme.typography.bodySmall,
         )
 
@@ -127,26 +122,18 @@ fun SettingsScreen(
         }
         Text(
             "Reserva pra quando uma impressão falha. Incide sobre tudo que você gasta de novo pra " +
-                "refazer a peça (material, energia, manutenção, retorno da máquina, custo fixo e " +
-                "mão de obra) — só o custo administrativo fica de fora, porque uma modelagem já " +
-                "feita não precisa ser refeita.",
+                "refazer a peça (material, energia, manutenção, retorno da máquina, custo fixo, " +
+                "mão de obra e acabamento). Só o custo administrativo fica de fora, porque uma " +
+                "modelagem já feita não precisa ser refeita.",
             style = MaterialTheme.typography.bodySmall,
         )
         LabeledField("Taxa de acabamento (%)", state.finishingRatePercentText) {
             viewModel.update { s -> s.copy(finishingRatePercentText = it) }
         }
         Text(
-            if (chargesLaborByTime) {
-                "Sem efeito no momento: com uma hora de trabalho configurada acima, o acabamento " +
-                    "passa a ser cobrado pelos minutos informados em cada orçamento, e não mais " +
-                    "por este percentual sobre o material."
-            } else {
-                "Percentual sobre o custo do material. Ele existe pra quem ainda não cobra por " +
-                    "hora: assim que você informar o valor da sua hora de trabalho acima, o " +
-                    "acabamento passa a ser cobrado por tempo e esta taxa deixa de ter efeito."
-            },
+            "Percentual do material pra lixar e pintar. Se você já conta esse tempo nos minutos de " +
+                "cada orçamento, deixe 0 pra não cobrar duas vezes.",
             style = MaterialTheme.typography.bodySmall,
-            color = if (chargesLaborByTime) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
         )
 
         SectionTitle(AppIcons.ReceiptLong, "Custos administrativos")

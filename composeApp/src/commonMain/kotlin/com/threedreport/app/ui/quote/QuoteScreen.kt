@@ -229,23 +229,6 @@ private fun QuoteInputs(
         label = { Text("Tempo de impressão (min)") },
     )
 
-    // Só aparece pra quem configurou quanto vale a própria hora: sem isso, o campo não teria
-    // efeito nenhum no preço e seria só mais uma caixa pra ignorar.
-    if (settings.chargesLaborByTime) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.laborMinutesText,
-            onValueChange = viewModel::setLaborMinutes,
-            label = { Text("Seu tempo de trabalho por peça (min)") },
-        )
-        Text(
-            "Quanto cada peça dá de trabalho seu, fora o tempo de máquina: tirar da mesa, " +
-                "remover suporte, lixar, pintar, embalar. Cobrado a " +
-                "${settings.laborRatePerHour.toCurrencyText(currency)}/h (ajustável em Configurações).",
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth().tabToNavigate(),
         value = input.quantityText,
@@ -259,19 +242,34 @@ private fun QuoteInputs(
         style = MaterialTheme.typography.bodySmall,
     )
 
-    if (settings.chargesLaborByTime) {
+    // Só aparece pra quem configurou quanto vale a própria hora: sem isso, o campo não teria
+    // efeito nenhum no preço e seria só mais uma caixa pra ignorar. Fica depois da quantidade
+    // porque o tempo é do pedido inteiro (decisão 94).
+    if (settings.laborRatePerHour > 0) {
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.setupMinutesText,
-            onValueChange = viewModel::setSetupMinutes,
-            label = { Text("Preparo do pedido (min)") },
+            value = input.laborMinutesText,
+            onValueChange = viewModel::setLaborMinutes,
+            label = { Text("Seu tempo de trabalho no pedido (min)") },
         )
+        val quantity = input.quantity
+        val scope = if (quantity > 1) "Total das $quantity peças, fora o tempo de máquina" else "Fora o tempo de máquina"
         Text(
-            "O que você faz uma vez só, não importa quantas peças: preparar o arquivo, fatiar, " +
-                "montar a mesa. É isso que faz a peça sair mais barata no lote, sem precisar " +
-                "inventar desconto.",
+            "$scope: fatiar, montar a mesa, tirar da mesa, remover suporte, lixar, pintar, " +
+                "embalar. Cobrado a ${settings.laborRatePerHour.toCurrencyText(currency)}/h " +
+                "(ajustável em Configurações). Se o acabamento já está no percentual de " +
+                "Configurações, não conte ele aqui." +
+                (if (quantity > 1) " Mudou a quantidade? Revise o tempo." else ""),
             style = MaterialTheme.typography.bodySmall,
         )
+        // Lembrete, não erro: sem ele, configurar a hora e não ver o preço mudar parece defeito.
+        if (input.isLaborTimeMissing) {
+            Text(
+                "Seu trabalho ainda não entra no preço: informe quantos minutos este pedido te dá.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 
     // Serviço marcado num orçamento reaberto que já saiu do catálogo continua aparecendo, pra não

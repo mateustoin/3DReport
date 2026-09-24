@@ -15,8 +15,8 @@ import kotlinx.serialization.Serializable
  *   salvos antes deste campo existir e para quem não configurou taxa de mão de obra.
  * @property fixedCost parcela do custo fixo mensal do negócio que esta peça paga, proporcional às
  *   horas de impressão (ver [PricingSettings.fixedCostPerHour]).
- * @property finishing acabamento no modelo antigo (percentual sobre o material); fica `0.0` quando
- *   há taxa de mão de obra configurada, porque aí o acabamento entra em [labor].
+ * @property finishing acabamento como percentual do material (ver [PricingSettings.finishingRate]).
+ *   Soma junto com [labor]; quem cobra lixar e pintar em minutos deixa a taxa em zero.
  * @property failures reserva de falha, que incide sobre todos os outros custos menos
  *   [administrative] (ver [PricingSettings.failureRate]).
  */
@@ -49,10 +49,11 @@ data class CostBreakdown(
  *
  * @property job peça orçada (dados de **uma** unidade).
  * @property quantity quantas peças iguais este orçamento cobre.
- * @property setupMinutes minutos de preparo cobrados **uma vez** pelo pedido
- *   inteiro (preparar o arquivo, fatiar, montar a mesa), independente de
- *   [quantity]. É o que faz o preço por unidade cair conforme a quantidade
- *   sobe, sem precisar inventar um desconto.
+ * @property setupMinutes minutos de trabalho cobrados **uma vez** pelo pedido
+ *   inteiro, independente de [quantity]. O app grava aqui o tempo de trabalho
+ *   total do pedido, que é como quem vende pensa (decisão 94), e deixa
+ *   [PrintJob.laborMinutes] em zero. Orçamentos anteriores podem ter os dois
+ *   (ver [totalLaborMinutes]). O nome ficou pra não quebrar o histórico salvo.
  * @property filamentWeightGrams massa estimada de filamento do pedido
  *   inteiro, em gramas.
  * @property costs detalhamento dos custos do pedido inteiro.
@@ -101,6 +102,13 @@ data class Quote(
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
         require(setupMinutes >= 0) { "setupMinutes não pode ser negativo: $setupMinutes" }
     }
+
+    /**
+     * Todo o seu tempo de trabalho no pedido, em minutos: o de cada peça vezes a quantidade mais o
+     * cobrado uma vez pelo pedido. É o número que a tela mostra num campo só (decisão 94).
+     */
+    val totalLaborMinutes: Double
+        get() = job.laborMinutes * quantity + setupMinutes
 
     /** Tudo que é descontado da venda antes de o dinheiro chegar em você. */
     val totalDeductionRate: Double

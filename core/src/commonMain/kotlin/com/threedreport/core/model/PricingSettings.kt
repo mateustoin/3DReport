@@ -13,15 +13,13 @@ import kotlinx.serialization.Serializable
  *   custo que se paga de novo ao reimprimir a peça (material, energia, manutenção, retorno da
  *   máquina, custo fixo, mão de obra e acabamento) — só [administrativeCost] fica de fora, porque
  *   uma modelagem já feita não precisa ser refeita quando a impressão falha.
- * @property finishingRate percentual sobre o custo de material referente a acabamento.
- *   **Legado:** só é usado quando [laborRatePerHour] é zero. Acabamento é trabalho, e trabalho
- *   escala com tempo, não com gramas de plástico — quem configura uma taxa de mão de obra passa a
- *   cobrar acabamento pelos minutos informados em cada orçamento, e este percentual deixa de ter
- *   efeito (ver `pricing/PricingCalculator`).
+ * @property finishingRate percentual sobre o custo de material pra lixar e pintar. Sempre soma,
+ *   com ou sem [laborRatePerHour]: quem já conta o acabamento nos minutos de trabalho de cada
+ *   orçamento deixa em zero, pra não cobrar o mesmo trabalho duas vezes.
  * @property laborRatePerHour quanto vale uma hora do seu trabalho, em R$/h. Cobre preparar o
  *   arquivo, fatiar, tirar a peça da mesa, remover suporte, lixar, pintar, embalar e atender o
- *   cliente — o serviço que a peça dá, e que não aparece em nenhum outro custo. Zero (padrão)
- *   mantém o comportamento antigo, sem cobrar mão de obra e usando [finishingRate].
+ *   cliente — o serviço que a peça dá, e que não aparece em nenhum outro custo. Zero (padrão) não
+ *   cobra mão de obra. Só **soma** ao preço, independente de [finishingRate].
  * @property monthlyFixedCost custo fixo mensal do negócio, em R$ (aluguel do espaço, internet,
  *   assinaturas, embalagem). Diluído por hora de impressão junto com [productiveHoursPerMonth];
  *   sem isso, quem precifica só o custo variável descobre tarde que o mês não fecha.
@@ -50,6 +48,7 @@ data class PricingSettings(
     val administrativeCost: Double = 0.0,
     val profitMargin: Double,
     val marketplaceFeeRate: Double = 0.0,
+    val schemaVersion: Int = 1,
 ) {
     init {
         require(energyPricePerKwh >= 0) { "energyPricePerKwh não pode ser negativo" }
@@ -76,9 +75,23 @@ data class PricingSettings(
         get() = if (productiveHoursPerMonth > 0) monthlyFixedCost / productiveHoursPerMonth else 0.0
 
     /**
-     * Se o acabamento deve ser cobrado pelo tempo de trabalho ([laborRatePerHour]) em vez do
-     * percentual sobre o material ([finishingRate]) — ver KDoc dos dois campos.
+     * Traz uma configuração salva por uma versão anterior do app pro formato atual. Até a versão 1
+     * do esquema, uma hora de trabalho configurada desligava sozinha o [finishingRate]; hoje os dois
+     * somam (decisão 93). Pra quem já tinha a hora configurada, o percentual é zerado **uma vez**,
+     * que é exatamente o que o cálculo antigo fazia, então o preço não muda ao atualizar. Depois de
+     * salva na versão atual, uma taxa digitada de propósito nunca mais é mexida.
      */
-    val chargesLaborByTime: Boolean
-        get() = laborRatePerHour > 0
+    fun migrated(): PricingSettings = when {
+        schemaVersion >= CURRENT_SCHEMA_VERSION -> this
+        laborRatePerHour > 0 -> copy(finishingRate = 0.0, schemaVersion = CURRENT_SCHEMA_VERSION)
+        else -> copy(schemaVersion = CURRENT_SCHEMA_VERSION)
+    }
+
+    companion object {
+        /**
+         * Versão do formato salvo. Um arquivo sem o campo é da versão 1 (ver [migrated]); só muda
+         * quando o significado de um campo muda, não a cada campo novo com valor padrão.
+         */
+        const val CURRENT_SCHEMA_VERSION = 2
+    }
 }

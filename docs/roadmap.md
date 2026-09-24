@@ -124,6 +124,10 @@ preencher.
   configurada (fallback, ninguém perde nada) e tratá-lo como legado; **(B)**
   remover o campo e avisar na atualização que acabamento agora se informa em
   minutos. A opção A é menos traumática pra quem já usa o app hoje.
+  **Revisado na decisão 93 (2026-09-24):** a hora de trabalho deixou de
+  desligar a taxa de acabamento, porque configurar a hora com os minutos
+  ainda vazios fazia o preço cair. Hoje as duas somam, e quem conta o
+  acabamento nos minutos deixa a taxa em 0.
 - [x] **Reserva de falha passa a incidir sobre o custo refeito inteiro** (decisão 76, 2026-09-22).
   Hoje `falhas = material × taxa`. Quando uma impressão de 8 h falha no fim,
   o prejuízo foi material **e** energia **e** hora de máquina **e** o tempo

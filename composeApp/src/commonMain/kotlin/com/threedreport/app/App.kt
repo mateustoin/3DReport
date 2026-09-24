@@ -321,7 +321,7 @@ private fun HelpDialog(onDismiss: () -> Unit) {
                 )
                 Text(
                     "• Orçamento: escolha filamento/impressora, informe comprimento e tempo, e calcule. " +
-                        "Com uma hora de trabalho configurada, informe também os minutos de trabalho da peça.",
+                        "Com uma hora de trabalho configurada, informe também o seu tempo de trabalho no pedido.",
                 )
                 Text("• Histórico: consulte, filtre, exporte em PDF ou copie orçamentos salvos (1 ou vários juntos).")
                 Text("• Dashboard: total vendido, lucro e filamento mais usado no período.")

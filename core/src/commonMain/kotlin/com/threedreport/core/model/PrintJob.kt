@@ -20,7 +20,9 @@ import kotlinx.serialization.Serializable
  *   mesa, remover suporte, lixar, pintar, embalar. Diferente de
  *   [printTimeMinutes], que é a máquina trabalhando enquanto você faz outra
  *   coisa. Só entra no custo se houver [PricingSettings.laborRatePerHour]
- *   configurada; zero (padrão) mantém o comportamento antigo.
+ *   configurada. O app deixa em zero e cobra o tempo total do pedido em
+ *   [Quote.setupMinutes] (decisão 94); o campo continua pro histórico e pra
+ *   quem usa o `core` como biblioteca.
  */
 @Serializable
 data class PrintJob(

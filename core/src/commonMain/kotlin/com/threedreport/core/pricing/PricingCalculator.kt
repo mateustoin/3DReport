@@ -53,10 +53,9 @@ object PricingCalculator {
         val investmentReturn = hours * printer.machineInvestment.costPerHour
         val fixedCost = hours * settings.fixedCostPerHour
         val labor = job.laborHours * settings.laborRatePerHour
-        // Acabamento como percentual do material só sobrevive enquanto não há mão de obra
-        // configurada (ver KDoc de PricingSettings.finishingRate): lixar e pintar custa tempo, não
-        // gramas de plástico, então quem cobra por hora já cobra acabamento em `labor`.
-        val finishing = if (settings.chargesLaborByTime) 0.0 else material * settings.finishingRate
+        // Acabamento e mão de obra são independentes e os dois só somam: configurar a hora nunca
+        // pode baixar o preço (decisão 93). Quem cobra lixar e pintar em minutos zera a taxa.
+        val finishing = material * settings.finishingRate
 
         // Preparar o arquivo, fatiar e montar a mesa se faz uma vez só, não uma vez por peça — é
         // isso que faz o preço unitário cair quando a quantidade sobe, sem desconto artificial.

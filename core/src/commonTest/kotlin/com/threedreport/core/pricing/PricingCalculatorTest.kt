@@ -102,6 +102,8 @@ class PricingCalculatorTest {
     fun documentedExampleWithLaborAndFixedCostMatches() {
         val settings = spreadsheetSettings.copy(
             laborRatePerHour = 30.0,
+            // Quem cobra lixar e pintar nos 40 min de trabalho zera o percentual.
+            finishingRate = 0.0,
             monthlyFixedCost = 800.0,
             productiveHoursPerMonth = 200.0,
         )
@@ -128,22 +130,33 @@ class PricingCalculatorTest {
     }
 
     @Test
-    fun finishingPercentageIsReplacedByLaborWhenAnHourlyRateIsConfigured() {
+    fun finishingPercentageAndLaborAreIndependentAndBothAdd() {
         val job = spreadsheetJob.copy(laborMinutes = 40.0)
 
-        val legacy = PricingCalculator.calculate(job, spreadsheetPrinter, spreadsheetSettings).costs
-        val byTime = PricingCalculator.calculate(
+        val costs = PricingCalculator.calculate(
             job,
             spreadsheetPrinter,
             spreadsheetSettings.copy(laborRatePerHour = 30.0),
         ).costs
 
-        // Sem taxa horária, o acabamento continua sendo o percentual sobre o material (legado)...
-        assertEquals(0.36, legacy.finishing, CENT_TOLERANCE)
-        assertEquals(0.0, legacy.labor, 1e-9)
-        // ...com taxa horária, o acabamento passa a ser cobrado dentro da mão de obra.
-        assertEquals(0.0, byTime.finishing, 1e-9)
-        assertEquals(20.0, byTime.labor, 1e-9)
+        assertEquals(0.36, costs.finishing, CENT_TOLERANCE)
+        assertEquals(20.0, costs.labor, 1e-9)
+    }
+
+    /**
+     * O caso relatado por um usuário: com a hora em zero, anotar o preço; configurar R$ 50/h; o
+     * preço caía, porque o acabamento saía e os minutos de trabalho ainda estavam vazios.
+     */
+    @Test
+    fun configuringAnHourlyRateNeverLowersThePrice() {
+        val withoutRate = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+        val withRate = spreadsheetSettings.copy(laborRatePerHour = 50.0)
+
+        listOf(0.0, 10.0).forEach { minutes ->
+            val quote = PricingCalculator.calculate(spreadsheetJob.copy(laborMinutes = minutes), spreadsheetPrinter, withRate)
+            assertEquals(withoutRate.costs.finishing, quote.costs.finishing, 1e-9)
+            assertTrue(quote.salePrice >= withoutRate.salePrice, "com $minutes min, o preço caiu")
+        }
     }
 
     @Test

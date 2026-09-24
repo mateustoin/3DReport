@@ -49,7 +49,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Cálculo de custo de produção e preço de venda (`core`)
 - Arraste o G-code pra janela e o orçamento se monta: comprimento, tempo, foto, configurações de impressão e, quando o nome bate com o cadastrado, a impressora e o filamento (Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer, Cura)
 - Tela de orçamento em duas colunas — entradas de um lado, o preço, a composição e a negociação do outro
-- Quantidade por orçamento, com preço unitário e preparo do pedido cobrado uma vez só (lote sai mais barato por peça)
+- Quantidade por orçamento, com preço unitário e o seu tempo de trabalho informado pelo pedido inteiro (lote sai mais barato por peça)
 - Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
 - Comparação entre as suas impressoras: quanto a mesma peça custa em cada máquina
 - Salvar orçamento (nome, foto e link do modelo opcionais)

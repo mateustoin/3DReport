@@ -43,6 +43,7 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository) {
                 // Preservado como estava: o cálculo não usa mais, mas apagar faria a migração pro
                 // catálogo de canais perder a referência de quem ainda não abriu o app.
                 marketplaceFeeRate = settingsRepository.settings.value.marketplaceFeeRate,
+                schemaVersion = PricingSettings.CURRENT_SCHEMA_VERSION,
             )
         }
 

@@ -92,7 +92,6 @@ class QuoteViewModel(
     fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text, gcodeImportMessage = null) }
     fun setLaborMinutes(text: String) = inputState.update { it.copy(laborMinutesText = text) }
     fun setQuantity(text: String) = inputState.update { it.copy(quantityText = text) }
-    fun setSetupMinutes(text: String) = inputState.update { it.copy(setupMinutesText = text) }
 
     /** Abre o seletor de arquivo e importa o G-code escolhido (ver [importGCode]). */
     fun pickAndImportGCode() {
@@ -348,9 +347,10 @@ class QuoteViewModel(
             printerId = quote.printerId,
             lengthMetersText = formatSavedNumber(job.filamentLengthMeters),
             printTimeMinutesText = formatSavedNumber(job.printTimeMinutes),
-            laborMinutesText = if (job.laborMinutes > 0) formatSavedNumber(job.laborMinutes) else "",
+            // Orçamento de antes da decisão 94 pode ter tempo por peça e preparo separados: somados,
+            // viram o mesmo total, e salvar de novo não muda o preço.
+            laborMinutesText = if (quote.totalLaborMinutes > 0) formatSavedNumber(quote.totalLaborMinutes) else "",
             quantityText = if (quote.quantity > 1) quote.quantity.toString() else "",
-            setupMinutesText = if (quote.setupMinutes > 0) formatSavedNumber(quote.setupMinutes) else "",
             // Valor e forma de cobrança vêm do retrato salvo, não do catálogo atual: reabrir e salvar
             // não pode reprecificar o pedido em silêncio.
             selectedServices = savedQuote.services.associate { service ->
@@ -453,7 +453,6 @@ class QuoteViewModel(
             filamentLengthMeters = length,
             printTimeMinutes = time,
             filamentColor = filamentColor,
-            laborMinutes = parseDecimal(input.laborMinutesText) ?: 0.0,
         )
         return runCatching {
             PricingCalculator.calculate(
@@ -462,7 +461,8 @@ class QuoteViewModel(
                 settings = settings,
                 channel = channel,
                 quantity = input.quantity,
-                setupMinutes = parseDecimal(input.setupMinutesText) ?: 0.0,
+                // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
+                setupMinutes = parseDecimal(input.laborMinutesText) ?: 0.0,
                 negotiatedSalePrice = negotiatedSalePrice,
             )
         }.fold(
