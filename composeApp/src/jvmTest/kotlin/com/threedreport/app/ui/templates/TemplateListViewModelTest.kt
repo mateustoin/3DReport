@@ -83,4 +83,22 @@ class TemplateListViewModelTest {
 
         assertEquals(formal.id, viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value))
     }
+
+    @Test
+    fun printTimeChoiceTravelsWithTheTemplateAndCountsForActiveDetection() {
+        val templateRepository = TemplateRepository()
+        templateRepository.add(sampleTemplate().copy(showPrintTime = true))
+        val brandingRepository = BrandingRepository()
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
+        val template = templateRepository.templates.value.first()
+
+        viewModel.load(template.id)
+
+        assertTrue(brandingRepository.branding.value.showPrintTime)
+        assertEquals(template.id, viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value))
+        assertNull(
+            viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value.copy(showPrintTime = false)),
+            "com o tempo desligado, a configuração ativa já não é mais esse template",
+        )
+    }
 }

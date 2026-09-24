@@ -1,0 +1,48 @@
+package com.threedreport.core.model
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+class SavedQuoteTest {
+
+    private val filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24)
+
+    private fun savedQuoteOf(
+        status: OrderStatus = OrderStatus.ORCADO,
+        deliveryDateEpochDay: Long? = null,
+        printTimeMinutes: Double = 90.0,
+        quantity: Int = 1,
+    ) = SavedQuote(
+        id = "1",
+        name = "Peça",
+        quote = Quote(
+            job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes),
+            filamentWeightGrams = 5.0,
+            costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            productionCost = 0.0,
+            salePrice = 10.0,
+            quantity = quantity,
+        ),
+        savedAtEpochMillis = 0L,
+        status = status,
+        deliveryDateEpochDay = deliveryDateEpochDay,
+    )
+
+    @Test
+    fun overdueOnlyAfterTheDeadlineAndBeforeDelivery() {
+        val deadline = 100L
+
+        assertFalse(savedQuoteOf(OrderStatus.APROVADO, deadline).isDeliveryOverdue(todayEpochDay = 100L), "no próprio dia ainda está no prazo")
+        assertTrue(savedQuoteOf(OrderStatus.APROVADO, deadline).isDeliveryOverdue(todayEpochDay = 101L))
+        assertTrue(savedQuoteOf(OrderStatus.ORCADO, deadline).isDeliveryOverdue(todayEpochDay = 101L))
+        assertFalse(savedQuoteOf(OrderStatus.ENTREGUE, deadline).isDeliveryOverdue(todayEpochDay = 101L))
+        assertFalse(savedQuoteOf(OrderStatus.APROVADO, null).isDeliveryOverdue(todayEpochDay = 101L))
+    }
+
+    @Test
+    fun totalPrintTimeMultipliesByQuantity() {
+        assertEquals(270.0, savedQuoteOf(printTimeMinutes = 90.0, quantity = 3).totalPrintTimeMinutes)
+    }
+}

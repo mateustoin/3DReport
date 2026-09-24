@@ -465,6 +465,55 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
+    fun deliveryDateSurvivesNewRepositoryInstanceAndEdit() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.save(
+            name = "Com prazo",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            sourceLink = null,
+            deliveryDateEpochDay = 20_700L,
+        )
+
+        assertEquals(20_700L, QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }.deliveryDateEpochDay)
+
+        repository.update(
+            id = saved.id,
+            name = "Com prazo",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = null,
+            sourceLink = null,
+            client = null,
+            deliveryDateEpochDay = 20_710L,
+        )
+        assertEquals(20_710L, QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }.deliveryDateEpochDay)
+    }
+
+    @Test
+    fun updateDeliveryDateChangesOnlyTheTargetQuoteAndCanRemoveIt() {
+        val repository = QuoteHistoryRepository()
+        val target = repository.save(name = "Alvo", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 10L)
+        val other = repository.save(name = "Outro", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 10L)
+
+        repository.updateDeliveryDate(target.id, 20L)
+        assertEquals(20L, QuoteHistoryRepository().savedQuotes.value.first { it.id == target.id }.deliveryDateEpochDay)
+        assertEquals(10L, QuoteHistoryRepository().savedQuotes.value.first { it.id == other.id }.deliveryDateEpochDay)
+
+        repository.updateDeliveryDate(target.id, null)
+        assertNull(QuoteHistoryRepository().savedQuotes.value.first { it.id == target.id }.deliveryDateEpochDay)
+    }
+
+    @Test
+    fun quoteSavedWithoutDeliveryDateHasNone() {
+        val saved = QuoteHistoryRepository().save(name = "Sem prazo", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        assertNull(QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }.deliveryDateEpochDay)
+    }
+
+    @Test
     fun deleteRemovesStlFile() {
         val repository = QuoteHistoryRepository()
         val saved = repository.save(

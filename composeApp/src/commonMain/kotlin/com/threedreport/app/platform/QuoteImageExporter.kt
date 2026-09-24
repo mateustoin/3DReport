@@ -15,6 +15,8 @@ package com.threedreport.app.platform
  *   da marca, que continua servindo pra mandar o preço.
  * @param unitPriceText linha secundária com o preço por unidade, quando o pedido tem mais de uma
  *   peça; `null` esconde a linha.
+ * @param deliveryText prazo de entrega já escrito ("Entrega até 30/09"), em destaque abaixo do preço;
+ *   `null` esconde a linha.
  * @param brandText nome da marca do vendedor (mesmo texto da marca d'água do PDF), escrito discreto
  *   no rodapé quando configurado.
  */
@@ -24,4 +26,5 @@ expect fun renderQuoteImage(
     unitPriceText: String?,
     photoBytes: ByteArray?,
     brandText: String?,
+    deliveryText: String? = null,
 ): ByteArray

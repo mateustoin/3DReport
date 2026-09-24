@@ -43,6 +43,7 @@ expect class QuoteHistoryRepository() {
         client: Client? = null,
         printSettings: PrintSettings? = null,
         shippingCost: Double = 0.0,
+        deliveryDateEpochDay: Long? = null,
     ): SavedQuote
 
     fun delete(id: String)
@@ -68,6 +69,7 @@ expect class QuoteHistoryRepository() {
         client: Client?,
         printSettings: PrintSettings? = null,
         shippingCost: Double = 0.0,
+        deliveryDateEpochDay: Long? = null,
     ): SavedQuote?
 
     /** Atualiza o andamento do pedido [id] pra [status]. Não faz nada se [id] não existir. */
@@ -79,6 +81,13 @@ expect class QuoteHistoryRepository() {
      * Não faz nada se [id] não existir.
      */
     fun updatePrintSettings(id: String, printSettings: PrintSettings?)
+
+    /**
+     * Troca só o prazo de entrega do pedido [id] (`null` remove), sem tocar em mais nada — mesmo
+     * tratamento de [updatePrintSettings]. É o caminho pra atualizar um prazo que venceu enquanto
+     * o cliente pensava, sem abrir a edição completa. Não faz nada se [id] não existir.
+     */
+    fun updateDeliveryDate(id: String, deliveryDateEpochDay: Long?)
 
     /** Bytes da foto de [savedQuote], ou `null` se não houver foto salva. */
     fun photoBytes(savedQuote: SavedQuote): ByteArray?

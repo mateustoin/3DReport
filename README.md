@@ -66,6 +66,7 @@ com a margem de lucro desejada.
 - Cliente e status do pedido por orçamento
 - Exportar em PDF ou copiar/colar (nome + valor de venda + foto no PDF)
 - Abrir a conversa no WhatsApp com o orçamento já escrito, e gerar uma imagem quadrada da peça pro zap ou pro status
+- Prazo de entrega no orçamento, em destaque no PDF, na mensagem e na imagem, com aviso no Histórico quando o prazo vence
 - Exportar vários orçamentos selecionados num PDF só (um por página)
 - Catálogo/portfólio exportável em PDF (grade, várias peças por página)
 - Dashboard — total vendido, lucro e filamento mais usado, por período

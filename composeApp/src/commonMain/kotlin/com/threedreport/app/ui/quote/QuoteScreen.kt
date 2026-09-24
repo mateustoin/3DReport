@@ -46,12 +46,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.platform.formatDate
+import com.threedreport.app.platform.todayEpochDay
+import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
@@ -322,10 +326,17 @@ private fun QuoteResultSection(
 ) {
     Text("Resultado", style = MaterialTheme.typography.titleMedium)
 
+    val saveForm by viewModel.saveForm.collectAsState()
+
     val quote = result.quote
     when {
         result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
-        quote != null -> QuoteReceipt(quote = quote, selectedServices = result.selectedServices, grandTotal = result.grandTotal ?: quote.salePrice)
+        quote != null -> QuoteReceipt(
+            quote = quote,
+            selectedServices = result.selectedServices,
+            grandTotal = result.grandTotal ?: quote.salePrice,
+            deliveryDateEpochDay = saveForm.deliveryDateEpochDay,
+        )
         filaments.isEmpty() && allFilaments.isNotEmpty() -> Text(
             "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" na aba Filamentos.",
             style = MaterialTheme.typography.bodyMedium,
@@ -358,10 +369,23 @@ private fun SaveQuoteFormSection(
     onEditingFinished: () -> Unit,
 ) {
     val quote = result.quote
+    val printers by viewModel.printers.collectAsState()
+    val savedQuotes by viewModel.savedQuotes.collectAsState()
+    val printer = quote?.let { q -> printers.firstOrNull { it.id == q.printerId } }
+    val queueHint = if (quote != null && printer != null) {
+        viewModel.queueAheadOf(printer, savedQuotes, saveForm.editingQuoteId)?.let { queue ->
+            val orders = if (queue.queuedQuoteCount == 1) "1 pedido aprovado ou imprimindo" else "${queue.queuedQuoteCount} pedidos aprovados ou imprimindo"
+            "Fila da ${printer.name}: ${queue.queuedMinutes.minutesToDurationText()} de impressão em $orders · " +
+                "esta peça: ${(quote.job.printTimeMinutes * quote.quantity).minutesToDurationText()}."
+        }
+    } else {
+        null
+    }
     SaveQuoteForm(
         form = saveForm,
         viewModel = viewModel,
         canSave = quote != null,
+        queueHint = queueHint,
         onSave = {
             quote?.let {
                 val wasEditing = saveForm.editingQuoteId != null
@@ -379,7 +403,7 @@ private fun SaveQuoteFormSection(
  * do mesmo peso, sem indicar qual número é o que realmente importa pra fechar a venda.
  */
 @Composable
-private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTotal: Double) {
+private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTotal: Double, deliveryDateEpochDay: Long?) {
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -398,6 +422,16 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<Service>, grandTot
                     "${quote.quantity} peças · ${(grandTotal / quote.quantity).toMoney()} cada",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // O mesmo prazo que vai sair em destaque no PDF, pra o vendedor ver na nota o que o
+            // cliente vai ler, enquanto ainda está escolhendo.
+            deliveryDateEpochDay?.let {
+                Text(
+                    "Entrega até ${formatDate(it)} (${weekdayName(it)})",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = if (it < todayEpochDay()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 )
             }
             if (quote.totalDeductionRate > 0.0) {
@@ -557,6 +591,7 @@ private fun SaveQuoteForm(
     form: SaveQuoteFormState,
     viewModel: QuoteViewModel,
     canSave: Boolean,
+    queueHint: String?,
     onSave: () -> Unit,
     onEditingFinished: () -> Unit,
 ) {
@@ -581,6 +616,8 @@ private fun SaveQuoteForm(
             }
         }
 
+        Text("O que o cliente vê", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().tabToNavigate(),
             value = form.name,
@@ -602,6 +639,14 @@ private fun SaveQuoteForm(
         } else {
             OutlinedButton(onClick = viewModel::pickPhoto) { Text("Escolher foto (opcional)") }
         }
+
+        Text("Prazo de entrega (opcional)", style = MaterialTheme.typography.labelLarge)
+        DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, onChange = viewModel::setDeliveryDate)
+        queueHint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+
+        // Daqui pra baixo nada vai pro cliente. O título separa as duas metades do formulário, em
+        // vez de depender de cada rótulo dizer "(uso interno)".
+        Text("Só pra você (não sai no PDF nem na mensagem)", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
 
         val stlFile = form.stlFile
         if (stlFile != null) {

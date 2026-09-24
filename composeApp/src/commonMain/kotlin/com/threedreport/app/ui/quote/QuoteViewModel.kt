@@ -13,6 +13,7 @@ import com.threedreport.app.platform.pickStlFile
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
@@ -22,6 +23,8 @@ import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.report.PrintQueueReport
+import com.threedreport.core.report.PrinterQueueEntry
 import com.threedreport.core.slicer.GCodeMetadata
 import com.threedreport.core.slicer.GCodeMetadataParser
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +61,24 @@ class QuoteViewModel(
 
     private val saveFormState = MutableStateFlow(SaveQuoteFormState())
     val saveForm: StateFlow<SaveQuoteFormState> = saveFormState.asStateFlow()
+
+    /** Histórico, só pra dica de prazo saber o que já está na fila de cada impressora. */
+    val savedQuotes: StateFlow<List<SavedQuote>> = historyRepository.savedQuotes
+
+    /**
+     * Função pura: o que está na frente de uma peça nova em [printer] — pedidos aprovados ou em
+     * impressão (ver `PrintQueueReport`) —, ou `null` se a fila estiver vazia. Serve de dica ao
+     * escolher o prazo e nunca preenche a data sozinha: o app sabe o tempo de máquina, mas não sabe
+     * quantas horas por dia a impressora roda nem quanto tempo o acabamento leva.
+     *
+     * O orçamento sendo editado ([editingQuoteId]) fica de fora, senão ele estaria na frente de si mesmo.
+     */
+    fun queueAheadOf(printer: PrinterProfile, savedQuotes: List<SavedQuote>, editingQuoteId: String?): PrinterQueueEntry? =
+        PrintQueueReport.summarize(
+            printers = listOf(printer),
+            savedQuotes = savedQuotes.filterNot { it.id == editingQuoteId },
+            statuses = setOf(OrderStatus.APROVADO, OrderStatus.EM_IMPRESSAO),
+        ).single().takeIf { it.queuedQuoteCount > 0 }
 
     fun selectFilament(id: String) = inputState.update { it.copy(filamentId = id, filamentColorId = null) }
     fun selectFilamentColor(id: String) = inputState.update { it.copy(filamentColorId = id) }
@@ -145,6 +166,7 @@ class QuoteViewModel(
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
     fun setClientName(text: String) = saveFormState.update { it.copy(clientName = text, savedConfirmation = false) }
     fun setClientContact(text: String) = saveFormState.update { it.copy(clientContact = text, savedConfirmation = false) }
+    fun setDeliveryDate(epochDay: Long?) = saveFormState.update { it.copy(deliveryDateEpochDay = epochDay, savedConfirmation = false) }
     fun clearPhoto() = saveFormState.update {
         it.copy(photo = null, photoFromGCode = false, photoReferenceFileName = null, savedConfirmation = false)
     }
@@ -205,6 +227,7 @@ class QuoteViewModel(
                 client = client,
                 printSettings = form.printSettings.takeUnless { it.isEmpty },
                 shippingCost = parseDecimal(inputState.value.shippingCostText) ?: 0.0,
+                deliveryDateEpochDay = form.deliveryDateEpochDay,
             )
         } else {
             historyRepository.save(
@@ -219,6 +242,7 @@ class QuoteViewModel(
                 client = client,
                 printSettings = form.printSettings.takeUnless { it.isEmpty },
                 shippingCost = parseDecimal(inputState.value.shippingCostText) ?: 0.0,
+                deliveryDateEpochDay = form.deliveryDateEpochDay,
             )
         }
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
@@ -246,7 +270,9 @@ class QuoteViewModel(
      */
     fun duplicateForNewQuote(savedQuote: SavedQuote) {
         inputState.value = inputStateFrom(savedQuote)
-        saveFormState.value = saveFormFrom(savedQuote).copy(duplicatedFromName = savedQuote.name)
+        // O prazo não vem junto: uma data de outro pedido, provavelmente já passada, é exatamente o
+        // prazo vencido que o cliente não pode receber (decisão 85).
+        saveFormState.value = saveFormFrom(savedQuote).copy(duplicatedFromName = savedQuote.name, deliveryDateEpochDay = null)
     }
 
     private fun inputStateFrom(savedQuote: SavedQuote): QuoteInputState {
@@ -287,6 +313,7 @@ class QuoteViewModel(
             clientName = savedQuote.client?.name.orEmpty(),
             clientContact = savedQuote.client?.contact.orEmpty(),
             printSettings = savedQuote.printSettings ?: PrintSettings(),
+            deliveryDateEpochDay = savedQuote.deliveryDateEpochDay,
         )
     }
 

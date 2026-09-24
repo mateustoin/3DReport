@@ -151,4 +151,36 @@ class QuoteExportTextTest {
         assertFalse(text.contains("cada"))
         assertFalse(text.contains("×"))
     }
+
+    private val september30 = java.time.LocalDate.of(2026, 9, 30).toEpochDay()
+
+    @Test
+    fun deliveryDateClosesTheMessage() {
+        val withDeadline = savedQuote.copy(deliveryDateEpochDay = september30)
+
+        assertEquals("Suporte de celular\nVenda: R$ 16,19\nPrazo de entrega: até 30/09/2026", withDeadline.toCopyPasteText())
+    }
+
+    @Test
+    fun printTimeAppearsOnlyWhenTurnedOnAndCoversTheWholeOrder() {
+        val twoPieces = savedQuote.copy(
+            quote = savedQuote.quote.copy(quantity = 2, salePrice = 32.38),
+            deliveryDateEpochDay = september30,
+        )
+
+        assertFalse(twoPieces.toCopyPasteText().contains("Tempo"))
+        assertEquals(
+            "Suporte de celular\nVenda: R$ 32,38\n2 peças · R$ 16,19 cada\nPrazo de entrega: até 30/09/2026\n" +
+                "Tempo de impressão: 6 h 20 min (2 peças)",
+            twoPieces.toCopyPasteText(showPrintTime = true),
+        )
+    }
+
+    @Test
+    fun singlePiecePrintTimeHasNoPieceCount() {
+        assertEquals(
+            "Suporte de celular\nVenda: R$ 16,19\nTempo de impressão: 3 h 10 min",
+            savedQuote.toCopyPasteText(showPrintTime = true),
+        )
+    }
 }

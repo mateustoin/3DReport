@@ -25,6 +25,8 @@ data class SaveQuoteFormState(
     val clientContact: String = "",
     /** Configurações de fatiamento (altura de camada, preenchimento, suporte), opcionais — ver KDoc de [PrintSettings]. */
     val printSettings: PrintSettings = PrintSettings(),
+    /** Prazo de entrega prometido ao cliente (dias desde 01/01/1970), ou `null` — ver `SavedQuote.deliveryDateEpochDay`. */
+    val deliveryDateEpochDay: Long? = null,
     val savedConfirmation: Boolean = false,
     /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
     val editingQuoteId: String? = null,

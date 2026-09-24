@@ -60,6 +60,28 @@ class PrintQueueReportTest {
     }
 
     @Test
+    fun approvedQuotesCountWhenAskedForTheDeliveryHint() {
+        // A dica de prazo considera também o que foi aprovado e ainda espera a vez de imprimir.
+        val printer = printerOf("a", "Impressora A")
+        val quotes = listOf(
+            quoteOf("1", printerId = "a", status = OrderStatus.EM_IMPRESSAO, printTimeMinutes = 120.0),
+            quoteOf("2", printerId = "a", status = OrderStatus.APROVADO, printTimeMinutes = 60.0),
+            quoteOf("3", printerId = "a", status = OrderStatus.ORCADO, printTimeMinutes = 999.0),
+        )
+
+        val nowPrinting = PrintQueueReport.summarize(listOf(printer), quotes).single()
+        val ahead = PrintQueueReport.summarize(
+            listOf(printer),
+            quotes,
+            statuses = setOf(OrderStatus.APROVADO, OrderStatus.EM_IMPRESSAO),
+        ).single()
+
+        assertEquals(120.0, nowPrinting.queuedMinutes)
+        assertEquals(180.0, ahead.queuedMinutes)
+        assertEquals(2, ahead.queuedQuoteCount)
+    }
+
+    @Test
     fun printerWithNothingQueuedHasZeroMinutes() {
         val printer = printerOf("a", "Impressora A")
 

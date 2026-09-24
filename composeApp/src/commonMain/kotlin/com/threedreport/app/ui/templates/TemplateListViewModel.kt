@@ -25,7 +25,8 @@ class TemplateListViewModel(
         templates.firstOrNull {
             it.watermarkText == branding.watermarkText &&
                 it.showWatermark == branding.showWatermark &&
-                it.showFooter == branding.showFooter
+                it.showFooter == branding.showFooter &&
+                it.showPrintTime == branding.showPrintTime
         }?.id
 
     fun delete(id: String) = repository.delete(id)
@@ -38,6 +39,7 @@ class TemplateListViewModel(
                 watermarkText = template.watermarkText,
                 showWatermark = template.showWatermark,
                 showFooter = template.showFooter,
+                showPrintTime = template.showPrintTime,
             )
         )
     }

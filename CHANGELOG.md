@@ -5,6 +5,35 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.32.0] - 2026-09-23
+
+### Adicionado
+- **Prazo de entrega no orçamento.** Ao salvar, escolha o prazo com um
+  clique ("+3 dias", "+7 dias", "+15 dias") ou uma data no calendário. Ele
+  aparece em destaque no PDF, no fim da mensagem do copiar/colar e do
+  WhatsApp, e na imagem quadrada. Enquanto você escolhe, a tela mostra
+  quanto tempo de impressão já está na fila da impressora (pedidos aprovados
+  ou imprimindo), pra prometer um prazo que dá pra cumprir.
+- **O Histórico avisa quando o prazo vence.** Os cards da lista e do Kanban
+  mostram o prazo, em vermelho quando um pedido aprovado está atrasado, e
+  "prazo vencido" quando um orçamento ainda não aprovado ficou parado. Pelo
+  menu "⋮" dá pra mudar só a data, sem abrir a edição completa. E se você
+  tentar mandar pro cliente um orçamento com prazo já vencido, o app
+  pergunta antes.
+- **Tempo de impressão no PDF e na mensagem (opcional).** Em Configurações,
+  "Documentos pro cliente", marque "Tempo de impressão no PDF e na mensagem"
+  pra mostrar, por exemplo, "Tempo de impressão: 6 h 30 min". Começa
+  desligado.
+
+### Alterado
+- **Formulário de salvar orçamento separado em duas partes:** "O que o
+  cliente vê" (nome, foto, prazo) e "Só pra você" (STL, configurações de
+  impressão, link, cliente).
+- **Duplicar um orçamento não copia mais o prazo de entrega**, pra uma data
+  de outro pedido não ir parar num orçamento novo.
+- A seção "Marca d'água do PDF" em Configurações passou a se chamar
+  "Documentos pro cliente".
+
 ## [1.31.0] - 2026-09-23
 
 ### Adicionado

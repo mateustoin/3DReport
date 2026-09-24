@@ -264,8 +264,8 @@ uma conta incompleta mente com mais confiança.
   63) e a assinatura discreta do item de divulgação (leva 8) cabe no
   rodapé dessa imagem também.
 
-- [ ] **Prazo de entrega no orçamento** (levantado em 2026-09-22, decisão
-  80). A imagem de divulgação pediria "foto + preço + prazo", mas prazo não
+- [x] **Prazo de entrega no orçamento** (decisão 85, 2026-09-23; levantado
+  em 2026-09-22, decisão 80). A imagem de divulgação pediria "foto + preço + prazo", mas prazo não
   existe como campo em lugar nenhum do modelo, então ficou de fora em vez de
   ser inventado a partir do tempo de impressão (que é tempo de máquina, não
   promessa de entrega). Encaixa bem com a fila por impressora que já existe
@@ -275,6 +275,12 @@ uma conta incompleta mente com mais confiança.
     2026-09-23, decisão 83): o prazo deve aparecer **em destaque** no PDF,
     porque é o que o cliente usa para decidir se autoriza a fabricação.
     Segunda fonte pedindo o mesmo item, sem mudança de escopo.
+  - **Feito:** data fixa (`SavedQuote.deliveryDateEpochDay`), escolhida com
+    atalhos "+3 / +7 / +15 dias" ou calendário, com a fila da impressora
+    mostrada como dica. Em destaque no PDF, no fim do texto/WhatsApp e na
+    imagem. Como data envelhece: duplicar não copia o prazo, o Histórico
+    marca atraso e prazo vencido, o menu "⋮" muda só a data, e todo envio
+    pro cliente com prazo vencido pede confirmação antes (decisão 85).
 - [ ] **Identidade do vendedor no PDF: logo, contato e borda** (sugerido por
   João Antonio em teste externo, 2026-09-23, decisão 83). Hoje o PDF só
   carrega a marca do vendedor como texto (marca d'água diagonal e rodapé,
@@ -289,8 +295,11 @@ uma conta incompleta mente com mais confiança.
   a assinatura "Gerado com 3DReport" (leva 8), pra os dois não disputarem o
   mesmo espaço. O mesmo contato serve pro rodapé da imagem quadrada
   (decisão 80).
-- [ ] **Tempo de fabricação no orçamento do cliente** (sugerido por João
-  Antonio em teste externo, 2026-09-23, decisão 83). O tempo de impressão
+- [x] **Tempo de fabricação no orçamento do cliente** (decisão 85,
+  2026-09-23; sugerido por João Antonio em teste externo, 2026-09-23,
+  decisão 83). Entrou como "Tempo de impressão", opção global em
+  Configurações desligada por padrão, no PDF e no texto/WhatsApp (não na
+  imagem). O tempo de impressão
   já existe em todo orçamento (`Quote.printTimeMinutes`, importado do G-code
   ou digitado), mas não aparece no PDF nem no copiar/colar. Mostrar como
   opção ("Tempo de fabricação: 6 h 30 min") não fere a decisão 19, porque

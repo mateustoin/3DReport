@@ -7,8 +7,21 @@ import com.threedreport.core.model.SavedQuote
 data class QuoteExportItem(val savedQuote: SavedQuote, val photoBytes: ByteArray?)
 
 /**
+ * Opções de apresentação do PDF que vêm de `BrandingSettings`, já resolvidas pelo chamador. Ficam
+ * num objeto à parte, com padrão, em vez de somar mais um parâmetro solto a cada leva: com os
+ * padrões, o PDF sai idêntico ao de antes dessas opções existirem.
+ *
+ * @property showPrintTime mostra "Tempo de impressão" abaixo do prazo (ver
+ *   `BrandingSettings.showPrintTime`).
+ */
+data class PdfLayoutOptions(
+    val showPrintTime: Boolean = false,
+)
+
+/**
  * Gera um PDF pra mandar pro cliente: uma página por item de [items] — nome,
- * valor de venda e a foto do produto (se houver). Não inclui produção/lucro
+ * valor de venda, o prazo de entrega em destaque (se houver) e a foto do
+ * produto (se houver). Não inclui produção/lucro
  * (uso interno) nem o link do modelo (uso interno). Um único item produz um
  * PDF de uma página, igual ao export individual de um orçamento; vários
  * itens produzem um PDF compilado, um orçamento por página, na ordem dada.
@@ -28,6 +41,7 @@ expect fun renderSavedQuotesPdf(
     watermarkText: String?,
     footerText: String?,
     currency: Currency = Currency.BRL,
+    options: PdfLayoutOptions = PdfLayoutOptions(),
 ): ByteArray
 
 /**
@@ -47,4 +61,5 @@ expect fun renderCatalogPdf(
     watermarkText: String?,
     footerText: String?,
     currency: Currency = Currency.BRL,
+    options: PdfLayoutOptions = PdfLayoutOptions(),
 ): ByteArray

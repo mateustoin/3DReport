@@ -34,6 +34,10 @@ class BrandingViewModel(
         state.value = state.value.copy(showWatermark = show, errorMessage = null, savedConfirmation = false)
     }
 
+    fun setShowPrintTime(show: Boolean) {
+        state.value = state.value.copy(showPrintTime = show, errorMessage = null, savedConfirmation = false)
+    }
+
     fun setShowFooter(show: Boolean) {
         state.value = state.value.copy(showFooter = show, errorMessage = null, savedConfirmation = false)
     }
@@ -93,6 +97,7 @@ class BrandingViewModel(
                         watermarkText = settings.watermarkText,
                         showWatermark = settings.showWatermark,
                         showFooter = settings.showFooter,
+                        showPrintTime = settings.showPrintTime,
                     )
                 )
                 state.value = current.copy(
@@ -112,11 +117,14 @@ private fun BrandingUiState.toSettingsOrError(): Result<BrandingSettings> {
     if (watermarkText != null && !showWatermark && !showFooter) {
         return Result.failure(IllegalStateException("Selecione ao menos uma opção: marca d'água ou rodapé."))
     }
-    return Result.success(BrandingSettings(watermarkText = watermarkText, showWatermark = showWatermark, showFooter = showFooter))
+    return Result.success(
+        BrandingSettings(watermarkText = watermarkText, showWatermark = showWatermark, showFooter = showFooter, showPrintTime = showPrintTime)
+    )
 }
 
 private fun BrandingSettings.toUiState() = BrandingUiState(
     watermarkTextInput = watermarkText.orEmpty(),
     showWatermark = showWatermark,
     showFooter = showFooter,
+    showPrintTime = showPrintTime,
 )

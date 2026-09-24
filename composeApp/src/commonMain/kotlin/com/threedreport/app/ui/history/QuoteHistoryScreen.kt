@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.formatDateTime
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
@@ -48,6 +50,7 @@ import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toWeightText
+import com.threedreport.app.ui.quote.DeliveryDateDialog
 import com.threedreport.app.ui.quote.PrintSettingsDialog
 import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
@@ -70,6 +73,9 @@ fun QuoteHistoryScreen(
     val filter by viewModel.filter.collectAsState()
     var pendingDelete by remember { mutableStateOf<SavedQuote?>(null) }
     var viewMode by remember { mutableStateOf(HistoryViewMode.LIST) }
+    val pendingExport by viewModel.pendingExport.collectAsState()
+    val deliveryDateEditing by viewModel.deliveryDateEditing.collectAsState()
+    val today = viewModel.currentEpochDay()
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -142,6 +148,8 @@ fun QuoteHistoryScreen(
                     onUpdatePrintSettings = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
                     onOpenWhatsApp = { viewModel.openInWhatsApp(savedQuote) },
                     onSaveImage = { viewModel.saveShareableImage(savedQuote) },
+                    todayEpochDay = today,
+                    onEditDeliveryDate = { viewModel.startEditingDeliveryDate(savedQuote) },
                 )
             }
         } else if (savedQuotes.isNotEmpty()) {
@@ -154,6 +162,8 @@ fun QuoteHistoryScreen(
                 onDuplicate = onDuplicateQuote,
                 onDelete = { pendingDelete = it },
                 onUpdatePrintSettings = { savedQuote, settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
+                todayEpochDay = today,
+                onEditDeliveryDate = viewModel::startEditingDeliveryDate,
             )
         }
     }
@@ -169,6 +179,54 @@ fun QuoteHistoryScreen(
             onDismiss = { pendingDelete = null },
         )
     }
+
+    deliveryDateEditing?.let { savedQuote ->
+        DeliveryDateDialog(
+            quoteName = savedQuote.name,
+            initial = savedQuote.deliveryDateEpochDay,
+            onDismiss = viewModel::cancelEditingDeliveryDate,
+            onSave = viewModel::saveDeliveryDate,
+        )
+    }
+
+    pendingExport?.let { pending -> OverdueExportDialog(pending, today, viewModel) }
+}
+
+/**
+ * Aviso antes de mandar pro cliente um orçamento com prazo já vencido. Com um orçamento só, o
+ * caminho principal é "Alterar prazo" (abre o diálogo de prazo); na exportação em lote não dá pra
+ * editar vários prazos de uma vez, então o aviso lista quais estão vencidos e oferece só enviar
+ * assim mesmo ou cancelar.
+ */
+@Composable
+private fun OverdueExportDialog(pending: PendingExport, todayEpochDay: Long, viewModel: QuoteHistoryViewModel) {
+    val overdue = pending.quotes.filter { it.isDeliveryOverdue(todayEpochDay) }
+    val single = pending.quotes.singleOrNull()
+
+    AlertDialog(
+        onDismissRequest = viewModel::dismissPendingExport,
+        title = { Text("O prazo de entrega já passou") },
+        text = {
+            Text(
+                if (single != null) {
+                    "\"${single.name}\" promete entrega até ${formatDate(single.deliveryDateEpochDay!!)}, e essa data já passou. " +
+                        "Se enviar assim, o cliente recebe um prazo vencido."
+                } else {
+                    "${overdue.size} dos orçamentos selecionados têm prazo vencido: " +
+                        overdue.joinToString { "\"${it.name}\" (${formatDate(it.deliveryDateEpochDay!!)})" } +
+                        ". Se exportar assim, o cliente recebe esses prazos vencidos."
+                },
+            )
+        },
+        confirmButton = {
+            if (single != null) {
+                TextButton(onClick = viewModel::changeDateOfPendingExport) { Text("Alterar prazo") }
+            } else {
+                TextButton(onClick = viewModel::dismissPendingExport) { Text("Cancelar") }
+            }
+        },
+        dismissButton = { TextButton(onClick = viewModel::confirmPendingExport) { Text("Enviar assim mesmo") } },
+    )
 }
 
 @Composable
@@ -269,6 +327,8 @@ private fun SavedQuoteRow(
     onUpdatePrintSettings: (PrintSettings?) -> Unit,
     onOpenWhatsApp: () -> Unit,
     onSaveImage: () -> Unit,
+    todayEpochDay: Long,
+    onEditDeliveryDate: () -> Unit,
 ) {
     var showPrintSettingsDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -346,7 +406,10 @@ private fun SavedQuoteRow(
                     Text("Cor: ${color.displayLabel()}", style = MaterialTheme.typography.bodySmall)
                 }
 
-                StatusDropdown(status = savedQuote.status, onStatusChange = onStatusChange)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    StatusDropdown(status = savedQuote.status, onStatusChange = onStatusChange)
+                    DeliveryBadge(savedQuote, todayEpochDay)
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = onExportPdf) { Text("Exportar PDF") }
@@ -356,6 +419,10 @@ private fun SavedQuoteRow(
                         TextButton(onClick = { showMenu = true }) { Text("⋮ Ações") }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                            DropdownMenuItem(
+                                text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
+                                onClick = { showMenu = false; onEditDeliveryDate() },
+                            )
                             DropdownMenuItem(
                                 text = { Text(if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão") },
                                 onClick = { showMenu = false; showPrintSettingsDialog = true },

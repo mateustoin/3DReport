@@ -48,6 +48,13 @@ import kotlinx.serialization.Serializable
  *   (altura de camada, preenchimento, suporte), se informadas — ver KDoc de
  *   [PrintSettings]. Editável direto no Histórico, sem precisar reabrir a
  *   edição completa do orçamento (mesmo tratamento de [status]).
+ * @property deliveryDateEpochDay prazo de entrega prometido ao cliente, em dias desde 01/01/1970
+ *   (uma data de calendário, e não um instante: guardar millis faria a data mudar de dia
+ *   conforme o fuso). Ao contrário de [client]/[sourceLink], **entra nos exports** (PDF, imagem,
+ *   copiar/colar): é informação pro cliente, e não custo nem margem (decisão 19). Data fixa, e não
+ *   "N dias após aprovar", porque cada vendedor conta prazo de um jeito; em troca, envelhece, e é
+ *   por isso que duplicar um orçamento não copia a data. `null` quando não há prazo, inclusive em
+ *   orçamentos salvos antes deste campo existir.
  */
 @Serializable
 data class SavedQuote(
@@ -64,6 +71,7 @@ data class SavedQuote(
     val lastEditedEpochMillis: Long? = null,
     val printSettings: PrintSettings? = null,
     val shippingCost: Double = 0.0,
+    val deliveryDateEpochDay: Long? = null,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
@@ -76,4 +84,18 @@ data class SavedQuote(
      */
     val totalWithServices: Double
         get() = quote.salePrice + services.sumOf { it.price } * quote.quantity + shippingCost
+
+    /** Tempo de máquina do pedido inteiro: o de uma peça vezes a quantidade (mesma conta da fila de impressão). */
+    val totalPrintTimeMinutes: Double
+        get() = quote.job.printTimeMinutes * quote.quantity
+
+    /**
+     * Se o prazo já passou em [todayEpochDay] sem o pedido ter sido entregue. Um orçamento ainda
+     * [OrderStatus.ORCADO] com prazo vencido não é atraso de produção: é um orçamento parado que
+     * precisa de data nova antes de ser reenviado (a tela trata os dois casos de forma diferente).
+     */
+    fun isDeliveryOverdue(todayEpochDay: Long): Boolean {
+        val deadline = deliveryDateEpochDay ?: return false
+        return deadline < todayEpochDay && status != OrderStatus.ENTREGUE
+    }
 }

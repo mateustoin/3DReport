@@ -86,6 +86,8 @@ fun KanbanBoard(
     onDuplicate: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
     onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
+    todayEpochDay: Long,
+    onEditDeliveryDate: (SavedQuote) -> Unit,
 ) {
     // Posição+tamanho (em coordenadas de janela) de cada coluna, atualizado a cada posicionamento —
     // usado como referência comum (independente de qual composable está aninhado onde) pra saber
@@ -119,6 +121,8 @@ fun KanbanBoard(
                 onDuplicate = onDuplicate,
                 onDelete = onDelete,
                 onUpdatePrintSettings = onUpdatePrintSettings,
+                todayEpochDay = todayEpochDay,
+                onEditDeliveryDate = onEditDeliveryDate,
             )
         }
     }
@@ -141,6 +145,8 @@ private fun KanbanColumn(
     onDuplicate: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
     onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
+    todayEpochDay: Long,
+    onEditDeliveryDate: (SavedQuote) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -178,6 +184,8 @@ private fun KanbanColumn(
                 onDuplicate = { onDuplicate(savedQuote) },
                 onDelete = { onDelete(savedQuote) },
                 onUpdatePrintSettings = { settings -> onUpdatePrintSettings(savedQuote, settings) },
+                todayEpochDay = todayEpochDay,
+                onEditDeliveryDate = { onEditDeliveryDate(savedQuote) },
             )
         }
         if (isDropTarget) {
@@ -203,6 +211,8 @@ private fun KanbanCard(
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     onUpdatePrintSettings: (PrintSettings?) -> Unit,
+    todayEpochDay: Long,
+    onEditDeliveryDate: () -> Unit,
 ) {
     var dragOffset by remember(savedQuote.id) { mutableStateOf(Offset.Zero) }
     var isDragging by remember(savedQuote.id) { mutableStateOf(false) }
@@ -269,6 +279,7 @@ private fun KanbanCard(
                         Text(client.name, style = MaterialTheme.typography.bodySmall)
                     }
                     NumericText(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
+                    DeliveryBadge(savedQuote, todayEpochDay)
                 }
             }
 
@@ -277,6 +288,10 @@ private fun KanbanCard(
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     DropdownMenuItem(text = { Text("Editar") }, onClick = { showMenu = false; onEdit() })
                     DropdownMenuItem(text = { Text("Duplicar") }, onClick = { showMenu = false; onDuplicate() })
+                    DropdownMenuItem(
+                        text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
+                        onClick = { showMenu = false; onEditDeliveryDate() },
+                    )
                     DropdownMenuItem(
                         text = { Text("Configurações de impressão") },
                         onClick = { showMenu = false; showPrintSettingsDialog = true },

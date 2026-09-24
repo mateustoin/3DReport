@@ -14,9 +14,9 @@ import com.threedreport.core.model.SavedQuote
  * já preenchido. É melhor do que esconder o botão, porque o trabalho de escrever a mensagem já foi
  * feito de qualquer jeito.
  */
-internal fun SavedQuote.toWhatsAppLink(currency: Currency = Currency.BRL): String {
+internal fun SavedQuote.toWhatsAppLink(currency: Currency = Currency.BRL, showPrintTime: Boolean = false): String {
     val phone = client?.contact?.let(::toInternationalPhone)
-    val text = percentEncode(toCopyPasteText(currency))
+    val text = percentEncode(toCopyPasteText(currency, showPrintTime))
     return "https://wa.me/${phone.orEmpty()}?text=$text"
 }
 

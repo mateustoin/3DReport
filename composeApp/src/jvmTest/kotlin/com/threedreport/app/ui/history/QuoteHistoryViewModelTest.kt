@@ -15,6 +15,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Valida a seleção múltipla de orçamentos (usada pra exportar vários num PDF só). */
@@ -88,6 +89,51 @@ class QuoteHistoryViewModelTest {
         viewModel.updateStatus(saved.id, OrderStatus.PRONTO)
 
         assertEquals(OrderStatus.PRONTO, repository.savedQuotes.value.first { it.id == saved.id }.status)
+    }
+
+    @Test
+    fun sendingAQuoteWithAnOverdueDeadlineIsHeldForConfirmation() {
+        val repository = QuoteHistoryRepository()
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), today = { 100L })
+        val overdue = repository.save(name = "Vencido", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 99L)
+
+        viewModel.copyQuoteToClipboard(overdue)
+
+        assertEquals(PendingExport(ClientExport.COPY, listOf(overdue)), viewModel.pendingExport.value)
+        assertNull(viewModel.copiedId.value, "segurado: nada foi copiado ainda")
+    }
+
+    @Test
+    fun changingTheDateFromTheWarningOpensTheDeliveryDialogInsteadOfSending() {
+        val repository = QuoteHistoryRepository()
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), today = { 100L })
+        val overdue = repository.save(name = "Vencido", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 99L)
+        viewModel.exportPdf(overdue)
+
+        viewModel.changeDateOfPendingExport()
+        viewModel.saveDeliveryDate(107L)
+
+        assertNull(viewModel.pendingExport.value)
+        assertNull(viewModel.deliveryDateEditing.value)
+        assertEquals(107L, repository.savedQuotes.value.first { it.id == overdue.id }.deliveryDateEpochDay)
+    }
+
+    @Test
+    fun batchExportIsHeldWhenAnySelectedQuoteIsOverdue() {
+        val repository = QuoteHistoryRepository()
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), today = { 100L })
+        val onTime = repository.save(name = "No prazo", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 120L)
+        val overdue = repository.save(name = "Vencido", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 99L)
+        viewModel.toggleSelection(onTime.id)
+        viewModel.toggleSelection(overdue.id)
+
+        viewModel.exportSelectedPdf()
+
+        assertEquals(ClientExport.SELECTED_PDF, viewModel.pendingExport.value?.export)
+        assertEquals(2, viewModel.selectedIds.value.size, "a seleção continua, pra poder cancelar e ajustar")
+
+        viewModel.dismissPendingExport()
+        assertNull(viewModel.pendingExport.value)
     }
 
     @Test

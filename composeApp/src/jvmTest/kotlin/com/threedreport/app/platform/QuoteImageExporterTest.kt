@@ -34,4 +34,21 @@ class QuoteImageExporterTest {
 
         assertEquals(1080, ImageIO.read(ByteArrayInputStream(bytes)).width)
     }
+
+    @Test
+    fun deliveryDateWithUnitPriceStillRendersASquarePng() {
+        // Preço unitário e prazo juntos são o caso de mais linhas: a faixa cresce em vez de estourar.
+        val bytes = renderQuoteImage(
+            title = "Chaveiro",
+            priceText = "R$ 80,00",
+            unitPriceText = "10 peças · R$ 8,00 cada",
+            photoBytes = null,
+            brandText = "Minha marca",
+            deliveryText = "Entrega até 30/09",
+        )
+
+        val image = ImageIO.read(ByteArrayInputStream(bytes))
+        assertEquals(1080, image.width)
+        assertEquals(1080, image.height)
+    }
 }

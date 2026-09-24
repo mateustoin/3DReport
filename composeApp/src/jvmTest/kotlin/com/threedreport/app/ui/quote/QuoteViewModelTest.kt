@@ -438,4 +438,46 @@ class QuoteViewModelTest {
         assertEquals(QuoteInputState(), viewModel.input.value)
         assertEquals(SaveQuoteFormState(), viewModel.saveForm.value)
     }
+
+    @Test
+    fun deliveryDateIsSavedAndRestoredOnEditButNotCopiedOnDuplicate() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.setDeliveryDate(20_700L)
+
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.first()
+        assertEquals(20_700L, saved.deliveryDateEpochDay)
+
+        viewModel.loadForEditing(saved)
+        assertEquals(20_700L, viewModel.saveForm.value.deliveryDateEpochDay)
+
+        // A data de outro pedido, provavelmente já vencida, não pode ir parar num orçamento novo.
+        viewModel.duplicateForNewQuote(saved)
+        assertEquals(null, viewModel.saveForm.value.deliveryDateEpochDay)
+    }
+
+    @Test
+    fun queueHintCountsApprovedAndPrintingButNotTheQuoteBeingEdited() {
+        val historyRepository = QuoteHistoryRepository()
+        val printerRepository = PrinterRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), printerRepository, SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
+        val printer = printerRepository.printers.value.first()
+        viewModel.selectPrinter(printer.id)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("120")
+        viewModel.saveCurrentQuote()
+        viewModel.saveCurrentQuote()
+        val (approved, editing) = historyRepository.savedQuotes.value
+        historyRepository.updateStatus(approved.id, com.threedreport.core.model.OrderStatus.APROVADO)
+        historyRepository.updateStatus(editing.id, com.threedreport.core.model.OrderStatus.EM_IMPRESSAO)
+
+        val ahead = viewModel.queueAheadOf(printer, historyRepository.savedQuotes.value, editingQuoteId = editing.id)
+
+        assertEquals(1, ahead?.queuedQuoteCount)
+        assertEquals(120.0, ahead?.queuedMinutes)
+        assertEquals(null, viewModel.queueAheadOf(printer, emptyList(), editingQuoteId = null), "fila vazia não mostra dica")
+    }
 }

@@ -37,6 +37,7 @@ actual class QuoteHistoryRepository actual constructor() {
         client: Client?,
         printSettings: PrintSettings?,
         shippingCost: Double,
+        deliveryDateEpochDay: Long?,
     ): SavedQuote {
         val id = Uuid.random().toString()
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
@@ -54,6 +55,7 @@ actual class QuoteHistoryRepository actual constructor() {
             client = client,
             printSettings = printSettings,
             shippingCost = shippingCost,
+            deliveryDateEpochDay = deliveryDateEpochDay,
         )
         state.value = state.value + saved
         persist()
@@ -73,6 +75,7 @@ actual class QuoteHistoryRepository actual constructor() {
         client: Client?,
         printSettings: PrintSettings?,
         shippingCost: Double,
+        deliveryDateEpochDay: Long?,
     ): SavedQuote? {
         val existing = state.value.find { it.id == id } ?: return null
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
@@ -89,6 +92,7 @@ actual class QuoteHistoryRepository actual constructor() {
             lastEditedEpochMillis = System.currentTimeMillis(),
             printSettings = printSettings,
             shippingCost = shippingCost,
+            deliveryDateEpochDay = deliveryDateEpochDay,
         )
         // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
         // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).
@@ -147,6 +151,11 @@ actual class QuoteHistoryRepository actual constructor() {
 
     actual fun updatePrintSettings(id: String, printSettings: PrintSettings?) {
         state.value = state.value.map { if (it.id == id) it.copy(printSettings = printSettings) else it }
+        persist()
+    }
+
+    actual fun updateDeliveryDate(id: String, deliveryDateEpochDay: Long?) {
+        state.value = state.value.map { if (it.id == id) it.copy(deliveryDateEpochDay = deliveryDateEpochDay) else it }
         persist()
     }
 

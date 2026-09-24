@@ -2,6 +2,8 @@ package com.threedreport.app.platform
 
 import androidx.compose.ui.graphics.toAwtImage
 import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.app.ui.history.deliveryDateText
+import com.threedreport.app.ui.history.printTimeText
 import com.threedreport.core.model.Currency
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
@@ -33,6 +35,7 @@ actual fun renderSavedQuotesPdf(
     watermarkText: String?,
     footerText: String?,
     currency: Currency,
+    options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
         val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
@@ -41,7 +44,7 @@ actual fun renderSavedQuotesPdf(
         items.forEach { item ->
             val page = PDPage(PDRectangle.A4)
             document.addPage(page)
-            drawQuotePage(document, page, titleFont, bodyFont, item, watermarkText, footerText, currency)
+            drawQuotePage(document, page, titleFont, bodyFont, item, watermarkText, footerText, currency, options)
         }
 
         val output = ByteArrayOutputStream()
@@ -65,6 +68,7 @@ private fun drawQuotePage(
     watermarkText: String?,
     footerText: String?,
     currency: Currency,
+    options: PdfLayoutOptions,
 ) {
     val margin = 50f
     val footerReserve = 50f
@@ -129,6 +133,24 @@ private fun drawQuotePage(
             content.endText()
             cursorY -= 18f
         }
+
+        // Em destaque, e não como mais uma linha da lista: é o que o cliente usa pra decidir se
+        // autoriza a fabricação (pedido do teste externo, decisão 83).
+        savedQuote.deliveryDateText()?.let { text ->
+            cursorY -= 4f
+            cursorY = drawHighlightBand(content, titleFont, text, margin, cursorY, page.mediaBox.width - margin * 2)
+            // O cursor é linha de base: a próxima linha precisa descer a altura dela, não só um respiro.
+            cursorY -= 20f
+        }
+
+        if (options.showPrintTime) {
+            content.beginText()
+            content.setFont(bodyFont, 11f)
+            content.newLineAtOffset(margin, cursorY)
+            content.showText(savedQuote.printTimeText())
+            content.endText()
+            cursorY -= 18f
+        }
         cursorY -= 6f
 
         val bufferedImage = decodePhotoAsBufferedImage(item.photoBytes)
@@ -160,6 +182,7 @@ actual fun renderCatalogPdf(
     watermarkText: String?,
     footerText: String?,
     currency: Currency,
+    options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
         val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
@@ -250,6 +273,40 @@ private fun drawCatalogCell(
     content.newLineAtOffset(cellX, textY)
     content.showText(savedQuote.totalWithServices.toCurrencyText(currency))
     content.endText()
+}
+
+/**
+ * Faixa de fundo âmbar claro com um filete âmbar à esquerda (a cor de destaque do app, decisão 35)
+ * e [text] em negrito por cima. Devolve o novo cursor, logo abaixo da faixa.
+ */
+private fun drawHighlightBand(
+    content: PDPageContentStream,
+    font: PDType1Font,
+    text: String,
+    x: Float,
+    top: Float,
+    width: Float,
+): Float {
+    val fontSize = 13f
+    val height = 26f
+    val bottom = top - height
+
+    content.saveGraphicsState()
+    content.setNonStrokingColor(Color(0xFF, 0xF3, 0xD6))
+    content.addRect(x, bottom, width, height)
+    content.fill()
+    content.setNonStrokingColor(Color(0xF5, 0xA6, 0x23))
+    content.addRect(x, bottom, 4f, height)
+    content.fill()
+    content.setNonStrokingColor(Color(0x33, 0x2A, 0x14))
+    content.beginText()
+    content.setFont(font, fontSize)
+    content.newLineAtOffset(x + 12f, bottom + (height - fontSize) / 2f + 3f)
+    content.showText(text)
+    content.endText()
+    content.restoreGraphicsState()
+
+    return bottom
 }
 
 /** Texto grande, cinza claro e diagonal, centralizado na página, por cima do resto do conteúdo. */

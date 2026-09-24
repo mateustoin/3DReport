@@ -11,8 +11,20 @@ import javax.imageio.ImageIO
 private const val SIZE = 1080
 private const val MARGIN = 64
 
-/** Faixa inferior com nome e preço; o resto da imagem é a foto. */
-private const val BAND_HEIGHT = 300
+/**
+ * Altura mínima da faixa inferior com nome e preço; o resto da imagem é a foto. Cresce quando há
+ * linhas a mais (preço unitário e prazo juntos), pra o texto nunca encostar na borda de baixo.
+ */
+private const val MIN_BAND_HEIGHT = 300
+
+/** Espaço livre entre a última linha de texto e a borda de baixo da faixa. */
+private const val BAND_BOTTOM_PADDING = 56
+
+// Distância entre linhas de base: título → preço → preço unitário → prazo.
+private const val TITLE_OFFSET = 90
+private const val PRICE_OFFSET = 96
+private const val UNIT_PRICE_OFFSET = 52
+private const val DELIVERY_OFFSET = 56
 
 // Mesma paleta do app (azul petróleo + âmbar, decisão 35), pra imagem e interface falarem a mesma
 // língua visual sem depender de nenhum recurso externo.
@@ -27,6 +39,7 @@ actual fun renderQuoteImage(
     unitPriceText: String?,
     photoBytes: ByteArray?,
     brandText: String?,
+    deliveryText: String?,
 ): ByteArray {
     val image = BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_RGB)
     val graphics = image.createGraphics()
@@ -37,42 +50,55 @@ actual fun renderQuoteImage(
     graphics.color = BACKGROUND
     graphics.fillRect(0, 0, SIZE, SIZE)
 
+    val lastBaseline = TITLE_OFFSET + PRICE_OFFSET +
+        (if (unitPriceText != null) UNIT_PRICE_OFFSET else 0) +
+        (if (deliveryText != null) DELIVERY_OFFSET else 0)
+    val bandHeight = maxOf(MIN_BAND_HEIGHT, lastBaseline + BAND_BOTTOM_PADDING)
+
     // A mesma decodificação por Skia usada no PDF (decisão 65): o ImageIO do Java devolve null em
     // silêncio pra WebP, e a foto sumiria da imagem sem nenhum erro aparecer.
     val photo = photoBytes?.let { runCatching { decodeImageBitmap(it).toAwtImage() }.getOrNull() }
     if (photo != null) {
-        drawPhotoFilling(graphics, photo, SIZE - BAND_HEIGHT)
+        drawPhotoFilling(graphics, photo, SIZE - bandHeight)
         graphics.color = BACKGROUND
-        graphics.fillRect(0, SIZE - BAND_HEIGHT, SIZE, BAND_HEIGHT)
+        graphics.fillRect(0, SIZE - bandHeight, SIZE, bandHeight)
         graphics.color = ACCENT
-        graphics.fillRect(0, SIZE - BAND_HEIGHT, SIZE, 6)
+        graphics.fillRect(0, SIZE - bandHeight, SIZE, 6)
     }
 
     // Sem foto não há o que separar: a faixa viraria um retângulo vazio com uma linha solta no
     // meio do nada, então o texto vai centralizado e a arte fica com cara de proposital.
-    val bandTop = if (photo != null) SIZE - BAND_HEIGHT else (SIZE - BAND_HEIGHT) / 2
-    var cursorY = bandTop + 90
+    val bandTop = if (photo != null) SIZE - bandHeight else (SIZE - bandHeight) / 2
+    var cursorY = bandTop + TITLE_OFFSET
     graphics.color = TEXT
     graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 46)
     graphics.drawString(fitToWidth(graphics, title, SIZE - MARGIN * 2), MARGIN, cursorY)
 
-    cursorY += 96
+    cursorY += PRICE_OFFSET
     graphics.color = ACCENT
     graphics.font = Font(Font.SANS_SERIF, Font.BOLD, 84)
     graphics.drawString(priceText, MARGIN, cursorY)
 
     if (unitPriceText != null) {
-        cursorY += 52
+        cursorY += UNIT_PRICE_OFFSET
         graphics.color = TEXT_MUTED
         graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 34)
         graphics.drawString(unitPriceText, MARGIN, cursorY)
+    }
+
+    // Em âmbar e negrito, mas menor que o preço: é a segunda coisa que o cliente procura.
+    if (deliveryText != null) {
+        cursorY += DELIVERY_OFFSET
+        graphics.color = ACCENT
+        graphics.font = Font(Font.SANS_SERIF, Font.BOLD, 38)
+        graphics.drawString(fitToWidth(graphics, deliveryText, SIZE - MARGIN * 2), MARGIN, cursorY)
     }
 
     if (!brandText.isNullOrBlank()) {
         graphics.color = TEXT_MUTED
         graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 30)
         val width = graphics.fontMetrics.stringWidth(brandText)
-        val brandY = if (photo != null) SIZE - BAND_HEIGHT - 32 else SIZE - MARGIN
+        val brandY = if (photo != null) SIZE - bandHeight - 32 else SIZE - MARGIN
         graphics.drawString(brandText, SIZE - MARGIN - width, brandY)
     }
 

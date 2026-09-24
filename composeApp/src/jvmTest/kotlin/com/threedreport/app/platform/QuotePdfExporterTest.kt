@@ -440,4 +440,44 @@ class QuotePdfExporterTest {
         assertTrue(text.contains("16.19"))
         assertFalse(text.contains("16,19"))
     }
+
+    private fun textOf(pdfBytes: ByteArray): String = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+    @Test
+    fun deliveryDateIsPrintedWhenPresent() {
+        val withDeadline = savedQuote.copy(deliveryDateEpochDay = java.time.LocalDate.of(2026, 9, 30).toEpochDay())
+
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withDeadline, null)), null, null))
+
+        assertTrue(text.contains("Prazo de entrega: até 30/09/2026"))
+    }
+
+    @Test
+    fun withoutDeadlineAndPrintTimeThePdfHasNeitherLine() {
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null))
+
+        assertFalse(text.contains("Prazo"))
+        assertFalse(text.contains("Tempo de impressão"))
+    }
+
+    @Test
+    fun printTimeAppearsOnlyWhenTurnedOn() {
+        val items = listOf(QuoteExportItem(savedQuote, null))
+
+        val withTime = textOf(renderSavedQuotesPdf(items, null, null, options = PdfLayoutOptions(showPrintTime = true)))
+        val withoutTime = textOf(renderSavedQuotesPdf(items, null, null))
+
+        assertTrue(withTime.contains("Tempo de impressão: 3 h 10 min"))
+        assertFalse(withoutTime.contains("Tempo de impressão"))
+    }
+
+    @Test
+    fun catalogNeverShowsTheDeliveryDate() {
+        // O catálogo é vitrine: prazo é do pedido, não do produto.
+        val withDeadline = savedQuote.copy(deliveryDateEpochDay = java.time.LocalDate.of(2026, 9, 30).toEpochDay())
+
+        val text = textOf(renderCatalogPdf(listOf(QuoteExportItem(withDeadline, null)), null, null))
+
+        assertFalse(text.contains("Prazo"))
+    }
 }
