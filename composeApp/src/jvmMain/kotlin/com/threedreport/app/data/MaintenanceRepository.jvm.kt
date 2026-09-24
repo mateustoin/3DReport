@@ -23,16 +23,9 @@ actual class MaintenanceRepository actual constructor() {
 
     actual fun deleteComponent(id: String) = edit { current -> current.copy(components = current.components.filterNot { it.id == id }) }
 
-    actual fun logService(entry: MaintenanceLogEntry, printerHoursNow: Double) = edit { current ->
-        current.copy(
-            log = current.log + entry,
-            components = current.components.map {
-                if (it.id == entry.componentId) it.copy(hoursAtLastService = printerHoursNow) else it
-            },
-        )
-    }
+    actual fun logService(entry: MaintenanceLogEntry, printerHoursNow: Double) = edit { it.withService(entry, printerHoursNow) }
 
-    actual fun deleteLogEntry(id: String) = edit { current -> current.copy(log = current.log.filterNot { it.id == id }) }
+    actual fun deleteLogEntry(id: String) = edit { it.withoutLogEntry(id) }
 
     actual fun addManualUsage(entry: ManualUsageEntry) = edit { it.copy(manualUsage = it.manualUsage + entry) }
 

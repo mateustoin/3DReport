@@ -24,6 +24,8 @@ expect class MaintenanceRepository() {
      * [printerHoursNow] (o total de horas da impressora agora), na mesma gravação.
      */
     fun logService(entry: MaintenanceLogEntry, printerHoursNow: Double)
+
+    /** Tira do diário; sendo a manutenção mais recente de um componente, desfaz o zerar dele. */
     fun deleteLogEntry(id: String)
     fun addManualUsage(entry: ManualUsageEntry)
     fun deleteManualUsage(id: String)

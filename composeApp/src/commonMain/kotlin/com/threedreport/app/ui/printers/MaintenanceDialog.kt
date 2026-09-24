@@ -111,6 +111,13 @@ fun MaintenanceDialog(printer: PrinterProfile, viewModel: PrinterListViewModel, 
                     components = maintenance.components,
                     onAdd = { date, description, componentId -> viewModel.logService(printer.id, date, description, componentId) },
                 )
+                if (maintenance.log.any { it.componentId != null }) {
+                    Text(
+                        "Registrou por engano? Excluir a manutenção mais recente de um componente devolve o contador dele pra onde estava.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 val componentNames = maintenance.components.associate { it.id to it.name }
                 maintenance.log.sortedByDescending { it.dateEpochDay }.forEach { entry ->
                     EntryRow(

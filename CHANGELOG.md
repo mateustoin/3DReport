@@ -5,6 +5,16 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.41.1] - 2026-09-24
+
+### Corrigido
+- **Dá pra desfazer um "Feito hoje" clicado por engano.** Antes, zerar o
+  contador de um componente era definitivo: excluir a entrada do diário não
+  devolvia as horas, e o próximo aviso de manutenção chegava atrasado.
+  Agora, excluir a manutenção mais recente de um componente devolve o
+  contador pra onde estava. Manutenções registradas na 1.41.0 só saem do
+  diário.
+
 ## [1.41.0] - 2026-09-24
 
 ### Adicionado

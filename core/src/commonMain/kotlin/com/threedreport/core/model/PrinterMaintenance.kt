@@ -40,6 +40,10 @@ data class MaintenanceComponent(
  * @property dateEpochDay data em dias desde 01/01/1970 (mesma unidade do prazo de entrega).
  * @property componentId componente que esta manutenção zerou, ou `null` quando é só um registro
  *   (ex.: "Nivelada a mesa" sem componente cadastrado).
+ * @property previousHoursAtLastService onde o contador de [componentId] estava antes desta
+ *   manutenção zerá-lo. É o que permite desfazer: excluir a entrada mais recente de um componente
+ *   devolve o contador a esse valor, então um "Feito hoje" clicado por engano não apaga as horas
+ *   acumuladas. `null` sem componente e em entradas gravadas antes deste campo existir.
  */
 @Serializable
 data class MaintenanceLogEntry(
@@ -48,6 +52,7 @@ data class MaintenanceLogEntry(
     val dateEpochDay: Long,
     val description: String,
     val componentId: String? = null,
+    val previousHoursAtLastService: Double? = null,
 ) {
     init {
         require(description.isNotBlank()) { "description não pode ser vazia" }
@@ -87,6 +92,38 @@ data class PrinterMaintenance(
         log = log.filter { it.printerId == printerId },
         manualUsage = manualUsage.filter { it.printerId == printerId },
     )
+
+    /**
+     * Grava [entry] e, se ela tiver componente, recomeça o contador dele em [printerHoursNow],
+     * guardando na entrada onde o contador estava (ver [MaintenanceLogEntry.previousHoursAtLastService]).
+     */
+    fun withService(entry: MaintenanceLogEntry, printerHoursNow: Double): PrinterMaintenance {
+        val component = components.find { it.id == entry.componentId }
+        return copy(
+            log = log + entry.copy(previousHoursAtLastService = component?.hoursAtLastService),
+            components = components.map { if (it.id == component?.id) it.copy(hoursAtLastService = printerHoursNow) else it },
+        )
+    }
+
+    /**
+     * Tira a entrada [id] do diário. Se ela for a manutenção **mais recente** do componente (pela
+     * ordem de registro, não pela data, que pode ter sido escolhida no passado), o contador volta
+     * pra onde estava antes dela. Uma entrada mais antiga só sai do diário: o contador atual já
+     * veio de uma manutenção posterior.
+     */
+    fun withoutLogEntry(id: String): PrinterMaintenance {
+        val entry = log.find { it.id == id } ?: return this
+        val previous = entry.previousHoursAtLastService
+        val isLatestForComponent = entry.componentId != null && log.last { it.componentId == entry.componentId }.id == id
+        return copy(
+            log = log.filterNot { it.id == id },
+            components = if (previous != null && isLatestForComponent) {
+                components.map { if (it.id == entry.componentId) it.copy(hoursAtLastService = previous) else it }
+            } else {
+                components
+            },
+        )
+    }
 
     /** O mesmo conjunto sem nada de [printerId]: usado quando a impressora é excluída. */
     fun withoutPrinter(printerId: String) = PrinterMaintenance(
