@@ -71,6 +71,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 **Catálogos**
 - Cadastro de filamentos — marca, tipo de material (com densidade sugerida), várias cores e controle manual de estoque por cor
 - Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento), com catálogo pré-cadastrado das principais marcas pra escolher
+- Manutenção por impressora: cada componente com o seu intervalo em horas (trocar bico, lubrificar eixos), aviso quando está perto ou vencido, diário do que foi feito e horas de uso fora de orçamento (calibração, reimpressão)
 
 **Personalização do PDF**
 - Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome

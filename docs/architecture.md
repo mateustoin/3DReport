@@ -68,8 +68,9 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   `negotiatedSalePrice`, o preço fechado com o cliente vira o `salePrice` e o
   de tabela fica em `Quote.tableSalePrice` (decisões 79 e 84).
 - `report/`: agregações puras sobre o histórico (`QuoteReport` pro
-  Dashboard, `PrintQueueReport` pra fila de cada impressora), mesmo estilo do
-  `PricingCalculator`.
+  Dashboard, `PrintQueueReport` pra fila de cada impressora,
+  `MaintenanceReport` pras horas de uso e a situação de cada componente de
+  manutenção), mesmo estilo do `PricingCalculator`.
 - `slicer/` e `stl/`: leitura dos metadados de G-code (consumo, tempo,
   miniatura, configurações de impressão) e da malha STL (parser e análise de
   complexidade), ambos sem dependência de plataforma.
@@ -112,8 +113,10 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   - **Filamentos** (`ui/filaments`), **Impressoras** (`ui/printers`) e
     **Serviços** (`ui/services`): catálogos usados no Orçamento, cada um com
     lista + formulário. Filamentos têm marca, tipo, várias cores e estoque
-    manual por cor; Impressoras têm presets de fabricante e mostram a fila de
-    impressão de cada máquina. Em Serviços, o valor é só uma sugestão
+    manual por cor; Impressoras têm presets de fabricante, mostram a fila de
+    impressão de cada máquina e abrem a manutenção dela (`MaintenanceDialog`:
+    componentes com intervalo, diário, horas avulsas; `PrinterMaintenance`
+    em `maintenance.json`, decisão 96). Em Serviços, o valor é só uma sugestão
     opcional e cada um tem um padrão "por peça / uma vez no pedido": o que
     vale é o digitado no orçamento (`ServiceInput`), congelado em
     `QuoteService` (decisão 92).

@@ -49,6 +49,7 @@ import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.OnboardingRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -129,6 +130,7 @@ private enum class AppTab(val label: String) {
 fun App() {
     val filamentRepository = remember { FilamentRepository() }
     val printerRepository = remember { PrinterRepository() }
+    val maintenanceRepository = remember { MaintenanceRepository() }
     val settingsRepository = remember { SettingsRepository() }
     val historyRepository = remember { QuoteHistoryRepository() }
     val brandingRepository = remember { BrandingRepository() }
@@ -149,7 +151,7 @@ fun App() {
     val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository, currencyRepository) }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
-    val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository) }
+    val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, maintenanceRepository) }
     val serviceListViewModel = remember { ServiceListViewModel(serviceRepository) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
     val brandingViewModel = remember { BrandingViewModel(brandingRepository, templateRepository, currency = { currencyRepository.currency.value }) }

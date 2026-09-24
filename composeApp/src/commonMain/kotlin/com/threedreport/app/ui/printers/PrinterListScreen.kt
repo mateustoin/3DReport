@@ -30,6 +30,9 @@ import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.minutesToHoursText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.report.ComponentStatus
+import com.threedreport.core.report.MaintenanceReport
+import com.threedreport.core.report.MaintenanceState
 import com.threedreport.core.report.PrinterQueueEntry
 
 /** Tela de Impressoras: perfis salvos, escolhidos depois na tela de Orçamento. */
@@ -38,7 +41,9 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
     val printers by viewModel.printers.collectAsState()
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val form by viewModel.form.collectAsState()
+    val maintenance by viewModel.maintenance.collectAsState()
     var pendingDelete by remember { mutableStateOf<PrinterProfile?>(null) }
+    var maintenanceFor by remember { mutableStateOf<PrinterProfile?>(null) }
     var showPresetPicker by remember { mutableStateOf(false) }
     val queueByPrinterId = remember(printers, savedQuotes) {
         viewModel.printQueue(printers, savedQuotes).associateBy { it.printer.id }
@@ -58,6 +63,8 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
             PrinterRow(
                 printer = printer,
                 queueEntry = queueByPrinterId[printer.id],
+                maintenanceStatuses = viewModel.componentStatuses(printer.id, savedQuotes, maintenance),
+                onMaintenance = { maintenanceFor = printer },
                 onEdit = { viewModel.startEdit(printer) },
                 onDelete = { pendingDelete = printer },
             )
@@ -83,13 +90,18 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
     pendingDelete?.let { printer ->
         ConfirmDialog(
             title = "Excluir impressora?",
-            message = "\"${printer.name}\" será removida do catálogo. Essa ação não pode ser desfeita.",
+            message = "\"${printer.name}\" será removida do catálogo, junto com os componentes, o diário de manutenção " +
+                "e as horas avulsas dela. Essa ação não pode ser desfeita.",
             onConfirm = {
                 viewModel.delete(printer.id)
                 pendingDelete = null
             },
             onDismiss = { pendingDelete = null },
         )
+    }
+
+    maintenanceFor?.let { printer ->
+        MaintenanceDialog(printer = printer, viewModel = viewModel, onDismiss = { maintenanceFor = null })
     }
 
     if (showPresetPicker) {
@@ -104,14 +116,21 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
 }
 
 @Composable
-private fun PrinterRow(printer: PrinterProfile, queueEntry: PrinterQueueEntry?, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun PrinterRow(
+    printer: PrinterProfile,
+    queueEntry: PrinterQueueEntry?,
+    maintenanceStatuses: List<ComponentStatus>,
+    onMaintenance: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(printer.name, style = MaterialTheme.typography.titleMedium)
                 Text(
                     "${printer.printerPowerWatts.toInt()} W · manutenção ${printer.maintenanceCostPerHour.toMoney()}/h · " +
@@ -127,13 +146,36 @@ private fun PrinterRow(printer: PrinterProfile, queueEntry: PrinterQueueEntry?, 
                     },
                     style = MaterialTheme.typography.bodySmall,
                 )
+                MaintenanceLine(maintenanceStatuses)
             }
             Row {
+                TextButton(onClick = onMaintenance) { Text("Manutenção") }
                 TextButton(onClick = onEdit) { Text("Editar") }
                 TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
             }
         }
     }
+}
+
+/**
+ * O que a manutenção está pedindo, pelo componente mais urgente: vencido em vermelho, perto em
+ * âmbar. Em dia, fica discreto e só diz qual é o próximo.
+ */
+@Composable
+private fun MaintenanceLine(statuses: List<ComponentStatus>) {
+    val urgent = MaintenanceReport.mostUrgent(statuses)
+    val overdueCount = statuses.count { it.state == MaintenanceState.OVERDUE }
+    val (text, color) = when {
+        urgent == null -> "Manutenção: nenhum componente cadastrado" to MaterialTheme.colorScheme.onSurfaceVariant
+        urgent.state == MaintenanceState.OK ->
+            "Manutenção em dia · próxima: ${urgent.component.name}, ${urgent.remainingText()}" to MaterialTheme.colorScheme.onSurfaceVariant
+        else -> {
+            val others = overdueCount - (if (urgent.state == MaintenanceState.OVERDUE) 1 else 0)
+            val suffix = if (others > 0) " (e mais $others vencida${if (others > 1) "s" else ""})" else ""
+            "Manutenção: ${urgent.component.name}, ${urgent.remainingText()}$suffix" to urgent.state.color()
+        }
+    }
+    Text(text, style = MaterialTheme.typography.bodySmall, color = color)
 }
 
 @Composable

@@ -350,9 +350,15 @@ uma conta incompleta mente com mais confiança.
   decisão 84). Texto original: item já registrado (ver
   "Dashboard/relatório simples" na seção 1) — agendado aqui, por ser a mesma
   leva de leitura do negócio e reaproveitar a mesma agregação.
-- [ ] **Manutenção por impressora** (promovido de "Fora das levas" em
-  2026-09-23, decisão 83, depois de pedido em teste externo por João
-  Antonio). Junta dois itens que já estavam registrados em "Produção e
+- [x] **Manutenção por impressora** (decisão 96, 2026-09-24; promovido de
+  "Fora das levas" em 2026-09-23, decisão 83, depois de pedido em teste
+  externo por João Antonio). **Feito:** botão "Manutenção" em cada
+  impressora da aba Impressoras, com componentes (cada um com o seu
+  intervalo em horas e barra de progresso), diário (registrar com
+  componente zera o contador dele) e horas avulsas; a linha da impressora
+  mostra o componente mais urgente, em âmbar quando perto e em vermelho
+  quando vencido. As horas vêm dos pedidos Prontos/Entregues daquela
+  impressora mais as avulsas. Texto original abaixo. Junta dois itens que já estavam registrados em "Produção e
   precificação" (seção 1): o **lembrete por horas acumuladas** e o
   **histórico/diário de manutenção**. Continuam lá descritos; aqui entra o
   agendamento e os refinamentos que o teste externo trouxe:
@@ -977,14 +983,16 @@ implementação.
   configurado, o valor/percentual do sinal e se já foi pago, sem virar um
   controle financeiro completo (não é objetivo do app virar um sistema de
   contas a receber).
-- [ ] **Lembrete de manutenção de impressora por horas acumuladas**
+- [x] **Lembrete de manutenção de impressora por horas acumuladas** (feito
+  na decisão 96, 2026-09-24, com um intervalo por componente)
   (levantado em 2026-09-19, pesquisa de concorrentes — FoxTrack tem
   agendamento de manutenção). `PrinterProfile` já registra o custo de
   manutenção da máquina; falta um aviso quando o total de horas impressas
   (somadas pelos orçamentos daquela impressora) passar de um limiar
   configurável, lembrando de fazer a manutenção preventiva. **Agendado na
   leva 6** junto do item abaixo, com alertas por componente (decisão 83).
-- [ ] **Histórico de manutenção/alterações por impressora** (levantado pelo
+- [x] **Histórico de manutenção/alterações por impressora** (feito na
+  decisão 96, 2026-09-24, como "Diário de manutenção"; levantado pelo
   responsável do projeto, 2026-09-21). Um campo discreto no cadastro de
   cada impressora (ex.: um botão/link "Histórico de manutenção" na linha
   da impressora, ao lado de "Editar"/"Excluir") que abre uma janela com uma

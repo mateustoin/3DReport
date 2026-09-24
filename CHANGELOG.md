@@ -5,6 +5,25 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.41.0] - 2026-09-24
+
+### Adicionado
+- **Manutenção por impressora.** Cada impressora da aba Impressoras ganhou o
+  botão "Manutenção":
+  - **Componentes com o próprio intervalo**, como trocar o bico a cada 200 h
+    ou lubrificar os eixos a cada 100 h, com uma barra mostrando quanto já
+    rodou. A linha da impressora avisa o que está perto (em âmbar) ou vencido
+    (em vermelho). "Feito hoje" registra e recomeça o contador.
+  - **Diário de manutenção**, com o que foi trocado, ajustado ou consertado e
+    quando.
+  - **Horas fora de orçamento**: calibração, reimpressão de peça que falhou e
+    uso próprio também gastam a máquina. Lance essas horas pra o aviso não
+    chegar atrasado.
+
+  As horas de uso vêm dos pedidos Prontos ou Entregues naquela impressora. Se
+  a máquina já rodava antes, informe ao cadastrar o componente quantas horas
+  se passaram desde a última vez.
+
 ## [1.40.0] - 2026-09-24
 
 ### Alterado
