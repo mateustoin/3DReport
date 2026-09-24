@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-Projeto **Kotlin Multiplatform** com dois módulos Gradle:
+Projeto **Kotlin Multiplatform** com três módulos Gradle:
 
 ```
 3DReport/
@@ -24,18 +24,25 @@ Projeto **Kotlin Multiplatform** com dois módulos Gradle:
 │     │  ├─ platform/          # actual fun: java.awt.FileDialog, Skia, java.time
 │     │  └─ Main.kt            # entrada do desktop (janela)
 │     └─ jvmTest/              # testes da persistência (kotlin.test)
+├─ web/                       # calculadora do site: fachada JS sobre o core (decisão 98)
+│  └─ src/jsMain/kotlin/com/threedreport/web/WebCalculator.kt
+├─ site/                      # site estático (GitHub Pages); site/assets/calc/ é gerado pelo :web
 ├─ docs/                      # documentação
 ├─ gradle/libs.versions.toml  # catálogo de versões
 ├─ LICENSE
 └─ README.md
 ```
 
-Dependência: `composeApp → core`. O `core` nunca depende da UI.
+Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da UI.
 
 ## Módulos
 
 ### `core`
-- Kotlin puro, todo o código em `commonMain` — roda em qualquer alvo. Única
+- Kotlin puro, todo o código em `commonMain`. Alvos declarados: **JVM** (app
+  desktop) e **JS** (calculadora do site); os testes de `commonTest` rodam nos
+  dois (`./gradlew :core:allTests`). Por isso nada de API só da JVM no
+  `commonMain`: nem `java.*`, nem `putIfAbsent`, nem flags de regex embutidas
+  como `(?i)` (o JavaScript não aceita; use `RegexOption`). Única
   dependência externa: `kotlinx.serialization` (anotação `@Serializable` nos
   modelos — usada pela persistência do `composeApp`, não pelo `core` em si).
 - `model/`: classes imutáveis (`data class`) que validam suas entradas no `init`
@@ -75,6 +82,18 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   miniatura, configurações de impressão) e da malha STL (parser e análise de
   complexidade), ambos sem dependência de plataforma.
 - Alvo atual: `jvm()`.
+
+### `web`
+- Calculadora do site (`site/calculadora.html`, decisão 98). Kotlin/JS
+  (`js { browser() }`), gera um bundle UMD de ~75 KB que expõe o objeto global
+  `web` com `calculateQuote(...)`.
+- `WebCalculator.kt` é só uma **fachada**: recebe números primitivos (peso em
+  gramas, percentuais de 0 a 100), monta `Filament`/`PrintJob`/`PrinterProfile`/
+  `PricingSettings`/`SalesChannel` e chama `PricingCalculator.calculate`. Não
+  faz conta própria; a página (`site/assets/calculadora.js`) também não. Assim
+  existe uma fórmula só pro app e pro site.
+- `./gradlew :web:syncSiteCalculator` copia o bundle pra `site/assets/calc/`
+  (fora do git). O workflow `pages.yml` roda isso antes de publicar.
 
 ### `composeApp`
 - Compose Multiplatform + Material 3.

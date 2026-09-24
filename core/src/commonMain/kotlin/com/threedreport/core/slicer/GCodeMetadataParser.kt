@@ -63,6 +63,10 @@ data class GCodeThumbnail(val bytes: ByteArray, val fileExtension: String)
  * miniatura do modelo. Não interpreta nenhum comando de movimento, só os
  * comentários de texto.
  */
+// Opções em vez de flags embutidas como "(?im)", que o JavaScript não aceita: o `core` também
+// roda no navegador (calculadora do site, decisão 98).
+private val IGNORE_CASE_MULTILINE = setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)
+
 object GCodeMetadataParser {
 
     @OptIn(ExperimentalEncodingApi::class)
@@ -82,11 +86,11 @@ object GCodeMetadataParser {
     // PrusaSlicer/Bambu Studio/OrcaSlicer, ex.: "; filament used [mm] = 1234.56"
     // ou "; total filament length [mm] : 1234.56" (múltiplos extrusores separados por vírgula).
     private val filamentMillimetersRegex =
-        Regex("""(?im)^;\s*(?:total\s+)?filament (?:used|length)\s*\[mm]\s*[:=]\s*(.+)$""")
+        Regex("""^;\s*(?:total\s+)?filament (?:used|length)\s*\[mm\]\s*[:=]\s*(.+)$""", IGNORE_CASE_MULTILINE)
 
     // Cura, ex.: ";Filament used: 2.5m" (já em metros; múltiplos extrusores separados por vírgula).
     private val filamentMetersRegex =
-        Regex("""(?im)^;\s*filament used\s*[:=]\s*(.+)$""")
+        Regex("""^;\s*filament used\s*[:=]\s*(.+)$""", IGNORE_CASE_MULTILINE)
 
     private fun parseFilamentLengthMeters(text: String): Double? {
         filamentMillimetersRegex.find(text)?.let { match ->
@@ -105,10 +109,10 @@ object GCodeMetadataParser {
     // agora aceita o rótulo no meio, e usa o "total estimated time", que inclui o preparo da máquina
     // (é o tempo em que ela fica ocupada).
     private val durationLabelRegex =
-        Regex("""(?im)^;.*?\b(?:estimated printing time|total estimated time)\s*(?:\([^)]*\))?\s*[:=]\s*([^;\n]+)""")
+        Regex("""^;.*?\b(?:estimated printing time|total estimated time)\s*(?:\([^)]*\))?\s*[:=]\s*([^;\n]+)""", IGNORE_CASE_MULTILINE)
 
     // Cura, ex.: ";TIME:12345" (segundos).
-    private val secondsRegex = Regex("""(?im)^;\s*TIME\s*:\s*(\d+)\s*$""")
+    private val secondsRegex = Regex("""^;\s*TIME\s*:\s*(\d+)\s*$""", IGNORE_CASE_MULTILINE)
 
     private fun parsePrintTimeMinutes(text: String): Double? {
         durationLabelRegex.find(text)?.let { match ->
@@ -143,17 +147,17 @@ object GCodeMetadataParser {
 
     // PrusaSlicer/Bambu Studio/OrcaSlicer, ex.: "; layer_height = 0.2" (bloco de configuração
     // completo gravado no fim do arquivo — mesma limitação de fatiador do thumbnail, ver KDoc).
-    private val layerHeightRegex = Regex("""(?im)^;\s*layer_height\s*=\s*([0-9.]+)\s*$""")
+    private val layerHeightRegex = Regex("""^;\s*layer_height\s*=\s*([0-9.]+)\s*$""", IGNORE_CASE_MULTILINE)
 
     // PrusaSlicer usa "fill_density"; OrcaSlicer/Bambu Studio (bifurcação mais recente do Prusa)
     // usam "sparse_infill_density". Ambos gravam como porcentagem, com ou sem o "%" no valor.
-    private val infillDensityRegex = Regex("""(?im)^;\s*(?:fill_density|sparse_infill_density)\s*=\s*([0-9.]+)%?\s*$""")
+    private val infillDensityRegex = Regex("""^;\s*(?:fill_density|sparse_infill_density)\s*=\s*([0-9.]+)%?\s*$""", IGNORE_CASE_MULTILINE)
 
-    private val infillPatternRegex = Regex("""(?im)^;\s*(?:fill_pattern|sparse_infill_pattern)\s*=\s*(\S+)\s*$""")
+    private val infillPatternRegex = Regex("""^;\s*(?:fill_pattern|sparse_infill_pattern)\s*=\s*(\S+)\s*$""", IGNORE_CASE_MULTILINE)
 
     // PrusaSlicer usa "support_material"; OrcaSlicer/Bambu Studio usam "enable_support". Ambos
     // gravam "1"/"0", mas aceita "true"/"false" também por segurança.
-    private val supportsRegex = Regex("""(?im)^;\s*(?:support_material|enable_support)\s*=\s*(\S+)\s*$""")
+    private val supportsRegex = Regex("""^;\s*(?:support_material|enable_support)\s*=\s*(\S+)\s*$""", IGNORE_CASE_MULTILINE)
 
     private fun parseBooleanFlag(value: String): Boolean? = when (value.trim().lowercase()) {
         "1", "true" -> true
@@ -166,7 +170,7 @@ object GCodeMetadataParser {
     // begin"/"thumbnail end" — cada linha do bloco é ";" + um pedaço da string base64. Cura não usa
     // esse formato em G-code puro, por isso não tem equivalente aqui.
     private val thumbnailBlockRegex =
-        Regex("""(?is);\s*thumbnail(_png|_jpg)?\s+begin\s+(\d+)x(\d+)\s+\d+(.*?);\s*thumbnail(?:_png|_jpg)?\s+end""")
+        Regex(""";\s*thumbnail(_png|_jpg)?\s+begin\s+(\d+)x(\d+)\s+\d+([\s\S]*?);\s*thumbnail(?:_png|_jpg)?\s+end""", RegexOption.IGNORE_CASE)
 
     @OptIn(ExperimentalEncodingApi::class)
     private fun parseThumbnail(text: String): GCodeThumbnail? =
@@ -188,13 +192,13 @@ object GCodeMetadataParser {
     // Família PrusaSlicer/SuperSlicer/OrcaSlicer/Bambu Studio, no bloco de configuração (conferido
     // em arquivos reais de cada um, decisão 89), ex.:
     // "; printer_model = Bambu Lab X1 Carbon" e "; printer_settings_id = Bambu Lab X1 Carbon 0.4 nozzle".
-    private val printerModelRegex = Regex("""(?im)^;\s*printer_model\s*=\s*(.*)$""")
-    private val printerSettingsRegex = Regex("""(?im)^;\s*printer_settings_id\s*=\s*(.*)$""")
+    private val printerModelRegex = Regex("""^;\s*printer_model\s*=\s*(.*)$""", IGNORE_CASE_MULTILINE)
+    private val printerSettingsRegex = Regex("""^;\s*printer_settings_id\s*=\s*(.*)$""", IGNORE_CASE_MULTILINE)
 
     // Cura não tem esse bloco: a impressora só aparece dentro do JSON de ";SETTING_3", quebrado em
     // várias linhas (inclusive no meio de uma palavra). "machine_name" só vem quando o perfil mexeu
     // no nome; "definition" (ex.: "creality_ender3") vem sempre.
-    private val curaSettingsLineRegex = Regex("""(?m)^;SETTING_3 (.*)$""")
+    private val curaSettingsLineRegex = Regex("""^;SETTING_3 (.*)$""", RegexOption.MULTILINE)
     // Termina na próxima quebra escapada do JSON ("\\n", uma barra seguida de "n") ou no fim da linha.
     private val curaMachineNameRegex = Regex("""machine_name = ([^\\\r\n]+)""")
     private val curaDefinitionRegex = Regex("""definition = ([A-Za-z0-9_]+)""")
@@ -220,9 +224,9 @@ object GCodeMetadataParser {
         return name.trim().takeIf { it.isNotEmpty() }
     }
 
-    private val filamentTypeRegex = Regex("""(?im)^;\s*filament_type\s*=\s*(.*)$""")
-    private val filamentVendorRegex = Regex("""(?im)^;\s*filament_vendor\s*=\s*(.*)$""")
-    private val filamentColourRegex = Regex("""(?im)^;\s*filament_colou?r\s*=\s*(.*)$""")
+    private val filamentTypeRegex = Regex("""^;\s*filament_type\s*=\s*(.*)$""", IGNORE_CASE_MULTILINE)
+    private val filamentVendorRegex = Regex("""^;\s*filament_vendor\s*=\s*(.*)$""", IGNORE_CASE_MULTILINE)
+    private val filamentColourRegex = Regex("""^;\s*filament_colou?r\s*=\s*(.*)$""", IGNORE_CASE_MULTILINE)
 
     /** Marcadores que os fatiadores gravam no lugar da marca quando o perfil não tem uma (vistos em arquivos reais). */
     private val placeholderVendors = setOf("generic", "(undefined)", "(unknown)", "undefined", "unknown")

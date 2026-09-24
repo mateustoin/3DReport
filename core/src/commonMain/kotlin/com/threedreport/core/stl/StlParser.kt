@@ -24,7 +24,7 @@ fun parseStl(bytes: ByteArray): StlMesh = if (isBinaryStl(bytes)) parseBinaryStl
 fun peekStlTriangleCount(bytes: ByteArray): Long = if (isBinaryStl(bytes)) {
     if (bytes.size >= 84) readUInt32LE(bytes, 80) else 0L
 } else {
-    Regex("(?i)endfacet").findAll(bytes.decodeToString()).count().toLong()
+    Regex("endfacet", RegexOption.IGNORE_CASE).findAll(bytes.decodeToString()).count().toLong()
 }
 
 private fun isBinaryStl(bytes: ByteArray): Boolean {

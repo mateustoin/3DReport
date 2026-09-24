@@ -55,9 +55,15 @@
         <img src="assets/icon.png" alt="Ícone do 3DReport" width="32" height="32">
         3DReport
       </a>
-      <div class="nav-links">
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+        <svg class="icon-open" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Menu
+      </button>
+      <div class="nav-links" id="nav-links">
         <a href="index.html#funcionalidades">Funcionalidades</a>
         <a href="index.html#como-funciona">Como funciona</a>
+        <a href="calculadora.html">Calculadora</a>
         <a href="manual.html">Manual</a>
         <a href="https://github.com/mateustoin/3DReport">GitHub</a>
       </div>
@@ -172,5 +178,6 @@
       </div>
     </div>
   </footer>
+  <script src="assets/nav.js" defer></script>
 </body>
 </html>

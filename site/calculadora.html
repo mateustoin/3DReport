@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de preço de impressão 3D grátis | 3DReport</title>
+  <meta name="description" content="Calculadora online e gratuita de preço de impressão 3D: informe peso da peça, tempo de impressão, filamento e energia e veja o custo real e o valor de venda na hora, direto no navegador, sem cadastro e sem instalar nada.">
+  <meta name="keywords" content="calculadora impressão 3D, calculadora preço impressão 3D online, quanto cobrar impressão 3D, calcular orçamento impressão 3D grátis, preço de venda impressão 3D">
+  <link rel="canonical" href="https://mateustoin.github.io/3DReport/calculadora.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b5fa8">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="3DReport">
+  <meta property="og:title" content="Calculadora de preço de impressão 3D grátis | 3DReport">
+  <meta property="og:description" content="Informe peso da peça, tempo de impressão, filamento e energia e veja o custo real e o valor de venda na hora, direto no navegador, sem cadastro.">
+  <meta property="og:url" content="https://mateustoin.github.io/3DReport/calculadora.html">
+  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/orcamento.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="800">
+  <meta property="og:locale" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Calculadora de preço de impressão 3D grátis | 3DReport">
+  <meta name="twitter:description" content="Calculadora online e gratuita de preço de impressão 3D, direto no navegador, sem cadastro.">
+  <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/orcamento.png">
+
+  <link rel="stylesheet" href="assets/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Calculadora de preço de impressão 3D",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Qualquer sistema com navegador",
+    "browserRequirements": "Requer JavaScript",
+    "inLanguage": "pt-BR",
+    "description": "Calculadora online e gratuita para descobrir o preço de venda de uma peça impressa em 3D a partir do peso, do tempo de impressão, do filamento e da energia. Roda inteiramente no navegador, sem enviar dados a nenhum servidor.",
+    "url": "https://mateustoin.github.io/3DReport/calculadora.html",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "3DReport",
+      "url": "https://mateustoin.github.io/3DReport/"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "BRL"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="index.html">
+        <img src="assets/icon.png" alt="Ícone do 3DReport" width="32" height="32">
+        3DReport
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+        <svg class="icon-open" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Menu
+      </button>
+      <div class="nav-links" id="nav-links">
+        <a href="index.html#funcionalidades">Funcionalidades</a>
+        <a href="index.html#gestao-de-vendas">Gestão de vendas</a>
+        <a href="index.html#como-funciona">Como funciona</a>
+        <a href="calculadora.html">Calculadora</a>
+        <a href="manual.html">Manual</a>
+        <a href="index.html#faq">Perguntas frequentes</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <noscript>
+    <div class="container" style="padding: 20px 0;">
+      <p>Esta calculadora precisa de JavaScript para funcionar. Você também pode <a href="https://github.com/mateustoin/3DReport/releases/latest">baixar o app 3DReport</a> e calcular o preço por lá.</p>
+    </div>
+  </noscript>
+
+  <main>
+    <section class="hero" style="padding-bottom: 20px;">
+      <div class="container" style="display: block;">
+        <p class="eyebrow">Ferramenta grátis</p>
+        <h1>Calculadora de preço de impressão 3D</h1>
+        <p class="lead" style="max-width: 70ch;">
+          Usa a mesma fórmula do app 3DReport: informe o peso da peça, o tempo
+          de impressão, o filamento e a energia, e veja o custo real e o
+          preço de venda sugerido na hora. Roda inteiramente no seu
+          navegador, sem cadastro; nada do que você digita aqui sai da sua
+          máquina.
+        </p>
+      </div>
+    </section>
+
+    <section id="calculadora">
+      <div class="container calc-layout">
+        <form class="calc-form" id="calc-form" novalidate>
+          <fieldset>
+            <legend>Dados da peça</legend>
+
+            <div class="field">
+              <label for="peso">Peso da peça (g)</label>
+              <input type="text" inputmode="decimal" id="peso" name="peso" placeholder="50" autocomplete="off">
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="horas">Tempo de impressão: horas</label>
+                <input type="text" inputmode="decimal" id="horas" name="horas" placeholder="0" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="minutos">minutos</label>
+                <input type="text" inputmode="decimal" id="minutos" name="minutos" placeholder="0" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="precoFilamento">Preço do filamento (R$/kg)</label>
+              <input type="text" inputmode="decimal" id="precoFilamento" name="precoFilamento" value="120" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="potencia">Potência da impressora (W)</label>
+              <input type="text" inputmode="decimal" id="potencia" name="potencia" value="350" autocomplete="off">
+              <p class="field-hint">Use o valor da ficha técnica; o consumo real costuma ser menor.</p>
+            </div>
+
+            <div class="field">
+              <label for="precoKwh">Preço do kWh (R$)</label>
+              <input type="text" inputmode="decimal" id="precoKwh" name="precoKwh" value="1,23" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="margem">Margem de lucro (%)</label>
+              <input type="text" inputmode="decimal" id="margem" name="margem" value="100" autocomplete="off">
+            </div>
+          </fieldset>
+
+          <details class="calc-advanced" id="calc-advanced">
+            <summary>Mais custos</summary>
+
+            <div class="field">
+              <label for="falhas">Reserva para falhas (%)</label>
+              <input type="text" inputmode="decimal" id="falhas" name="falhas" value="10" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="acabamento">Acabamento (% do material)</label>
+              <input type="text" inputmode="decimal" id="acabamento" name="acabamento" value="10" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="valorHora">Valor da sua hora (R$/h)</label>
+              <input type="text" inputmode="decimal" id="valorHora" name="valorHora" value="0" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="tempoTrabalho">Seu tempo de trabalho no pedido (min)</label>
+              <input type="text" inputmode="decimal" id="tempoTrabalho" name="tempoTrabalho" value="0" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="quantidade">Quantidade de peças</label>
+              <input type="text" inputmode="numeric" id="quantidade" name="quantidade" value="1" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="taxaCanal">Taxa do canal de venda (%)</label>
+              <input type="text" inputmode="decimal" id="taxaCanal" name="taxaCanal" value="0" autocomplete="off">
+              <p class="field-hint">Shopee, Mercado Livre, maquininha.</p>
+            </div>
+
+            <div class="field">
+              <label for="imposto">Imposto sobre a venda (%)</label>
+              <input type="text" inputmode="decimal" id="imposto" name="imposto" value="0" autocomplete="off">
+              <p class="field-hint">MEI deixa em zero.</p>
+            </div>
+          </details>
+        </form>
+
+        <aside class="calc-result">
+          <div class="result-panel" id="calc-output" aria-live="polite">
+            <p class="result-placeholder">Preencha o peso da peça e o tempo de impressão para ver o preço.</p>
+          </div>
+
+          <div class="cta-box">
+            <h3>Quer guardar esse orçamento?</h3>
+            <p>O app 3DReport soma a essa conta:</p>
+            <ul>
+              <li>Salvar orçamento e histórico</li>
+              <li>Clientes</li>
+              <li>PDF com a sua marca</li>
+              <li>Arraste o G-code e o orçamento sai pronto</li>
+              <li>Catálogo de impressoras e filamentos</li>
+              <li>Custo de máquina e custo fixo mensal, que esta calculadora não inclui</li>
+            </ul>
+            <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Baixar grátis</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="alt">
+      <div class="container">
+        <h2>Onde encontrar o peso e o tempo no seu fatiador</h2>
+        <p class="section-intro">
+          Depois de fatiar o modelo, essas duas informações aparecem no resumo
+          de impressão, antes mesmo de exportar o G-code.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Bambu Studio e OrcaSlicer</h3>
+            <p>No painel direito, após fatiar, aparecem o peso do filamento (g) e o tempo estimado de impressão, logo acima do botão de exportar.</p>
+          </div>
+          <div class="card">
+            <h3>PrusaSlicer</h3>
+            <p>Na aba "Fatiar agora" (Preview), o resumo no canto inferior direito mostra o peso do filamento e o tempo total de impressão.</p>
+          </div>
+          <div class="card">
+            <h3>Cura</h3>
+            <p>No canto inferior direito, depois de fatiar, aparecem o tempo estimado e o peso do filamento usado.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <h2>O que cada custo significa</h2>
+        <p class="section-intro">
+          A mesma fórmula do app, explicada linha por linha.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Material</h3>
+            <p>O filamento gasto na peça, calculado pelo peso informado e pelo preço do quilo.</p>
+          </div>
+          <div class="card">
+            <h3>Energia</h3>
+            <p>O consumo da impressora durante o tempo de impressão, pela potência informada e pelo preço do kWh.</p>
+          </div>
+          <div class="card">
+            <h3>Reserva para falhas</h3>
+            <p>Uma porcentagem a mais no custo para cobrir impressões que falham no meio do caminho e precisam ser refeitas.</p>
+          </div>
+          <div class="card">
+            <h3>Acabamento</h3>
+            <p>Uma porcentagem sobre o material para cobrir lixar, pintar ou remover suporte depois da impressão.</p>
+          </div>
+          <div class="card">
+            <h3>Seu trabalho</h3>
+            <p>O tempo que você gasta preparando o arquivo, fatiando, tirando a peça da mesa e embalando, pelo valor da sua hora.</p>
+          </div>
+        </div>
+        <p class="section-intro" style="margin-top: 32px; max-width: 70ch;">
+          Esta calculadora usa a mesma fórmula do app 3DReport, mas sem
+          manutenção da impressora, retorno do investimento da máquina e
+          custo fixo mensal, que dependem do seu cadastro. Veja o cálculo
+          completo em
+          <a href="index.html#como-funciona">Como o cálculo funciona</a>
+          ou na
+          <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">documentação da fórmula</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>3DReport · Apache License 2.0 · por Mateus Antonio</span>
+      <div class="footer-links">
+        <a href="index.html">Início</a>
+        <a href="manual.html">Manual</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <a href="https://github.com/mateustoin/3DReport/releases/latest">Downloads</a>
+        <a href="https://buymeacoffee.com/mateustoin">Doar</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/calc/web.js" defer></script>
+  <script src="assets/calculadora.js" defer></script>
+  <script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -178,10 +178,16 @@
         <img src="assets/icon.png" alt="Ícone do 3DReport" width="32" height="32">
         3DReport
       </a>
-      <div class="nav-links">
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+        <svg class="icon-open" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Menu
+      </button>
+      <div class="nav-links" id="nav-links">
         <a href="#funcionalidades">Funcionalidades</a>
         <a href="#gestao-de-vendas">Gestão de vendas</a>
         <a href="#como-funciona">Como funciona</a>
+        <a href="calculadora.html">Calculadora</a>
         <a href="manual.html">Manual</a>
         <a href="#faq">Perguntas frequentes</a>
         <a href="https://github.com/mateustoin/3DReport">GitHub</a>
@@ -205,6 +211,7 @@
           </p>
           <div class="btn-row">
             <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Baixar grátis</a>
+            <a class="btn btn-secondary" href="calculadora.html">Calcular preço online</a>
             <a class="btn btn-secondary" href="manual.html">Ver manual rápido</a>
           </div>
         </div>
@@ -364,6 +371,8 @@
           Fórmula transparente, sem caixa-preta. Detalhes completos e
           exemplo numérico em
           <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>.
+          Quer testar com os números da sua peça agora? Use a
+          <a href="calculadora.html">calculadora online grátis</a>.
         </p>
         <div class="formula-box">
 CUSTO POR PEÇA    = material + energia + manutenção
@@ -495,5 +504,6 @@ LUCRO             = venda − produção
       </div>
     </div>
   </footer>
+  <script src="assets/nav.js" defer></script>
 </body>
 </html>

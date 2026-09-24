@@ -1,13 +1,19 @@
 name: Deploy site (GitHub Pages)
 
 # Publica o conteúdo de site/ no GitHub Pages a cada push em main que muda
-# a pasta do site. Pré-requisito: em Settings → Pages, "Source" precisa
-# estar em "GitHub Actions" (ver docs/roadmap.md, seção 2).
+# a pasta do site ou a fórmula (core/), já que a calculadora do site
+# (site/calculadora.html) é o core compilado pra JavaScript (decisão 98).
+# Pré-requisito: em Settings → Pages, "Source" precisa estar em "GitHub
+# Actions" (ver docs/roadmap.md, seção 2).
 on:
   push:
     branches: [main]
     paths:
       - "site/**"
+      - "core/**"
+      - "web/**"
+      - "gradle/**"
+      - "*.gradle.kts"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -28,6 +34,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Gerar a calculadora do site
+        run: ./gradlew :web:syncSiteCalculator
 
       - uses: actions/configure-pages@v5
 

@@ -30,9 +30,10 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 |---|---|
 | Executar o app desktop | `./gradlew :composeApp:run` |
 | Rodar todos os testes | `./gradlew allTests` |
-| Rodar só testes do core | `./gradlew :core:jvmTest` |
+| Rodar só testes do core (JVM e JS) | `./gradlew :core:allTests` |
 | Rodar só testes do composeApp (persistência) | `./gradlew :composeApp:jvmTest` |
 | Compilar e testar tudo | `./gradlew build` |
+| Gerar a calculadora do site | `./gradlew :web:syncSiteCalculator` |
 | Gerar instalador do SO atual | `./gradlew :composeApp:packageDistributionForCurrentOS` |
 | Limpar build | `./gradlew clean` |
 
@@ -46,6 +47,12 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
   abaixo).
 - Dados do app (filamentos, impressoras, configurações): `~/.3dreport/*.json`.
   Apague a pasta para resetar para os valores padrão.
+
+- Calculadora do site (decisão 98): depois de gerar, rode
+  `python3 -m http.server -d site` e abra `http://localhost:8000/calculadora.html`
+  (abrir o HTML direto do disco também funciona). `site/assets/calc/` é gerado e
+  fica fora do git; o `kotlin-js-store/yarn.lock` (dependências JS do Kotlin/JS)
+  é versionado.
 
 ### Rodando pela IDE
 - Android Studio/IntelliJ: abra `Main.kt` e clique no ▶ ao lado de `fun main()`,

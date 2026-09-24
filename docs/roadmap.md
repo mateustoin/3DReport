@@ -641,7 +641,14 @@ barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
   continua somado. **Nota de sequenciamento:** se houver intenção real de fazer
   isso, fazer junto da leva 2 (quantidade, que também mexe em
   `PrintJob`/`Quote`) economiza metade do trabalho de migração.
-- [ ] **Calculadora web no próprio site, reaproveitando o módulo `core`.**
+- [x] **Calculadora web no próprio site, reaproveitando o módulo `core`**
+  (decisão 98, 2026-09-24). **Feito:** `site/calculadora.html`, página
+  própria ligada pela home e no sitemap. Peso, tempo, filamento, potência,
+  kWh e margem à vista; falhas, acabamento, trabalho, quantidade, canal e
+  imposto em "Mais custos". Mostra venda, produção, lucro, ponto de
+  equilíbrio e o detalhamento, com a chamada pro app logo abaixo. A conta é
+  o `PricingCalculator` compilado pra JavaScript (módulo `:web`), e os
+  testes do `core` rodam também no alvo JS. Texto original:
   O `core` é Kotlin Multiplatform puro, sem dependência de desktop — dá pra
   publicar uma calculadora simples no GitHub Pages que já existe (alvo
   Wasm/JS) usando exatamente a mesma fórmula, sem segunda fonte de verdade.

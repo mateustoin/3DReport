@@ -13,3 +13,6 @@ out/
 # SO
 .DS_Store
 Thumbs.db
+
+# Calculadora do site, gerada por ./gradlew :web:syncSiteCalculator
+site/assets/calc/

@@ -12,6 +12,7 @@
   --border: #dfe2eb;
   --radius: 14px;
   --max-width: 1120px;
+  --danger: #b3261e;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,6 +28,7 @@
     --text: #e3e2e6;
     --text-muted: #c3c6cf;
     --border: #3a3d42;
+    --danger: #ff8a80;
   }
 }
 
@@ -109,6 +111,60 @@ header.site-header {
 
 .nav-links a:hover {
   color: var(--primary);
+}
+
+/* Menu no celular (decisão 99): um botão "Menu" abre os links numa coluna embaixo do cabeçalho.
+   Só vale depois que assets/nav.js marca o cabeçalho com .nav-ready; sem JS, os links aparecem
+   como antes. */
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .site-header.nav-ready .nav {
+    flex-wrap: wrap;
+  }
+
+  .site-header.nav-ready .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .site-header.nav-ready .nav-toggle .icon-close,
+  .site-header.nav-open .nav-toggle .icon-open {
+    display: none;
+  }
+
+  .site-header.nav-open .nav-toggle .icon-close {
+    display: block;
+  }
+
+  .site-header.nav-ready .nav-links {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+  }
+
+  .site-header.nav-open .nav-links {
+    display: flex;
+  }
+
+  .site-header.nav-ready .nav-links a {
+    padding: 12px 0;
+    font-size: 1rem;
+  }
 }
 
 .btn {
@@ -417,4 +473,236 @@ th {
   font-size: 0.78rem;
   font-weight: 700;
   margin-right: 6px;
+}
+
+/* Calculadora */
+
+.calc-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .calc-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.calc-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.calc-form fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.calc-form legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.field input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-width: 0;
+}
+
+.calc-advanced {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.calc-advanced summary {
+  margin-bottom: 4px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calc-advanced[open] summary {
+  margin-bottom: 12px;
+}
+
+.calc-result {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  min-width: 0;
+}
+
+@media (min-width: 861px) {
+  .calc-result {
+    position: sticky;
+    top: 84px;
+  }
+}
+
+.result-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.result-label {
+  margin: 0 0 4px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.result-total {
+  margin: 0 0 4px;
+  color: var(--primary);
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.result-unit {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+}
+
+.result-lines {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.result-lines div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.95rem;
+}
+
+.result-lines dt {
+  color: var(--text-muted);
+}
+
+.result-lines dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.result-breakeven {
+  margin: 0;
+  background: var(--secondary-light);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.result-breakdown {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 12px 0 0;
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.result-breakdown li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.result-placeholder {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.result-error {
+  margin: 0;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.cta-box {
+  background: var(--primary-light);
+  border-radius: var(--radius);
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+}
+
+.cta-box h3 {
+  margin: 0;
+  color: var(--primary-dark);
+}
+
+.cta-box p {
+  margin: 0;
+  color: var(--primary-dark);
+}
+
+.cta-box ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  color: var(--primary-dark);
+  font-size: 0.9rem;
+}
+
+.cta-box .btn {
+  justify-self: start;
 }

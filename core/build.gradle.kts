@@ -8,9 +8,13 @@ plugins {
 kotlin {
     jvmToolchain(21)
 
-    // Alvo atual: JVM (usado pelo app desktop).
-    // Para Android/iOS/Web, basta declarar novos alvos aqui — o código em commonMain não muda.
+    // Alvos: JVM (usado pelo app desktop) e JS (usado pela calculadora do site, módulo `:web`).
+    // Os testes de commonTest rodam nos dois, o que garante que a conta no navegador é a mesma do app.
+    // Para Android/iOS, basta declarar novos alvos aqui — o código em commonMain não muda.
     jvm()
+    js {
+        nodejs()
+    }
 
     sourceSets {
         commonMain.dependencies {

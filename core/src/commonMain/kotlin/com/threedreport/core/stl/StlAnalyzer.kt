@@ -75,8 +75,8 @@ object StlAnalyzer {
             val v3 = vertexId(vertexIds, triangle.v3)
 
             for (vertex in intArrayOf(v1, v2, v3)) {
-                val firstTriangle = firstTriangleForVertex.putIfAbsent(vertex, index)
-                if (firstTriangle != null) unionFind.union(index, firstTriangle)
+                val firstTriangle = firstTriangleForVertex.getOrPut(vertex) { index }
+                if (firstTriangle != index) unionFind.union(index, firstTriangle)
             }
             for ((a, b) in listOf(v1 to v2, v2 to v3, v3 to v1)) {
                 val edge = if (a < b) a to b else b to a
