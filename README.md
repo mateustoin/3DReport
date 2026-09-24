@@ -76,8 +76,9 @@ com a margem de lucro desejada.
 - Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento), com catálogo pré-cadastrado das principais marcas pra escolher
 
 **Personalização do PDF**
-- Marca d'água personalizada (texto, configurável em Configurações)
-- Templates — fotos salvas de marca d'água/rodapé, com indicador do template ativo
+- Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome
+- Prévia do PDF em Configurações ("Ver como fica"), antes mesmo de salvar
+- Templates — fotos salvas da aparência do PDF (marca d'água, rodapé, borda, tempo de impressão), com indicador do template ativo; logo e contato ficam de fora, pra não se perderem ao trocar de template
 
 **Configurações & plataforma**
 - Configurações gerais do negócio (energia, valor da sua hora de trabalho, custo fixo mensal, falhas, margem)

@@ -1,5 +1,6 @@
 package com.threedreport.app.platform
 
+import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
 
@@ -13,9 +14,20 @@ data class QuoteExportItem(val savedQuote: SavedQuote, val photoBytes: ByteArray
  *
  * @property showPrintTime mostra "Tempo de impressão" abaixo do prazo (ver
  *   `BrandingSettings.showPrintTime`).
+ * @property logoBytes logo do vendedor, pro cabeçalho. Imagem que não decodifica é ignorada.
+ * @property brandName nome da marca, mostrado no cabeçalho junto da logo/contato.
+ * @property contactLines contato público do vendedor, uma linha por item (ver
+ *   `BrandingSettings.contactLines`).
+ * @property showBorder borda fina em volta da página.
+ *
+ * O cabeçalho só aparece com logo ou contato: o nome sozinho já tem a marca d'água e o rodapé.
  */
 data class PdfLayoutOptions(
     val showPrintTime: Boolean = false,
+    val logoBytes: ByteArray? = null,
+    val brandName: String? = null,
+    val contactLines: List<String> = emptyList(),
+    val showBorder: Boolean = false,
 )
 
 /**
@@ -63,3 +75,31 @@ expect fun renderCatalogPdf(
     currency: Currency = Currency.BRL,
     options: PdfLayoutOptions = PdfLayoutOptions(),
 ): ByteArray
+
+/**
+ * Primeira página de [pdf] como PNG, pra "Ver como fica" em Configurações mostrar o PDF de
+ * verdade em vez de uma imitação desenhada na tela, que poderia divergir do documento real.
+ */
+expect fun renderPdfFirstPagePng(pdf: ByteArray, dpi: Float = 90f): ByteArray
+
+/**
+ * Tudo o que o PDF precisa de [BrandingSettings], resolvido num lugar só pra o Histórico e a
+ * prévia de Configurações nunca montarem o documento de jeitos diferentes. A logo vem à parte
+ * porque mora num arquivo, não na configuração.
+ */
+data class ResolvedPdfBranding(val watermarkText: String?, val footerText: String?, val options: PdfLayoutOptions)
+
+fun BrandingSettings.resolvePdfBranding(logoBytes: ByteArray?): ResolvedPdfBranding {
+    val brandName = watermarkText?.takeIf { it.isNotBlank() }
+    return ResolvedPdfBranding(
+        watermarkText = brandName?.takeIf { showWatermark },
+        footerText = brandName?.takeIf { showFooter },
+        options = PdfLayoutOptions(
+            showPrintTime = showPrintTime,
+            logoBytes = logoBytes,
+            brandName = brandName,
+            contactLines = contactLines,
+            showBorder = showBorder,
+        ),
+    )
+}

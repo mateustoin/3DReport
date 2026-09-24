@@ -101,4 +101,24 @@ class TemplateListViewModelTest {
             "com o tempo desligado, a configuração ativa já não é mais esse template",
         )
     }
+
+    @Test
+    fun loadingATemplateKeepsTheSellerLogoAndContact() {
+        val templateRepository = TemplateRepository()
+        templateRepository.add(sampleTemplate().copy(showBorder = true))
+        val brandingRepository = BrandingRepository()
+        brandingRepository.update(
+            com.threedreport.core.model.BrandingSettings(contactInstagram = "loja"),
+            com.threedreport.app.data.LogoChange.Replace(com.threedreport.app.platform.PickedFile("logo.png", byteArrayOf(1))),
+        )
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
+
+        viewModel.load(templateRepository.templates.value.first().id)
+
+        val branding = brandingRepository.branding.value
+        assertTrue(branding.showBorder)
+        assertEquals("@loja", branding.instagramHandle)
+        assertTrue(branding.logoFileName != null)
+        assertEquals(templateRepository.templates.value.first().id, viewModel.activeTemplateId(templateRepository.templates.value, branding))
+    }
 }

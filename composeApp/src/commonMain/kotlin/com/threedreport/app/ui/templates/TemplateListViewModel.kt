@@ -20,26 +20,34 @@ class TemplateListViewModel(
     val templates: StateFlow<List<QuoteTemplate>> = repository.templates
     val activeBranding: StateFlow<BrandingSettings> = brandingRepository.branding
 
-    /** Função pura: id do template (se algum) cujos campos batem com [branding], a config ativa. */
+    /**
+     * Função pura: id do template (se algum) cujos campos batem com [branding], a config ativa.
+     * Compara só os campos de template: logo e contato são identidade e não entram na conta.
+     */
     fun activeTemplateId(templates: List<QuoteTemplate>, branding: BrandingSettings): String? =
         templates.firstOrNull {
             it.watermarkText == branding.watermarkText &&
                 it.showWatermark == branding.showWatermark &&
                 it.showFooter == branding.showFooter &&
-                it.showPrintTime == branding.showPrintTime
+                it.showPrintTime == branding.showPrintTime &&
+                it.showBorder == branding.showBorder
         }?.id
 
     fun delete(id: String) = repository.delete(id)
 
-    /** "Carregar": copia o preset [id] pra dentro do [BrandingRepository] ativo. */
+    /**
+     * "Carregar": copia o preset [id] pra dentro do [BrandingRepository] ativo. Parte da
+     * configuração atual, e não de uma em branco, pra logo e contato continuarem onde estão.
+     */
     fun load(id: String) {
         val template = repository.templates.value.find { it.id == id } ?: return
         brandingRepository.update(
-            BrandingSettings(
+            brandingRepository.branding.value.copy(
                 watermarkText = template.watermarkText,
                 showWatermark = template.showWatermark,
                 showFooter = template.showFooter,
                 showPrintTime = template.showPrintTime,
+                showBorder = template.showBorder,
             )
         )
     }

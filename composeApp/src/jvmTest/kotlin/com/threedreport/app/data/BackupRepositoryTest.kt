@@ -56,6 +56,21 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun theSellerLogoTravelsInTheBackupAndComesBackOnRestore() {
+        val logoBytes = byteArrayOf(9, 8, 7)
+        BrandingRepository().update(
+            com.threedreport.core.model.BrandingSettings(watermarkText = "Loja"),
+            LogoChange.Replace(com.threedreport.app.platform.PickedFile("logo.png", logoBytes)),
+        )
+        val backup = BackupRepository().createBackupZip()
+
+        File(dataDir, "branding").deleteRecursively()
+        BackupRepository().restoreFromZip(backup)
+
+        assertContentEquals(logoBytes, BrandingRepository().logoBytes())
+    }
+
+    @Test
     fun restoreKeepsTheReplacedDataAsACopy() {
         File(dataDir, "quotes.json").writeText("dados atuais")
         val repository = BackupRepository()

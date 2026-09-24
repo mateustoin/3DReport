@@ -281,8 +281,14 @@ uma conta incompleta mente com mais confiança.
     imagem. Como data envelhece: duplicar não copia o prazo, o Histórico
     marca atraso e prazo vencido, o menu "⋮" muda só a data, e todo envio
     pro cliente com prazo vencido pede confirmação antes (decisão 85).
-- [ ] **Identidade do vendedor no PDF: logo, contato e borda** (sugerido por
-  João Antonio em teste externo, 2026-09-23, decisão 83). Hoje o PDF só
+- [x] **Identidade do vendedor no PDF: logo, contato e borda** (decisão 86,
+  2026-09-23; sugerido por João Antonio em teste externo, 2026-09-23,
+  decisão 83). **Feito:** logo e contato (WhatsApp, e-mail, Instagram) num
+  cabeçalho de papel timbrado, borda opcional, prévia "Ver como fica" em
+  Configurações; logo e contato fora dos templates; contato também na
+  imagem quadrada (a logo não, por causa do fundo escuro); rodapé mantido
+  só com o nome, com o canto direito reservado pra assinatura da leva 8.
+  Texto original abaixo. Hoje o PDF só
   carrega a marca do vendedor como texto (marca d'água diagonal e rodapé,
   `BrandingSettings`), e a versão com imagem já estava registrada como
   "iteração futura" no item de marca d'água (seção 1). Três acréscimos
@@ -522,7 +528,8 @@ decisão 83 e foram pra leva 6.
   - Feito (2026-09-15): `platform/QuotePdfExporter` (Apache PDFBox) +
     `platform/Clipboard`.
 - [x] **Marca d'água personalizada no PDF.** Texto opcional (não imagem —
-  ficou pra uma iteração futura, se fizer falta), configurado em
+  ficou pra uma iteração futura, se fizer falta; a imagem chegou como logo
+  no cabeçalho, decisão 86), configurado em
   Configurações (`BrandingSettings`, separado de `PricingSettings` por não
   ser parâmetro de custo). Desenhado diagonal, cinza claro, translúcido,
   centralizado, **por cima** do resto do conteúdo (inclusive da foto — ver

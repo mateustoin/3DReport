@@ -1,5 +1,7 @@
 package com.threedreport.app.platform
 
+import com.threedreport.core.model.BrandingSettings
+
 /**
  * Gera uma imagem quadrada (1080×1080 PNG) do orçamento pra mandar numa conversa de WhatsApp ou
  * postar no status/stories, em vez de anexar um PDF.
@@ -28,3 +30,14 @@ expect fun renderQuoteImage(
     brandText: String?,
     deliveryText: String? = null,
 ): ByteArray
+
+/**
+ * Linha de marca da imagem quadrada: "Minha Loja · @minhaloja". Instagram primeiro, porque a imagem
+ * é feita pra status e redes; sem Instagram, o WhatsApp. A logo não vai pra imagem: o fundo é
+ * azul-petróleo escuro, e a logo típica (escura, com fundo transparente) sumiria nele (decisão 86).
+ */
+fun BrandingSettings.imageBrandLine(): String? =
+    listOfNotNull(
+        watermarkText?.trim()?.takeIf { it.isNotEmpty() },
+        instagramHandle ?: contactWhatsApp?.trim()?.takeIf { it.isNotEmpty() },
+    ).joinToString(" · ").ifEmpty { null }

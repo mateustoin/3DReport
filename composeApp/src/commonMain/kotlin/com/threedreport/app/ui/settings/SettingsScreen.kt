@@ -64,7 +64,6 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
-    val branding by brandingViewModel.uiState.collectAsState()
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
     var showTemplatesDialog by remember { mutableStateOf(false) }
@@ -175,41 +174,7 @@ fun SettingsScreen(
 
         HorizontalDivider()
 
-        Text("Documentos pro cliente", style = MaterialTheme.typography.titleMedium)
-        LabeledField("Texto da marca d'água (opcional)", branding.watermarkTextInput, brandingViewModel::update)
-
-        CheckboxRow("Marca d'água diagonal no PDF", branding.showWatermark, brandingViewModel::setShowWatermark)
-        CheckboxRow("Rodapé com o nome no PDF", branding.showFooter, brandingViewModel::setShowFooter)
-        CheckboxRow("Tempo de impressão no PDF e na mensagem", branding.showPrintTime, brandingViewModel::setShowPrintTime)
-        Text(
-            "Mostra o tempo de máquina do pedido (ex.: \"Tempo de impressão: 6 h 30 min\"). Ajuda o cliente a " +
-                "entender o trabalho, mas também pode virar argumento pra pedir desconto, por isso começa desligado.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        Button(onClick = brandingViewModel::save) { Text("Salvar") }
-
-        branding.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        ShowSnackbarOnce(branding.savedConfirmation, "Configurações dos documentos salvas.", brandingViewModel::consumeSavedConfirmation)
-
-        if (branding.isSavingAsTemplate) {
-            LabeledField("Nome do template (ex.: Formal, Simples)", branding.templateNameInput, brandingViewModel::updateTemplateName)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = brandingViewModel::confirmSaveAsTemplate) { Text("Salvar template") }
-                TextButton(onClick = brandingViewModel::cancelSaveAsTemplate) { Text("Cancelar") }
-            }
-            branding.templateSaveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = brandingViewModel::startSaveAsTemplate) { Text("Salvar como template") }
-                TextButton(onClick = { showTemplatesDialog = true }) { Text("Ver templates salvos") }
-            }
-        }
-        ShowSnackbarOnce(
-            branding.templateSavedConfirmation,
-            "Template salvo.",
-            brandingViewModel::consumeTemplateSavedConfirmation,
-        )
+        ClientDocumentsSection(brandingViewModel, onShowTemplates = { showTemplatesDialog = true })
 
         HorizontalDivider()
 
@@ -357,7 +322,7 @@ private fun CurrencySelector(selected: Currency, onSelect: (Currency) -> Unit) {
 }
 
 @Composable
-private fun CheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun CheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = checked, onCheckedChange = onCheckedChange)
         Text(label)
@@ -365,7 +330,7 @@ private fun CheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boole
 }
 
 @Composable
-private fun LabeledField(label: String, value: String, onValueChange: (String) -> Unit) {
+internal fun LabeledField(label: String, value: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth().tabToNavigate(),
         value = value,

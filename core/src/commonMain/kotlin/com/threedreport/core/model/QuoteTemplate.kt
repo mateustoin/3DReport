@@ -16,6 +16,10 @@ import kotlinx.serialization.Serializable
  * @property showWatermark se este preset liga a marca d'água diagonal.
  * @property showFooter se este preset liga o rodapé.
  * @property showPrintTime se este preset mostra o tempo de impressão (ver [BrandingSettings.showPrintTime]).
+ * @property showBorder se este preset desenha a borda da página.
+ *
+ * Logo e contato do vendedor **não** fazem parte do template: são a identidade de quem vende, uma
+ * só, e aplicar um template não deve apagá-los (ver [BrandingSettings]).
  */
 @Serializable
 data class QuoteTemplate(
@@ -25,6 +29,7 @@ data class QuoteTemplate(
     val showWatermark: Boolean = true,
     val showFooter: Boolean = true,
     val showPrintTime: Boolean = false,
+    val showBorder: Boolean = false,
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }

@@ -5,6 +5,31 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.33.0] - 2026-09-23
+
+### Adicionado
+- **Sua logo e seu contato no PDF.** Em Configurações, "Documentos pro
+  cliente", escolha a logo e preencha WhatsApp, e-mail e Instagram: o PDF
+  ganha um cabeçalho com a logo à esquerda e o nome e o contato à direita,
+  como papel timbrado. Sem logo nem contato, o PDF continua igual.
+- **Borda na página do PDF (opcional).**
+- **"Ver como fica".** Mostra o PDF de um orçamento de exemplo com o que
+  está no formulário, antes mesmo de salvar. Dá pra testar uma logo nova
+  sem adotá-la.
+- **Contato na imagem quadrada.** A linha da marca vira "Minha Loja ·
+  @minhaloja" e ganhou um fundo escuro, pra continuar legível em foto clara.
+
+### Alterado
+- **Templates não mexem mais na sua logo nem no seu contato.** Um template
+  guarda a aparência do PDF (nome, marca d'água, rodapé, borda, tempo de
+  impressão); trocar de template mantém a sua identidade.
+- A logo fica na pasta de dados do app e entra no backup.
+
+### Corrigido
+- **Emoji no nome do orçamento não impede mais a exportação do PDF.** Antes,
+  um "🌵" no nome fazia o PDF falhar. Agora o símbolo que o PDF não consegue
+  desenhar é deixado de fora e o resto sai normalmente.
+
 ## [1.32.0] - 2026-09-23
 
 ### Adicionado

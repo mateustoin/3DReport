@@ -480,4 +480,76 @@ class QuotePdfExporterTest {
 
         assertFalse(text.contains("Prazo"))
     }
+
+    /** Logo "de verdade" (PNG com ruído, pra não comprimir a quase nada), no tamanho que um vendedor usaria. */
+    private fun noisyLogoPng(size: Int = 400): ByteArray {
+        val random = java.util.Random(42)
+        val image = BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB)
+        for (x in 0 until size) for (y in 0 until size) image.setRGB(x, y, random.nextInt())
+        return ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
+    }
+
+    @Test
+    fun headerShowsBrandNameAndContactWhenThereIsIdentity() {
+        val options = PdfLayoutOptions(brandName = "Minha Loja 3D", contactLines = listOf("WhatsApp (11) 99999-0000", "@minhaloja"))
+
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = options))
+
+        assertTrue(text.contains("Minha Loja 3D"))
+        assertTrue(text.contains("WhatsApp (11) 99999-0000"))
+        assertTrue(text.contains("@minhaloja"))
+    }
+
+    @Test
+    fun brandNameAloneDoesNotCreateAHeader() {
+        // Só o nome, sem logo nem contato: continua saindo só na marca d'água/rodapé, como antes.
+        val items = listOf(QuoteExportItem(savedQuote, null))
+
+        val withName = textOf(renderSavedQuotesPdf(items, null, null, options = PdfLayoutOptions(brandName = "Minha Loja 3D")))
+        val plain = textOf(renderSavedQuotesPdf(items, null, null))
+
+        assertEquals(plain, withName)
+    }
+
+    @Test
+    fun emojiInTheNameOrContactDoesNotBreakTheExport() {
+        val withEmoji = savedQuote.copy(name = "Vaso 🌵 decorativo")
+        val options = PdfLayoutOptions(contactLines = listOf("WhatsApp 📱 (11) 99999-0000"))
+
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withEmoji, null)), "Loja ✨", "Loja ✨", options = options))
+
+        assertTrue(text.contains("Vaso decorativo"))
+        assertTrue(text.contains("WhatsApp (11) 99999-0000"))
+    }
+
+    @Test
+    fun theLogoIsEmbeddedOnceAndReusedAcrossPages() {
+        val logo = noisyLogoPng()
+        val options = PdfLayoutOptions(logoBytes = logo)
+
+        val onePage = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = options)
+        val tenPages = renderSavedQuotesPdf(List(10) { QuoteExportItem(savedQuote, null) }, null, null, options = options)
+
+        assertEquals(10, Loader.loadPDF(tenPages).use { it.numberOfPages })
+        assertTrue(tenPages.size < onePage.size * 2, "10 páginas com a mesma logo não podem pesar 10 logos: ${tenPages.size} vs ${onePage.size}")
+    }
+
+    @Test
+    fun anUnreadableLogoIsIgnored() {
+        val options = PdfLayoutOptions(logoBytes = byteArrayOf(1, 2, 3), contactLines = listOf("@loja"))
+
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = options))
+
+        assertTrue(text.contains("@loja"))
+    }
+
+    @Test
+    fun catalogWithHeaderAndBorderStillListsEveryItem() {
+        val options = PdfLayoutOptions(logoBytes = noisyLogoPng(64), brandName = "Loja", contactLines = listOf("@loja", "loja@example.com"), showBorder = true)
+        val items = List(7) { index -> QuoteExportItem(savedQuote.copy(id = "$index", name = "Peça $index"), null) }
+
+        val text = textOf(renderCatalogPdf(items, null, "Loja", options = options))
+
+        (0 until 7).forEach { assertTrue(text.contains("Peça $it")) }
+    }
 }

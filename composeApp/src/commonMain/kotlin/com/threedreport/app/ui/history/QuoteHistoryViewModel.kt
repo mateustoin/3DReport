@@ -4,7 +4,9 @@ import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.PeriodPreset
-import com.threedreport.app.platform.PdfLayoutOptions
+import com.threedreport.app.platform.ResolvedPdfBranding
+import com.threedreport.app.platform.imageBrandLine
+import com.threedreport.app.platform.resolvePdfBranding
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.copyToClipboard
 import com.threedreport.app.platform.openUrl
@@ -17,7 +19,6 @@ import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.saveBytesToFile
 import com.threedreport.app.ui.format.toCurrencyText
-import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.SavedQuote
@@ -211,9 +212,9 @@ class QuoteHistoryViewModel(
         val selected = savedQuotes.value.filter { it.id in selectedIdsState.value }
         if (selected.isEmpty()) return
 
-        val (watermarkText, footerText) = resolveWatermarkAndFooterText()
+        val branding = resolvePdfBranding()
         val items = selected.map { QuoteExportItem(it, photoBytes(it)) }
-        val pdfBytes = renderCatalogPdf(items, watermarkText, footerText, currencyRepository.currency.value)
+        val pdfBytes = renderCatalogPdf(items, branding.watermarkText, branding.footerText, currencyRepository.currency.value, branding.options)
 
         saveBytesToFile(
             pdfBytes,
@@ -224,9 +225,9 @@ class QuoteHistoryViewModel(
     }
 
     private fun performExportPdf(savedQuote: SavedQuote) {
-        val (watermarkText, footerText) = resolveWatermarkAndFooterText()
+        val branding = resolvePdfBranding()
         val item = QuoteExportItem(savedQuote, photoBytes(savedQuote))
-        val pdfBytes = renderSavedQuotesPdf(listOf(item), watermarkText, footerText, currencyRepository.currency.value, pdfLayoutOptions())
+        val pdfBytes = renderSavedQuotesPdf(listOf(item), branding.watermarkText, branding.footerText, currencyRepository.currency.value, branding.options)
         saveBytesToFile(pdfBytes, "${sanitizeFileName(savedQuote.name)}.pdf", defaultDocumentsDirectory())
     }
 
@@ -246,7 +247,7 @@ class QuoteHistoryViewModel(
                 null
             },
             photoBytes = photoBytes(savedQuote),
-            brandText = brandingRepository.branding.value.watermarkText,
+            brandText = brandingRepository.branding.value.imageBrandLine(),
             // Curta ("30/09", sem o ano) porque a imagem é pra conversa do dia, não documento.
             deliveryText = savedQuote.deliveryDateEpochDay?.let { "Entrega até ${formatShortDate(it)}" },
         )
@@ -259,9 +260,9 @@ class QuoteHistoryViewModel(
     }
 
     private fun performExportSelectedPdf(selected: List<SavedQuote>) {
-        val (watermarkText, footerText) = resolveWatermarkAndFooterText()
+        val branding = resolvePdfBranding()
         val items = selected.map { QuoteExportItem(it, photoBytes(it)) }
-        val pdfBytes = renderSavedQuotesPdf(items, watermarkText, footerText, currencyRepository.currency.value, pdfLayoutOptions())
+        val pdfBytes = renderSavedQuotesPdf(items, branding.watermarkText, branding.footerText, currencyRepository.currency.value, branding.options)
 
         saveBytesToFile(
             pdfBytes,
@@ -271,13 +272,9 @@ class QuoteHistoryViewModel(
         clearSelection()
     }
 
-    private fun pdfLayoutOptions() = PdfLayoutOptions(showPrintTime = brandingRepository.branding.value.showPrintTime)
-
-    private fun resolveWatermarkAndFooterText(): Pair<String?, String?> {
-        val branding: BrandingSettings = brandingRepository.branding.value
-        val brandName = branding.watermarkText?.takeIf { it.isNotBlank() }
-        return brandName?.takeIf { branding.showWatermark } to brandName?.takeIf { branding.showFooter }
-    }
+    /** Marca, logo, contato e opções do PDF, resolvidos do jeito que a prévia de Configurações também usa. */
+    private fun resolvePdfBranding(): ResolvedPdfBranding =
+        brandingRepository.branding.value.resolvePdfBranding(brandingRepository.logoBytes())
 
     private fun sanitizeFileName(name: String): String =
         name.map { if (it.isLetterOrDigit() || it == ' ' || it == '-') it else '_' }.joinToString("")

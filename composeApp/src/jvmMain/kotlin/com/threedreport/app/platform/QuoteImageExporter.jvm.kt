@@ -97,9 +97,25 @@ actual fun renderQuoteImage(
     if (!brandText.isNullOrBlank()) {
         graphics.color = TEXT_MUTED
         graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 30)
-        val width = graphics.fontMetrics.stringWidth(brandText)
+        val text = fitToWidth(graphics, brandText, SIZE - MARGIN * 2)
+        val width = graphics.fontMetrics.stringWidth(text)
         val brandY = if (photo != null) SIZE - bandHeight - 32 else SIZE - MARGIN
-        graphics.drawString(brandText, SIZE - MARGIN - width, brandY)
+        if (photo != null) {
+            // Por cima da foto, texto claro some numa foto clara: uma pílula escura translúcida
+            // atrás garante a leitura do nome e do contato em qualquer foto.
+            val metrics = graphics.fontMetrics
+            graphics.color = Color(BACKGROUND.red, BACKGROUND.green, BACKGROUND.blue, 190)
+            graphics.fillRoundRect(
+                SIZE - MARGIN - width - 18,
+                brandY - metrics.ascent - 10,
+                width + 36,
+                metrics.ascent + metrics.descent + 20,
+                24,
+                24,
+            )
+            graphics.color = TEXT
+        }
+        graphics.drawString(text, SIZE - MARGIN - width, brandY)
     }
 
     graphics.dispose()

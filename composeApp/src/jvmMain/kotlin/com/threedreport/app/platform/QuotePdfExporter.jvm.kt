@@ -9,16 +9,33 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.common.PDRectangle
+import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
+import org.apache.pdfbox.rendering.PDFRenderer
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.util.Matrix
 import java.awt.Color
+import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
+
+/** Maior lado da logo embutida no PDF: o bastante pra ficar nítida no cabeçalho, sem inflar o arquivo. */
+private const val LOGO_MAX_PIXELS = 512
+
+/** Caixa máxima da logo no cabeçalho, em pontos (1/72 pol.). */
+private const val LOGO_MAX_WIDTH = 140f
+private const val LOGO_MAX_HEIGHT = 56f
+
+/** Distância da borda opcional até o limite da página. */
+private const val BORDER_INSET = 20f
 
 /**
  * Decodifica a foto via Skia ([decodeImageBitmap], mesmo decoder da miniatura no app) em vez de
@@ -30,6 +47,77 @@ import kotlin.math.sin
 private fun decodePhotoAsBufferedImage(bytes: ByteArray?): BufferedImage? =
     bytes?.let { runCatching { decodeImageBitmap(it).toAwtImage() }.getOrNull() }
 
+/**
+ * Tudo que é igual em todas as páginas de um documento: fontes, opções e a logo já convertida.
+ * A logo vira **uma** imagem do PDF, reaproveitada em cada página; convertê-la por página faria
+ * um PDF em lote de 20 orçamentos carregar a mesma logo 20 vezes.
+ */
+private class PdfContext(
+    val document: PDDocument,
+    val currency: Currency,
+    val options: PdfLayoutOptions,
+) {
+    val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
+    val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
+    val logo: PDImageXObject? = options.logoBytes?.let { prepareLogo(document, it) }
+
+    /** Se o cabeçalho de identidade aparece. Sem logo nem contato, a página é a de sempre. */
+    val hasHeader: Boolean
+        get() = logo != null || options.contactLines.isNotEmpty()
+}
+
+/** Decodifica a logo (Skia, pelo mesmo motivo da foto), reduz se for grande e converte uma vez só. */
+private fun prepareLogo(document: PDDocument, bytes: ByteArray): PDImageXObject? {
+    val decoded = decodePhotoAsBufferedImage(bytes) ?: return null
+    val largestSide = maxOf(decoded.width, decoded.height)
+    val image = if (largestSide <= LOGO_MAX_PIXELS) {
+        decoded
+    } else {
+        val scale = LOGO_MAX_PIXELS.toDouble() / largestSide
+        val width = (decoded.width * scale).roundToInt().coerceAtLeast(1)
+        val height = (decoded.height * scale).roundToInt().coerceAtLeast(1)
+        // ARGB pra manter o fundo transparente da logo, que é o caso mais comum.
+        BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB).also { scaled ->
+            val graphics = scaled.createGraphics()
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+            graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+            graphics.drawImage(decoded, 0, 0, width, height, null)
+            graphics.dispose()
+        }
+    }
+    return runCatching { LosslessFactory.createFromImage(document, image) }.getOrNull()
+}
+
+/**
+ * Deixa [text] desenhável com [font]. As fontes padrão do PDF (Helvetica) só conhecem a tabela
+ * WinAnsi: um emoji no nome do orçamento ou no contato fazia a exportação inteira falhar com
+ * exceção. Caractere que a fonte não codifica é descartado (e o espaço duplo que sobra, juntado),
+ * porque um PDF com um símbolo a menos é muito melhor do que PDF nenhum.
+ */
+internal fun pdfSafe(font: PDFont, text: String): String {
+    val safe = buildString {
+        var index = 0
+        while (index < text.length) {
+            val codePoint = text.codePointAt(index)
+            val character = String(Character.toChars(codePoint))
+            if (runCatching { font.encode(character) }.isSuccess) append(character)
+            index += Character.charCount(codePoint)
+        }
+    }
+    return if (safe.length == text.length) safe else safe.replace(Regex(" {2,}"), " ").trim()
+}
+
+/** Linha de texto simples, sempre passando por [pdfSafe]. */
+private fun PDPageContentStream.text(font: PDFont, size: Float, x: Float, y: Float, text: String) {
+    beginText()
+    setFont(font, size)
+    newLineAtOffset(x, y)
+    showText(pdfSafe(font, text))
+    endText()
+}
+
+private fun PDFont.widthOf(text: String, size: Float): Float = getStringWidth(pdfSafe(this, text)) / 1000f * size
+
 actual fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
     watermarkText: String?,
@@ -38,13 +126,12 @@ actual fun renderSavedQuotesPdf(
     options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
-        val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
-        val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
+        val context = PdfContext(document, currency, options)
 
         items.forEach { item ->
             val page = PDPage(PDRectangle.A4)
             document.addPage(page)
-            drawQuotePage(document, page, titleFont, bodyFont, item, watermarkText, footerText, currency, options)
+            drawQuotePage(context, page, item, watermarkText, footerText)
         }
 
         val output = ByteArrayOutputStream()
@@ -54,83 +141,63 @@ actual fun renderSavedQuotesPdf(
 }
 
 /**
- * Desenha nome, valor de venda (+ serviços/frete/total, se houver), o preço
- * por unidade quando a quantidade é maior que 1, foto (se houver) e marca
- * d'água/rodapé (se configurados) numa única página. Com quantidade 1 e sem
- * frete (os padrões), a saída é idêntica à de antes desses campos existirem.
+ * Desenha o cabeçalho de identidade (se houver logo ou contato), nome, valor de venda
+ * (+ serviços/frete/total, se houver), o preço por unidade quando a quantidade é maior que 1,
+ * prazo e tempo de impressão, foto (se houver), borda e marca d'água/rodapé (se configurados)
+ * numa única página. Sem identidade, borda, quantidade, frete e prazo (os padrões), a saída é
+ * idêntica à de antes desses campos existirem.
  */
 private fun drawQuotePage(
-    document: PDDocument,
+    context: PdfContext,
     page: PDPage,
-    titleFont: PDType1Font,
-    bodyFont: PDType1Font,
     item: QuoteExportItem,
     watermarkText: String?,
     footerText: String?,
-    currency: Currency,
-    options: PdfLayoutOptions,
 ) {
     val margin = 50f
     val footerReserve = 50f
-    var cursorY = page.mediaBox.height - margin
     val savedQuote = item.savedQuote
+    val currency = context.currency
+    val titleFont = context.titleFont
+    val bodyFont = context.bodyFont
 
-    PDPageContentStream(document, page).use { content ->
-        content.beginText()
-        content.setFont(titleFont, 20f)
-        content.newLineAtOffset(margin, cursorY)
-        content.showText(savedQuote.name)
-        content.endText()
+    PDPageContentStream(context.document, page).use { content ->
+        var cursorY = page.mediaBox.height - margin
+        if (context.hasHeader) {
+            cursorY = drawIdentityHeader(context, content, page, margin, cursorY) - 28f
+        }
+
+        content.text(titleFont, 20f, margin, cursorY, savedQuote.name)
         cursorY -= 30f
 
         val quantity = savedQuote.quote.quantity
 
-        content.beginText()
-        content.setFont(bodyFont, 14f)
-        content.newLineAtOffset(margin, cursorY)
-        content.showText("Venda: ${savedQuote.quote.salePrice.toCurrencyText(currency)}")
-        content.endText()
+        content.text(bodyFont, 14f, margin, cursorY, "Venda: ${savedQuote.quote.salePrice.toCurrencyText(currency)}")
         cursorY -= 24f
 
         savedQuote.services.forEach { service ->
-            content.beginText()
-            content.setFont(bodyFont, 12f)
-            content.newLineAtOffset(margin, cursorY)
             val label = if (quantity > 1) "${service.name} (× $quantity)" else service.name
-            content.showText("$label: ${(service.price * quantity).toCurrencyText(currency)}")
-            content.endText()
+            content.text(bodyFont, 12f, margin, cursorY, "$label: ${(service.price * quantity).toCurrencyText(currency)}")
             cursorY -= 18f
         }
 
         if (savedQuote.shippingCost > 0) {
-            content.beginText()
-            content.setFont(bodyFont, 12f)
-            content.newLineAtOffset(margin, cursorY)
-            content.showText("Frete: ${savedQuote.shippingCost.toCurrencyText(currency)}")
-            content.endText()
+            content.text(bodyFont, 12f, margin, cursorY, "Frete: ${savedQuote.shippingCost.toCurrencyText(currency)}")
             cursorY -= 18f
         }
 
         // O "Total" precisa aparecer mesmo com frete e sem nenhum serviço, senão o cliente vê
         // "Venda" e "Frete" soltos, sem a soma.
         if (savedQuote.services.isNotEmpty() || savedQuote.shippingCost > 0) {
-            content.beginText()
-            content.setFont(titleFont, 14f)
-            content.newLineAtOffset(margin, cursorY)
-            content.showText("Total: ${savedQuote.totalWithServices.toCurrencyText(currency)}")
-            content.endText()
+            content.text(titleFont, 14f, margin, cursorY, "Total: ${savedQuote.totalWithServices.toCurrencyText(currency)}")
             cursorY -= 24f
         }
 
         // Sempre sobre o total que o cliente paga (com serviços), igual à tela de Orçamento: se
         // fosse sobre o valor de venda, a mesma peça teria dois preços unitários diferentes.
         if (quantity > 1) {
-            content.beginText()
-            content.setFont(bodyFont, 11f)
-            content.newLineAtOffset(margin, cursorY)
             val unitPrice = savedQuote.totalWithServices / quantity
-            content.showText("$quantity peças · ${unitPrice.toCurrencyText(currency)} cada")
-            content.endText()
+            content.text(bodyFont, 11f, margin, cursorY, "$quantity peças · ${unitPrice.toCurrencyText(currency)} cada")
             cursorY -= 18f
         }
 
@@ -143,19 +210,15 @@ private fun drawQuotePage(
             cursorY -= 20f
         }
 
-        if (options.showPrintTime) {
-            content.beginText()
-            content.setFont(bodyFont, 11f)
-            content.newLineAtOffset(margin, cursorY)
-            content.showText(savedQuote.printTimeText())
-            content.endText()
+        if (context.options.showPrintTime) {
+            content.text(bodyFont, 11f, margin, cursorY, savedQuote.printTimeText())
             cursorY -= 18f
         }
         cursorY -= 6f
 
         val bufferedImage = decodePhotoAsBufferedImage(item.photoBytes)
         if (bufferedImage != null) {
-            val pdImage = LosslessFactory.createFromImage(document, bufferedImage)
+            val pdImage = LosslessFactory.createFromImage(context.document, bufferedImage)
             val maxWidth = page.mediaBox.width - margin * 2
             val maxHeight = cursorY - footerReserve
             val scale = minOf(maxWidth / pdImage.width, maxHeight / pdImage.height, 1f)
@@ -164,17 +227,85 @@ private fun drawQuotePage(
             content.drawImage(pdImage, margin, cursorY - drawHeight, drawWidth, drawHeight)
         }
 
-        // Marca d'água e rodapé por último: desenhados por cima do resto do
-        // conteúdo (inclusive a foto), translúcidos o bastante pra não
-        // atrapalhar a leitura — do contrário ficam encobertos pela foto.
-        // Independentes: cada um só aparece se o respectivo texto vier preenchido.
-        if (!watermarkText.isNullOrBlank()) {
-            drawWatermark(content, page, titleFont, watermarkText)
-        }
-        if (!footerText.isNullOrBlank()) {
-            drawFooter(content, page, bodyFont, footerText, margin)
-        }
+        drawPageDecorations(context, content, page, watermarkText, footerText, margin)
     }
+}
+
+/**
+ * Borda, marca d'água e rodapé, por último: desenhados por cima do resto do conteúdo (inclusive a
+ * foto), translúcidos o bastante pra não atrapalhar a leitura — do contrário ficam encobertos pela
+ * foto. Independentes: cada um só aparece se configurado.
+ */
+private fun drawPageDecorations(
+    context: PdfContext,
+    content: PDPageContentStream,
+    page: PDPage,
+    watermarkText: String?,
+    footerText: String?,
+    margin: Float,
+) {
+    if (context.options.showBorder) drawBorder(content, page)
+    if (!watermarkText.isNullOrBlank()) drawWatermark(content, page, context.titleFont, watermarkText)
+    if (!footerText.isNullOrBlank()) {
+        // Com borda, o rodapé sobe um pouco pra não encostar nela.
+        drawFooter(content, page, context.bodyFont, footerText, margin, textY = if (context.options.showBorder) 36f else 28f)
+    }
+}
+
+/**
+ * Cabeçalho de papel timbrado: à esquerda a logo (ou, sem logo, o nome da marca em destaque), à
+ * direita o nome e os contatos alinhados, e uma linha fina embaixo. Devolve a altura da linha,
+ * pra quem chama continuar desenhando abaixo dela. O canto de baixo da página, e não este
+ * cabeçalho, fica reservado pra assinatura "Gerado com 3DReport" (leva 8, decisão 86).
+ */
+private fun drawIdentityHeader(
+    context: PdfContext,
+    content: PDPageContentStream,
+    page: PDPage,
+    margin: Float,
+    top: Float,
+): Float {
+    val options = context.options
+    val brandName = options.brandName?.takeIf { it.isNotBlank() }
+    val right = page.mediaBox.width - margin
+
+    var leftHeight = 0f
+    val logo = context.logo
+    if (logo != null) {
+        val scale = minOf(LOGO_MAX_WIDTH / logo.width, LOGO_MAX_HEIGHT / logo.height)
+        val drawWidth = logo.width * scale
+        val drawHeight = logo.height * scale
+        content.drawImage(logo, margin, top - drawHeight, drawWidth, drawHeight)
+        leftHeight = drawHeight
+    } else if (brandName != null) {
+        content.text(context.titleFont, 16f, margin, top - 16f, brandName)
+        leftHeight = 20f
+    }
+
+    // Com logo, o nome vai pro bloco da direita junto do contato; sem logo, ele já está à esquerda.
+    val rightLines = buildList {
+        if (logo != null && brandName != null) add(Triple(context.titleFont, 11f, brandName))
+        options.contactLines.forEach { add(Triple(context.bodyFont, 9f, it)) }
+    }
+    var lineY = top
+    content.saveGraphicsState()
+    rightLines.forEachIndexed { index, (font, size, text) ->
+        lineY -= if (index == 0) size else size + 3f
+        content.setNonStrokingColor(if (font == context.titleFont) Color(0x22, 0x22, 0x22) else Color(90, 90, 90))
+        content.text(font, size, right - font.widthOf(text, size), lineY, text)
+    }
+    content.restoreGraphicsState()
+    val rightHeight = top - lineY + if (rightLines.isNotEmpty()) 3f else 0f
+
+    val ruleY = top - maxOf(leftHeight, rightHeight) - 8f
+    content.saveGraphicsState()
+    content.setStrokingColor(Color(200, 200, 200))
+    content.setLineWidth(0.5f)
+    content.moveTo(margin, ruleY)
+    content.lineTo(right, ruleY)
+    content.stroke()
+    content.restoreGraphicsState()
+    return ruleY
 }
 
 actual fun renderCatalogPdf(
@@ -185,17 +316,32 @@ actual fun renderCatalogPdf(
     options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
-        val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
-        val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
+        val context = PdfContext(document, currency, options)
 
         val margin = 40f
         val columns = 2
         val gutter = 20f
-        val headerHeight = 50f
+        val titleHeight = 50f
         val photoSize = 180f
         val cellHeight = photoSize + 44f
         val rowGap = 20f
         val cellWidth = (PDRectangle.A4.width - margin * 2 - gutter * (columns - 1)) / columns
+
+        // O cabeçalho de identidade tem altura variável (logo, número de contatos). Mede numa
+        // página de rascunho, fora do documento, pra saber quantas linhas de produtos ainda cabem.
+        val identityHeight = if (context.hasHeader) {
+            PDDocument().use { scratch ->
+                val scratchPage = PDPage(PDRectangle.A4).also(scratch::addPage)
+                val scratchContext = PdfContext(scratch, currency, options)
+                PDPageContentStream(scratch, scratchPage).use { content ->
+                    val top = scratchPage.mediaBox.height - margin
+                    top - drawIdentityHeader(scratchContext, content, scratchPage, margin, top) + 12f
+                }
+            }
+        } else {
+            0f
+        }
+        val headerHeight = titleHeight + identityHeight
 
         val usableHeight = PDRectangle.A4.height - margin * 2 - headerHeight
         val rowsPerPage = maxOf(1, ((usableHeight + rowGap) / (cellHeight + rowGap)).toInt())
@@ -206,26 +352,19 @@ actual fun renderCatalogPdf(
             document.addPage(page)
             PDPageContentStream(document, page).use { content ->
                 val top = page.mediaBox.height - margin
-                content.beginText()
-                content.setFont(titleFont, 18f)
-                content.newLineAtOffset(margin, top - 14f)
-                content.showText("Catálogo de produtos")
-                content.endText()
+                if (context.hasHeader) drawIdentityHeader(context, content, page, margin, top)
+                val titleTop = top - identityHeight
+                content.text(context.titleFont, 18f, margin, titleTop - 14f, "Catálogo de produtos")
 
                 pageItems.forEachIndexed { index, item ->
                     val row = index / columns
                     val col = index % columns
                     val cellX = margin + col * (cellWidth + gutter)
-                    val cellTop = top - headerHeight - row * (cellHeight + rowGap)
-                    drawCatalogCell(document, content, item, cellX, cellTop, cellWidth, photoSize, titleFont, bodyFont, currency)
+                    val cellTop = titleTop - titleHeight - row * (cellHeight + rowGap)
+                    drawCatalogCell(context, content, item, cellX, cellTop, cellWidth, photoSize)
                 }
 
-                if (!watermarkText.isNullOrBlank()) {
-                    drawWatermark(content, page, titleFont, watermarkText)
-                }
-                if (!footerText.isNullOrBlank()) {
-                    drawFooter(content, page, bodyFont, footerText, margin)
-                }
+                drawPageDecorations(context, content, page, watermarkText, footerText, margin)
             }
         }
 
@@ -237,21 +376,18 @@ actual fun renderCatalogPdf(
 
 /** Desenha uma célula da grade do catálogo: foto (se houver, centralizada e escalada até [photoSize]) + nome + venda. */
 private fun drawCatalogCell(
-    document: PDDocument,
+    context: PdfContext,
     content: PDPageContentStream,
     item: QuoteExportItem,
     cellX: Float,
     cellTop: Float,
     cellWidth: Float,
     photoSize: Float,
-    titleFont: PDType1Font,
-    bodyFont: PDType1Font,
-    currency: Currency,
 ) {
     val savedQuote = item.savedQuote
     val bufferedImage = decodePhotoAsBufferedImage(item.photoBytes)
     if (bufferedImage != null) {
-        val pdImage = LosslessFactory.createFromImage(document, bufferedImage)
+        val pdImage = LosslessFactory.createFromImage(context.document, bufferedImage)
         val scale = minOf(photoSize / pdImage.width, photoSize / pdImage.height, 1f)
         val drawWidth = pdImage.width * scale
         val drawHeight = pdImage.height * scale
@@ -261,18 +397,9 @@ private fun drawCatalogCell(
     }
 
     var textY = cellTop - photoSize - 16f
-    content.beginText()
-    content.setFont(titleFont, 12f)
-    content.newLineAtOffset(cellX, textY)
-    content.showText(savedQuote.name)
-    content.endText()
+    content.text(context.titleFont, 12f, cellX, textY, savedQuote.name)
     textY -= 16f
-
-    content.beginText()
-    content.setFont(bodyFont, 12f)
-    content.newLineAtOffset(cellX, textY)
-    content.showText(savedQuote.totalWithServices.toCurrencyText(currency))
-    content.endText()
+    content.text(context.bodyFont, 12f, cellX, textY, savedQuote.totalWithServices.toCurrencyText(context.currency))
 }
 
 /**
@@ -281,7 +408,7 @@ private fun drawCatalogCell(
  */
 private fun drawHighlightBand(
     content: PDPageContentStream,
-    font: PDType1Font,
+    font: PDFont,
     text: String,
     x: Float,
     top: Float,
@@ -299,21 +426,28 @@ private fun drawHighlightBand(
     content.addRect(x, bottom, 4f, height)
     content.fill()
     content.setNonStrokingColor(Color(0x33, 0x2A, 0x14))
-    content.beginText()
-    content.setFont(font, fontSize)
-    content.newLineAtOffset(x + 12f, bottom + (height - fontSize) / 2f + 3f)
-    content.showText(text)
-    content.endText()
+    content.text(font, fontSize, x + 12f, bottom + (height - fontSize) / 2f + 3f, text)
     content.restoreGraphicsState()
 
     return bottom
 }
 
+/** Borda fina e clara em volta da página, pra dar cara de documento. */
+private fun drawBorder(content: PDPageContentStream, page: PDPage) {
+    content.saveGraphicsState()
+    content.setStrokingColor(Color(190, 190, 190))
+    content.setLineWidth(0.75f)
+    content.addRect(BORDER_INSET, BORDER_INSET, page.mediaBox.width - BORDER_INSET * 2, page.mediaBox.height - BORDER_INSET * 2)
+    content.stroke()
+    content.restoreGraphicsState()
+}
+
 /** Texto grande, cinza claro e diagonal, centralizado na página, por cima do resto do conteúdo. */
-private fun drawWatermark(content: PDPageContentStream, page: PDPage, font: PDType1Font, text: String) {
+private fun drawWatermark(content: PDPageContentStream, page: PDPage, font: PDFont, text: String) {
     val fontSize = 48f
+    val safeText = pdfSafe(font, text)
     val angleRadians = Math.toRadians(45.0)
-    val textWidth = font.getStringWidth(text) / 1000f * fontSize
+    val textWidth = font.getStringWidth(safeText) / 1000f * fontSize
     val centerX = page.mediaBox.width / 2f
     val centerY = page.mediaBox.height / 2f
     val startX = centerX - (textWidth / 2f) * cos(angleRadians).toFloat()
@@ -328,15 +462,17 @@ private fun drawWatermark(content: PDPageContentStream, page: PDPage, font: PDTy
     content.beginText()
     content.setFont(font, fontSize)
     content.setTextMatrix(Matrix.getRotateInstance(angleRadians, startX, startY))
-    content.showText(text)
+    content.showText(safeText)
     content.endText()
     content.restoreGraphicsState()
 }
 
-/** Rodapé discreto: linha fina + nome da marca centralizado, no rodapé de qualquer página A4. */
-private fun drawFooter(content: PDPageContentStream, page: PDPage, font: PDType1Font, brandName: String, margin: Float) {
+/**
+ * Rodapé discreto: linha fina + nome da marca centralizado, no rodapé de qualquer página A4. O
+ * canto direito fica livre de propósito, reservado pra assinatura "Gerado com 3DReport" (leva 8).
+ */
+private fun drawFooter(content: PDPageContentStream, page: PDPage, font: PDFont, brandName: String, margin: Float, textY: Float) {
     val fontSize = 9f
-    val textY = 28f
     val lineY = textY + 14f
 
     content.saveGraphicsState()
@@ -347,12 +483,13 @@ private fun drawFooter(content: PDPageContentStream, page: PDPage, font: PDType1
     content.stroke()
 
     content.setNonStrokingColor(Color(120, 120, 120))
-    val textWidth = font.getStringWidth(brandName) / 1000f * fontSize
-    val centerX = (page.mediaBox.width - textWidth) / 2f
-    content.beginText()
-    content.setFont(font, fontSize)
-    content.newLineAtOffset(centerX, textY)
-    content.showText(brandName)
-    content.endText()
+    val centerX = (page.mediaBox.width - font.widthOf(brandName, fontSize)) / 2f
+    content.text(font, fontSize, centerX, textY, brandName)
     content.restoreGraphicsState()
 }
+
+actual fun renderPdfFirstPagePng(pdf: ByteArray, dpi: Float): ByteArray =
+    Loader.loadPDF(pdf).use { document ->
+        val image = PDFRenderer(document).renderImageWithDPI(0, dpi)
+        ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
+    }

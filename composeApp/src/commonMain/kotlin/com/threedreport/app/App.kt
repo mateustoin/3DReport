@@ -116,7 +116,7 @@ fun App() {
     val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository) }
     val serviceListViewModel = remember { ServiceListViewModel(serviceRepository) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
-    val brandingViewModel = remember { BrandingViewModel(brandingRepository, templateRepository) }
+    val brandingViewModel = remember { BrandingViewModel(brandingRepository, templateRepository, currency = { currencyRepository.currency.value }) }
     val templateListViewModel = remember { TemplateListViewModel(templateRepository, brandingRepository) }
     val themeViewModel = remember { ThemeViewModel(themeRepository) }
     val currencyViewModel = remember { CurrencyViewModel(currencyRepository) }

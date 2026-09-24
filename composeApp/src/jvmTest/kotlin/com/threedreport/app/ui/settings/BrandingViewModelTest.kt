@@ -1,7 +1,9 @@
 package com.threedreport.app.ui.settings
 
 import com.threedreport.app.data.BrandingRepository
+import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
+import com.threedreport.app.platform.PickedFile
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -117,5 +119,99 @@ class BrandingViewModelTest {
 
         assertNotNull(viewModel.uiState.value.templateSaveError)
         assertTrue(templateRepository.templates.value.isEmpty())
+    }
+
+    /** PNG de 2x2 de verdade, pra passar na checagem de "a imagem abre". */
+    private fun tinyPng(): ByteArray {
+        val image = java.awt.image.BufferedImage(2, 2, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        return java.io.ByteArrayOutputStream().also { javax.imageio.ImageIO.write(image, "png", it) }.toByteArray()
+    }
+
+    @Test
+    fun pickedLogoIsOnlyStoredOnSave() {
+        val repository = BrandingRepository()
+        val png = tinyPng()
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", png) })
+
+        viewModel.pickLogo()
+        assertNull(repository.branding.value.logoFileName, "escolher não grava: o formulário é rascunho até Salvar")
+
+        viewModel.save()
+        assertNotNull(repository.logoBytes())
+        assertEquals(LogoChange.Keep, viewModel.uiState.value.logoChange, "salvar de novo não regrava a mesma logo")
+    }
+
+    @Test
+    fun unreadableLogoShowsAnErrorAndKeepsTheFormAsItWas() {
+        val viewModel = BrandingViewModel(BrandingRepository(), TemplateRepository(), pickImage = { PickedFile("logo.png", byteArrayOf(1, 2, 3)) })
+
+        viewModel.pickLogo()
+
+        assertNotNull(viewModel.uiState.value.logoError)
+        assertNull(viewModel.uiState.value.logoBytes)
+    }
+
+    @Test
+    fun removingTheLogoTakesEffectOnSave() {
+        val repository = BrandingRepository()
+        val png = tinyPng()
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", png) })
+        viewModel.pickLogo()
+        viewModel.save()
+
+        viewModel.removeLogo()
+        viewModel.save()
+
+        assertNull(repository.branding.value.logoFileName)
+    }
+
+    @Test
+    fun nameWithoutWatermarkOrFooterIsFineWhenTheHeaderShowsIt() {
+        // Com contato, o PDF ganha cabeçalho, e é lá que o nome aparece.
+        val repository = BrandingRepository()
+        val viewModel = newViewModel(repository)
+
+        viewModel.update("Minha Marca")
+        viewModel.setShowWatermark(false)
+        viewModel.setShowFooter(false)
+        viewModel.setContactInstagram("minhamarca")
+        viewModel.save()
+
+        assertNull(viewModel.uiState.value.errorMessage)
+        assertEquals("@minhamarca", repository.branding.value.instagramHandle)
+    }
+
+    @Test
+    fun templateKeepsPresentationButNotIdentity() {
+        val templateRepository = TemplateRepository()
+        val viewModel = newViewModel(templateRepository = templateRepository)
+
+        viewModel.update("Minha Marca")
+        viewModel.setShowBorder(true)
+        viewModel.setContactEmail("loja@example.com")
+        viewModel.startSaveAsTemplate()
+        viewModel.updateTemplateName("Com borda")
+        viewModel.confirmSaveAsTemplate()
+
+        val saved = templateRepository.templates.value.first { it.name == "Com borda" }
+        assertTrue(saved.showBorder)
+        assertEquals("Minha Marca", saved.watermarkText)
+    }
+
+    @Test
+    fun previewRendersThePdfWithWhatIsInTheFormEvenUnsaved() {
+        val repository = BrandingRepository()
+        val viewModel = newViewModel(repository)
+        viewModel.update("Minha Marca")
+        viewModel.setShowBorder(true)
+
+        viewModel.showPreview()
+
+        val png = assertNotNull(viewModel.uiState.value.previewPng)
+        assertNotNull(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(png)))
+        assertNull(repository.branding.value.watermarkText, "a prévia não salva nada")
+
+        viewModel.closePreview()
+        assertNull(viewModel.uiState.value.previewPng)
     }
 }
