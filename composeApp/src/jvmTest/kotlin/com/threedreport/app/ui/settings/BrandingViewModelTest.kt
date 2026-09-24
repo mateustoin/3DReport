@@ -214,19 +214,4 @@ class BrandingViewModelTest {
         viewModel.closePreview()
         assertNull(viewModel.uiState.value.previewPng)
     }
-
-    @Test
-    fun disablingTheSignatureFromTheNoticeKeepsEverythingElseAndSurvivesTheNextSave() {
-        val repository = BrandingRepository()
-        repository.update(com.threedreport.core.model.BrandingSettings(watermarkText = "Loja", showBorder = true))
-        val viewModel = newViewModel(repository)
-
-        viewModel.disableAppSignature()
-        viewModel.save()
-
-        val saved = repository.branding.value
-        assertEquals(false, saved.showAppSignature)
-        assertEquals("Loja", saved.watermarkText)
-        assertTrue(saved.showBorder)
-    }
 }

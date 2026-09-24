@@ -120,6 +120,13 @@ class BrandingRepositoryTest {
         assertNull(loaded.logoFileName)
         assertTrue(loaded.contactLines.isEmpty())
         assertFalse(loaded.showBorder)
-        assertTrue(loaded.showAppSignature, "quem atualiza recebe a assinatura ligada, com o aviso único (decisão 88)")
+    }
+
+    @Test
+    fun brandingSavedWithTheOldSignatureSwitchStillLoads() {
+        // A opção de desligar a assinatura existiu numa versão local (decisão 88) e saiu (decisão 91).
+        java.io.File(dataDir(), "branding.json").writeText("""{"watermarkText":"Loja","showAppSignature":false}""")
+
+        assertEquals("Loja", BrandingRepository().branding.value.watermarkText)
     }
 }

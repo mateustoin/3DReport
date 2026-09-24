@@ -49,8 +49,6 @@ import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
-import com.threedreport.app.data.NOTICE_APP_SIGNATURE
-import com.threedreport.app.data.NoticesRepository
 import com.threedreport.app.data.OnboardingRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -69,7 +67,6 @@ import com.threedreport.app.ui.filaments.FilamentListViewModel
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.history.QuoteHistoryScreen
 import com.threedreport.app.ui.history.QuoteHistoryViewModel
-import com.threedreport.app.ui.onboarding.AppSignatureNoticeDialog
 import com.threedreport.app.ui.onboarding.OnboardingDialog
 import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
@@ -142,7 +139,6 @@ fun App() {
     val backupRepository = remember { BackupRepository() }
     val salesChannelRepository = remember { SalesChannelRepository() }
     val onboardingRepository = remember { OnboardingRepository() }
-    val noticesRepository = remember { NoticesRepository() }
 
     val quoteViewModel = remember {
         QuoteViewModel(
@@ -164,7 +160,6 @@ fun App() {
     val salesChannelViewModel = remember { SalesChannelViewModel(salesChannelRepository) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
-    val seenNotices by noticesRepository.seen.collectAsState()
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var draggingFile by remember { mutableStateOf(false) }
     var showHelp by remember { mutableStateOf(false) }
@@ -273,33 +268,13 @@ fun App() {
             }
 
             if (!onboardingCompleted) {
-                // Quem instala agora conhece a assinatura por Configurações; o aviso de novidade é
-                // pra quem já usava. Concluir ou pular o onboarding marca os dois, pra não abrir
-                // um diálogo logo atrás do outro.
-                fun finishOnboarding() {
-                    onboardingRepository.markCompleted()
-                    noticesRepository.markSeen(NOTICE_APP_SIGNATURE)
-                }
                 OnboardingDialog(
                     currentSettings = settingsRepository.settings.value,
                     onFinish = {
                         settingsRepository.update(it)
-                        finishOnboarding()
+                        onboardingRepository.markCompleted()
                     },
-                    onSkip = ::finishOnboarding,
-                )
-            } else if (NOTICE_APP_SIGNATURE !in seenNotices) {
-                AppSignatureNoticeDialog(
-                    onPreview = {
-                        noticesRepository.markSeen(NOTICE_APP_SIGNATURE)
-                        selectedTab = AppTab.SETTINGS
-                        brandingViewModel.showPreview()
-                    },
-                    onDisable = {
-                        noticesRepository.markSeen(NOTICE_APP_SIGNATURE)
-                        brandingViewModel.disableAppSignature()
-                    },
-                    onKeep = { noticesRepository.markSeen(NOTICE_APP_SIGNATURE) },
+                    onSkip = onboardingRepository::markCompleted,
                 )
             }
 

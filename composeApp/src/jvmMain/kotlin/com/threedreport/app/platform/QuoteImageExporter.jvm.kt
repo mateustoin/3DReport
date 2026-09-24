@@ -17,8 +17,8 @@ private const val MARGIN = 64
  */
 private const val MIN_BAND_HEIGHT = 300
 
-/** Espaço livre entre a última linha de texto e a borda de baixo da faixa. */
-private const val BAND_BOTTOM_PADDING = 56
+/** Espaço livre entre a última linha de texto e a borda de baixo da faixa, onde fica a assinatura do app. */
+private const val BAND_BOTTOM_PADDING = 64
 
 // Distância entre linhas de base: título → preço → preço unitário → prazo.
 private const val TITLE_OFFSET = 90
@@ -118,6 +118,8 @@ actual fun renderQuoteImage(
         graphics.drawString(text, SIZE - MARGIN - width, brandY)
     }
 
+    drawAppSignature(graphics)
+
     graphics.dispose()
 
     val output = ByteArrayOutputStream()
@@ -146,4 +148,17 @@ private fun fitToWidth(graphics: java.awt.Graphics2D, text: String, maxWidth: In
     var end = text.length
     while (end > 1 && metrics.stringWidth(text.take(end) + "...") > maxWidth) end--
     return text.take(end).trimEnd() + "..."
+}
+
+/**
+ * "Gerado com 3DReport" no canto inferior direito, pequeno e bem apagado, longe do nome, do preço
+ * e do prazo, que ficam à esquerda (decisão 91). Na imagem não há link, então o texto é o próprio
+ * caminho: "3DReport" é o que alguém pesquisa depois de ver a imagem no status de um vendedor.
+ */
+private fun drawAppSignature(graphics: java.awt.Graphics2D) {
+    graphics.color = Color(TEXT_MUTED.red, TEXT_MUTED.green, TEXT_MUTED.blue, 150)
+    graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 22)
+    val text = "Gerado com 3DReport"
+    val width = graphics.fontMetrics.stringWidth(text)
+    graphics.drawString(text, SIZE - MARGIN - width, SIZE - 28)
 }

@@ -440,10 +440,11 @@ layout antes disso significa redesenhar duas vezes.
 
 ### Leva 8 — Crescimento (com o produto já bom)
 
-- [x] **Assinatura discreta "Gerado com 3DReport" nos PDFs** (decisão 88,
-  2026-09-23). **Feito:** canto inferior direito, link só pro site, ligada
-  por padrão com aviso único pra quem já usava, desligável em
-  Configurações. Detalhe no item de "Vendas e divulgação". Texto original:
+- [x] **Assinatura discreta "Gerado com 3DReport" nos PDFs** (decisões 88 e
+  91, 2026-09-23). **Feito:** sempre presente, sem opção de desligar
+  (decisão 91: opcional, todo mundo desligaria), discreta no canto inferior
+  direito do PDF, com só "3DReport" como link pro site, e também na imagem
+  do WhatsApp (sem link). Detalhe no item de "Vendas e divulgação". Texto original:
   item já registrado e detalhado (ver "Vendas e divulgação") — é a maior alavanca
   de distribuição do projeto inteiro. Cada
   orçamento que um vendedor manda pro cliente é uma chance de outro vendedor
@@ -1193,13 +1194,14 @@ funciona hoje.
   `ui/format/CurrencyFormat.kt` (`LocalCurrency`, `toMoney()`,
   `toCurrencyText()`).
 - [x] **Assinatura discreta "Gerado com 3DReport" nos PDFs exportados**
-  (decisão 88, 2026-09-23). **Feito:** "Gerado com 3DReport" em 7 pt no
-  canto inferior direito (espaço reservado pela decisão 86), link só pro
-  site (o link de apoio ficou de fora por decisão do responsável do
-  projeto), em todo PDF (orçamento, lote, catálogo), fora da imagem e do
-  texto. Ligada por padrão inclusive pra quem atualiza, com um aviso único
-  ("Ver como fica / Desligar / Manter") pra quem já usava; instalação nova
-  pula o aviso. Texto original abaixo.
+  (decisões 88 e 91, 2026-09-23). **Feito:** "Gerado com 3DReport" em 7 pt
+  no canto inferior direito (espaço reservado pela decisão 86), com só
+  "3DReport" como link pro site (o link de apoio ficou de fora por decisão
+  do responsável do projeto), em todo PDF (orçamento, lote, catálogo) e
+  também na imagem quadrada do WhatsApp, pequena e apagada. Fora do texto
+  do copiar/colar. **Sempre ligada, sem opção de desligar** (decisão 91,
+  que revisou a 88 antes de publicar: opcional e não essencial, todo mundo
+  desligaria); o aviso único da decisão 88 saiu junto. Texto original abaixo.
   Ideia trazida pelo responsável do projeto (2026-09-17): já que o projeto
   vive só de doação voluntária, sem verba de marketing (decisão 15), cada
   PDF gerado (orçamento individual, múltiplos orçamentos e catálogo —
@@ -1217,13 +1219,15 @@ funciona hoje.
     competir com a identidade que o vendedor está tentando passar no
     documento que ele manda pro cliente dele — o app continua sendo uma
     ferramenta a serviço do vendedor, não uma vitrine pro 3DReport.
-  - **Ligada por padrão, mas configurável.** Sem edição paga pra remover a
+  - **Ligada por padrão, mas configurável** (superado pela decisão 91: ficou
+    sempre ligada, sem opção de desligar). Sem edição paga pra remover a
     marca (decisão 15), a única alavanca de alcance aqui é vir ligada por
     padrão — mas precisa dar pra desligar em Configurações (checkbox, mesmo
     espírito de `showWatermark`/`showFooter`), pra quem prefira entregar um
     documento sem nenhuma referência a terceiros. Perde algo de alcance,
     ganha em confiança de quem usa a ferramenta a longo prazo.
-  - **Escopo: só PDF**, não no copiar/colar (decisão 19) — aquele formato é
+  - **Escopo: só PDF** (a decisão 91 levou também pra imagem do WhatsApp,
+    sem link; o copiar/colar continua sem), não no copiar/colar (decisão 19) — aquele formato é
     pra colar direto numa conversa informal de WhatsApp/marketplace, onde um
     link a mais soa mais invasivo do que discreto. Reavaliar só se fizer
     sentido depois.

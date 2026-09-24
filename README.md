@@ -74,7 +74,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 
 **Personalização do PDF**
 - Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome
-- Assinatura discreta "Gerado com 3DReport" no canto do PDF, desligável em Configurações
+- Assinatura discreta "Gerado com 3DReport" no canto do PDF (com link pro site) e da imagem do WhatsApp
 - Prévia do PDF em Configurações ("Ver como fica"), antes mesmo de salvar
 - Templates — fotos salvas da aparência do PDF (marca d'água, rodapé, borda, tempo de impressão), com indicador do template ativo; logo e contato ficam de fora, pra não se perderem ao trocar de template
 

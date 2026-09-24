@@ -444,7 +444,7 @@ private fun SavedQuoteRow(
                                 onClick = { showMenu = false; onOpenWhatsApp() },
                             )
                             DropdownMenuItem(
-                                text = { Text("Salvar imagem pro WhatsApp") },
+                                text = { Text("Salvar orçamento pro WhatsApp") },
                                 leadingIcon = { Icon(AppIcons.AddPhotoAlternate, contentDescription = null) },
                                 onClick = { showMenu = false; onSaveImage() },
                             )

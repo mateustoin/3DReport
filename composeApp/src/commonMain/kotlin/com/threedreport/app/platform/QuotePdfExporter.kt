@@ -19,7 +19,8 @@ data class QuoteExportItem(val savedQuote: SavedQuote, val photoBytes: ByteArray
  * @property contactLines contato público do vendedor, uma linha por item (ver
  *   `BrandingSettings.contactLines`).
  * @property showBorder borda fina em volta da página.
- * @property showAppSignature "Gerado com 3DReport" no canto inferior direito, com link pro site.
+ * @property showAppSignature "Gerado com 3DReport" no canto inferior direito, com "3DReport" como link
+ *   pro site. Nos exports do app vem sempre ligada ([resolvePdfBranding], decisão 91).
  *   Padrão desligado aqui (só quem resolve a partir de `BrandingSettings` liga), pra quem chama
  *   sem opções continuar recebendo o PDF de sempre.
  *
@@ -104,7 +105,8 @@ fun BrandingSettings.resolvePdfBranding(logoBytes: ByteArray?): ResolvedPdfBrand
             brandName = brandName,
             contactLines = contactLines,
             showBorder = showBorder,
-            showAppSignature = showAppSignature,
+            // Sempre ligada nos exports do app (decisão 91): opcional, todo mundo desligaria.
+            showAppSignature = true,
         ),
     )
 }

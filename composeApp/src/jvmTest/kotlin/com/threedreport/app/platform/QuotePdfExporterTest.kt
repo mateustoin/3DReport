@@ -554,28 +554,32 @@ class QuotePdfExporterTest {
     }
 
     @Test
-    fun appSignatureLinksToTheSiteOnEveryPage() {
-        val options = com.threedreport.core.model.BrandingSettings().resolvePdfBranding(null).options
-        check(options.showAppSignature) { "a assinatura nasce ligada" }
+    fun appSignatureIsAlwaysOnAndOnlyTheAppNameIsALink() {
+        // Qualquer configuração da marca resolve com a assinatura ligada: não há como desligar (decisão 91).
+        val options = com.threedreport.core.model.BrandingSettings(showWatermark = false, showFooter = false).resolvePdfBranding(null).options
+        check(options.showAppSignature) { "a assinatura é sempre ligada nos exports do app" }
 
         val pdf = renderSavedQuotesPdf(List(2) { QuoteExportItem(savedQuote, null) }, null, null, options = options)
 
         Loader.loadPDF(pdf).use { document ->
             assertTrue(PDFTextStripper().getText(document).contains("Gerado com 3DReport"))
+            val font = org.apache.pdfbox.pdmodel.font.PDType1Font(org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA)
+            val nameWidth = font.getStringWidth("3DReport") / 1000f * 7f
+            val rightEdge = document.pages.first().mediaBox.width - 50f
             document.pages.forEach { page ->
-                val uris = page.annotations
-                    .filterIsInstance<org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink>()
-                    .mapNotNull { (it.action as? org.apache.pdfbox.pdmodel.interactive.action.PDActionURI)?.uri }
-                assertEquals(listOf("https://mateustoin.github.io/3DReport/"), uris)
+                val links = page.annotations.filterIsInstance<org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink>()
+                val link = links.single()
+                assertEquals("https://mateustoin.github.io/3DReport/", (link.action as org.apache.pdfbox.pdmodel.interactive.action.PDActionURI).uri)
+                // O link cobre só "3DReport", no fim da linha, e não a frase inteira.
+                assertEquals(nameWidth, link.rectangle.width, 0.01f)
+                assertEquals(rightEdge, link.rectangle.upperRightX, 0.01f)
             }
         }
     }
 
     @Test
-    fun appSignatureCanBeTurnedOffAndIsOffWithoutOptions() {
-        val off = com.threedreport.core.model.BrandingSettings(showAppSignature = false).resolvePdfBranding(null).options
-
-        assertFalse(textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = off)).contains("3DReport"))
+    fun renderingWithoutOptionsHasNoSignature() {
+        // Só quem chama sem opções (testes, uso interno) recebe o PDF sem assinatura; o app sempre resolve com ela.
         assertFalse(textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null)).contains("3DReport"))
     }
 

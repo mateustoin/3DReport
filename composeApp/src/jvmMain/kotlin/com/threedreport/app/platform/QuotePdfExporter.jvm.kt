@@ -259,27 +259,30 @@ private fun drawPageDecorations(
  * "Gerado com 3DReport" no canto inferior direito, o espaço que a decisão 86 deixou livre no
  * rodapé pra isso: fica na mesma linha do nome da marca (centralizado), sem disputar com ele.
  * Pequeno e claro de propósito: o documento é do vendedor, a assinatura é só uma porta pra outro
- * vendedor conhecer o app. O texto inteiro é um link pro site (decisão 88).
+ * vendedor conhecer o app. Só "3DReport" é link pro site (decisão 91), pra o clique cair no nome
+ * do app e não numa frase inteira.
  */
 private fun drawAppSignature(content: PDPageContentStream, page: PDPage, font: PDFont, margin: Float, baselineY: Float) {
     val fontSize = 7f
-    val textWidth = font.widthOf(APP_SIGNATURE_TEXT, fontSize)
-    val x = page.mediaBox.width - margin - textWidth
+    val prefixWidth = font.widthOf(APP_SIGNATURE_PREFIX, fontSize)
+    val nameWidth = font.widthOf(APP_NAME, fontSize)
+    val x = page.mediaBox.width - margin - prefixWidth - nameWidth
 
     content.saveGraphicsState()
     content.setNonStrokingColor(Color(165, 165, 165))
-    content.text(font, fontSize, x, baselineY, APP_SIGNATURE_TEXT)
+    content.text(font, fontSize, x, baselineY, APP_SIGNATURE_PREFIX + APP_NAME)
     content.restoreGraphicsState()
 
     val link = PDAnnotationLink().apply {
-        rectangle = PDRectangle(x, baselineY - 2f, textWidth, fontSize + 4f)
+        rectangle = PDRectangle(x + prefixWidth, baselineY - 2f, nameWidth, fontSize + 4f)
         borderStyle = PDBorderStyleDictionary().apply { width = 0f }
         action = PDActionURI().apply { uri = APP_SITE_URL }
     }
     page.annotations.add(link)
 }
 
-private const val APP_SIGNATURE_TEXT = "Gerado com 3DReport"
+private const val APP_SIGNATURE_PREFIX = "Gerado com "
+private const val APP_NAME = "3DReport"
 private const val APP_SITE_URL = "https://mateustoin.github.io/3DReport/"
 
 /**

@@ -5,6 +5,23 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.37.0] - 2026-09-23
+
+### Alterado
+- **A assinatura "Gerado com 3DReport" agora aparece sempre**, sem opção de
+  desligar, e bem discreta: uma linha pequena e apagada no canto de baixo,
+  longe do seu nome, da sua logo e do preço. No PDF, só a palavra
+  "3DReport" é link pro site. O app é gratuito e sem propaganda, e é assim
+  que outros vendedores o conhecem.
+- **A imagem do WhatsApp também leva a assinatura**, pequena, no canto de
+  baixo da faixa escura, sem tocar a foto nem o prazo.
+- **"Salvar imagem pro WhatsApp" virou "Salvar orçamento pro WhatsApp"**,
+  porque salva o orçamento inteiro em imagem, não só a foto.
+
+### Removido
+- A opção de desligar a assinatura em Configurações e o aviso de novidade
+  que aparecia pra quem já usava o app.
+
 ## [1.36.0] - 2026-09-23
 
 ### Adicionado
