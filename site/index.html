@@ -81,6 +81,14 @@
       },
       {
         "@type": "Question",
+        "name": "Preciso digitar o comprimento e o tempo de cada peça?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Não. Arraste o G-code exportado pelo fatiador pra janela do app (ou use o botão de importar): comprimento de filamento, tempo de impressão, foto da peça e configurações de impressão entram sozinhos. Se o nome da impressora e o tipo de filamento do G-code baterem com o que você cadastrou, eles já vêm escolhidos também; quando só parecem, o app sugere e você confirma. Funciona com Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer e Cura (no Cura, só a impressora, porque ele não grava o filamento)."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "Dá pra orçar mais de uma peça igual de uma vez?",
         "acceptedAnswer": {
           "@type": "Answer",
@@ -185,15 +193,15 @@
     <section class="hero">
       <div class="container">
         <div>
-          <p class="eyebrow">Orçamento e venda de impressão 3D</p>
-          <h1>Saiba quanto cobrar em cada impressão 3D, sem planilha e sem chute</h1>
+          <p class="eyebrow">O sistema de quem vende impressão 3D</p>
+          <h1>Do preço certo à peça entregue, num app só e sem mensalidade</h1>
           <p class="lead">
-            O 3DReport calcula o custo real de produção e sugere o valor de
-            venda com a margem de lucro que você definir, a partir do
-            filamento, da impressora usada e do tempo de impressão de cada
-            peça. Feito para quem vive de vender impressão 3D: do orçamento
-            ao histórico de vendas, gratuito e open source, rodando direto no
-            seu computador.
+            Arraste o G-code e o orçamento de impressão 3D se monta com o custo
+            real: filamento, energia, máquina, o seu tempo, o imposto e a taxa
+            de cada canal de venda. Mande pro cliente no WhatsApp ou em PDF com
+            a sua marca, negocie sem perder dinheiro e acompanhe cada pedido
+            até a entrega. Gratuito, open source e 100% no seu computador:
+            seus preços e seus clientes não saem da sua máquina.
           </p>
           <div class="btn-row">
             <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Baixar grátis</a>
@@ -214,21 +222,21 @@
         </p>
         <div class="grid">
           <div class="screenshot">
-            <img src="assets/screenshots/orcamento.png" alt="Tela de Orçamento do 3DReport, com cálculo de valor de produção e venda" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <img src="assets/screenshots/orcamento.png" alt="Tela de Orçamento do 3DReport: entradas à esquerda e, à direita, o valor cobrado, o prazo de entrega, a composição do preço e a negociação" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div class="screenshot-placeholder">
               <strong>Tela de Orçamento</strong>
               <span>assets/screenshots/orcamento.png</span>
             </div>
           </div>
           <div class="screenshot">
-            <img src="assets/screenshots/historico.png" alt="Tela de Histórico de orçamentos do 3DReport" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <img src="assets/screenshots/historico.png" alt="Histórico do 3DReport em Kanban, com os pedidos por status e o prazo de entrega de cada um" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div class="screenshot-placeholder">
-              <strong>Histórico &amp; Dashboard</strong>
+              <strong>Histórico em Kanban</strong>
               <span>assets/screenshots/historico.png</span>
             </div>
           </div>
           <div class="screenshot">
-            <img src="assets/screenshots/pdf.png" alt="Exemplo de PDF de orçamento exportado pelo 3DReport" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <img src="assets/screenshots/pdf.png" alt="PDF de orçamento com logo e contato do vendedor, prazo de entrega em destaque e foto da peça" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div class="screenshot-placeholder">
               <strong>PDF exportado</strong>
               <span>assets/screenshots/pdf.png</span>
@@ -242,49 +250,73 @@
       <div class="container">
         <h2>Feito para quem vende impressão 3D no dia a dia</h2>
         <p class="section-intro">
-          Não é só uma calculadora: acompanha o negócio inteiro, do cadastro
-          de filamento até o PDF que vai pro cliente.
+          Não é só uma calculadora: acompanha a venda inteira, do G-code que
+          sai do fatiador até o PDF que vai pro cliente e o pedido entregue.
         </p>
         <div class="grid">
           <div class="card">
-            <h3>Cálculo de custo e preço de venda</h3>
-            <p>Considera filamento, energia, manutenção, retorno do investimento da impressora, custo fixo do negócio, o seu tempo de trabalho, reserva para falhas e margem de lucro.</p>
+            <h3>Arraste o G-code e pronto</h3>
+            <p>Solte o arquivo do fatiador na janela: comprimento, tempo, foto e configurações de impressão entram sozinhos, e a impressora e o filamento já vêm escolhidos quando batem com o que você cadastrou. Funciona com Bambu Studio, OrcaSlicer, PrusaSlicer e Cura.</p>
+          </div>
+          <div class="card">
+            <h3>O custo de verdade</h3>
+            <p>Filamento, energia, manutenção, retorno do investimento da impressora, custo fixo do negócio, o seu tempo de trabalho e reserva para falhas. Imposto do MEI ou do Simples e a taxa de cada canal (Shopee, Mercado Livre, maquininha) já entram no preço.</p>
           </div>
           <div class="card">
             <h3>Você vê pra onde vai o dinheiro</h3>
             <p>Junto do preço, uma barra mostra quanto é material, energia, máquina, seu trabalho, reserva de falha e lucro. Fica claro onde mexer quando o cliente acha caro.</p>
           </div>
           <div class="card">
-            <h3>Pronto pra mandar no WhatsApp</h3>
-            <p>Abra a conversa do cliente com o orçamento já escrito, ou gere uma imagem quadrada com foto, nome e preço pra mandar no zap e postar no status.</p>
-          </div>
-          <div class="card">
             <h3>Negociação sem perder dinheiro</h3>
-            <p>Digite o preço que o cliente propôs e veja na hora o que sobra: lucro, margem e aviso quando o valor não cobre o custo. O preço mínimo fica sempre à vista.</p>
+            <p>Digite o preço que o cliente propôs e veja na hora o que sobra: lucro, margem e aviso quando o valor não cobre o custo. O preço mínimo fica sempre à vista, e o Dashboard soma quanto de desconto você deu.</p>
           </div>
           <div class="card">
-            <h3>Várias impressoras e filamentos</h3>
-            <p>Cadastre cada impressora com seu próprio perfil e cada filamento com marca, cores e controle de estoque.</p>
+            <h3>Prazo de entrega que não se perde</h3>
+            <p>Escolha o prazo com um clique (+3, +7 ou +15 dias) vendo quanto tempo de impressão já está na fila da máquina. Ele sai em destaque pro cliente, e o app avisa quando um pedido atrasa.</p>
           </div>
           <div class="card">
-            <h3>Histórico e dashboard</h3>
-            <p>Consulte orçamentos salvos, filtre por cliente/status/período e veja total vendido, lucro e filamento mais usado.</p>
+            <h3>Pronto pra mandar no WhatsApp</h3>
+            <p>Abra a conversa do cliente com o orçamento já escrito, ou gere uma imagem quadrada com foto, preço e prazo pra mandar no zap e postar no status.</p>
           </div>
           <div class="card">
-            <h3>Exportação em PDF</h3>
-            <p>Orçamento individual, vários orçamentos num PDF só ou catálogo de peças em grade, com a sua logo, o seu contato e marca d'água personalizada.</p>
+            <h3>PDF com a sua marca</h3>
+            <p>Orçamento individual, vários num PDF só ou catálogo em grade, com a sua logo e o seu contato no cabeçalho, borda e marca d'água opcionais. Dá pra conferir como fica antes de salvar.</p>
           </div>
           <div class="card">
-            <h3>Serviços e taxas opcionais</h3>
-            <p>Pintura, lixamento e embalagem entram como serviços; Shopee, Mercado Livre, cartão ou Pix entram como canal de venda, cada um com a sua taxa; e o frete aparece como linha separada, sem embutir no preço da peça.</p>
+            <h3>Do orçado ao entregue</h3>
+            <p>Histórico com busca e filtros, Kanban por status, fila de cada impressora e Dashboard com total vendido, lucro e descontos no período.</p>
           </div>
           <div class="card">
-            <h3>Múltiplas moedas</h3>
-            <p>BRL, USD, EUR ou GBP, com o símbolo e a formatação corretos em toda a interface, no PDF e no copiar e colar.</p>
+            <h3>Catálogo que conversa com o orçamento</h3>
+            <p>Impressoras com presets das principais marcas, filamentos com marca, tipo, cores e estoque por cor, serviços como pintura e lixamento, e canais de venda com a taxa de cada um.</p>
           </div>
           <div class="card">
             <h3>Visualizador 3D e nível de dificuldade</h3>
-            <p>Anexe o STL do modelo pra girar e dar zoom nele dentro do próprio app, capturar uma foto automática do orçamento e ver um nível de dificuldade sugerido (Fácil, Médio ou Difícil) pra ajudar a precificar peças mais complexas.</p>
+            <p>Anexe o STL do modelo pra girar e dar zoom dentro do app, capturar uma foto do orçamento e ver um nível de dificuldade sugerido (Fácil, Médio ou Difícil) pra precificar peças complexas.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="no-seu-computador">
+      <div class="container">
+        <h2>100% no seu computador</h2>
+        <p class="section-intro">
+          Sem conta, sem mensalidade e sem internet obrigatória. Os seus preços
+          e os seus clientes são o seu negócio, e ficam só com você.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Grátis de verdade</h3>
+            <p>Sem plano pago, sem versão "pro" e sem limite de orçamentos. O app é open source e vive de apoio voluntário.</p>
+          </div>
+          <div class="card">
+            <h3>Seus dados ficam com você</h3>
+            <p>Tudo fica numa pasta no seu computador. Um clique gera um backup em arquivo, pra levar pro notebook ou guardar antes de formatar.</p>
+          </div>
+          <div class="card">
+            <h3>Feito pro vendedor brasileiro</h3>
+            <p>Imposto do MEI ou do Simples, taxa da Shopee e do Mercado Livre, maquininha e Pix, WhatsApp, frete e prazo de entrega, tudo em português e em reais.</p>
           </div>
         </div>
       </div>
@@ -387,6 +419,10 @@ LUCRO             = venda − produção
         <details class="faq-item">
           <summary>O app cobra o meu tempo de trabalho?</summary>
           <p>Cobra, se você quiser. Em Configurações você informa quanto vale a sua hora e, em cada orçamento, quantos minutos aquela peça deu de trabalho: preparar o arquivo, fatiar, tirar da mesa, remover suporte, lixar, pintar, embalar. Esse é o custo que mais some da conta de quem vende impressão 3D, porque a máquina trabalha sozinha mas todo o resto é você. Enquanto você não informar o valor da sua hora, nada muda e o app continua cobrando acabamento como percentual do material, como antes.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Preciso digitar o comprimento e o tempo de cada peça?</summary>
+          <p>Não. Arraste o G-code exportado pelo fatiador pra janela do app (ou use o botão de importar): comprimento de filamento, tempo de impressão, foto da peça e configurações de impressão entram sozinhos. Se o nome da impressora e o tipo de filamento do G-code baterem com o que você cadastrou, eles já vêm escolhidos também; quando só parecem, o app sugere e você confirma. Funciona com Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer e Cura (no Cura, só a impressora, porque ele não grava o filamento).</p>
         </details>
         <details class="faq-item">
           <summary>Dá pra orçar mais de uma peça igual de uma vez?</summary>

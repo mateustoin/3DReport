@@ -20,11 +20,12 @@
   <a href="https://mateustoin.github.io/3DReport/manual.html">Manual rápido</a>
 </p>
 
-Aplicativo **gratuito e de código aberto** para criação de **orçamentos de
-impressão 3D**. A partir do filamento usado, da impressora escolhida (cada uma
-com seu próprio perfil salvo) e dos dados da peça (comprimento em metros e
-tempo de impressão), calcula o **valor de produção** e o **valor de venda**
-com a margem de lucro desejada.
+**O sistema de quem vende impressão 3D**, gratuito, de código aberto e 100% no
+seu computador. Arraste o G-code e o **orçamento de impressão 3D** se monta com
+o custo real (filamento, energia, máquina, o seu tempo, imposto e a taxa de
+cada canal de venda); mande pro cliente no WhatsApp ou em PDF com a sua marca;
+negocie sem perder dinheiro; e acompanhe cada pedido até a entrega. Sem conta e
+sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 
 ## Sumário
 
@@ -42,11 +43,12 @@ com a margem de lucro desejada.
 ## Funcionalidades
 
 <details>
-<summary>Ver lista completa (20+ prontas)</summary>
+<summary>Ver lista completa (30+ prontas)</summary>
 
 **Orçamento**
 - Cálculo de custo de produção e preço de venda (`core`)
-- Tela de orçamento — escolhe filamento + impressora, informa comprimento/tempo → produção/venda
+- Arraste o G-code pra janela e o orçamento se monta: comprimento, tempo, foto, configurações de impressão e, quando o nome bate com o cadastrado, a impressora e o filamento (Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer, Cura)
+- Tela de orçamento em duas colunas — entradas de um lado, o preço, a composição e a negociação do outro
 - Quantidade por orçamento, com preço unitário e preparo do pedido cobrado uma vez só (lote sai mais barato por peça)
 - Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
 - Comparação entre as suas impressoras: quanto a mesma peça custa em cada máquina
@@ -72,6 +74,7 @@ com a margem de lucro desejada.
 
 **Personalização do PDF**
 - Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome
+- Assinatura discreta "Gerado com 3DReport" no canto do PDF, desligável em Configurações
 - Prévia do PDF em Configurações ("Ver como fica"), antes mesmo de salvar
 - Templates — fotos salvas da aparência do PDF (marca d'água, rodapé, borda, tempo de impressão), com indicador do template ativo; logo e contato ficam de fora, pra não se perderem ao trocar de template
 

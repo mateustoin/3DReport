@@ -449,8 +449,14 @@ layout antes disso significa redesenhar duas vezes.
   orçamento que um vendedor manda pro cliente é uma chance de outro vendedor
   conhecer o app, e é a única divulgação orgânica disponível pra um projeto
   sem verba de marketing (decisão 15).
-- [ ] **Reposicionar a comunicação: de "calculadora" pra "o sistema de quem
-  vende impressão 3D".** Site e README hoje lideram com orçamento/
+- [x] **Reposicionar a comunicação: de "calculadora" pra "o sistema de quem
+  vende impressão 3D"** (decisão 90, 2026-09-23). **Feito:** hero do site,
+  abertura do README e manual reescritos em torno do sistema completo e do
+  "100% no seu computador"; seção nova sobre isso no site; funcionalidades
+  reorganizadas pelo fluxo de venda; FAQ do G-code e da assinatura; prints
+  novos. Título, meta description e dados estruturados continuam com
+  "orçamento/preço de impressão 3D", que é o que se pesquisa. Texto
+  original: site e README hoje lideram com orçamento/
   calculadora, categoria em que existem centenas de páginas web gratuitas
   concorrendo. O que está construído já é outra coisa: histórico, clientes,
   kanban, fila de impressora, catálogos, reimpressão com a mesma
@@ -1411,6 +1417,17 @@ funciona hoje.
     banner dedicado (1200×630, nome do app + composição de telas) no lugar da
     screenshot crua, se quiser refinar mais a prévia de compartilhamento —
     ideia registrada, não crítica.
+  - **Prints refeitos (decisão 90, 2026-09-23):** os três prints estavam
+    numa versão de meses antes (sem duas colunas, canais, prazo, ícones).
+    Foram gerados de novo pelo próprio app, renderizado sem janela
+    (`ImageComposeScene`) com dados de exemplo, em vez de captura de tela
+    manual, que é o que deixa refazer rápido quando a interface mudar.
+- [ ] **Publicar uma release nova.** A última release publicada é a
+  **v1.11.3** (2026-09-21), e o botão "Baixar grátis" do site e o
+  "Download" do README levam pra ela. Tudo o que entrou depois (v1.12 a
+  v1.36, inclusive o que o site novo descreve) só chega a quem usa o app
+  depois de criar a tag e publicar o rascunho que o workflow de release
+  gera (decisão 33). Levantado na auditoria de 2026-09-23.
 
 ## 3. Instaladores desktop
 
