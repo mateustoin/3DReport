@@ -5,7 +5,7 @@
 <h1 align="center">3DReport</h1>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img alt="Versão" src="https://img.shields.io/badge/vers%C3%A3o-1.8.0-0B5FA8"></a>
+  <a href="https://github.com/mateustoin/3DReport/releases/latest"><img alt="Versão" src="https://img.shields.io/github/v/release/mateustoin/3DReport?label=vers%C3%A3o&color=0B5FA8"></a>
   <a href="LICENSE"><img alt="Licença" src="https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-0B5FA8"></a>
   <img alt="Plataforma" src="https://img.shields.io/badge/plataforma-Windows%20%7C%20Linux%20%7C%20macOS-0B5FA8">
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white">
@@ -25,11 +25,6 @@ impressão 3D**. A partir do filamento usado, da impressora escolhida (cada uma
 com seu próprio perfil salvo) e dos dados da peça (comprimento em metros e
 tempo de impressão), calcula o **valor de produção** e o **valor de venda**
 com a margem de lucro desejada.
-
-> **Status:** motor de cálculo implementado e testado; telas de orçamento
-> (com salvar e exportar), histórico de orçamentos, cadastro de filamentos,
-> cadastro de impressoras e configurações gerais funcionando, com
-> persistência real em disco. Veja o backlog em [docs/roadmap.md](docs/roadmap.md).
 
 ## Sumário
 

@@ -244,7 +244,7 @@ uma conta incompleta mente com mais confiança.
     (líquido: preço acima da tabela abate). O ranking de clientes que mais
     puxam o preço pra baixo não entrou; se fizer falta, cabe na leva 6,
     reaproveitando o mesmo campo.
-- [ ] **Desconto percentual por volume.** Descartado na decisão 79: quem quer
+- **Descartado (decisão 79): desconto percentual por volume.** Quem quer
   dar desconto digita o preço fechado e vê o efeito na hora. Fica aqui só
   como registro de que foi avaliado e por quê, pra não voltar à fila sem
   argumento novo.
@@ -279,7 +279,7 @@ uma conta incompleta mente com mais confiança.
     atalhos "+3 / +7 / +15 dias" ou calendário, com a fila da impressora
     mostrada como dica. Em destaque no PDF, no fim do texto/WhatsApp e na
     imagem. Como data envelhece: duplicar não copia o prazo, o Histórico
-    marca atraso e prazo vencido, o menu "⋮" muda só a data, e todo envio
+    marca atraso e prazo vencido, o menu "Ações" muda só a data, e todo envio
     pro cliente com prazo vencido pede confirmação antes (decisão 85).
 - [x] **Identidade do vendedor no PDF: logo, contato e borda** (decisão 86,
   2026-09-23; sugerido por João Antonio em teste externo, 2026-09-23,
@@ -384,8 +384,8 @@ layout antes disso significa redesenhar duas vezes.
   confirmações de sucesso; erro de validação continua ao lado do campo.
   Entrou como sobreposição no layout que já existia, sem migrar pra
   `Scaffold`: os slots dele (barra superior/inferior, FAB) não são usados.
-- [ ] ~~Unificar o código das três telas de catálogo~~ e ~~fundir as abas
-  num "Catálogos"~~ — **descartados na decisão 82**, depois de conferir a
+- **Descartado (decisão 82):** ~~unificar o código das três telas de catálogo~~ e ~~fundir as abas
+  num "Catálogos"~~, depois de conferir a
   premissa. As telas deixaram de ser "quase idênticas" (362/199/142 linhas,
   com conteúdo próprio vindo das decisões 39/40, 54 e 68), e a fusão das
   abas custaria um clique diário e a renumeração dos atalhos pra liberar
@@ -596,9 +596,12 @@ decisão 83 e foram pra leva 6.
   `appliesMarketplaceFee`, `Quote.marketplaceFeeRate`). Custo de embalagem/
   spray, por outro lado, **entra na aba Serviços** (é um valor fixo cobrado
   do cliente, cabe direto no que já existe — não precisou de aba nova).
-  Feito (2026-09-15).
-  - **Múltiplos canais de venda com taxa própria (levantado em 2026-09-19,
-    pesquisa de concorrentes, ainda não implementado).** Hoje só existe uma
+  Feito (2026-09-15). **Substituído pelos canais de venda** (decisão 78, leva
+  3): a taxa única e a checkbox deram lugar a um catálogo de canais, cada um
+  com a própria taxa; `PricingSettings.marketplaceFeeRate` ficou como legado.
+  - [x] **Múltiplos canais de venda com taxa própria** (feito na decisão 78,
+    leva 3; levantado em 2026-09-19,
+    pesquisa de concorrentes). Texto original: hoje só existe uma
     taxa de marketplace única. Quem vende em mais de um canal (Shopee,
     Mercado Livre, Etsy etc., cada um com sua própria taxa) precisa trocar a
     configuração manualmente antes de cada orçamento. Ideia: um pequeno
@@ -612,7 +615,7 @@ decisão 83 e foram pra leva 6.
   Filamentos, Impressoras, Serviços e Histórico (decisão 30). Edição não
   precisou de confirmação própria — só é efetivada ao clicar em "Salvar".
 - [x] **Versão do app + ajuda + rodapé com crédito/doação.** `APP_VERSION`
-  (hoje `0.2.0`, SemVer) em `gradle.properties`/`AppVersion.kt`, bump MINOR a
+  (SemVer, começou em `0.2.0`) em `gradle.properties`/`AppVersion.kt`, bump MINOR a
   cada leva de funcionalidades (decisão 27). Rodapé fixo em todas as telas:
   versão, nome do autor, link do GitHub, link do Buy Me a Coffee e um botão
   "Ajuda" que abre um diálogo com a versão, uma descrição curta e um resumo
@@ -632,7 +635,7 @@ decisão 83 e foram pra leva 6.
   nunca era mostrado. Passa a aparecer na linha de Produção/Venda/Lucro do
   Histórico — uso só interno do criador, não entra no PDF nem no
   copiar/colar (decisão 32). Feito (2026-09-15).
-Os itens abaixo (ainda sem checkbox marcado) vieram de uma sessão de
+Os itens abaixo vieram de uma sessão de
 brainstorming com o responsável do projeto (2026-09-16), pensando no app do
 ponto de vista de quem vende impressão 3D no dia a dia. Estão agrupados por
 prioridade sugerida — o responsável do projeto decide a ordem real de
@@ -1025,8 +1028,8 @@ funciona hoje.
     reconhece uma imagem mais rápido que um nome. Soma uma terceira
     alternativa, sem problema de licença: (c) **foto da própria impressora**,
     enviada pelo vendedor no cadastro, pelo mesmo caminho da foto do
-    orçamento. A alternativa (a) sai de graça do item de ícones da leva 7,
-    que desenha um ícone de impressora 3D pro projeto.
+    orçamento. A alternativa (a) já está disponível: a leva 7 desenhou um
+    ícone de impressora 3D pro projeto (`AppIcons.Printer3d`, decisão 87).
   - **Feito (2026-09-19, decisão 54):** `ui/printers/PrinterPresetDialog`
     (botão "Escolher da lista" em Impressoras), `ui/printers/PrinterPresets.kt`.
     Fotos de produto ficaram de fora, como já registrado acima (sem decisão
@@ -1132,7 +1135,8 @@ funciona hoje.
   `QuoteHistoryViewModel.exportCatalogPdf`.
 - [x] **Templates de orçamento** (decisões 45 e 47). Biblioteca de **fotos
   nomeadas** do `BrandingSettings` ativo — sem tela/aba própria: acessada
-  por um diálogo modal a partir de Configurações → "Marca d'água do PDF",
+  por um diálogo modal a partir de Configurações → "Documentos pro cliente"
+  (antes "Marca d'água do PDF"),
   que continua sendo o único editor ao vivo. Feito (2026-09-17):
   `core/model/QuoteTemplate`, `data/TemplateRepository`,
   `ui/templates/{TemplateListViewModel,TemplateListDialog}`.
@@ -1142,7 +1146,7 @@ funciona hoje.
   - **Relação Templates ↔ Configurações repensada (decisão 47,
     2026-09-17):** Templates deixou de ter formulário próprio de
     criar/editar (removido `TemplateFormState`) — vira uma lista simples
-    de "Carregar"/"Excluir". Configurações → "Marca d'água do PDF" ganhou
+    de "Carregar"/"Excluir". Configurações → "Marca d'água do PDF" (hoje "Documentos pro cliente") ganhou
     o botão "Salvar como template" (só pede um nome; tira uma foto do que
     está no formulário na hora do clique, mesmo sem ter clicado em
     "Salvar" antes). Feito:
@@ -1322,7 +1326,7 @@ funciona hoje.
   Feito: `ui/history/KanbanBoard.kt` — arrasto de verdade via
   `pointerInput`/`detectDragGestures`, usando `boundsInWindow()` de cada
   coluna como referência comum pra decidir sobre qual coluna o card foi
-  solto. Cada card também tem um menu "⋮" (Editar/Duplicar/Excluir,
+  solto. Cada card também tem um menu de ações (hoje "Ações", antes "⋮"; Editar/Duplicar/Excluir,
   reaproveitando os mesmos callbacks da lista) como caminho alternativo
   caso o arrasto não seja preciso o bastante num mouse/tela específico —
   os dois caminhos levam à mesma mudança de status. Sem scroll vertical
@@ -1470,18 +1474,12 @@ repositório privado também). O repositório ficou público em 2026-09-17
   redimensionamento programático quando a janela muda de monitor. Se algum
   dia isso for corrigido oficialmente no Compose Multiplatform, o workaround
   em `Main.kt` pode ser removido.
-- **Duplicação entre Filamentos/Impressoras/Serviços (observado em
-  2026-09-16):** as 3 telas de catálogo (`FilamentListScreen`,
-  `PrinterListScreen`, `ServiceListScreen`) são quase idênticas em estrutura
-  (lista + formulário de adicionar/editar + `ConfirmDialog` de exclusão).
-  Fora do escopo da modernização de UI da leva 2026-09-16 (decisão 36) por
-  ser um refactor grande à parte — unificar num componente genérico de
-  lista/formulário é candidato a uma leva futura, se a duplicação continuar
-  incomodando.
-- **`App.kt` sem `Scaffold`/`SnackbarHost` (observado em 2026-09-16):** todo
-  feedback de sucesso/erro hoje é `Text` inline (vermelho/erro, colorido/
-  sucesso) que aparece/desaparece com a recomposição, em vez de um toast
-  transitório. Migrar pra `Scaffold` + `SnackbarHost` foi cogitado na
-  modernização de UI da leva 2026-09-16 mas ficou de fora por ser um
-  refactor que toca as 5 telas com esse padrão (decisão 36) — candidato a
-  uma leva futura de UI.
+- **Encerrado (decisão 82): duplicação entre Filamentos/Impressoras/Serviços**
+  (observado em 2026-09-16). As 3 telas de catálogo eram quase idênticas em
+  estrutura e unificá-las era candidato a uma leva futura. Ao conferir a
+  premissa na leva 7, elas já não eram quase idênticas (conteúdo próprio
+  vindo das decisões 39/40, 54 e 68), e a unificação foi descartada.
+- **Resolvido (decisão 82): `App.kt` sem `Scaffold`/`SnackbarHost`**
+  (observado em 2026-09-16). As confirmações de sucesso viraram snackbar em
+  sobreposição no layout que já existia, sem migrar pra `Scaffold`; erro de
+  validação continua ao lado do campo, de propósito.

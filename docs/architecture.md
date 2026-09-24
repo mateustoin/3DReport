@@ -47,19 +47,32 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
     cobrado do cliente (não um custo com margem em cima), então soma
     diretamente no valor de venda na camada de UI/export, não no cálculo
     interno de produção/lucro (decisão 25).
-  - `PricingSettings.marketplaceFeeRate` (%, decisão 26) é diferente de um
-    `Service`: é descontado da venda pelo marketplace, não somado ao total do
-    cliente. Por isso não é um valor fixo — é usado pelo `PricingCalculator`
-    pra ajustar o preço de venda (ver abaixo), e `Quote.marketplaceFeeRate`
-    guarda a taxa efetivamente aplicada (0 se o orçamento não marcou a
-    checkbox), usada no cálculo de `Quote.profit`.
+  - Canais de venda (`SalesChannel`, decisão 78) substituíram a taxa única de
+    marketplace: cada canal tem a própria taxa, **descontada** da venda pelo
+    marketplace (não somada ao total do cliente). `PricingSettings.marketplaceFeeRate`
+    ficou como campo legado, e `Quote.marketplaceFeeRate` guarda a taxa do
+    canal efetivamente aplicada (o nome antigo foi mantido pra orçamentos já
+    salvos não perderem a taxa). `PricingSettings.taxRate` (imposto) é
+    tratado do mesmo jeito.
+  - `SavedQuote` é o retrato congelado de um orçamento salvo: além do `Quote`,
+    guarda serviços, frete, cliente (uso interno), status do pedido, prazo de
+    entrega, configurações de impressão e referências aos arquivos de foto e
+    STL. `BrandingSettings` guarda a identidade do vendedor (nome, logo,
+    contato) e a aparência dos documentos pro cliente.
 - `pricing/PricingCalculator`: função pura
-  `calculate(job, printer, settings, appliesMarketplaceFee = false): Quote`.
+  `calculate(job, printer, settings, channel = null, quantity = 1, setupMinutes = 0.0, negotiatedSalePrice = null): Quote`.
   Fórmulas em [pricing-formulas.md](pricing-formulas.md). Não conhece
-  serviços. Quando `appliesMarketplaceFee` é true e há taxa configurada, o
-  valor de venda é inflado (`salePrice = baseSalePrice / (1 − taxa)`) pra que
-  o lucro real, após a taxa, fique igual ao de uma venda sem marketplace
-  (decisão 26).
+  serviços nem frete. Com canal e/ou imposto, o valor de venda é inflado
+  (`venda = base / (1 − deduções)`) pra que o lucro real, depois das
+  deduções, fique igual ao de uma venda direta (decisões 26 e 78). Com
+  `negotiatedSalePrice`, o preço fechado com o cliente vira o `salePrice` e o
+  de tabela fica em `Quote.tableSalePrice` (decisões 79 e 84).
+- `report/`: agregações puras sobre o histórico (`QuoteReport` pro
+  Dashboard, `PrintQueueReport` pra fila de cada impressora), mesmo estilo do
+  `PricingCalculator`.
+- `slicer/` e `stl/`: leitura dos metadados de G-code (consumo, tempo,
+  miniatura, configurações de impressão) e da malha STL (parser e análise de
+  complexidade), ambos sem dependência de plataforma.
 - Alvo atual: `jvm()`.
 
 ### `composeApp`
@@ -70,68 +83,56 @@ Dependência: `composeApp → core`. O `core` nunca depende da UI.
   imutável), um `ViewModel` (Kotlin puro, sem `Composable`, expõe
   `StateFlow`) e um `*Screen` (`@Composable` que só observa o `ViewModel` e
   envia eventos — sem lógica de cálculo).
-- Seis telas, navegadas por abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt):
-  - **Orçamento** (`ui/quote`): escolhe filamento + impressora (dropdowns,
-    alimentados pelos catálogos salvos) e entra comprimento + tempo de
-    impressão; mostra produção/venda/lucro calculados a cada mudança. Se
-    houver serviços cadastrados, mostra uma seção "Serviços opcionais" com
-    uma checkbox por serviço (decisão 25); o resultado então também mostra
-    cada serviço marcado e o "Total (venda + serviços)" (`QuoteResult.grandTotal`)
-    — o Lucro exibido não muda. Se houver taxa de marketplace configurada em
-    Configurações, mostra também uma checkbox "Vender por marketplace"
-    (decisão 26) que ajusta o valor de venda calculado. Quando o resultado é
-    válido, mostra também o formulário pra salvar (nome, foto, link do modelo
-    — todos opcionais; ver `SaveQuoteFormState`), que agora também congela os
-    serviços escolhidos; o link do modelo, quando preenchido, aparece como um
-    hyperlink clicável (`ui/components/LinkText`, decisão 29) além do campo de
-    texto editável.
-  - **Histórico** (`ui/history`): lista os orçamentos salvos (`SavedQuote` —
-    um retrato congelado do `Quote` no momento em que foi salvo, não afetado
-    por edições posteriores em filamento/impressora/configurações), com
-    ações por linha de baixar a foto, **exportar PDF**, **copiar** (texto
-    simplificado pra área de transferência) e excluir. Exportação (decisão
-    19) mostra só nome + valor de venda + foto — produção, lucro e o link do
-    modelo nunca aparecem, porque é documento pro cliente. Cada linha tem
-    também uma checkbox de seleção; com 1+ selecionados, um botão "Exportar
-    selecionados (PDF)" (decisão 24) gera um único PDF com um orçamento por
-    página, na mesma ordem da lista. Quando há link do modelo, ele também
-    aparece como hyperlink clicável (só na tela — nunca no PDF, decisão 29).
-    A linha de produção/venda/lucro (uso interno, não exportada) agora
-    também mostra o peso estimado da peça (`Quote.filamentWeightGrams`,
-    decisão 32). "Excluir" abre antes um `ui/components/ConfirmDialog`
-    nomeando o orçamento (decisão 30).
+- Sete abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt),
+  cada uma com ícone ao lado do nome (decisão 87; só texto em janela
+  estreita) e atalho `Ctrl/Cmd+1` a `7` (decisão 43):
+  - **Orçamento** (`ui/quote`): em janela larga, duas colunas (decisão 81) —
+    à esquerda as entradas (filamento/cor, impressora, comprimento e tempo,
+    que podem vir do G-code, trabalho, quantidade, serviços, canal de venda,
+    frete) e o formulário de salvar (dividido entre "O que o cliente vê" —
+    nome, foto, prazo de entrega — e "Só pra você" — STL com visualizador 3D,
+    configurações de impressão, link, cliente); à direita a "nota" com o
+    valor cobrado, a barra de composição do preço, a negociação e a
+    comparação entre impressoras. Recalcula a cada mudança
+    (`QuoteViewModel.calculate`, função pura). Editar um orçamento salvo abre
+    a mesma tela num diálogo (`EditQuoteDialog`).
+  - **Histórico** (`ui/history`): orçamentos salvos em lista ou Kanban por
+    status (decisão 70), com busca, filtro e prazo de entrega em destaque.
+    Ações por orçamento: exportar PDF, copiar texto, abrir no WhatsApp,
+    imagem quadrada, editar, duplicar, prazo, configurações de impressão,
+    baixar foto/STL, excluir (com `ConfirmDialog`). Tudo o que vai pro
+    cliente mostra só o que é do cliente (decisão 19): produção, lucro,
+    link do modelo e cliente nunca aparecem. Envio com prazo vencido pede
+    confirmação antes (decisão 85). Seleção múltipla exporta vários
+    orçamentos num PDF ou um catálogo em grade.
+  - **Dashboard** (`ui/dashboard`): total vendido, lucro, descontos dados e
+    filamento mais usado no período (`QuoteReport`).
   - **Filamentos** (`ui/filaments`), **Impressoras** (`ui/printers`) e
-    **Serviços** (`ui/services`): cadastro (listar, adicionar, editar,
-    excluir) dos catálogos usados no Orçamento. Mesmo padrão de tela nos
-    três: lista + formulário (`FormState`) que abre para adicionar/editar um
-    item por vez. Diferente dos outros dois, o catálogo de serviços começa
-    vazio (não há serviço "padrão"). "Excluir" abre antes um
-    `ui/components/ConfirmDialog` nomeando o item (decisão 30) — mesmo
-    diálogo genérico usado no Histórico.
-  - **Configurações** (`ui/settings`): edita os parâmetros gerais do negócio
-    (`PricingSettings` — iguais para qualquer impressora), incluindo a taxa de
-    marketplace opcional (%, decisão 26), em rascunho; só grava no
-    repositório compartilhado ao clicar em "Salvar". Na mesma tela,
-    uma seção separada (`BrandingViewModel`, próprio botão "Salvar") edita a
-    marca d'água opcional do PDF exportado (decisão 20) — fica fora de
-    `PricingSettings` por não ser parâmetro de custo. Duas checkboxes
-    (`showWatermark`/`showFooter`, decisão 22) controlam se o texto aparece
-    na diagonal, no rodapé, nos dois ou em nenhum; com o texto preenchido,
-    `BrandingViewModel.save()` recusa salvar se as duas estiverem
-    desmarcadas (erro de validação, mesmo padrão dos outros formulários).
+    **Serviços** (`ui/services`): catálogos usados no Orçamento, cada um com
+    lista + formulário. Filamentos têm marca, tipo, várias cores e estoque
+    manual por cor; Impressoras têm presets de fabricante e mostram a fila de
+    impressão de cada máquina.
+  - **Configurações** (`ui/settings`): parâmetros do negócio
+    (`PricingSettings`, gravados só no "Salvar"), canais de venda, moeda,
+    tema, backup/restauração, e "Documentos pro cliente" (`BrandingViewModel`:
+    nome da marca, logo, contato, marca d'água, rodapé, borda, tempo de
+    impressão, prévia "Ver como fica" e templates).
 
 ### Persistência
-- `data/FilamentRepository`, `data/PrinterRepository`, `data/ServiceRepository`,
-  `data/SettingsRepository`, `data/QuoteHistoryRepository` e
-  `data/BrandingRepository` guardam o estado compartilhado entre as telas
-  (`StateFlow`) e persistem em disco: arquivos JSON em `~/.3dreport/`
-  (`filaments.json`, `printers.json`, `services.json`, `settings.json`,
-  `quotes.json`, `branding.json`), lidos uma vez na criação e regravados a
-  cada mudança. Filamentos/impressoras vêm com um catálogo/perfil padrão no
-  primeiro uso; serviços, histórico e marca d'água começam vazios.
-- A foto de um `SavedQuote`, quando existe, **não** vai dentro do JSON — fica
-  como arquivo à parte em `~/.3dreport/photos/<id>.<extensão>`, referenciado
-  pelo campo `photoFileName`. Motivo: manter o JSON pequeno e legível; o
+- Os repositórios de `data/` (filamentos, impressoras, serviços,
+  configurações, histórico, marca, templates, canais de venda, tema, moeda,
+  onboarding) guardam o estado compartilhado entre as telas (`StateFlow`) e
+  persistem em disco: um arquivo JSON por assunto em `~/.3dreport/`
+  (`filaments.json`, `quotes.json`, `branding.json` etc.), lido uma vez na
+  criação e regravado a cada mudança. Filamentos/impressoras vêm com um
+  catálogo/perfil padrão no primeiro uso; o resto começa vazio.
+- `data/BackupRepository` empacota a pasta de dados inteira num `.zip` e
+  restaura de forma transacional (decisão 75). Como todos os arquivos do app
+  moram nessa pasta, nada novo precisa ser registrado no backup.
+- Arquivos binários **não** vão dentro do JSON: a foto de um `SavedQuote`
+  fica em `~/.3dreport/photos/`, o STL em `~/.3dreport/models/` e a logo do
+  vendedor em `~/.3dreport/branding/`, referenciados por nome de arquivo
+  (`photoFileName`, `stlFileName`, `logoFileName`). Motivo: manter o JSON pequeno e legível; o
   `Quote` embutido no `SavedQuote` já tem os números todos (produção, venda,
   detalhamento de custos), então o histórico não precisa recalcular nada.
 - Cada repositório é um `expect class` em `commonMain` (contrato) com um
