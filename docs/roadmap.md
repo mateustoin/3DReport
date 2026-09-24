@@ -1426,12 +1426,18 @@ funciona hoje.
     Foram gerados de novo pelo próprio app, renderizado sem janela
     (`ImageComposeScene`) com dados de exemplo, em vez de captura de tela
     manual, que é o que deixa refazer rápido quando a interface mudar.
-- [ ] **Publicar uma release nova.** A última release publicada é a
-  **v1.11.3** (2026-09-21), e o botão "Baixar grátis" do site e o
-  "Download" do README levam pra ela. Tudo o que entrou depois (v1.12 a
-  v1.36, inclusive o que o site novo descreve) só chega a quem usa o app
-  depois de criar a tag e publicar o rascunho que o workflow de release
-  gera (decisão 33). Levantado na auditoria de 2026-09-23.
+- [x] **Publicar uma release nova** (2026-09-23). **Feito:** tag `v1.37.0`,
+  com os instaladores de Windows, macOS e Linux gerados pelo workflow de
+  release e o rascunho publicado como a mais recente; "Baixar grátis" e
+  "Download" passaram a levar pra ela. Como as notas geradas pelo workflow
+  só trazem o trecho do CHANGELOG da própria versão, elas foram reescritas
+  à mão com um resumo de tudo desde a v1.11.3. Texto original: a última
+  release publicada era a **v1.11.3** (2026-09-21), e o botão "Baixar
+  grátis" do site e o "Download" do README levavam pra ela. Tudo o que
+  entrou depois (v1.12 a v1.36, inclusive o que o site novo descreve) só
+  chegaria a quem usa o app depois de criar a tag e publicar o rascunho
+  que o workflow de release gera (decisão 33). Levantado na auditoria de
+  2026-09-23.
 
 ## 3. Instaladores desktop
 
