@@ -20,6 +20,7 @@ import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
@@ -92,6 +93,7 @@ class QuoteViewModel(
     fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text, gcodeImportMessage = null) }
     fun setLaborMinutes(text: String) = inputState.update { it.copy(laborMinutesText = text) }
     fun setQuantity(text: String) = inputState.update { it.copy(quantityText = text) }
+    fun setKind(kind: QuoteKind) = inputState.update { it.copy(kind = kind) }
 
     /** Abre o seletor de arquivo e importa o G-code escolhido (ver [importGCode]). */
     fun pickAndImportGCode() {
@@ -272,7 +274,8 @@ class QuoteViewModel(
 
     fun saveQuote(quote: Quote, services: List<QuoteService>) {
         val form = saveFormState.value
-        val client = form.clientName.trim().ifEmpty { null }?.let { name ->
+        val isProduct = inputState.value.isProduct
+        val client = if (isProduct) null else form.clientName.trim().ifEmpty { null }?.let { name ->
             Client(name = name, contact = form.clientContact.trim().ifEmpty { null })
         }
         val editingId = form.editingQuoteId
@@ -289,8 +292,8 @@ class QuoteViewModel(
                 sourceLink = form.sourceLink,
                 client = client,
                 printSettings = form.printSettings.takeUnless { it.isEmpty },
-                shippingCost = parseDecimal(inputState.value.shippingCostText) ?: 0.0,
-                deliveryDateEpochDay = form.deliveryDateEpochDay,
+                shippingCost = shippingCostToSave(),
+                deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
             )
         } else {
             historyRepository.save(
@@ -304,12 +307,18 @@ class QuoteViewModel(
                 sourceLink = form.sourceLink,
                 client = client,
                 printSettings = form.printSettings.takeUnless { it.isEmpty },
-                shippingCost = parseDecimal(inputState.value.shippingCostText) ?: 0.0,
-                deliveryDateEpochDay = form.deliveryDateEpochDay,
+                shippingCost = shippingCostToSave(),
+                deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
+                kind = inputState.value.kind,
+                sourceProductId = form.sourceProductId.takeUnless { isProduct },
             )
         }
-        saveFormState.value = SaveQuoteFormState(savedConfirmation = true)
+        saveFormState.value = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct)
     }
+
+    /** Produto não tem frete (decisão 101): o campo some da tela, e o que ficou digitado nele não vai junto. */
+    private fun shippingCostToSave(): Double =
+        if (inputState.value.isProduct) 0.0 else parseDecimal(inputState.value.shippingCostText) ?: 0.0
 
     /**
      * Reabre [savedQuote] pra edição na aba Orçamento: preenche filamento/cor/impressora/
@@ -338,10 +347,43 @@ class QuoteViewModel(
         saveFormState.value = saveFormFrom(savedQuote).copy(duplicatedFromName = savedQuote.name, deliveryDateEpochDay = null)
     }
 
+    /**
+     * "Vender" um produto do catálogo (decisão 101): mesmo caminho de [duplicateForNewQuote], mas o
+     * que nasce é um **pedido**, que guarda de qual produto veio ([SavedQuote.sourceProductId]). Sem
+     * cliente e sem prazo, que são da venda nova. O produto continua no catálogo, intacto.
+     */
+    fun sellFromProduct(product: SavedQuote) {
+        inputState.value = inputStateFrom(product).copy(kind = QuoteKind.ORDER)
+        saveFormState.value = saveFormFrom(product).copy(
+            sourceProductId = product.id,
+            soldFromProductName = product.name,
+            clientName = "",
+            clientContact = "",
+            deliveryDateEpochDay = null,
+        )
+    }
+
+    /**
+     * "Guardar no catálogo" a partir de um pedido (decisão 101): abre uma cópia em modo produto pra
+     * revisar antes de salvar. Passa pelo Orçamento de propósito: um preço negociado com aquele
+     * cliente volta pro preço de tabela, e frete, cliente e prazo ficam pra trás. O pedido não muda,
+     * porque é histórico de venda.
+     */
+    fun copyToCatalog(order: SavedQuote) {
+        inputState.value = inputStateFrom(order).copy(kind = QuoteKind.PRODUCT, shippingCostText = "", targetTotalText = "")
+        saveFormState.value = saveFormFrom(order).copy(
+            copiedFromOrderName = order.name,
+            clientName = "",
+            clientContact = "",
+            deliveryDateEpochDay = null,
+        )
+    }
+
     private fun inputStateFrom(savedQuote: SavedQuote): QuoteInputState {
         val quote = savedQuote.quote
         val job = quote.job
         return QuoteInputState(
+            kind = savedQuote.kind,
             filamentId = job.filament.id,
             filamentColorId = job.filamentColor?.id,
             printerId = quote.printerId,
@@ -428,12 +470,15 @@ class QuoteViewModel(
         val length = parseDecimal(input.lengthMetersText)
         val time = parseDecimal(input.printTimeMinutesText)
         val channel = channels.find { it.id == input.salesChannelId }
-        val shippingCost = parseDecimal(input.shippingCostText) ?: 0.0
+        // Produto do catálogo não tem frete nem preço fechado com cliente (decisão 101): os campos
+        // somem da tela, e o que tiver ficado digitado neles não pode mexer no preço.
+        val shippingCost = if (input.isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
         // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
         // que de fato é a peça. Se o alvo nem cobre os extras, a peça vale zero e o prejuízo
         // aparece no lucro, que é justamente o aviso.
         val servicesTotal = selectedServices.sumOf { it.total(input.quantity) }
         val negotiatedSalePrice = parseDecimal(input.targetTotalText)
+            ?.takeUnless { input.isProduct }
             ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
 
         if (filament == null || printer == null || length == null || time == null) {

@@ -5,6 +5,7 @@ import com.threedreport.core.model.Client
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.QuoteService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,8 +39,11 @@ actual class QuoteHistoryRepository actual constructor() {
         printSettings: PrintSettings?,
         shippingCost: Double,
         deliveryDateEpochDay: Long?,
+        kind: QuoteKind,
+        sourceProductId: String?,
     ): SavedQuote {
         val id = Uuid.random().toString()
+        val isProduct = kind == QuoteKind.PRODUCT
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
         val stlFileName = resolveAttachment(modelsDir, id, stlFile, stlReferenceFileName, "stl")
 
@@ -52,10 +56,12 @@ actual class QuoteHistoryRepository actual constructor() {
             stlFileName = stlFileName,
             sourceLink = sourceLink?.trim()?.ifEmpty { null },
             savedAtEpochMillis = System.currentTimeMillis(),
-            client = client,
+            client = if (isProduct) null else client,
             printSettings = printSettings,
-            shippingCost = shippingCost,
-            deliveryDateEpochDay = deliveryDateEpochDay,
+            shippingCost = if (isProduct) 0.0 else shippingCost,
+            deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
+            kind = kind,
+            sourceProductId = sourceProductId,
         )
         state.value = state.value + saved
         persist()
@@ -78,6 +84,7 @@ actual class QuoteHistoryRepository actual constructor() {
         deliveryDateEpochDay: Long?,
     ): SavedQuote? {
         val existing = state.value.find { it.id == id } ?: return null
+        val isProduct = !existing.isOrder
         val photoFileName = resolveAttachment(photosDir, id, photo, photoReferenceFileName, "img")
         val stlFileName = resolveAttachment(modelsDir, id, stlFile, stlReferenceFileName, "stl")
 
@@ -88,11 +95,11 @@ actual class QuoteHistoryRepository actual constructor() {
             photoFileName = photoFileName,
             stlFileName = stlFileName,
             sourceLink = sourceLink?.trim()?.ifEmpty { null },
-            client = client,
+            client = if (isProduct) null else client,
             lastEditedEpochMillis = System.currentTimeMillis(),
             printSettings = printSettings,
-            shippingCost = shippingCost,
-            deliveryDateEpochDay = deliveryDateEpochDay,
+            shippingCost = if (isProduct) 0.0 else shippingCost,
+            deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
         )
         // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
         // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).
@@ -142,6 +149,12 @@ actual class QuoteHistoryRepository actual constructor() {
     private fun cleanupIfOrphaned(dir: File, oldFileName: String?, newFileName: String?, fileNameOf: (SavedQuote) -> String?) {
         if (oldFileName == null || oldFileName == newFileName) return
         if (state.value.none { fileNameOf(it) == oldFileName }) File(dir, oldFileName).delete()
+    }
+
+    actual fun convertToOrder(id: String) {
+        if (state.value.none { it.id == id && !it.isOrder }) return
+        state.value = state.value.map { if (it.id == id) it.copy(kind = QuoteKind.ORDER, status = OrderStatus.ORCADO) else it }
+        persist()
     }
 
     actual fun updateStatus(id: String, status: OrderStatus) {

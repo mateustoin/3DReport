@@ -11,11 +11,13 @@ import com.threedreport.core.model.SavedQuote
  * Função pura e sem estado, igual a [com.threedreport.core.pricing.PricingCalculator]:
  * mesma entrada, mesma saída. Quem filtra por período (ex.: só os últimos 30
  * dias) é quem chama, passando a lista já filtrada. Quem separa venda de orçamento em aberto é
- * esta função ([com.threedreport.core.model.OrderStatus.isSold]).
+ * esta função ([com.threedreport.core.model.OrderStatus.isSold]), e também quem deixa os produtos do catálogo de fora
+ * ([SavedQuote.isOrder], decisão 101): produto não é venda nem orçamento em aberto.
  */
 object QuoteReport {
 
-    fun summarize(quotes: List<SavedQuote>): QuoteSummary {
+    fun summarize(savedQuotes: List<SavedQuote>): QuoteSummary {
+        val quotes = savedQuotes.filter { it.isOrder }
         if (quotes.isEmpty()) return QuoteSummary.EMPTY
 
         val (sold, open) = quotes.partition { it.status.isSold }

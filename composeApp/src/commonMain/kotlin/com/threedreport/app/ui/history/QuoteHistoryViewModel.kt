@@ -21,6 +21,7 @@ import com.threedreport.app.platform.saveBytesToFile
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -67,6 +68,16 @@ class QuoteHistoryViewModel(
     fun setStatusFilter(status: OrderStatus?) = filterState.update { it.copy(status = status) }
     fun setPeriodFilter(period: PeriodPreset) = filterState.update { it.copy(period = period) }
 
+    /**
+     * Troca entre Pedidos e Produtos (decisão 101). A seleção é esvaziada, pra um PDF não levar
+     * junto itens marcados na outra lista sem ninguém ver, e o filtro de status sai, porque produto
+     * não tem andamento.
+     */
+    fun setKindFilter(kind: QuoteKind) {
+        filterState.update { it.copy(kind = kind, status = null) }
+        clearSelection()
+    }
+
     /** Função pura: aplica [filter] a [savedQuotes], já ordenados do mais recente pro mais antigo. */
     fun visibleQuotes(savedQuotes: List<SavedQuote>, filter: HistoryFilter): List<SavedQuote> {
         val startEpochMillis = periodStartEpochMillis(filter.period)
@@ -74,7 +85,8 @@ class QuoteHistoryViewModel(
 
         return savedQuotes
             .filter { savedQuote ->
-                (filter.status == null || savedQuote.status == filter.status) &&
+                savedQuote.kind == filter.kind &&
+                    (filter.status == null || savedQuote.status == filter.status) &&
                     (startEpochMillis == null || savedQuote.savedAtEpochMillis >= startEpochMillis) &&
                     (normalizedQuery.isEmpty() || savedQuote.matchesQuery(normalizedQuery))
             }
@@ -85,6 +97,15 @@ class QuoteHistoryViewModel(
         name.contains(query, ignoreCase = true) || client?.name?.contains(query, ignoreCase = true) == true
 
     fun updateStatus(id: String, status: OrderStatus) = repository.updateStatus(id, status)
+
+    /**
+     * "Transformar em pedido" só aparece pra produto que nunca foi vendido: depois de uma venda, o
+     * produto é a origem daquele pedido, e movê-lo apagaria o catálogo de onde a venda saiu.
+     */
+    fun canConvertToOrder(product: SavedQuote, savedQuotes: List<SavedQuote>): Boolean =
+        !product.isOrder && savedQuotes.none { it.sourceProductId == product.id }
+
+    fun convertToOrder(id: String) = repository.convertToOrder(id)
 
     fun updatePrintSettings(id: String, printSettings: PrintSettings?) = repository.updatePrintSettings(id, printSettings)
 
@@ -207,9 +228,20 @@ class QuoteHistoryViewModel(
         performExportSelectedPdf(selected)
     }
 
-    /** Catálogo pra divulgação (vários itens por página, com foto), não um orçamento formal por página. */
+    /**
+     * Catálogo pra divulgação (vários itens por página, com foto), não um orçamento formal por página.
+     * Com itens marcados, vai só a seleção. Sem nenhum, na lista de Produtos, vão todos os produtos
+     * que a busca e o período estão mostrando (decisão 101): o catálogo é justamente essa lista.
+     */
     fun exportCatalogPdf() {
-        val selected = savedQuotes.value.filter { it.id in selectedIdsState.value }
+        val all = savedQuotes.value
+        val selected = if (selectedIdsState.value.isNotEmpty()) {
+            all.filter { it.id in selectedIdsState.value }
+        } else if (filterState.value.kind == QuoteKind.PRODUCT) {
+            visibleQuotes(all, filterState.value)
+        } else {
+            emptyList()
+        }
         if (selected.isEmpty()) return
 
         val branding = resolvePdfBranding()

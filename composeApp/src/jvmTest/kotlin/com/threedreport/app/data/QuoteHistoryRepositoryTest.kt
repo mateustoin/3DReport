@@ -9,6 +9,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.pricing.PricingCalculator
 import kotlin.io.path.createTempDirectory
@@ -17,6 +18,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -528,5 +530,82 @@ class QuoteHistoryRepositoryTest {
         repository.delete(saved.id)
 
         assertNull(repository.stlBytes(saved))
+    }
+
+    @Test
+    fun ordersKeepTheOldFileFormat() {
+        QuoteHistoryRepository().save(name = "Vaso", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        val json = java.io.File(appDataDir(), "quotes.json").readText()
+
+        assertFalse("\"kind\"" in json, "pedido não grava o campo novo: o arquivo continua igual ao de antes")
+        assertTrue(QuoteHistoryRepository().savedQuotes.value.single().isOrder)
+    }
+
+    @Test
+    fun productDropsClientShippingAndDeadlineAndSurvivesReload() {
+        val repository = QuoteHistoryRepository()
+        repository.save(
+            name = "Chaveiro",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            sourceLink = null,
+            client = Client(name = "Maria"),
+            shippingCost = 15.0,
+            deliveryDateEpochDay = 20_000L,
+            kind = QuoteKind.PRODUCT,
+        )
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.single()
+        assertEquals(QuoteKind.PRODUCT, reloaded.kind)
+        assertNull(reloaded.client)
+        assertEquals(0.0, reloaded.shippingCost)
+        assertNull(reloaded.deliveryDateEpochDay)
+    }
+
+    @Test
+    fun updateKeepsTheKind() {
+        val repository = QuoteHistoryRepository()
+        val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
+
+        repository.update(
+            id = product.id,
+            name = "Chaveiro novo",
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = null,
+            sourceLink = null,
+            client = Client(name = "Maria"),
+        )
+
+        val updated = repository.savedQuotes.value.single()
+        assertEquals(QuoteKind.PRODUCT, updated.kind)
+        assertNull(updated.client)
+    }
+
+    @Test
+    fun sourceProductIdSurvivesReload() {
+        QuoteHistoryRepository().save(name = "Pedido", quote = quote, services = emptyList(), photo = null, sourceLink = null, sourceProductId = "produto-1")
+
+        assertEquals("produto-1", QuoteHistoryRepository().savedQuotes.value.single().sourceProductId)
+    }
+
+    @Test
+    fun convertToOrderTurnsAProductIntoAnOrcadoOrderAndIgnoresOrders() {
+        val repository = QuoteHistoryRepository()
+        val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
+        val order = repository.save(name = "Pedido", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        repository.updateStatus(order.id, OrderStatus.ENTREGUE)
+
+        repository.convertToOrder(product.id)
+        repository.convertToOrder(order.id)
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value
+        val converted = reloaded.first { it.id == product.id }
+        assertTrue(converted.isOrder)
+        assertEquals(OrderStatus.ORCADO, converted.status)
+        assertEquals(OrderStatus.ENTREGUE, reloaded.first { it.id == order.id }.status)
     }
 }

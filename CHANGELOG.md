@@ -5,6 +5,33 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.42.0] - 2026-09-24
+
+### Adicionado
+- **Produtos do catálogo, separados dos pedidos.** Pra quem está começando e
+  ainda não tem cliente, e pra quem monta vitrine: agora dá pra guardar uma
+  peça com preço sem fingir que é uma venda.
+  - Na tela de Orçamento, escolha **"Pedido de cliente"** ou **"Produto do
+    catálogo"** antes de salvar. No modo produto, cliente, prazo, frete e
+    preço negociado somem, porque só existem numa venda. O botão diz onde a
+    peça vai parar: "Salvar como pedido" ou "Salvar no catálogo".
+  - O Histórico ganhou o seletor **Pedidos | Produtos**. Produto fica fora do
+    Kanban, do Dashboard (inclusive da linha "Orçado" e da conversão), da fila
+    das impressoras e das horas de manutenção.
+  - **"Vender"** no card do produto abre o Orçamento já preenchido pra criar o
+    pedido do cliente. O produto continua no catálogo, sem mudar nada.
+  - **"Guardar no catálogo"** no menu de um pedido cria uma cópia como produto,
+    a preço de tabela. O pedido não muda.
+  - **"Transformar em pedido"** num produto que nunca foi vendido, pra quem
+    salvou no lugar errado.
+  - Na lista de Produtos, **"Exportar catálogo"** já leva todos os produtos da
+    lista, sem precisar marcar um por um. Marcando alguns, vão só esses.
+
+### Observação
+- Nada muda no que já está salvo: tudo continua como pedido. Produto só existe
+  quando alguém cria um. Abrir os dados numa versão anterior do app mostra os
+  produtos como pedidos "Orçado", sem perder nada.
+
 ## [1.41.1] - 2026-09-24
 
 ### Corrigido

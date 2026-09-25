@@ -489,36 +489,36 @@ Decidido com o responsável do projeto (2026-09-24): os produtos ficam
 barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
 **dois botões**, "Salvar no catálogo" e "Salvar como pedido".
 
-**Fase 1: separar produto de pedido (o núcleo)**
+**Fase 1: separar produto de pedido (o núcleo)** (feita, decisão 101, 2026-09-24, v1.42.0)
 
-- [ ] **`SavedQuote.kind` (Produto | Pedido)**, com padrão Pedido: os JSONs
+- [x] **`SavedQuote.kind` (Produto | Pedido)**, com padrão Pedido: os JSONs
   antigos continuam iguais e nenhum pedido existente muda. Campo no mesmo
   `SavedQuote`, e não modelo novo, pra reaproveitar foto, STL, configurações
   de impressão, PDF, imagem quadrada, WhatsApp, edição e comparar
   impressoras sem duplicar código. Produto guarda cliente, frete e prazo
   vazios e ignora o `status`.
-- [ ] **Uma regra só pra "o que é pedido"**, no mesmo espírito do `isSold`
+- [x] **Uma regra só pra "o que é pedido"** (`SavedQuote.isOrder`), no mesmo espírito do `isSold`
   (um lugar só, pra tela e relatório não divergirem). Produto fica fora do
   Kanban, do Dashboard (inclusive da linha "Orçado" e da conversão), da fila
   de impressão (`PrintQueueReport`), das horas de manutenção
   (`MaintenanceReport`), da etiqueta de prazo e do filtro de status.
-- [ ] **Seletor `Pedidos | Produtos` no Histórico**, ao lado de
+- [x] **Seletor `Pedidos | Produtos` no Histórico**, ao lado de
   Lista/Kanban. No modo Produtos o Kanban não aparece (produto não tem
   andamento); busca e seleção múltipla continuam funcionando.
-- [ ] **Dois botões ao salvar:** "Salvar no catálogo" e "Salvar como
+- [x] **Dois botões ao salvar:** **Feito de outro jeito (decisão 101):** seletor "Pedido de cliente | Produto do catálogo" no topo da seção de salvar e um botão só, cujo texto muda, porque esconder cliente, prazo e frete exige saber o tipo antes de preencher. Texto original: "Salvar no catálogo" e "Salvar como
   pedido". O destacado segue o perfil do onboarding (Fase 3). No modo
   catálogo, cliente, frete e prazo somem do formulário, porque não fazem
   sentido sem venda.
-- [ ] **"Vender" como ação principal do card do produto.** Abre o Orçamento
+- [x] **"Vender" como ação principal do card do produto.** Abre o Orçamento
   preenchido (mesmo caminho de `QuoteViewModel.duplicateForNewQuote`), com
   aviso "a partir do produto X". O pedido nasce Orçado e segue o fluxo
   normal: cliente, serviços, negociação, prazo. O produto continua no
   catálogo, intacto.
-- [ ] **Mover entre os dois:** "Guardar no catálogo" num pedido cria uma
+- [x] **Mover entre os dois:** ("Guardar no catálogo" passa pelo Orçamento em modo produto, pra revisar e voltar ao preço de tabela) "Guardar no catálogo" num pedido cria uma
   cópia como produto, sem mexer no pedido (que é histórico de venda);
   "Transformar em pedido" num produto que nunca foi vendido, pra quem salvou
   no lugar errado.
-- [ ] **Catálogo em PDF parte dos produtos:** no modo Produtos, "Exportar
+- [x] **Catálogo em PDF parte dos produtos:** no modo Produtos, "Exportar
   catálogo" já sugere todos, sem obrigar a marcar um por um. A seleção
   manual continua valendo pra quem quer um recorte.
 

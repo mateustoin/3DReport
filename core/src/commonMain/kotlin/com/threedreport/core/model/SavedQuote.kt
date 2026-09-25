@@ -55,6 +55,12 @@ import kotlinx.serialization.Serializable
  *   "N dias após aprovar", porque cada vendedor conta prazo de um jeito; em troca, envelhece, e é
  *   por isso que duplicar um orçamento não copia a data. `null` quando não há prazo, inclusive em
  *   orçamentos salvos antes deste campo existir.
+ * @property kind se é pedido ou produto do catálogo (decisão 101). Padrão [QuoteKind.ORDER], então
+ *   todo orçamento salvo antes deste campo existir continua pedido. Produto guarda [client],
+ *   [shippingCost] e [deliveryDateEpochDay] vazios e ignora [status]; quem decide o que conta como
+ *   pedido é [isOrder].
+ * @property sourceProductId `id` do produto de onde este pedido nasceu pelo "Vender", ou `null`.
+ *   Continua apontando pro id mesmo se o produto for excluído depois.
  */
 @Serializable
 data class SavedQuote(
@@ -72,6 +78,8 @@ data class SavedQuote(
     val printSettings: PrintSettings? = null,
     val shippingCost: Double = 0.0,
     val deliveryDateEpochDay: Long? = null,
+    val kind: QuoteKind = QuoteKind.ORDER,
+    val sourceProductId: String? = null,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
@@ -85,6 +93,14 @@ data class SavedQuote(
     val totalWithServices: Double
         get() = quote.salePrice + services.sumOf { it.total(quote.quantity) } + shippingCost
 
+    /**
+     * Se é pedido (e não produto do catálogo). É a única regra de "o que é pedido" (decisão 101),
+     * no mesmo espírito de [OrderStatus.isSold]: Kanban, Dashboard, fila de impressão, horas de
+     * manutenção, prazo e filtro de status só olham pra pedidos, e todos perguntam aqui.
+     */
+    val isOrder: Boolean
+        get() = kind == QuoteKind.ORDER
+
     /** Tempo de máquina do pedido inteiro: o de uma peça vezes a quantidade (mesma conta da fila de impressão). */
     val totalPrintTimeMinutes: Double
         get() = quote.job.printTimeMinutes * quote.quantity
@@ -95,6 +111,7 @@ data class SavedQuote(
      * precisa de data nova antes de ser reenviado (a tela trata os dois casos de forma diferente).
      */
     fun isDeliveryOverdue(todayEpochDay: Long): Boolean {
+        if (!isOrder) return false
         val deadline = deliveryDateEpochDay ?: return false
         return deadline < todayEpochDay && status != OrderStatus.ENTREGUE
     }

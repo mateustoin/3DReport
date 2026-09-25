@@ -45,4 +45,20 @@ class SavedQuoteTest {
     fun totalPrintTimeMultipliesByQuantity() {
         assertEquals(270.0, savedQuoteOf(printTimeMinutes = 90.0, quantity = 3).totalPrintTimeMinutes)
     }
+
+    @Test
+    fun savedQuoteIsAnOrderByDefault() {
+        val saved = savedQuoteOf()
+
+        assertEquals(QuoteKind.ORDER, saved.kind)
+        assertTrue(saved.isOrder)
+    }
+
+    @Test
+    fun productIsNeverOverdue() {
+        val product = savedQuoteOf(OrderStatus.ORCADO, deliveryDateEpochDay = 100L).copy(kind = QuoteKind.PRODUCT)
+
+        assertFalse(product.isOrder)
+        assertFalse(product.isDeliveryOverdue(todayEpochDay = 101L))
+    }
 }

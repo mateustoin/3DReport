@@ -28,8 +28,16 @@ data class SaveQuoteFormState(
     /** Prazo de entrega prometido ao cliente (dias desde 01/01/1970), ou `null` — ver `SavedQuote.deliveryDateEpochDay`. */
     val deliveryDateEpochDay: Long? = null,
     val savedConfirmation: Boolean = false,
+    /** Se o que acabou de ser salvo foi um produto, pra confirmação dizer onde ele foi parar. */
+    val savedAsProduct: Boolean = false,
     /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
     val editingQuoteId: String? = null,
     /** Nome do orçamento de origem, só quando este formulário veio de "Duplicar" — exibido como aviso. */
     val duplicatedFromName: String? = null,
+    /** Produto de onde este pedido está nascendo pelo "Vender" (decisão 101), gravado no pedido ao salvar. */
+    val sourceProductId: String? = null,
+    /** Nome do produto de [sourceProductId], exibido como aviso. */
+    val soldFromProductName: String? = null,
+    /** Nome do pedido de origem, só quando este formulário veio de "Guardar no catálogo" — exibido como aviso. */
+    val copiedFromOrderName: String? = null,
 )

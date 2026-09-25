@@ -1,5 +1,6 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
@@ -227,5 +228,31 @@ class QuoteReportTest {
         assertEquals(1, ranking.size)
         assertEquals(2, ranking[0].negotiatedCount)
         assertEquals(8.0, ranking[0].totalDiscount, 1e-9)
+    }
+
+    @Test
+    fun catalogProductsStayOutOfSalesOpenQuotesAndConversion() {
+        val quotes = listOf(
+            quoteOf("PLA", salePrice = 20.0, productionCost = 10.0),
+            quoteOf("PLA", salePrice = 30.0, productionCost = 10.0, status = OrderStatus.ORCADO),
+            quoteOf("PETG", salePrice = 99.0, productionCost = 10.0, status = OrderStatus.ORCADO).copy(kind = QuoteKind.PRODUCT),
+            quoteOf("PETG", salePrice = 98.0, productionCost = 10.0, status = OrderStatus.ENTREGUE).copy(kind = QuoteKind.PRODUCT),
+        )
+
+        val summary = QuoteReport.summarize(quotes)
+
+        assertEquals(1, summary.quoteCount)
+        assertEquals(20.0, summary.totalSalePrice)
+        assertEquals(1, summary.openQuoteCount)
+        assertEquals(30.0, summary.openQuoteTotal)
+        assertEquals(0.5, summary.conversionRate)
+        assertEquals("PLA", summary.mostUsedFilamentName)
+    }
+
+    @Test
+    fun onlyCatalogProductsSummarizeToEmpty() {
+        val summary = QuoteReport.summarize(listOf(quoteOf("PLA", 20.0, 10.0).copy(kind = QuoteKind.PRODUCT)))
+
+        assertEquals(QuoteSummary.EMPTY, summary)
     }
 }

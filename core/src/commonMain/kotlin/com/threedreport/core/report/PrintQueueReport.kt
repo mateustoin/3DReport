@@ -42,7 +42,8 @@ object PrintQueueReport {
         savedQuotes: List<SavedQuote>,
         statuses: Set<OrderStatus> = setOf(OrderStatus.EM_IMPRESSAO),
     ): List<PrinterQueueEntry> {
-        val printingQuotes = savedQuotes.filter { it.status in statuses }
+        // Produto do catálogo (decisão 101) não ocupa máquina: o status dele fica parado em Orçado.
+        val printingQuotes = savedQuotes.filter { it.isOrder && it.status in statuses }
         return printers.map { printer ->
             val queued = printingQuotes.filter { it.quote.printerId == printer.id }
             PrinterQueueEntry(

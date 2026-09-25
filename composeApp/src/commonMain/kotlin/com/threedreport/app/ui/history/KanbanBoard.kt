@@ -87,6 +87,7 @@ fun KanbanBoard(
     onStatusChange: (String, OrderStatus) -> Unit,
     onEdit: (SavedQuote) -> Unit,
     onDuplicate: (SavedQuote) -> Unit,
+    onCopyToCatalog: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
     onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
     todayEpochDay: Long,
@@ -122,6 +123,7 @@ fun KanbanBoard(
                 onStatusChange = { savedQuote, newStatus -> onStatusChange(savedQuote.id, newStatus) },
                 onEdit = onEdit,
                 onDuplicate = onDuplicate,
+                onCopyToCatalog = onCopyToCatalog,
                 onDelete = onDelete,
                 onUpdatePrintSettings = onUpdatePrintSettings,
                 todayEpochDay = todayEpochDay,
@@ -146,6 +148,7 @@ private fun KanbanColumn(
     onStatusChange: (SavedQuote, OrderStatus) -> Unit,
     onEdit: (SavedQuote) -> Unit,
     onDuplicate: (SavedQuote) -> Unit,
+    onCopyToCatalog: (SavedQuote) -> Unit,
     onDelete: (SavedQuote) -> Unit,
     onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
     todayEpochDay: Long,
@@ -185,6 +188,7 @@ private fun KanbanColumn(
                 onStatusChange = { newStatus -> onStatusChange(savedQuote, newStatus) },
                 onEdit = { onEdit(savedQuote) },
                 onDuplicate = { onDuplicate(savedQuote) },
+                onCopyToCatalog = { onCopyToCatalog(savedQuote) },
                 onDelete = { onDelete(savedQuote) },
                 onUpdatePrintSettings = { settings -> onUpdatePrintSettings(savedQuote, settings) },
                 todayEpochDay = todayEpochDay,
@@ -212,6 +216,7 @@ private fun KanbanCard(
     onStatusChange: (OrderStatus) -> Unit,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
+    onCopyToCatalog: () -> Unit,
     onDelete: () -> Unit,
     onUpdatePrintSettings: (PrintSettings?) -> Unit,
     todayEpochDay: Long,
@@ -291,6 +296,7 @@ private fun KanbanCard(
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(AppIcons.Edit, contentDescription = null) }, onClick = { showMenu = false; onEdit() })
                     DropdownMenuItem(text = { Text("Duplicar") }, leadingIcon = { Icon(AppIcons.FileCopy, contentDescription = null) }, onClick = { showMenu = false; onDuplicate() })
+                    DropdownMenuItem(text = { Text("Guardar no catálogo") }, leadingIcon = { Icon(AppIcons.Storefront, contentDescription = null) }, onClick = { showMenu = false; onCopyToCatalog() })
                     DropdownMenuItem(
                         text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
                         leadingIcon = { Icon(AppIcons.Event, contentDescription = null) },

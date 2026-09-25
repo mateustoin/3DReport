@@ -13,6 +13,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,6 +31,7 @@ import androidx.compose.ui.window.Dialog
 @Composable
 fun EditQuoteDialog(viewModel: QuoteViewModel, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = { viewModel.resetForm(); onDismiss() }) {
+        val input by viewModel.input.collectAsState()
         Surface(shape = MaterialTheme.shapes.medium) {
             Column(modifier = Modifier.width(760.dp).heightIn(max = 680.dp)) {
                 Row(
@@ -36,7 +39,7 @@ fun EditQuoteDialog(viewModel: QuoteViewModel, onDismiss: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Editar orçamento salvo", style = MaterialTheme.typography.titleLarge)
+                    Text(if (input.isProduct) "Editar produto" else "Editar orçamento salvo", style = MaterialTheme.typography.titleLarge)
                     TextButton(onClick = { viewModel.resetForm(); onDismiss() }) { Text("Cancelar edição") }
                 }
                 HorizontalDivider()

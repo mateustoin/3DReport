@@ -64,7 +64,10 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   - `SavedQuote` é o retrato congelado de um orçamento salvo: além do `Quote`,
     guarda serviços, frete, cliente (uso interno), status do pedido, prazo de
     entrega, configurações de impressão e referências aos arquivos de foto e
-    STL. `BrandingSettings` guarda a identidade do vendedor (nome, logo,
+    STL. `SavedQuote.kind` (`QuoteKind`) separa **pedido** de **produto do
+    catálogo** (decisão 101); `SavedQuote.isOrder` é a única regra de "o que é
+    pedido", e os relatórios de `report/` deixam os produtos de fora por ela.
+    `BrandingSettings` guarda a identidade do vendedor (nome, logo,
     contato) e a aparência dos documentos pro cliente.
 - `pricing/PricingCalculator`: função pura
   `calculate(job, printer, settings, channel = null, quantity = 1, setupMinutes = 0.0, negotiatedSalePrice = null): Quote`.

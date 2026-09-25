@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.core.model.QuoteKind
 
 /** Entradas da tela de Orçamento controladas pelo usuário (o resto vem dos repositórios). */
 data class QuoteInputState(
@@ -30,6 +31,13 @@ data class QuoteInputState(
      * Vazio significa usar o preço de tabela. Ver `PricingCalculator.calculate`.
      */
     val targetTotalText: String = "",
+    /**
+     * Se o que está sendo montado é um pedido de cliente ou um produto do catálogo (decisão 101).
+     * Fica aqui, e não no formulário de salvar, porque muda o cálculo: produto não tem frete nem
+     * preço fechado com cliente (ver [isProduct]). Continua escolhido depois de salvar, pra quem
+     * cadastra vários produtos seguidos não precisar escolher de novo.
+     */
+    val kind: QuoteKind = QuoteKind.ORDER,
     /** Mensagem sobre a última tentativa de importar dados de um G-code, exibida abaixo do botão. */
     val gcodeImportMessage: String? = null,
     /** O que estava escolhido antes da última importação de G-code, pra "Desfazer" devolver. */
@@ -38,6 +46,9 @@ data class QuoteInputState(
     /** [quantityText] como número; campo vazio, texto inválido ou zero contam como uma peça. */
     val quantity: Int
         get() = quantityText.trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
+
+    val isProduct: Boolean
+        get() = kind == QuoteKind.PRODUCT
 
     /**
      * Nenhum minuto de trabalho informado: com a hora configurada, é o caso em que ela não muda o

@@ -62,6 +62,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 **Histórico & Dashboard**
 - Histórico de orçamentos — consultar, filtrar, baixar foto, excluir
 - Cliente e status do pedido por orçamento
+- Produtos do catálogo separados dos pedidos: guarde peças com preço sem cliente (pra quem está começando ou monta vitrine), fora do Kanban e do Dashboard, e crie o pedido com um clique em "Vender"
 - Exportar em PDF ou copiar/colar (nome + valor de venda + foto no PDF)
 - Abrir a conversa no WhatsApp com o orçamento já escrito, e gerar uma imagem quadrada da peça pro zap ou pro status
 - Prazo de entrega no orçamento, em destaque no PDF, na mensagem e na imagem, com aviso no Histórico quando o prazo vence

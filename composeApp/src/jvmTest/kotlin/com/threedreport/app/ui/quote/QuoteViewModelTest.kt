@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.quote
 
+import kotlin.test.assertNull
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -750,5 +752,106 @@ class QuoteViewModelTest {
 
         assertEquals("90", viewModel.input.value.laborMinutesText)
         assertEquals(current.quote.salePrice, viewModel.currentResult().quote!!.salePrice, 1e-9)
+    }
+
+    @Test
+    fun productIgnoresShippingAndNegotiatedPrice() {
+        val viewModel = viewModelWith()
+        viewModel.setShippingCost("15")
+        viewModel.setTargetTotal("5")
+        val asOrder = viewModel.currentResult()
+
+        viewModel.setKind(QuoteKind.PRODUCT)
+        val asProduct = viewModel.currentResult()
+
+        assertTrue(asOrder.quote!!.isNegotiated)
+        assertEquals(0.0, asProduct.shippingCost)
+        assertFalse(asProduct.quote!!.isNegotiated, "produto usa o preço de tabela")
+    }
+
+    @Test
+    fun savingAsProductDropsClientShippingAndDeadlineAndKeepsTheKindForTheNextOne() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.setClientName("Maria")
+        viewModel.setShippingCost("15")
+        viewModel.setDeliveryDate(20_700L)
+
+        viewModel.saveCurrentQuote()
+
+        val product = historyRepository.savedQuotes.value.single()
+        assertEquals(QuoteKind.PRODUCT, product.kind)
+        assertNull(product.client)
+        assertEquals(0.0, product.shippingCost)
+        assertNull(product.deliveryDateEpochDay)
+        assertTrue(viewModel.saveForm.value.savedAsProduct)
+        assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
+    }
+
+    @Test
+    fun editingAProductReopensItAsAProduct() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.saveCurrentQuote()
+        val product = historyRepository.savedQuotes.value.single()
+        viewModel.resetForm()
+
+        viewModel.loadForEditing(product)
+        viewModel.saveCurrentQuote()
+
+        assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
+        assertEquals(QuoteKind.PRODUCT, historyRepository.savedQuotes.value.single().kind)
+    }
+
+    @Test
+    fun sellingAProductCreatesAnOrderThatPointsBackAndLeavesTheProductAlone() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.setSaveName("Chaveiro")
+        viewModel.saveCurrentQuote()
+        val product = historyRepository.savedQuotes.value.single()
+
+        viewModel.sellFromProduct(product)
+
+        assertEquals(QuoteKind.ORDER, viewModel.input.value.kind)
+        assertEquals("Chaveiro", viewModel.saveForm.value.soldFromProductName)
+        assertEquals("Chaveiro", viewModel.saveForm.value.name)
+        assertNull(viewModel.saveForm.value.editingQuoteId)
+
+        viewModel.setClientName("Maria")
+        viewModel.saveCurrentQuote()
+
+        val order = historyRepository.savedQuotes.value.first { it.id != product.id }
+        assertTrue(order.isOrder)
+        assertEquals(product.id, order.sourceProductId)
+        assertEquals("Maria", order.client?.name)
+        assertEquals(product, historyRepository.savedQuotes.value.first { it.id == product.id })
+    }
+
+    @Test
+    fun copyingANegotiatedOrderToTheCatalogUsesTheTablePriceAndLeavesTheOrderAlone() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setTargetTotal("5")
+        viewModel.setShippingCost("15")
+        viewModel.setClientName("Maria")
+        viewModel.saveCurrentQuote()
+        val order = historyRepository.savedQuotes.value.single()
+
+        viewModel.copyToCatalog(order)
+
+        assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
+        assertEquals("", viewModel.input.value.targetTotalText)
+        assertEquals("", viewModel.saveForm.value.clientName)
+        viewModel.saveCurrentQuote()
+
+        val product = historyRepository.savedQuotes.value.first { it.id != order.id }
+        assertEquals(QuoteKind.PRODUCT, product.kind)
+        assertFalse(product.quote.isNegotiated)
+        assertNull(product.client)
+        assertEquals(order, historyRepository.savedQuotes.value.first { it.id == order.id })
     }
 }

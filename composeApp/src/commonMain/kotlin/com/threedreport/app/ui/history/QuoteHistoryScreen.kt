@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -28,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,6 +61,7 @@ import com.threedreport.app.ui.quote.PrintSettingsDialog
 import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
 
 private enum class HistoryViewMode { LIST, KANBAN }
@@ -68,6 +72,8 @@ fun QuoteHistoryScreen(
     viewModel: QuoteHistoryViewModel,
     onEditQuote: (SavedQuote) -> Unit,
     onDuplicateQuote: (SavedQuote) -> Unit,
+    onSellProduct: (SavedQuote) -> Unit,
+    onCopyToCatalog: (SavedQuote) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val savedQuotes by viewModel.savedQuotes.collectAsState()
@@ -79,29 +85,45 @@ fun QuoteHistoryScreen(
     val pendingExport by viewModel.pendingExport.collectAsState()
     val deliveryDateEditing by viewModel.deliveryDateEditing.collectAsState()
     val today = viewModel.currentEpochDay()
+    val showingProducts = filter.kind == QuoteKind.PRODUCT
+    // Produto não tem andamento, então não tem Kanban: a lista de produtos é sempre lista.
+    val effectiveViewMode = if (showingProducts) HistoryViewMode.LIST else viewMode
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Histórico de orçamentos", style = MaterialTheme.typography.titleLarge)
+        Text("Histórico", style = MaterialTheme.typography.titleLarge)
 
         if (savedQuotes.isEmpty()) {
             Text(
-                "Nenhum orçamento salvo ainda. Calcule um na aba Orçamento e clique em \"Salvar orçamento\".",
+                "Nada salvo ainda. Calcule uma peça na aba Orçamento e salve como pedido de cliente " +
+                    "ou como produto do catálogo.",
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = viewMode == HistoryViewMode.LIST, onClick = { viewMode = HistoryViewMode.LIST }, label = { Text("Lista") })
-                FilterChip(
-                    selected = viewMode == HistoryViewMode.KANBAN,
-                    onClick = { viewMode = HistoryViewMode.KANBAN },
-                    label = { Text("Kanban") },
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilterChip(selected = !showingProducts, onClick = { viewModel.setKindFilter(QuoteKind.ORDER) }, label = { Text("Pedidos") })
+                FilterChip(selected = showingProducts, onClick = { viewModel.setKindFilter(QuoteKind.PRODUCT) }, label = { Text("Produtos") })
+                if (!showingProducts) {
+                    VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 4.dp))
+                    FilterChip(selected = viewMode == HistoryViewMode.LIST, onClick = { viewMode = HistoryViewMode.LIST }, label = { Text("Lista") })
+                    FilterChip(
+                        selected = viewMode == HistoryViewMode.KANBAN,
+                        onClick = { viewMode = HistoryViewMode.KANBAN },
+                        label = { Text("Kanban") },
+                    )
+                }
             }
 
-            if (viewMode == HistoryViewMode.LIST) {
+            if (showingProducts) {
+                Text(
+                    "Produtos são as peças que você oferece, com preço, sem cliente nem andamento. Quando " +
+                        "alguém comprar, clique em \"Vender\" pra criar o pedido. \"Exportar catálogo\" leva " +
+                        "todos os produtos da lista, ou só os que você marcar.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else if (viewMode == HistoryViewMode.LIST) {
                 Text(
                     "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só.",
                     style = MaterialTheme.typography.bodySmall,
@@ -115,10 +137,13 @@ fun QuoteHistoryScreen(
 
             // No Kanban, o status já é a própria organização em colunas — filtrar por status ali
             // deixaria as outras colunas vazias sem explicação, então esse filtro some nesse modo.
-            HistoryFilterBar(filter = filter, viewModel = viewModel, showStatusFilter = viewMode == HistoryViewMode.LIST)
+            // Produto também não tem status pra filtrar.
+            HistoryFilterBar(filter = filter, viewModel = viewModel, showStatusFilter = effectiveViewMode == HistoryViewMode.LIST && !showingProducts)
         }
 
-        if (viewMode == HistoryViewMode.LIST) {
+        if (effectiveViewMode == HistoryViewMode.LIST) {
+            val visibleQuotes = viewModel.visibleQuotes(savedQuotes, filter)
+
             if (selectedIds.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("${selectedIds.size} selecionado(s)", style = MaterialTheme.typography.bodyMedium)
@@ -126,11 +151,28 @@ fun QuoteHistoryScreen(
                     Button(onClick = viewModel::exportCatalogPdf) { IconLabel(AppIcons.GridView, "Exportar catálogo (PDF)") }
                     TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
                 }
+            } else if (showingProducts && visibleQuotes.isNotEmpty()) {
+                Button(onClick = viewModel::exportCatalogPdf) {
+                    IconLabel(
+                        AppIcons.GridView,
+                        if (visibleQuotes.size == 1) "Exportar catálogo com 1 produto (PDF)" else "Exportar catálogo com os ${visibleQuotes.size} produtos (PDF)",
+                    )
+                }
             }
 
-            val visibleQuotes = viewModel.visibleQuotes(savedQuotes, filter)
             if (savedQuotes.isNotEmpty() && visibleQuotes.isEmpty()) {
-                EmptyState("Nenhum orçamento encontrado com esse filtro.")
+                val hasAnyOfThisKind = savedQuotes.any { it.kind == filter.kind }
+                EmptyState(
+                    when {
+                        hasAnyOfThisKind && showingProducts -> "Nenhum produto encontrado com esse filtro."
+                        hasAnyOfThisKind -> "Nenhum orçamento encontrado com esse filtro."
+                        showingProducts -> "Nenhum produto no catálogo ainda. Na aba Orçamento, escolha " +
+                            "\"Produto do catálogo\" antes de salvar, ou use \"Guardar no catálogo\" no menu " +
+                            "\"Ações\" de um pedido."
+                        else -> "Nenhum pedido ainda. Na aba Orçamento, escolha \"Pedido de cliente\" antes de " +
+                            "salvar, ou clique em \"Vender\" num produto."
+                    },
+                )
             }
 
             visibleQuotes.forEach { savedQuote ->
@@ -146,6 +188,13 @@ fun QuoteHistoryScreen(
                     onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
                     onEdit = { onEditQuote(savedQuote) },
                     onDuplicate = { onDuplicateQuote(savedQuote) },
+                    onSell = { onSellProduct(savedQuote) },
+                    onCopyToCatalog = { onCopyToCatalog(savedQuote) },
+                    onConvertToOrder = if (viewModel.canConvertToOrder(savedQuote, savedQuotes)) {
+                        { viewModel.convertToOrder(savedQuote.id) }
+                    } else {
+                        null
+                    },
                     onDelete = { pendingDelete = savedQuote },
                     onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
                     onUpdatePrintSettings = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
@@ -163,6 +212,7 @@ fun QuoteHistoryScreen(
                 onStatusChange = viewModel::updateStatus,
                 onEdit = onEditQuote,
                 onDuplicate = onDuplicateQuote,
+                onCopyToCatalog = onCopyToCatalog,
                 onDelete = { pendingDelete = it },
                 onUpdatePrintSettings = { savedQuote, settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
                 todayEpochDay = today,
@@ -173,8 +223,13 @@ fun QuoteHistoryScreen(
 
     pendingDelete?.let { savedQuote ->
         ConfirmDialog(
-            title = "Excluir orçamento?",
-            message = "\"${savedQuote.name}\" será removido do histórico, junto com a foto e o STL salvos (se houver). Essa ação não pode ser desfeita.",
+            title = if (savedQuote.isOrder) "Excluir orçamento?" else "Excluir produto?",
+            message = if (savedQuote.isOrder) {
+                "\"${savedQuote.name}\" será removido do histórico, junto com a foto e o STL salvos (se houver). Essa ação não pode ser desfeita."
+            } else {
+                "\"${savedQuote.name}\" será removido do catálogo, junto com a foto e o STL salvos (se houver). " +
+                    "Pedidos já vendidos a partir dele não mudam. Essa ação não pode ser desfeita."
+            },
             onConfirm = {
                 viewModel.delete(savedQuote.id)
                 pendingDelete = null
@@ -239,7 +294,8 @@ private fun HistoryFilterBar(filter: HistoryFilter, viewModel: QuoteHistoryViewM
             modifier = Modifier.fillMaxWidth(),
             value = filter.query,
             onValueChange = viewModel::setSearchQuery,
-            label = { Text("Buscar por nome ou cliente") },
+            // Produto não tem cliente, então a busca dele é só pelo nome.
+            label = { Text(if (filter.kind == QuoteKind.PRODUCT) "Buscar por nome" else "Buscar por nome ou cliente") },
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -325,6 +381,9 @@ private fun SavedQuoteRow(
     onCopy: () -> Unit,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
+    onSell: () -> Unit,
+    onCopyToCatalog: () -> Unit,
+    onConvertToOrder: (() -> Unit)?,
     onDelete: () -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
     onUpdatePrintSettings: (PrintSettings?) -> Unit,
@@ -335,6 +394,7 @@ private fun SavedQuoteRow(
 ) {
     var showPrintSettingsDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    val isProduct = !savedQuote.isOrder
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -409,12 +469,22 @@ private fun SavedQuoteRow(
                     Text("Cor: ${color.displayLabel()}", style = MaterialTheme.typography.bodySmall)
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    StatusDropdown(status = savedQuote.status, onStatusChange = onStatusChange)
-                    DeliveryBadge(savedQuote, todayEpochDay)
+                // Produto não tem andamento nem prazo (decisão 101).
+                if (isProduct) {
+                    Text("Produto do catálogo", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        StatusDropdown(status = savedQuote.status, onStatusChange = onStatusChange)
+                        DeliveryBadge(savedQuote, todayEpochDay)
+                    }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // FlowRow: com o "Vender" do produto, os botões não cabem numa linha em janela estreita.
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                    // Vender é a ação principal do produto: um clique a partir do card.
+                    if (isProduct) {
+                        Button(onClick = onSell) { IconLabel(AppIcons.Sell, "Vender") }
+                    }
                     TextButton(onClick = onExportPdf) { IconLabel(AppIcons.PictureAsPdf, "Exportar PDF") }
                     TextButton(onClick = onCopy) { IconLabel(AppIcons.ContentCopy, if (justCopied) "Copiado!" else "Copiar") }
                     TextButton(onClick = onEdit) { IconLabel(AppIcons.Edit, "Editar") }
@@ -422,11 +492,26 @@ private fun SavedQuoteRow(
                         TextButton(onClick = { showMenu = true }) { IconLabel(AppIcons.MoreVert, "Ações") }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(text = { Text("Duplicar") }, leadingIcon = { Icon(AppIcons.FileCopy, contentDescription = null) }, onClick = { showMenu = false; onDuplicate() })
-                            DropdownMenuItem(
-                                text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
-                                leadingIcon = { Icon(AppIcons.Event, contentDescription = null) },
-                                onClick = { showMenu = false; onEditDeliveryDate() },
-                            )
+                            if (isProduct) {
+                                onConvertToOrder?.let { convert ->
+                                    DropdownMenuItem(
+                                        text = { Text("Transformar em pedido") },
+                                        leadingIcon = { Icon(AppIcons.RequestQuote, contentDescription = null) },
+                                        onClick = { showMenu = false; convert() },
+                                    )
+                                }
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text("Guardar no catálogo") },
+                                    leadingIcon = { Icon(AppIcons.Storefront, contentDescription = null) },
+                                    onClick = { showMenu = false; onCopyToCatalog() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
+                                    leadingIcon = { Icon(AppIcons.Event, contentDescription = null) },
+                                    onClick = { showMenu = false; onEditDeliveryDate() },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão") },
                                 leadingIcon = { Icon(AppIcons.Tune, contentDescription = null) },
@@ -444,7 +529,7 @@ private fun SavedQuoteRow(
                                 onClick = { showMenu = false; onOpenWhatsApp() },
                             )
                             DropdownMenuItem(
-                                text = { Text("Salvar orçamento pro WhatsApp") },
+                                text = { Text(if (isProduct) "Salvar imagem pro WhatsApp" else "Salvar orçamento pro WhatsApp") },
                                 leadingIcon = { Icon(AppIcons.AddPhotoAlternate, contentDescription = null) },
                                 onClick = { showMenu = false; onSaveImage() },
                             )

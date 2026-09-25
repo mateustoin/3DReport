@@ -25,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -73,6 +74,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.Service
 import com.threedreport.core.stl.StlAnalyzer
@@ -313,17 +315,20 @@ private fun QuoteInputs(
         )
     }
 
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth().tabToNavigate(),
-        value = input.shippingCostText,
-        onValueChange = viewModel::setShippingCost,
-        label = { Text("Frete (${currency.symbol}, opcional)") },
-    )
-    Text(
-        "Somado ao total como linha própria, nunca embutido no preço da peça: frete é repasse, " +
-            "não produto seu. Não multiplica pela quantidade nem entra na margem.",
-        style = MaterialTheme.typography.bodySmall,
-    )
+    // Produto do catálogo não tem frete (decisão 101): quem paga e pra onde vai só existe na venda.
+    if (!input.isProduct) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = input.shippingCostText,
+            onValueChange = viewModel::setShippingCost,
+            label = { Text("Frete (${currency.symbol}, opcional)") },
+        )
+        Text(
+            "Somado ao total como linha própria, nunca embutido no preço da peça: frete é repasse, " +
+                "não produto seu. Não multiplica pela quantidade nem entra na margem.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
 }
 
 /**
@@ -400,7 +405,7 @@ private fun QuoteResultSection(
             quote = quote,
             selectedServices = result.selectedServices,
             grandTotal = result.grandTotal ?: quote.salePrice,
-            deliveryDateEpochDay = saveForm.deliveryDateEpochDay,
+            deliveryDateEpochDay = saveForm.deliveryDateEpochDay.takeUnless { input.isProduct },
         )
         filaments.isEmpty() && allFilaments.isNotEmpty() -> Text(
             "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" na aba Filamentos.",
@@ -417,6 +422,7 @@ private fun QuoteResultSection(
             extras = result.servicesTotal + result.shippingCost,
             targetTotalText = input.targetTotalText,
             onTargetTotalChange = viewModel::setTargetTotal,
+            isProduct = input.isProduct,
         )
 
         val comparison = viewModel.comparePrinters(filaments, printers, settings, services, input, salesChannels)
@@ -434,10 +440,11 @@ private fun SaveQuoteFormSection(
     onEditingFinished: () -> Unit,
 ) {
     val quote = result.quote
+    val input by viewModel.input.collectAsState()
     val printers by viewModel.printers.collectAsState()
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val printer = quote?.let { q -> printers.firstOrNull { it.id == q.printerId } }
-    val queueHint = if (quote != null && printer != null) {
+    val queueHint = if (quote != null && printer != null && !input.isProduct) {
         viewModel.queueAheadOf(printer, savedQuotes, saveForm.editingQuoteId)?.let { queue ->
             val orders = if (queue.queuedQuoteCount == 1) "1 pedido aprovado ou imprimindo" else "${queue.queuedQuoteCount} pedidos aprovados ou imprimindo"
             "Fila da ${printer.name}: ${queue.queuedMinutes.minutesToDurationText()} de impressão em $orders · " +
@@ -448,6 +455,7 @@ private fun SaveQuoteFormSection(
     }
     SaveQuoteForm(
         form = saveForm,
+        isProduct = input.isProduct,
         viewModel = viewModel,
         canSave = quote != null && !result.missingServicePrice,
         cannotSaveReason = if (quote != null && result.missingServicePrice) {
@@ -542,21 +550,28 @@ private fun NegotiationSection(
     extras: Double,
     targetTotalText: String,
     onTargetTotalChange: (String) -> Unit,
+    isProduct: Boolean = false,
 ) {
-    SectionTitle(AppIcons.Handshake, "Negociação")
+    // Produto do catálogo não tem cliente pra negociar (decisão 101): fica só o mínimo, que
+    // continua útil pra saber até onde dá pra baixar quando o cliente aparecer.
+    if (isProduct) {
+        SectionTitle(AppIcons.Handshake, "Preço mínimo")
+    } else {
+        SectionTitle(AppIcons.Handshake, "Negociação")
 
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth().tabToNavigate(),
-        value = targetTotalText,
-        onValueChange = onTargetTotalChange,
-        label = { Text("Preço fechado com o cliente (opcional)") },
-    )
-    Text(
-        "Digite aqui o valor que o cliente propôs e veja o que sobra. Ele passa a ser o preço de " +
-            "verdade do orçamento: é o que vai pro PDF, pro histórico e pro Dashboard. Deixe vazio " +
-            "pra usar o preço da sua margem.",
-        style = MaterialTheme.typography.bodySmall,
-    )
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = targetTotalText,
+            onValueChange = onTargetTotalChange,
+            label = { Text("Preço fechado com o cliente (opcional)") },
+        )
+        Text(
+            "Digite aqui o valor que o cliente propôs e veja o que sobra. Ele passa a ser o preço de " +
+                "verdade do orçamento: é o que vai pro PDF, pro histórico e pro Dashboard. Deixe vazio " +
+                "pra usar o preço da sua margem.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
 
     val breakEvenTotal = quote.breakEvenSalePrice + extras
     if (quote.profit < 0) {
@@ -660,6 +675,7 @@ private fun ReceiptLine(label: String, value: String) {
 @Composable
 private fun SaveQuoteForm(
     form: SaveQuoteFormState,
+    isProduct: Boolean,
     viewModel: QuoteViewModel,
     canSave: Boolean,
     queueHint: String?,
@@ -668,24 +684,54 @@ private fun SaveQuoteForm(
     onEditingFinished: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle(AppIcons.Save, if (form.editingQuoteId != null) "Editar orçamento salvo" else "Salvar orçamento")
-        if (form.editingQuoteId != null) {
+        val isEditing = form.editingQuoteId != null
+        SectionTitle(
+            AppIcons.Save,
+            when {
+                isEditing && isProduct -> "Editar produto"
+                isEditing -> "Editar orçamento salvo"
+                else -> "Salvar"
+            },
+        )
+        if (isEditing) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Editando um orçamento já salvo — a data de criação original é mantida.",
+                    if (isProduct) {
+                        "Editando um produto do catálogo: a data de criação original é mantida."
+                    } else {
+                        "Editando um orçamento já salvo: a data de criação original é mantida."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                 )
                 TextButton(onClick = { viewModel.resetForm(); onEditingFinished() }) { Text("Cancelar edição") }
             }
         }
         form.duplicatedFromName?.let { originalName ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "Duplicado de \"$originalName\" — revise os dados e clique em Salvar pra criar um orçamento novo.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                TextButton(onClick = viewModel::resetForm) { Text("Cancelar") }
-            }
+            FormOriginNotice(
+                "Duplicado de \"$originalName\": revise os dados e clique em Salvar pra criar " +
+                    (if (isProduct) "um produto novo." else "um pedido novo."),
+                onCancel = viewModel::resetForm,
+            )
+        }
+        form.soldFromProductName?.let { productName ->
+            FormOriginNotice(
+                "Vendendo o produto \"$productName\": preencha o cliente e o prazo e salve o pedido. " +
+                    "O produto continua no catálogo, sem mudar nada.",
+                onCancel = viewModel::resetForm,
+            )
+        }
+        form.copiedFromOrderName?.let { orderName ->
+            FormOriginNotice(
+                "Copiando o pedido \"$orderName\" pro catálogo: revise e clique em \"Salvar no catálogo\". " +
+                    "Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
+                onCancel = viewModel::resetForm,
+            )
+        }
+
+        // O tipo só se escolhe ao criar: na edição, e quando o formulário veio de "Vender" ou de
+        // "Guardar no catálogo", o destino já está decidido e o aviso acima diz qual é.
+        if (!isEditing && form.soldFromProductName == null && form.copiedFromOrderName == null) {
+            KindSelector(isProduct = isProduct, onSelect = viewModel::setKind)
         }
 
         SubsectionTitle(AppIcons.Visibility, "O que o cliente vê", modifier = Modifier.padding(top = 8.dp))
@@ -712,9 +758,11 @@ private fun SaveQuoteForm(
             OutlinedButton(onClick = viewModel::pickPhoto) { Text("Escolher foto (opcional)") }
         }
 
-        Text("Prazo de entrega (opcional)", style = MaterialTheme.typography.labelLarge)
-        DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, onChange = viewModel::setDeliveryDate)
-        queueHint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        if (!isProduct) {
+            Text("Prazo de entrega (opcional)", style = MaterialTheme.typography.labelLarge)
+            DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, onChange = viewModel::setDeliveryDate)
+            queueHint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
 
         // Daqui pra baixo nada vai pro cliente. O título separa as duas metades do formulário, em
         // vez de depender de cada rótulo dizer "(uso interno)".
@@ -814,25 +862,74 @@ private fun SaveQuoteForm(
             LinkText(text = "Abrir link no navegador", url = form.sourceLink)
         }
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.clientName,
-            onValueChange = viewModel::setClientName,
-            label = { Text("Cliente (opcional, uso interno)") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.clientContact,
-            onValueChange = viewModel::setClientContact,
-            label = { Text("Contato do cliente (opcional)") },
-        )
+        if (!isProduct) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().tabToNavigate(),
+                value = form.clientName,
+                onValueChange = viewModel::setClientName,
+                label = { Text("Cliente (opcional, uso interno)") },
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().tabToNavigate(),
+                value = form.clientContact,
+                onValueChange = viewModel::setClientContact,
+                label = { Text("Contato do cliente (opcional)") },
+            )
+        }
 
-        Button(onClick = onSave, enabled = canSave) { Text(if (form.editingQuoteId != null) "Salvar alterações" else "Salvar orçamento") }
+        Button(onClick = onSave, enabled = canSave) {
+            Text(
+                when {
+                    isEditing -> "Salvar alterações"
+                    isProduct -> "Salvar no catálogo"
+                    else -> "Salvar como pedido"
+                },
+            )
+        }
         if (!canSave) {
             Text(cannotSaveReason, style = MaterialTheme.typography.bodySmall)
         }
 
-        ShowSnackbarOnce(form.savedConfirmation, "Orçamento salvo no histórico.", viewModel::consumeSavedConfirmation)
+        ShowSnackbarOnce(
+            form.savedConfirmation,
+            if (form.savedAsProduct) "Produto salvo no catálogo (Histórico, em Produtos)." else "Orçamento salvo no histórico.",
+            viewModel::consumeSavedConfirmation,
+        )
+    }
+}
+
+/** Aviso de onde veio o formulário (Duplicar, Vender, Guardar no catálogo), com o jeito de desistir. */
+@Composable
+private fun FormOriginNotice(text: String, onCancel: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f, fill = false))
+        TextButton(onClick = onCancel) { Text("Cancelar") }
+    }
+}
+
+/**
+ * Pedido de cliente ou produto do catálogo (decisão 101). Vem antes dos campos de propósito: o que
+ * não faz sentido pra produto (cliente, prazo, frete, preço negociado) some antes de a pessoa
+ * gastar tempo preenchendo.
+ */
+@Composable
+private fun KindSelector(isProduct: Boolean, onSelect: (QuoteKind) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = !isProduct, onClick = { onSelect(QuoteKind.ORDER) }, label = { Text("Pedido de cliente") })
+            FilterChip(selected = isProduct, onClick = { onSelect(QuoteKind.PRODUCT) }, label = { Text("Produto do catálogo") })
+        }
+        Text(
+            if (isProduct) {
+                "Uma peça que você oferece, com preço, sem cliente nem andamento. Fica no Histórico, em " +
+                    "Produtos, fora do Kanban e do Dashboard. Quando alguém comprar, é só clicar em \"Vender\"."
+            } else {
+                "Um orçamento pra um cliente. Fica no Histórico, em Pedidos, e segue o andamento de " +
+                    "Orçado até Entregue."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

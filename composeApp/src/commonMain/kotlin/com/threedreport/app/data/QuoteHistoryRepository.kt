@@ -5,6 +5,7 @@ import com.threedreport.core.model.Client
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.QuoteService
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,10 @@ expect class QuoteHistoryRepository() {
      * orçamento cuja foto/STL não mudou), reaproveita esse arquivo já existente em vez de gravar
      * [photo]/[stlFile] de novo em disco — evita duplicar o mesmo arquivo de imagem/modelo a cada
      * duplicação. Ignorado se o [photo]/[stlFile] correspondente for `null`.
+     *
+     * [kind] = [QuoteKind.PRODUCT] salva um produto do catálogo (decisão 101): [client],
+     * [shippingCost] e [deliveryDateEpochDay] são descartados mesmo se vierem preenchidos, porque
+     * produto não tem venda. [sourceProductId] é o produto de onde um pedido nasceu pelo "Vender".
      */
     fun save(
         name: String,
@@ -44,6 +49,8 @@ expect class QuoteHistoryRepository() {
         printSettings: PrintSettings? = null,
         shippingCost: Double = 0.0,
         deliveryDateEpochDay: Long? = null,
+        kind: QuoteKind = QuoteKind.ORDER,
+        sourceProductId: String? = null,
     ): SavedQuote
 
     fun delete(id: String)
@@ -54,7 +61,9 @@ expect class QuoteHistoryRepository() {
      * de criação original) e marcando [SavedQuote.lastEditedEpochMillis]. `null` de [photo]/[stlFile]
      * remove o anexo existente; não-nulo substitui. [photoReferenceFileName]/[stlReferenceFileName]
      * (ver [save]) evitam regravar o arquivo em disco quando o anexo não mudou desde que foi
-     * carregado pra edição. Retorna `null` sem fazer nada se [id] não existir.
+     * carregado pra edição. Retorna `null` sem fazer nada se [id] não existir. O
+     * [SavedQuote.kind] não muda por aqui (produto continua produto, com cliente, frete e prazo
+     * descartados); mudar de tipo é pelo [convertToOrder].
      */
     fun update(
         id: String,
@@ -71,6 +80,14 @@ expect class QuoteHistoryRepository() {
         shippingCost: Double = 0.0,
         deliveryDateEpochDay: Long? = null,
     ): SavedQuote?
+
+    /**
+     * "Transformar em pedido" (decisão 101): o produto [id] passa a ser pedido, nascendo
+     * [OrderStatus.ORCADO] como qualquer orçamento salvo. Pra quem salvou no lugar errado; vender
+     * um produto de verdade é outro caminho, que cria um pedido novo e deixa o produto no catálogo.
+     * Não faz nada se [id] não existir ou já for pedido.
+     */
+    fun convertToOrder(id: String)
 
     /** Atualiza o andamento do pedido [id] pra [status]. Não faz nada se [id] não existir. */
     fun updateStatus(id: String, status: OrderStatus)

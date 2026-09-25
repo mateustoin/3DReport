@@ -236,6 +236,14 @@ fun App() {
                                     quoteViewModel.duplicateForNewQuote(savedQuote)
                                     selectedTab = AppTab.QUOTE
                                 },
+                                onSellProduct = { product ->
+                                    quoteViewModel.sellFromProduct(product)
+                                    selectedTab = AppTab.QUOTE
+                                },
+                                onCopyToCatalog = { order ->
+                                    quoteViewModel.copyToCatalog(order)
+                                    selectedTab = AppTab.QUOTE
+                                },
                             )
                             AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
                             AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)

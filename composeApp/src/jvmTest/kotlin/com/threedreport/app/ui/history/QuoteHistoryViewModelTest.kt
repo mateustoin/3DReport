@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.history
 
+import kotlin.test.assertFalse
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -181,6 +183,36 @@ class QuoteHistoryViewModelTest {
         val visible = viewModel.visibleQuotes(listOf(older, newer), HistoryFilter())
 
         assertEquals(listOf(newer, older), visible)
+    }
+    @Test
+    fun kindFilterShowsOrdersOrProductsAndClearsSelectionAndStatus() {
+        val repository = QuoteHistoryRepository()
+        val order = repository.save(name = "Pedido", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
+
+        assertEquals(listOf(order.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
+
+        viewModel.setStatusFilter(OrderStatus.ORCADO)
+        viewModel.toggleSelection(order.id)
+        viewModel.setKindFilter(QuoteKind.PRODUCT)
+
+        assertEquals(listOf(product.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
+        assertNull(viewModel.filter.value.status)
+        assertTrue(viewModel.selectedIds.value.isEmpty())
+    }
+
+    @Test
+    fun convertToOrderIsOnlyOfferedForAProductThatWasNeverSold() {
+        val repository = QuoteHistoryRepository()
+        val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
+
+        assertTrue(viewModel.canConvertToOrder(product, repository.savedQuotes.value))
+
+        repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, sourceProductId = product.id)
+
+        assertFalse(viewModel.canConvertToOrder(product, repository.savedQuotes.value))
     }
 }
 

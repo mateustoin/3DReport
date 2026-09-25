@@ -1,5 +1,6 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MaintenanceComponent
@@ -103,5 +104,15 @@ class MaintenanceReportTest {
 
         assertEquals("b", MaintenanceReport.mostUrgent(listOf(a, b))?.component?.id)
         assertNull(MaintenanceReport.mostUrgent(emptyList()))
+    }
+
+    @Test
+    fun catalogProductsDoNotAddMachineHours() {
+        val quotes = listOf(
+            printed("p1", 60.0, OrderStatus.PRONTO),
+            printed("p1", 600.0, OrderStatus.ENTREGUE).copy(kind = QuoteKind.PRODUCT),
+        )
+
+        assertEquals(1.0, MaintenanceReport.printerHours("p1", quotes, emptyList()), 1e-9)
     }
 }

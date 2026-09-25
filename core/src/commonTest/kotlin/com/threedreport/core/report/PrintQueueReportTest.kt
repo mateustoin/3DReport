@@ -1,5 +1,6 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MachineInvestment
@@ -100,5 +101,19 @@ class PrintQueueReportTest {
         val queue = PrintQueueReport.summarize(listOf(printer), quotes)
 
         assertEquals(0.0, queue.single().queuedMinutes)
+    }
+
+    @Test
+    fun catalogProductsNeverEnterTheQueue() {
+        val printer = printerOf("a", "Impressora A")
+        val quotes = listOf(
+            quoteOf("1", printerId = "a", status = OrderStatus.EM_IMPRESSAO, printTimeMinutes = 60.0),
+            quoteOf("2", printerId = "a", status = OrderStatus.EM_IMPRESSAO, printTimeMinutes = 500.0).copy(kind = QuoteKind.PRODUCT),
+        )
+
+        val entry = PrintQueueReport.summarize(listOf(printer), quotes).single()
+
+        assertEquals(60.0, entry.queuedMinutes)
+        assertEquals(1, entry.queuedQuoteCount)
     }
 }

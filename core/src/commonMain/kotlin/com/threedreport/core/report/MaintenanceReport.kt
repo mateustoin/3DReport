@@ -48,7 +48,7 @@ object MaintenanceReport {
      */
     fun printerHours(printerId: String, savedQuotes: List<SavedQuote>, manualUsage: List<ManualUsageEntry>): Double {
         val printedMinutes = savedQuotes
-            .filter { it.quote.printerId == printerId && it.status in PRINTED_STATUSES }
+            .filter { it.isOrder && it.quote.printerId == printerId && it.status in PRINTED_STATUSES }
             .sumOf { it.totalPrintTimeMinutes }
         return printedMinutes / 60.0 + manualUsage.filter { it.printerId == printerId }.sumOf { it.hours }
     }
