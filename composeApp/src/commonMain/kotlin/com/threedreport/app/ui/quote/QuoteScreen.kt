@@ -118,8 +118,8 @@ private fun Double.formatOneDecimal(): String {
 }
 
 /**
- * Tela de Orçamento: dados da peça e resultado calculado. [onSave] é o botão Salvar: na aba, salva e
- * limpa pra o próximo; no [EditQuoteDialog], salva e fecha o diálogo.
+ * Tela de Orçamento: dados da peça e resultado calculado. [onSave] é o botão Salvar: num orçamento novo,
+ * salva e limpa pra o próximo; editando um salvo (decisão 113), salva e volta pra onde a edição começou.
  */
 @Composable
 fun QuoteScreen(
@@ -188,8 +188,9 @@ fun QuoteScreen(
 }
 
 /**
- * Faixa fixa no rodapé enquanto o formulário veio de uma operação começada no Histórico (Vender,
- * Duplicar, Guardar no catálogo), com o jeito de desistir sempre à vista (decisão 102).
+ * Faixa fixa no rodapé enquanto o formulário veio de uma operação começada em Pedidos ou no Catálogo
+ * (Editar, Vender, Duplicar, Guardar no catálogo), com o jeito de desistir sempre à vista (decisões 102
+ * e 113).
  *
  * Visual neutro com filete âmbar (decisão 103), a mesma assinatura das faixas de destaque do PDF
  * (decisão 35): diz que há algo em andamento sem parecer erro.
@@ -197,6 +198,12 @@ fun QuoteScreen(
 @Composable
 private fun OperationBar(form: SaveQuoteFormState, isProduct: Boolean, onCancel: () -> Unit) {
     val (title, detail, cancelLabel) = when (val operation = form.operation) {
+        is QuoteOperation.Editing -> Triple(
+            "Editando " + listOfNotNull(operation.savedQuote.displayNumber?.takeIf { operation.savedQuote.isOrder }, "\"${operation.savedQuote.name}\"").joinToString(" "),
+            "Salve pra atualizar " + (if (isProduct) "o produto." else "o pedido.") +
+                " O que estava sendo feito no Orçamento volta quando você terminar.",
+            "Cancelar edição",
+        )
         is QuoteOperation.Selling -> Triple(
             "Vendendo \"${operation.product.name}\"",
             "Preencha o cliente e o prazo e salve o pedido. O produto continua no catálogo, sem mudar nada.",

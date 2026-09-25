@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,7 +66,7 @@ import com.threedreport.app.ui.onboarding.OnboardingPrinter
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
-import com.threedreport.app.ui.quote.EditQuoteDialog
+import com.threedreport.app.ui.quote.QuoteOperation
 import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListScreen
@@ -93,6 +94,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val onboardingRepository = container.onboarding
 
     val appScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val newQuoteViewModel = {
         QuoteViewModel(
             filamentRepository, printerRepository, settingsRepository, container.services,
@@ -106,7 +108,8 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     }
     val quoteViewModel = remember { newQuoteViewModel() }
     // Editar um orçamento salvo tem o próprio ViewModel (decisão 108): usar o da aba apagava o rascunho
-    // que estivesse em andamento lá.
+    // que estivesse em andamento lá. A edição aparece no próprio Orçamento (decisão 113), e o rascunho
+    // da aba volta quando ela termina.
     val editQuoteViewModel = remember { newQuoteViewModel() }
     var destination by remember { mutableStateOf(AppDestination.QUOTE) }
     // Fica aqui, e não na tela, pra voltar a Configurações na mesma seção.
@@ -145,11 +148,43 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     var draggingFile by remember { mutableStateOf(false) }
     // Ação que jogaria fora o orçamento em andamento na aba, esperando a confirmação.
     var pendingDiscard by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val unlessDraft: (() -> Unit) -> Unit = { action -> if (quoteViewModel.hasDraft) pendingDiscard = action else action() }
+    // Ação que precisa da aba do Orçamento livre, esperando a pessoa encerrar a edição em andamento.
+    var pendingEndEditing by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val editForm by editQuoteViewModel.saveForm.collectAsState()
+    val editing = editForm.editingQuoteId != null
+    val originOf = { operation: QuoteOperation? ->
+        if (operation?.originKind == QuoteKind.PRODUCT) AppDestination.CATALOG else AppDestination.ORDERS
+    }
+    // Duplicar, Vender, Guardar no catálogo e Ctrl+N carregam no ViewModel da aba, que está por trás da
+    // edição: primeiro a edição termina (sem alteração, termina sozinha), depois pergunta do rascunho.
+    val unlessEditing: (() -> Unit) -> Unit = { action ->
+        when {
+            !editing -> action()
+            editQuoteViewModel.hasUnsavedEdits -> pendingEndEditing = action
+            else -> {
+                editQuoteViewModel.resetForm()
+                action()
+            }
+        }
+    }
+    val unlessDraft: (() -> Unit) -> Unit = { action ->
+        unlessEditing { if (quoteViewModel.hasDraft) pendingDiscard = action else action() }
+    }
+    var confirmingEditDiscard by remember { mutableStateOf(false) }
+    val endEditing = {
+        val origin = originOf(editQuoteViewModel.saveForm.value.operation)
+        editQuoteViewModel.resetForm()
+        destination = origin
+    }
+    val cancelEditing = { if (editQuoteViewModel.hasUnsavedEdits) confirmingEditDiscard = true else endEditing() }
+    val saveEditing = {
+        if (editQuoteViewModel.saveCurrentQuote()) {
+            endEditing()
+            appScope.launch { snackbarHostState.showSnackbar("Alterações salvas.") }
+        }
+    }
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
-
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Coletados aqui pro pontinho de "alteração não salva" da barra lateral acompanhar o que se digita.
     val settingsDraft by settingsViewModel.uiState.collectAsState()
@@ -171,7 +206,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
 
                     when {
                         accel && event.key == Key.S && destination == AppDestination.QUOTE -> {
-                            quoteViewModel.saveCurrentQuote()
+                            if (editing) saveEditing() else quoteViewModel.saveCurrentQuote()
                             true
                         }
                         accel && event.key == Key.N && destination == AppDestination.QUOTE -> {
@@ -196,7 +231,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                         onDrop = { dropped ->
                             // Seja qual for a aba aberta, o G-code vai pro Orçamento, que é onde o resultado aparece.
                             destination = AppDestination.QUOTE
-                            quoteViewModel.importDropped(dropped)
+                            (if (editing) editQuoteViewModel else quoteViewModel).importDropped(dropped)
                         },
                     ),
                 ) {
@@ -208,25 +243,38 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                         onSelect = { destination = it },
                         compact = compactSidebar,
                         version = APP_VERSION,
+                        status = { if (it == AppDestination.QUOTE && editing) "Editando" else null },
                         hasPendingChanges = { it == AppDestination.SETTINGS && settingsDirty },
                     )
                     VerticalDivider()
 
                     Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         when (destination) {
-                            AppDestination.QUOTE -> QuoteScreen(
-                                quoteViewModel,
-                                // Vender, Duplicar e Guardar no catálogo começam em Pedidos ou no Catálogo:
-                                // desistir devolve a pessoa pra lá, com o formulário limpo.
-                                onCancelOperation = {
-                                    val origin = quoteViewModel.saveForm.value.operation?.originKind
-                                    quoteViewModel.resetForm()
-                                    destination = if (origin == QuoteKind.PRODUCT) AppDestination.CATALOG else AppDestination.ORDERS
-                                },
-                            )
+                            // A chave troca a tela inteira entre a edição e a aba, sem estado de uma vazar pra outra.
+                            AppDestination.QUOTE -> key(editing) {
+                                if (editing) {
+                                    QuoteScreen(editQuoteViewModel, onSave = saveEditing, onCancelOperation = cancelEditing)
+                                } else {
+                                    QuoteScreen(
+                                        quoteViewModel,
+                                        // Vender, Duplicar e Guardar no catálogo começam em Pedidos ou no Catálogo:
+                                        // desistir devolve a pessoa pra lá, com o formulário limpo.
+                                        onCancelOperation = {
+                                            val origin = originOf(quoteViewModel.saveForm.value.operation)
+                                            quoteViewModel.resetForm()
+                                            destination = origin
+                                        },
+                                    )
+                                }
+                            }
                             AppDestination.ORDERS, AppDestination.CATALOG -> QuoteHistoryScreen(
                                 if (destination == AppDestination.ORDERS) ordersViewModel else catalogViewModel,
-                                onEditQuote = { savedQuote -> editQuoteViewModel.loadForEditing(savedQuote) },
+                                onEditQuote = { savedQuote ->
+                                    unlessEditing {
+                                        editQuoteViewModel.loadForEditing(savedQuote)
+                                        destination = AppDestination.QUOTE
+                                    }
+                                },
                                 // As três começam um orçamento na aba: com um rascunho lá, pergunta antes.
                                 onDuplicateQuote = { savedQuote ->
                                     unlessDraft {
@@ -297,12 +345,35 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                 )
             }
 
-            val editForm by editQuoteViewModel.saveForm.collectAsState()
-            if (editForm.editingQuoteId != null) {
-                EditQuoteDialog(
-                    viewModel = editQuoteViewModel,
-                    onDismiss = editQuoteViewModel::resetForm,
-                    onSaved = { appScope.launch { snackbarHostState.showSnackbar("Alterações salvas.") } },
+            if (confirmingEditDiscard) {
+                ConfirmDialog(
+                    title = "Descartar as alterações?",
+                    message = "O que você mudou neste orçamento não foi salvo e vai se perder.",
+                    confirmLabel = "Descartar",
+                    onConfirm = {
+                        confirmingEditDiscard = false
+                        endEditing()
+                    },
+                    onDismiss = { confirmingEditDiscard = false },
+                )
+            }
+
+            pendingEndEditing?.let { action ->
+                ConfirmDialog(
+                    title = "Descartar a edição em andamento?",
+                    message = "Você está editando \"${editForm.name}\" no Orçamento e ainda não salvou. Pra continuar, " +
+                        "as alterações dessa edição se perdem.",
+                    confirmLabel = "Descartar e continuar",
+                    dismissLabel = "Voltar pra edição",
+                    onConfirm = {
+                        pendingEndEditing = null
+                        editQuoteViewModel.resetForm()
+                        action()
+                    },
+                    onDismiss = {
+                        pendingEndEditing = null
+                        destination = AppDestination.QUOTE
+                    },
                 )
             }
 
