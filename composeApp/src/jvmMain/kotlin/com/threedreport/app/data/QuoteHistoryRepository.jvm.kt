@@ -103,7 +103,7 @@ actual class QuoteHistoryRepository actual constructor() {
             printSettings = printSettings,
             shippingCost = if (isProduct) 0.0 else shippingCost,
             deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
-            category = if (isProduct) category.normalizedCategory() else null,
+            category = if (isProduct) category.normalizedCategory(excludingId = id) else null,
         )
         // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
         // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).
@@ -203,11 +203,14 @@ actual class QuoteHistoryRepository actual constructor() {
     /**
      * Categoria sem espaços nas pontas, vazia vira `null`, e com a grafia de uma que já existe
      * quando só muda maiúscula ("chaveiros" cai em "Chaveiros"), pra lista e PDF não ganharem duas
-     * seções da mesma coisa.
+     * seções da mesma coisa. [excludingId] é o produto sendo editado: sem isso, a grafia antiga dele
+     * mesmo venceria, e corrigir a maiúscula de uma categoria seria impossível.
      */
-    private fun String?.normalizedCategory(): String? {
+    private fun String?.normalizedCategory(excludingId: String? = null): String? {
         val trimmed = this?.trim()?.ifEmpty { null } ?: return null
-        return state.value.firstNotNullOfOrNull { saved -> saved.category?.takeIf { it.equals(trimmed, ignoreCase = true) } } ?: trimmed
+        return state.value
+            .filter { it.id != excludingId }
+            .firstNotNullOfOrNull { saved -> saved.category?.takeIf { it.equals(trimmed, ignoreCase = true) } } ?: trimmed
     }
 
     private fun defaultName(): String =

@@ -762,6 +762,7 @@ class QuoteViewModelTest {
         val asOrder = viewModel.currentResult()
 
         viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.setTargetTotal("30")
         val asProduct = viewModel.currentResult()
 
         assertEquals(15.0, asOrder.shippingCost)
@@ -871,7 +872,8 @@ class QuoteViewModelTest {
 
         viewModel.sellFromProduct(product)
 
-        assertEquals("25", viewModel.input.value.targetTotalText)
+        assertEquals("", viewModel.input.value.targetTotalText)
+        assertEquals(25.0, viewModel.input.value.announcedUnitPrice!!, 1e-9)
         viewModel.saveCurrentQuote()
         val order = historyRepository.savedQuotes.value.first { it.id != product.id }
         assertEquals(25.0, order.quote.salePrice, 1e-9)
@@ -903,5 +905,42 @@ class QuoteViewModelTest {
 
         assertEquals("Chaveiros", viewModel.saveForm.value.category)
         assertEquals(listOf("Chaveiros"), viewModel.knownCategories(historyRepository.savedQuotes.value))
+    }
+
+    @Test
+    fun sellingAnAnnouncedProductAddsShippingOnTopInsteadOfTakingItFromThePiece() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.setTargetTotal("50")
+        viewModel.saveCurrentQuote()
+        val product = historyRepository.savedQuotes.value.single()
+
+        viewModel.sellFromProduct(product)
+        viewModel.setShippingCost("15")
+        viewModel.setQuantity("2")
+        val result = viewModel.currentResult()
+
+        assertEquals(100.0, result.quote!!.salePrice, 1e-9)
+        assertEquals(115.0, result.grandTotal!!, 1e-9)
+
+        viewModel.setTargetTotal("90")
+        assertEquals(75.0, viewModel.currentResult().quote!!.salePrice, 1e-9, "preço fechado digitado vence o anunciado")
+    }
+
+    @Test
+    fun switchingKindClearsTheClosedPrice() {
+        val viewModel = viewModelWith()
+        viewModel.setShippingCost("20")
+        viewModel.setTargetTotal("100")
+
+        viewModel.setKind(QuoteKind.PRODUCT)
+
+        assertEquals("", viewModel.input.value.targetTotalText)
+        assertFalse(viewModel.currentResult().quote!!.isNegotiated)
+
+        viewModel.setTargetTotal("30")
+        viewModel.setKind(QuoteKind.PRODUCT)
+        assertEquals("30", viewModel.input.value.targetTotalText, "escolher o mesmo tipo de novo não apaga nada")
     }
 }

@@ -93,7 +93,13 @@ class QuoteViewModel(
     fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text, gcodeImportMessage = null) }
     fun setLaborMinutes(text: String) = inputState.update { it.copy(laborMinutesText = text) }
     fun setQuantity(text: String) = inputState.update { it.copy(quantityText = text) }
-    fun setKind(kind: QuoteKind) = inputState.update { it.copy(kind = kind) }
+    /**
+     * Trocar entre pedido e produto limpa o preço fechado: com cliente ele é o total combinado,
+     * frete incluso, e em produto é o preço anunciado. Levar um pro outro mudaria o preço em silêncio.
+     */
+    fun setKind(kind: QuoteKind) = inputState.update {
+        if (it.kind == kind) it else it.copy(kind = kind, targetTotalText = "", announcedUnitPrice = null)
+    }
 
     /** Abre o seletor de arquivo e importa o G-code escolhido (ver [importGCode]). */
     fun pickAndImportGCode() {
@@ -366,10 +372,13 @@ class QuoteViewModel(
     /**
      * "Vender" um produto do catálogo (decisão 101): mesmo caminho de [duplicateForNewQuote], mas o
      * que nasce é um **pedido**, que guarda de qual produto veio ([SavedQuote.sourceProductId]). Sem
-     * cliente e sem prazo, que são da venda nova. O produto continua no catálogo, intacto.
+     * cliente e sem prazo, que são da venda nova. O produto continua no catálogo, intacto. Com preço
+     * anunciado, a peça sai por ele ([QuoteInputState.announcedUnitPrice]), e frete e serviços somam
+     * por fora (decisão 102).
      */
     fun sellFromProduct(product: SavedQuote) {
-        inputState.value = inputStateFrom(product).copy(kind = QuoteKind.ORDER)
+        val announced = product.quote.takeIf { it.isNegotiated }?.unitSalePrice
+        inputState.value = inputStateFrom(product).copy(kind = QuoteKind.ORDER, targetTotalText = "", announcedUnitPrice = announced)
         saveFormState.value = saveFormFrom(product).copy(
             sourceProductId = product.id,
             soldFromProductName = product.name,
@@ -504,6 +513,7 @@ class QuoteViewModel(
         val servicesTotal = selectedServices.sumOf { it.total(input.quantity) }
         val negotiatedSalePrice = parseDecimal(input.targetTotalText)
             ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
+            ?: input.announcedUnitPrice?.let { it * input.quantity }
 
         if (filament == null || printer == null || length == null || time == null) {
             return QuoteResult(

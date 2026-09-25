@@ -663,4 +663,14 @@ class QuoteHistoryRepositoryTest {
         assertTrue(updated.lastEditedEpochMillis != null)
         assertEquals(quote, reloaded.first { it.id == order.id }.quote)
     }
+
+    @Test
+    fun editingAProductCanFixTheCapitalizationOfItsOwnCategory() {
+        val repository = QuoteHistoryRepository()
+        val product = repository.save(name = "A", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = "chaveiros")
+
+        repository.update(id = product.id, name = "A", quote = quote, services = emptyList(), photo = null, stlFile = null, sourceLink = null, client = null, category = "Chaveiros")
+
+        assertEquals("Chaveiros", repository.savedQuotes.value.single().category)
+    }
 }

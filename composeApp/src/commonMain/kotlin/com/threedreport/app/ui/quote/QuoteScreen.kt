@@ -480,12 +480,15 @@ private fun QuoteResultSection(
             targetTotalText = input.targetTotalText,
             onTargetTotalChange = viewModel::setTargetTotal,
             isProduct = input.isProduct,
-            showcaseSuggestion = if (input.isProduct) {
+            // Só com o campo vazio: depois de aplicado, ou com um anunciado próprio, o atalho sobrava
+            // e podia até sugerir baixar o preço.
+            showcaseSuggestion = if (input.isProduct && input.targetTotalText.isBlank()) {
                 viewModel.showcasePriceSuggestion((quote.tableSalePrice ?: quote.salePrice) + result.servicesTotal + result.shippingCost)
             } else {
                 null
             },
             onApplyShowcaseSuggestion = viewModel::applyShowcasePrice,
+            announcedPiecePrice = input.announcedUnitPrice?.takeIf { input.targetTotalText.isBlank() }?.let { it * input.quantity },
         )
 
         val comparison = viewModel.comparePrinters(filaments, printers, settings, services, input, salesChannels)
@@ -616,6 +619,7 @@ private fun NegotiationSection(
     isProduct: Boolean = false,
     showcaseSuggestion: Double? = null,
     onApplyShowcaseSuggestion: (Double) -> Unit = {},
+    announcedPiecePrice: Double? = null,
 ) {
     // Produto do catálogo não tem cliente pra negociar (decisão 101), mas tem o preço que se
     // anuncia (decisão 102): o mesmo preço fechado, com outro nome. Calculado R$ 18,37, anunciado
@@ -647,6 +651,14 @@ private fun NegotiationSection(
             onValueChange = onTargetTotalChange,
             label = { Text("Preço fechado com o cliente (opcional)") },
         )
+        announcedPiecePrice?.let { price ->
+            Text(
+                "Preço anunciado do produto: ${price.toMoney()}. Frete e serviços somam por fora. " +
+                    "Digite um valor aqui pra fechar outro preço.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         Text(
             "Digite aqui o valor que o cliente propôs e veja o que sobra. Ele passa a ser o preço de " +
                 "verdade do orçamento: é o que vai pro PDF, pro histórico e pro Dashboard. Deixe vazio " +

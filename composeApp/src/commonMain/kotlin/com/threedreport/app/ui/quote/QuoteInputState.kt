@@ -32,6 +32,13 @@ data class QuoteInputState(
      */
     val targetTotalText: String = "",
     /**
+     * Preço anunciado, por unidade, do produto de onde este pedido está nascendo pelo "Vender"
+     * (decisão 102). Com [targetTotalText] vazio, a peça sai por ele vezes a quantidade, e serviços
+     * e frete somam por fora. Fica separado do preço fechado porque aquele é o total que o cliente
+     * paga, frete incluso: usar o anunciado ali descontaria o frete da peça.
+     */
+    val announcedUnitPrice: Double? = null,
+    /**
      * Se o que está sendo montado é um pedido de cliente ou um produto do catálogo (decisão 101).
      * Fica aqui, e não no formulário de salvar, porque muda o cálculo: produto não tem frete nem
      * preço fechado com cliente (ver [isProduct]). Continua escolhido depois de salvar, pra quem
