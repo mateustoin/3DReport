@@ -10,6 +10,21 @@ import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.interpretationHint
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.SalesChannel
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import com.threedreport.app.ui.about.READING_MAX_WIDTH
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,12 +72,33 @@ import com.threedreport.app.ui.theme.ThemeViewModel
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.ThemeMode
 
+/** As seções de Configurações, uma por vez na tela (decisão 112). */
+enum class SettingsSection(val label: String) {
+    BUSINESS("Negócio e custos"),
+    CHANNELS("Canais"),
+    DOCUMENTS("Documentos pro cliente"),
+    APPEARANCE("Aparência"),
+    DATA("Dados");
+
+    val icon: ImageVector
+        get() = when (this) {
+            BUSINESS -> AppIcons.Payments
+            CHANNELS -> AppIcons.ShoppingBag
+            DOCUMENTS -> AppIcons.Description
+            APPEARANCE -> AppIcons.Palette
+            DATA -> AppIcons.Inventory2
+        }
+}
+
+/** Se Configurações tem rascunho por salvar (custos ou documentos), pra barra lateral marcar. */
+fun hasUnsavedSettings(viewModel: SettingsViewModel, brandingViewModel: BrandingViewModel): Boolean =
+    viewModel.hasUnsavedChanges || brandingViewModel.hasUnsavedChanges
+
 /**
- * Tela de Configurações gerais: parâmetros do negócio, iguais para qualquer
- * impressora/orçamento (energia, falhas, acabamento, administrativo, margem),
- * e a personalização do PDF exportado (marca d'água, com biblioteca de
- * templates salvos — ver [TemplateListDialog]).
- * O que é específico de cada impressora fica na tela de Impressoras.
+ * Configurações em seções (decisão 112): uma lista à esquerda e uma seção por vez, com largura de leitura.
+ * Custos e documentos são rascunho, e a barra "Alterações não salvas" embaixo salva ou descarta os dois
+ * juntos; trocar de seção ou de tela não perde nada. Tema, moeda, canais e backup valem na hora.
+ * O que é de cada impressora fica em Impressoras.
  */
 @Composable
 fun SettingsScreen(
@@ -73,126 +109,229 @@ fun SettingsScreen(
     currencyViewModel: CurrencyViewModel,
     backupViewModel: BackupViewModel,
     salesChannelViewModel: SalesChannelViewModel,
+    section: SettingsSection,
+    onSectionChange: (SettingsSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
     val savedSettings by viewModel.savedSettings.collectAsState()
     LaunchedEffect(savedSettings) { viewModel.syncWith(savedSettings) }
+    val branding by brandingViewModel.uiState.collectAsState()
     val savedBranding by brandingViewModel.savedBranding.collectAsState()
     LaunchedEffect(savedBranding) { brandingViewModel.syncWith(savedBranding) }
-    val themeMode by themeViewModel.mode.collectAsState()
-    val currency by currencyViewModel.currency.collectAsState()
     var showTemplatesDialog by remember { mutableStateOf(false) }
+    // Lido depois de coletar os dois estados, pra barra aparecer e sumir junto com o que se digita.
+    val pricingDirty = remember(state, savedSettings) { viewModel.hasUnsavedChanges }
+    val brandingDirty = remember(branding, savedBranding) { brandingViewModel.hasUnsavedChanges }
 
-    Column(
-        modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        SectionTitle(AppIcons.Palette, "Aparência")
-        ThemeModeSelector(selected = themeMode, onSelect = themeViewModel::setMode)
+    fun saveAll() {
+        if (pricingDirty) viewModel.save()
+        if (brandingDirty) brandingViewModel.save()
+        // Um erro leva pra seção dele: com a barra embaixo, a mensagem ficaria numa seção que não está na tela.
+        when {
+            viewModel.uiState.value.errorMessage != null -> onSectionChange(SettingsSection.BUSINESS)
+            brandingViewModel.uiState.value.errorMessage != null -> onSectionChange(SettingsSection.DOCUMENTS)
+        }
+    }
 
-        SectionTitle(AppIcons.Payments, "Moeda")
-        CurrencySelector(selected = currency, onSelect = currencyViewModel::setCurrency)
-        Text(
-            "A moeda dos orçamentos novos: símbolo e formato dos valores na tela, no PDF e no " +
-                "copiar/colar. Não afeta o cálculo. Cada orçamento salvo continua na moeda em que foi feito.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        HorizontalDivider()
-
-        SectionTitle(AppIcons.Bolt, "Energia")
-        NumberField("Preço do kWh (${LocalCurrency.current.symbol})", state.energyPricePerKwhText, NumberKind.MEASURE) {
-            viewModel.update { s -> s.copy(energyPricePerKwhText = it) }
+    Column(modifier = modifier.fillMaxSize()) {
+        Row(modifier = Modifier.weight(1f)) {
+            SectionList(
+                selected = section,
+                onSelect = onSectionChange,
+                hasPendingChanges = { (it == SettingsSection.BUSINESS && pricingDirty) || (it == SettingsSection.DOCUMENTS && brandingDirty) },
+            )
+            VerticalDivider()
+            Box(
+                modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                Column(
+                    modifier = Modifier.widthIn(max = READING_MAX_WIDTH).fillMaxWidth().padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    when (section) {
+                        SettingsSection.BUSINESS -> BusinessSection(viewModel, currencyViewModel)
+                        SettingsSection.CHANNELS -> SalesChannelSection(salesChannelViewModel)
+                        SettingsSection.DOCUMENTS -> ClientDocumentsSection(brandingViewModel, onShowTemplates = { showTemplatesDialog = true })
+                        SettingsSection.APPEARANCE -> AppearanceSection(themeViewModel)
+                        SettingsSection.DATA -> BackupSection(backupViewModel)
+                    }
+                }
+            }
         }
 
-        SectionTitle(AppIcons.Schedule, "Seu trabalho")
-        NumberField("Valor da sua hora de trabalho (${LocalCurrency.current.symbol}/h)", state.laborRatePerHourText, NumberKind.AMOUNT) {
-            viewModel.update { s -> s.copy(laborRatePerHourText = it) }
+        if (pricingDirty || brandingDirty) {
+            UnsavedChangesBar(
+                onDiscard = {
+                    viewModel.discard()
+                    brandingViewModel.discard()
+                },
+                onSave = ::saveAll,
+            )
         }
-        Text(
-            "Cobrado pelos minutos que você informa em cada orçamento (tirar da mesa, remover " +
-                "suporte, lixar, pintar, embalar). Só soma ao preço. Deixe zero pra não cobrar mão " +
-                "de obra.",
-            style = MaterialTheme.typography.bodySmall,
-        )
+    }
 
-        SectionTitle(AppIcons.Storefront, "Custos fixos do negócio")
-        NumberField("Custo fixo mensal (${LocalCurrency.current.symbol})", state.monthlyFixedCostText, NumberKind.AMOUNT) {
-            viewModel.update { s -> s.copy(monthlyFixedCostText = it) }
-        }
-        NumberField("Horas de impressão por mês (todas as impressoras)", state.productiveHoursPerMonthText, NumberKind.AMOUNT) {
-            viewModel.update { s -> s.copy(productiveHoursPerMonthText = it) }
-        }
-        Text(
-            "Aluguel do espaço, internet, assinaturas e embalagem não aparecem em nenhuma peça " +
-                "específica, mas você paga todo mês. O valor é dividido pelas horas de impressão " +
-                "do mês e cada peça paga a parte dela. Deixe zero pra não usar.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        SectionTitle(AppIcons.Build, "Falhas e acabamento")
-        NumberField("Taxa de falhas (%)", state.failureRatePercentText, NumberKind.MEASURE) {
-            viewModel.update { s -> s.copy(failureRatePercentText = it) }
-        }
-        Text(
-            "Reserva pra quando uma impressão falha. Incide sobre tudo que você gasta de novo pra " +
-                "refazer a peça (material, energia, manutenção, retorno da máquina, custo fixo, " +
-                "mão de obra e acabamento). Só o custo administrativo fica de fora, porque uma " +
-                "modelagem já feita não precisa ser refeita.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        NumberField("Taxa de acabamento (%)", state.finishingRatePercentText, NumberKind.MEASURE) {
-            viewModel.update { s -> s.copy(finishingRatePercentText = it) }
-        }
-        Text(
-            "Percentual do material pra lixar e pintar. Se você já conta esse tempo nos minutos de " +
-                "cada orçamento, deixe 0 pra não cobrar duas vezes.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        SectionTitle(AppIcons.ReceiptLong, "Custos administrativos")
-        NumberField("Custo administrativo por orçamento (${LocalCurrency.current.symbol})", state.administrativeCostText, NumberKind.AMOUNT) {
-            viewModel.update { s -> s.copy(administrativeCostText = it) }
-        }
-
-        SectionTitle(AppIcons.TrendingUp, "Margem")
-        NumberField("Margem de lucro (%)", state.profitMarginPercentText, NumberKind.MEASURE) {
-            viewModel.update { s -> s.copy(profitMarginPercentText = it) }
-        }
-
-        SectionTitle(AppIcons.AccountBalance, "Imposto")
-        NumberField("Imposto sobre a venda (%)", state.taxRatePercentText, NumberKind.MEASURE) {
-            viewModel.update { s -> s.copy(taxRatePercentText = it) }
-        }
-        Text(
-            "Percentual que sai da venda, como o Simples Nacional. Se você é MEI, deixe zero aqui: " +
-                "o DAS é um valor fixo por mês, então o lugar dele é o custo fixo mensal, logo acima.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        Button(onClick = viewModel::save) { Text("Salvar") }
-
-        state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.warningMessage?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodyMedium) }
-        ShowSnackbarOnce(state.savedConfirmation, "Configurações salvas.", viewModel::consumeSavedConfirmation)
-
-        HorizontalDivider()
-
-        ClientDocumentsSection(brandingViewModel, onShowTemplates = { showTemplatesDialog = true })
-
-        HorizontalDivider()
-
-        SalesChannelSection(salesChannelViewModel)
-
-        HorizontalDivider()
-
-        BackupSection(backupViewModel)
+    // Um aviso só, mesmo salvando custos e documentos juntos.
+    ShowSnackbarOnce(state.savedConfirmation || branding.savedConfirmation, "Configurações salvas.") {
+        viewModel.consumeSavedConfirmation()
+        brandingViewModel.consumeSavedConfirmation()
     }
 
     if (showTemplatesDialog) {
         TemplateListDialog(templateListViewModel, onLoad = brandingViewModel::applyTemplate, onDismiss = { showTemplatesDialog = false })
     }
+}
+
+@Composable
+private fun SectionList(selected: SettingsSection, onSelect: (SettingsSection) -> Unit, hasPendingChanges: (SettingsSection) -> Boolean) {
+    Column(
+        modifier = Modifier.width(220.dp).fillMaxHeight().padding(horizontal = 12.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text("Configurações", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 12.dp, bottom = 12.dp))
+        SettingsSection.entries.forEach { section ->
+            val isSelected = section == selected
+            val colors = MaterialTheme.colorScheme
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(if (isSelected) colors.secondaryContainer else colors.surface)
+                    .clickable(role = Role.Tab) { onSelect(section) }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val content = if (isSelected) colors.onSecondaryContainer else colors.onSurfaceVariant
+                Icon(section.icon, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
+                Text(section.label, style = MaterialTheme.typography.labelLarge, color = content, modifier = Modifier.weight(1f))
+                if (hasPendingChanges(section)) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(colors.tertiary))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Barra fixa embaixo enquanto há rascunho (decisão 112). No lugar dos dois "Salvar" soltos no meio das
+ * seções, que ficavam fora da vista com a tela rolada.
+ */
+@Composable
+private fun UnsavedChangesBar(onDiscard: () -> Unit, onSave: () -> Unit) {
+    HorizontalDivider()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(horizontal = 24.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.tertiary))
+        Text("Alterações não salvas", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        TextButton(onClick = onDiscard) { Text("Descartar") }
+        Button(onClick = onSave) { Text("Salvar") }
+    }
+}
+
+@Composable
+private fun BusinessSection(viewModel: SettingsViewModel, currencyViewModel: CurrencyViewModel) {
+    val state by viewModel.uiState.collectAsState()
+    val currency by currencyViewModel.currency.collectAsState()
+
+    SectionTitle(AppIcons.Payments, "Moeda")
+    CurrencySelector(selected = currency, onSelect = currencyViewModel::setCurrency)
+    Text(
+        "A moeda dos orçamentos novos: símbolo e formato dos valores na tela, no PDF e no " +
+            "copiar/colar. Não afeta o cálculo. Cada orçamento salvo continua na moeda em que foi feito. " +
+            "Vale na hora, sem precisar salvar.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    HorizontalDivider()
+
+    state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    state.warningMessage?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodyMedium) }
+
+    SectionTitle(AppIcons.Bolt, "Energia")
+    NumberField("Preço do kWh (${LocalCurrency.current.symbol})", state.energyPricePerKwhText, NumberKind.MEASURE) {
+        viewModel.update { s -> s.copy(energyPricePerKwhText = it) }
+    }
+
+    SectionTitle(AppIcons.Schedule, "Seu trabalho")
+    NumberField("Valor da sua hora de trabalho (${LocalCurrency.current.symbol}/h)", state.laborRatePerHourText, NumberKind.AMOUNT) {
+        viewModel.update { s -> s.copy(laborRatePerHourText = it) }
+    }
+    Text(
+        "Cobrado pelos minutos que você informa em cada orçamento (tirar da mesa, remover " +
+            "suporte, lixar, pintar, embalar). Só soma ao preço. Deixe zero pra não cobrar mão " +
+            "de obra.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    SectionTitle(AppIcons.Storefront, "Custos fixos do negócio")
+    NumberField("Custo fixo mensal (${LocalCurrency.current.symbol})", state.monthlyFixedCostText, NumberKind.AMOUNT) {
+        viewModel.update { s -> s.copy(monthlyFixedCostText = it) }
+    }
+    NumberField("Horas de impressão por mês (todas as impressoras)", state.productiveHoursPerMonthText, NumberKind.AMOUNT) {
+        viewModel.update { s -> s.copy(productiveHoursPerMonthText = it) }
+    }
+    Text(
+        "Aluguel do espaço, internet, assinaturas e embalagem não aparecem em nenhuma peça " +
+            "específica, mas você paga todo mês. O valor é dividido pelas horas de impressão " +
+            "do mês e cada peça paga a parte dela. Deixe zero pra não usar.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    SectionTitle(AppIcons.Build, "Falhas e acabamento")
+    NumberField("Taxa de falhas (%)", state.failureRatePercentText, NumberKind.MEASURE) {
+        viewModel.update { s -> s.copy(failureRatePercentText = it) }
+    }
+    Text(
+        "Reserva pra quando uma impressão falha. Incide sobre tudo que você gasta de novo pra " +
+            "refazer a peça (material, energia, manutenção, retorno da máquina, custo fixo, " +
+            "mão de obra e acabamento). Só o custo administrativo fica de fora, porque uma " +
+            "modelagem já feita não precisa ser refeita.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    NumberField("Taxa de acabamento (%)", state.finishingRatePercentText, NumberKind.MEASURE) {
+        viewModel.update { s -> s.copy(finishingRatePercentText = it) }
+    }
+    Text(
+        "Percentual do material pra lixar e pintar. Se você já conta esse tempo nos minutos de " +
+            "cada orçamento, deixe 0 pra não cobrar duas vezes.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    SectionTitle(AppIcons.ReceiptLong, "Custos administrativos")
+    NumberField("Custo administrativo por orçamento (${LocalCurrency.current.symbol})", state.administrativeCostText, NumberKind.AMOUNT) {
+        viewModel.update { s -> s.copy(administrativeCostText = it) }
+    }
+
+    SectionTitle(AppIcons.TrendingUp, "Margem")
+    NumberField("Margem de lucro (%)", state.profitMarginPercentText, NumberKind.MEASURE) {
+        viewModel.update { s -> s.copy(profitMarginPercentText = it) }
+    }
+
+    SectionTitle(AppIcons.AccountBalance, "Imposto")
+    NumberField("Imposto sobre a venda (%)", state.taxRatePercentText, NumberKind.MEASURE) {
+        viewModel.update { s -> s.copy(taxRatePercentText = it) }
+    }
+    Text(
+        "Percentual que sai da venda, como o Simples Nacional. Se você é MEI, deixe zero aqui: " +
+            "o DAS é um valor fixo por mês, então o lugar dele é o custo fixo mensal, logo acima.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+}
+
+@Composable
+private fun AppearanceSection(themeViewModel: ThemeViewModel) {
+    val themeMode by themeViewModel.mode.collectAsState()
+    SectionTitle(AppIcons.Palette, "Tema")
+    ThemeModeSelector(selected = themeMode, onSelect = themeViewModel::setMode)
+    Text("Claro, escuro ou o mesmo do sistema. Vale na hora.", style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable

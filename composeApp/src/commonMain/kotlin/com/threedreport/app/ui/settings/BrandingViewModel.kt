@@ -126,6 +126,11 @@ class BrandingViewModel(
 
     fun removeLogo() = edit { it.copy(logoBytes = null, logoChange = LogoChange.Remove, logoError = null, logoMissing = false) }
 
+    /** Volta o formulário pro que está gravado, logo incluída ("Descartar" da barra de alterações, decisão 112). */
+    fun discard() {
+        state.value = baseline.toUiState(repository.logoBytes())
+    }
+
     /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
     fun consumeSavedConfirmation() {
         state.value = state.value.copy(savedConfirmation = false)

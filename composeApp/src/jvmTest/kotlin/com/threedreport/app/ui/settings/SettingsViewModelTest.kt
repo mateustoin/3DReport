@@ -6,6 +6,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -46,6 +47,21 @@ class SettingsViewModelTest {
 
         assertEquals("150", viewModel.uiState.value.profitMarginPercentText)
         assertTrue(viewModel.hasUnsavedChanges)
+    }
+
+    @Test
+    fun discardGoesBackToWhatIsSaved() {
+        val repository = SettingsRepository()
+        val viewModel = SettingsViewModel(repository)
+        val saved = viewModel.uiState.value.profitMarginPercentText
+        viewModel.update { it.copy(profitMarginPercentText = "150") }
+        assertTrue(viewModel.hasUnsavedChanges)
+
+        viewModel.discard()
+
+        assertEquals(saved, viewModel.uiState.value.profitMarginPercentText)
+        assertFalse(viewModel.hasUnsavedChanges)
+        assertEquals(saved.toDouble() / 100, repository.settings.value.profitMargin, 1e-9)
     }
 
     @Test

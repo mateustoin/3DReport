@@ -74,6 +74,8 @@ import com.threedreport.app.ui.settings.BackupViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.CurrencyViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
+import com.threedreport.app.ui.settings.SettingsSection
+import com.threedreport.app.ui.settings.hasUnsavedSettings
 import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsViewModel
 import com.threedreport.app.ui.templates.TemplateListViewModel
@@ -107,6 +109,8 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     // que estivesse em andamento lá.
     val editQuoteViewModel = remember { newQuoteViewModel() }
     var destination by remember { mutableStateOf(AppDestination.QUOTE) }
+    // Fica aqui, e não na tela, pra voltar a Configurações na mesma seção.
+    var settingsSection by remember { mutableStateOf(SettingsSection.BUSINESS) }
     // Pedidos e Catálogo são a mesma tela com o tipo fixo (decisão 111): cada uma com o seu ViewModel,
     // pra busca, filtros e seleção de uma não vazarem pra outra.
     val newHistoryViewModel = { kind: QuoteKind ->
@@ -146,6 +150,11 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val currency by currencyViewModel.currency.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Coletados aqui pro pontinho de "alteração não salva" da barra lateral acompanhar o que se digita.
+    val settingsDraft by settingsViewModel.uiState.collectAsState()
+    val brandingDraft by brandingViewModel.uiState.collectAsState()
+    val settingsDirty = remember(settingsDraft, brandingDraft) { hasUnsavedSettings(settingsViewModel, brandingViewModel) }
 
     AppTheme(themeMode) {
         CompositionLocalProvider(LocalCurrency provides currency, LocalSnackbarHostState provides snackbarHostState) {
@@ -199,6 +208,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                         onSelect = { destination = it },
                         compact = compactSidebar,
                         version = APP_VERSION,
+                        hasPendingChanges = { it == AppDestination.SETTINGS && settingsDirty },
                     )
                     VerticalDivider()
 
@@ -249,6 +259,8 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                                 currencyViewModel,
                                 backupViewModel,
                                 salesChannelViewModel,
+                                section = settingsSection,
+                                onSectionChange = { settingsSection = it },
                             )
                             AppDestination.ABOUT -> AboutScreen(version = APP_VERSION)
                         }

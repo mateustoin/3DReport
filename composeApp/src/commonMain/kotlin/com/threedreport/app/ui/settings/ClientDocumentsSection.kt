@@ -4,7 +4,6 @@ import com.threedreport.app.ui.format.NumberKind
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -48,6 +47,7 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplate
         "O que aparece no PDF, na imagem quadrada e na mensagem que você manda pro cliente.",
         style = MaterialTheme.typography.bodySmall,
     )
+    branding.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
     SubsectionTitle(AppIcons.Badge, "Sua marca", modifier = Modifier.padding(top = 4.dp))
     LabeledField("Nome da sua marca (opcional)", branding.brandNameInput, viewModel::update)
@@ -86,14 +86,8 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplate
         style = MaterialTheme.typography.bodySmall,
     )
 
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Button(onClick = viewModel::save) { Text("Salvar") }
-        // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
-        OutlinedButton(onClick = viewModel::showPreview) { Text("Ver como fica") }
-    }
-
-    branding.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-    ShowSnackbarOnce(branding.savedConfirmation, "Configurações dos documentos salvas.", viewModel::consumeSavedConfirmation)
+    // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
+    OutlinedButton(onClick = viewModel::showPreview) { Text("Ver como fica") }
 
     if (branding.isSavingAsTemplate) {
         LabeledField("Nome do template (ex.: Formal, Simples)", branding.templateNameInput, viewModel::updateTemplateName)
