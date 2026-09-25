@@ -20,7 +20,6 @@ import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.model.ThemeMode
-import com.threedreport.core.model.UsageProfile
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
@@ -96,9 +95,6 @@ class LocalStorage(
     fun theme(): ThemeRepository = StoredThemeRepository(document("theme.json", ThemeMode.serializer()) { ThemeMode.SYSTEM })
 
     fun currency(): CurrencyRepository = StoredCurrencyRepository(document("currency.json", Currency.serializer()) { Currency.BRL })
-
-    fun usageProfile(): UsageProfileRepository =
-        StoredUsageProfileRepository(document("usage-profile.json", UsageProfile.serializer()) { UsageProfile.SELLER })
 
     fun onboarding(): OnboardingRepository = StoredOnboardingRepository(document("onboarding.json", Boolean.serializer()) { false })
 

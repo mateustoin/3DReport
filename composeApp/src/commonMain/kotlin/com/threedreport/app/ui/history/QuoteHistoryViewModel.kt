@@ -73,8 +73,6 @@ class QuoteHistoryViewModel(
     settingsRepository: SettingsRepository,
     salesChannelRepository: SalesChannelRepository,
     private val today: () -> Long = ::todayEpochDay,
-    /** Pedidos ou Produtos, conforme o perfil de uso (decisão 103): a lista que aparece primeiro. */
-    defaultKind: () -> QuoteKind = { QuoteKind.ORDER },
     /** Cadastro de clientes (decisão 106), pro "Editar detalhes" ligar o pedido ao cliente. */
     private val clientRepository: ClientRepository? = null,
     private val clock: Clock = Clock.System,
@@ -139,7 +137,7 @@ class QuoteHistoryViewModel(
     private val selectedIdsState = MutableStateFlow<Set<String>>(emptySet())
     val selectedIds: StateFlow<Set<String>> = selectedIdsState.asStateFlow()
 
-    private val filterState = MutableStateFlow(HistoryFilter(kind = defaultKind()))
+    private val filterState = MutableStateFlow(HistoryFilter())
     val filter: StateFlow<HistoryFilter> = filterState.asStateFlow()
 
     fun setSearchQuery(query: String) = filterState.update { it.copy(query = query) }

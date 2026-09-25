@@ -37,7 +37,6 @@ fun createDesktopContainer(scope: CoroutineScope): AppContainer {
         branding = branding,
         theme = storage.theme(),
         currency = storage.currency(),
-        usageProfile = storage.usageProfile(),
         onboarding = storage.onboarding(),
         preferences = storage.preferences(),
         backup = storage.backup(),

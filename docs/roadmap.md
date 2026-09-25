@@ -545,6 +545,7 @@ barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
   resposta só define **padrões** (botão de salvar em destaque, vista inicial
   do Histórico); nada fica escondido e a escolha muda em Configurações.
   Entra no onboarding da decisão 81 sem transformá-lo em formulário.
+  *Removido na 2.0.0 (decisão 110): redundante com a escolha no Orçamento.*
 - [x] **Dashboard sem vendas não fica vazio:** quem ainda não tem pedido vê
   o resumo do catálogo (quantos produtos, faixa de preço, lucro por hora de
   máquina de cada um) e o convite "quando aparecer um cliente, é só clicar

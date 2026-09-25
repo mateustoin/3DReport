@@ -56,7 +56,6 @@ import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.ThemeMode
-import com.threedreport.core.model.UsageProfile
 
 /**
  * Tela de Configurações gerais: parâmetros do negócio, iguais para qualquer
@@ -74,8 +73,6 @@ fun SettingsScreen(
     currencyViewModel: CurrencyViewModel,
     backupViewModel: BackupViewModel,
     salesChannelViewModel: SalesChannelViewModel,
-    usageProfile: UsageProfile,
-    onUsageProfileChange: (UsageProfile) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -93,14 +90,6 @@ fun SettingsScreen(
     ) {
         SectionTitle(AppIcons.Palette, "Aparência")
         ThemeModeSelector(selected = themeMode, onSelect = themeViewModel::setMode)
-
-        SectionTitle(AppIcons.Badge, "Como você usa o app")
-        UsageProfileSelector(selected = usageProfile, onSelect = onUsageProfileChange)
-        Text(
-            "Define o que já vem escolhido ao salvar (pedido de cliente ou produto do catálogo) e o que " +
-                "o Histórico mostra primeiro. Tudo continua disponível nos dois.",
-            style = MaterialTheme.typography.bodySmall,
-        )
 
         SectionTitle(AppIcons.Payments, "Moeda")
         CurrencySelector(selected = currency, onSelect = currencyViewModel::setCurrency)
@@ -355,23 +344,6 @@ private fun ThemeModeSelector(selected: ThemeMode, onSelect: (ThemeMode) -> Unit
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
             ) {
                 Text(mode.label)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun UsageProfileSelector(selected: UsageProfile, onSelect: (UsageProfile) -> Unit) {
-    val options = UsageProfile.entries
-    SingleChoiceSegmentedButtonRow {
-        options.forEachIndexed { index, profile ->
-            SegmentedButton(
-                selected = profile == selected,
-                onClick = { onSelect(profile) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-            ) {
-                Text(profile.label)
             }
         }
     }

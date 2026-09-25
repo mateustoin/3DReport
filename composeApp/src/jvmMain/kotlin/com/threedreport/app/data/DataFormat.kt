@@ -23,6 +23,13 @@ internal const val DATA_FORMAT_VERSION = 2
 
 private const val FORMAT_FILE_NAME = "format.json"
 
+/**
+ * Pasta do log do app, dentro da pasta de dados. O log começa antes de [prepareDataDir] (pra registrar
+ * o que ela fizer), então ela não conta como dado: contava, e toda instalação nova parecia ser da 1.x
+ * (decisão 110).
+ */
+internal const val LOGS_DIR_NAME = "logs"
+
 private val formatJson = Json { prettyPrint = true }
 
 /**
@@ -83,9 +90,9 @@ data class MigratedData(val fromVersion: Int, val originalCopy: File)
  * - Versão anterior sem migração, ou de uma versão mais nova (quem voltou pra esta): a pasta é movida
  *   inteira, sem apagar nada, pra uma pasta irmã, e o app começa numa pasta nova.
  *
- * Pasta vazia ou nova só ganha o `format.json`. Um `format.json` que existe mas não abre
- * (gravação interrompida) conta como a versão atual: só esta versão grava esse arquivo, e mover os
- * dados por causa dele seria pior do que regravá-lo.
+ * Pasta vazia ou nova (só com o log, [LOGS_DIR_NAME]) só ganha o `format.json`. Um `format.json`
+ * que existe mas não abre (gravação interrompida) conta como a versão atual: só esta versão grava
+ * esse arquivo, e mover os dados por causa dele seria pior do que regravá-lo.
  */
 fun prepareDataDir(migrations: Map<Int, DataMigration> = DATA_MIGRATIONS): DataDirResult {
     val dataDir = appDataDir()
@@ -96,7 +103,7 @@ fun prepareDataDir(migrations: Map<Int, DataMigration> = DATA_MIGRATIONS): DataD
     }
     if (version == DATA_FORMAT_VERSION) return DataDirResult.Ready()
 
-    val hasData = dataDir.listFiles()?.any { it.name != FORMAT_FILE_NAME } == true
+    val hasData = dataDir.listFiles()?.any { it.name != FORMAT_FILE_NAME && it.name != LOGS_DIR_NAME } == true
     if (!hasData) {
         writeDataFormatVersion(formatFile)
         return DataDirResult.Ready()

@@ -935,32 +935,16 @@ class QuoteViewModelTest {
         assertEquals("30", viewModel.input.value.targetTotalText, "escolher o mesmo tipo de novo não apaga nada")
     }
 
+    /** Decisão 110: sem perfil de uso, todo orçamento novo começa como pedido; produto se escolhe na tela. */
     @Test
-    fun starterProfileStartsAndResetsAsProduct() {
-        var kind = QuoteKind.PRODUCT
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository(), defaultKind = { kind })
+    fun aNewQuoteStartsAsAnOrderAndStartingOverGoesBackToIt() {
+        val viewModel = viewModelWith()
+        assertEquals(QuoteKind.ORDER, viewModel.input.value.kind)
 
-        assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
-        viewModel.setKind(QuoteKind.ORDER)
+        viewModel.setKind(QuoteKind.PRODUCT)
         viewModel.resetForm()
-        assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
-
-        kind = QuoteKind.ORDER
-        viewModel.applyDefaultKindIfUntouched()
-        assertEquals(QuoteKind.ORDER, viewModel.input.value.kind)
-    }
-
-    @Test
-    fun changingTheProfileNeverTouchesAQuoteInProgress() {
-        var kind = QuoteKind.ORDER
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository(), defaultKind = { kind })
-        viewModel.setLengthMeters("12")
-
-        kind = QuoteKind.PRODUCT
-        viewModel.applyDefaultKindIfUntouched()
 
         assertEquals(QuoteKind.ORDER, viewModel.input.value.kind)
-        assertEquals("12", viewModel.input.value.prints.first().filaments.first().lengthText)
     }
 
     @Test

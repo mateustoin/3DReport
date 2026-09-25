@@ -15,7 +15,6 @@ import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.data.ThemeRepository
-import com.threedreport.app.data.UsageProfileRepository
 import com.threedreport.app.data.store.StorageHealth
 
 /**
@@ -37,7 +36,6 @@ class AppContainer(
     val branding: BrandingRepository,
     val theme: ThemeRepository,
     val currency: CurrencyRepository,
-    val usageProfile: UsageProfileRepository,
     val onboarding: OnboardingRepository,
     val preferences: PreferencesRepository,
     val backup: BackupRepository,
@@ -82,12 +80,12 @@ interface PendingWrites {
     }
 }
 
-/** Um aviso sobre a pasta de dados ao abrir (decisões 104 e 106). */
+/**
+ * Um aviso sobre a pasta de dados ao abrir (decisões 104 e 106). Os dados da 1.x vão pra uma pasta à
+ * parte sem aviso (decisão 110): ficam só os casos que podem acontecer com quem já usa a 2.x.
+ */
 data class DataFolderNotice(val kind: Kind, val path: String) {
     enum class Kind {
-        /** Dados de um formato anterior sem conversão: guardados à parte, o app começa em branco. */
-        MOVED_FROM_OLDER,
-
         /** Dados de uma versão mais nova do app: guardados à parte. */
         MOVED_FROM_NEWER,
 

@@ -2,13 +2,9 @@ package com.threedreport.app.ui.onboarding
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -19,7 +15,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,9 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.threedreport.app.ui.focus.tabToNavigate
@@ -39,7 +32,6 @@ import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.printers.PRINTER_PRESETS
 import com.threedreport.app.ui.printers.PrinterPreset
 import com.threedreport.core.model.PricingSettings
-import com.threedreport.core.model.UsageProfile
 
 /**
  * A impressora respondida no onboarding, aplicada na impressora de exemplo (a que o primeiro orçamento
@@ -49,12 +41,10 @@ import com.threedreport.core.model.UsageProfile
 data class OnboardingPrinter(val preset: PrinterPreset?, val machinePrice: Double?)
 
 /**
- * Cinco perguntas na primeira execução, pra o app não abrir com a conta calibrada pra outra pessoa.
+ * Quatro perguntas na primeira execução, pra o app não abrir com a conta calibrada pra outra pessoa.
+ * Pedido ou produto não entra aqui (decisão 110): a escolha fica no próprio Orçamento.
  *
- * A primeira é como a pessoa usa o app (decisão 103): quem ainda não vende começa salvando no
- * catálogo e vendo Produtos primeiro no Histórico. Só muda o que vem escolhido; nada some.
- *
- * Depois, os números que mais mudam o preço e que ninguém adivinha por padrão: a impressora e quanto
+ * São os números que mais mudam o preço e que ninguém adivinha por padrão: a impressora e quanto
  * ela custou (decisão 108: o exemplo de R$ 2.700 e 380 W errava pra quase todo mundo e ia direto pro
  * primeiro orçamento), energia, o valor da própria hora (que nasce zerado e, sem preencher, faz o
  * trabalho sumir do preço) e a margem. Filamento fica de fora: o cadastro padrão já é utilizável e a tela
@@ -66,13 +56,12 @@ data class OnboardingPrinter(val preset: PrinterPreset?, val machinePrice: Doubl
 @Composable
 fun OnboardingDialog(
     currentSettings: PricingSettings,
-    onFinish: (PricingSettings, UsageProfile, OnboardingPrinter?) -> Unit,
+    onFinish: (PricingSettings, OnboardingPrinter?) -> Unit,
     onSkip: () -> Unit,
 ) {
     val currency = LocalCurrency.current
     var energyText by remember { mutableStateOf(currentSettings.energyPricePerKwh.toInputText()) }
     var laborText by remember { mutableStateOf("") }
-    var profile by remember { mutableStateOf(UsageProfile.SELLER) }
     var marginText by remember { mutableStateOf((currentSettings.profitMargin * 100).toInputText()) }
     var preset by remember { mutableStateOf<PrinterPreset?>(null) }
     var machinePriceText by remember { mutableStateOf("") }
@@ -114,29 +103,10 @@ fun OnboardingDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    "Cinco perguntas rápidas pra o app sair do jeito do seu negócio. Dá pra mudar " +
+                    "Quatro perguntas rápidas pra o app sair do jeito do seu negócio. Dá pra mudar " +
                         "tudo depois em Configurações e Impressoras.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-
-                Text("Como você vai usar o 3DReport?", style = MaterialTheme.typography.titleSmall)
-                Column(modifier = Modifier.selectableGroup()) {
-                    UsageProfile.entries.forEach { option ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(selected = option == profile, onClick = { profile = option }, role = Role.RadioButton)
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = option == profile, onClick = null)
-                            Column(modifier = Modifier.padding(start = 8.dp)) {
-                                Text(option.label, style = MaterialTheme.typography.bodyLarge)
-                                Text(option.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-                }
 
                 Text("Qual a sua impressora?", style = MaterialTheme.typography.titleSmall)
                 PresetDropdown(selected = preset, onSelect = { preset = it })
@@ -180,7 +150,6 @@ fun OnboardingDialog(
                             laborRatePerHour = labor ?: 0.0,
                             profitMargin = (margin ?: (currentSettings.profitMargin * 100)) / 100.0,
                         ),
-                        profile,
                         OnboardingPrinter(preset, machinePrice).takeIf { preset != null || machinePrice != null },
                     )
                 },

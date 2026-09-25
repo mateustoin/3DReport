@@ -9,8 +9,8 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 Primeira versão MAJOR: o formato dos dados mudou e **os dados da versão
 anterior não são convertidos**. Ao abrir, o app guarda a pasta antiga inteira
-em `~/.3dreport-v1`, sem apagar nada, e avisa uma vez onde ela ficou. Pra
-recuperar, reinstale a 1.44 e renomeie a pasta de volta pra `.3dreport`.
+em `~/.3dreport-v1`, sem apagar nada. Pra recuperar, reinstale a 1.44 e
+renomeie a pasta de volta pra `.3dreport`.
 
 ### Adicionado
 - **Peça multicolor (AMS, MMU).** "+ Adicionar filamento" na tela de
@@ -65,6 +65,10 @@ recuperar, reinstale a 1.44 e renomeie a pasta de volta pra `.3dreport`.
   andamento.
 - A tela de Orçamento começa pelo G-code e pelo tipo (pedido ou produto), e os
   textos de ajuda ficaram curtos, com "Saiba mais".
+- **Pedido ou produto se escolhe só no Orçamento.** A pergunta "Como você usa
+  o app" saiu da primeira abertura e das Configurações: o orçamento novo e o
+  Histórico começam sempre em pedidos, e o produto do catálogo continua a um
+  clique no topo do Orçamento.
 - O menu "Ações" é o mesmo na lista e no Kanban, agrupado por assunto. Lista e
   Kanban mostram o mesmo valor: o total que o cliente paga.
 - Kanban mostra os entregues dos últimos 30 dias (com "ver mais") e ganhou

@@ -87,8 +87,6 @@ class QuoteViewModel(
     serviceRepository: ServiceRepository,
     salesChannelRepository: SalesChannelRepository,
     private val historyRepository: QuoteHistoryRepository,
-    /** Pedido ou produto, conforme o perfil de uso (decisão 103): o que vem escolhido num orçamento novo. */
-    private val defaultKind: () -> QuoteKind = { QuoteKind.ORDER },
     /** Cadastro de clientes (decisão 106): o cliente do pedido é achado ou criado ao salvar. */
     private val clientRepository: ClientRepository? = null,
     /** Moeda dos orçamentos novos (decisão 106), gravada no orçamento ao salvar. */
@@ -107,7 +105,7 @@ class QuoteViewModel(
     /** Clientes do cadastro, pra sugerir ao digitar o nome. */
     val clients: StateFlow<List<Client>> = clientRepository?.clients ?: MutableStateFlow(emptyList())
 
-    private val inputState = MutableStateFlow(QuoteInputState(kind = defaultKind()))
+    private val inputState = MutableStateFlow(QuoteInputState())
     val input: StateFlow<QuoteInputState> = inputState.asStateFlow()
 
     private val saveFormState = MutableStateFlow(SaveQuoteFormState())
@@ -664,18 +662,9 @@ class QuoteViewModel(
             return input != QuoteInputState(kind = input.kind) || form != SaveQuoteFormState()
         }
 
-    /**
-     * O perfil de uso mudou em Configurações (decisão 103): o orçamento em branco passa a vir no
-     * tipo novo na hora. Se já tem algo digitado, ou uma operação/edição em andamento, fica como
-     * está, pra trocar o perfil nunca mexer no que a pessoa estava fazendo.
-     */
-    fun applyDefaultKindIfUntouched() {
-        if (!hasDraft) inputState.value = QuoteInputState(kind = defaultKind())
-    }
-
     /** Limpa a peça e o formulário de salvar, pra começar um orçamento novo (Ctrl/Cmd+N, cancelar). */
     fun resetForm() {
-        inputState.value = QuoteInputState(kind = defaultKind())
+        inputState.value = QuoteInputState()
         saveFormState.value = SaveQuoteFormState()
         formBeforeGCode = null
         stlPreviewState.value = null

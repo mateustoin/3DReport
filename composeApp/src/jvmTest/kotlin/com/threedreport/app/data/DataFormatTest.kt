@@ -40,6 +40,18 @@ class DataFormatTest {
         assertEquals(listOf("format.json"), dataDir.list()!!.toList())
     }
 
+    /** Decisão 110: o log começa antes da checagem, e fazia toda instalação nova parecer da 1.x. */
+    @Test
+    fun aNewInstallWithOnlyTheLogIsNotOldData() {
+        File(dataDir, "$LOGS_DIR_NAME/3dreport.log").apply { parentFile.mkdirs() }.writeText("3DReport iniciado\n")
+
+        assertEquals(DataDirResult.Ready(), prepareDataDir())
+
+        assertEquals(listOf(".3dreport"), parent.list()!!.toList(), "nada foi guardado à parte")
+        assertTrue(File(dataDir, "$LOGS_DIR_NAME/3dreport.log").isFile)
+        assertEquals(DATA_FORMAT_VERSION, readDataFormatVersion(File(dataDir, "format.json")))
+    }
+
     @Test
     fun dataFromVersionOneIsMovedAsideWithEverythingInIt() {
         dataDir.mkdirs()

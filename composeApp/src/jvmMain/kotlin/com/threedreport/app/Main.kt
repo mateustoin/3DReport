@@ -15,6 +15,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.threedreport.app.data.DataDirResult
 import com.threedreport.app.data.DataReadException
+import com.threedreport.app.data.LOGS_DIR_NAME
 import com.threedreport.app.data.appDataDir
 import com.threedreport.app.data.prepareDataDir
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +44,7 @@ private var instanceLock: FileLock? = null
 
 /** Ponto de entrada do app desktop. */
 fun main() {
-    DesktopLog.install(File(appDataDir(), "logs"))
+    DesktopLog.install(File(appDataDir(), LOGS_DIR_NAME))
     Thread.setDefaultUncaughtExceptionHandler { thread, error ->
         AppLog.error("Erro não tratado no thread ${thread.name}", error)
         showErrorDialog(error, fatal = false)
@@ -74,13 +75,18 @@ fun main() {
                 "Feche os programas que estejam usando essa pasta (explorador de arquivos, antivírus, " +
                 "backup) e abra o 3DReport de novo. Nada foi apagado.",
         )
-        is DataDirResult.Ready -> when {
-            prepared.migrated != null -> DataFolderNotice(DataFolderNotice.Kind.MIGRATED, prepared.migrated.originalCopy.path)
-            prepared.moved != null -> DataFolderNotice(
-                if (prepared.moved.fromNewerVersion) DataFolderNotice.Kind.MOVED_FROM_NEWER else DataFolderNotice.Kind.MOVED_FROM_OLDER,
-                prepared.moved.path.path,
-            )
-            else -> null
+        is DataDirResult.Ready -> {
+            val moved = prepared.moved
+            when {
+                prepared.migrated != null -> DataFolderNotice(DataFolderNotice.Kind.MIGRATED, prepared.migrated.originalCopy.path)
+                moved == null -> null
+                moved.fromNewerVersion -> DataFolderNotice(DataFolderNotice.Kind.MOVED_FROM_NEWER, moved.path.path)
+                else -> {
+                    // Dados da 1.x: guardados à parte, sem aviso (decisão 110).
+                    AppLog.info("Dados da 1.x guardados em ${moved.path.path}")
+                    null
+                }
+            }
         }
     }
 

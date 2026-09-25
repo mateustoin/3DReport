@@ -80,7 +80,6 @@ import com.threedreport.app.ui.settings.SettingsViewModel
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.ThemeViewModel
-import com.threedreport.core.model.UsageProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -131,14 +130,12 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val settingsRepository = container.settings
     val historyRepository = container.quoteHistory
     val onboardingRepository = container.onboarding
-    val usageProfileRepository = container.usageProfile
-    val defaultKind = { usageProfileRepository.profile.value.defaultKind }
 
     val appScope = rememberCoroutineScope()
     val newQuoteViewModel = {
         QuoteViewModel(
             filamentRepository, printerRepository, settingsRepository, container.services,
-            container.salesChannels, historyRepository, defaultKind,
+            container.salesChannels, historyRepository,
             clientRepository = container.clients,
             currency = { container.currency.currency.value },
             scope = appScope,
@@ -154,7 +151,6 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
         QuoteHistoryViewModel(
             historyRepository, container.branding,
             filamentRepository, printerRepository, settingsRepository, container.salesChannels,
-            defaultKind = defaultKind,
             clientRepository = container.clients,
             scope = appScope,
             background = Dispatchers.Default,
@@ -176,14 +172,6 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
-    val usageProfile by usageProfileRepository.profile.collectAsState()
-    // Perfil de uso (decisão 103): só muda o que vem escolhido, e vale na hora pro orçamento em
-    // branco e pra lista do Histórico.
-    val applyUsageProfile: (UsageProfile) -> Unit = { profile ->
-        usageProfileRepository.update(profile)
-        quoteViewModel.applyDefaultKindIfUntouched()
-        historyViewModel.setKindFilter(profile.defaultKind)
-    }
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var draggingFile by remember { mutableStateOf(false) }
     // Ação que jogaria fora o orçamento em andamento na aba, esperando a confirmação.
@@ -297,8 +285,6 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                                 currencyViewModel,
                                 backupViewModel,
                                 salesChannelViewModel,
-                                usageProfile = usageProfile,
-                                onUsageProfileChange = applyUsageProfile,
                             )
                         }
                     }
@@ -330,9 +316,8 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
             if (!onboardingCompleted && !showOldDataNotice) {
                 OnboardingDialog(
                     currentSettings = settingsRepository.settings.value,
-                    onFinish = { settings, profile, printer ->
+                    onFinish = { settings, printer ->
                         settingsRepository.update(settings)
-                        applyUsageProfile(profile)
                         printer?.let { applyOnboardingPrinter(printerRepository, it) }
                         onboardingRepository.markCompleted()
                     },
@@ -418,7 +403,6 @@ private fun DataFolderNoticeDialog(notice: DataFolderNotice, onDismiss: () -> Un
             Text(
                 when (notice.kind) {
                     DataFolderNotice.Kind.MOVED_FROM_NEWER -> "Dados de uma versão mais nova"
-                    DataFolderNotice.Kind.MOVED_FROM_OLDER -> "Formato de dados novo"
                     DataFolderNotice.Kind.MIGRATED -> "Seus dados foram atualizados"
                 },
             )
@@ -430,9 +414,6 @@ private fun DataFolderNoticeDialog(notice: DataFolderNotice, onDismiss: () -> Un
                         DataFolderNotice.Kind.MOVED_FROM_NEWER ->
                             "Os dados eram de uma versão mais nova do 3DReport, que esta não consegue ler. Pra não " +
                                 "estragar nada, esta versão começa com os dados em branco."
-                        DataFolderNotice.Kind.MOVED_FROM_OLDER ->
-                            "Esta versão guarda os pedidos de um jeito novo, que aceita vários filamentos e várias " +
-                                "impressões por pedido, e começa com os dados em branco."
                         DataFolderNotice.Kind.MIGRATED ->
                             "Esta versão guarda os dados de um jeito novo, e os seus foram convertidos. Está tudo aqui."
                     },
@@ -450,7 +431,6 @@ private fun DataFolderNoticeDialog(notice: DataFolderNotice, onDismiss: () -> Un
                 Text(
                     when (notice.kind) {
                         DataFolderNotice.Kind.MOVED_FROM_NEWER -> "Pra recuperar, atualize o 3DReport e renomeie essa pasta de volta pra .3dreport."
-                        DataFolderNotice.Kind.MOVED_FROM_OLDER -> "Pra recuperar, reinstale a versão 1.44 e renomeie essa pasta de volta pra .3dreport."
                         DataFolderNotice.Kind.MIGRATED -> "Depois de conferir que está tudo certo, dá pra apagar essa cópia."
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -541,7 +521,7 @@ private fun HelpDialog(onDismiss: () -> Unit) {
                 Text("• Filamentos, Impressoras e Serviços: seus cadastros, usados na tela de Orçamento.")
                 Text(
                     "• Configurações: custos (energia, sua hora, margem, imposto), canais de venda com a taxa de cada " +
-                        "um, documentos pro cliente (marca, logo, contato), perfil de uso, tema, moeda e backup " +
+                        "um, documentos pro cliente (marca, logo, contato), tema, moeda e backup " +
                         "(com cópia automática diária).",
                 )
                 Text("Atalhos de teclado", style = MaterialTheme.typography.titleSmall)

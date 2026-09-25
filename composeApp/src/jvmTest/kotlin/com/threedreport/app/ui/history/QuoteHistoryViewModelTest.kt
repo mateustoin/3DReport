@@ -301,13 +301,10 @@ class QuoteHistoryViewModelTest {
     }
 
     @Test
-    fun starterProfileOpensTheHistoryOnProducts() {
-        val viewModel = QuoteHistoryViewModel(
-            QuoteHistoryRepository(), BrandingRepository(), FilamentRepository(), PrinterRepository(),
-            SettingsRepository(), SalesChannelRepository(), defaultKind = { QuoteKind.PRODUCT },
-        )
+    fun theHistoryOpensOnOrders() {
+        val viewModel = viewModelWith(QuoteHistoryRepository())
 
-        assertEquals(QuoteKind.PRODUCT, viewModel.filter.value.kind)
+        assertEquals(QuoteKind.ORDER, viewModel.filter.value.kind)
     }
 
 
