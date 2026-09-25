@@ -1,17 +1,21 @@
 package com.threedreport.app.ui.settings
 
+import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.decodeImageBitmap
-import com.threedreport.app.platform.pickImageFile
+import com.threedreport.app.platform.FileKind
+import com.threedreport.app.platform.PickResult
+import com.threedreport.app.platform.defaultPlatform
 import com.threedreport.app.platform.renderPdfFirstPagePng
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
@@ -43,11 +47,52 @@ class BrandingViewModel(
     private val repository: BrandingRepository,
     private val templateRepository: TemplateRepository,
     private val currency: () -> Currency = { Currency.BRL },
-    private val pickImage: () -> PickedFile? = ::pickImageFile,
+    private val pickImage: () -> PickedFile? = { (defaultPlatform.pickFile(FileKind.IMAGE) as? PickResult.Picked)?.file },
 ) {
 
-    private val state = MutableStateFlow(repository.branding.value.toUiState(repository.logoBytes()))
+    /** O que está gravado e de onde o formulário saiu; serve pra saber se há edição por salvar. */
+    private var baseline: BrandingSettings = repository.branding.value
+
+    private val state = MutableStateFlow(baseline.toUiState(repository.logoBytes()))
     val uiState: StateFlow<BrandingUiState> = state.asStateFlow()
+
+    /** O que está gravado agora, pra tela acompanhar mudanças feitas de fora (carregar um template). */
+    val savedBranding: StateFlow<BrandingSettings> = repository.branding
+
+    /** Se o formulário tem alguma mudança ainda não salva. */
+    val hasUnsavedChanges: Boolean
+        get() = state.value.logoChange != LogoChange.Keep ||
+            runCatching { state.value.toSettings() }.getOrNull() != baseline.copy(logoFileName = null)
+
+    /**
+     * Acompanha o que foi gravado por outro caminho. Com o formulário sem edição, ele passa a mostrar o
+     * que está gravado; antes, carregar um template não aparecia no formulário, e o próximo "Salvar"
+     * desfazia o template. Com edição em andamento, o rascunho fica.
+     */
+    fun syncWith(saved: BrandingSettings) {
+        if (saved == baseline) return
+        val wasClean = !hasUnsavedChanges
+        baseline = saved
+        if (wasClean) state.value = saved.toUiState(repository.logoBytes())
+    }
+
+    /**
+     * "Carregar" um template: põe os campos de apresentação dele no formulário (logo e contato ficam, são
+     * identidade, decisão 86) e grava. Passar pelo formulário, e não direto pelo repositório, é o que faz
+     * o template aparecer na tela e não ser desfeito pelo próximo "Salvar".
+     */
+    fun applyTemplate(template: QuoteTemplate) {
+        edit {
+            it.copy(
+                brandNameInput = template.brandName.orEmpty(),
+                showWatermark = template.showWatermark,
+                showFooter = template.showFooter,
+                showPrintTime = template.showPrintTime,
+                showBorder = template.showBorder,
+            )
+        }
+        save()
+    }
 
     /** Toda edição de campo apaga erro e confirmação anteriores, que já não valem pro formulário novo. */
     private fun edit(transform: (BrandingUiState) -> BrandingUiState) =
@@ -58,6 +103,8 @@ class BrandingViewModel(
     fun setShowFooter(show: Boolean) = edit { it.copy(showFooter = show) }
     fun setShowPrintTime(show: Boolean) = edit { it.copy(showPrintTime = show) }
     fun setShowBorder(show: Boolean) = edit { it.copy(showBorder = show) }
+    fun setValidityDays(text: String) = edit { it.copy(validityDaysText = text) }
+    fun setShowClientName(show: Boolean) = edit { it.copy(showClientName = show) }
     fun setContactWhatsApp(text: String) = edit { it.copy(contactWhatsAppInput = text) }
     fun setContactEmail(text: String) = edit { it.copy(contactEmailInput = text) }
     fun setContactInstagram(text: String) = edit { it.copy(contactInstagramInput = text) }
@@ -93,6 +140,7 @@ class BrandingViewModel(
         current.toSettingsOrError().fold(
             onSuccess = { settings ->
                 repository.update(settings, current.logoChange)
+                baseline = repository.branding.value
                 state.value = current.copy(logoChange = LogoChange.Keep, errorMessage = null, savedConfirmation = true)
             },
             onFailure = { state.value = current.copy(errorMessage = it.message, savedConfirmation = false) },
@@ -106,12 +154,15 @@ class BrandingViewModel(
      */
     fun showPreview() {
         val current = state.value
-        val branding = current.toSettings().resolvePdfBranding(current.logoBytes)
+        val settings = runCatching { current.toSettings() }.getOrElse {
+            state.value = current.copy(errorMessage = it.message)
+            return
+        }
+        val branding = settings.resolvePdfBranding(current.logoBytes)
         val pdf = renderSavedQuotesPdf(
-            items = listOf(QuoteExportItem(sampleQuote(), photoBytes = null)),
+            items = listOf(QuoteExportItem(sampleQuote(currency()), photoBytes = null)),
             brandName = branding.brandName,
             footerText = branding.footerText,
-            currency = currency(),
             options = branding.options,
         )
         state.value = current.copy(previewPng = renderPdfFirstPagePng(pdf))
@@ -172,7 +223,10 @@ class BrandingViewModel(
     }
 }
 
-/** O formulário como [BrandingSettings], sem validar. A logo não entra aqui (ver [BrandingRepository.update]). */
+/**
+ * O formulário como [BrandingSettings]. A logo não entra aqui (ver [BrandingRepository.update]). A validade
+ * inválida falha com a mensagem do campo.
+ */
 private fun BrandingUiState.toSettings() = BrandingSettings(
     brandName = brandNameInput.trim().ifEmpty { null },
     showWatermark = showWatermark,
@@ -182,14 +236,25 @@ private fun BrandingUiState.toSettings() = BrandingSettings(
     contactEmail = contactEmailInput.trim().ifEmpty { null },
     contactInstagram = contactInstagramInput.trim().ifEmpty { null },
     showBorder = showBorder,
+    quoteValidityDays = validityDays(),
+    showClientName = showClientName,
 )
+
+private fun BrandingUiState.validityDays(): Int {
+    if (validityDaysText.isBlank()) return 0
+    val days = parseWholeNumber(validityDaysText)
+    if (days == null || days !in 0..BrandingSettings.MAX_VALIDITY_DAYS) {
+        error("Validade do orçamento: use um número de dias de 0 a ${BrandingSettings.MAX_VALIDITY_DAYS} (0 tira a linha).")
+    }
+    return days
+}
 
 /**
  * Com nome preenchido, ele precisa aparecer em algum lugar: marca d'água, rodapé, ou o cabeçalho,
  * que existe quando há logo ou contato. Só sem nenhum dos quatro o nome ficaria configurado à toa.
  */
 private fun BrandingUiState.toSettingsOrError(): Result<BrandingSettings> {
-    val settings = toSettings()
+    val settings = runCatching { toSettings() }.getOrElse { return Result.failure(it) }
     val hasHeader = logoBytes != null || settings.contactLines.isNotEmpty()
     if (settings.brandName != null && !showWatermark && !showFooter && !hasHeader) {
         return Result.failure(IllegalStateException("Selecione ao menos uma opção: marca d'água ou rodapé."))
@@ -203,6 +268,8 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
     showFooter = showFooter,
     showPrintTime = showPrintTime,
     showBorder = showBorder,
+    validityDaysText = quoteValidityDays.toString(),
+    showClientName = showClientName,
     contactWhatsAppInput = contactWhatsApp.orEmpty(),
     contactEmailInput = contactEmail.orEmpty(),
     contactInstagramInput = contactInstagram.orEmpty(),
@@ -212,10 +279,13 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
     logoMissing = logoFileName != null && logoBytes == null,
 )
 
-/** Orçamento fictício da prévia: com prazo, pra todas as opções terem onde aparecer. */
-private fun sampleQuote() = SavedQuote(
+/** Orçamento fictício da prévia: com prazo, número e cliente, pra todas as opções terem onde aparecer. */
+private fun sampleQuote(currency: Currency) = SavedQuote(
     id = "preview",
     name = "Exemplo: suporte de celular",
+    number = 42,
+    client = Client(name = "Maria"),
+    currency = currency,
     quote = Quote(
         prints = listOf(
             QuotedPrint(

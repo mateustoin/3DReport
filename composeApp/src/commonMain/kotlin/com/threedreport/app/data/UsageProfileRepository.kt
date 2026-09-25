@@ -1,14 +1,14 @@
 package com.threedreport.app.data
 
+import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.core.model.UsageProfile
 import kotlinx.coroutines.flow.StateFlow
 
-/**
- * Guarda o [UsageProfile] (decisão 103), começando em [UsageProfile.SELLER]: quem já usava o app
- * antes da pergunta existir continua vendo tudo exatamente como antes. Arquivo próprio pelo mesmo
- * motivo do [OnboardingRepository]: é estado da interface, não parâmetro de custo.
- */
-expect class UsageProfileRepository() {
+/** Perfil de uso (decisão 103): só define o que vem escolhido. */
+interface UsageProfileRepository : DocumentRepository<UsageProfile> {
     val profile: StateFlow<UsageProfile>
-    fun update(profile: UsageProfile)
+        get() = value
 }
+
+class StoredUsageProfileRepository(document: DocumentValue<UsageProfile>) :
+    StoredDocumentRepository<UsageProfile>(document), UsageProfileRepository

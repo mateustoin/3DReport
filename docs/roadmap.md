@@ -780,6 +780,45 @@ consumidor precisou tratar a lista.
   total ficam sempre à vista.
 - O cliente nunca vê a divisão (decisão 19).
 
+### Revisão pré-lançamento (2026-09-25, decisões 106 a 109)
+
+Antes de divulgar a 2.0.0, uma revisão do app inteiro (código, dados, telas,
+distribuição) com a pergunta "o que dá errado quando mil pessoas começarem a
+usar, e o que trava a nuvem e o Android depois?". Entrou na própria 2.0.0:
+
+- [x] **Nada se perde, nada fecha o app** (decisão 108): gravação atômica com
+  cópia anterior, instância única, log e diálogo de erro, anexos pelo
+  conteúdo, backup em fluxo e automático, avisos em vez de exceção.
+- [x] **Números e conta certos** (decisão 107): canal e imposto sobre o total
+  cobrado, entrada numérica pt-BR com erro por campo, gramas ou metros, "3h20".
+- [x] **Desempenho** (decisão 108): G-code pelas pontas, trabalho pesado fora
+  do thread da tela, Histórico preguiçoso, PDF leve.
+- [x] **Modelo pronto pra migrar e sincronizar** (decisão 106): metadados por
+  registro com lixeira, número do pedido, histórico de status, Cancelado,
+  moeda no orçamento, cadastro de clientes, retrato por impressão, migrações.
+- [x] **Arquitetura aberta a mudança** (decisão 108): repositórios como
+  interfaces, `AppContainer`, serviços de plataforma injetados.
+- [x] **UX essencial** (decisão 108): Orçamento, Histórico/Kanban, PDF,
+  onboarding, cadastros, janela e tema.
+
+Leva seguinte, a 2.1 (decisão 109):
+
+- [ ] **Barra lateral agrupada** (Vendas: Orçamento, Pedidos, Catálogo,
+  Dashboard; Cadastros: Filamentos, Impressoras, Serviços; Configurações
+  embaixo), com atalhos renumerados e o rodapé indo pro "Sobre".
+- [ ] **Configurações em seções**, com barra fixa de "Alterações não salvas" e
+  largura máxima de leitura.
+- [ ] **Editar na própria aba**, com a barra de operação, em duas colunas.
+- [ ] **Fase 3 da Leva 9** (várias impressões num pedido), sobre os ids
+  estáveis e o retrato por impressão.
+- [ ] "Arquivar" um cadastro em uso, lembrar tamanho e posição da janela,
+  textos em `composeResources`, fixar o `upgradeUuid` do instalador do Windows
+  (conferindo antes o valor que o jpackage já deriva, pra não quebrar a
+  atualização da 1.x) e a verificação opcional de atualizações.
+- [ ] **Nuvem e Android:** SQLite (ou outro banco) como nova implementação das
+  mesmas interfaces de repositório; sincronizar por registro usando
+  `updatedAt`/`deletedAt` e anexos pela chave de conteúdo.
+
 ### Fora das levas
 
 Continuam no backlog, sem posição definida nesta revisão (nenhum foi

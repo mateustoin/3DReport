@@ -1,5 +1,8 @@
 package com.threedreport.app.ui.filaments
 
+import com.threedreport.app.ui.format.toInputText
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -90,7 +93,9 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
     pendingDelete?.let { filament ->
         ConfirmDialog(
             title = "Excluir filamento?",
-            message = "\"${filament.name}\" será removido do catálogo. Essa ação não pode ser desfeita.",
+            message = "\"${filament.name}\" sai da lista de filamentos. Pedidos e produtos já salvos guardam o próprio " +
+                "retrato e não mudam, mas um produto feito com ele só volta a ter o preço atualizado depois de você " +
+                "escolher outro filamento em \"Editar cálculo\".",
             onConfirm = {
                 viewModel.delete(filament.id)
                 pendingDelete = null
@@ -107,7 +112,7 @@ private fun FilamentRow(
     onDelete: () -> Unit,
     onToggleColorInStock: (String) -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth().alpha(if (filament.hasStockAvailable) 1f else 0.5f)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -115,11 +120,14 @@ private fun FilamentRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text(filament.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        filament.name + if (filament.hasStockAvailable) "" else " · esgotado",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                     Text(
                         buildString {
                             filament.materialType?.let { append("$it · ") }
-                            append("${filament.pricePerKg.toMoney()}/kg · ${filament.densityGPerCm3} g/cm³")
+                            append("${filament.pricePerKg.toMoney()}/kg · ${filament.densityGPerCm3.toInputText()} g/cm³")
                             filament.brand?.let { append(" · $it") }
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -131,7 +139,14 @@ private fun FilamentRow(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Estoque é um controle com rótulo (decisão 108): antes era um clique escondido no chip da cor, e
+            // o card inteiro ficava apagado, parecendo desabilitado.
+            Text(
+                "Cores em estoque (clique numa cor pra marcar que acabou ou que chegou):",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 filament.colors.forEach { color ->
                     ColorChip(
                         label = color.displayLabel(),
@@ -147,19 +162,13 @@ private fun FilamentRow(
 
 @Composable
 private fun ColorChip(label: String, hex: String?, inStock: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .clickable(onClick = onClick)
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(50))
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-            .alpha(if (inStock) 1f else 0.5f),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        parseHexColor(hex)?.let { ColorSwatch(color = it, size = 14.dp) }
-        Text(label + if (inStock) "" else " (Acabou)", style = MaterialTheme.typography.bodySmall)
-    }
+    FilterChip(
+        selected = inStock,
+        onClick = onClick,
+        label = { Text(if (inStock) label else "$label (acabou)") },
+        leadingIcon = { parseHexColor(hex)?.let { ColorSwatch(color = it, size = 14.dp) } },
+        modifier = Modifier.alpha(if (inStock) 1f else 0.6f),
+    )
 }
 
 @Composable
@@ -194,10 +203,7 @@ private fun FilamentForm(
         )
 
         Text("Tipo de material (opcional)", style = MaterialTheme.typography.bodySmall)
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             FILAMENT_MATERIAL_TYPE_PRESETS.forEach { preset ->
                 PresetChip(
                     label = preset.label,
@@ -207,7 +213,7 @@ private fun FilamentForm(
                             it.copy(
                                 materialType = preset.label,
                                 isCustomMaterialType = false,
-                                densityGPerCm3Text = preset.defaultDensityGPerCm3?.toString() ?: it.densityGPerCm3Text,
+                                densityGPerCm3Text = preset.defaultDensityGPerCm3?.toInputText() ?: it.densityGPerCm3Text,
                             )
                         }
                     },
@@ -260,10 +266,7 @@ private fun FilamentForm(
             label = { Text("Marca (opcional)") },
         )
         Text("Marcas conhecidas:", style = MaterialTheme.typography.bodySmall)
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             (FILAMENT_BRAND_PRESETS_INTERNATIONAL + FILAMENT_BRAND_PRESETS_BRAZIL).forEach { brand ->
                 PresetChip(
                     label = brand,

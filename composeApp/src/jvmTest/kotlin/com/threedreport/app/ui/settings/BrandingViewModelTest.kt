@@ -214,4 +214,34 @@ class BrandingViewModelTest {
         viewModel.closePreview()
         assertNull(viewModel.uiState.value.previewPng)
     }
+
+    @Test
+    fun loadingATemplateShowsItInTheFormAndTheNextSaveKeepsIt() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+        val template = com.threedreport.core.model.QuoteTemplate(
+            id = "t", name = "Loja", brandName = "Minha Loja", showWatermark = false, showFooter = true, showPrintTime = true, showBorder = true,
+        )
+
+        viewModel.applyTemplate(template)
+        assertEquals("Minha Loja", viewModel.uiState.value.brandNameInput)
+        assertTrue(viewModel.uiState.value.showBorder)
+
+        viewModel.save()
+        assertEquals("Minha Loja", brandingRepository.branding.value.brandName)
+        assertTrue(brandingRepository.branding.value.showPrintTime)
+    }
+
+    @Test
+    fun anInvalidValidityIsAnErrorThatNamesTheField() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.setValidityDays("dez")
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.errorMessage!!.contains("Validade"))
+        assertEquals(com.threedreport.core.model.BrandingSettings.DEFAULT_VALIDITY_DAYS, brandingRepository.branding.value.quoteValidityDays)
+    }
 }
+

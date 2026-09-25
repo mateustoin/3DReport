@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.filaments
 
+import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 
@@ -20,7 +21,7 @@ data class FilamentFormState(
     val name: String = "",
     val pricePerKgText: String = "",
     val densityGPerCm3Text: String = "",
-    val diameterMmText: String = Filament.DEFAULT_DIAMETER_MM.toString(),
+    val diameterMmText: String = Filament.DEFAULT_DIAMETER_MM.toInputText(),
     val brand: String = "",
     val materialType: String = "",
     /** `true` quando o tipo veio do campo livre ("Personalizado"), não de um chip de [FILAMENT_MATERIAL_TYPE_PRESETS]. */
@@ -32,9 +33,9 @@ data class FilamentFormState(
 internal fun Filament.toFormState() = FilamentFormState(
     id = id,
     name = name,
-    pricePerKgText = pricePerKg.toString(),
-    densityGPerCm3Text = densityGPerCm3.toString(),
-    diameterMmText = diameterMm.toString(),
+    pricePerKgText = pricePerKg.toInputText(),
+    densityGPerCm3Text = densityGPerCm3.toInputText(),
+    diameterMmText = diameterMm.toInputText(),
     brand = brand.orEmpty(),
     materialType = materialType.orEmpty(),
     isCustomMaterialType = materialType != null && FILAMENT_MATERIAL_TYPE_PRESETS.none { it.label == materialType },

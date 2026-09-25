@@ -9,20 +9,13 @@ data class SaveQuoteFormState(
     val photo: PickedFile? = null,
     /** `true` quando [photo] veio da miniatura embutida num G-code importado, não de escolha manual. */
     val photoFromGCode: Boolean = false,
-    /**
-     * Nome do arquivo de foto já existente em disco que [photo] ainda representa sem nenhuma
-     * mudança (carregado por [QuoteViewModel.loadForEditing]/`duplicateForNewQuote`) — permite
-     * salvar sem regravar/duplicar o arquivo. `null` sempre que o usuário escolhe/remove/substitui
-     * a foto manualmente (a partir daí, `photo` não corresponde mais a nenhum arquivo existente).
-     */
-    val photoReferenceFileName: String? = null,
     /** Arquivo STL do modelo (opcional), guardado pra recuperar/reaproveitar numa venda futura. */
     val stlFile: PickedFile? = null,
-    /** Mesmo espírito de [photoReferenceFileName], mas pro arquivo STL. */
-    val stlReferenceFileName: String? = null,
     val sourceLink: String = "",
     val clientName: String = "",
     val clientContact: String = "",
+    /** Cliente do cadastro escolhido na sugestão (decisão 106), ou `null` quando foi digitado. */
+    val clientId: String? = null,
     /** Configurações de fatiamento (altura de camada, preenchimento, suporte), opcionais — ver KDoc de [PrintSettings]. */
     val printSettings: PrintSettings = PrintSettings(),
     /** Prazo de entrega prometido ao cliente (dias desde 01/01/1970), ou `null` — ver `SavedQuote.deliveryDateEpochDay`. */
@@ -30,16 +23,32 @@ data class SaveQuoteFormState(
     val savedConfirmation: Boolean = false,
     /** Se o que acabou de ser salvo foi um produto, pra confirmação dizer onde ele foi parar. */
     val savedAsProduct: Boolean = false,
-    /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
-    val editingQuoteId: String? = null,
-    /** Nome do orçamento de origem, só quando este formulário veio de "Duplicar" — exibido como aviso. */
-    val duplicatedFromName: String? = null,
-    /** Produto de onde este pedido está nascendo pelo "Vender" (decisão 101), gravado no pedido ao salvar. */
+    /** Número do que acabou de ser salvo ("#0042"), pra confirmação. */
+    val savedNumber: String? = null,
+    /** Por que o salvar (Ctrl+S) não aconteceu, pra tela avisar em vez de não fazer nada. */
+    val blockedMessage: String? = null,
+    /** O que a tela está fazendo além de um orçamento novo (editar, duplicar, vender, copiar pro catálogo). */
+    val operation: QuoteOperation? = null,
+    /** Produto de onde este pedido nasceu (pelo "Vender" ou duplicando uma venda dele), gravado ao salvar. */
     val sourceProductId: String? = null,
-    /** Nome do produto de [sourceProductId], exibido como aviso. */
-    val soldFromProductName: String? = null,
-    /** Nome do pedido de origem, só quando este formulário veio de "Guardar no catálogo" — exibido como aviso. */
-    val copiedFromOrderName: String? = null,
     /** Categoria do produto no catálogo (decisão 102), texto livre; ignorada em pedido. */
     val category: String = "",
-)
+    /** Mensagem sobre a foto escolhida (imagem que não abre). */
+    val photoError: String? = null,
+) {
+    /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
+    val editingQuoteId: String?
+        get() = (operation as? QuoteOperation.Editing)?.savedQuote?.id
+
+    /** Nome do orçamento de origem, só quando este formulário veio de "Duplicar". */
+    val duplicatedFromName: String?
+        get() = (operation as? QuoteOperation.Duplicating)?.fromName
+
+    /** Nome do produto sendo vendido, só no "Vender". */
+    val soldFromProductName: String?
+        get() = (operation as? QuoteOperation.Selling)?.product?.name
+
+    /** Nome do pedido de origem, só quando este formulário veio de "Guardar no catálogo". */
+    val copiedFromOrderName: String?
+        get() = (operation as? QuoteOperation.CopyingToCatalog)?.fromName
+}

@@ -94,7 +94,7 @@ class QuoteViewModelTest {
     }
 
     @Test
-    fun deletedSelectedPrinterFallsBackToFirstRemaining() {
+    fun deletedSelectedPrinterAsksToChooseAgain() {
         val printerRepository = PrinterRepository()
         printerRepository.add(
             PrinterProfile(
@@ -126,7 +126,11 @@ class QuoteViewModelTest {
             viewModel.input.value,
         )
 
-        assertEquals("second", result.prints.first().printer?.id)
+        // A impressora escolhida saiu do cadastro: a tela pede pra escolher de novo, em vez de trocar pela
+        // primeira da lista em silêncio (decisão 108).
+        assertNull(result.prints.first().printer)
+        assertNull(result.quote)
+        assertTrue(result.errorMessage!!.contains("impressora"))
     }
 
     private fun viewModelWith(
@@ -189,7 +193,7 @@ class QuoteViewModelTest {
         assertEquals(20.0, result.servicesTotal)
         assertEquals(quote.salePrice + 20.0, result.grandTotal)
         // Lucro não deve mudar por causa de serviços (decisão: só entram no total, não no lucro).
-        assertEquals(quote.profit, quote.salePrice - quote.productionCost)
+        assertEquals(quote.salePrice - quote.productionCost, quote.profit, 1e-9)
     }
 
     @Test
@@ -293,7 +297,7 @@ class QuoteViewModelTest {
         val viewModel = viewModelWith(Service(id = "paint", name = "Pintura"), historyRepository = historyRepository)
         viewModel.setQuantity("1000")
         viewModel.toggleService("paint")
-        viewModel.setServicePrice("paint", "2.345")
+        viewModel.setServicePrice("paint", "2,345")
         viewModel.saveCurrentQuote()
         val saved = historyRepository.savedQuotes.value.single()
 
@@ -307,16 +311,16 @@ class QuoteViewModelTest {
     fun reopeningKeepsShippingAndPartDataWithoutRounding() {
         val historyRepository = QuoteHistoryRepository()
         val viewModel = viewModelWith(historyRepository = historyRepository)
-        viewModel.setLengthMeters("12.3456")
-        viewModel.setShippingCost("19.999")
+        viewModel.setLengthMeters("12,3456")
+        viewModel.setShippingCost("19,999")
         viewModel.saveCurrentQuote()
         val saved = historyRepository.savedQuotes.value.single()
 
         viewModel.resetForm()
         viewModel.loadForEditing(saved)
 
-        assertEquals("12.3456", viewModel.input.value.prints.first().filaments.first().lengthText)
-        assertEquals("19.999", viewModel.input.value.shippingCostText)
+        assertEquals("12,3456", viewModel.input.value.prints.first().filaments.first().lengthText)
+        assertEquals("19,999", viewModel.input.value.shippingCostText)
         viewModel.saveCurrentQuote()
         assertEquals(saved.totalWithServices, historyRepository.savedQuotes.value.single().totalWithServices)
     }
@@ -498,7 +502,7 @@ class QuoteViewModelTest {
         viewModel.loadForEditing(saved)
 
         assertEquals("12", viewModel.input.value.prints.first().filaments.first().lengthText)
-        assertEquals("190", viewModel.input.value.prints.first().printTimeText)
+        assertEquals("3h10", viewModel.input.value.prints.first().printTimeText)
         assertEquals(saved.id, viewModel.saveForm.value.editingQuoteId)
         assertEquals("Peça original", viewModel.saveForm.value.name)
 
@@ -634,11 +638,13 @@ class QuoteViewModelTest {
         val printerRepository = PrinterRepository()
         val viewModel = QuoteViewModel(FilamentRepository(), printerRepository, SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
         val printer = printerRepository.printers.value.first()
-        viewModel.selectPrinter(printer.id)
-        viewModel.setLengthMeters("12")
-        viewModel.setPrintTimeMinutes("120")
-        viewModel.saveCurrentQuote()
-        viewModel.saveCurrentQuote()
+        // Salvar limpa o formulário (clicar duas vezes não cria dois pedidos): o segundo é preenchido de novo.
+        repeat(2) {
+            viewModel.selectPrinter(printer.id)
+            viewModel.setLengthMeters("12")
+            viewModel.setPrintTimeMinutes("120")
+            assertTrue(viewModel.saveCurrentQuote())
+        }
         val (approved, editing) = historyRepository.savedQuotes.value
         historyRepository.updateStatus(approved.id, com.threedreport.core.model.OrderStatus.APROVADO)
         historyRepository.updateStatus(editing.id, com.threedreport.core.model.OrderStatus.EM_IMPRESSAO)
@@ -684,7 +690,8 @@ class QuoteViewModelTest {
         assertEquals("x1c", input.prints.first().printerId)
         assertEquals("pla-verde", input.prints.first().filaments.first().filamentId)
         assertEquals("verde", input.prints.first().filaments.first().colorId)
-        assertEquals("11.6", input.prints.first().printTimeText)
+        // 11 min 36 s, arredondado pro minuto como o campo de tempo aceita.
+        assertEquals("12", input.prints.first().printTimeText)
         assertTrue(input.prints.first().gcodeImportMessage!!.contains("Impressora: Bambu Lab X1 Carbon"))
 
         viewModel.undoGCodeImport()
@@ -872,7 +879,7 @@ class QuoteViewModelTest {
         assertNull(viewModel.showcasePriceSuggestion(18.90))
 
         viewModel.applyShowcasePrice(18.90)
-        assertEquals("18.9", viewModel.input.value.targetTotalText)
+        assertEquals("18,9", viewModel.input.value.targetTotalText)
     }
 
     @Test
@@ -930,7 +937,7 @@ class QuoteViewModelTest {
     @Test
     fun starterProfileStartsAndResetsAsProduct() {
         var kind = QuoteKind.PRODUCT
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository()) { kind }
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository(), defaultKind = { kind })
 
         assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
         viewModel.setKind(QuoteKind.ORDER)
@@ -945,7 +952,7 @@ class QuoteViewModelTest {
     @Test
     fun changingTheProfileNeverTouchesAQuoteInProgress() {
         var kind = QuoteKind.ORDER
-        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository()) { kind }
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository(), defaultKind = { kind })
         viewModel.setLengthMeters("12")
 
         kind = QuoteKind.PRODUCT
@@ -1135,10 +1142,10 @@ class QuoteViewModelTest {
         assertEquals(2, imported.filaments.size)
         assertEquals("pla", imported.filaments[0].filamentId)
         assertEquals("verde", imported.filaments[0].colorId)
-        assertEquals("9.04", imported.filaments[0].lengthText)
+        assertEquals("9,04", imported.filaments[0].lengthText)
         assertEquals("pla", imported.filaments[1].filamentId)
         assertEquals("amarelo", imported.filaments[1].colorId)
-        assertEquals("11.47", imported.filaments[1].lengthText)
+        assertEquals("11,47", imported.filaments[1].lengthText)
         assertTrue(imported.gcodeImportMessage!!.startsWith("Preenchido a partir do G-code"))
         assertTrue(imported.gcodeImportMessage.contains("Um filamento por extrusor"))
 
@@ -1187,7 +1194,7 @@ class QuoteViewModelTest {
 
         val print = viewModel.input.value.prints.single()
         assertEquals(before, print.filaments)
-        assertEquals("60", print.printTimeText)
+        assertEquals("1h", print.printTimeText)
         assertTrue(print.gcodeImportMessage!!.contains("mantive as suas linhas de filamento"))
     }
 
@@ -1207,7 +1214,7 @@ class QuoteViewModelTest {
 
         val row = viewModel.input.value.prints.single().filaments.single()
         assertEquals("pla", row.filamentId)
-        assertEquals("1.5", row.lengthText)
+        assertEquals("1,5", row.lengthText)
     }
 
     /** Revisão de código: canal excluído e recriado ganha id novo; reabrir perdia a taxa em silêncio. */
@@ -1269,9 +1276,154 @@ class QuoteViewModelTest {
         assertEquals(2, rows.size)
         assertEquals("pla", rows[0].filamentId)
         assertEquals("verde", rows[0].colorId)
-        assertEquals("9.04", rows[0].lengthText)
+        assertEquals("9,04", rows[0].lengthText)
         assertEquals("pla", rows[1].filamentId)
         assertEquals("amarelo", rows[1].colorId)
-        assertEquals("11.47", rows[1].lengthText)
+        assertEquals("11,47", rows[1].lengthText)
+    }
+
+    @Test
+    fun reopeningAndSavingWithoutChangesKeepsTheSavedPriceEvenIfCostsChanged() {
+        val historyRepository = QuoteHistoryRepository()
+        val settingsRepository = SettingsRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), settingsRepository, ServiceRepository(), SalesChannelRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        assertTrue(viewModel.saveCurrentQuote())
+        val saved = historyRepository.savedQuotes.value.single()
+
+        // A energia subiu depois do orçamento enviado.
+        settingsRepository.update(settingsRepository.settings.value.copy(energyPricePerKwh = 5.0))
+        viewModel.loadForEditing(saved)
+        val reopened = viewModel.currentResult()
+        assertTrue(reopened.keepsOriginalPrice)
+        assertEquals(saved.quote, reopened.quote)
+        assertTrue(reopened.todaysQuote!!.salePrice > saved.quote.salePrice, "a tela mostra quanto sairia hoje")
+
+        viewModel.setClientContact("(11) 90000-0000")
+        assertTrue(viewModel.hasUnsavedEdits)
+        assertTrue(viewModel.saveCurrentQuote())
+
+        assertEquals(saved.quote, historyRepository.savedQuotes.value.single().quote, "corrigir o contato não reprecifica")
+    }
+
+    @Test
+    fun changingAPriceInputRecalculatesAndShowsTheOldPrice() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+
+        viewModel.loadForEditing(saved)
+        viewModel.setLengthMeters("24")
+
+        val result = viewModel.currentResult()
+        assertFalse(result.keepsOriginalPrice)
+        assertEquals(saved.quote, result.originalQuote)
+        assertTrue(result.quote!!.salePrice > saved.quote.salePrice)
+    }
+
+    @Test
+    fun negativeShippingIsAFieldErrorAndBlocksSavingWithoutCrashing() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setShippingCost("-10")
+
+        val result = viewModel.currentResult()
+        assertEquals("Frete não pode ser negativo.", result.fieldErrors[QuoteFields.SHIPPING])
+        assertNull(result.quote)
+
+        assertFalse(viewModel.saveCurrentQuote())
+        assertNotNull(viewModel.saveForm.value.blockedMessage)
+        assertTrue(historyRepository.savedQuotes.value.isEmpty())
+    }
+
+    @Test
+    fun aQuantityThatIsNotAWholeNumberIsAnErrorInsteadOfBecomingOne() {
+        val viewModel = viewModelWith()
+        viewModel.setQuantity("2,5")
+
+        assertNotNull(viewModel.currentResult().fieldErrors[QuoteFields.QUANTITY])
+    }
+
+    @Test
+    fun savingTwiceInARowCreatesOneOrderAndGivesItANumber() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+
+        assertTrue(viewModel.saveCurrentQuote())
+        assertFalse(viewModel.saveCurrentQuote(), "o formulário foi limpo: o segundo clique não salva nada")
+
+        val saved = historyRepository.savedQuotes.value.single()
+        assertEquals(1, saved.number)
+        assertEquals("#0001", viewModel.saveForm.value.savedNumber)
+    }
+
+    @Test
+    fun theQuoteIsSavedInTheCurrencyInUse() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(
+            FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository,
+            currency = { com.threedreport.core.model.Currency.USD },
+        )
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.saveCurrentQuote()
+
+        assertEquals(com.threedreport.core.model.Currency.USD, historyRepository.savedQuotes.value.single().currency)
+    }
+
+    @Test
+    fun theClientGoesToTheRegistryAndDuplicatingDoesNotCopyIt() {
+        val historyRepository = QuoteHistoryRepository()
+        val clients = com.threedreport.app.data.ClientRepository()
+        val viewModel = QuoteViewModel(
+            FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository,
+            clientRepository = clients,
+        )
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.setClientName("Maria")
+        viewModel.saveCurrentQuote()
+
+        val saved = historyRepository.savedQuotes.value.single()
+        assertEquals(clients.clients.value.single().id, saved.client?.id)
+        assertEquals(listOf("Maria"), viewModel.clientSuggestions("mar", clients.clients.value).map { it.name })
+
+        viewModel.duplicateForNewQuote(saved)
+        assertEquals("", viewModel.saveForm.value.clientName)
+    }
+
+    @Test
+    fun typingTheWeightFillsTheLengthWithTheFilamentDensity() {
+        val viewModel = viewModelWith()
+        val filament = viewModel.currentResult().prints.first().filaments.first().filament!!
+
+        viewModel.setWeightGrams("100")
+
+        val meters = viewModel.input.value.prints.first().filaments.first().lengthText
+        assertEquals(100.0, filament.weightGrams(com.threedreport.app.ui.format.parseDecimal(meters, com.threedreport.app.ui.format.NumberKind.MEASURE)!!), 0.01)
+    }
+
+    @Test
+    fun aDraftIsDetectedSoOtherActionsCanAskBeforeReplacingIt() {
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
+        assertFalse(viewModel.hasDraft)
+
+        viewModel.setLengthMeters("12")
+        assertTrue(viewModel.hasDraft)
+
+        viewModel.resetForm()
+        assertFalse(viewModel.hasDraft)
+    }
+
+    @Test
+    fun droppingAFileThatIsNotGCodeExplainsInsteadOfReadingIt() {
+        val viewModel = viewModelWith()
+
+        viewModel.importDropped(com.threedreport.app.platform.PickResult.Picked(com.threedreport.app.platform.PickedFile("video.mp4", ByteArray(0))))
+
+        assertNotNull(viewModel.input.value.prints.first().gcodeImportMessage)
+        assertEquals("12", viewModel.input.value.prints.first().filaments.first().lengthText, "nada do orçamento mudou")
     }
 }

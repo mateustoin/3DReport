@@ -2,9 +2,10 @@ package com.threedreport.app.platform
 
 import androidx.compose.ui.graphics.toAwtImage
 import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.app.ui.history.clientTitle
 import com.threedreport.app.ui.history.deliveryDateText
 import com.threedreport.app.ui.history.printTimeText
-import com.threedreport.core.model.Currency
+import com.threedreport.core.model.SavedQuote
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
@@ -12,6 +13,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
+import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
@@ -41,6 +43,18 @@ private const val LOGO_MAX_HEIGHT = 56f
 private const val BORDER_INSET = 20f
 
 /**
+ * Maior lado da foto no PDF: 1200 px na página do orçamento, 800 px na grade do catálogo, em JPEG
+ * (decisão 108). A foto do celular ia inteira e sem compressão, e um catálogo de 30 produtos passava de
+ * centenas de MB, grande demais pra mandar no WhatsApp.
+ */
+private const val QUOTE_PHOTO_MAX_PIXELS = 1200
+private const val CATALOG_PHOTO_MAX_PIXELS = 800
+private const val PHOTO_JPEG_QUALITY = 0.85f
+
+/** Espaço mínimo pra foto caber na mesma página; menos que isso, ela vai pra uma página só dela. */
+private const val MIN_PHOTO_HEIGHT = 160f
+
+/**
  * Decodifica a foto via Skia ([decodeImageBitmap], mesmo decoder da miniatura no app) em vez de
  * `javax.imageio.ImageIO` — o JDK não tem leitor de WebP registrado por padrão, então `ImageIO.read`
  * retornava `null` silenciosamente pra fotos `.webp` e a imagem sumia do PDF sem erro nenhum
@@ -57,7 +71,6 @@ private fun decodePhotoAsBufferedImage(bytes: ByteArray?): BufferedImage? =
  */
 private class PdfContext(
     val document: PDDocument,
-    val currency: Currency,
     val options: PdfLayoutOptions,
 ) {
     val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
@@ -67,6 +80,40 @@ private class PdfContext(
     /** Se o cabeçalho de identidade aparece. Sem logo nem contato, a página é a de sempre. */
     val hasHeader: Boolean
         get() = logo != null || options.contactLines.isNotEmpty()
+}
+
+/** A foto reduzida e em JPEG, pronta pra desenhar. `null` se não houver foto ou ela não abrir. */
+private fun preparePhoto(document: PDDocument, bytes: ByteArray?, maxPixels: Int): PDImageXObject? {
+    val decoded = decodePhotoAsBufferedImage(bytes) ?: return null
+    return runCatching { JPEGFactory.createFromImage(document, decoded.scaledToFit(maxPixels, keepAlpha = false), PHOTO_JPEG_QUALITY) }.getOrNull()
+}
+
+/**
+ * Quebra [text] em até [maxLines] linhas que cabem em [width] com [font] no tamanho [size]; a última
+ * ganha "…" se ainda sobrar texto. Nome longo de peça saía cortado na borda da página.
+ */
+internal fun wrapText(font: PDFont, size: Float, text: String, width: Float, maxLines: Int): List<String> {
+    val words = pdfSafe(font, text).split(' ').filter { it.isNotEmpty() }
+    val lines = mutableListOf<String>()
+    var current = ""
+    var index = 0
+    while (index < words.size && lines.size < maxLines) {
+        val candidate = if (current.isEmpty()) words[index] else "$current ${words[index]}"
+        if (font.widthOf(candidate, size) <= width || current.isEmpty()) {
+            current = candidate
+            index++
+        } else {
+            lines += current
+            current = ""
+        }
+    }
+    if (current.isNotEmpty() && lines.size < maxLines) lines += current
+    if (index < words.size && lines.isNotEmpty()) {
+        var last = lines.removeAt(lines.lastIndex)
+        while (last.isNotEmpty() && font.widthOf("$last…", size) > width) last = last.dropLast(1).trimEnd()
+        lines += "$last…"
+    }
+    return lines.ifEmpty { listOf("") }
 }
 
 /** Decodifica a logo (Skia, pelo mesmo motivo da foto), reduz se for grande e converte uma vez só. */
@@ -125,11 +172,10 @@ actual fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
     brandName: String?,
     footerText: String?,
-    currency: Currency,
     options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
-        val context = PdfContext(document, currency, options)
+        val context = PdfContext(document, options)
 
         items.forEach { item ->
             val page = PDPage(PDRectangle.A4)
@@ -144,11 +190,10 @@ actual fun renderSavedQuotesPdf(
 }
 
 /**
- * Desenha o cabeçalho de identidade (se houver logo ou contato), nome, valor de venda
- * (+ serviços/frete/total, se houver), o preço por unidade quando a quantidade é maior que 1,
- * prazo e tempo de impressão, foto (se houver), borda e marca d'água/rodapé (se configurados)
- * numa única página. Sem identidade, borda, quantidade, frete e prazo (os padrões), a saída é
- * idêntica à de antes desses campos existirem.
+ * Desenha a página do orçamento: cabeçalho de identidade (se houver logo ou contato), título (até duas
+ * linhas), número, emissão e validade, "Para" (se ligado), o valor com a conta quantidade × unitário,
+ * serviços, frete e total, o prazo em destaque, o tempo de impressão e a foto. A foto vai pra uma página
+ * só dela quando não cabe embaixo do texto (com muitos serviços, ela chegava a sair de cabeça pra baixo).
  */
 private fun drawQuotePage(
     context: PdfContext,
@@ -160,9 +205,12 @@ private fun drawQuotePage(
     val margin = 50f
     val footerReserve = 50f
     val savedQuote = item.savedQuote
-    val currency = context.currency
+    val currency = savedQuote.currency
     val titleFont = context.titleFont
     val bodyFont = context.bodyFont
+    val contentWidth = page.mediaBox.width - margin * 2
+    val photo = preparePhoto(context.document, item.photoBytes, QUOTE_PHOTO_MAX_PIXELS)
+    var photoPending = photo != null
 
     PDPageContentStream(context.document, page).use { content ->
         var cursorY = page.mediaBox.height - margin
@@ -170,14 +218,36 @@ private fun drawQuotePage(
             cursorY = drawIdentityHeader(context, content, page, margin, cursorY) - 28f
         }
 
-        content.text(titleFont, 20f, margin, cursorY, savedQuote.name)
-        cursorY -= 30f
+        wrapText(titleFont, 20f, savedQuote.clientTitle(withNumber = false), contentWidth, maxLines = 2).forEach { line ->
+            content.text(titleFont, 20f, margin, cursorY, line)
+            cursorY -= 24f
+        }
+        cursorY -= 2f
 
-        val quantity = savedQuote.quote.quantity
+        documentInfoLine(savedQuote, context.options)?.let { info ->
+            content.saveGraphicsState()
+            content.setNonStrokingColor(Color(90, 90, 90))
+            content.text(bodyFont, 10f, margin, cursorY, info)
+            content.restoreGraphicsState()
+            cursorY -= 16f
+        }
+        if (context.options.showClientName) {
+            savedQuote.client?.name?.let { name ->
+                content.text(bodyFont, 11f, margin, cursorY, "Para: $name")
+                cursorY -= 16f
+            }
+        }
+        val printCount = savedQuote.quote.prints.size
+        if (printCount > 1) {
+            content.text(bodyFont, 11f, margin, cursorY, "Kit com $printCount peças")
+            cursorY -= 16f
+        }
+        cursorY -= 8f
 
-        content.text(bodyFont, 14f, margin, cursorY, "Venda: ${savedQuote.quote.salePrice.toCurrencyText(currency)}")
+        content.text(bodyFont, 14f, margin, cursorY, "Valor: ${valueText(savedQuote)}")
         cursorY -= 24f
 
+        val quantity = savedQuote.quote.quantity
         savedQuote.services.forEach { service ->
             val label = if (quantity > 1 && !service.chargedPerOrder) "${service.name} (× $quantity)" else service.name
             content.text(bodyFont, 12f, margin, cursorY, "$label: ${service.total(quantity).toCurrencyText(currency)}")
@@ -190,25 +260,17 @@ private fun drawQuotePage(
         }
 
         // O "Total" precisa aparecer mesmo com frete e sem nenhum serviço, senão o cliente vê
-        // "Venda" e "Frete" soltos, sem a soma.
+        // "Valor" e "Frete" soltos, sem a soma.
         if (savedQuote.services.isNotEmpty() || savedQuote.shippingCost > 0) {
             content.text(titleFont, 14f, margin, cursorY, "Total: ${savedQuote.totalWithServices.toCurrencyText(currency)}")
             cursorY -= 24f
-        }
-
-        // Sempre sobre o total que o cliente paga (com serviços), igual à tela de Orçamento: se
-        // fosse sobre o valor de venda, a mesma peça teria dois preços unitários diferentes.
-        if (quantity > 1) {
-            val unitPrice = savedQuote.totalWithServices / quantity
-            content.text(bodyFont, 11f, margin, cursorY, "$quantity peças · ${unitPrice.toCurrencyText(currency)} cada")
-            cursorY -= 18f
         }
 
         // Em destaque, e não como mais uma linha da lista: é o que o cliente usa pra decidir se
         // autoriza a fabricação (pedido do teste externo, decisão 83).
         savedQuote.deliveryDateText()?.let { text ->
             cursorY -= 4f
-            cursorY = drawHighlightBand(content, titleFont, text, margin, cursorY, page.mediaBox.width - margin * 2)
+            cursorY = drawHighlightBand(content, titleFont, text, margin, cursorY, contentWidth)
             // O cursor é linha de base: a próxima linha precisa descer a altura dela, não só um respiro.
             cursorY -= 20f
         }
@@ -219,18 +281,53 @@ private fun drawQuotePage(
         }
         cursorY -= 6f
 
-        val bufferedImage = decodePhotoAsBufferedImage(item.photoBytes)
-        if (bufferedImage != null) {
-            val pdImage = LosslessFactory.createFromImage(context.document, bufferedImage)
-            val maxWidth = page.mediaBox.width - margin * 2
-            val maxHeight = cursorY - footerReserve
-            val scale = minOf(maxWidth / pdImage.width, maxHeight / pdImage.height, 1f)
-            val drawWidth = pdImage.width * scale
-            val drawHeight = pdImage.height * scale
-            content.drawImage(pdImage, margin, cursorY - drawHeight, drawWidth, drawHeight)
+        if (photo != null && cursorY - footerReserve >= MIN_PHOTO_HEIGHT) {
+            drawFitted(content, photo, margin, cursorY, contentWidth, cursorY - footerReserve)
+            photoPending = false
         }
 
         drawPageDecorations(context, content, page, brandName, footerText, margin)
+    }
+
+    if (photoPending && photo != null) {
+        val photoPage = PDPage(PDRectangle.A4).also(context.document::addPage)
+        PDPageContentStream(context.document, photoPage).use { content ->
+            val top = photoPage.mediaBox.height - margin
+            drawFitted(content, photo, margin, top, contentWidth, top - footerReserve)
+            drawPageDecorations(context, content, photoPage, brandName, footerText, margin)
+        }
+    }
+}
+
+/** Desenha [image] no topo de uma caixa ([x], [top], [maxWidth] × [maxHeight]), sem distorcer nem ampliar. */
+private fun drawFitted(content: PDPageContentStream, image: PDImageXObject, x: Float, top: Float, maxWidth: Float, maxHeight: Float) {
+    val scale = minOf(maxWidth / image.width, maxHeight / image.height, 1f)
+    val drawWidth = image.width * scale
+    val drawHeight = image.height * scale
+    content.drawImage(image, x, top - drawHeight, drawWidth, drawHeight)
+}
+
+/**
+ * "Pedido #0042 · Emitido em 25/09/2026 · Válido até 02/10/2026", com o que houver. O número dá como o
+ * cliente se referir ao orçamento; a validade protege o preço de um cliente que volta meses depois.
+ */
+internal fun documentInfoLine(savedQuote: SavedQuote, options: PdfLayoutOptions): String? {
+    val issued = options.issuedOnEpochDay ?: todayEpochDay()
+    return listOfNotNull(
+        savedQuote.displayNumber?.takeIf { savedQuote.isOrder }?.let { "Pedido $it" },
+        "Emitido em ${formatDate(issued)}",
+        options.validityDays?.takeIf { it > 0 && savedQuote.isOrder }?.let { "Válido até ${formatDate(issued + it)}" },
+    ).joinToString(" · ")
+}
+
+/** O valor das peças: "R$ 60,20", ou a conta "10 × R$ 6,02 = R$ 60,20" com mais de uma. */
+internal fun valueText(savedQuote: SavedQuote): String {
+    val quote = savedQuote.quote
+    val currency = savedQuote.currency
+    return if (quote.quantity > 1) {
+        "${quote.quantity} × ${quote.unitSalePrice.toCurrencyText(currency)} = ${quote.salePrice.toCurrencyText(currency)}"
+    } else {
+        quote.salePrice.toCurrencyText(currency)
     }
 }
 
@@ -345,18 +442,17 @@ actual fun renderCatalogPdf(
     items: List<QuoteExportItem>,
     brandName: String?,
     footerText: String?,
-    currency: Currency,
     options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
-        val context = PdfContext(document, currency, options)
+        val context = PdfContext(document, options)
 
         val margin = 40f
         val columns = 2
         val gutter = 20f
         val titleHeight = 50f
         val photoSize = 180f
-        val cellHeight = photoSize + 44f
+        val cellHeight = photoSize + 58f
         val rowGap = 20f
         val cellWidth = (PDRectangle.A4.width - margin * 2 - gutter * (columns - 1)) / columns
 
@@ -365,7 +461,7 @@ actual fun renderCatalogPdf(
         val identityHeight = if (context.hasHeader) {
             PDDocument().use { scratch ->
                 val scratchPage = PDPage(PDRectangle.A4).also(scratch::addPage)
-                val scratchContext = PdfContext(scratch, currency, options)
+                val scratchContext = PdfContext(scratch, options)
                 PDPageContentStream(scratch, scratchPage).use { content ->
                     val top = scratchPage.mediaBox.height - margin
                     top - drawIdentityHeader(scratchContext, content, scratchPage, margin, top) + 12f
@@ -459,7 +555,10 @@ internal fun catalogSections(items: List<QuoteExportItem>): List<Pair<String?, L
     return if (uncategorized.isEmpty()) sections else sections + ("Outros" to uncategorized)
 }
 
-/** Desenha uma célula da grade do catálogo: foto (se houver, centralizada e escalada até [photoSize]) + nome + venda. */
+/**
+ * Desenha uma célula da grade do catálogo: foto (se houver, centralizada e escalada até [photoSize]), nome
+ * (até duas linhas) e preço, na moeda do produto.
+ */
 private fun drawCatalogCell(
     context: PdfContext,
     content: PDPageContentStream,
@@ -470,9 +569,7 @@ private fun drawCatalogCell(
     photoSize: Float,
 ) {
     val savedQuote = item.savedQuote
-    val bufferedImage = decodePhotoAsBufferedImage(item.photoBytes)
-    if (bufferedImage != null) {
-        val pdImage = LosslessFactory.createFromImage(context.document, bufferedImage)
+    preparePhoto(context.document, item.photoBytes, CATALOG_PHOTO_MAX_PIXELS)?.let { pdImage ->
         val scale = minOf(photoSize / pdImage.width, photoSize / pdImage.height, 1f)
         val drawWidth = pdImage.width * scale
         val drawHeight = pdImage.height * scale
@@ -482,9 +579,12 @@ private fun drawCatalogCell(
     }
 
     var textY = cellTop - photoSize - 16f
-    content.text(context.titleFont, 12f, cellX, textY, savedQuote.name)
-    textY -= 16f
-    content.text(context.bodyFont, 12f, cellX, textY, savedQuote.totalWithServices.toCurrencyText(context.currency))
+    wrapText(context.titleFont, 12f, savedQuote.clientTitle(withNumber = false), cellWidth, maxLines = 2).forEach { line ->
+        content.text(context.titleFont, 12f, cellX, textY, line)
+        textY -= 14f
+    }
+    textY -= 2f
+    content.text(context.bodyFont, 12f, cellX, textY, savedQuote.totalWithServices.toCurrencyText(savedQuote.currency))
 }
 
 /**

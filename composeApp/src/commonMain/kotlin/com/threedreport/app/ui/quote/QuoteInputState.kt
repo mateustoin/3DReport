@@ -1,16 +1,27 @@
 package com.threedreport.app.ui.quote
 
-import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.format.parseDurationMinutes
+import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.core.model.QuoteKind
 
 /**
  * Uma linha de filamento de uma impressão: qual filamento, qual cor e quanto dele. Uma peça
  * multicolor tem uma linha por filamento (decisão 105).
+ *
+ * @property lengthText comprimento em metros: é o que vale pra conta.
+ * @property weightText peso em gramas, **enquanto a pessoa digita nesse campo** (decisão 107): cada
+ *   mudança converte pra metros pelo filamento escolhido. `null` quando o peso é só o reflexo dos metros.
+ * @property missingFilamentName nome do filamento de um orçamento reaberto que não está mais no
+ *   cadastro. A linha fica sem filamento (nunca cai em outro em silêncio) e a tela explica.
+ * @property id identifica a linha enquanto a tela está aberta (chave de lista, remover a linha certa).
  */
 data class FilamentInput(
     val filamentId: String? = null,
     val colorId: String? = null,
     val lengthText: String = "",
+    val weightText: String? = null,
+    val missingFilamentName: String? = null,
+    val id: Int = 0,
 )
 
 /**
@@ -18,10 +29,14 @@ data class FilamentInput(
  * só a primeira; o estado já é uma lista pra o pedido com várias impressões não refazer tudo.
  *
  * @property filaments nunca vazia. Com uma linha só, a tela é a de sempre.
+ * @property printTimeText tempo de uma rodada, como digitado ("3h20", "200"; ver `parseDurationMinutes`).
  * @property runsText quantas vezes a mesma mesa roda; vazio conta como 1.
  * @property gcodeImportMessage mensagem sobre a última importação de G-code nesta impressão.
  * @property beforeGCode como a impressão estava antes da primeira importação de G-code, pra
  *   "Desfazer" devolver tudo de uma vez (inclusive as linhas de filamento).
+ * @property missingPrinterName nome da impressora de um orçamento reaberto que não está mais no
+ *   cadastro (ver [FilamentInput.missingFilamentName]).
+ * @property id identifica a impressão enquanto a tela está aberta (ver [FilamentInput.id]).
  */
 data class PrintInput(
     val name: String = "",
@@ -31,9 +46,15 @@ data class PrintInput(
     val runsText: String = "",
     val gcodeImportMessage: String? = null,
     val beforeGCode: PrintInput? = null,
+    val missingPrinterName: String? = null,
+    val id: Int = 0,
 ) {
     val runs: Int
         get() = runsText.trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
+
+    /** Tempo de uma rodada em minutos, ou `null` se vazio ou ilegível. */
+    val printTimeMinutes: Double?
+        get() = parseDurationMinutes(printTimeText)
 }
 
 /** Entradas da tela de Orçamento controladas pelo usuário (o resto vem dos repositórios). */
@@ -41,11 +62,11 @@ data class QuoteInputState(
     /** As impressões do pedido, na ordem da tela. Nunca vazia. */
     val prints: List<PrintInput> = listOf(PrintInput()),
     /**
-     * Minutos do seu trabalho no pedido **inteiro**, sem multiplicar pela quantidade nem pelas
-     * impressões (ver `Quote.laborMinutes`); só afeta o preço se houver taxa horária configurada.
+     * Seu trabalho no pedido **inteiro**, sem multiplicar pela quantidade nem pelas impressões (ver
+     * `Quote.laborMinutes`), como digitado ("1h30", "90"); só afeta o preço se houver taxa horária.
      */
     val laborMinutesText: String = "",
-    /** Quantas peças iguais o cliente quer. Vazio ou inválido conta como 1. */
+    /** Quantas peças iguais o cliente quer. Vazio conta como 1; texto inválido é erro, não 1. */
     val quantityText: String = "",
     /**
      * Serviços marcados neste orçamento, pelo id do `Service` no catálogo, na ordem em que foram
@@ -81,9 +102,13 @@ data class QuoteInputState(
      */
     val kind: QuoteKind = QuoteKind.ORDER,
 ) {
-    /** [quantityText] como número; campo vazio, texto inválido ou zero contam como uma peça. */
+    /** [quantityText] como número: vazio conta como 1; `null` quando não é um inteiro de 1 pra cima. */
+    val quantityOrNull: Int?
+        get() = if (quantityText.isBlank()) 1 else parseWholeNumber(quantityText)?.takeIf { it >= 1 }
+
+    /** A quantidade que vale pra conta (1 enquanto o campo tem erro; o erro aparece ao lado dele). */
     val quantity: Int
-        get() = quantityText.trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
+        get() = quantityOrNull ?: 1
 
     val isProduct: Boolean
         get() = kind == QuoteKind.PRODUCT
@@ -93,7 +118,7 @@ data class QuoteInputState(
      * preço. Só faz sentido mostrar com `laborRatePerHour > 0`.
      */
     val isLaborTimeMissing: Boolean
-        get() = (parseDecimal(laborMinutesText) ?: 0.0) <= 0.0
+        get() = (parseDurationMinutes(laborMinutesText) ?: 0.0) <= 0.0
 }
 
 /**

@@ -188,48 +188,44 @@ private fun PrinterForm(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(if (form.id == null) "Nova impressora" else "Editar impressora", style = MaterialTheme.typography.titleMedium)
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.name,
-            onValueChange = { text -> onChange { it.copy(name = text) } },
-            label = { Text("Nome (ex.: Ender 3)") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.printerPowerWattsText,
-            onValueChange = { text -> onChange { it.copy(printerPowerWattsText = text) } },
-            label = { Text("Consumo (W)") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.maintenanceCostPerHourText,
-            onValueChange = { text -> onChange { it.copy(maintenanceCostPerHourText = text) } },
-            label = { Text("Manutenção por hora (${LocalCurrency.current.symbol})") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.machinePriceText,
-            onValueChange = { text -> onChange { it.copy(machinePriceText = text) } },
-            label = { Text("Valor da máquina (${LocalCurrency.current.symbol})") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.paybackMonthsText,
-            onValueChange = { text -> onChange { it.copy(paybackMonthsText = text) } },
-            label = { Text("Prazo de retorno (meses)") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.printingDaysPerMonthText,
-            onValueChange = { text -> onChange { it.copy(printingDaysPerMonthText = text) } },
-            label = { Text("Dias de uso por mês") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.printingHoursPerDayText,
-            onValueChange = { text -> onChange { it.copy(printingHoursPerDayText = text) } },
-            label = { Text("Horas de uso por dia") },
-        )
+        PrinterField("Nome", form.name, "Ex.: Ender 3, P1S da oficina.") { text -> onChange { it.copy(name = text) } }
+        PrinterField(
+            "Consumo médio (W)",
+            form.printerPowerWattsText,
+            if (form.powerFromPreset) {
+                "O preset traz a potência máxima da fonte. Na média de uma impressão a máquina gasta bem menos: " +
+                    "se tiver um medidor de tomada, use o valor medido, senão a energia sai mais cara do que é."
+            } else {
+                "Quanto a impressora puxa da tomada, em média, durante uma impressão (um medidor de tomada dá o número certo)."
+            },
+            warning = form.powerFromPreset,
+        ) { text -> onChange { it.copy(printerPowerWattsText = text, powerFromPreset = false) } }
+        PrinterField(
+            "Manutenção por hora (${LocalCurrency.current.symbol})",
+            form.maintenanceCostPerHourText,
+            "Bicos, correias, PTFE e peças que gastam, divididos pelas horas que duram.",
+        ) { text -> onChange { it.copy(maintenanceCostPerHourText = text) } }
+        PrinterField(
+            "Valor da máquina (${LocalCurrency.current.symbol})",
+            form.machinePriceText,
+            "Quanto você pagou. Entra no preço como retorno do investimento, no prazo abaixo.",
+        ) { text -> onChange { it.copy(machinePriceText = text) } }
+        PrinterField("Prazo de retorno (meses)", form.paybackMonthsText, "Em quantos meses a máquina precisa se pagar.") { text ->
+            onChange { it.copy(paybackMonthsText = text) }
+        }
+        PrinterField("Dias de uso por mês", form.printingDaysPerMonthText, "Dias em que ela imprime, de 1 a 31.") { text ->
+            onChange { it.copy(printingDaysPerMonthText = text) }
+        }
+        PrinterField("Horas de uso por dia", form.printingHoursPerDayText, "Horas imprimindo num dia de uso, de 1 a 24.") { text ->
+            onChange { it.copy(printingHoursPerDayText = text) }
+        }
+        form.machineCostPerHour?.let { perHour ->
+            Text(
+                "Custo da máquina: ${perHour.toMoney()} por hora de impressão (retorno + manutenção), fora a energia.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
 
         form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
@@ -238,4 +234,16 @@ private fun PrinterForm(
             TextButton(onClick = onCancel) { Text("Cancelar") }
         }
     }
+}
+
+@Composable
+private fun PrinterField(label: String, value: String, help: String, warning: Boolean = false, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        supportingText = { Text(help, color = if (warning) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant) },
+        singleLine = true,
+    )
 }

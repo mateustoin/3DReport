@@ -19,4 +19,6 @@ data class SettingsUiState(
     val taxRatePercentText: String = "",
     val errorMessage: String? = null,
     val savedConfirmation: Boolean = false,
+    /** Aviso depois de salvar, quando algo gravado não vai ter o efeito que a pessoa espera. */
+    val warningMessage: String? = null,
 )

@@ -28,18 +28,18 @@ class FileSaverTest {
     fun prefersDocumentsFolderWhenItExists() {
         File(fakeHome, "Documents").mkdirs()
 
-        assertEquals(File(fakeHome, "Documents").path, defaultDocumentsDirectory())
+        assertEquals(File(fakeHome, "Documents").path, DesktopPlatform.documentsDirectory())
     }
 
     @Test
     fun fallsBackToDocumentosFolderWhenThatIsWhatExists() {
         File(fakeHome, "Documentos").mkdirs()
 
-        assertEquals(File(fakeHome, "Documentos").path, defaultDocumentsDirectory())
+        assertEquals(File(fakeHome, "Documentos").path, DesktopPlatform.documentsDirectory())
     }
 
     @Test
     fun fallsBackToHomeWhenNeitherExists() {
-        assertEquals(fakeHome.path, defaultDocumentsDirectory())
+        assertEquals(fakeHome.path, DesktopPlatform.documentsDirectory())
     }
 }

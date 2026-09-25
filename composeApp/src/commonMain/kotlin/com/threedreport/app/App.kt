@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.window.DialogProperties
+import com.threedreport.app.platform.openFolder
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
@@ -33,6 +36,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
@@ -46,21 +50,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.threedreport.app.data.BackupRepository
-import com.threedreport.app.data.BrandingRepository
-import com.threedreport.app.data.CurrencyRepository
-import com.threedreport.app.data.FilamentRepository
-import com.threedreport.app.data.MaintenanceRepository
-import com.threedreport.app.data.OnboardingRepository
-import com.threedreport.app.data.UsageProfileRepository
-import com.threedreport.app.data.PrinterRepository
-import com.threedreport.app.data.QuoteHistoryRepository
-import com.threedreport.app.data.SalesChannelRepository
-import com.threedreport.app.data.ServiceRepository
-import com.threedreport.app.data.SettingsRepository
-import com.threedreport.app.data.TemplateRepository
-import com.threedreport.app.data.ThemeRepository
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.dashboard.DashboardScreen
@@ -71,6 +62,8 @@ import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.history.QuoteHistoryScreen
 import com.threedreport.app.ui.history.QuoteHistoryViewModel
 import com.threedreport.app.ui.onboarding.OnboardingDialog
+import com.threedreport.app.ui.onboarding.OnboardingPrinter
+import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
 import com.threedreport.app.ui.quote.EditQuoteDialog
@@ -88,6 +81,8 @@ import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.ThemeViewModel
 import com.threedreport.core.model.UsageProfile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 private const val GITHUB_URL = "https://github.com/mateustoin/3DReport"
 private const val BUY_ME_A_COFFEE_URL = "https://buymeacoffee.com/mateustoin"
@@ -130,47 +125,55 @@ private enum class AppTab(val label: String) {
 }
 
 @Composable
-fun App(oldDataPath: String? = null, oldDataFromNewerVersion: Boolean = false) {
-    val filamentRepository = remember { FilamentRepository() }
-    val printerRepository = remember { PrinterRepository() }
-    val maintenanceRepository = remember { MaintenanceRepository() }
-    val settingsRepository = remember { SettingsRepository() }
-    val historyRepository = remember { QuoteHistoryRepository() }
-    val brandingRepository = remember { BrandingRepository() }
-    val serviceRepository = remember { ServiceRepository() }
-    val templateRepository = remember { TemplateRepository() }
-    val themeRepository = remember { ThemeRepository() }
-    val currencyRepository = remember { CurrencyRepository() }
-    val backupRepository = remember { BackupRepository() }
-    val salesChannelRepository = remember { SalesChannelRepository() }
-    val onboardingRepository = remember { OnboardingRepository() }
-    val usageProfileRepository = remember { UsageProfileRepository() }
+fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
+    val filamentRepository = container.filaments
+    val printerRepository = container.printers
+    val settingsRepository = container.settings
+    val historyRepository = container.quoteHistory
+    val onboardingRepository = container.onboarding
+    val usageProfileRepository = container.usageProfile
     val defaultKind = { usageProfileRepository.profile.value.defaultKind }
 
-    val quoteViewModel = remember {
+    val appScope = rememberCoroutineScope()
+    val newQuoteViewModel = {
         QuoteViewModel(
-            filamentRepository, printerRepository, settingsRepository, serviceRepository,
-            salesChannelRepository, historyRepository, defaultKind,
+            filamentRepository, printerRepository, settingsRepository, container.services,
+            container.salesChannels, historyRepository, defaultKind,
+            clientRepository = container.clients,
+            currency = { container.currency.currency.value },
+            scope = appScope,
+            background = Dispatchers.Default,
+            main = Dispatchers.Main,
         )
     }
+    val quoteViewModel = remember { newQuoteViewModel() }
+    // Editar um orçamento salvo tem o próprio ViewModel (decisão 108): usar o da aba apagava o rascunho
+    // que estivesse em andamento lá.
+    val editQuoteViewModel = remember { newQuoteViewModel() }
     val historyViewModel = remember {
         QuoteHistoryViewModel(
-            historyRepository, brandingRepository, currencyRepository,
-            filamentRepository, printerRepository, settingsRepository, salesChannelRepository,
+            historyRepository, container.branding,
+            filamentRepository, printerRepository, settingsRepository, container.salesChannels,
             defaultKind = defaultKind,
+            clientRepository = container.clients,
+            scope = appScope,
+            background = Dispatchers.Default,
+            main = Dispatchers.Main,
         )
     }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
-    val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, maintenanceRepository) }
-    val serviceListViewModel = remember { ServiceListViewModel(serviceRepository) }
+    val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, container.maintenance) }
+    val serviceListViewModel = remember { ServiceListViewModel(container.services) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
-    val brandingViewModel = remember { BrandingViewModel(brandingRepository, templateRepository, currency = { currencyRepository.currency.value }) }
-    val templateListViewModel = remember { TemplateListViewModel(templateRepository, brandingRepository) }
-    val themeViewModel = remember { ThemeViewModel(themeRepository) }
-    val currencyViewModel = remember { CurrencyViewModel(currencyRepository) }
-    val backupViewModel = remember { BackupViewModel(backupRepository) }
-    val salesChannelViewModel = remember { SalesChannelViewModel(salesChannelRepository) }
+    val brandingViewModel = remember {
+        BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value })
+    }
+    val templateListViewModel = remember { TemplateListViewModel(container.templates, container.branding) }
+    val themeViewModel = remember { ThemeViewModel(container.theme) }
+    val currencyViewModel = remember { CurrencyViewModel(container.currency) }
+    val backupViewModel = remember { BackupViewModel(container.backup, container.preferences, scope = appScope) }
+    val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
     val usageProfile by usageProfileRepository.profile.collectAsState()
@@ -183,6 +186,9 @@ fun App(oldDataPath: String? = null, oldDataFromNewerVersion: Boolean = false) {
     }
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var draggingFile by remember { mutableStateOf(false) }
+    // Ação que jogaria fora o orçamento em andamento na aba, esperando a confirmação.
+    var pendingDiscard by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val unlessDraft: (() -> Unit) -> Unit = { action -> if (quoteViewModel.hasDraft) pendingDiscard = action else action() }
     var showHelp by remember { mutableStateOf(false) }
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
@@ -217,16 +223,16 @@ fun App(oldDataPath: String? = null, oldDataFromNewerVersion: Boolean = false) {
                             true
                         }
                         accel && event.key == Key.N && selectedTab == AppTab.QUOTE -> {
-                            quoteViewModel.resetForm()
+                            unlessDraft(quoteViewModel::resetForm)
                             true
                         }
-                        event.key == Key.Escape -> {
-                            var handled = false
-                            if (filamentListViewModel.form.value != null) { filamentListViewModel.cancelEdit(); handled = true }
-                            if (printerListViewModel.form.value != null) { printerListViewModel.cancelEdit(); handled = true }
-                            if (serviceListViewModel.form.value != null) { serviceListViewModel.cancelEdit(); handled = true }
-                            if (quoteViewModel.saveForm.value.editingQuoteId != null) { quoteViewModel.resetForm(); handled = true }
-                            handled
+                        // Esc fecha o formulário da aba que está na tela, e só ele: antes fechava os de
+                        // todas as abas, inclusive um que a pessoa nem estava vendo.
+                        event.key == Key.Escape -> when (selectedTab) {
+                            AppTab.FILAMENTS -> filamentListViewModel.form.value?.let { filamentListViewModel.cancelEdit(); true } ?: false
+                            AppTab.PRINTERS -> printerListViewModel.form.value?.let { printerListViewModel.cancelEdit(); true } ?: false
+                            AppTab.SERVICES -> serviceListViewModel.form.value?.let { serviceListViewModel.cancelEdit(); true } ?: false
+                            else -> false
                         }
                         else -> false
                     }
@@ -235,10 +241,10 @@ fun App(oldDataPath: String? = null, oldDataFromNewerVersion: Boolean = false) {
                 Box(
                     modifier = Modifier.fillMaxSize().fileDropTarget(
                         onDragActive = { draggingFile = it },
-                        onDrop = { file ->
+                        onDrop = { dropped ->
                             // Seja qual for a aba aberta, o G-code vai pro Orçamento, que é onde o resultado aparece.
                             selectedTab = AppTab.QUOTE
-                            quoteViewModel.importGCode(file)
+                            quoteViewModel.importDropped(dropped)
                         },
                     ),
                 ) {
@@ -258,18 +264,25 @@ fun App(oldDataPath: String? = null, oldDataFromNewerVersion: Boolean = false) {
                             )
                             AppTab.HISTORY -> QuoteHistoryScreen(
                                 historyViewModel,
-                                onEditQuote = { savedQuote -> quoteViewModel.loadForEditing(savedQuote) },
+                                onEditQuote = { savedQuote -> editQuoteViewModel.loadForEditing(savedQuote) },
+                                // As três começam um orçamento na aba: com um rascunho lá, pergunta antes.
                                 onDuplicateQuote = { savedQuote ->
-                                    quoteViewModel.duplicateForNewQuote(savedQuote)
-                                    selectedTab = AppTab.QUOTE
+                                    unlessDraft {
+                                        quoteViewModel.duplicateForNewQuote(savedQuote)
+                                        selectedTab = AppTab.QUOTE
+                                    }
                                 },
                                 onSellProduct = { product ->
-                                    quoteViewModel.sellFromProduct(product)
-                                    selectedTab = AppTab.QUOTE
+                                    unlessDraft {
+                                        quoteViewModel.sellFromProduct(product)
+                                        selectedTab = AppTab.QUOTE
+                                    }
                                 },
                                 onCopyToCatalog = { order ->
-                                    quoteViewModel.copyToCatalog(order)
-                                    selectedTab = AppTab.QUOTE
+                                    unlessDraft {
+                                        quoteViewModel.copyToCatalog(order)
+                                        selectedTab = AppTab.QUOTE
+                                    }
                                 },
                             )
                             AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
@@ -306,30 +319,66 @@ fun App(oldDataPath: String? = null, oldDataFromNewerVersion: Boolean = false) {
                 HelpDialog(onDismiss = { showHelp = false })
             }
 
-            var showOldDataNotice by remember { mutableStateOf(oldDataPath != null) }
-            if (showOldDataNotice && oldDataPath != null) {
-                OldDataNoticeDialog(oldDataPath, oldDataFromNewerVersion, onDismiss = { showOldDataNotice = false })
+            var showOldDataNotice by remember { mutableStateOf(dataFolderNotice != null) }
+            if (showOldDataNotice && dataFolderNotice != null) {
+                DataFolderNoticeDialog(dataFolderNotice, onDismiss = { showOldDataNotice = false })
             }
+
+            StorageHealthDialogs(container)
 
             // O aviso dos dados antigos vem antes: o onboarding só aparece depois de ele ser lido.
             if (!onboardingCompleted && !showOldDataNotice) {
                 OnboardingDialog(
                     currentSettings = settingsRepository.settings.value,
-                    onFinish = { settings, profile ->
+                    onFinish = { settings, profile, printer ->
                         settingsRepository.update(settings)
                         applyUsageProfile(profile)
+                        printer?.let { applyOnboardingPrinter(printerRepository, it) }
                         onboardingRepository.markCompleted()
                     },
                     onSkip = onboardingRepository::markCompleted,
                 )
             }
 
-            val quoteSaveForm by quoteViewModel.saveForm.collectAsState()
-            if (quoteSaveForm.editingQuoteId != null) {
-                EditQuoteDialog(viewModel = quoteViewModel, onDismiss = quoteViewModel::resetForm)
+            val editForm by editQuoteViewModel.saveForm.collectAsState()
+            if (editForm.editingQuoteId != null) {
+                EditQuoteDialog(
+                    viewModel = editQuoteViewModel,
+                    onDismiss = editQuoteViewModel::resetForm,
+                    onSaved = { appScope.launch { snackbarHostState.showSnackbar("Alterações salvas.") } },
+                )
+            }
+
+            pendingDiscard?.let { action ->
+                ConfirmDialog(
+                    title = "Descartar o orçamento em andamento?",
+                    message = "O que está preenchido na aba Orçamento ainda não foi salvo e vai ser substituído.",
+                    confirmLabel = "Descartar",
+                    onConfirm = {
+                        pendingDiscard = null
+                        action()
+                    },
+                    onDismiss = { pendingDiscard = null },
+                )
             }
         }
     }
+}
+
+/**
+ * A impressora respondida no onboarding vai pra primeira impressora cadastrada (a de exemplo, numa
+ * instalação nova): o modelo troca nome e consumo, o valor troca o preço da máquina.
+ */
+private fun applyOnboardingPrinter(repository: PrinterRepository, choice: OnboardingPrinter) {
+    val printer = repository.printers.value.firstOrNull() ?: return
+    val preset = choice.preset
+    repository.update(
+        printer.copy(
+            name = preset?.let { "${it.brand} ${it.model}" } ?: printer.name,
+            printerPowerWatts = preset?.ratedPowerWatts ?: printer.printerPowerWatts,
+            machineInvestment = choice.machinePrice?.let { printer.machineInvestment.copy(machinePrice = it) } ?: printer.machineInvestment,
+        ),
+    )
 }
 
 /** Rodapé fixo em toda tela: versão, autor, link do projeto e apoio via doação. */
@@ -354,40 +403,117 @@ private fun AppFooter(onHelpClick: () -> Unit) {
 }
 
 /**
- * Aviso único de que os dados de uma versão anterior foram guardados à parte (decisão 104): a 2.0
- * mudou o formato dos dados e não converte o que existia, então a pessoa precisa saber onde eles
- * ficaram e como recuperar.
+ * Aviso único sobre a pasta de dados ao abrir (decisões 104 e 106): dados de outro formato guardados à
+ * parte ou convertidos. O caminho pode ser selecionado e copiado, e o aviso não some com um clique fora,
+ * porque é a única vez que ele aparece.
  */
 @Composable
-private fun OldDataNoticeDialog(oldDataPath: String, fromNewerVersion: Boolean, onDismiss: () -> Unit) {
+private fun DataFolderNoticeDialog(notice: DataFolderNotice, onDismiss: () -> Unit) {
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
+        properties = DialogProperties(dismissOnClickOutside = false),
         confirmButton = { TextButton(onClick = onDismiss) { Text("Entendi") } },
-        title = { Text(if (fromNewerVersion) "Dados de uma versão mais nova" else "Formato de dados novo") },
+        dismissButton = { TextButton(onClick = { openFolder(notice.path) }) { Text("Abrir pasta") } },
+        title = {
+            Text(
+                when (notice.kind) {
+                    DataFolderNotice.Kind.MOVED_FROM_NEWER -> "Dados de uma versão mais nova"
+                    DataFolderNotice.Kind.MOVED_FROM_OLDER -> "Formato de dados novo"
+                    DataFolderNotice.Kind.MIGRATED -> "Seus dados foram atualizados"
+                },
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    if (fromNewerVersion) {
-                        "Os dados eram de uma versão mais nova do 3DReport, que esta não consegue ler. Pra não " +
-                            "estragar nada, esta versão começa com os dados em branco."
-                    } else {
-                        "Esta versão guarda os pedidos de um jeito novo, que aceita vários filamentos e várias " +
-                            "impressões por pedido, e começa com os dados em branco."
+                    when (notice.kind) {
+                        DataFolderNotice.Kind.MOVED_FROM_NEWER ->
+                            "Os dados eram de uma versão mais nova do 3DReport, que esta não consegue ler. Pra não " +
+                                "estragar nada, esta versão começa com os dados em branco."
+                        DataFolderNotice.Kind.MOVED_FROM_OLDER ->
+                            "Esta versão guarda os pedidos de um jeito novo, que aceita vários filamentos e várias " +
+                                "impressões por pedido, e começa com os dados em branco."
+                        DataFolderNotice.Kind.MIGRATED ->
+                            "Esta versão guarda os dados de um jeito novo, e os seus foram convertidos. Está tudo aqui."
                     },
                 )
-                Text("O que você tinha foi guardado, sem apagar nada, em:")
-                Text(oldDataPath, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 Text(
-                    if (fromNewerVersion) {
-                        "Pra recuperar, atualize o 3DReport e renomeie essa pasta de volta pra .3dreport."
+                    if (notice.kind == DataFolderNotice.Kind.MIGRATED) {
+                        "Uma cópia de como estava antes ficou guardada, sem mudar nada, em:"
                     } else {
-                        "Pra recuperar, reinstale a versão 1.44 e renomeie essa pasta de volta pra .3dreport."
+                        "O que você tinha foi guardado, sem apagar nada, em:"
+                    },
+                )
+                SelectionContainer {
+                    Text(notice.path, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                }
+                Text(
+                    when (notice.kind) {
+                        DataFolderNotice.Kind.MOVED_FROM_NEWER -> "Pra recuperar, atualize o 3DReport e renomeie essa pasta de volta pra .3dreport."
+                        DataFolderNotice.Kind.MOVED_FROM_OLDER -> "Pra recuperar, reinstale a versão 1.44 e renomeie essa pasta de volta pra .3dreport."
+                        DataFolderNotice.Kind.MIGRATED -> "Depois de conferir que está tudo certo, dá pra apagar essa cópia."
                     },
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
         },
     )
+}
+
+/**
+ * Avisos do armazenamento (decisão 108). Um arquivo de dados que não abriu foi guardado à parte (e,
+ * quando deu, os dados vieram da cópia anterior); uma gravação que falhou fica numa faixa que não some
+ * até dar certo, porque o que mudou está só na memória.
+ */
+@Composable
+private fun StorageHealthDialogs(container: AppContainer) {
+    val unreadable by container.storageHealth.unreadableFiles.collectAsState()
+    val writeFailures by container.storageHealth.writeFailures.collectAsState()
+
+    if (unreadable.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnClickOutside = false),
+            confirmButton = { TextButton(onClick = container.storageHealth::dismissUnreadable) { Text("Entendi") } },
+            title = { Text("Um arquivo de dados não abriu") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    unreadable.forEach { file ->
+                        Text(
+                            if (file.recoveredFromBackup) {
+                                "${file.name}: recuperado da cópia anterior. Só a última mudança antes de fechar pode ter se perdido."
+                            } else {
+                                "${file.name}: não havia cópia anterior que abrisse, e ele começou vazio. Restaure um backup em " +
+                                    "Configurações → Backup pra recuperar."
+                            },
+                        )
+                    }
+                    Text("Nada foi apagado. O arquivo com problema ficou guardado em:", style = MaterialTheme.typography.bodySmall)
+                    SelectionContainer {
+                        Column { unreadable.forEach { Text(it.keptAs, style = MaterialTheme.typography.bodySmall) } }
+                    }
+                }
+            },
+        )
+    }
+
+    if (writeFailures.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnClickOutside = false),
+            confirmButton = { TextButton(onClick = container.pendingWrites::retry) { Text("Tentar de novo") } },
+            title = { Text("Não consegui gravar suas mudanças") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "O que você mudou está só na memória por enquanto. Feche programas que possam estar usando a " +
+                            "pasta de dados (antivírus, OneDrive, backup), confira se o disco tem espaço e tente de novo.",
+                    )
+                    writeFailures.forEach { (file, reason) -> Text("• $file: $reason", style = MaterialTheme.typography.bodySmall) }
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -403,22 +529,26 @@ private fun HelpDialog(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    "• Orçamento: escolha filamento/impressora, informe comprimento e tempo, e calcule. " +
-                        "Com uma hora de trabalho configurada, informe também o seu tempo de trabalho no pedido.",
+                    "• Orçamento: arraste o G-code pra janela (ou use \"Escolher arquivo\") e peso, tempo, foto, " +
+                        "impressora e filamento vêm preenchidos. Escolha se é pedido de cliente ou produto do catálogo, " +
+                        "o canal de venda e os serviços, e salve.",
                 )
-                Text("• Histórico: consulte, filtre, exporte em PDF ou copie orçamentos salvos (1 ou vários juntos).")
-                Text("• Dashboard: total vendido, lucro e filamento mais usado no período.")
-                Text("• Filamentos, Impressoras e Serviços: seus catálogos, usados na tela de Orçamento.")
                 Text(
-                    "• Configurações: aparência (tema), parâmetros de custo (incluindo o valor da sua hora de " +
-                        "trabalho e o custo fixo mensal), marca d'água do PDF (com templates salvos — fotos " +
-                        "nomeadas pra voltar rápido a uma configuração), taxa de marketplace e backup dos dados.",
+                    "• Histórico: pedidos e produtos salvos, em lista ou Kanban. Exporte PDF, imagem pro WhatsApp " +
+                        "ou o texto; \"Ações\" tem mover de etapa, editar detalhes, duplicar e vender.",
+                )
+                Text("• Dashboard: vendas pela data em que o cliente fechou, lucro por hora e o que mais vende.")
+                Text("• Filamentos, Impressoras e Serviços: seus cadastros, usados na tela de Orçamento.")
+                Text(
+                    "• Configurações: custos (energia, sua hora, margem, imposto), canais de venda com a taxa de cada " +
+                        "um, documentos pro cliente (marca, logo, contato), perfil de uso, tema, moeda e backup " +
+                        "(com cópia automática diária).",
                 )
                 Text("Atalhos de teclado", style = MaterialTheme.typography.titleSmall)
                 Text("• Ctrl/Cmd+1 a 7: pula direto para cada aba, nessa ordem.")
-                Text("• Ctrl/Cmd+S: salva o orçamento atual (aba Orçamento).")
-                Text("• Ctrl/Cmd+N: limpa a tela de Orçamento pra começar um novo.")
-                Text("• Esc: cancela o formulário aberto em Filamentos/Impressoras/Serviços.")
+                Text("• Ctrl/Cmd+S: salva o orçamento (na aba Orçamento e na edição).")
+                Text("• Ctrl/Cmd+N: começa um orçamento novo (pergunta antes se houver algo preenchido).")
+                Text("• Esc: fecha o formulário aberto na aba (Filamentos, Impressoras, Serviços) ou a edição.")
                 LinkText(text = "Ver código-fonte no GitHub", url = GITHUB_URL)
                 LinkText(text = "☕ Apoiar o projeto no Buy Me a Coffee", url = BUY_ME_A_COFFEE_URL)
             }

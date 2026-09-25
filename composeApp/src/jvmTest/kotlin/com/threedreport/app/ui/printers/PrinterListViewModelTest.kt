@@ -3,6 +3,7 @@ package com.threedreport.app.ui.printers
 import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.OrderStatus
@@ -41,7 +42,8 @@ class PrinterListViewModelTest {
 
         val form = viewModel.form.value!!
         assertEquals("${preset.brand} ${preset.model}", form.name)
-        assertEquals(preset.ratedPowerWatts.toString(), form.printerPowerWattsText)
+        assertEquals(preset.ratedPowerWatts.toInputText(), form.printerPowerWattsText)
+        assertTrue(form.powerFromPreset, "o campo avisa que é a potência máxima")
     }
 
     @Test

@@ -167,7 +167,7 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
-    fun deleteRemovesMetadataAndPhotoFile() {
+    fun deleteHidesTheQuoteAndRestoreBringsItBackWithThePhoto() {
         val repository = QuoteHistoryRepository()
         val saved = repository.save(
             name = "Pra excluir",
@@ -178,9 +178,13 @@ class QuoteHistoryRepositoryTest {
         )
 
         repository.delete(saved.id)
-
         assertTrue(QuoteHistoryRepository().savedQuotes.value.none { it.id == saved.id })
-        assertNull(repository.photoBytes(saved))
+
+        // Excluir manda pra lixeira (decisão 106): o "Desfazer" traz tudo de volta, inclusive a foto.
+        val reloaded = QuoteHistoryRepository()
+        reloaded.restore(saved.id)
+        val restored = reloaded.savedQuotes.value.single { it.id == saved.id }
+        assertContentEquals(byteArrayOf(9), reloaded.photoBytes(restored))
     }
 
     @Test
@@ -296,7 +300,6 @@ class QuoteHistoryRepositoryTest {
             quote = quote,
             services = emptyList(),
             photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(1, 2, 3)),
-            photoReferenceFileName = original.photoFileName,
             sourceLink = null,
         )
 
@@ -321,7 +324,6 @@ class QuoteHistoryRepositoryTest {
             services = emptyList(),
             photo = null,
             stlFile = PickedFile(fileName = "modelo.stl", bytes = byteArrayOf(9, 9)),
-            stlReferenceFileName = original.stlFileName,
             sourceLink = null,
         )
 
@@ -344,7 +346,6 @@ class QuoteHistoryRepositoryTest {
             quote = quote,
             services = emptyList(),
             photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
-            photoReferenceFileName = original.photoFileName,
             sourceLink = null,
         )
 
@@ -354,7 +355,7 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
-    fun deletingBothQuotesSharingAPhotoRemovesTheFile() {
+    fun deletedQuotesKeepTheirPhotoUntilNothingReferencesItAnymore() {
         val repository = QuoteHistoryRepository()
         val original = repository.save(
             name = "Original",
@@ -368,14 +369,57 @@ class QuoteHistoryRepositoryTest {
             quote = quote,
             services = emptyList(),
             photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(1)),
-            photoReferenceFileName = original.photoFileName,
             sourceLink = null,
         )
 
         repository.delete(original.id)
         repository.delete(duplicate.id)
 
-        assertNull(repository.photoBytes(duplicate))
+        // Na lixeira o orçamento ainda pode voltar, então a foto continua referenciada.
+        val key = duplicate.photoFileName!!
+        assertTrue(key in repository.referencedAttachments())
+        repository.restore(duplicate.id)
+        assertContentEquals(byteArrayOf(1), repository.photoBytes(duplicate))
+
+        // Sem ninguém apontando pra ela, a coleta de anexos (feita ao abrir o app) apaga o arquivo.
+        val attachments = testStorage().attachments
+        assertEquals(1, attachments.collectGarbage(emptySet()))
+        assertNull(attachments.read(key))
+    }
+
+    @Test
+    fun editingTheOriginalWithANewPhotoDoesNotChangeTheDuplicatesPhoto() {
+        val repository = QuoteHistoryRepository()
+        val oldPhoto = byteArrayOf(1, 2, 3)
+        val original = repository.save(
+            name = "Original",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = oldPhoto),
+            sourceLink = null,
+        )
+        val duplicate = repository.save(
+            name = "Duplicado",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = oldPhoto),
+            sourceLink = null,
+        )
+
+        repository.update(
+            id = original.id,
+            name = "Original",
+            quote = quote,
+            services = emptyList(),
+            photo = PickedFile(fileName = "produto.png", bytes = byteArrayOf(7, 7, 7)),
+            stlFile = null,
+            sourceLink = null,
+            client = null,
+        )
+
+        // Antes, o arquivo era "<id>.png" e os dois apontavam pro mesmo nome: a foto nova sobrescrevia a do
+        // pedido já vendido. Com o endereço pelo conteúdo, cada foto é um arquivo.
+        assertContentEquals(oldPhoto, repository.photoBytes(repository.savedQuotes.value.first { it.id == duplicate.id }))
     }
 
     @Test
@@ -394,7 +438,6 @@ class QuoteHistoryRepositoryTest {
             quote = quote,
             services = emptyList(),
             photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
-            photoReferenceFileName = original.photoFileName,
             sourceLink = null,
         )
 
@@ -406,7 +449,6 @@ class QuoteHistoryRepositoryTest {
             quote = quote,
             services = emptyList(),
             photo = PickedFile(fileName = "produto.png", bytes = photoBytes),
-            photoReferenceFileName = duplicate.photoFileName,
             stlFile = null,
             sourceLink = null,
             client = null,
@@ -515,7 +557,7 @@ class QuoteHistoryRepositoryTest {
     }
 
     @Test
-    fun deleteRemovesStlFile() {
+    fun aDeletedQuoteStlLeavesTheReferencesOnlyAfterTheTrashIsEmptied() {
         val repository = QuoteHistoryRepository()
         val saved = repository.save(
             name = "Pra excluir",
@@ -528,7 +570,7 @@ class QuoteHistoryRepositoryTest {
 
         repository.delete(saved.id)
 
-        assertNull(repository.stlBytes(saved))
+        assertTrue(saved.stlFileName!! in repository.referencedAttachments(), "na lixeira, o STL ainda pode voltar")
     }
 
     @Test

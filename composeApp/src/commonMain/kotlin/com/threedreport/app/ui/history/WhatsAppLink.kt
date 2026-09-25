@@ -14,20 +14,39 @@ import com.threedreport.core.model.SavedQuote
  * já preenchido. É melhor do que esconder o botão, porque o trabalho de escrever a mensagem já foi
  * feito de qualquer jeito.
  */
-internal fun SavedQuote.toWhatsAppLink(currency: Currency = Currency.BRL, showPrintTime: Boolean = false): String {
+internal fun SavedQuote.toWhatsAppLink(currency: Currency = this.currency, showPrintTime: Boolean = false): String {
     val phone = client?.contact?.let(::toInternationalPhone)
     val text = percentEncode(toCopyPasteText(currency, showPrintTime))
     return "https://wa.me/${phone.orEmpty()}?text=$text"
 }
 
+/** Uma sequência com cara de telefone: dígitos com espaço, ponto, hífen ou parênteses no meio, e "+" opcional. */
+private val PHONE_CANDIDATE = Regex("""\+?\(?\d[\d\s().-]{6,}\d""")
+
 /**
  * Converte o contato digitado à mão num número que o `wa.me` aceita (só dígitos, com código do
- * país). Assume Brasil quando o número tem 10 ou 11 dígitos, que é o formato com DDD que as
- * pessoas escrevem no dia a dia ("(11) 99999-0000"); números maiores já são tratados como
- * internacionais e vão como estão.
+ * país). Pega a primeira sequência com cara de telefone, então "Maria (11) 99999-0000 / e-mail" funciona.
+ *
+ * - Com "+", o número já é internacional e vai como está.
+ * - Com 10 ou 11 dígitos, é o formato com DDD que se escreve no dia a dia ("(11) 99999-0000"): ganha o 55.
+ * - Com o 0 da ligação interurbana ("0 21 11 99999-0000" ou "011 99999-0000"), sai o 0 e, se houver, o
+ *   código da operadora.
+ * - 12 a 15 dígitos sem "+" já são tratados como internacionais.
+ * - Sem DDD (8 ou 9 dígitos) não dá pra saber a cidade: o link sai sem número.
  */
 internal fun toInternationalPhone(contact: String): String? {
-    val digits = contact.filter { it.isDigit() }
+    val candidate = PHONE_CANDIDATE.find(contact)?.value ?: return null
+    val digits = candidate.filter { it.isDigit() }
+    if (candidate.startsWith("+")) return digits.takeIf { it.length in 8..15 }
+    if (digits.startsWith("0")) {
+        val national = digits.trimStart('0')
+        return when (national.length) {
+            in 10..11 -> "55$national"
+            // Operadora (2 dígitos) + DDD + número.
+            in 12..13 -> "55${national.drop(2)}"
+            else -> null
+        }
+    }
     return when (digits.length) {
         in 10..11 -> "55$digits"
         in 12..15 -> digits

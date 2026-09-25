@@ -4,6 +4,7 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.app.platform.PeriodPreset
+import com.threedreport.app.platform.periodEndEpochMillis
 import com.threedreport.app.platform.periodStartEpochMillis
 import com.threedreport.core.model.QuoteSummary
 import com.threedreport.core.model.SavedQuote
@@ -30,16 +31,12 @@ class DashboardViewModel(repository: QuoteHistoryRepository, settingsRepository:
         periodState.value = preset
     }
 
-    /** Função pura: agrega [savedQuotes] recortados por [period]. Chamada pela tela com os valores já coletados. */
-    fun summarize(savedQuotes: List<SavedQuote>, period: PeriodPreset): QuoteSummary {
-        val startEpochMillis = periodStartEpochMillis(period)
-        val filtered = if (startEpochMillis == null) {
-            savedQuotes
-        } else {
-            savedQuotes.filter { it.savedAtEpochMillis >= startEpochMillis }
-        }
-        return QuoteReport.summarize(filtered)
-    }
+    /**
+     * Função pura: agrega [savedQuotes] no [period]. Venda conta pela data em que foi fechada, e não pela
+     * data do orçamento (decisão 106): um orçamento de março aprovado em abril é venda de abril.
+     */
+    fun summarize(savedQuotes: List<SavedQuote>, period: PeriodPreset): QuoteSummary =
+        QuoteReport.summarize(savedQuotes, periodStartEpochMillis(period), periodEndEpochMillis(period))
 
     /**
      * Resumo do catálogo (decisão 103), mostrado quando não há vendas no período. Sem recorte de

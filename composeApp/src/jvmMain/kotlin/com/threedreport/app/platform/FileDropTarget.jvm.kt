@@ -17,7 +17,7 @@ import java.net.URI
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-actual fun Modifier.fileDropTarget(onDragActive: (Boolean) -> Unit, onDrop: (PickedFile) -> Unit): Modifier {
+actual fun Modifier.fileDropTarget(onDragActive: (Boolean) -> Unit, onDrop: (PickResult) -> Unit): Modifier {
     val currentOnDragActive by rememberUpdatedState(onDragActive)
     val currentOnDrop by rememberUpdatedState(onDrop)
 
@@ -30,7 +30,8 @@ actual fun Modifier.fileDropTarget(onDragActive: (Boolean) -> Unit, onDrop: (Pic
             override fun onDrop(event: DragAndDropEvent): Boolean {
                 currentOnDragActive(false)
                 val file = droppedFiles(event).firstOrNull() ?: return false
-                currentOnDrop(PickedFile(file.name, file.readBytes()))
+                val isGCode = file.extension.lowercase() in FileKind.GCODE.extensions
+                currentOnDrop(if (isGCode) DesktopPlatform.readPicked(file, FileKind.GCODE) else PickResult.Picked(PickedFile(file.name, ByteArray(0))))
                 return true
             }
         }

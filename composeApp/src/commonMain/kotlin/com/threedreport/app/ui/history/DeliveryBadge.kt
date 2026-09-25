@@ -45,7 +45,7 @@ fun DeliveryBadge(savedQuote: SavedQuote, todayEpochDay: Long, modifier: Modifie
             MaterialTheme.colorScheme.errorContainer,
             MaterialTheme.colorScheme.onErrorContainer,
         )
-        savedQuote.status == OrderStatus.ENTREGUE -> Triple(
+        savedQuote.status == OrderStatus.ENTREGUE || savedQuote.status == OrderStatus.CANCELADO -> Triple(
             "Prazo era $date",
             Color.Transparent,
             MaterialTheme.colorScheme.onSurfaceVariant,

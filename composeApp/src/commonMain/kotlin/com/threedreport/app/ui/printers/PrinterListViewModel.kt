@@ -4,9 +4,10 @@ import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.todayEpochDay
-import com.threedreport.app.ui.format.parseDecimal
-import com.threedreport.app.ui.format.toRequiredDouble
-import com.threedreport.app.ui.format.toRequiredInt
+import com.threedreport.app.ui.format.NumberKind
+import com.threedreport.app.ui.format.toRequiredNonNegative
+import com.threedreport.app.ui.format.toRequiredPositive
+import com.threedreport.app.ui.format.toRequiredPositiveInt
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.MaintenanceComponent
 import com.threedreport.core.model.MaintenanceLogEntry
@@ -47,15 +48,12 @@ class PrinterListViewModel(
     val form: StateFlow<PrinterFormState?> = formState.asStateFlow()
 
     fun startAdd() {
-        formState.value = PrinterFormState()
+        formState.value = PrinterFormState.new()
     }
 
     /** Abre o formulário de nova impressora já preenchido com um preset — ver [PrinterPreset]. */
     fun startAddFromPreset(preset: PrinterPreset) {
-        formState.value = PrinterFormState(
-            name = "${preset.brand} ${preset.model}",
-            printerPowerWattsText = preset.ratedPowerWatts.toString(),
-        )
+        formState.value = PrinterFormState.new(name = "${preset.brand} ${preset.model}", powerWatts = preset.ratedPowerWatts, fromPreset = true)
     }
 
     fun startEdit(printer: PrinterProfile) {
@@ -76,14 +74,16 @@ class PrinterListViewModel(
         val result = runCatching {
             PrinterProfile(
                 id = current.id ?: Uuid.random().toString(),
-                name = current.name.trim().ifEmpty { error("Nome não pode ser vazio") },
-                printerPowerWatts = current.printerPowerWattsText.toRequiredDouble("Consumo"),
-                maintenanceCostPerHour = current.maintenanceCostPerHourText.toRequiredDouble("Manutenção por hora"),
+                name = current.name.trim().ifEmpty { error("Dê um nome à impressora.") },
+                printerPowerWatts = current.printerPowerWattsText.toRequiredNonNegative("Consumo", NumberKind.MEASURE),
+                maintenanceCostPerHour = current.maintenanceCostPerHourText.toRequiredNonNegative("Manutenção por hora"),
                 machineInvestment = MachineInvestment(
-                    machinePrice = current.machinePriceText.toRequiredDouble("Valor da máquina"),
-                    paybackMonths = current.paybackMonthsText.toRequiredInt("Prazo de retorno"),
-                    printingDaysPerMonth = current.printingDaysPerMonthText.toRequiredInt("Dias de uso por mês"),
-                    printingHoursPerDay = current.printingHoursPerDayText.toRequiredDouble("Horas de uso por dia"),
+                    machinePrice = current.machinePriceText.toRequiredNonNegative("Valor da máquina"),
+                    paybackMonths = current.paybackMonthsText.toRequiredPositiveInt("Prazo de retorno"),
+                    printingDaysPerMonth = current.printingDaysPerMonthText.toRequiredPositiveInt("Dias de uso por mês")
+                        .also { if (it > 31) error("\"Dias de uso por mês\" vai até 31.") },
+                    printingHoursPerDay = current.printingHoursPerDayText.toRequiredPositive("Horas de uso por dia", NumberKind.MEASURE)
+                        .also { if (it > 24) error("\"Horas de uso por dia\" vai até 24.") },
                 ),
             )
         }
@@ -126,8 +126,7 @@ class PrinterListViewModel(
      */
     @OptIn(ExperimentalUuidApi::class)
     fun addComponent(printerId: String, name: String, intervalText: String, hoursSinceText: String): String? = runCatching {
-        val hoursSince = if (hoursSinceText.isBlank()) 0.0 else hoursSinceText.toRequiredDouble("Horas desde a última vez")
-        require(hoursSince >= 0) { "Horas desde a última vez não pode ser negativo" }
+        val hoursSince = if (hoursSinceText.isBlank()) 0.0 else hoursSinceText.toRequiredNonNegative("Horas desde a última vez", NumberKind.MEASURE)
         maintenanceRepository.addComponent(
             MaintenanceComponent(
                 id = Uuid.random().toString(),
@@ -180,8 +179,7 @@ class PrinterListViewModel(
     /** Lança horas de uso fora de orçamento, com a data de hoje. Devolve a mensagem de erro, ou `null`. */
     @OptIn(ExperimentalUuidApi::class)
     fun addManualUsage(printerId: String, hoursText: String, reason: String): String? = runCatching {
-        val hours = hoursText.toRequiredDouble("Horas")
-        require(hours > 0) { "Horas deve ser maior que zero" }
+        val hours = hoursText.toRequiredPositive("Horas", NumberKind.MEASURE)
         maintenanceRepository.addManualUsage(
             ManualUsageEntry(
                 id = Uuid.random().toString(),
@@ -196,8 +194,6 @@ class PrinterListViewModel(
     fun deleteManualUsage(id: String) = maintenanceRepository.deleteManualUsage(id)
 
     private fun parseInterval(text: String): Double {
-        val interval = parseDecimal(text) ?: error("Intervalo inválido")
-        require(interval > 0) { "O intervalo deve ser maior que zero" }
-        return interval
+        return text.toRequiredPositive("Intervalo", NumberKind.MEASURE)
     }
 }

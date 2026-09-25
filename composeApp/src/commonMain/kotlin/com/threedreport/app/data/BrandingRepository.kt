@@ -1,5 +1,6 @@
 package com.threedreport.app.data
 
+import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.core.model.BrandingSettings
 import kotlinx.coroutines.flow.StateFlow
@@ -13,24 +14,40 @@ sealed interface LogoChange {
 
 /**
  * Guarda a personalização do documento exportado ([BrandingSettings]): nome da marca, logo,
- * contato e as opções de apresentação do PDF.
+ * contato e as opções de apresentação do PDF. Começa sem marca (`brandName = null`).
  *
- * A implementação persiste em disco (ver `actual` na fonte de cada
- * plataforma), começando sem marca d'água (`brandName = null`). A logo
- * fica como arquivo à parte dentro da pasta de dados, então entra no backup
- * sem nenhum tratamento especial.
+ * A logo mora no [AttachmentStore], como os outros anexos, e [BrandingSettings.logoFileName] guarda a
+ * chave dela.
  */
-expect class BrandingRepository() {
+interface BrandingRepository {
     val branding: StateFlow<BrandingSettings>
 
     /**
      * Grava [branding]. [BrandingSettings.logoFileName] é ignorado aqui: quem decide a logo é
-     * [logo]. Com [LogoChange.Keep], mantém a logo atual; com [LogoChange.Replace], grava o arquivo
-     * novo **antes** de trocar a referência e só depois apaga o antigo, pra uma falha no meio nunca
-     * deixar a configuração apontando pra um arquivo que não existe.
+     * [logo]. Com [LogoChange.Keep], mantém a logo atual; com [LogoChange.Replace], guarda o arquivo
+     * novo antes de trocar a referência. O arquivo antigo não é apagado aqui (sai na limpeza de
+     * anexos sem uso, ao abrir o app).
      */
     fun update(branding: BrandingSettings, logo: LogoChange = LogoChange.Keep)
 
     /** Bytes da logo atual, ou `null` sem logo ou se o arquivo sumiu da pasta. */
     fun logoBytes(): ByteArray?
+}
+
+class StoredBrandingRepository(
+    private val document: DocumentValue<BrandingSettings>,
+    private val attachments: AttachmentStore,
+) : BrandingRepository {
+    override val branding: StateFlow<BrandingSettings> = document.value
+
+    override fun update(branding: BrandingSettings, logo: LogoChange) {
+        val logoKey = when (logo) {
+            LogoChange.Keep -> document.value.value.logoFileName
+            LogoChange.Remove -> null
+            is LogoChange.Replace -> attachments.put(logo.file.bytes, logo.file.fileName)
+        }
+        document.set(branding.copy(logoFileName = logoKey))
+    }
+
+    override fun logoBytes(): ByteArray? = document.value.value.logoFileName?.let(attachments::read)
 }

@@ -329,13 +329,11 @@ class QuotePdfExporterTest {
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
-        assertTrue(text.contains("60,20"))
-        assertTrue(text.contains("10 peças"))
+        // A conta das peças por extenso: quantidade × valor de cada = valor das peças.
+        assertTrue(text.contains("10 × R$ 6,02 = R$ 60,20"), text)
         assertTrue(text.contains("Pintura"))
         assertTrue(text.contains("150,00")) // 15,00 (por peça) × 10 = 150,00
-        assertTrue(text.contains("210,20")) // total: 60,20 (venda) + 150,00 (serviço)
-        // O preço por unidade sai do total que o cliente paga (210,20 / 10), igual à tela.
-        assertTrue(text.contains("21,02"))
+        assertTrue(text.contains("210,20")) // total: 60,20 (peças) + 150,00 (serviço)
     }
 
     @Test
@@ -442,12 +440,11 @@ class QuotePdfExporterTest {
     }
 
     @Test
-    fun pdfUsesTheGivenCurrencyInsteadOfBrl() {
+    fun pdfUsesTheCurrencyTheQuoteWasSavedIn() {
         val pdfBytes = renderSavedQuotesPdf(
-            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            listOf(QuoteExportItem(savedQuote.copy(currency = Currency.USD), photoBytes = null)),
             brandName = null,
             footerText = null,
-            currency = Currency.USD,
         )
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
@@ -457,12 +454,11 @@ class QuotePdfExporterTest {
     }
 
     @Test
-    fun catalogPdfUsesTheGivenCurrencyInsteadOfBrl() {
+    fun catalogPdfUsesTheCurrencyTheProductWasSavedIn() {
         val pdfBytes = renderCatalogPdf(
-            listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            listOf(QuoteExportItem(savedQuote.copy(currency = Currency.USD), photoBytes = null)),
             brandName = null,
             footerText = null,
-            currency = Currency.USD,
         )
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }

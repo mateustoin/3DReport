@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.services
 
+import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Service
 
 /**
@@ -18,6 +19,6 @@ data class ServiceFormState(
 internal fun Service.toFormState() = ServiceFormState(
     id = id,
     name = name,
-    priceText = suggestedPrice?.toString().orEmpty(),
+    priceText = suggestedPrice?.toInputText().orEmpty(),
     chargedPerOrder = chargedPerOrder,
 )

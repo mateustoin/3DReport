@@ -1,6 +1,8 @@
 package com.threedreport.app.ui.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,8 +46,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val savedQuotes by viewModel.savedQuotes.collectAsState()
     val period by viewModel.period.collectAsState()
     val settings by viewModel.settings.collectAsState()
-    val summary = viewModel.summarize(savedQuotes, period)
-    val catalog = viewModel.catalog(savedQuotes)
+    val summary = remember(savedQuotes, period) { viewModel.summarize(savedQuotes, period) }
+    val catalog = remember(savedQuotes) { viewModel.catalog(savedQuotes) }
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -53,7 +55,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     ) {
         Text("Dashboard", style = MaterialTheme.typography.titleLarge)
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             PeriodPreset.entries.forEach { preset ->
                 FilterChip(
                     selected = preset == period,

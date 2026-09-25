@@ -32,6 +32,19 @@ data class QuoteResult(
      * zero cobraria de menos sem ninguém perceber.
      */
     val missingServicePrice: Boolean = false,
+    /**
+     * Campos com valor que não dá pra usar (texto que não é número, negativo), pela chave de
+     * [QuoteFields]. Com qualquer um, não há [quote]: um valor inválido não vira zero nem 1 em silêncio.
+     */
+    val fieldErrors: Map<String, String> = emptyMap(),
+    /**
+     * Reabrindo um orçamento sem mexer em nada que muda o preço: [quote] é o cálculo congelado dele, e
+     * [todaysQuote] mostra quanto sairia com os custos de hoje (decisão 108).
+     */
+    val keepsOriginalPrice: Boolean = false,
+    val todaysQuote: Quote? = null,
+    /** Reabrindo um orçamento com alguma mudança de preço: o cálculo antigo, pra tela mostrar "era R$ X". */
+    val originalQuote: Quote? = null,
 ) {
     /**
      * Soma dos serviços escolhidos: os por peça multiplicam pela quantidade (10 unidades custam 10
@@ -44,4 +57,18 @@ data class QuoteResult(
     /** Valor de venda + serviços + frete — o que de fato será cobrado do cliente. */
     val grandTotal: Double?
         get() = quote?.let { it.salePrice + servicesTotal + shippingCost }
+}
+
+/** Chaves de [QuoteResult.fieldErrors]: um nome por campo, com a impressão e a linha quando é de uma delas. */
+object QuoteFields {
+    const val QUANTITY = "quantity"
+    const val LABOR = "labor"
+    const val SHIPPING = "shipping"
+    const val TARGET = "target"
+
+    fun printTime(printId: Int) = "time:$printId"
+
+    fun length(printId: Int, rowId: Int) = "length:$printId:$rowId"
+
+    fun service(serviceId: String) = "service:$serviceId"
 }

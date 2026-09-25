@@ -6,6 +6,31 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    // Os repositórios (data/) montam o formato dos arquivos em código comum (registro com metadados,
+    // documento), então o módulo gera serializadores próprios.
+    alias(libs.plugins.kotlinSerialization)
+}
+
+// A versão do app sai de `appVersion` em gradle.properties, a mesma do instalador: antes eram duas
+// fontes mantidas à mão (decisão 108).
+val generateAppVersion by tasks.registering {
+    val version = providers.gradleProperty("appVersion")
+    val outputDir = layout.buildDirectory.dir("generated/appVersion/commonMain/kotlin")
+    inputs.property("appVersion", version)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("com/threedreport/app/AppVersion.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            |package com.threedreport.app
+            |
+            |/** Versão do app, exibida no rodapé e na Ajuda. Gerada a partir de `appVersion` em gradle.properties. */
+            |const val APP_VERSION = "${version.get()}"
+            |
+            """.trimMargin(),
+        )
+    }
 }
 
 kotlin {
@@ -21,6 +46,9 @@ kotlin {
     jvm()
 
     sourceSets {
+        commonMain {
+            kotlin.srcDir(generateAppVersion)
+        }
         commonMain.dependencies {
             implementation(project(":core"))
             implementation(libs.compose.runtime)
@@ -28,15 +56,16 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
-            implementation(libs.kotlinx.serialization.json)
             implementation(libs.pdfbox)
         }
         jvmTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
@@ -49,7 +78,7 @@ compose.desktop {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = "3DReport"
             vendor = "Mateus Antonio da Silva"
-            // Lido de gradle.properties; mantenha com.threedreport.app.APP_VERSION em sincronia.
+            // Lido de gradle.properties, a mesma fonte do APP_VERSION do app (generateAppVersion).
             packageVersion = providers.gradleProperty("appVersion").get()
 
             // Ícone do app (cubo isométrico "em camadas" + bico de impressão,

@@ -1,16 +1,19 @@
 package com.threedreport.app.ui.history
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -25,15 +28,17 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,24 +46,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.PeriodPreset
-import com.threedreport.app.platform.decodeImageBitmap
-import com.threedreport.app.ui.components.IconLabel
-import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.formatDateTime
-import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
+import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.components.ShowNotice
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.filaments.displayText
-import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toWeightText
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.quote.DeliveryDateDialog
 import com.threedreport.app.ui.quote.PrintSettingsDialog
 import com.threedreport.app.ui.theme.progressColor
@@ -67,6 +72,7 @@ import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.pricing.RepriceResult
+import kotlinx.coroutines.delay
 
 private enum class HistoryViewMode { LIST, KANBAN }
 
@@ -86,13 +92,18 @@ fun QuoteHistoryScreen(
     val copiedId by viewModel.copiedId.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
     val filter by viewModel.filter.collectAsState()
-    var pendingDelete by remember { mutableStateOf<SavedQuote?>(null) }
     var viewMode by remember { mutableStateOf(HistoryViewMode.LIST) }
+    var showAllDelivered by remember { mutableStateOf(false) }
+    var printSettingsFor by remember { mutableStateOf<SavedQuote?>(null) }
     val pendingExport by viewModel.pendingExport.collectAsState()
     val deliveryDateEditing by viewModel.deliveryDateEditing.collectAsState()
+    val detailsEditing by viewModel.detailsEditing.collectAsState()
+    val repricing by viewModel.repricing.collectAsState()
+    val notice by viewModel.notice.collectAsState()
+    val busy by viewModel.busy.collectAsState()
+    val clients by viewModel.clients.collectAsState()
     val today = viewModel.currentEpochDay()
     val showingProducts = filter.kind == QuoteKind.PRODUCT
-    val repricing by viewModel.repricing.collectAsState()
     // Coletados pra o aviso "Custos mudaram" dos produtos acompanhar os cadastros na hora.
     val filaments by viewModel.filaments.collectAsState()
     val printers by viewModel.printers.collectAsState()
@@ -101,190 +112,169 @@ fun QuoteHistoryScreen(
     // Produto não tem andamento, então não tem Kanban: a lista de produtos é sempre lista.
     val effectiveViewMode = if (showingProducts) HistoryViewMode.LIST else viewMode
 
-    Column(
-        modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Histórico", style = MaterialTheme.typography.titleLarge)
+    // Recalculado quando a lista ou o filtro mudam, e não a cada redesenho (decisão 108).
+    val visibleQuotes = remember(savedQuotes, filter) { viewModel.visibleQuotes(savedQuotes, filter) }
+    val categories = remember(savedQuotes) { viewModel.productCategories(savedQuotes) }
+    val soldProductIds = remember(savedQuotes) { viewModel.soldProductIds(savedQuotes) }
+    val repriced = remember(savedQuotes, filaments, printers, settings, salesChannels) {
+        savedQuotes.filterNot { it.isOrder }.associate { it.id to viewModel.repriceFor(it, filaments, printers, settings, salesChannels) }
+    }
+    val selectedVisibleCount = visibleQuotes.count { it.id in selectedIds }
 
-        if (savedQuotes.isEmpty()) {
-            Text(
-                "Nada salvo ainda. Calcule uma peça na aba Orçamento e salve como pedido de cliente " +
-                    "ou como produto do catálogo.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        } else {
-            // Dois níveis (decisão 102): o segmentado escolhe o que ver, e "Exibir como", menor e
-            // recuado embaixo, é um jeito de ver os pedidos. Na mesma linha, Lista/Kanban pareciam
-            // uma terceira e quarta opção do mesmo nível que Pedidos e Produtos.
-            val orderCount = savedQuotes.count { it.isOrder }
-            SingleChoiceSegmentedButtonRow {
-                // Largura mínima: sem ela, o check que entra no segmento escolhido corta o texto.
-                SegmentedButton(
-                    modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
-                    selected = !showingProducts,
-                    onClick = { viewModel.setKindFilter(QuoteKind.ORDER) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                ) { Text("Pedidos ($orderCount)") }
-                SegmentedButton(
-                    modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
-                    selected = showingProducts,
-                    onClick = { viewModel.setKindFilter(QuoteKind.PRODUCT) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                ) { Text("Produtos (${savedQuotes.size - orderCount})") }
-            }
-            if (!showingProducts) {
-                Row(
-                    modifier = Modifier.padding(start = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Exibir como:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    FilterChip(
-                        selected = viewMode == HistoryViewMode.LIST,
-                        onClick = { viewMode = HistoryViewMode.LIST },
-                        label = { IconLabel(AppIcons.ViewList, "Lista") },
-                    )
-                    FilterChip(
-                        selected = viewMode == HistoryViewMode.KANBAN,
-                        onClick = { viewMode = HistoryViewMode.KANBAN },
-                        label = { IconLabel(AppIcons.ViewKanban, "Kanban") },
-                    )
-                }
-            }
-
-            if (showingProducts) {
-                Text(
-                    "Produtos são as peças que você oferece, com preço, sem cliente nem andamento. Quando " +
-                        "alguém comprar, clique em \"Vender\" pra criar o pedido. \"Exportar catálogo\" leva " +
-                        "todos os produtos da lista, ou só os que você marcar.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            } else if (viewMode == HistoryViewMode.LIST) {
-                Text(
-                    "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            } else {
-                Text(
-                    "Arraste um card pra outra coluna pra mudar o status (ou use o menu \"Ações\" do card).",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            // No Kanban, o status já é a própria organização em colunas — filtrar por status ali
-            // deixaria as outras colunas vazias sem explicação, então esse filtro some nesse modo.
-            // Produto também não tem status pra filtrar.
-            HistoryFilterBar(
-                filter = filter,
-                viewModel = viewModel,
-                showStatusFilter = effectiveViewMode == HistoryViewMode.LIST && !showingProducts,
-                categories = if (showingProducts) viewModel.productCategories(savedQuotes) else emptyList(),
-                hasUncategorized = savedQuotes.any { !it.isOrder && it.category == null },
-            )
-        }
-
-        if (effectiveViewMode == HistoryViewMode.LIST) {
-            val visibleQuotes = viewModel.visibleQuotes(savedQuotes, filter)
-
-            if (selectedIds.isNotEmpty()) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("${selectedIds.size} selecionado(s)", style = MaterialTheme.typography.bodyMedium)
-                    Button(onClick = viewModel::exportSelectedPdf) { IconLabel(AppIcons.PictureAsPdf, "Exportar selecionados (PDF)") }
-                    Button(onClick = viewModel::exportCatalogPdf) { IconLabel(AppIcons.GridView, "Exportar catálogo (PDF)") }
-                    TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
-                }
-            } else if (showingProducts && visibleQuotes.isNotEmpty()) {
-                Button(onClick = viewModel::exportCatalogPdf) {
-                    IconLabel(
-                        AppIcons.GridView,
-                        if (visibleQuotes.size == 1) "Exportar catálogo com 1 produto (PDF)" else "Exportar catálogo com os ${visibleQuotes.size} produtos (PDF)",
-                    )
-                }
-            }
-
-            if (savedQuotes.isNotEmpty() && visibleQuotes.isEmpty()) {
-                val hasAnyOfThisKind = savedQuotes.any { it.kind == filter.kind }
-                EmptyState(
-                    when {
-                        hasAnyOfThisKind && showingProducts -> "Nenhum produto encontrado com esse filtro."
-                        hasAnyOfThisKind -> "Nenhum orçamento encontrado com esse filtro."
-                        showingProducts -> "Nenhum produto no catálogo ainda. Na aba Orçamento, escolha " +
-                            "\"Produto do catálogo\" antes de salvar, ou use \"Guardar no catálogo\" no menu " +
-                            "\"Ações\" de um pedido."
-                        else -> "Nenhum pedido ainda. Na aba Orçamento, escolha \"Pedido de cliente\" antes de " +
-                            "salvar, ou clique em \"Vender\" num produto."
-                    },
-                )
-            }
-
-            visibleQuotes.forEach { savedQuote ->
-                SavedQuoteRow(
-                    savedQuote = savedQuote,
-                    photoBytes = savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) },
-                    justCopied = copiedId == savedQuote.id,
-                    selected = savedQuote.id in selectedIds,
-                    onToggleSelected = { viewModel.toggleSelection(savedQuote.id) },
-                    onDownloadPhoto = { viewModel.downloadPhoto(savedQuote) },
-                    onDownloadStl = { viewModel.downloadStl(savedQuote) },
-                    onExportPdf = { viewModel.exportPdf(savedQuote) },
-                    onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
-                    onEdit = { onEditQuote(savedQuote) },
-                    onDuplicate = { onDuplicateQuote(savedQuote) },
-                    onSell = { onSellProduct(savedQuote) },
-                    onCopyToCatalog = { onCopyToCatalog(savedQuote) },
-                    onConvertToOrder = if (viewModel.canConvertToOrder(savedQuote, savedQuotes)) {
-                        { viewModel.convertToOrder(savedQuote.id) }
-                    } else {
-                        null
-                    },
-                    onDelete = { pendingDelete = savedQuote },
-                    repriceResult = if (savedQuote.isOrder) {
-                        null
-                    } else {
-                        viewModel.repriceFor(savedQuote, filaments, printers, settings, salesChannels)
-                    },
-                    onReprice = { viewModel.startRepricing(savedQuote) },
-                    onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
-                    onUpdatePrintSettings = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
-                    onOpenWhatsApp = { viewModel.openInWhatsApp(savedQuote) },
-                    onSaveImage = { viewModel.saveShareableImage(savedQuote) },
-                    todayEpochDay = today,
-                    onEditDeliveryDate = { viewModel.startEditingDeliveryDate(savedQuote) },
-                )
-            }
-        } else if (savedQuotes.isNotEmpty()) {
-            val kanbanQuotes = viewModel.visibleQuotes(savedQuotes, filter.copy(status = null))
-            KanbanBoard(
-                quotes = kanbanQuotes,
-                photoBytesFor = { savedQuote -> savedQuote.photoFileName?.let { viewModel.photoBytes(savedQuote) } },
-                onStatusChange = viewModel::updateStatus,
-                onEdit = onEditQuote,
-                onDuplicate = onDuplicateQuote,
-                onCopyToCatalog = onCopyToCatalog,
-                onDelete = { pendingDelete = it },
-                onUpdatePrintSettings = { savedQuote, settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
-                todayEpochDay = today,
-                onEditDeliveryDate = viewModel::startEditingDeliveryDate,
-            )
-        }
+    // A categoria escolhida sumiu (o último produto dela foi excluído ou mudou de categoria): volta pra
+    // "Todas", senão a lista ficaria vazia com um filtro que nem aparece mais nos chips.
+    LaunchedEffect(categories, filter.category) {
+        val chosen = filter.category as? CategoryFilter.Named ?: return@LaunchedEffect
+        if (categories.none { it.equals(chosen.name, ignoreCase = true) }) viewModel.setCategoryFilter(CategoryFilter.All)
+    }
+    LaunchedEffect(copiedId) {
+        if (copiedId == null) return@LaunchedEffect
+        delay(2000)
+        viewModel.clearCopied()
     }
 
-    pendingDelete?.let { savedQuote ->
-        ConfirmDialog(
-            title = if (savedQuote.isOrder) "Excluir orçamento?" else "Excluir produto?",
-            message = if (savedQuote.isOrder) {
-                "\"${savedQuote.name}\" será removido do histórico, junto com a foto e o STL salvos (se houver). Essa ação não pode ser desfeita."
-            } else {
-                "\"${savedQuote.name}\" será removido do catálogo, junto com a foto e o STL salvos (se houver). " +
-                    "Pedidos já vendidos a partir dele não mudam. Essa ação não pode ser desfeita."
-            },
-            onConfirm = {
-                viewModel.delete(savedQuote.id)
-                pendingDelete = null
-            },
-            onDismiss = { pendingDelete = null },
+    fun actionsFor(savedQuote: SavedQuote): QuoteActions {
+        val isProduct = !savedQuote.isOrder
+        return QuoteActions(
+            onEdit = { onEditQuote(savedQuote) },
+            onEditDetails = { viewModel.startEditingDetails(savedQuote) },
+            onDuplicate = { onDuplicateQuote(savedQuote) },
+            onSell = if (isProduct) ({ onSellProduct(savedQuote) }) else null,
+            onCopyToCatalog = if (isProduct) null else ({ onCopyToCatalog(savedQuote) }),
+            onConvertToOrder = if (viewModel.canConvertToOrder(savedQuote, soldProductIds)) ({ viewModel.convertToOrder(savedQuote.id) }) else null,
+            onReprice = (repriced[savedQuote.id] as? RepriceResult.Repriced)?.takeIf { it.changed }?.let { { viewModel.startRepricing(savedQuote) } },
+            onStatusChange = if (isProduct) null else ({ status -> viewModel.updateStatus(savedQuote.id, status) }),
+            onEditDeliveryDate = if (isProduct) null else ({ viewModel.startEditingDeliveryDate(savedQuote) }),
+            onPrintSettings = { printSettingsFor = savedQuote },
+            onDownloadPhoto = savedQuote.photoFileName?.let { { viewModel.downloadPhoto(savedQuote) } },
+            onDownloadStl = savedQuote.stlFileName?.let { { viewModel.downloadStl(savedQuote) } },
+            onExportPdf = { viewModel.exportPdf(savedQuote) },
+            onCopy = { viewModel.copyQuoteToClipboard(savedQuote) },
+            onOpenWhatsApp = { viewModel.openInWhatsApp(savedQuote) },
+            onSaveImage = { viewModel.saveShareableImage(savedQuote) },
+            onDelete = { viewModel.delete(savedQuote.id) },
         )
+    }
+
+    val header: @Composable () -> Unit = {
+        HistoryHeader(
+            viewModel = viewModel,
+            savedQuotes = savedQuotes,
+            filter = filter,
+            showingProducts = showingProducts,
+            viewMode = viewMode,
+            onViewModeChange = { viewMode = it },
+            categories = if (showingProducts) categories else emptyList(),
+            effectiveViewMode = effectiveViewMode,
+        )
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        busy?.let { message ->
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Text(message, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            if (effectiveViewMode == HistoryViewMode.LIST) {
+                // Lista preguiçosa: só os cards visíveis são montados, e cada um só carrega a própria
+                // miniatura. Com algumas centenas de pedidos com foto, a lista antiga travava a cada tecla.
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item(key = "header") { header() }
+                    if (showingProducts && visibleQuotes.isNotEmpty() && selectedIds.isEmpty()) {
+                        item(key = "catalog") {
+                            Button(onClick = viewModel::exportCatalogPdf, enabled = busy == null) {
+                                IconLabel(
+                                    AppIcons.GridView,
+                                    if (visibleQuotes.size == 1) "Exportar catálogo com 1 produto (PDF)" else "Exportar catálogo com os ${visibleQuotes.size} produtos (PDF)",
+                                )
+                            }
+                        }
+                    }
+                    if (savedQuotes.isNotEmpty() && visibleQuotes.isEmpty()) {
+                        item(key = "empty") { EmptyHistory(savedQuotes, filter, showingProducts) }
+                    }
+                    items(visibleQuotes, key = { it.id }) { savedQuote ->
+                        SavedQuoteRow(
+                            savedQuote = savedQuote,
+                            loadThumbnail = viewModel::photoThumbnail,
+                            justCopied = copiedId == savedQuote.id,
+                            selected = savedQuote.id in selectedIds,
+                            onToggleSelected = { viewModel.toggleSelection(savedQuote.id) },
+                            actions = actionsFor(savedQuote),
+                            repriceResult = repriced[savedQuote.id],
+                            todayEpochDay = today,
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    header()
+                    val nowMillis = remember(savedQuotes) { viewModel.nowMillis() }
+                    val kanbanQuotes = remember(savedQuotes, filter, showAllDelivered) {
+                        viewModel.kanbanQuotes(savedQuotes, filter, showAllDelivered, nowMillis)
+                    }
+                    val hiddenDelivered = remember(savedQuotes, filter, kanbanQuotes) {
+                        viewModel.kanbanQuotes(savedQuotes, filter, true, nowMillis).count { it.status == OrderStatus.ENTREGUE } -
+                            kanbanQuotes.count { it.status == OrderStatus.ENTREGUE }
+                    }
+                    KanbanBoard(
+                        quotes = kanbanQuotes,
+                        loadThumbnail = viewModel::photoThumbnail,
+                        onStatusChange = viewModel::updateStatus,
+                        actionsFor = ::actionsFor,
+                        todayEpochDay = today,
+                        deliveredFooter = {
+                            when {
+                                hiddenDelivered > 0 -> TextButton(onClick = { showAllDelivered = true }) {
+                                    Text("Ver mais $hiddenDelivered entregues (mais de ${QuoteHistoryViewModel.RECENT_DELIVERED_DAYS} dias)")
+                                }
+                                showAllDelivered -> TextButton(onClick = { showAllDelivered = false }) {
+                                    Text("Mostrar só os últimos ${QuoteHistoryViewModel.RECENT_DELIVERED_DAYS} dias")
+                                }
+                            }
+                        },
+                    )
+                    val cancelled = savedQuotes.count { it.isOrder && it.status == OrderStatus.CANCELADO }
+                    if (cancelled > 0) {
+                        Text(
+                            "$cancelled cancelado(s) ficam fora do quadro. Na lista, filtre pelo status Cancelado pra ver.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+
+        // Barra de seleção fixa no rodapé: com a lista rolada, os botões de exportar continuavam
+        // lá em cima, fora da vista.
+        if (effectiveViewMode == HistoryViewMode.LIST && selectedVisibleCount > 0) {
+            HorizontalDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)).padding(horizontal = 24.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    if (selectedVisibleCount == 1) "1 selecionado" else "$selectedVisibleCount selecionados",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                if (showingProducts) {
+                    Button(onClick = viewModel::exportCatalogPdf, enabled = busy == null) { IconLabel(AppIcons.GridView, "Exportar catálogo (PDF)") }
+                } else {
+                    Button(onClick = viewModel::exportSelectedPdf, enabled = busy == null) { IconLabel(AppIcons.PictureAsPdf, "Exportar selecionados (PDF)") }
+                }
+                TextButton(onClick = viewModel::clearSelection) { Text("Cancelar seleção") }
+            }
+        }
     }
 
     deliveryDateEditing?.let { savedQuote ->
@@ -296,9 +286,121 @@ fun QuoteHistoryScreen(
         )
     }
 
+    detailsEditing?.let { savedQuote -> QuoteDetailsDialog(savedQuote, viewModel, clients) }
+
+    printSettingsFor?.let { savedQuote ->
+        PrintSettingsDialog(
+            initial = savedQuote.printSettings ?: PrintSettings(),
+            onDismiss = { printSettingsFor = null },
+            onSave = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings.takeUnless { it.isEmpty }) },
+        )
+    }
+
     pendingExport?.let { pending -> OverdueExportDialog(pending, today, viewModel) }
 
     repricing?.let { RepriceDialog(it, viewModel) }
+
+    ShowNotice(notice, viewModel::consumeNotice)
+}
+
+@Composable
+private fun HistoryHeader(
+    viewModel: QuoteHistoryViewModel,
+    savedQuotes: List<SavedQuote>,
+    filter: HistoryFilter,
+    showingProducts: Boolean,
+    viewMode: HistoryViewMode,
+    onViewModeChange: (HistoryViewMode) -> Unit,
+    categories: List<String>,
+    effectiveViewMode: HistoryViewMode,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Histórico", style = MaterialTheme.typography.titleLarge)
+
+        if (savedQuotes.isEmpty()) {
+            Text(
+                "Nada salvo ainda. Calcule uma peça na aba Orçamento e salve como pedido de cliente " +
+                    "ou como produto do catálogo.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            return@Column
+        }
+
+        // Dois níveis (decisão 102): o segmentado escolhe o que ver, e "Exibir como", menor e
+        // recuado embaixo, é um jeito de ver os pedidos.
+        val orderCount = savedQuotes.count { it.isOrder }
+        SingleChoiceSegmentedButtonRow {
+            // Largura mínima: sem ela, o check que entra no segmento escolhido corta o texto.
+            SegmentedButton(
+                modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
+                selected = !showingProducts,
+                onClick = { viewModel.setKindFilter(QuoteKind.ORDER) },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+            ) { Text("Pedidos ($orderCount)") }
+            SegmentedButton(
+                modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
+                selected = showingProducts,
+                onClick = { viewModel.setKindFilter(QuoteKind.PRODUCT) },
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+            ) { Text("Produtos (${savedQuotes.size - orderCount})") }
+        }
+        if (!showingProducts) {
+            Row(
+                modifier = Modifier.padding(start = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Exibir como:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FilterChip(
+                    selected = viewMode == HistoryViewMode.LIST,
+                    onClick = { onViewModeChange(HistoryViewMode.LIST) },
+                    label = { IconLabel(AppIcons.ViewList, "Lista") },
+                )
+                FilterChip(
+                    selected = viewMode == HistoryViewMode.KANBAN,
+                    onClick = { onViewModeChange(HistoryViewMode.KANBAN) },
+                    label = { IconLabel(AppIcons.ViewKanban, "Kanban") },
+                )
+            }
+        }
+
+        Text(
+            when {
+                showingProducts -> "Produtos são as peças que você oferece, com preço, sem cliente nem andamento. Quando " +
+                    "alguém comprar, clique em \"Vender\" pra criar o pedido."
+                viewMode == HistoryViewMode.LIST -> "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só."
+                else -> "Arraste um card pra outra coluna pra mudar o status, ou use \"Ações\" › \"Mover para\"."
+            },
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        // No Kanban, o status já é a própria organização em colunas, e o período não esconde pedido em
+        // andamento; os dois filtros somem nesse modo. Produto também não tem status pra filtrar.
+        HistoryFilterBar(
+            filter = filter,
+            viewModel = viewModel,
+            showStatusFilter = effectiveViewMode == HistoryViewMode.LIST && !showingProducts,
+            showPeriodFilter = effectiveViewMode == HistoryViewMode.LIST,
+            categories = categories,
+            hasUncategorized = savedQuotes.any { !it.isOrder && it.category == null },
+        )
+    }
+}
+
+@Composable
+private fun EmptyHistory(savedQuotes: List<SavedQuote>, filter: HistoryFilter, showingProducts: Boolean) {
+    val hasAnyOfThisKind = savedQuotes.any { it.kind == filter.kind }
+    EmptyState(
+        when {
+            hasAnyOfThisKind && showingProducts -> "Nenhum produto encontrado com esse filtro."
+            hasAnyOfThisKind -> "Nenhum pedido encontrado com esse filtro."
+            showingProducts -> "Nenhum produto no catálogo ainda. Na aba Orçamento, escolha " +
+                "\"Produto do catálogo\" antes de salvar, ou use \"Guardar no catálogo\" no menu " +
+                "\"Ações\" de um pedido."
+            else -> "Nenhum pedido ainda. Na aba Orçamento, escolha \"Pedido de cliente\" antes de " +
+                "salvar, ou clique em \"Vender\" num produto."
+        },
+    )
 }
 
 /**
@@ -306,14 +408,13 @@ fun QuoteHistoryScreen(
  * quando há o que fazer: preço antigo com custos iguais continua certo e não gera aviso.
  */
 @Composable
-private fun RepriceNotice(result: RepriceResult, onReprice: () -> Unit) {
+private fun RepriceNotice(result: RepriceResult, currencyText: (Double) -> String, onReprice: () -> Unit) {
     when (result) {
         is RepriceResult.Repriced -> if (result.changed) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Custos mudaram: hoje o preço calculado seria ${(result.quote.tableSalePrice ?: result.quote.salePrice).toMoney()}.",
+                    "Custos mudaram: hoje o preço calculado seria ${currencyText(result.quote.tableSalePrice ?: result.quote.salePrice)}.",
                     style = MaterialTheme.typography.bodySmall,
-                    // Âmbar da paleta (o app não define `tertiary`, que cairia no roxo padrão do M3).
                     color = MaterialTheme.colorScheme.secondary,
                 )
                 TextButton(onClick = onReprice) { IconLabel(AppIcons.Sync, "Atualizar preço") }
@@ -326,7 +427,7 @@ private fun RepriceNotice(result: RepriceResult, onReprice: () -> Unit) {
                     ?: "Este produto não guardou a impressora"
                 RepriceResult.Reason.CHANNEL_MISSING -> "O canal ${result.missingName.orEmpty()} não está mais cadastrado"
                 RepriceResult.Reason.INVALID -> "Não deu pra recalcular com os cadastros de hoje"
-            } + ": abra em Editar pra escolher de novo e conferir o preço.",
+            } + ": abra em \"Editar cálculo\" pra escolher de novo e conferir o preço.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -338,6 +439,8 @@ private fun RepriceNotice(result: RepriceResult, onReprice: () -> Unit) {
 private fun RepriceDialog(repricing: Repricing, viewModel: QuoteHistoryViewModel) {
     val before = repricing.product.quote
     val after = repricing.newQuote
+    val currency = repricing.product.currency
+    val money: (Double) -> String = { it.toCurrencyText(currency) }
     AlertDialog(
         onDismissRequest = viewModel::cancelRepricing,
         title = { Text("Atualizar o preço de \"${repricing.product.name}\"") },
@@ -348,19 +451,19 @@ private fun RepriceDialog(repricing: Repricing, viewModel: QuoteHistoryViewModel
                         "medidas da peça.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                BeforeAfterLine("Preço calculado", before.tableSalePrice ?: before.salePrice, after.tableSalePrice ?: after.salePrice)
-                BeforeAfterLine("Custo de produção", before.productionCost, after.productionCost)
-                BeforeAfterLine("Lucro", before.profit, after.profit)
+                BeforeAfterLine("Preço calculado", money(before.tableSalePrice ?: before.salePrice), money(after.tableSalePrice ?: after.salePrice))
+                BeforeAfterLine("Custo de produção", money(before.productionCost), money(after.productionCost))
+                BeforeAfterLine("Lucro", money(before.profit), money(after.profit))
                 if (after.isNegotiated) {
                     Text(
-                        "Preço anunciado: ${after.salePrice.toMoney()} (mantido). Pra mudar, abra o produto em Editar.",
+                        "Preço anunciado: ${money(after.salePrice)} (mantido). Pra mudar, abra o produto em \"Editar cálculo\".",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
                 if (after.profit < 0) {
                     Text(
-                        "Com os custos de hoje, o preço anunciado dá prejuízo de ${(-after.profit).toMoney()}. " +
-                            "O mínimo pra não sair no negativo é ${after.breakEvenSalePrice.toMoney()}.",
+                        "Com os custos de hoje, o preço anunciado dá prejuízo de ${money(-after.profit)}. " +
+                            "O mínimo pra não sair no negativo é ${money(after.breakEvenSalePrice)}.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -373,13 +476,10 @@ private fun RepriceDialog(repricing: Repricing, viewModel: QuoteHistoryViewModel
 }
 
 @Composable
-private fun BeforeAfterLine(label: String, before: Double, after: Double) {
+private fun BeforeAfterLine(label: String, before: String, after: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(
-            "${before.toMoney()} → ${after.toMoney()}",
-            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-        )
+        Text("$before → $after", style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace))
     }
 }
 
@@ -424,9 +524,10 @@ private fun OverdueExportDialog(pending: PendingExport, todayEpochDay: Long, vie
 private fun HistoryFilterBar(
     filter: HistoryFilter,
     viewModel: QuoteHistoryViewModel,
-    showStatusFilter: Boolean = true,
-    categories: List<String> = emptyList(),
-    hasUncategorized: Boolean = false,
+    showStatusFilter: Boolean,
+    showPeriodFilter: Boolean,
+    categories: List<String>,
+    hasUncategorized: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -434,16 +535,19 @@ private fun HistoryFilterBar(
             value = filter.query,
             onValueChange = viewModel::setSearchQuery,
             // Produto não tem cliente, então a busca dele é só pelo nome.
-            label = { Text(if (filter.kind == QuoteKind.PRODUCT) "Buscar por nome" else "Buscar por nome ou cliente") },
+            label = { Text(if (filter.kind == QuoteKind.PRODUCT) "Buscar por nome" else "Buscar por nome, cliente ou número") },
+            singleLine = true,
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PeriodPreset.entries.forEach { preset ->
-                FilterChip(
-                    selected = preset == filter.period,
-                    onClick = { viewModel.setPeriodFilter(preset) },
-                    label = { Text(preset.label) },
-                )
+        if (showPeriodFilter) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                PeriodPreset.entries.forEach { preset ->
+                    FilterChip(
+                        selected = preset == filter.period,
+                        onClick = { viewModel.setPeriodFilter(preset) },
+                        label = { Text(preset.label) },
+                    )
+                }
             }
         }
 
@@ -493,6 +597,7 @@ private fun StatusFilterDropdown(selected: OrderStatus?, onSelect: (OrderStatus?
             onValueChange = {},
             label = { Text("Status") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os status") }, onClick = { onSelect(null); expanded = false })
@@ -503,12 +608,11 @@ private fun StatusFilterDropdown(selected: OrderStatus?, onSelect: (OrderStatus?
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StatusDropdown(status: OrderStatus, onStatusChange: (OrderStatus) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
 
-    Column {
+    Box {
         TextButton(onClick = { expanded = true }) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(modifier = Modifier.size(8.dp).background(status.progressColor(), CircleShape))
@@ -537,47 +641,36 @@ private fun StatusDropdown(status: OrderStatus, onStatusChange: (OrderStatus) ->
 @Composable
 private fun SavedQuoteRow(
     savedQuote: SavedQuote,
-    photoBytes: ByteArray?,
+    loadThumbnail: (SavedQuote) -> ByteArray?,
     justCopied: Boolean,
     selected: Boolean,
     onToggleSelected: () -> Unit,
-    onDownloadPhoto: () -> Unit,
-    onDownloadStl: () -> Unit,
-    onExportPdf: () -> Unit,
-    onCopy: () -> Unit,
-    onEdit: () -> Unit,
-    onDuplicate: () -> Unit,
-    onSell: () -> Unit,
-    onCopyToCatalog: () -> Unit,
-    onConvertToOrder: (() -> Unit)?,
-    onDelete: () -> Unit,
+    actions: QuoteActions,
     repriceResult: RepriceResult?,
-    onReprice: () -> Unit,
-    onStatusChange: (OrderStatus) -> Unit,
-    onUpdatePrintSettings: (PrintSettings?) -> Unit,
-    onOpenWhatsApp: () -> Unit,
-    onSaveImage: () -> Unit,
     todayEpochDay: Long,
-    onEditDeliveryDate: () -> Unit,
 ) {
-    var showPrintSettingsDialog by remember { mutableStateOf(false) }
-    var showMenu by remember { mutableStateOf(false) }
     val isProduct = !savedQuote.isOrder
+    val currency = savedQuote.currency
+    val money: (Double) -> String = { it.toCurrencyText(currency) }
+    val quote = savedQuote.quote
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Checkbox(checked = selected, onCheckedChange = { onToggleSelected() })
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onToggleSelected() },
+                modifier = Modifier.semantics { contentDescription = "Selecionar \"${savedQuote.name}\"" },
+            )
 
-            if (photoBytes != null) {
-                Image(
-                    bitmap = decodeImageBitmap(photoBytes),
-                    contentDescription = savedQuote.name,
-                    modifier = Modifier.size(72.dp),
-                )
-            }
+            PhotoThumbnail(savedQuote, size = 72.dp, load = loadThumbnail)
 
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(savedQuote.name, style = MaterialTheme.typography.titleMedium)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(savedQuote.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                    savedQuote.displayNumber?.takeIf { savedQuote.isOrder }?.let {
+                        Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(formatDateTime(savedQuote.savedAtEpochMillis), style = MaterialTheme.typography.bodySmall)
                     savedQuote.lastEditedEpochMillis?.let { editedAt ->
@@ -588,68 +681,56 @@ private fun SavedQuoteRow(
                         )
                     }
                 }
+                // O valor em destaque é o que o cliente paga, o mesmo do Kanban, do PDF e da mensagem.
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumericText(money(savedQuote.totalWithServices), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    if (quote.quantity > 1) {
+                        Text("${quote.quantity} peças · ${money(quote.unitSalePrice)} cada", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
                 Text(
-                    buildAnnotatedString {
-                        append("Peso: ")
-                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.filamentWeightGrams.toWeightText()) }
-                        append(" · Produção: ")
-                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.productionCost.toMoney()) }
-                        append(" · Venda: ")
-                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.salePrice.toMoney()) }
-                        savedQuote.quote.tableSalePrice?.let { tablePrice ->
-                            append(
+                    buildList {
+                        add("Produção ${money(quote.productionCost)}")
+                        add("Lucro ${money(quote.profit)}")
+                        add("Peso ${quote.filamentWeightGrams.toWeightText()}")
+                        quote.tableSalePrice?.let { tablePrice ->
+                            add(
                                 when {
-                                    isProduct -> " · Anunciado (calculado "
-                                    savedQuote.soldAtCatalogPrice -> " · Preço do catálogo (calculado "
-                                    savedQuote.quote.negotiatedDiscount < 0 -> " · Acima da tabela ("
-                                    else -> " · Negociado (tabela "
+                                    isProduct -> "Anunciado (calculado ${money(tablePrice)})"
+                                    savedQuote.soldAtCatalogPrice -> "Preço do catálogo (calculado ${money(tablePrice)})"
+                                    quote.negotiatedDiscount < 0 -> "Acima da tabela (${money(tablePrice)})"
+                                    else -> "Negociado (tabela ${money(tablePrice)})"
                                 },
                             )
-                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(tablePrice.toMoney()) }
-                            append(")")
                         }
-                        append(" · Lucro: ")
-                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.profit.toMoney()) }
-                        if (savedQuote.quote.quantity > 1) {
-                            append(" · Quantidade: ")
-                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append("${savedQuote.quote.quantity}") }
-                            append(" (")
-                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.unitSalePrice.toMoney()) }
-                            append(" cada)")
-                        }
-                        savedQuote.quote.channelName?.let { channelName ->
-                            append(" · Canal: ")
-                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(channelName) }
-                        }
-                        if (savedQuote.shippingCost > 0) {
-                            append(" · Frete: ")
-                            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.shippingCost.toMoney()) }
-                        }
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
+                        quote.channelName?.let { add("Canal $it") }
+                        if (savedQuote.shippingCost > 0) add("Frete ${money(savedQuote.shippingCost)}")
+                    }.joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 savedQuote.category?.let { category ->
                     Text("Categoria: $category", style = MaterialTheme.typography.bodySmall)
                 }
-                repriceResult?.let { RepriceNotice(it, onReprice) }
+                repriceResult?.let { result -> RepriceNotice(result, money) { actions.onReprice?.invoke() } }
                 savedQuote.sourceLink?.let { link ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Link interno (não exportado):", style = MaterialTheme.typography.bodySmall)
+                        Text("Link interno:", style = MaterialTheme.typography.bodySmall)
                         LinkText(text = link, url = link)
                     }
                 }
                 savedQuote.client?.let { client ->
                     Text(
-                        "Cliente (uso interno): ${client.name}" + (client.contact?.let { " · $it" } ?: ""),
+                        "Cliente: ${client.name}" + (client.contact?.let { " · $it" } ?: ""),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
                 // Peça multicolor mostra o consumo de cada filamento, que é o que se confere no estoque.
-                val filamentTotals = savedQuote.quote.filamentTotals()
+                val filamentTotals = quote.filamentTotals()
                 if (filamentTotals.size > 1) {
                     Text("Filamentos: ${filamentTotals.joinToString(", ") { it.displayText() }}", style = MaterialTheme.typography.bodySmall)
                 } else {
-                    filamentTotals.single().color?.let { color ->
+                    filamentTotals.singleOrNull()?.color?.let { color ->
                         Text("Cor: ${color.displayLabel()}", style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -659,7 +740,7 @@ private fun SavedQuoteRow(
                     Text("Produto do catálogo", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        StatusDropdown(status = savedQuote.status, onStatusChange = onStatusChange)
+                        actions.onStatusChange?.let { StatusDropdown(status = savedQuote.status, onStatusChange = it) }
                         DeliveryBadge(savedQuote, todayEpochDay)
                     }
                 }
@@ -667,80 +748,13 @@ private fun SavedQuoteRow(
                 // FlowRow: com o "Vender" do produto, os botões não cabem numa linha em janela estreita.
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
                     // Vender é a ação principal do produto: um clique a partir do card.
-                    if (isProduct) {
-                        Button(onClick = onSell) { IconLabel(AppIcons.Sell, "Vender") }
-                    }
-                    TextButton(onClick = onExportPdf) { IconLabel(AppIcons.PictureAsPdf, "Exportar PDF") }
-                    TextButton(onClick = onCopy) { IconLabel(AppIcons.ContentCopy, if (justCopied) "Copiado!" else "Copiar") }
-                    TextButton(onClick = onEdit) { IconLabel(AppIcons.Edit, "Editar") }
-                    Box {
-                        TextButton(onClick = { showMenu = true }) { IconLabel(AppIcons.MoreVert, "Ações") }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(text = { Text("Duplicar") }, leadingIcon = { Icon(AppIcons.FileCopy, contentDescription = null) }, onClick = { showMenu = false; onDuplicate() })
-                            if (isProduct) {
-                                DropdownMenuItem(
-                                    text = { Text("Atualizar preço") },
-                                    leadingIcon = { Icon(AppIcons.Sync, contentDescription = null) },
-                                    enabled = repriceResult is RepriceResult.Repriced,
-                                    onClick = { showMenu = false; onReprice() },
-                                )
-                                onConvertToOrder?.let { convert ->
-                                    DropdownMenuItem(
-                                        text = { Text("Transformar em pedido") },
-                                        leadingIcon = { Icon(AppIcons.RequestQuote, contentDescription = null) },
-                                        onClick = { showMenu = false; convert() },
-                                    )
-                                }
-                            } else {
-                                DropdownMenuItem(
-                                    text = { Text("Guardar no catálogo") },
-                                    leadingIcon = { Icon(AppIcons.Storefront, contentDescription = null) },
-                                    onClick = { showMenu = false; onCopyToCatalog() },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
-                                    leadingIcon = { Icon(AppIcons.Event, contentDescription = null) },
-                                    onClick = { showMenu = false; onEditDeliveryDate() },
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text(if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão") },
-                                leadingIcon = { Icon(AppIcons.Tune, contentDescription = null) },
-                                onClick = { showMenu = false; showPrintSettingsDialog = true },
-                            )
-                            if (photoBytes != null) {
-                                DropdownMenuItem(text = { Text("Baixar foto") }, leadingIcon = { Icon(AppIcons.Image, contentDescription = null) }, onClick = { showMenu = false; onDownloadPhoto() })
-                            }
-                            if (savedQuote.stlFileName != null) {
-                                DropdownMenuItem(text = { Text("Baixar STL") }, leadingIcon = { Icon(AppIcons.Download, contentDescription = null) }, onClick = { showMenu = false; onDownloadStl() })
-                            }
-                            DropdownMenuItem(
-                                text = { Text("Abrir no WhatsApp") },
-                                leadingIcon = { Icon(AppIcons.Chat, contentDescription = null) },
-                                onClick = { showMenu = false; onOpenWhatsApp() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(if (isProduct) "Salvar imagem pro WhatsApp" else "Salvar orçamento pro WhatsApp") },
-                                leadingIcon = { Icon(AppIcons.AddPhotoAlternate, contentDescription = null) },
-                                onClick = { showMenu = false; onSaveImage() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
-                                leadingIcon = { Icon(AppIcons.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = { showMenu = false; onDelete() },
-                            )
-                        }
-                    }
+                    actions.onSell?.let { sell -> Button(onClick = sell) { IconLabel(AppIcons.Sell, "Vender") } }
+                    TextButton(onClick = actions.onExportPdf) { IconLabel(AppIcons.PictureAsPdf, "Exportar PDF") }
+                    TextButton(onClick = actions.onCopy) { IconLabel(AppIcons.ContentCopy, if (justCopied) "Copiado!" else "Copiar") }
+                    TextButton(onClick = actions.onEdit) { IconLabel(AppIcons.Edit, "Editar") }
+                    QuoteActionsMenu(savedQuote, actions)
                 }
             }
         }
-    }
-
-    if (showPrintSettingsDialog) {
-        PrintSettingsDialog(
-            initial = savedQuote.printSettings ?: PrintSettings(),
-            onDismiss = { showPrintSettingsDialog = false },
-            onSave = { settings -> onUpdatePrintSettings(settings.takeUnless { it.isEmpty }) },
-        )
     }
 }

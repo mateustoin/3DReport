@@ -1,14 +1,17 @@
 package com.threedreport.app.data
 
+import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.core.model.Currency
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Guarda a moeda usada pra formatar valores no app ([Currency]). A
- * implementação persiste em disco (ver `actual` na fonte de cada
- * plataforma), começando em [Currency.BRL].
+ * Moeda padrão dos orçamentos **novos** (decisão 106). Cada orçamento salvo guarda a própria moeda
+ * ([com.threedreport.core.model.SavedQuote.currency]), então trocar aqui não re-rotula o histórico.
  */
-expect class CurrencyRepository() {
+interface CurrencyRepository : DocumentRepository<Currency> {
     val currency: StateFlow<Currency>
-    fun update(currency: Currency)
+        get() = value
 }
+
+class StoredCurrencyRepository(document: DocumentValue<Currency>) :
+    StoredDocumentRepository<Currency>(document), CurrencyRepository

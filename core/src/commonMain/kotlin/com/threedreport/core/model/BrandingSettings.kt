@@ -24,6 +24,11 @@ import kotlinx.serialization.Serializable
  *   cliente responder. Diferente de `Client.contact`, que é do cliente e só de uso interno
  *   (decisão 37). Texto livre, como a pessoa digitou.
  * @property showBorder desenha uma borda fina em volta da página do PDF.
+ * @property quoteValidityDays por quantos dias o preço do orçamento vale, a contar da emissão do PDF
+ *   ("Válido até 02/10/2026", decisão 108). Zero tira a linha. Protege o vendedor de um cliente que volta
+ *   meses depois com o preço antigo, depois de o filamento subir.
+ * @property showClientName "Para: nome do cliente" no PDF. Desligado por padrão: o cliente é dado interno
+ *   (decisão 19), e só vai pro documento quando o vendedor escolhe.
  */
 @Serializable
 data class BrandingSettings(
@@ -36,7 +41,13 @@ data class BrandingSettings(
     val contactEmail: String? = null,
     val contactInstagram: String? = null,
     val showBorder: Boolean = false,
+    val quoteValidityDays: Int = DEFAULT_VALIDITY_DAYS,
+    val showClientName: Boolean = false,
 ) {
+    init {
+        require(quoteValidityDays in 0..MAX_VALIDITY_DAYS) { "quoteValidityDays fora de 0..$MAX_VALIDITY_DAYS: $quoteValidityDays" }
+    }
+
     /** Instagram sempre com "@" na frente, que é como ele é reconhecido; `null` se vazio. */
     val instagramHandle: String?
         get() = contactInstagram?.trim()?.removePrefix("@")?.trim()?.takeIf { it.isNotEmpty() }?.let { "@$it" }
@@ -55,4 +66,9 @@ data class BrandingSettings(
     /** Se há algo pro cabeçalho do PDF (logo ou contato). Sem isso, a página fica como sempre foi. */
     val hasIdentity: Boolean
         get() = logoFileName != null || contactLines.isNotEmpty()
+
+    companion object {
+        const val DEFAULT_VALIDITY_DAYS = 7
+        const val MAX_VALIDITY_DAYS = 365
+    }
 }

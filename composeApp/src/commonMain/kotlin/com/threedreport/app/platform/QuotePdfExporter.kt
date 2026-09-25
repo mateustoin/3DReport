@@ -1,7 +1,6 @@
 package com.threedreport.app.platform
 
 import com.threedreport.core.model.BrandingSettings
-import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
 
 /** Um orçamento salvo a incluir na exportação em PDF, com sua foto (se houver) já carregada em memória. */
@@ -23,6 +22,9 @@ data class QuoteExportItem(val savedQuote: SavedQuote, val photoBytes: ByteArray
  *   pro site. Nos exports do app vem sempre ligada ([resolvePdfBranding], decisão 91).
  *   Padrão desligado aqui (só quem resolve a partir de `BrandingSettings` liga), pra quem chama
  *   sem opções continuar recebendo o PDF de sempre.
+ * @property validityDays "Válido até" a data de emissão mais esses dias; `null` ou zero tira a linha.
+ * @property issuedOnEpochDay data de emissão; `null` é hoje (os testes fixam a data).
+ * @property showClientName "Para: nome do cliente" abaixo do título.
  *
  * O cabeçalho só aparece com logo ou contato: o nome sozinho já tem a marca d'água e o rodapé.
  */
@@ -33,6 +35,9 @@ data class PdfLayoutOptions(
     val contactLines: List<String> = emptyList(),
     val showBorder: Boolean = false,
     val showAppSignature: Boolean = false,
+    val validityDays: Int? = null,
+    val issuedOnEpochDay: Long? = null,
+    val showClientName: Boolean = false,
 )
 
 /**
@@ -52,12 +57,13 @@ data class PdfLayoutOptions(
  * @param brandName texto da marca d'água diagonal e translúcida, desenhada
  *   por cima de todo o conteúdo (inclusive a foto, pra continuar visível ali).
  * @param footerText texto do rodapé (linha fina + texto centralizado no fim da página).
+ *
+ * Cada orçamento sai na moeda em que foi salvo ([SavedQuote.currency], decisão 106).
  */
 expect fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
     brandName: String?,
     footerText: String?,
-    currency: Currency = Currency.BRL,
     options: PdfLayoutOptions = PdfLayoutOptions(),
 ): ByteArray
 
@@ -77,7 +83,6 @@ expect fun renderCatalogPdf(
     items: List<QuoteExportItem>,
     brandName: String?,
     footerText: String?,
-    currency: Currency = Currency.BRL,
     options: PdfLayoutOptions = PdfLayoutOptions(),
 ): ByteArray
 
@@ -107,6 +112,8 @@ fun BrandingSettings.resolvePdfBranding(logoBytes: ByteArray?): ResolvedPdfBrand
             showBorder = showBorder,
             // Sempre ligada nos exports do app (decisão 91): opcional, todo mundo desligaria.
             showAppSignature = true,
+            validityDays = quoteValidityDays.takeIf { it > 0 },
+            showClientName = showClientName,
         ),
     )
 }

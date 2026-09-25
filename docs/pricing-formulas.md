@@ -98,11 +98,12 @@ VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
 PREÇO BASE         = produção · (1 + margem_lucro)
 
 deduções           = taxa_do_canal + imposto
-VALOR DE VENDA     = PREÇO BASE / (1 − deduções)
-PREÇO UNITÁRIO     = (venda + serviços + frete) / quantidade
-LUCRO              = venda · (1 − deduções) − produção
+extras             = serviços_por_peça · quantidade + serviços_por_pedido + frete
+VALOR DE VENDA     = (PREÇO BASE + extras) / (1 − deduções) − extras
+PREÇO UNITÁRIO     = venda / quantidade
 
-TOTAL DO CLIENTE   = venda + serviços_por_peça · quantidade + serviços_por_pedido + frete
+TOTAL DO CLIENTE   = venda + extras
+LUCRO              = TOTAL DO CLIENTE · (1 − deduções) − extras − produção
 ```
 
 Todos os valores acima são do **pedido inteiro**. As entradas de cada
@@ -217,21 +218,46 @@ mês, não um percentual da venda, então o lugar dele é o custo fixo mensal
 (que já é diluído por hora de impressão). O campo de imposto serve pra quem
 paga percentual sobre o faturamento, como o Simples Nacional.
 
-**Frete não passa por nada disso.** É repasse, não produto seu: entra como
-linha própria no total do cliente, não multiplica pela quantidade, não passa
-pela margem e não sofre dedução. Sai do preço da peça de propósito, pra o
-cliente ver o que é peça e o que é entrega.
+**Frete não passa pela margem.** É repasse, não produto seu: entra como
+linha própria no total do cliente, não multiplica pela quantidade e não passa
+pela margem. Sai do preço da peça de propósito, pra o cliente ver o que é peça
+e o que é entrega.
 
 | | Multiplica pela quantidade? | Passa pela margem? | Sofre dedução? |
 |---|---|---|---|
 | Peça (produção) | Sim | Sim | Sim |
-| Serviços | Os por peça sim, os por pedido não | Não | Não |
-| Frete | Não | Não | Não |
+| Serviços | Os por peça sim, os por pedido não | Não | Sim (decisão 107) |
+| Frete | Não | Não | Sim (decisão 107) |
 
-Exemplo: peça de R$ 17,02 (venda direta) vendida pela Shopee (20%) por quem
-paga 6% de Simples. As deduções somam 26%, então o preço vira
-`17,02 / 0,74 = R$ 23,00`. O cliente paga R$ 23,00, a Shopee e o imposto
-levam R$ 5,98, e sobram os mesmos R$ 17,02 de antes.
+### Serviços e frete também pagam a taxa (2026-09-25, decisão 107)
+
+Até a 1.44, a taxa do canal e o imposto só incidiam sobre a peça. Só que o
+marketplace e a maquininha cobram a porcentagem sobre **tudo o que o cliente
+paga**, e o imposto sobre faturamento também: numa venda com R$ 25 de serviço
+e frete pela Shopee, R$ 6,50 saíam do bolso do vendedor sem aparecer em lugar
+nenhum. Agora a peça sobe o suficiente pra cobrir o que o canal e o imposto
+levam dos extras, e o lucro continua sendo o que sobra de verdade:
+
+```
+VALOR DE VENDA = (PREÇO BASE + extras) / (1 − deduções) − extras
+```
+
+Sem serviço nem frete (`extras = 0`), a conta é a mesma de antes. **Muda o
+preço de quem usa canal ou imposto junto com serviço ou frete.**
+
+Exemplo (travado em `PricingCalculatorTest`): peça de R$ 17,02 (venda direta),
+com R$ 25,00 de serviços e frete, vendida pela Shopee (20%) por quem paga 6% de
+Simples. As deduções somam 26%:
+
+| | |
+|---|---|
+| Valor da peça | `(17,02 + 25,00) / 0,74 − 25,00 = R$ 31,78` |
+| Total do cliente | `31,78 + 25,00 = R$ 56,78` |
+| Shopee e imposto (26%) | R$ 14,76 |
+| Repassado (serviços e frete) | R$ 25,00 |
+| Sobra (produção R$ 8,51 + lucro) | R$ 17,02, os mesmos da venda direta |
+
+Sem extras, o mesmo exemplo dá o preço de antes: `17,02 / 0,74 = R$ 23,00`.
 
 ## Negociação e preço mínimo (2026-09-22, decisão 79)
 
@@ -241,7 +267,7 @@ verdade do orçamento, e não um número de simulação à parte:
 
 ```
 preço_da_peça  = preço_fechado − serviços − frete
-LUCRO          = preço_da_peça · (1 − deduções) − produção
+LUCRO          = preço_fechado · (1 − deduções) − serviços − frete − produção
 MARGEM OBTIDA  = lucro / produção
 ```
 
@@ -263,8 +289,8 @@ período. Nenhuma conta de lucro usa o preço de tabela.
 ### Preço mínimo (ponto de equilíbrio)
 
 ```
-mínimo_da_peça  = produção / (1 − deduções)
-mínimo_total    = mínimo_da_peça + serviços + frete
+mínimo_da_peça  = (produção + extras) / (1 − deduções) − extras
+mínimo_total    = mínimo_da_peça + extras
 ```
 
 Vender exatamente por esse valor significa trabalhar de graça: cobre custo e

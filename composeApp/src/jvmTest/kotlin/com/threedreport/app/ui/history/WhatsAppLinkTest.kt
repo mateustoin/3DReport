@@ -87,4 +87,25 @@ class WhatsAppLinkTest {
 
         assertTrue(link.contains("Or%C3%A7amento"), "link gerado: $link")
     }
+
+    @Test
+    fun takesTheFirstPhoneInAContactWithOtherText() {
+        assertEquals("5511999990000", toInternationalPhone("Maria (11) 99999-0000 / maria@example.com"))
+    }
+
+    @Test
+    fun dropsTheLongDistanceZeroAndTheCarrierCode() {
+        assertEquals("5511999990000", toInternationalPhone("011 99999-0000"))
+        assertEquals("5511999990000", toInternationalPhone("0 21 11 99999-0000"))
+    }
+
+    @Test
+    fun aPlusSignMeansTheNumberIsAlreadyInternational() {
+        assertEquals("351912345678", toInternationalPhone("+351 912 345 678"))
+    }
+
+    @Test
+    fun aNumberWithoutAreaCodeHasNoLink() {
+        assertNull(toInternationalPhone("99999-0000"))
+    }
 }

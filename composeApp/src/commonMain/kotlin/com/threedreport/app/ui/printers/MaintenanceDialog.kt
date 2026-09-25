@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.printers
 
+import com.threedreport.app.ui.format.toInputText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -186,7 +187,7 @@ private fun ComponentRow(
     if (editing) {
         ComponentFields(
             initialName = status.component.name,
-            initialInterval = status.component.intervalHours.toPlainText(),
+            initialInterval = status.component.intervalHours.toInputText(),
             showHoursSince = false,
             submitLabel = "Salvar",
             onSubmit = { name, interval, _ -> onSave(name, interval).also { if (it == null) editing = false } },
@@ -430,6 +431,3 @@ private fun EntryRow(text: String, onDelete: () -> Unit) {
     }
 }
 
-/** "50" em vez de "50.0" ao reabrir um intervalo pra editar. */
-private fun Double.toPlainText(): String =
-    if (this % 1.0 == 0.0) toLong().toString() else toString().replace('.', ',')

@@ -25,8 +25,57 @@ recuperar, reinstale a 1.44 e renomeie a pasta de volta pra `.3dreport`.
 - Por dentro, o pedido já aceita várias impressões, cada uma na sua
   impressora: a fila, as horas de manutenção e o Dashboard já somam cada
   impressão na máquina dela. A tela pra montar pedidos assim vem na 2.1.
+- **Número do pedido** ("#0042") no PDF, na mensagem e na busca do Histórico.
+- **Validade do orçamento no PDF** ("Válido até 02/10/2026", 7 dias por
+  padrão, ajustável em Documentos pro cliente) e data de emissão.
+- **Status Cancelado**, pra orçamento recusado sair das contas de "em aberto".
+- **Cadastro de clientes:** o cliente que já comprou aparece ao digitar o nome,
+  com o contato junto.
+- **Editar detalhes** no Histórico: corrigir nome, cliente, contato, foto,
+  prazo ou link sem reabrir o cálculo.
+- **Mover para** no menu "Ações", pra mudar a etapa do pedido sem arrastar.
+- **Desfazer** ao excluir um pedido ou produto.
+- **Avisos depois de cada ação**, com "Abrir pasta" quando um PDF, imagem,
+  foto ou STL é salvo, e o motivo quando não dá (PDF aberto no leitor, por
+  exemplo).
+- **Backup automático** uma vez por dia, guardando os 7 últimos, numa pasta que
+  você escolhe. Apontar pra uma pasta do Google Drive, OneDrive ou Dropbox já
+  guarda a cópia na nuvem.
+- **Peso em gramas** no Orçamento, ao lado dos metros, e **tempo em "3h20"**.
+- Dashboard com os períodos **"Mês passado"** e **"Este ano"**.
+- Na primeira execução, o app pergunta **qual é a sua impressora e quanto ela
+  custou**.
+- Mac com processador Intel ganha instalador próprio (`-intel.dmg`).
 
 ### Alterado
+- **A taxa do canal e o imposto passam a incidir também sobre serviços e
+  frete**, como o marketplace e a maquininha cobram de verdade. **Muda o preço
+  de quem usa canal ou imposto junto com serviço ou frete:** a peça sobe o
+  suficiente pra você não pagar essa taxa do próprio bolso. Sem serviço nem
+  frete, o preço é o mesmo de antes.
+- **Reabrir um orçamento não muda mais o preço sozinho.** O preço salvo fica
+  até você mexer em algo que muda o preço, e a tela mostra quanto sairia com
+  os custos de hoje.
+- **Números do jeito que se digita:** "2.700" é dois mil e setecentos,
+  "2.700,50", "R$ 50" e "20%" funcionam, e os campos mostram vírgula. Um valor
+  que não é número vira aviso no próprio campo, com o nome dele.
+- **Editar um orçamento não apaga mais o que estava na aba Orçamento**, não
+  fecha com um clique fora e pergunta antes de descartar alterações. Duplicar,
+  Vender e Ctrl+N também perguntam antes de substituir um orçamento em
+  andamento.
+- A tela de Orçamento começa pelo G-code e pelo tipo (pedido ou produto), e os
+  textos de ajuda ficaram curtos, com "Saiba mais".
+- O menu "Ações" é o mesmo na lista e no Kanban, agrupado por assunto. Lista e
+  Kanban mostram o mesmo valor: o total que o cliente paga.
+- Kanban mostra os entregues dos últimos 30 dias (com "ver mais") e ganhou
+  barra de rolagem.
+- PDF: a conta "10 × R$ 6,02 = R$ 60,20", nome longo em duas linhas, foto
+  reduzida (catálogo com fotos de celular fica leve pra mandar no WhatsApp).
+  "Para: cliente" é opcional, desligado por padrão.
+- Trocar a moeda vale para os orçamentos novos; os salvos continuam na moeda
+  em que foram feitos.
+- Tema com as cores do app em todos os componentes (os cards do Kanban
+  saíam lilás).
 - **Dados em formato novo** (ver acima), sem os campos que existiam só pra
   abrir arquivos antigos.
 - **Backup:** restaurar um backup da versão 1.x é recusado com aviso, sem
@@ -44,6 +93,28 @@ recuperar, reinstale a 1.44 e renomeie a pasta de volta pra `.3dreport`.
 ### Corrigido
 - G-code com um slot de filamento declarado e sem uso não dispara mais o
   aviso de "mais de um material".
+- **Editar a foto de um produto trocava a foto dos pedidos já vendidos a
+  partir dele.** Cada foto agora é um arquivo próprio.
+- **Salvar em Configurações logo depois da primeira execução desfazia o que foi
+  respondido nas perguntas iniciais.** E carregar um template deixou de ser
+  desfeito pelo próximo "Salvar".
+- O app não fecha mais sem aviso: um erro inesperado mostra o que aconteceu,
+  com "Copiar detalhes", e fica registrado em `~/.3dreport/logs`.
+- Gravação dos dados à prova de queda de energia (o arquivo nunca fica pela
+  metade), e duas janelas do app abertas ao mesmo tempo não brigam mais pelos
+  mesmos arquivos.
+- Clicar duas vezes em "Salvar" não cria mais dois pedidos.
+- Arrastar um G-code de centenas de MB, ou um arquivo que não é G-code, não
+  trava mais o app. O Histórico com muitos pedidos com foto não engasga mais
+  ao digitar na busca.
+- "Comparar impressoras" com preço fechado compara o preço de tabela de cada
+  máquina, e a barra de composição mostra a fatia do canal e do imposto.
+- O link do WhatsApp acha o telefone mesmo com outro texto no contato, tira o
+  0 e o código da operadora, e copia a mensagem se o navegador não abrir.
+- Frete negativo não derruba mais o salvar; quantidade inválida não vira 1 em
+  silêncio.
+- O status do pedido que sai da lista filtrada avisa pra onde ele foi.
+- Janela inicial cabe em telas de 1366×768.
 
 ## [1.44.0] - 2026-09-24
 

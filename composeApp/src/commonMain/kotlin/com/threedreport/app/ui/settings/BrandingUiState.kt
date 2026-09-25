@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.settings
 
 import com.threedreport.app.data.LogoChange
+import com.threedreport.core.model.BrandingSettings
 
 /**
  * Estado da seção "Documentos pro cliente" em Configurações: marca, logo, contato e opções de
@@ -18,6 +19,8 @@ data class BrandingUiState(
     val showFooter: Boolean = true,
     val showPrintTime: Boolean = false,
     val showBorder: Boolean = false,
+    val validityDaysText: String = BrandingSettings.DEFAULT_VALIDITY_DAYS.toString(),
+    val showClientName: Boolean = false,
     val contactWhatsAppInput: String = "",
     val contactEmailInput: String = "",
     val contactInstagramInput: String = "",

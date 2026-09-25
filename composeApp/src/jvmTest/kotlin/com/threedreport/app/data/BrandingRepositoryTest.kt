@@ -88,14 +88,16 @@ class BrandingRepositoryTest {
         repository.update(repository.branding.value, LogoChange.Remove)
 
         assertNull(BrandingRepository().branding.value.logoFileName)
-        assertFalse(java.io.File(dataDir(), "branding/$logoName").exists())
+        assertNull(BrandingRepository().logoBytes())
+        // O arquivo sai na coleta de anexos ao abrir o app, quando nada mais aponta pra ele.
+        assertTrue(java.io.File(dataDir(), "attachments/$logoName").exists())
     }
 
     @Test
     fun missingLogoFileMeansNoLogoInsteadOfAnError() {
         val repository = BrandingRepository()
         repository.update(BrandingSettings(), LogoChange.Replace(PickedFile("logo.png", byteArrayOf(1))))
-        java.io.File(dataDir(), "branding/${repository.branding.value.logoFileName}").delete()
+        java.io.File(dataDir(), "attachments/${repository.branding.value.logoFileName}").delete()
 
         assertNull(repository.logoBytes())
     }
