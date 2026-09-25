@@ -707,7 +707,10 @@ conta errada.
   energia, manutenção, retorno e custo fixo com a impressora **daquela**
   impressão; soma; e só então o que é do pedido (preparo, administrativo,
   falha, margem, canal, imposto). A assinatura atual vira atalho pra uma
-  impressão. **Garantia:** os testes de `commonTest` passam sem alteração,
+  impressão. O acabamento, por ser percentual do material, fica em cada
+  impressão junto com o material dela. O `PrintJob.laborMinutes` continua
+  em zero pelo app (decisão 94): o tempo de trabalho é só do pedido.
+  **Garantia:** os testes de `commonTest` passam sem alteração,
   nos alvos JVM e JS, e a calculadora do site (decisão 98) não muda.
 - [ ] `quantity` continua sendo "quantos pedidos iguais" (2 dioramas); cada
   impressão multiplica pelos próprios `runs` e depois pela quantidade.
@@ -768,6 +771,7 @@ conta errada.
 - Nenhum número do pedido fica escondido em cartão recolhido: total e tempo
   total ficam sempre à vista.
 - O cliente nunca vê a divisão (decisão 19).
+
 ### Fora das levas
 
 Continuam no backlog, sem posição definida nesta revisão (nenhum foi
