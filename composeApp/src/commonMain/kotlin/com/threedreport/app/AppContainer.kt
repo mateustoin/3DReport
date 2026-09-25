@@ -55,12 +55,30 @@ interface PendingWrites {
     /** Tenta de novo as gravações que falharam. */
     fun retry()
 
+    /**
+     * Espera a gravação em andamento terminar e segura as próximas até [resume]. Usado ao restaurar um
+     * backup: nada do estado em memória pode cair na pasta restaurada.
+     */
+    suspend fun pause()
+
+    /** Volta a gravar, começando pelo que ficou pedido durante a pausa. */
+    fun resume()
+
+    /** Se as gravações estão seguradas ([pause]): depois de restaurar um backup, nada mais vai pro disco. */
+    val isPaused: Boolean
+
     object None : PendingWrites {
         override val allWritten: Boolean = true
 
         override suspend fun awaitAll() = Unit
 
         override fun retry() = Unit
+
+        override suspend fun pause() = Unit
+
+        override fun resume() = Unit
+
+        override val isPaused: Boolean = false
     }
 }
 

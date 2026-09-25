@@ -65,7 +65,9 @@ class RecordCollection<T>(
         records = MutableStateFlow(initial)
         live = MutableStateFlow(liveOf(initial))
         items = live.asStateFlow()
-        if (loaded == null && initial.isNotEmpty()) file.write(initial)
+        // Grava o seed na primeira abertura, e grava de novo quando a lixeira descartou algum conteúdo
+        // vencido: sem isso, o que foi apagado continuava no arquivo e nos backups.
+        if ((loaded == null && initial.isNotEmpty()) || (loaded != null && initial != loaded)) file.write(initial)
     }
 
     /** Todos os registros, inclusive excluídos (pra quem precisa saber o que ainda é referenciado). */

@@ -828,11 +828,12 @@ class QuoteViewModelTest {
     fun copyingANegotiatedOrderToTheCatalogUsesTheTablePriceAndLeavesTheOrderAlone() {
         val historyRepository = QuoteHistoryRepository()
         val viewModel = viewModelWith(historyRepository = historyRepository)
-        viewModel.setTargetTotal("5")
+        viewModel.setTargetTotal("20")
         viewModel.setShippingCost("15")
         viewModel.setClientName("Maria")
-        viewModel.saveCurrentQuote()
+        assertTrue(viewModel.saveCurrentQuote())
         val order = historyRepository.savedQuotes.value.single()
+        assertTrue(order.quote.isNegotiated)
 
         viewModel.copyToCatalog(order)
 
@@ -1425,5 +1426,49 @@ class QuoteViewModelTest {
 
         assertNotNull(viewModel.input.value.prints.first().gcodeImportMessage)
         assertEquals("12", viewModel.input.value.prints.first().filaments.first().lengthText, "nada do orçamento mudou")
+    }
+
+    /** Revisão do PR #2: um preço fechado abaixo de serviços e frete salvava outro total, sem aviso. */
+    @Test
+    fun aClosedPriceBelowServicesAndShippingIsAFieldError() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setShippingCost("25")
+        viewModel.setTargetTotal("20")
+
+        val result = viewModel.currentResult()
+        assertNotNull(result.fieldErrors[QuoteFields.TARGET])
+        assertNull(result.quote)
+        assertFalse(viewModel.saveCurrentQuote())
+
+        viewModel.setTargetTotal("40")
+        assertEquals(40.0, viewModel.currentResult().quote!!.customerTotal, 1e-9)
+    }
+
+    /** Revisão do PR #2: com o canal excluído, mexer no preço recalculava sem a taxa, só com um aviso. */
+    @Test
+    fun aDeletedChannelBlocksRecalculatingUntilAnotherIsChosen() {
+        val channelRepository = SalesChannelRepository()
+        channelRepository.add(SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.2))
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), channelRepository, historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.selectSalesChannel("shopee")
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+        channelRepository.delete("shopee")
+
+        viewModel.loadForEditing(saved)
+        assertEquals(saved.quote, viewModel.currentResult().quote, "sem mudança, o preço salvo continua valendo")
+
+        viewModel.setLengthMeters("24")
+        val changed = viewModel.currentResult()
+        assertNull(changed.quote)
+        assertTrue(changed.errorMessage!!.contains("Shopee"))
+        assertFalse(viewModel.saveCurrentQuote())
+
+        viewModel.selectSalesChannel(null)
+        assertEquals(0.0, viewModel.currentResult().quote!!.channelFeeRate)
     }
 }

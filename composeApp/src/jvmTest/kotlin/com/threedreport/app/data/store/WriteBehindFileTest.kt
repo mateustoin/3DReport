@@ -59,4 +59,24 @@ class WriteBehindFileTest {
         assertTrue(health.writeFailures.value.isEmpty())
         assertTrue(file.isWritten)
     }
+
+    /** Revisão do PR #2: restaurar um backup segura as gravações, pra nada antigo cair na pasta nova. */
+    @Test
+    fun whileTheGateIsLockedWritesWaitAndResumeWithTheLatestState() = runTest {
+        val target = FlakyFile()
+        val gate = kotlinx.coroutines.sync.Mutex()
+        val file = WriteBehindFile(target, backgroundScope, StandardTestDispatcher(testScheduler), StorageHealth(), gate)
+
+        gate.lock()
+        file.write(1)
+        runCurrent()
+        assertTrue(target.written.isEmpty(), "travado, nada vai pro disco")
+
+        file.write(2)
+        gate.unlock()
+        runCurrent()
+
+        assertEquals(2, target.written.last())
+        assertTrue(file.isWritten)
+    }
 }

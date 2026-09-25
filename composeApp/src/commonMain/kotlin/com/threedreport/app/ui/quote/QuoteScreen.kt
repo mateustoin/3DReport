@@ -391,7 +391,9 @@ private fun QuoteInputs(
     }
 
     SectionTitle(AppIcons.Storefront, "A venda")
-    if (salesChannels.isNotEmpty()) {
+    // Com o canal do orçamento excluído, o seletor aparece mesmo sem canais cadastrados: é nele que se
+    // escolhe "Venda direta" pra liberar o cálculo.
+    if (salesChannels.isNotEmpty() || input.missingChannelName != null) {
         LabeledDropdown(
             label = "Canal de venda",
             items = listOf(null) + salesChannels,
@@ -399,7 +401,7 @@ private fun QuoteInputs(
             itemLabel = { it?.let { channel -> "${channel.name} · ${channel.feeRate.toPercentText()}" } ?: DIRECT_SALE_LABEL },
             displayText = { it?.name ?: DIRECT_SALE_LABEL },
             onSelect = { viewModel.selectSalesChannel(it?.id) },
-            emptyText = DIRECT_SALE_LABEL,
+            emptyText = input.missingChannelName?.let { "$it (excluído)" } ?: DIRECT_SALE_LABEL,
         )
         FieldHelp(
             "A taxa do canal sai do que você recebe; o preço sobe o suficiente pra sua margem não mudar.",
@@ -410,8 +412,8 @@ private fun QuoteInputs(
 
     input.missingChannelName?.let { name ->
         Text(
-            "O canal \"$name\" deste orçamento não existe mais no cadastro, então o preço está sem a " +
-                "taxa dele. " + if (salesChannels.isEmpty()) "Cadastre o canal em Configurações." else "Escolha o canal de novo pra cobrar a taxa.",
+            "O canal \"$name\" deste orçamento não existe mais no cadastro. O preço salvo continua valendo; " +
+                "pra recalcular, escolha outro canal ou \"Venda direta\" acima.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )

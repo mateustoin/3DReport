@@ -87,8 +87,8 @@ recuperar, reinstale a 1.44 e renomeie a pasta de volta pra `.3dreport`.
   antes, inclusive os filamentos.
 - Renomear um canal de venda não deixa mais os produtos do catálogo sem
   canal na hora de atualizar o preço. Reabrir, duplicar ou vender um
-  orçamento cujo canal foi excluído avisa que o preço ficou sem a taxa, em
-  vez de recalcular sem ela em silêncio.
+  orçamento cujo canal foi excluído pede pra escolher outro canal (ou venda
+  direta) antes de recalcular, em vez de recalcular sem a taxa.
 
 ### Corrigido
 - G-code com um slot de filamento declarado e sem uso não dispara mais o
@@ -112,7 +112,10 @@ recuperar, reinstale a 1.44 e renomeie a pasta de volta pra `.3dreport`.
 - O link do WhatsApp acha o telefone mesmo com outro texto no contato, tira o
   0 e o código da operadora, e copia a mensagem se o navegador não abrir.
 - Frete negativo não derruba mais o salvar; quantidade inválida não vira 1 em
-  silêncio.
+  silêncio; um preço fechado menor que serviços e frete vira aviso no campo, em
+  vez de salvar outro total.
+- Restaurar um backup espera as gravações pendentes e não deixa mais nenhuma
+  cair na pasta restaurada.
 - O status do pedido que sai da lista filtrada avisa pra onde ele foi.
 - Janela inicial cabe em telas de 1366×768.
 

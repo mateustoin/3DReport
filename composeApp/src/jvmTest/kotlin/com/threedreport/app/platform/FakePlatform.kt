@@ -6,6 +6,7 @@ package com.threedreport.app.platform
  */
 class FakePlatform : PlatformServices {
     var nextPick: PickResult = PickResult.Cancelled
+    var nextPickPath: String? = null
     var nextSaveLocation: String? = null
     var clipboardWorks = true
     var browserWorks = true
@@ -15,7 +16,7 @@ class FakePlatform : PlatformServices {
     val opened = mutableListOf<String>()
 
     override fun pickFile(kind: FileKind): PickResult = nextPick
-    override fun pickFilePath(kind: FileKind): String? = null
+    override fun pickFilePath(kind: FileKind): String? = nextPickPath
     override fun pickFolder(title: String, initialDirectory: String?): String? = null
     override fun chooseSaveLocation(suggestedFileName: String, initialDirectory: String?): String? =
         nextSaveLocation?.let { if (it.endsWith("/")) it + suggestedFileName else it }

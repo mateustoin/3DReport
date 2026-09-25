@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Grava em segundo plano, fora do thread da tela (decisão 108). O repositório muda o estado em memória
@@ -18,12 +20,17 @@ import kotlinx.coroutines.launch
  * Uma gravação que falha não perde nada: o estado continua em memória, [StorageHealth] avisa a tela, e a
  * próxima mudança (ou [retry]) tenta de novo com o estado inteiro. Ao fechar, o app espera
  * [awaitWritten] pra não sair com mudança por gravar.
+ *
+ * Cada gravação passa por [gate], compartilhado entre os arquivos da pasta: quem trava o [gate] (restaurar
+ * um backup) espera a gravação em andamento terminar e segura as próximas até destravar. Sem isso, uma
+ * gravação atrasada levaria o estado antigo da memória pra pasta recém-restaurada.
  */
 class WriteBehindFile<T>(
     private val target: DataFile<T>,
     scope: CoroutineScope,
     dispatcher: CoroutineDispatcher,
     private val health: StorageHealth,
+    private val gate: Mutex = Mutex(),
 ) : DataFile<T> {
 
     private data class Pending<V>(val version: Long, val value: V)
@@ -38,7 +45,7 @@ class WriteBehindFile<T>(
         scope.launch(dispatcher) {
             latest.filterNotNull().collect { pending ->
                 try {
-                    target.write(pending.value)
+                    gate.withLock { target.write(pending.value) }
                     written.value = pending.version
                     health.clearWriteFailure(name)
                 } catch (e: CancellationException) {

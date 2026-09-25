@@ -77,6 +77,11 @@ class RecordCollectionTest {
         assertNull(record.data)
         assertTrue(record.isDeleted, "a marca de exclusão fica, pra outro dispositivo saber")
         assertNull(reopened.restore("a"))
+
+        // O arquivo também perde o conteúdo: o que foi apagado não pode seguir no disco nem nos backups.
+        val onDisk = file.content!!.single()
+        assertNull(onDisk.data)
+        assertTrue(onDisk.isDeleted)
     }
 
     @Test

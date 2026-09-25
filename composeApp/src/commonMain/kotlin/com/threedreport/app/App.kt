@@ -172,7 +172,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val templateListViewModel = remember { TemplateListViewModel(container.templates, container.branding) }
     val themeViewModel = remember { ThemeViewModel(container.theme) }
     val currencyViewModel = remember { CurrencyViewModel(container.currency) }
-    val backupViewModel = remember { BackupViewModel(container.backup, container.preferences, scope = appScope) }
+    val backupViewModel = remember { BackupViewModel(container.backup, container.preferences, container.pendingWrites, scope = appScope) }
     val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()

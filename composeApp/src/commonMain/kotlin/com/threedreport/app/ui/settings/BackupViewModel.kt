@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.settings
 
+import com.threedreport.app.PendingWrites
 import com.threedreport.app.data.AppPreferences
 import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.Clock
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Estado da seção "Backup" das Configurações.
@@ -47,6 +49,8 @@ data class BackupUiState(
 class BackupViewModel(
     private val repository: BackupRepository,
     private val preferencesRepository: PreferencesRepository,
+    /** Gravações em segundo plano, que precisam parar antes de a pasta de dados ser trocada. */
+    private val pendingWrites: PendingWrites = PendingWrites.None,
     private val platform: PlatformServices = defaultPlatform,
     private val clock: Clock = Clock.System,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
@@ -121,8 +125,14 @@ class BackupViewModel(
         val path = state.value.pathToRestore ?: return
         state.value = BackupUiState(busy = true)
         scope.launch(io) {
+            // Primeiro o que está pendente vai pro disco (a cópia dos dados atuais sai completa); depois as
+            // gravações param. Uma gravação atrasada levaria o estado antigo pra pasta restaurada. Com sucesso,
+            // continuam paradas até o app fechar, que é o próximo passo obrigatório.
+            withTimeoutOrNull(FLUSH_TIMEOUT_MILLIS) { pendingWrites.awaitAll() }
+            pendingWrites.pause()
             val result = runCatching { repository.restore(path) }
                 .getOrElse { RestoreResult.Failure("Não consegui restaurar esse backup. Nada foi alterado.") }
+            if (result !is RestoreResult.Success) pendingWrites.resume()
             withContext(main) {
                 state.value = when (result) {
                     is RestoreResult.Success -> BackupUiState(restoredFromPreviousDataAt = result.previousDataPath)
@@ -140,4 +150,9 @@ class BackupViewModel(
 
     private fun markBackupDone() =
         preferencesRepository.update(preferences.value.copy(lastBackupEpochMillis = clock.nowMillis()))
+
+    private companion object {
+        /** Quanto esperar as gravações pendentes antes de restaurar; um disco com falha não pode travar a restauração. */
+        const val FLUSH_TIMEOUT_MILLIS = 10_000L
+    }
 }

@@ -137,6 +137,9 @@ private fun initialWindowSize(): DpSize {
  * a última mudança.
  */
 private fun flushBeforeClosing(container: AppContainer): Boolean {
+    // Depois de restaurar um backup as gravações ficam seguradas de propósito: o que está na memória é o
+    // estado antigo e não pode ir pra pasta restaurada.
+    if (container.pendingWrites.isPaused) return true
     while (true) {
         val written = runBlocking { withTimeoutOrNull(5_000) { container.pendingWrites.awaitAll() } != null }
         if (written && container.pendingWrites.allWritten) return true

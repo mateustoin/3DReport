@@ -768,10 +768,18 @@ class QuoteViewModel(
         val shippingCost = if (input.isProduct) 0.0 else amount(input.shippingCostText, QuoteFields.SHIPPING, "Frete", errors) ?: 0.0
         val servicesTotal = selectedServices.sumOf { it.total(quantity) }
         // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
-        // que de fato é a peça. Se o alvo nem cobre os extras, a peça vale zero e o prejuízo
-        // aparece no lucro, que é justamente o aviso.
-        val target = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors)
-        val negotiatedSalePrice = target?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
+        // que de fato é a peça. Um alvo que nem cobre os extras é erro no campo: zerar a peça salvaria
+        // um total diferente do digitado, sem ninguém ver.
+        val target = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors)?.let { typed ->
+            val extras = servicesTotal + shippingCost
+            if (typed < extras) {
+                errors[QuoteFields.TARGET] = "Esse preço não cobre serviços e frete (${extras.toInputText()}): digite pelo menos esse valor."
+                null
+            } else {
+                typed
+            }
+        }
+        val negotiatedSalePrice = target?.let { it - servicesTotal - shippingCost }
             ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * quantity }
         val laborMinutes = if (input.laborMinutesText.isBlank()) {
             0.0
@@ -827,6 +835,11 @@ class QuoteViewModel(
 
     /** Um filamento ou impressora escolhidos que saíram do cadastro (orçamento reaberto), com o nome. */
     private fun missingFromCatalog(input: QuoteInputState, resolved: List<ResolvedPrint>): String? {
+        // Canal que saiu do cadastro: recalcular sem a taxa baixaria o preço em silêncio. Escolher outro
+        // canal, ou "Venda direta", limpa isto (ver [selectSalesChannel]).
+        input.missingChannelName?.let { name ->
+            return "O canal \"$name\" não existe mais. Escolha outro canal, ou \"Venda direta\", pra calcular o preço."
+        }
         input.prints.zip(resolved).forEach { (print, resolvedPrint) ->
             if (print.printerId != null && resolvedPrint.printer == null) {
                 return "A impressora \"${print.missingPrinterName ?: "escolhida"}\" não está mais cadastrada. Escolha outra."

@@ -178,4 +178,25 @@ class BackupRepositoryTest {
         }
         return output.toByteArray()
     }
+
+    /**
+     * Revisão do PR #2 (zip slip): uma entrada que sai pra uma pasta irmã cujo nome começa igual ao da
+     * pasta de trabalho ("...-restaurando2") também é recusada. A comparação é por partes do caminho, e
+     * não por começo de texto.
+     */
+    @Test
+    fun restoreRefusesEntriesIntoASiblingFolderWithTheSamePrefix() {
+        File(dataDir, "quotes.json").writeText("dados atuais")
+        val sibling = "${dataDir.name}-restaurando2"
+        val zipSlip = zipOf(
+            "3dreport-backup.json" to """{"app":"3DReport","appVersion":"1.0.0","createdAtEpochMillis":0,"dataFormatVersion":2}""".encodeToByteArray(),
+            "../$sibling/invasor.txt" to "não deveria ser gravado".encodeToByteArray(),
+        )
+
+        val result = BackupRepository().restoreFromZip(zipSlip)
+
+        assertIs<RestoreResult.Failure>(result)
+        assertFalse(File(dataDir.parentFile, "$sibling/invasor.txt").exists())
+        assertEquals("dados atuais", File(dataDir, "quotes.json").readText())
+    }
 }
