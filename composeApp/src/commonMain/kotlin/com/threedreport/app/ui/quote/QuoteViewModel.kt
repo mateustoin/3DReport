@@ -548,7 +548,7 @@ class QuoteViewModel(
         inputState.value = inputFrom(savedQuote)
         setForm(
             formFrom(savedQuote).copy(
-                operation = QuoteOperation.Duplicating(savedQuote.name),
+                operation = QuoteOperation.Duplicating(savedQuote.name, savedQuote.kind),
                 deliveryDateEpochDay = null,
                 sourceProductId = savedQuote.sourceProductId,
                 clientName = "",

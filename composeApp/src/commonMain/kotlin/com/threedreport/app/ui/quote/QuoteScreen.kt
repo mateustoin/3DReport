@@ -102,11 +102,12 @@ import kotlin.math.round
 private const val DIRECT_SALE_LABEL = "Venda direta (sem taxa)"
 
 /**
- * Abaixo disso a tela volta pra uma coluna só. O valor cobre a janela padrão do app com folga e
- * ainda deixa as duas colunas legíveis; espremer mais faria os campos e a nota ficarem estreitos
- * demais pra ler de relance, que é justamente o que o layout de duas colunas tenta resolver.
+ * Abaixo disso a tela volta pra uma coluna só. O valor cabe na janela padrão do app (1280) já descontada a
+ * barra lateral com rótulos (decisão 111), e ainda deixa as duas colunas com uns 500 dp cada; espremer mais
+ * faria os campos e a nota ficarem estreitos demais pra ler de relance, que é justamente o que o layout de
+ * duas colunas tenta resolver.
  */
-private val TWO_COLUMN_MIN_WIDTH = 1100.dp
+private val TWO_COLUMN_MIN_WIDTH = 1040.dp
 
 /** Arredonda pra 1 casa decimal, separador decimal brasileiro (vírgula) — mesmo estilo de `toWeightText()`. */
 private fun Double.formatOneDecimal(): String {
@@ -641,11 +642,11 @@ private fun QuoteResultSection(
             color = MaterialTheme.colorScheme.error,
         )
         allFilaments.none { it.hasStockAvailable } && allFilaments.isNotEmpty() -> Text(
-            "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" na aba Filamentos.",
+            "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" em Filamentos.",
             style = MaterialTheme.typography.bodyMedium,
         )
-        allFilaments.isEmpty() -> Text("Cadastre um filamento na aba Filamentos.", style = MaterialTheme.typography.bodyMedium)
-        printers.isEmpty() -> Text("Cadastre uma impressora na aba Impressoras.", style = MaterialTheme.typography.bodyMedium)
+        allFilaments.isEmpty() -> Text("Cadastre um filamento em Filamentos.", style = MaterialTheme.typography.bodyMedium)
+        printers.isEmpty() -> Text("Cadastre uma impressora em Impressoras.", style = MaterialTheme.typography.bodyMedium)
         else -> Text("Preencha peso (ou comprimento) e tempo pra calcular, ou arraste o G-code.", style = MaterialTheme.typography.bodyMedium)
     }
 
@@ -1114,8 +1115,8 @@ private fun SaveQuoteForm(
         ShowSnackbarOnce(
             form.savedConfirmation,
             when {
-                form.savedAsProduct -> "Produto ${form.savedNumber.orEmpty()} salvo no catálogo (Histórico, em Produtos).".replace("  ", " ")
-                else -> "Pedido ${form.savedNumber.orEmpty()} salvo no Histórico.".replace("  ", " ")
+                form.savedAsProduct -> "Produto ${form.savedNumber.orEmpty()} salvo no Catálogo.".replace("  ", " ")
+                else -> "Pedido ${form.savedNumber.orEmpty()} salvo em Pedidos.".replace("  ", " ")
             },
             viewModel::consumeSavedConfirmation,
         )
@@ -1128,7 +1129,7 @@ private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
     val stlFile = form.stlFile
     if (stlFile == null) {
         OutlinedButton(onClick = viewModel::pickStl) { Text("Anexar arquivo STL (opcional)") }
-        FieldHelp("Guardado pra você recuperar no Histórico e reaproveitar numa venda futura da mesma peça.")
+        FieldHelp("Guardado pra você baixar de novo em Pedidos ou no Catálogo e reaproveitar numa venda futura da mesma peça.")
         return
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

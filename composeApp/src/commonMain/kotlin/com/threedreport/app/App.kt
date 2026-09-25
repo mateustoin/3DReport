@@ -9,25 +9,26 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.VerticalDivider
+import com.threedreport.app.ui.about.AboutScreen
+import com.threedreport.app.ui.navigation.AppDestination
+import com.threedreport.app.ui.navigation.AppSidebar
+import com.threedreport.app.ui.navigation.SIDEBAR_LABELS_MIN_WINDOW_WIDTH
+import com.threedreport.app.ui.navigation.destinationForShortcut
+import com.threedreport.core.model.QuoteKind
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.window.DialogProperties
 import com.threedreport.app.platform.openFolder
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LeadingIconTab
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,11 +49,9 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.components.ConfirmDialog
-import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.dashboard.DashboardScreen
 import com.threedreport.app.ui.dashboard.DashboardViewModel
@@ -83,46 +82,6 @@ import com.threedreport.app.ui.theme.ThemeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-private const val GITHUB_URL = "https://github.com/mateustoin/3DReport"
-private const val BUY_ME_A_COFFEE_URL = "https://buymeacoffee.com/mateustoin"
-private const val AUTHOR_NAME = "Mateus Antonio da Silva"
-
-private enum class AppTab(val label: String) {
-    QUOTE("Orçamento"),
-    HISTORY("Histórico"),
-    DASHBOARD("Dashboard"),
-    FILAMENTS("Filamentos"),
-    PRINTERS("Impressoras"),
-    SERVICES("Serviços"),
-    SETTINGS("Configurações");
-
-    /**
-     * Ícone contornado das abas inativas e o preenchido da aba ativa (padrão do Material 3). Por
-     * `when`, e não no construtor, pra nenhum vetor ser montado antes de a barra aparecer.
-     */
-    val icon: ImageVector
-        get() = when (this) {
-            QUOTE -> AppIcons.RequestQuote
-            HISTORY -> AppIcons.History
-            DASHBOARD -> AppIcons.BarChart
-            FILAMENTS -> AppIcons.Spool
-            PRINTERS -> AppIcons.Printer3d
-            SERVICES -> AppIcons.Handyman
-            SETTINGS -> AppIcons.Settings
-        }
-
-    val selectedIcon: ImageVector
-        get() = when (this) {
-            QUOTE -> AppIcons.RequestQuoteFilled
-            HISTORY -> AppIcons.HistoryFilled
-            DASHBOARD -> AppIcons.BarChartFilled
-            FILAMENTS -> AppIcons.SpoolFilled
-            PRINTERS -> AppIcons.Printer3dFilled
-            SERVICES -> AppIcons.HandymanFilled
-            SETTINGS -> AppIcons.SettingsFilled
-        }
-}
-
 @Composable
 fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val filamentRepository = container.filaments
@@ -147,7 +106,10 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     // Editar um orçamento salvo tem o próprio ViewModel (decisão 108): usar o da aba apagava o rascunho
     // que estivesse em andamento lá.
     val editQuoteViewModel = remember { newQuoteViewModel() }
-    val historyViewModel = remember {
+    var destination by remember { mutableStateOf(AppDestination.QUOTE) }
+    // Pedidos e Catálogo são a mesma tela com o tipo fixo (decisão 111): cada uma com o seu ViewModel,
+    // pra busca, filtros e seleção de uma não vazarem pra outra.
+    val newHistoryViewModel = { kind: QuoteKind ->
         QuoteHistoryViewModel(
             historyRepository, container.branding,
             filamentRepository, printerRepository, settingsRepository, container.salesChannels,
@@ -155,8 +117,12 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
             scope = appScope,
             background = Dispatchers.Default,
             main = Dispatchers.Main,
+            kind = kind,
+            showOrders = { destination = AppDestination.ORDERS },
         )
     }
+    val ordersViewModel = remember { newHistoryViewModel(QuoteKind.ORDER) }
+    val catalogViewModel = remember { newHistoryViewModel(QuoteKind.PRODUCT) }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, container.maintenance) }
@@ -172,12 +138,10 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
-    var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var draggingFile by remember { mutableStateOf(false) }
     // Ação que jogaria fora o orçamento em andamento na aba, esperando a confirmação.
     var pendingDiscard by remember { mutableStateOf<(() -> Unit)?>(null) }
     val unlessDraft: (() -> Unit) -> Unit = { action -> if (quoteViewModel.hasDraft) pendingDiscard = action else action() }
-    var showHelp by remember { mutableStateOf(false) }
     val themeMode by themeViewModel.mode.collectAsState()
     val currency by currencyViewModel.currency.collectAsState()
 
@@ -190,36 +154,27 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                     val accel = event.isCtrlPressed || event.isMetaPressed
 
-                    val tabForKey = when {
-                        accel && event.key == Key.One -> AppTab.QUOTE
-                        accel && event.key == Key.Two -> AppTab.HISTORY
-                        accel && event.key == Key.Three -> AppTab.DASHBOARD
-                        accel && event.key == Key.Four -> AppTab.FILAMENTS
-                        accel && event.key == Key.Five -> AppTab.PRINTERS
-                        accel && event.key == Key.Six -> AppTab.SERVICES
-                        accel && event.key == Key.Seven -> AppTab.SETTINGS
-                        else -> null
-                    }
-                    if (tabForKey != null) {
-                        selectedTab = tabForKey
+                    val shortcut = if (accel) destinationForShortcut(shortcutNumberOf(event.key) ?: 0) else null
+                    if (shortcut != null) {
+                        destination = shortcut
                         return@onPreviewKeyEvent true
                     }
 
                     when {
-                        accel && event.key == Key.S && selectedTab == AppTab.QUOTE -> {
+                        accel && event.key == Key.S && destination == AppDestination.QUOTE -> {
                             quoteViewModel.saveCurrentQuote()
                             true
                         }
-                        accel && event.key == Key.N && selectedTab == AppTab.QUOTE -> {
+                        accel && event.key == Key.N && destination == AppDestination.QUOTE -> {
                             unlessDraft(quoteViewModel::resetForm)
                             true
                         }
                         // Esc fecha o formulário da aba que está na tela, e só ele: antes fechava os de
                         // todas as abas, inclusive um que a pessoa nem estava vendo.
-                        event.key == Key.Escape -> when (selectedTab) {
-                            AppTab.FILAMENTS -> filamentListViewModel.form.value?.let { filamentListViewModel.cancelEdit(); true } ?: false
-                            AppTab.PRINTERS -> printerListViewModel.form.value?.let { printerListViewModel.cancelEdit(); true } ?: false
-                            AppTab.SERVICES -> serviceListViewModel.form.value?.let { serviceListViewModel.cancelEdit(); true } ?: false
+                        event.key == Key.Escape -> when (destination) {
+                            AppDestination.FILAMENTS -> filamentListViewModel.form.value?.let { filamentListViewModel.cancelEdit(); true } ?: false
+                            AppDestination.PRINTERS -> printerListViewModel.form.value?.let { printerListViewModel.cancelEdit(); true } ?: false
+                            AppDestination.SERVICES -> serviceListViewModel.form.value?.let { serviceListViewModel.cancelEdit(); true } ?: false
                             else -> false
                         }
                         else -> false
@@ -231,53 +186,62 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                         onDragActive = { draggingFile = it },
                         onDrop = { dropped ->
                             // Seja qual for a aba aberta, o G-code vai pro Orçamento, que é onde o resultado aparece.
-                            selectedTab = AppTab.QUOTE
+                            destination = AppDestination.QUOTE
                             quoteViewModel.importDropped(dropped)
                         },
                     ),
                 ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    AppTabBar(selected = selectedTab, onSelect = { selectedTab = it })
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val compactSidebar = maxWidth < SIDEBAR_LABELS_MIN_WINDOW_WIDTH
+                Row(modifier = Modifier.fillMaxSize()) {
+                    AppSidebar(
+                        selected = destination,
+                        onSelect = { destination = it },
+                        compact = compactSidebar,
+                        version = APP_VERSION,
+                    )
+                    VerticalDivider()
 
-                    Box(modifier = Modifier.weight(1f)) {
-                        when (selectedTab) {
-                            AppTab.QUOTE -> QuoteScreen(
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                        when (destination) {
+                            AppDestination.QUOTE -> QuoteScreen(
                                 quoteViewModel,
-                                // Vender, Duplicar e Guardar no catálogo começam no Histórico:
+                                // Vender, Duplicar e Guardar no catálogo começam em Pedidos ou no Catálogo:
                                 // desistir devolve a pessoa pra lá, com o formulário limpo.
                                 onCancelOperation = {
+                                    val origin = quoteViewModel.saveForm.value.operation?.originKind
                                     quoteViewModel.resetForm()
-                                    selectedTab = AppTab.HISTORY
+                                    destination = if (origin == QuoteKind.PRODUCT) AppDestination.CATALOG else AppDestination.ORDERS
                                 },
                             )
-                            AppTab.HISTORY -> QuoteHistoryScreen(
-                                historyViewModel,
+                            AppDestination.ORDERS, AppDestination.CATALOG -> QuoteHistoryScreen(
+                                if (destination == AppDestination.ORDERS) ordersViewModel else catalogViewModel,
                                 onEditQuote = { savedQuote -> editQuoteViewModel.loadForEditing(savedQuote) },
                                 // As três começam um orçamento na aba: com um rascunho lá, pergunta antes.
                                 onDuplicateQuote = { savedQuote ->
                                     unlessDraft {
                                         quoteViewModel.duplicateForNewQuote(savedQuote)
-                                        selectedTab = AppTab.QUOTE
+                                        destination = AppDestination.QUOTE
                                     }
                                 },
                                 onSellProduct = { product ->
                                     unlessDraft {
                                         quoteViewModel.sellFromProduct(product)
-                                        selectedTab = AppTab.QUOTE
+                                        destination = AppDestination.QUOTE
                                     }
                                 },
                                 onCopyToCatalog = { order ->
                                     unlessDraft {
                                         quoteViewModel.copyToCatalog(order)
-                                        selectedTab = AppTab.QUOTE
+                                        destination = AppDestination.QUOTE
                                     }
                                 },
                             )
-                            AppTab.DASHBOARD -> DashboardScreen(dashboardViewModel)
-                            AppTab.FILAMENTS -> FilamentListScreen(filamentListViewModel)
-                            AppTab.PRINTERS -> PrinterListScreen(printerListViewModel)
-                            AppTab.SERVICES -> ServiceListScreen(serviceListViewModel)
-                            AppTab.SETTINGS -> SettingsScreen(
+                            AppDestination.DASHBOARD -> DashboardScreen(dashboardViewModel)
+                            AppDestination.FILAMENTS -> FilamentListScreen(filamentListViewModel)
+                            AppDestination.PRINTERS -> PrinterListScreen(printerListViewModel)
+                            AppDestination.SERVICES -> ServiceListScreen(serviceListViewModel)
+                            AppDestination.SETTINGS -> SettingsScreen(
                                 settingsViewModel,
                                 brandingViewModel,
                                 templateListViewModel,
@@ -286,23 +250,19 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                                 backupViewModel,
                                 salesChannelViewModel,
                             )
+                            AppDestination.ABOUT -> AboutScreen(version = APP_VERSION)
                         }
                     }
-
-                    AppFooter(onHelpClick = { showHelp = true })
+                }
                 }
 
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 56.dp),
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
                 )
 
                 if (draggingFile) GCodeDropOverlay()
                 }
-            }
-
-            if (showHelp) {
-                HelpDialog(onDismiss = { showHelp = false })
             }
 
             var showOldDataNotice by remember { mutableStateOf(dataFolderNotice != null) }
@@ -337,7 +297,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
             pendingDiscard?.let { action ->
                 ConfirmDialog(
                     title = "Descartar o orçamento em andamento?",
-                    message = "O que está preenchido na aba Orçamento ainda não foi salvo e vai ser substituído.",
+                    message = "O que está preenchido no Orçamento ainda não foi salvo e vai ser substituído.",
                     confirmLabel = "Descartar",
                     onConfirm = {
                         pendingDiscard = null
@@ -364,27 +324,6 @@ private fun applyOnboardingPrinter(repository: PrinterRepository, choice: Onboar
             machineInvestment = choice.machinePrice?.let { printer.machineInvestment.copy(machinePrice = it) } ?: printer.machineInvestment,
         ),
     )
-}
-
-/** Rodapé fixo em toda tela: versão, autor, link do projeto e apoio via doação. */
-@Composable
-private fun AppFooter(onHelpClick: () -> Unit) {
-    HorizontalDivider()
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text("3DReport v$APP_VERSION", style = MaterialTheme.typography.bodySmall)
-        Text("·", style = MaterialTheme.typography.bodySmall)
-        Text(AUTHOR_NAME, style = MaterialTheme.typography.bodySmall)
-        Text("·", style = MaterialTheme.typography.bodySmall)
-        LinkText(text = "GitHub", url = GITHUB_URL)
-        Text("·", style = MaterialTheme.typography.bodySmall)
-        LinkText(text = "☕ Apoie no Buy Me a Coffee", url = BUY_ME_A_COFFEE_URL)
-        Text("·", style = MaterialTheme.typography.bodySmall)
-        TextButton(onClick = onHelpClick) { Text("Ajuda") }
-    }
 }
 
 /**
@@ -464,7 +403,7 @@ private fun StorageHealthDialogs(container: AppContainer) {
                                 "${file.name}: recuperado da cópia anterior. Só a última mudança antes de fechar pode ter se perdido."
                             } else {
                                 "${file.name}: não havia cópia anterior que abrisse, e ele começou vazio. Restaure um backup em " +
-                                    "Configurações → Backup pra recuperar."
+                                    "Configurações → Dados pra recuperar."
                             },
                         )
                     }
@@ -496,79 +435,18 @@ private fun StorageHealthDialogs(container: AppContainer) {
     }
 }
 
-@Composable
-private fun HelpDialog(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
-        title = { Text("3DReport v$APP_VERSION") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "Aplicativo gratuito e de código aberto para orçamentos de impressão 3D.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    "• Orçamento: arraste o G-code pra janela (ou use \"Escolher arquivo\") e peso, tempo, foto, " +
-                        "impressora e filamento vêm preenchidos. Escolha se é pedido de cliente ou produto do catálogo, " +
-                        "o canal de venda e os serviços, e salve.",
-                )
-                Text(
-                    "• Histórico: pedidos e produtos salvos, em lista ou Kanban. Exporte PDF, imagem pro WhatsApp " +
-                        "ou o texto; \"Ações\" tem mover de etapa, editar detalhes, duplicar e vender.",
-                )
-                Text("• Dashboard: vendas pela data em que o cliente fechou, lucro por hora e o que mais vende.")
-                Text("• Filamentos, Impressoras e Serviços: seus cadastros, usados na tela de Orçamento.")
-                Text(
-                    "• Configurações: custos (energia, sua hora, margem, imposto), canais de venda com a taxa de cada " +
-                        "um, documentos pro cliente (marca, logo, contato), tema, moeda e backup " +
-                        "(com cópia automática diária).",
-                )
-                Text("Atalhos de teclado", style = MaterialTheme.typography.titleSmall)
-                Text("• Ctrl/Cmd+1 a 7: pula direto para cada aba, nessa ordem.")
-                Text("• Ctrl/Cmd+S: salva o orçamento (na aba Orçamento e na edição).")
-                Text("• Ctrl/Cmd+N: começa um orçamento novo (pergunta antes se houver algo preenchido).")
-                Text("• Esc: fecha o formulário aberto na aba (Filamentos, Impressoras, Serviços) ou a edição.")
-                LinkText(text = "Ver código-fonte no GitHub", url = GITHUB_URL)
-                LinkText(text = "☕ Apoiar o projeto no Buy Me a Coffee", url = BUY_ME_A_COFFEE_URL)
-            }
-        },
-    )
-}
-
-/**
- * Abaixo disso, as sete abas não cabem com ícone sem quebrar o rótulo no meio da palavra
- * ("Orçament/o"), e a barra volta a ser só texto. O texto é o principal e o ícone é apoio
- * (decisão 87), então é o ícone que sai quando falta espaço.
- */
-private val TAB_ICONS_MIN_WIDTH = 1160.dp
-
-@Composable
-private fun AppTabBar(selected: AppTab, onSelect: (AppTab) -> Unit) {
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val showIcons = maxWidth >= TAB_ICONS_MIN_WIDTH
-        PrimaryTabRow(selectedTabIndex = selected.ordinal) {
-            AppTab.entries.forEach { tab ->
-                if (showIcons) {
-                    // Ícone à esquerda, e não em cima, pra barra continuar com 48 dp de altura.
-                    LeadingIconTab(
-                        selected = selected == tab,
-                        onClick = { onSelect(tab) },
-                        text = { Text(tab.label, maxLines = 1) },
-                        icon = {
-                            Icon(
-                                if (selected == tab) tab.selectedIcon else tab.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        },
-                    )
-                } else {
-                    Tab(selected = selected == tab, onClick = { onSelect(tab) }, text = { Text(tab.label) })
-                }
-            }
-        }
-    }
+/** O número de Ctrl/Cmd+1 a 9, ou `null` pra outra tecla. */
+private fun shortcutNumberOf(key: Key): Int? = when (key) {
+    Key.One -> 1
+    Key.Two -> 2
+    Key.Three -> 3
+    Key.Four -> 4
+    Key.Five -> 5
+    Key.Six -> 6
+    Key.Seven -> 7
+    Key.Eight -> 8
+    Key.Nine -> 9
+    else -> null
 }
 
 /**

@@ -200,21 +200,15 @@ class QuoteHistoryViewModelTest {
         assertEquals(listOf(newer, older), visible)
     }
     @Test
-    fun kindFilterShowsOrdersOrProductsAndClearsSelectionAndStatus() {
+    fun eachScreenShowsOnlyItsKind() {
         val repository = QuoteHistoryRepository()
         val order = repository.save(name = "Pedido", quote = quote, services = emptyList(), photo = null, sourceLink = null)
         val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
+        val orders = QuoteHistoryViewModel(repository, BrandingRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
+        val catalog = QuoteHistoryViewModel(repository, BrandingRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository(), kind = QuoteKind.PRODUCT)
 
-        assertEquals(listOf(order.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
-
-        viewModel.setStatusFilter(OrderStatus.ORCADO)
-        viewModel.toggleSelection(order.id)
-        viewModel.setKindFilter(QuoteKind.PRODUCT)
-
-        assertEquals(listOf(product.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
-        assertNull(viewModel.filter.value.status)
-        assertTrue(viewModel.selectedIds.value.isEmpty())
+        assertEquals(listOf(order.id), orders.visibleQuotes(repository.savedQuotes.value, orders.filter.value).map { it.id })
+        assertEquals(listOf(product.id), catalog.visibleQuotes(repository.savedQuotes.value, catalog.filter.value).map { it.id })
     }
 
     @Test
@@ -229,8 +223,11 @@ class QuoteHistoryViewModelTest {
 
         assertFalse(viewModel.canConvertToOrder(product, viewModel.soldProductIds(repository.savedQuotes.value)))
     }
-    private fun historyViewModel(repository: QuoteHistoryRepository, filamentRepository: FilamentRepository = FilamentRepository()) =
-        QuoteHistoryViewModel(repository, BrandingRepository(), filamentRepository, PrinterRepository(), SettingsRepository(), SalesChannelRepository())
+    private fun historyViewModel(
+        repository: QuoteHistoryRepository,
+        filamentRepository: FilamentRepository = FilamentRepository(),
+        kind: QuoteKind = QuoteKind.ORDER,
+    ) = QuoteHistoryViewModel(repository, BrandingRepository(), filamentRepository, PrinterRepository(), SettingsRepository(), SalesChannelRepository(), kind = kind)
 
     /** Produto calculado com o filamento e a impressora padrão que o app cria na primeira execução. */
     private fun savedProduct(repository: QuoteHistoryRepository, category: String? = null): com.threedreport.core.model.SavedQuote {
@@ -245,12 +242,11 @@ class QuoteHistoryViewModelTest {
     }
 
     @Test
-    fun categoryFilterNarrowsProductsAndResetsWhenSwitchingKind() {
+    fun categoryFilterNarrowsProducts() {
         val repository = QuoteHistoryRepository()
         val keychain = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = "Chaveiros")
         val vase = repository.save(name = "Vaso", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
-        val viewModel = historyViewModel(repository)
-        viewModel.setKindFilter(QuoteKind.PRODUCT)
+        val viewModel = historyViewModel(repository, kind = QuoteKind.PRODUCT)
 
         assertEquals(listOf("Chaveiros"), viewModel.productCategories(repository.savedQuotes.value))
 
@@ -259,9 +255,6 @@ class QuoteHistoryViewModelTest {
 
         viewModel.setCategoryFilter(CategoryFilter.None)
         assertEquals(listOf(vase.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
-
-        viewModel.setKindFilter(QuoteKind.ORDER)
-        assertEquals(CategoryFilter.All, viewModel.filter.value.category)
     }
 
     @Test

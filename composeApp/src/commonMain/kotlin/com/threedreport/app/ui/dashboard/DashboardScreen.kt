@@ -69,13 +69,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             summary.quoteCount == 0 && summary.openQuoteCount == 0 && catalog.productCount > 0 -> CatalogSection(catalog)
             summary.quoteCount == 0 && summary.openQuoteCount == 0 -> Text(
                 "Nenhum orçamento salvo nesse período. Ainda não vende? Dá pra começar montando o " +
-                    "catálogo: na aba Orçamento, escolha \"Produto do catálogo\" antes de salvar.",
+                    "catálogo: no Orçamento, escolha \"Produto do catálogo\" antes de salvar.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             summary.quoteCount == 0 -> {
                 Text(
                     "Nenhuma venda nesse período. Um orçamento conta como venda quando o cliente aprova " +
-                        "(status Aprovado em diante, no Histórico).",
+                        "(status Aprovado em diante, em Pedidos).",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OpenQuotesLine(summary)
@@ -223,7 +223,7 @@ private fun CatalogSection(catalog: CatalogSummary) {
     }
     Text(
         "Ainda não há vendas nesse período. Quando aparecer um cliente, é só clicar em \"Vender\" no " +
-            "Histórico, em Produtos, e o pedido já sai preenchido.",
+            "Catálogo, e o pedido já sai preenchido.",
         style = MaterialTheme.typography.bodyMedium,
         modifier = Modifier.padding(top = 8.dp),
     )

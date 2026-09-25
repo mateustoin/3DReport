@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -32,9 +31,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -76,9 +72,10 @@ import kotlinx.coroutines.delay
 
 private enum class HistoryViewMode { LIST, KANBAN }
 
-private val KIND_SEGMENT_MIN_WIDTH = 168.dp
-
-/** Tela de Histórico: orçamentos salvos, com o retrato dos valores no momento em que foram salvos. */
+/**
+ * Pedidos ou Catálogo (decisão 111): a mesma tela, cada uma com o próprio [QuoteHistoryViewModel] e o tipo
+ * fixo nele. Mostra o que foi salvo com o retrato dos valores do momento em que foi salvo.
+ */
 @Composable
 fun QuoteHistoryScreen(
     viewModel: QuoteHistoryViewModel,
@@ -194,8 +191,8 @@ fun QuoteHistoryScreen(
                             }
                         }
                     }
-                    if (savedQuotes.isNotEmpty() && visibleQuotes.isEmpty()) {
-                        item(key = "empty") { EmptyHistory(savedQuotes, filter, showingProducts) }
+                    if (savedQuotes.any { it.kind == filter.kind } && visibleQuotes.isEmpty()) {
+                        item(key = "empty") { EmptyHistory(showingProducts) }
                     }
                     items(visibleQuotes, key = { it.id }) { savedQuote ->
                         SavedQuoteRow(
@@ -315,35 +312,22 @@ private fun HistoryHeader(
     effectiveViewMode: HistoryViewMode,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Histórico", style = MaterialTheme.typography.titleLarge)
+        Text(if (showingProducts) "Catálogo" else "Pedidos", style = MaterialTheme.typography.titleLarge)
 
-        if (savedQuotes.isEmpty()) {
+        if (savedQuotes.none { it.kind == filter.kind }) {
             Text(
-                "Nada salvo ainda. Calcule uma peça na aba Orçamento e salve como pedido de cliente " +
-                    "ou como produto do catálogo.",
+                if (showingProducts) {
+                    "Nenhum produto no catálogo ainda. No Orçamento, escolha \"Produto do catálogo\" antes de " +
+                        "salvar, ou use \"Guardar no catálogo\" no menu \"Ações\" de um pedido."
+                } else {
+                    "Nenhum pedido ainda. No Orçamento, escolha \"Pedido de cliente\" antes de salvar, ou " +
+                        "clique em \"Vender\" num produto do Catálogo."
+                },
                 style = MaterialTheme.typography.bodyMedium,
             )
             return@Column
         }
 
-        // Dois níveis (decisão 102): o segmentado escolhe o que ver, e "Exibir como", menor e
-        // recuado embaixo, é um jeito de ver os pedidos.
-        val orderCount = savedQuotes.count { it.isOrder }
-        SingleChoiceSegmentedButtonRow {
-            // Largura mínima: sem ela, o check que entra no segmento escolhido corta o texto.
-            SegmentedButton(
-                modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
-                selected = !showingProducts,
-                onClick = { viewModel.setKindFilter(QuoteKind.ORDER) },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-            ) { Text("Pedidos ($orderCount)") }
-            SegmentedButton(
-                modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
-                selected = showingProducts,
-                onClick = { viewModel.setKindFilter(QuoteKind.PRODUCT) },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-            ) { Text("Produtos (${savedQuotes.size - orderCount})") }
-        }
         if (!showingProducts) {
             Row(
                 modifier = Modifier.padding(start = 16.dp),
@@ -388,19 +372,8 @@ private fun HistoryHeader(
 }
 
 @Composable
-private fun EmptyHistory(savedQuotes: List<SavedQuote>, filter: HistoryFilter, showingProducts: Boolean) {
-    val hasAnyOfThisKind = savedQuotes.any { it.kind == filter.kind }
-    EmptyState(
-        when {
-            hasAnyOfThisKind && showingProducts -> "Nenhum produto encontrado com esse filtro."
-            hasAnyOfThisKind -> "Nenhum pedido encontrado com esse filtro."
-            showingProducts -> "Nenhum produto no catálogo ainda. Na aba Orçamento, escolha " +
-                "\"Produto do catálogo\" antes de salvar, ou use \"Guardar no catálogo\" no menu " +
-                "\"Ações\" de um pedido."
-            else -> "Nenhum pedido ainda. Na aba Orçamento, escolha \"Pedido de cliente\" antes de " +
-                "salvar, ou clique em \"Vender\" num produto."
-        },
-    )
+private fun EmptyHistory(showingProducts: Boolean) {
+    EmptyState(if (showingProducts) "Nenhum produto encontrado com esse filtro." else "Nenhum pedido encontrado com esse filtro.")
 }
 
 /**
