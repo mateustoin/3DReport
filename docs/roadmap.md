@@ -327,7 +327,9 @@ uma conta incompleta mente com mais confiança.
   `PricingCalculator` várias vezes e mostra lado a lado, mas aqui as
   variantes vão **pro cliente** e precisam ficar salvas, então mexe no
   formato de `SavedQuote`. Por isso é bem maior que o item anterior e merece
-  decisão própria sobre o modelo de dados antes de implementar.
+  decisão própria sobre o modelo de dados antes de implementar. Se vier
+  depois do pedido com várias impressões (leva 9), cada opção pode ser um
+  conjunto de impressões, reaproveitando aquele modelo.
 
 ### Leva 6 — Leitura do negócio (Dashboard vira consultor, não relatório)
 
@@ -614,7 +616,9 @@ barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
   - [ ] **Ler o `.gcode.3mf` do Bambu Studio** ("Exportar arquivo fatiado da
     placa", um zip com `Metadata/plate_N.gcode` dentro). Ficou de fora porque
     nenhum exemplo público confirmou a estrutura; pela regra de não inventar
-    formato, entra quando houver um arquivo real pra conferir.
+    formato, entra quando houver um arquivo real pra conferir. O arquivo
+    pode trazer várias placas; depois da fase 3 do pedido com várias
+    impressões (leva 9), cada placa vira uma impressão do mesmo pedido.
   Texto original: hoje a
   importação preenche dois campos, mas o fluxo ainda exige escolher
   impressora e filamento na mão. O bloco de configuração do G-code das
@@ -629,18 +633,6 @@ barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
 
 ### Leva 9 — Apostas maiores (por último)
 
-- [ ] **Peça com mais de um filamento (multicolor/AMS).** `PrintJob` tem um
-  único `filament`, então uma peça com 3 cores não é representável — pior: o
-  parser de G-code **soma** os extrusores num total só, então uma peça com
-  PLA + PETG é cobrada como se tudo fosse do mesmo preço/kg, em silêncio.
-  Com AMS virando comum, isso vira uma limitação de verdade. Fica por último
-  por ser a mudança mais profunda do modelo (`PrintJob`/`Quote` + todos os
-  exports). Desde a decisão 89, importar um G-code com materiais diferentes
-  em extrusores diferentes pelo menos **avisa** e não escolhe filamento
-  sozinho, em vez de orçar tudo como um material só em silêncio; o consumo
-  continua somado. **Nota de sequenciamento:** se houver intenção real de fazer
-  isso, fazer junto da leva 2 (quantidade, que também mexe em
-  `PrintJob`/`Quote`) economiza metade do trabalho de migração.
 - [x] **Calculadora web no próprio site, reaproveitando o módulo `core`**
   (decisão 98, 2026-09-24). **Feito:** `site/calculadora.html`, página
   própria ligada pela home e no sitemap. Peso, tempo, filamento, potência,
@@ -658,6 +650,124 @@ barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
   build novo, pipeline de publicação, e uma versão web que precisa não
   canibalizar o app).
 
+#### Vários filamentos numa impressão e várias impressões num pedido
+
+Junta dois problemas que são o mesmo visto de lados diferentes. Hoje o
+modelo supõe "1 pedido = 1 impressão = 1 filamento": `PrintJob` tem um
+`filament` só e `Quote` tem um `job` só, com uma impressora.
+
+- **Multicolor/AMS** (item que já estava aqui): uma peça com 3 cores não é
+  representável, e pior, o parser de G-code **soma** os extrusores num total
+  só, então uma peça com PLA + PETG é cobrada como se tudo fosse do mesmo
+  preço/kg. Desde a decisão 89, importar um G-code com materiais diferentes
+  em extrusores diferentes pelo menos **avisa** e não escolhe filamento
+  sozinho; o consumo continua somado.
+- **Pedido feito de várias impressões** (levantado pelo responsável do
+  projeto, 2026-09-24): uma action figure grande ou um diorama sai em várias
+  rodadas de impressão, às vezes em impressoras e filamentos diferentes, mas
+  é uma entrega só e um preço só pro cliente. Hoje o vendedor não tem como
+  orçar isso no app sem fingir que é uma peça só.
+
+A forma real do pedido:
+
+```
+Pedido (1 entrega, 1 preço pro cliente)
+ └─ Impressão 1 "Cabeça" · K1    · 3h10 · ×1 · PLA pele 42 g + PLA preto 6 g
+ └─ Impressão 2 "Corpo"  · K1    · 9h40 · ×1 · PLA azul 180 g
+ └─ Impressão 3 "Base"   · Ender · 6h00 · ×1 · PETG cinza 210 g
+```
+
+Dois cuidados de conceito:
+
+- **O custo é de cada mesa, não de cada parte.** Uma mesa pode ter várias
+  partes; o que custa é uma rodada da máquina (tempo, impressora, filamento).
+- **Não é somar N orçamentos.** O que é do pedido entra uma vez só: tempo de
+  trabalho (decisão 94), custo administrativo, serviços por pedido, frete,
+  prazo, canal, imposto e preço negociado. Somar orçamentos separados
+  cobraria o administrativo N vezes.
+
+Decidido com o responsável do projeto (2026-09-24): na tela, cada bloco se
+chama **"Impressão"** ("Impressão 2 · Corpo"); o cliente vê **um item só**
+(nome, foto, preço, prazo), e a divisão fica de uso interno, como custo e
+margem (decisão 19); o modelo é migrado **uma vez**, já suportando as duas
+coisas, e as telas vêm em fases, multicolor primeiro porque corrige uma
+conta errada.
+
+**Fase 1: modelo e cálculo (nada muda na tela)**
+
+- [ ] **`FilamentUsage` (filamento, cor, metros).** `PrintJob` mantém os
+  campos atuais como filamento principal, pra JSON antigo continuar válido,
+  e ganha `additionalFilaments`, `name`, impressora (`printerId` e
+  `printerName`, pelo mesmo motivo do `Quote`) e `runs` (quantas vezes a
+  mesma mesa roda, padrão 1).
+- [ ] **`Quote` ganha `additionalJobs`.** O `job` atual continua sendo a
+  impressão 1, então nenhum orçamento salvo muda. O custo de cada impressão
+  fica congelado junto, pra o detalhamento sair igual ao reabrir.
+- [ ] **`PricingCalculator` por impressão.** Material por filamento;
+  energia, manutenção, retorno e custo fixo com a impressora **daquela**
+  impressão; soma; e só então o que é do pedido (preparo, administrativo,
+  falha, margem, canal, imposto). A assinatura atual vira atalho pra uma
+  impressão. **Garantia:** os testes de `commonTest` passam sem alteração,
+  nos alvos JVM e JS, e a calculadora do site (decisão 98) não muda.
+- [ ] `quantity` continua sendo "quantos pedidos iguais" (2 dioramas); cada
+  impressão multiplica pelos próprios `runs` e depois pela quantidade.
+
+**Fase 2: vários filamentos numa impressão (multicolor/AMS)**
+
+- [ ] **"+ Adicionar filamento"** na linha do filamento. Com mais de um,
+  cada linha tem filamento, cor e metros; com um só, a tela fica
+  exatamente como hoje.
+- [ ] **G-code por extrusor:** o parser para de somar e devolve o consumo de
+  cada extrusor, e o `CatalogMatcher` casa cada um com a mesma regra de
+  precisão da decisão 89 (o que não bate fica em branco pra escolher).
+  Primeiro passo obrigatório: conferir em G-codes multicolor reais (Bambu
+  Studio, OrcaSlicer, PrusaSlicer com MMU) se o consumo por extrusor já
+  inclui a purga e a torre, que são custo de verdade.
+- [ ] **Resultado mostra o consumo por filamento** ("PLA preto 320 g, PETG
+  80 g"), que é o que o vendedor confere no estoque.
+
+**Fase 3: várias impressões num pedido**
+
+- [ ] **Revelação progressiva:** pedido de uma impressão continua idêntico
+  ao de hoje. "Adicionar outra impressão" transforma o bloco atual no cartão
+  "Impressão 1" e cria a "Impressão 2", já com a impressora e o filamento da
+  anterior.
+- [ ] **Cartão da impressão:** nome opcional ("Cabeça"), impressora,
+  filamentos, metros, tempo, "× N vezes", botão de G-code e miniatura.
+  Recolhível, com resumo numa linha ("Corpo · K1 · 9h40 · 180 g · produção
+  R$ 32,10"). Duplicar e remover, remover com desfazer.
+- [ ] **O que é do pedido fica fora dos cartões:** tempo de trabalho,
+  serviços, frete, canal, negociação e prazo, uma vez só.
+- [ ] **Arrastar vários G-codes de uma vez cria uma impressão por arquivo**
+  (o vendedor fatia 6 mesas e arrasta as 6). Com um arquivo só, o aviso de
+  arraste se divide em "Substituir a impressão N" e "Adicionar como nova
+  impressão"; soltar em cima de um cartão preenche aquele cartão. Desfazer
+  continua valendo.
+- [ ] **Resultado:** total do pedido em destaque, "Por impressão" recolhido
+  logo abaixo.
+- [ ] **Comparar impressoras** (decisão 79) vira "tudo nesta impressora".
+
+**Fase 4: o resto do app entende o pedido com várias impressões**
+
+- [ ] **Histórico e Kanban:** um cartão por pedido, com "3 impressões"
+  discreto.
+- [ ] **Fila de impressão e horas de manutenção:** cada impressão soma na
+  impressora dela (`PrintQueueReport`, `MaintenanceReport`).
+- [ ] **Dashboard:** horas de máquina somadas; o filamento mais usado conta
+  cada filamento de cada impressão (`QuoteReport`).
+- [ ] **PDF, texto/WhatsApp e imagem:** um item só; o tempo de impressão
+  (opção da decisão 85) é a soma.
+- [ ] **Duplicar, reimprimir, editar e o "Vender" do catálogo** (leva 7B)
+  copiam todas as impressões.
+- [ ] **Backup:** o formato só ganha campos opcionais.
+
+**Cuidados de usabilidade na implementação:**
+
+- Quem nunca clica em "Adicionar" não vê nada novo.
+- Na tela, a palavra é "impressão", nunca "job", "placa" ou "parte".
+- Nenhum número do pedido fica escondido em cartão recolhido: total e tempo
+  total ficam sempre à vista.
+- O cliente nunca vê a divisão (decisão 19).
 ### Fora das levas
 
 Continuam no backlog, sem posição definida nesta revisão (nenhum foi
