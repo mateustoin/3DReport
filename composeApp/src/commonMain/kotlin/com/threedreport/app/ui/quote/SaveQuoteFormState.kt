@@ -40,4 +40,6 @@ data class SaveQuoteFormState(
     val soldFromProductName: String? = null,
     /** Nome do pedido de origem, só quando este formulário veio de "Guardar no catálogo" — exibido como aviso. */
     val copiedFromOrderName: String? = null,
+    /** Categoria do produto no catálogo (decisão 102), texto livre; ignorada em pedido. */
+    val category: String = "",
 )

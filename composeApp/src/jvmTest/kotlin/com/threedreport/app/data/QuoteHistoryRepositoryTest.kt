@@ -623,4 +623,44 @@ class QuoteHistoryRepositoryTest {
         assertTrue(converted.savedAtEpochMillis >= before)
         assertNull(converted.lastEditedEpochMillis)
     }
+
+    @Test
+    fun productCategoryIsTrimmedReusesAnExistingSpellingAndSurvivesReload() {
+        val repository = QuoteHistoryRepository()
+        repository.save(name = "A", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = "Chaveiros")
+        repository.save(name = "B", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = "  chaveiros ")
+        repository.save(name = "C", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = "   ")
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value
+        assertEquals(listOf("Chaveiros", "Chaveiros", null), reloaded.map { it.category })
+    }
+
+    @Test
+    fun orderNeverKeepsACategory() {
+        val repository = QuoteHistoryRepository()
+        val order = repository.save(name = "Pedido", quote = quote, services = emptyList(), photo = null, sourceLink = null, category = "Chaveiros")
+
+        repository.update(id = order.id, name = "Pedido", quote = quote, services = emptyList(), photo = null, stlFile = null, sourceLink = null, client = null, category = "Chaveiros")
+
+        assertNull(repository.savedQuotes.value.single().category)
+    }
+
+    @Test
+    fun updateQuoteChangesOnlyTheProductPriceAndIgnoresOrders() {
+        val repository = QuoteHistoryRepository()
+        val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = "https://x", kind = QuoteKind.PRODUCT, category = "Chaveiros")
+        val order = repository.save(name = "Pedido", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val newQuote = quote.copy(salePrice = quote.salePrice + 5)
+
+        repository.updateQuote(product.id, newQuote)
+        repository.updateQuote(order.id, newQuote)
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value
+        val updated = reloaded.first { it.id == product.id }
+        assertEquals(newQuote, updated.quote)
+        assertEquals("https://x", updated.sourceLink)
+        assertEquals("Chaveiros", updated.category)
+        assertTrue(updated.lastEditedEpochMillis != null)
+        assertEquals(quote, reloaded.first { it.id == order.id }.quote)
+    }
 }

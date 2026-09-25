@@ -376,35 +376,87 @@ actual fun renderCatalogPdf(
         }
         val headerHeight = titleHeight + identityHeight
 
-        val usableHeight = PDRectangle.A4.height - margin * 2 - headerHeight
-        val rowsPerPage = maxOf(1, ((usableHeight + rowGap) / (cellHeight + rowGap)).toInt())
-        val itemsPerPage = rowsPerPage * columns
+        val sectionHeaderHeight = 26f + 14f
+        val blocks = catalogSections(items).flatMap { (title, sectionItems) ->
+            listOfNotNull(title?.let(CatalogBlock::Header)) + sectionItems.chunked(columns).map(CatalogBlock::Row)
+        }
 
-        items.chunked(itemsPerPage).forEach { pageItems ->
-            val page = PDPage(PDRectangle.A4)
-            document.addPage(page)
-            PDPageContentStream(document, page).use { content ->
-                val top = page.mediaBox.height - margin
-                if (context.hasHeader) drawIdentityHeader(context, content, page, margin, top)
-                val titleTop = top - identityHeight
-                content.text(context.titleFont, 18f, margin, titleTop - 14f, "Catálogo de produtos")
+        // Fluxo de cima pra baixo: página nova só quando o próximo bloco não cabe. Sem categorias,
+        // os blocos são só linhas de produtos e o resultado é a mesma grade de sempre.
+        var page: PDPage? = null
+        var content: PDPageContentStream? = null
+        var pageStart = 0f
+        var cursor = 0f
 
-                pageItems.forEachIndexed { index, item ->
-                    val row = index / columns
-                    val col = index % columns
-                    val cellX = margin + col * (cellWidth + gutter)
-                    val cellTop = titleTop - titleHeight - row * (cellHeight + rowGap)
-                    drawCatalogCell(context, content, item, cellX, cellTop, cellWidth, photoSize)
+        fun finishPage() {
+            val current = content ?: return
+            drawPageDecorations(context, current, page!!, watermarkText, footerText, margin)
+            current.close()
+        }
+
+        fun startPage() {
+            finishPage()
+            val newPage = PDPage(PDRectangle.A4).also(document::addPage)
+            val newContent = PDPageContentStream(document, newPage)
+            val top = newPage.mediaBox.height - margin
+            if (context.hasHeader) drawIdentityHeader(context, newContent, newPage, margin, top)
+            val titleTop = top - identityHeight
+            newContent.text(context.titleFont, 18f, margin, titleTop - 14f, "Catálogo de produtos")
+            page = newPage
+            content = newContent
+            pageStart = top - headerHeight
+            cursor = pageStart
+        }
+
+        blocks.forEach { block ->
+            // O título da seção nunca fica sozinho no pé da página: só entra se couber uma linha junto.
+            val needed = when (block) {
+                is CatalogBlock.Header -> sectionHeaderHeight + cellHeight
+                is CatalogBlock.Row -> cellHeight
+            }
+            if (content == null || (cursor - needed < margin && cursor < pageStart)) startPage()
+            val current = content!!
+            when (block) {
+                is CatalogBlock.Header -> {
+                    cursor = drawHighlightBand(current, context.titleFont, block.title, margin, cursor, PDRectangle.A4.width - margin * 2) - 14f
                 }
-
-                drawPageDecorations(context, content, page, watermarkText, footerText, margin)
+                is CatalogBlock.Row -> {
+                    block.items.forEachIndexed { col, item ->
+                        val cellX = margin + col * (cellWidth + gutter)
+                        drawCatalogCell(context, current, item, cellX, cursor, cellWidth, photoSize)
+                    }
+                    cursor -= cellHeight + rowGap
+                }
             }
         }
+        finishPage()
 
         val output = ByteArrayOutputStream()
         document.save(output)
         return output.toByteArray()
     }
+}
+
+/** Um pedaço do catálogo em fluxo: título de seção ou uma linha da grade de produtos. */
+private sealed interface CatalogBlock {
+    data class Header(val title: String) : CatalogBlock
+    data class Row(val items: List<QuoteExportItem>) : CatalogBlock
+}
+
+/**
+ * Seções do catálogo por categoria do produto (decisão 102): em ordem alfabética, com os sem
+ * categoria em "Outros", no fim. Se nenhum item tem categoria, uma seção só e sem título, que é o
+ * catálogo de antes. A ordem dos itens dentro de cada seção é a que veio.
+ */
+internal fun catalogSections(items: List<QuoteExportItem>): List<Pair<String?, List<QuoteExportItem>>> {
+    if (items.none { it.savedQuote.category != null }) return listOf(null to items)
+    val (categorized, uncategorized) = items.partition { it.savedQuote.category != null }
+    val sections = categorized
+        .groupBy { it.savedQuote.category!!.lowercase() }
+        .values
+        .map { group -> group.first().savedQuote.category!! to group }
+        .sortedBy { it.first.lowercase() }
+    return if (uncategorized.isEmpty()) sections else sections + ("Outros" to uncategorized)
 }
 
 /** Desenha uma célula da grade do catálogo: foto (se houver, centralizada e escalada até [photoSize]) + nome + venda. */

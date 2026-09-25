@@ -522,19 +522,19 @@ barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
   catálogo" já sugere todos, sem obrigar a marcar um por um. A seleção
   manual continua valendo pra quem quer um recorte.
 
-**Fase 2: catálogo vivo (preço que não envelhece)**
+**Fase 2: catálogo vivo (preço que não envelhece)** (feita, decisão 102, 2026-09-24, v1.43.0)
 
-- [ ] **Atualizar o preço com os cadastros de hoje.** O pedido é um retrato
+- [x] **Atualizar o preço com os cadastros de hoje.** **Feito com um ajuste (decisão 102):** o aviso aparece quando os custos mudaram ("Custos mudaram: hoje sairia R$ X"), e não pela idade do preço, porque preço antigo com custos iguais continua certo. Texto original: O pedido é um retrato
   congelado (KDoc de `SavedQuote`), e isso está certo pra venda. O produto
   de catálogo precisa acompanhar o filamento que subiu e a hora de trabalho
   que mudou: "Atualizar preço" roda o `PricingCalculator` de novo e mostra
   antes e depois antes de gravar. Produto antigo ganha um aviso discreto
   ("preço de N meses atrás").
-- [ ] **Preço de vitrine:** calculado R$ 18,37, anunciado R$ 18,90. Mesma
+- [x] **Preço de vitrine:** (com o atalho "Arredondar pra R$ X,90") calculado R$ 18,37, anunciado R$ 18,90. Mesma
   ideia do `tableSalePrice` (decisão 84): o anunciado vai pro catálogo, e o
   aviso de prejuízo (decisão 79) avisa se o arredondamento ficou abaixo do
   custo.
-- [ ] **Categorias simples** (Chaveiros, Decoração, Utilidades) pra filtrar
+- [x] **Categorias simples** (Chaveiros, Decoração, Utilidades) pra filtrar
   a lista e separar o PDF do catálogo em seções. Texto livre com sugestão
   das já usadas, sem tela de cadastro nova.
 

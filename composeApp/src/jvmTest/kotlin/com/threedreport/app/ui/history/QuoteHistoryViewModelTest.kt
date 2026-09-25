@@ -4,7 +4,11 @@ import kotlin.test.assertFalse
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
+import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.data.SalesChannelRepository
+import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
@@ -47,7 +51,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun toggleSelectionAddsAndRemoves() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
 
         viewModel.toggleSelection("a")
         viewModel.toggleSelection("b")
@@ -59,7 +63,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun clearSelectionEmptiesIt() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
 
         viewModel.toggleSelection("a")
         viewModel.toggleSelection("b")
@@ -71,7 +75,7 @@ class QuoteHistoryViewModelTest {
     @Test
     fun deletingASelectedQuoteRemovesItFromSelection() {
         val repository = QuoteHistoryRepository()
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
         val saved = repository.save(name = "Peça", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         viewModel.toggleSelection(saved.id)
@@ -85,7 +89,7 @@ class QuoteHistoryViewModelTest {
     @Test
     fun updateStatusChangesTheSavedQuoteStatus() {
         val repository = QuoteHistoryRepository()
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
         val saved = repository.save(name = "Peça", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         viewModel.updateStatus(saved.id, OrderStatus.PRONTO)
@@ -96,7 +100,7 @@ class QuoteHistoryViewModelTest {
     @Test
     fun sendingAQuoteWithAnOverdueDeadlineIsHeldForConfirmation() {
         val repository = QuoteHistoryRepository()
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), today = { 100L })
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository(), today = { 100L })
         val overdue = repository.save(name = "Vencido", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 99L)
 
         viewModel.copyQuoteToClipboard(overdue)
@@ -108,7 +112,7 @@ class QuoteHistoryViewModelTest {
     @Test
     fun changingTheDateFromTheWarningOpensTheDeliveryDialogInsteadOfSending() {
         val repository = QuoteHistoryRepository()
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), today = { 100L })
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository(), today = { 100L })
         val overdue = repository.save(name = "Vencido", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 99L)
         viewModel.exportPdf(overdue)
 
@@ -123,7 +127,7 @@ class QuoteHistoryViewModelTest {
     @Test
     fun batchExportIsHeldWhenAnySelectedQuoteIsOverdue() {
         val repository = QuoteHistoryRepository()
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), today = { 100L })
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository(), today = { 100L })
         val onTime = repository.save(name = "No prazo", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 120L)
         val overdue = repository.save(name = "Vencido", quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = 99L)
         viewModel.toggleSelection(onTime.id)
@@ -140,7 +144,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesFiltersByQueryMatchingNameOrClient() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
         val byName = quote.let { SavedQuoteFixture.of(it, name = "Suporte de celular") }
         val byClient = quote.let { SavedQuoteFixture.of(it, name = "Vaso", client = Client(name = "João")) }
         val neither = quote.let { SavedQuoteFixture.of(it, name = "Chaveiro") }
@@ -153,7 +157,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesFiltersByStatus() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
         val orcado = SavedQuoteFixture.of(quote, name = "A", status = OrderStatus.ORCADO)
         val entregue = SavedQuoteFixture.of(quote, name = "B", status = OrderStatus.ENTREGUE)
 
@@ -164,7 +168,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesFiltersByPeriod() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
         val now = System.currentTimeMillis()
         val today = SavedQuoteFixture.of(quote, name = "Hoje", savedAtEpochMillis = now)
         val longAgo = SavedQuoteFixture.of(quote, name = "Antigo", savedAtEpochMillis = now - 60L * 24 * 60 * 60 * 1000)
@@ -176,7 +180,7 @@ class QuoteHistoryViewModelTest {
 
     @Test
     fun visibleQuotesAreSortedByMostRecentFirst() {
-        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
         val older = SavedQuoteFixture.of(quote, name = "Mais antigo", savedAtEpochMillis = 1_000L)
         val newer = SavedQuoteFixture.of(quote, name = "Mais novo", savedAtEpochMillis = 2_000L)
 
@@ -189,7 +193,7 @@ class QuoteHistoryViewModelTest {
         val repository = QuoteHistoryRepository()
         val order = repository.save(name = "Pedido", quote = quote, services = emptyList(), photo = null, sourceLink = null)
         val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
 
         assertEquals(listOf(order.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
 
@@ -206,7 +210,7 @@ class QuoteHistoryViewModelTest {
     fun convertToOrderIsOnlyOfferedForAProductThatWasNeverSold() {
         val repository = QuoteHistoryRepository()
         val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
-        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository())
+        val viewModel = QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository())
 
         assertTrue(viewModel.canConvertToOrder(product, repository.savedQuotes.value))
 
@@ -214,6 +218,77 @@ class QuoteHistoryViewModelTest {
 
         assertFalse(viewModel.canConvertToOrder(product, repository.savedQuotes.value))
     }
+    private fun historyViewModel(repository: QuoteHistoryRepository, filamentRepository: FilamentRepository = FilamentRepository()) =
+        QuoteHistoryViewModel(repository, BrandingRepository(), CurrencyRepository(), filamentRepository, PrinterRepository(), SettingsRepository(), SalesChannelRepository())
+
+    /** Produto calculado com o filamento e a impressora padrão que o app cria na primeira execução. */
+    private fun savedProduct(repository: QuoteHistoryRepository, category: String? = null): com.threedreport.core.model.SavedQuote {
+        val filament = FilamentRepository().filaments.value.first()
+        val printer = PrinterRepository().printers.value.first()
+        val calculated = com.threedreport.core.pricing.PricingCalculator.calculate(
+            job = PrintJob(filament = filament, filamentLengthMeters = 12.0, printTimeMinutes = 190.0),
+            printer = printer,
+            settings = SettingsRepository().settings.value,
+        ).copy(printerId = printer.id, printerName = printer.name)
+        return repository.save(name = "Chaveiro", quote = calculated, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = category)
+    }
+
+    @Test
+    fun categoryFilterNarrowsProductsAndResetsWhenSwitchingKind() {
+        val repository = QuoteHistoryRepository()
+        val keychain = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = "Chaveiros")
+        val vase = repository.save(name = "Vaso", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
+        val viewModel = historyViewModel(repository)
+        viewModel.setKindFilter(QuoteKind.PRODUCT)
+
+        assertEquals(listOf("Chaveiros"), viewModel.productCategories(repository.savedQuotes.value))
+
+        viewModel.setCategoryFilter(CategoryFilter.Named("chaveiros"))
+        assertEquals(listOf(keychain.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
+
+        viewModel.setCategoryFilter(CategoryFilter.None)
+        assertEquals(listOf(vase.id), viewModel.visibleQuotes(repository.savedQuotes.value, viewModel.filter.value).map { it.id })
+
+        viewModel.setKindFilter(QuoteKind.ORDER)
+        assertEquals(CategoryFilter.All, viewModel.filter.value.category)
+    }
+
+    @Test
+    fun productWithUnchangedCostsNeedsNoRepricing() {
+        val repository = QuoteHistoryRepository()
+        val product = savedProduct(repository)
+
+        val result = historyViewModel(repository).repriceFor(product)
+
+        assertFalse((result as com.threedreport.core.pricing.RepriceResult.Repriced).changed)
+    }
+
+    @Test
+    fun repricingShowsTheNewPriceAndOnlySavesOnConfirm() {
+        val repository = QuoteHistoryRepository()
+        val product = savedProduct(repository)
+        val filamentRepository = FilamentRepository()
+        val filament = filamentRepository.filaments.value.first()
+        filamentRepository.update(filament.copy(pricePerKg = filament.pricePerKg * 2))
+        val viewModel = historyViewModel(repository, filamentRepository)
+
+        assertTrue((viewModel.repriceFor(product) as com.threedreport.core.pricing.RepriceResult.Repriced).changed)
+
+        viewModel.startRepricing(product)
+        val pending = viewModel.repricing.value!!
+        assertTrue(pending.newQuote.salePrice > product.quote.salePrice)
+
+        viewModel.cancelRepricing()
+        assertEquals(product.quote, repository.savedQuotes.value.single().quote)
+
+        viewModel.startRepricing(product)
+        viewModel.confirmRepricing()
+        val updated = repository.savedQuotes.value.single()
+        assertEquals(pending.newQuote, updated.quote)
+        assertTrue(updated.lastEditedEpochMillis != null)
+        assertNull(viewModel.repricing.value)
+    }
+
 }
 
 private object SavedQuoteFixture {

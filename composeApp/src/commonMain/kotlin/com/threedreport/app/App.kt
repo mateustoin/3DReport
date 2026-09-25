@@ -148,7 +148,12 @@ fun App() {
             salesChannelRepository, historyRepository,
         )
     }
-    val historyViewModel = remember { QuoteHistoryViewModel(historyRepository, brandingRepository, currencyRepository) }
+    val historyViewModel = remember {
+        QuoteHistoryViewModel(
+            historyRepository, brandingRepository, currencyRepository,
+            filamentRepository, printerRepository, settingsRepository, salesChannelRepository,
+        )
+    }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, maintenanceRepository) }
@@ -228,7 +233,15 @@ fun App() {
 
                     Box(modifier = Modifier.weight(1f)) {
                         when (selectedTab) {
-                            AppTab.QUOTE -> QuoteScreen(quoteViewModel)
+                            AppTab.QUOTE -> QuoteScreen(
+                                quoteViewModel,
+                                // Vender, Duplicar e Guardar no catálogo começam no Histórico:
+                                // desistir devolve a pessoa pra lá, com o formulário limpo.
+                                onCancelOperation = {
+                                    quoteViewModel.resetForm()
+                                    selectedTab = AppTab.HISTORY
+                                },
+                            )
                             AppTab.HISTORY -> QuoteHistoryScreen(
                                 historyViewModel,
                                 onEditQuote = { savedQuote -> quoteViewModel.loadForEditing(savedQuote) },

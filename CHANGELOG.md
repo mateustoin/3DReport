@@ -5,6 +5,32 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.43.0] - 2026-09-24
+
+### Adicionado
+- **Preço do catálogo que acompanha os custos.** Quando o filamento sobe ou a
+  hora de trabalho muda, o card do produto avisa "Custos mudaram: hoje o preço
+  calculado seria R$ X". "Atualizar preço" mostra o antes e o depois (preço,
+  produção e lucro) antes de gravar. Se o filamento, a impressora ou o canal
+  do produto foram excluídos, o card diz qual e sugere abrir em Editar.
+- **Preço anunciado.** No produto, dá pra anunciar um valor redondo (R$ 18,90)
+  no lugar do calculado (R$ 18,37), com o atalho "Arredondar pra R$ 18,90". É
+  o anunciado que sai no catálogo, no PDF e na imagem, e é o preço que o
+  pedido recebe ao clicar em "Vender". O app avisa se ele ficar abaixo do
+  custo.
+- **Categorias de produto** (Chaveiros, Decoração...), em texto livre com as
+  já usadas sugeridas. A lista de Produtos ganhou filtro por categoria, e o
+  catálogo em PDF sai separado em seções, com "Outros" no fim.
+
+### Alterado
+- **Cancelar ficou fácil de achar.** Em "Vender", "Duplicar" e "Guardar no
+  catálogo", uma faixa avermelhada fixa no rodapé da tela de Orçamento diz o
+  que está em andamento e tem o botão de cancelar, que limpa o formulário e
+  volta ao Histórico.
+- **Topo do Histórico mais claro.** "Pedidos | Produtos" virou um seletor com
+  a quantidade de cada um, e "Exibir como: Lista · Kanban" fica embaixo, só em
+  Pedidos, pra deixar claro que é um jeito de ver os pedidos.
+
 ## [1.42.0] - 2026-09-24
 
 ### Adicionado

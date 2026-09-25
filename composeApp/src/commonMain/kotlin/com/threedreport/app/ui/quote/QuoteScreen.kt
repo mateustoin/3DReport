@@ -1,6 +1,12 @@
 package com.threedreport.app.ui.quote
 
 import androidx.compose.foundation.Image
+import com.threedreport.app.ui.components.IconLabel
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
@@ -117,7 +123,12 @@ private fun Double.formatOneDecimal(): String {
  * tem efeito num orçamento novo (não editando nada).
  */
 @Composable
-fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEditingFinished: () -> Unit = {}) {
+fun QuoteScreen(
+    viewModel: QuoteViewModel,
+    modifier: Modifier = Modifier,
+    onEditingFinished: () -> Unit = {},
+    onCancelOperation: () -> Unit = {},
+) {
     val allFilaments by viewModel.filaments.collectAsState()
     val filaments = allFilaments.filter { it.hasStockAvailable }
     val printers by viewModel.printers.collectAsState()
@@ -134,7 +145,8 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
     // Em tela larga, entradas à esquerda e o dinheiro à direita, recalculando enquanto se digita:
     // antes era uma coluna só e não dava pra ver o preço e os campos ao mesmo tempo. Janela
     // estreita volta pra coluna única, que continua sendo o layout que sempre funcionou.
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
         if (maxWidth >= TWO_COLUMN_MIN_WIDTH) {
             Row(modifier = Modifier.fillMaxSize()) {
                 Column(
@@ -164,6 +176,51 @@ fun QuoteScreen(viewModel: QuoteViewModel, modifier: Modifier = Modifier, onEdit
                 HorizontalDivider()
                 SaveQuoteFormSection(viewModel, saveForm, result, onEditingFinished)
             }
+        }
+    }
+    OperationBar(saveForm, isProduct = input.isProduct, onCancel = onCancelOperation)
+    }
+}
+
+/**
+ * Faixa fixa no rodapé enquanto o formulário veio de uma operação começada no Histórico (Vender,
+ * Duplicar, Guardar no catálogo), com o jeito de desistir sempre à vista (decisão 102). Antes o
+ * "Cancelar" ficava no meio do formulário, entre os campos, e era difícil de achar. O fundo
+ * avermelhado diz que há algo em andamento, sem ser alarme: nada foi salvo ainda.
+ */
+@Composable
+private fun OperationBar(form: SaveQuoteFormState, isProduct: Boolean, onCancel: () -> Unit) {
+    val (text, cancelLabel) = when {
+        form.soldFromProductName != null -> Pair(
+            "Vendendo o produto \"${form.soldFromProductName}\": preencha o cliente e o prazo e salve o pedido. " +
+                "O produto continua no catálogo, sem mudar nada.",
+            "Cancelar venda",
+        )
+        form.copiedFromOrderName != null -> Pair(
+            "Copiando o pedido \"${form.copiedFromOrderName}\" pro catálogo: revise e clique em \"Salvar no catálogo\". " +
+                "Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
+            "Cancelar cópia",
+        )
+        form.duplicatedFromName != null -> Pair(
+            "Duplicando \"${form.duplicatedFromName}\": revise os dados e salve pra criar " +
+                (if (isProduct) "um produto novo." else "um pedido novo.") + " O original não muda.",
+            "Cancelar duplicação",
+        )
+        else -> return
+    }
+    Surface(color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Icon(AppIcons.Info, contentDescription = null)
+            Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            OutlinedButton(
+                onClick = onCancel,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) { IconLabel(AppIcons.Close, cancelLabel) }
         }
     }
 }
@@ -423,6 +480,12 @@ private fun QuoteResultSection(
             targetTotalText = input.targetTotalText,
             onTargetTotalChange = viewModel::setTargetTotal,
             isProduct = input.isProduct,
+            showcaseSuggestion = if (input.isProduct) {
+                viewModel.showcasePriceSuggestion((quote.tableSalePrice ?: quote.salePrice) + result.servicesTotal + result.shippingCost)
+            } else {
+                null
+            },
+            onApplyShowcaseSuggestion = viewModel::applyShowcasePrice,
         )
 
         val comparison = viewModel.comparePrinters(filaments, printers, settings, services, input, salesChannels)
@@ -551,11 +614,30 @@ private fun NegotiationSection(
     targetTotalText: String,
     onTargetTotalChange: (String) -> Unit,
     isProduct: Boolean = false,
+    showcaseSuggestion: Double? = null,
+    onApplyShowcaseSuggestion: (Double) -> Unit = {},
 ) {
-    // Produto do catálogo não tem cliente pra negociar (decisão 101): fica só o mínimo, que
-    // continua útil pra saber até onde dá pra baixar quando o cliente aparecer.
+    // Produto do catálogo não tem cliente pra negociar (decisão 101), mas tem o preço que se
+    // anuncia (decisão 102): o mesmo preço fechado, com outro nome. Calculado R$ 18,37, anunciado
+    // R$ 18,90; o anunciado vai pro catálogo, e o calculado fica guardado pra comparar.
     if (isProduct) {
-        SectionTitle(AppIcons.Handshake, "Preço mínimo")
+        SectionTitle(AppIcons.Sell, "Preço anunciado")
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = targetTotalText,
+            onValueChange = onTargetTotalChange,
+            label = { Text("Preço anunciado no catálogo (opcional)") },
+        )
+        showcaseSuggestion?.let { suggestion ->
+            AssistChip(onClick = { onApplyShowcaseSuggestion(suggestion) }, label = { Text("Arredondar pra ${suggestion.toMoney()}") })
+        }
+        Text(
+            "Um valor redondo pra vitrine, no lugar do que a margem deu. É ele que sai no catálogo, " +
+                "no PDF e na imagem, e é o preço que o pedido recebe quando você clica em \"Vender\". " +
+                "Deixe vazio pra anunciar o preço calculado.",
+            style = MaterialTheme.typography.bodySmall,
+        )
     } else {
         SectionTitle(AppIcons.Handshake, "Negociação")
 
@@ -706,28 +788,6 @@ private fun SaveQuoteForm(
                 TextButton(onClick = { viewModel.resetForm(); onEditingFinished() }) { Text("Cancelar edição") }
             }
         }
-        form.duplicatedFromName?.let { originalName ->
-            FormOriginNotice(
-                "Duplicado de \"$originalName\": revise os dados e clique em Salvar pra criar " +
-                    (if (isProduct) "um produto novo." else "um pedido novo."),
-                onCancel = viewModel::resetForm,
-            )
-        }
-        form.soldFromProductName?.let { productName ->
-            FormOriginNotice(
-                "Vendendo o produto \"$productName\": preencha o cliente e o prazo e salve o pedido. " +
-                    "O produto continua no catálogo, sem mudar nada.",
-                onCancel = viewModel::resetForm,
-            )
-        }
-        form.copiedFromOrderName?.let { orderName ->
-            FormOriginNotice(
-                "Copiando o pedido \"$orderName\" pro catálogo: revise e clique em \"Salvar no catálogo\". " +
-                    "Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
-                onCancel = viewModel::resetForm,
-            )
-        }
-
         // O tipo só se escolhe ao criar: na edição, e quando o formulário veio de "Vender" ou de
         // "Guardar no catálogo", o destino já está decidido e o aviso acima diz qual é.
         if (!isEditing && form.soldFromProductName == null && form.copiedFromOrderName == null) {
@@ -742,6 +802,10 @@ private fun SaveQuoteForm(
             onValueChange = viewModel::setSaveName,
             label = { Text("Nome (opcional)") },
         )
+        if (isProduct) {
+            val savedQuotes by viewModel.savedQuotes.collectAsState()
+            CategoryField(value = form.category, suggestions = viewModel.knownCategories(savedQuotes), onValueChange = viewModel::setCategory)
+        }
 
         val photo = form.photo
         if (photo != null) {
@@ -898,15 +962,6 @@ private fun SaveQuoteForm(
     }
 }
 
-/** Aviso de onde veio o formulário (Duplicar, Vender, Guardar no catálogo), com o jeito de desistir. */
-@Composable
-private fun FormOriginNotice(text: String, onCancel: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f, fill = false))
-        TextButton(onClick = onCancel) { Text("Cancelar") }
-    }
-}
-
 /**
  * Pedido de cliente ou produto do catálogo (decisão 101). Vem antes dos campos de propósito: o que
  * não faz sentido pra produto (cliente, prazo, frete, preço negociado) some antes de a pessoa
@@ -931,6 +986,42 @@ private fun KindSelector(isProduct: Boolean, onSelect: (QuoteKind) -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * Categoria do produto (decisão 102): texto livre com as já usadas sugeridas embaixo, filtradas pelo
+ * que se digita. Sem tela de cadastro: a lista de categorias é o que já foi digitado antes.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val matches = suggestions.filter { it.contains(value.trim(), ignoreCase = true) && !it.equals(value.trim(), ignoreCase = true) }
+
+    ExposedDropdownMenuBox(expanded = expanded && matches.isNotEmpty(), onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).tabToNavigate(),
+            value = value,
+            onValueChange = { onValueChange(it); expanded = true },
+            label = { Text("Categoria (opcional)") },
+            placeholder = { Text("Ex.: Chaveiros, Decoração, Utilidades") },
+            trailingIcon = if (suggestions.isNotEmpty()) {
+                { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && matches.isNotEmpty()) }
+            } else {
+                null
+            },
+            singleLine = true,
+        )
+        DropdownMenu(expanded = expanded && matches.isNotEmpty(), onDismissRequest = { expanded = false }) {
+            matches.forEach { category ->
+                DropdownMenuItem(text = { Text(category) }, onClick = { onValueChange(category); expanded = false })
+            }
+        }
+    }
+    Text(
+        "Separa a lista de produtos e o catálogo em PDF em seções.",
+        style = MaterialTheme.typography.bodySmall,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

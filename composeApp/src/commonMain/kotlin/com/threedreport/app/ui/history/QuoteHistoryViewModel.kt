@@ -2,6 +2,10 @@ package com.threedreport.app.ui.history
 
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
+import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.PrinterRepository
+import com.threedreport.app.data.SalesChannelRepository
+import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.ResolvedPdfBranding
@@ -19,10 +23,17 @@ import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.saveBytesToFile
 import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.core.model.Filament
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.PricingSettings
+import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
+import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.pricing.ProductRepricer
+import com.threedreport.core.pricing.RepriceResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +48,10 @@ class QuoteHistoryViewModel(
     private val repository: QuoteHistoryRepository,
     private val brandingRepository: BrandingRepository,
     private val currencyRepository: CurrencyRepository,
+    private val filamentRepository: FilamentRepository,
+    private val printerRepository: PrinterRepository,
+    private val settingsRepository: SettingsRepository,
+    private val salesChannelRepository: SalesChannelRepository,
     private val today: () -> Long = ::todayEpochDay,
 ) {
 
@@ -74,8 +89,55 @@ class QuoteHistoryViewModel(
      * não tem andamento.
      */
     fun setKindFilter(kind: QuoteKind) {
-        filterState.update { it.copy(kind = kind, status = null) }
+        filterState.update { it.copy(kind = kind, status = null, category = CategoryFilter.All) }
         clearSelection()
+    }
+
+    fun setCategoryFilter(category: CategoryFilter) = filterState.update { it.copy(category = category) }
+
+    /** Categorias dos produtos, uma por grafia, em ordem alfabética, pros chips de filtro. */
+    fun productCategories(savedQuotes: List<SavedQuote>): List<String> =
+        savedQuotes.filterNot { it.isOrder }.mapNotNull { it.category }
+            .distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
+
+    private val repricingState = MutableStateFlow<Repricing?>(null)
+
+    /** Produto com o diálogo "Atualizar preço" aberto, com o antes e o depois, ou `null`. */
+    val repricing: StateFlow<Repricing?> = repricingState.asStateFlow()
+
+    // Cadastros que o recálculo do produto usa. A tela coleta os quatro, pra o aviso "Custos
+    // mudaram" aparecer (ou sumir) assim que um filamento ou a hora de trabalho mudar.
+    val filaments: StateFlow<List<Filament>> = filamentRepository.filaments
+    val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
+    val settings: StateFlow<PricingSettings> = settingsRepository.settings
+    val salesChannels: StateFlow<List<SalesChannel>> = salesChannelRepository.channels
+
+    /**
+     * O produto recalculado com os cadastros de hoje (decisão 102), pro card avisar quando os
+     * custos mudaram. Pedido não passa por aqui, porque é retrato congelado da venda.
+     */
+    fun repriceFor(
+        product: SavedQuote,
+        filaments: List<Filament> = this.filaments.value,
+        printers: List<PrinterProfile> = this.printers.value,
+        settings: PricingSettings = this.settings.value,
+        channels: List<SalesChannel> = salesChannels.value,
+    ): RepriceResult = ProductRepricer.reprice(product, filaments, printers, settings, channels)
+
+    /** Abre o diálogo com o antes e o depois; não faz nada se não der pra recalcular. */
+    fun startRepricing(product: SavedQuote) {
+        val result = repriceFor(product) as? RepriceResult.Repriced ?: return
+        repricingState.value = Repricing(product, result.quote)
+    }
+
+    fun cancelRepricing() {
+        repricingState.value = null
+    }
+
+    fun confirmRepricing() {
+        val pending = repricingState.value ?: return
+        repository.updateQuote(pending.product.id, pending.newQuote)
+        repricingState.value = null
     }
 
     /** Função pura: aplica [filter] a [savedQuotes], já ordenados do mais recente pro mais antigo. */
@@ -86,11 +148,18 @@ class QuoteHistoryViewModel(
         return savedQuotes
             .filter { savedQuote ->
                 savedQuote.kind == filter.kind &&
+                    savedQuote.matchesCategory(filter.category) &&
                     (filter.status == null || savedQuote.status == filter.status) &&
                     (startEpochMillis == null || savedQuote.savedAtEpochMillis >= startEpochMillis) &&
                     (normalizedQuery.isEmpty() || savedQuote.matchesQuery(normalizedQuery))
             }
             .sortedByDescending { it.savedAtEpochMillis }
+    }
+
+    private fun SavedQuote.matchesCategory(filter: CategoryFilter): Boolean = when (filter) {
+        CategoryFilter.All -> true
+        CategoryFilter.None -> category == null
+        is CategoryFilter.Named -> category.equals(filter.name, ignoreCase = true)
     }
 
     private fun SavedQuote.matchesQuery(query: String): Boolean =
@@ -311,6 +380,9 @@ class QuoteHistoryViewModel(
     private fun sanitizeFileName(name: String): String =
         name.map { if (it.isLetterOrDigit() || it == ' ' || it == '-') it else '_' }.joinToString("")
 }
+
+/** "Atualizar preço" aberto: o produto como está e como ficaria com os cadastros de hoje. */
+data class Repricing(val product: SavedQuote, val newQuote: Quote)
 
 /** Os envios pro cliente que mostram o prazo, e por isso passam pelo aviso de prazo vencido. */
 enum class ClientExport { PDF, IMAGE, WHATSAPP, COPY, SELECTED_PDF }

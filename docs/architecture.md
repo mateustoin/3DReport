@@ -69,6 +69,9 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     pedido", e os relatórios de `report/` deixam os produtos de fora por ela.
     `BrandingSettings` guarda a identidade do vendedor (nome, logo,
     contato) e a aparência dos documentos pro cliente.
+- `pricing/ProductRepricer`: recalcula um produto do catálogo com os cadastros de
+  hoje (decisão 102), mantendo o preço anunciado; devolve o motivo quando falta
+  filamento, impressora ou canal.
 - `pricing/PricingCalculator`: função pura
   `calculate(job, printer, settings, channel = null, quantity = 1, setupMinutes = 0.0, negotiatedSalePrice = null): Quote`.
   Fórmulas em [pricing-formulas.md](pricing-formulas.md). Não conhece

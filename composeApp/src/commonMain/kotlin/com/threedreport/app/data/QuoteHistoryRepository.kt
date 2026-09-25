@@ -35,6 +35,7 @@ expect class QuoteHistoryRepository() {
      * [kind] = [QuoteKind.PRODUCT] salva um produto do catálogo (decisão 101): [client],
      * [shippingCost] e [deliveryDateEpochDay] são descartados mesmo se vierem preenchidos, porque
      * produto não tem venda. [sourceProductId] é o produto de onde um pedido nasceu pelo "Vender".
+     * [category] é só de produto (decisão 102): num pedido, é descartada.
      */
     fun save(
         name: String,
@@ -51,6 +52,7 @@ expect class QuoteHistoryRepository() {
         deliveryDateEpochDay: Long? = null,
         kind: QuoteKind = QuoteKind.ORDER,
         sourceProductId: String? = null,
+        category: String? = null,
     ): SavedQuote
 
     fun delete(id: String)
@@ -79,6 +81,7 @@ expect class QuoteHistoryRepository() {
         printSettings: PrintSettings? = null,
         shippingCost: Double = 0.0,
         deliveryDateEpochDay: Long? = null,
+        category: String? = null,
     ): SavedQuote?
 
     /**
@@ -89,6 +92,14 @@ expect class QuoteHistoryRepository() {
      * Não faz nada se [id] não existir ou já for pedido.
      */
     fun convertToOrder(id: String)
+
+    /**
+     * "Atualizar preço" de um produto do catálogo (decisão 102): troca só o [quote] recalculado com
+     * os cadastros de hoje e marca [SavedQuote.lastEditedEpochMillis], que passa a ser a data do
+     * preço. Serviços, anexos e o resto ficam como estão. Não faz nada se [id] não existir ou for
+     * pedido, que é retrato congelado da venda.
+     */
+    fun updateQuote(id: String, quote: Quote)
 
     /** Atualiza o andamento do pedido [id] pra [status]. Não faz nada se [id] não existir. */
     fun updateStatus(id: String, status: OrderStatus)

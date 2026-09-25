@@ -61,6 +61,9 @@ import kotlinx.serialization.Serializable
  *   pedido é [isOrder].
  * @property sourceProductId `id` do produto de onde este pedido nasceu pelo "Vender", ou `null`.
  *   Continua apontando pro id mesmo se o produto for excluído depois.
+ * @property category categoria do produto no catálogo ("Chaveiros", "Decoração"), texto livre, ou
+ *   `null` (decisão 102). Só produto guarda: serve pra filtrar a lista e separar o catálogo em PDF
+ *   em seções, e pedido não tem catálogo.
  */
 @Serializable
 data class SavedQuote(
@@ -80,6 +83,7 @@ data class SavedQuote(
     val deliveryDateEpochDay: Long? = null,
     val kind: QuoteKind = QuoteKind.ORDER,
     val sourceProductId: String? = null,
+    val category: String? = null,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }

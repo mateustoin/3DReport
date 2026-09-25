@@ -609,4 +609,32 @@ class QuotePdfExporterTest {
 
         assertTrue(textOf(renderCatalogPdf(listOf(QuoteExportItem(savedQuote, null)), null, "Loja", options = options)).contains("Gerado com 3DReport"))
     }
+
+    @Test
+    fun catalogWithoutCategoriesKeepsTheSameGridAndPaging() {
+        fun pages(count: Int) = Loader.loadPDF(
+            renderCatalogPdf((1..count).map { QuoteExportItem(savedQuote.copy(id = "$it", name = "Peça $it"), null) }, null, null),
+        ).use { it.numberOfPages }
+
+        // Duas linhas de duas peças por página, como antes das categorias.
+        assertEquals(1, pages(4))
+        assertEquals(2, pages(5))
+    }
+
+    @Test
+    fun catalogIsSplitIntoAlphabeticalCategorySectionsWithOthersLast() {
+        val items = listOf(
+            savedQuote.copy(id = "1", name = "Vaso", category = "Decoração"),
+            savedQuote.copy(id = "2", name = "Dado", category = null),
+            savedQuote.copy(id = "3", name = "Chaveiro", category = "Chaveiros"),
+            savedQuote.copy(id = "4", name = "Cachepô", category = "decoração"),
+        ).map { QuoteExportItem(it, null) }
+
+        val text = Loader.loadPDF(renderCatalogPdf(items, null, null)).use { PDFTextStripper().getText(it) }
+
+        val order = listOf("Chaveiros", "Chaveiro", "Decoração", "Vaso", "Cachepô", "Outros", "Dado").map { text.indexOf(it) }
+        assertTrue(order.none { it < 0 }, text)
+        assertEquals(order.sorted(), order, text)
+        assertEquals(listOf("Chaveiros", "Decoração", "Outros"), catalogSections(items).map { it.first })
+    }
 }

@@ -227,10 +227,24 @@ class QuoteViewModel(
     fun setShippingCost(text: String) = inputState.update { it.copy(shippingCostText = text) }
     fun setTargetTotal(text: String) = inputState.update { it.copy(targetTotalText = text) }
 
+    /**
+     * "Arredondar pra R$ 18,90" do preço anunciado (decisão 102): o próximo valor terminado em ,90
+     * a partir do [total] calculado, ou `null` quando ele já termina assim. Função pura; a tela
+     * mostra o chip só quando há sugestão.
+     */
+    fun showcasePriceSuggestion(total: Double): Double? {
+        val cents = round(total * 100).toLong()
+        val suggestion = ((cents - 90 + 99) / 100) * 100 + 90
+        return (suggestion / 100.0).takeIf { suggestion != cents }
+    }
+
+    fun applyShowcasePrice(value: Double) = inputState.update { it.copy(targetTotalText = formatSavedNumber(value)) }
+
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
     fun setClientName(text: String) = saveFormState.update { it.copy(clientName = text, savedConfirmation = false) }
     fun setClientContact(text: String) = saveFormState.update { it.copy(clientContact = text, savedConfirmation = false) }
+    fun setCategory(text: String) = saveFormState.update { it.copy(category = text, savedConfirmation = false) }
     fun setDeliveryDate(epochDay: Long?) = saveFormState.update { it.copy(deliveryDateEpochDay = epochDay, savedConfirmation = false) }
     fun clearPhoto() = saveFormState.update {
         it.copy(photo = null, photoFromGCode = false, photoReferenceFileName = null, savedConfirmation = false)
@@ -294,6 +308,7 @@ class QuoteViewModel(
                 printSettings = form.printSettings.takeUnless { it.isEmpty },
                 shippingCost = shippingCostToSave(),
                 deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
+                category = form.category,
             )
         } else {
             historyRepository.save(
@@ -311,6 +326,7 @@ class QuoteViewModel(
                 deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
                 kind = inputState.value.kind,
                 sourceProductId = form.sourceProductId.takeUnless { isProduct },
+                category = form.category,
             )
         }
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct)
@@ -362,6 +378,13 @@ class QuoteViewModel(
             deliveryDateEpochDay = null,
         )
     }
+
+    /**
+     * Categorias já usadas nos produtos, pra sugerir no campo (decisão 102): sem tela de cadastro,
+     * a lista nasce do que a pessoa já digitou. Uma por grafia, em ordem alfabética.
+     */
+    fun knownCategories(savedQuotes: List<SavedQuote>): List<String> =
+        savedQuotes.mapNotNull { it.category }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
 
     /**
      * "Guardar no catálogo" a partir de um pedido (decisão 101): abre uma cópia em modo produto pra
@@ -428,6 +451,7 @@ class QuoteViewModel(
             clientContact = savedQuote.client?.contact.orEmpty(),
             printSettings = savedQuote.printSettings ?: PrintSettings(),
             deliveryDateEpochDay = savedQuote.deliveryDateEpochDay,
+            category = savedQuote.category.orEmpty(),
         )
     }
 
@@ -470,15 +494,15 @@ class QuoteViewModel(
         val length = parseDecimal(input.lengthMetersText)
         val time = parseDecimal(input.printTimeMinutesText)
         val channel = channels.find { it.id == input.salesChannelId }
-        // Produto do catálogo não tem frete nem preço fechado com cliente (decisão 101): os campos
-        // somem da tela, e o que tiver ficado digitado neles não pode mexer no preço.
+        // Produto do catálogo não tem frete (decisão 101): o campo some da tela, e o que tiver ficado
+        // digitado nele não pode mexer no preço. O preço fechado, em produto, é o preço anunciado no
+        // catálogo (decisão 102), e por isso continua valendo.
         val shippingCost = if (input.isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
         // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
         // que de fato é a peça. Se o alvo nem cobre os extras, a peça vale zero e o prejuízo
         // aparece no lucro, que é justamente o aviso.
         val servicesTotal = selectedServices.sumOf { it.total(input.quantity) }
         val negotiatedSalePrice = parseDecimal(input.targetTotalText)
-            ?.takeUnless { input.isProduct }
             ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
 
         if (filament == null || printer == null || length == null || time == null) {

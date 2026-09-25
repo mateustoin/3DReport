@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -29,8 +29,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,8 +65,11 @@ import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.pricing.RepriceResult
 
 private enum class HistoryViewMode { LIST, KANBAN }
+
+private val KIND_SEGMENT_MIN_WIDTH = 168.dp
 
 /** Tela de Histórico: orçamentos salvos, com o retrato dos valores no momento em que foram salvos. */
 @Composable
@@ -86,6 +91,12 @@ fun QuoteHistoryScreen(
     val deliveryDateEditing by viewModel.deliveryDateEditing.collectAsState()
     val today = viewModel.currentEpochDay()
     val showingProducts = filter.kind == QuoteKind.PRODUCT
+    val repricing by viewModel.repricing.collectAsState()
+    // Coletados pra o aviso "Custos mudaram" dos produtos acompanhar os cadastros na hora.
+    val filaments by viewModel.filaments.collectAsState()
+    val printers by viewModel.printers.collectAsState()
+    val settings by viewModel.settings.collectAsState()
+    val salesChannels by viewModel.salesChannels.collectAsState()
     // Produto não tem andamento, então não tem Kanban: a lista de produtos é sempre lista.
     val effectiveViewMode = if (showingProducts) HistoryViewMode.LIST else viewMode
 
@@ -102,16 +113,41 @@ fun QuoteHistoryScreen(
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilterChip(selected = !showingProducts, onClick = { viewModel.setKindFilter(QuoteKind.ORDER) }, label = { Text("Pedidos") })
-                FilterChip(selected = showingProducts, onClick = { viewModel.setKindFilter(QuoteKind.PRODUCT) }, label = { Text("Produtos") })
-                if (!showingProducts) {
-                    VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 4.dp))
-                    FilterChip(selected = viewMode == HistoryViewMode.LIST, onClick = { viewMode = HistoryViewMode.LIST }, label = { Text("Lista") })
+            // Dois níveis (decisão 102): o segmentado escolhe o que ver, e "Exibir como", menor e
+            // recuado embaixo, é um jeito de ver os pedidos. Na mesma linha, Lista/Kanban pareciam
+            // uma terceira e quarta opção do mesmo nível que Pedidos e Produtos.
+            val orderCount = savedQuotes.count { it.isOrder }
+            SingleChoiceSegmentedButtonRow {
+                // Largura mínima: sem ela, o check que entra no segmento escolhido corta o texto.
+                SegmentedButton(
+                    modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
+                    selected = !showingProducts,
+                    onClick = { viewModel.setKindFilter(QuoteKind.ORDER) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                ) { Text("Pedidos ($orderCount)") }
+                SegmentedButton(
+                    modifier = Modifier.widthIn(min = KIND_SEGMENT_MIN_WIDTH),
+                    selected = showingProducts,
+                    onClick = { viewModel.setKindFilter(QuoteKind.PRODUCT) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                ) { Text("Produtos (${savedQuotes.size - orderCount})") }
+            }
+            if (!showingProducts) {
+                Row(
+                    modifier = Modifier.padding(start = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Exibir como:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FilterChip(
+                        selected = viewMode == HistoryViewMode.LIST,
+                        onClick = { viewMode = HistoryViewMode.LIST },
+                        label = { IconLabel(AppIcons.ViewList, "Lista") },
+                    )
                     FilterChip(
                         selected = viewMode == HistoryViewMode.KANBAN,
                         onClick = { viewMode = HistoryViewMode.KANBAN },
-                        label = { Text("Kanban") },
+                        label = { IconLabel(AppIcons.ViewKanban, "Kanban") },
                     )
                 }
             }
@@ -138,7 +174,13 @@ fun QuoteHistoryScreen(
             // No Kanban, o status já é a própria organização em colunas — filtrar por status ali
             // deixaria as outras colunas vazias sem explicação, então esse filtro some nesse modo.
             // Produto também não tem status pra filtrar.
-            HistoryFilterBar(filter = filter, viewModel = viewModel, showStatusFilter = effectiveViewMode == HistoryViewMode.LIST && !showingProducts)
+            HistoryFilterBar(
+                filter = filter,
+                viewModel = viewModel,
+                showStatusFilter = effectiveViewMode == HistoryViewMode.LIST && !showingProducts,
+                categories = if (showingProducts) viewModel.productCategories(savedQuotes) else emptyList(),
+                hasUncategorized = savedQuotes.any { !it.isOrder && it.category == null },
+            )
         }
 
         if (effectiveViewMode == HistoryViewMode.LIST) {
@@ -196,6 +238,12 @@ fun QuoteHistoryScreen(
                         null
                     },
                     onDelete = { pendingDelete = savedQuote },
+                    repriceResult = if (savedQuote.isOrder) {
+                        null
+                    } else {
+                        viewModel.repriceFor(savedQuote, filaments, printers, settings, salesChannels)
+                    },
+                    onReprice = { viewModel.startRepricing(savedQuote) },
                     onStatusChange = { status -> viewModel.updateStatus(savedQuote.id, status) },
                     onUpdatePrintSettings = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings) },
                     onOpenWhatsApp = { viewModel.openInWhatsApp(savedQuote) },
@@ -248,6 +296,89 @@ fun QuoteHistoryScreen(
     }
 
     pendingExport?.let { pending -> OverdueExportDialog(pending, today, viewModel) }
+
+    repricing?.let { RepriceDialog(it, viewModel) }
+}
+
+/**
+ * Aviso no card do produto quando o preço de hoje não é o guardado (decisão 102). Aparece só
+ * quando há o que fazer: preço antigo com custos iguais continua certo e não gera aviso.
+ */
+@Composable
+private fun RepriceNotice(result: RepriceResult, onReprice: () -> Unit) {
+    when (result) {
+        is RepriceResult.Repriced -> if (result.changed) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Custos mudaram: hoje o preço calculado seria ${(result.quote.tableSalePrice ?: result.quote.salePrice).toMoney()}.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+                TextButton(onClick = onReprice) { IconLabel(AppIcons.Sync, "Atualizar preço") }
+            }
+        }
+        is RepriceResult.Unavailable -> Text(
+            when (result.reason) {
+                RepriceResult.Reason.FILAMENT_MISSING -> "O filamento ${result.missingName.orEmpty()} não está mais cadastrado"
+                RepriceResult.Reason.PRINTER_MISSING -> result.missingName?.let { "A impressora $it não está mais cadastrada" }
+                    ?: "Este produto não guardou a impressora"
+                RepriceResult.Reason.CHANNEL_MISSING -> "O canal ${result.missingName.orEmpty()} não está mais cadastrado"
+                RepriceResult.Reason.INVALID -> "Não deu pra recalcular com os cadastros de hoje"
+            } + ": abra em Editar pra escolher de novo e conferir o preço.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** Antes e depois de atualizar o preço de um produto, pra confirmar antes de gravar. */
+@Composable
+private fun RepriceDialog(repricing: Repricing, viewModel: QuoteHistoryViewModel) {
+    val before = repricing.product.quote
+    val after = repricing.newQuote
+    AlertDialog(
+        onDismissRequest = viewModel::cancelRepricing,
+        title = { Text("Atualizar o preço de \"${repricing.product.name}\"") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Recalculado com os filamentos, a impressora e as configurações de hoje, com as mesmas " +
+                        "medidas da peça.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                BeforeAfterLine("Preço calculado", before.tableSalePrice ?: before.salePrice, after.tableSalePrice ?: after.salePrice)
+                BeforeAfterLine("Custo de produção", before.productionCost, after.productionCost)
+                BeforeAfterLine("Lucro", before.profit, after.profit)
+                if (after.isNegotiated) {
+                    Text(
+                        "Preço anunciado: ${after.salePrice.toMoney()} (mantido). Pra mudar, abra o produto em Editar.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                if (after.profit < 0) {
+                    Text(
+                        "Com os custos de hoje, o preço anunciado dá prejuízo de ${(-after.profit).toMoney()}. " +
+                            "O mínimo pra não sair no negativo é ${after.breakEvenSalePrice.toMoney()}.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::confirmRepricing) { Text("Atualizar") } },
+        dismissButton = { TextButton(onClick = viewModel::cancelRepricing) { Text("Cancelar") } },
+    )
+}
+
+@Composable
+private fun BeforeAfterLine(label: String, before: Double, after: Double) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "${before.toMoney()} → ${after.toMoney()}",
+            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+        )
+    }
 }
 
 /**
@@ -288,7 +419,13 @@ private fun OverdueExportDialog(pending: PendingExport, todayEpochDay: Long, vie
 }
 
 @Composable
-private fun HistoryFilterBar(filter: HistoryFilter, viewModel: QuoteHistoryViewModel, showStatusFilter: Boolean = true) {
+private fun HistoryFilterBar(
+    filter: HistoryFilter,
+    viewModel: QuoteHistoryViewModel,
+    showStatusFilter: Boolean = true,
+    categories: List<String> = emptyList(),
+    hasUncategorized: Boolean = false,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
@@ -310,6 +447,33 @@ private fun HistoryFilterBar(filter: HistoryFilter, viewModel: QuoteHistoryViewM
 
         if (showStatusFilter) {
             StatusFilterDropdown(selected = filter.status, onSelect = viewModel::setStatusFilter)
+        }
+
+        // Categorias dos produtos (decisão 102). Só aparecem quando existe alguma; "Sem categoria"
+        // só quando há produtos dos dois jeitos, senão seria igual a "Todas".
+        if (categories.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FilterChip(
+                    selected = filter.category == CategoryFilter.All,
+                    onClick = { viewModel.setCategoryFilter(CategoryFilter.All) },
+                    label = { Text("Todas as categorias") },
+                )
+                categories.forEach { category ->
+                    val option = CategoryFilter.Named(category)
+                    FilterChip(
+                        selected = (filter.category as? CategoryFilter.Named)?.name.equals(category, ignoreCase = true),
+                        onClick = { viewModel.setCategoryFilter(option) },
+                        label = { Text(category) },
+                    )
+                }
+                if (hasUncategorized) {
+                    FilterChip(
+                        selected = filter.category == CategoryFilter.None,
+                        onClick = { viewModel.setCategoryFilter(CategoryFilter.None) },
+                        label = { Text("Sem categoria") },
+                    )
+                }
+            }
         }
     }
 }
@@ -385,6 +549,8 @@ private fun SavedQuoteRow(
     onCopyToCatalog: () -> Unit,
     onConvertToOrder: (() -> Unit)?,
     onDelete: () -> Unit,
+    repriceResult: RepriceResult?,
+    onReprice: () -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
     onUpdatePrintSettings: (PrintSettings?) -> Unit,
     onOpenWhatsApp: () -> Unit,
@@ -429,7 +595,13 @@ private fun SavedQuoteRow(
                         append(" · Venda: ")
                         withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(savedQuote.quote.salePrice.toMoney()) }
                         savedQuote.quote.tableSalePrice?.let { tablePrice ->
-                            append(if (savedQuote.quote.negotiatedDiscount < 0) " · Acima da tabela (" else " · Negociado (tabela ")
+                            append(
+                                when {
+                                    isProduct -> " · Anunciado (calculado "
+                                    savedQuote.quote.negotiatedDiscount < 0 -> " · Acima da tabela ("
+                                    else -> " · Negociado (tabela "
+                                },
+                            )
                             withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(tablePrice.toMoney()) }
                             append(")")
                         }
@@ -453,6 +625,10 @@ private fun SavedQuoteRow(
                     },
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                savedQuote.category?.let { category ->
+                    Text("Categoria: $category", style = MaterialTheme.typography.bodySmall)
+                }
+                repriceResult?.let { RepriceNotice(it, onReprice) }
                 savedQuote.sourceLink?.let { link ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Link interno (não exportado):", style = MaterialTheme.typography.bodySmall)
@@ -493,6 +669,12 @@ private fun SavedQuoteRow(
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(text = { Text("Duplicar") }, leadingIcon = { Icon(AppIcons.FileCopy, contentDescription = null) }, onClick = { showMenu = false; onDuplicate() })
                             if (isProduct) {
+                                DropdownMenuItem(
+                                    text = { Text("Atualizar preço") },
+                                    leadingIcon = { Icon(AppIcons.Sync, contentDescription = null) },
+                                    enabled = repriceResult is RepriceResult.Repriced,
+                                    onClick = { showMenu = false; onReprice() },
+                                )
                                 onConvertToOrder?.let { convert ->
                                     DropdownMenuItem(
                                         text = { Text("Transformar em pedido") },

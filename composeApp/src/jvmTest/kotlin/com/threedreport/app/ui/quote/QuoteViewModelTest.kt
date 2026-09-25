@@ -755,18 +755,20 @@ class QuoteViewModelTest {
     }
 
     @Test
-    fun productIgnoresShippingAndNegotiatedPrice() {
+    fun productIgnoresShippingButKeepsTheAnnouncedPrice() {
         val viewModel = viewModelWith()
         viewModel.setShippingCost("15")
-        viewModel.setTargetTotal("5")
+        viewModel.setTargetTotal("30")
         val asOrder = viewModel.currentResult()
 
         viewModel.setKind(QuoteKind.PRODUCT)
         val asProduct = viewModel.currentResult()
 
-        assertTrue(asOrder.quote!!.isNegotiated)
+        assertEquals(15.0, asOrder.shippingCost)
         assertEquals(0.0, asProduct.shippingCost)
-        assertFalse(asProduct.quote!!.isNegotiated, "produto usa o preço de tabela")
+        // Em produto, o preço fechado é o anunciado no catálogo (decisão 102), sem o frete descontado.
+        assertEquals(30.0, asProduct.quote!!.salePrice, 1e-9)
+        assertEquals(15.0, asOrder.quote!!.salePrice, 1e-9)
     }
 
     @Test
@@ -853,5 +855,53 @@ class QuoteViewModelTest {
         assertFalse(product.quote.isNegotiated)
         assertNull(product.client)
         assertEquals(order, historyRepository.savedQuotes.value.first { it.id == order.id })
+    }
+
+    @Test
+    fun announcedPriceBecomesTheProductPriceAndSellingCarriesIt() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.setTargetTotal("25")
+        val result = viewModel.currentResult()
+        assertEquals(25.0, result.quote!!.salePrice, 1e-9)
+        viewModel.saveCurrentQuote()
+        val product = historyRepository.savedQuotes.value.single()
+        assertTrue(product.quote.isNegotiated)
+
+        viewModel.sellFromProduct(product)
+
+        assertEquals("25", viewModel.input.value.targetTotalText)
+        viewModel.saveCurrentQuote()
+        val order = historyRepository.savedQuotes.value.first { it.id != product.id }
+        assertEquals(25.0, order.quote.salePrice, 1e-9)
+    }
+
+    @Test
+    fun showcaseSuggestionIsTheNextValueEndingIn90() {
+        val viewModel = viewModelWith()
+
+        assertEquals(18.90, viewModel.showcasePriceSuggestion(18.37)!!, 1e-9)
+        assertEquals(19.90, viewModel.showcasePriceSuggestion(18.95)!!, 1e-9)
+        assertEquals(0.90, viewModel.showcasePriceSuggestion(0.10)!!, 1e-9)
+        assertNull(viewModel.showcasePriceSuggestion(18.90))
+
+        viewModel.applyShowcasePrice(18.90)
+        assertEquals("18.9", viewModel.input.value.targetTotalText)
+    }
+
+    @Test
+    fun productCategoryIsSavedRestoredOnEditAndSuggestedLater() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.setCategory("Chaveiros")
+        viewModel.saveCurrentQuote()
+        val product = historyRepository.savedQuotes.value.single()
+
+        viewModel.loadForEditing(product)
+
+        assertEquals("Chaveiros", viewModel.saveForm.value.category)
+        assertEquals(listOf("Chaveiros"), viewModel.knownCategories(historyRepository.savedQuotes.value))
     }
 }

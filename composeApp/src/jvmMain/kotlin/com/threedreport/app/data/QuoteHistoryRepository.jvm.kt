@@ -41,6 +41,7 @@ actual class QuoteHistoryRepository actual constructor() {
         deliveryDateEpochDay: Long?,
         kind: QuoteKind,
         sourceProductId: String?,
+        category: String?,
     ): SavedQuote {
         val id = Uuid.random().toString()
         val isProduct = kind == QuoteKind.PRODUCT
@@ -62,6 +63,7 @@ actual class QuoteHistoryRepository actual constructor() {
             deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
             kind = kind,
             sourceProductId = sourceProductId,
+            category = if (isProduct) category.normalizedCategory() else null,
         )
         state.value = state.value + saved
         persist()
@@ -82,6 +84,7 @@ actual class QuoteHistoryRepository actual constructor() {
         printSettings: PrintSettings?,
         shippingCost: Double,
         deliveryDateEpochDay: Long?,
+        category: String?,
     ): SavedQuote? {
         val existing = state.value.find { it.id == id } ?: return null
         val isProduct = !existing.isOrder
@@ -100,6 +103,7 @@ actual class QuoteHistoryRepository actual constructor() {
             printSettings = printSettings,
             shippingCost = if (isProduct) 0.0 else shippingCost,
             deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
+            category = if (isProduct) category.normalizedCategory() else null,
         )
         // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
         // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).
@@ -151,6 +155,13 @@ actual class QuoteHistoryRepository actual constructor() {
         if (state.value.none { fileNameOf(it) == oldFileName }) File(dir, oldFileName).delete()
     }
 
+    actual fun updateQuote(id: String, quote: Quote) {
+        if (state.value.none { it.id == id && !it.isOrder }) return
+        val now = System.currentTimeMillis()
+        state.value = state.value.map { if (it.id == id) it.copy(quote = quote, lastEditedEpochMillis = now) else it }
+        persist()
+    }
+
     actual fun convertToOrder(id: String) {
         if (state.value.none { it.id == id && !it.isOrder }) return
         // A data passa a ser a da conversão: é um pedido novo do ponto de vista da venda, e com a
@@ -188,6 +199,16 @@ actual class QuoteHistoryRepository actual constructor() {
     }
 
     private fun persist() = writeJsonFile(file, state.value)
+
+    /**
+     * Categoria sem espaços nas pontas, vazia vira `null`, e com a grafia de uma que já existe
+     * quando só muda maiúscula ("chaveiros" cai em "Chaveiros"), pra lista e PDF não ganharem duas
+     * seções da mesma coisa.
+     */
+    private fun String?.normalizedCategory(): String? {
+        val trimmed = this?.trim()?.ifEmpty { null } ?: return null
+        return state.value.firstNotNullOfOrNull { saved -> saved.category?.takeIf { it.equals(trimmed, ignoreCase = true) } } ?: trimmed
+    }
 
     private fun defaultName(): String =
         SavedQuote.AUTO_NAME_PREFIX + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
