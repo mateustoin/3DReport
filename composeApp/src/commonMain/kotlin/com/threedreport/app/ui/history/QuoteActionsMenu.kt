@@ -41,7 +41,8 @@ class QuoteActions(
     val onReprice: (() -> Unit)?,
     val onStatusChange: ((OrderStatus) -> Unit)?,
     val onEditDeliveryDate: (() -> Unit)?,
-    val onPrintSettings: () -> Unit,
+    /** `null` com várias impressões: cada uma tem as suas, e elas se editam no Orçamento (decisão 114). */
+    val onPrintSettings: (() -> Unit)?,
     val onDownloadPhoto: (() -> Unit)?,
     val onDownloadStl: (() -> Unit)?,
     val onExportPdf: () -> Unit,
@@ -96,10 +97,12 @@ fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Mo
             MenuGroup("Arquivos")
             actions.onDownloadPhoto?.let { MenuItem("Baixar foto", AppIcons.Image) { close(); it() } }
             actions.onDownloadStl?.let { MenuItem("Baixar STL", AppIcons.Download) { close(); it() } }
-            MenuItem(
-                if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão",
-                AppIcons.Tune,
-            ) { close(); actions.onPrintSettings() }
+            actions.onPrintSettings?.let { onPrintSettings ->
+                MenuItem(
+                    if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão",
+                    AppIcons.Tune,
+                ) { close(); onPrintSettings() }
+            }
 
             HorizontalDivider()
             MenuGroup("Organizar")

@@ -34,8 +34,9 @@ interface QuoteHistoryRepository {
      * [kind] = [QuoteKind.PRODUCT] salva um produto do catálogo (decisão 101): [client],
      * [shippingCost] e [deliveryDateEpochDay] são descartados mesmo se vierem preenchidos, porque
      * produto não tem venda. [sourceProductId] é o produto de onde um pedido nasceu pelo "Vender".
-     * [category] é só de produto (decisão 102): num pedido, é descartada. [printSettings] vai pra
-     * primeira impressão ([SavedQuote.withPrintSettings]).
+     * [category] é só de produto (decisão 102): num pedido, é descartada. As configurações de cada impressão
+     * vêm no próprio [quote]; [printThumbnails] traz a miniatura de cada uma, na ordem de `quote.prints`,
+     * guardada como anexo (decisão 114).
      */
     fun save(
         name: String,
@@ -45,7 +46,7 @@ interface QuoteHistoryRepository {
         stlFile: PickedFile? = null,
         sourceLink: String?,
         client: Client? = null,
-        printSettings: PrintSettings? = null,
+        printThumbnails: List<PickedFile?> = emptyList(),
         shippingCost: Double = 0.0,
         deliveryDateEpochDay: Long? = null,
         kind: QuoteKind = QuoteKind.ORDER,
@@ -71,7 +72,7 @@ interface QuoteHistoryRepository {
         stlFile: PickedFile?,
         sourceLink: String?,
         client: Client?,
-        printSettings: PrintSettings? = null,
+        printThumbnails: List<PickedFile?> = emptyList(),
         shippingCost: Double = 0.0,
         deliveryDateEpochDay: Long? = null,
         category: String? = null,
@@ -123,6 +124,9 @@ interface QuoteHistoryRepository {
     /** Bytes do arquivo STL de [savedQuote], ou `null` se não houver STL salvo. */
     fun stlBytes(savedQuote: SavedQuote): ByteArray?
 
+    /** Bytes de um anexo pela chave (a miniatura de uma impressão, por exemplo), ou `null`. */
+    fun attachmentBytes(key: String): ByteArray?
+
     /** Chaves de anexos em uso por algum orçamento (inclusive os na lixeira, que podem voltar). */
     fun referencedAttachments(): Set<String>
 }
@@ -157,7 +161,7 @@ class StoredQuoteHistoryRepository(
         stlFile: PickedFile?,
         sourceLink: String?,
         client: Client?,
-        printSettings: PrintSettings?,
+        printThumbnails: List<PickedFile?>,
         shippingCost: Double,
         deliveryDateEpochDay: Long?,
         kind: QuoteKind,
@@ -187,8 +191,12 @@ class StoredQuoteHistoryRepository(
             number = lastNumber.value.value + 1,
             statusHistory = listOf(StatusChange(OrderStatus.ORCADO, now)),
             currency = currency,
-        ).withPrintSettings(printSettings)
-        val saved = draft.copy(photoFileName = photo?.let(::store), stlFileName = stlFile?.let(::store))
+        )
+        val saved = draft.copy(
+            quote = draft.quote.withThumbnails(printThumbnails),
+            photoFileName = photo?.let(::store),
+            stlFileName = stlFile?.let(::store),
+        )
         collection.add(saved)
         lastNumber.set(saved.number)
         return saved
@@ -203,7 +211,7 @@ class StoredQuoteHistoryRepository(
         stlFile: PickedFile?,
         sourceLink: String?,
         client: Client?,
-        printSettings: PrintSettings?,
+        printThumbnails: List<PickedFile?>,
         shippingCost: Double,
         deliveryDateEpochDay: Long?,
         category: String?,
@@ -222,8 +230,14 @@ class StoredQuoteHistoryRepository(
             deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
             category = if (isProduct) category.normalizedCategory(excludingId = id) else null,
             soldAtCatalogPrice = !isProduct && soldAtCatalogPrice,
-        ).withPrintSettings(printSettings)
-        return collection.update(id) { draft.copy(photoFileName = photo?.let(::store), stlFileName = stlFile?.let(::store)) }
+        )
+        return collection.update(id) {
+            draft.copy(
+                quote = draft.quote.withThumbnails(printThumbnails),
+                photoFileName = photo?.let(::store),
+                stlFileName = stlFile?.let(::store),
+            )
+        }
     }
 
     override fun updateDetails(id: String, details: QuoteDetails): SavedQuote? = collection.update(id) { existing ->
@@ -291,6 +305,8 @@ class StoredQuoteHistoryRepository(
 
     override fun stlBytes(savedQuote: SavedQuote): ByteArray? = savedQuote.stlFileName?.let(attachments::read)
 
+    override fun attachmentBytes(key: String): ByteArray? = attachments.read(key)
+
     override fun referencedAttachments(): Set<String> = collection.allRecords
         .mapNotNull { it.data }
         .flatMapTo(HashSet()) { saved ->
@@ -298,6 +314,13 @@ class StoredQuoteHistoryRepository(
         }
 
     private fun store(file: PickedFile): String = attachments.put(file.bytes, file.fileName)
+
+    /** A miniatura de cada impressão, na ordem de `prints`; impressão sem miniatura fica sem. */
+    private fun Quote.withThumbnails(thumbnails: List<PickedFile?>): Quote = copy(
+        prints = prints.mapIndexed { index, print ->
+            print.copy(job = print.job.copy(thumbnailFileName = thumbnails.getOrNull(index)?.let(::store)))
+        },
+    )
 
     private fun String?.clean(): String? = this?.trim()?.ifEmpty { null }
 

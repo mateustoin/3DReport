@@ -142,7 +142,7 @@ fun QuoteHistoryScreen(
             onReprice = (repriced[savedQuote.id] as? RepriceResult.Repriced)?.takeIf { it.changed }?.let { { viewModel.startRepricing(savedQuote) } },
             onStatusChange = if (isProduct) null else ({ status -> viewModel.updateStatus(savedQuote.id, status) }),
             onEditDeliveryDate = if (isProduct) null else ({ viewModel.startEditingDeliveryDate(savedQuote) }),
-            onPrintSettings = { printSettingsFor = savedQuote },
+            onPrintSettings = if (savedQuote.quote.prints.size == 1) ({ printSettingsFor = savedQuote }) else null,
             onDownloadPhoto = savedQuote.photoFileName?.let { { viewModel.downloadPhoto(savedQuote) } },
             onDownloadStl = savedQuote.stlFileName?.let { { viewModel.downloadStl(savedQuote) } },
             onExportPdf = { viewModel.exportPdf(savedQuote) },
@@ -643,6 +643,10 @@ private fun SavedQuoteRow(
                     savedQuote.displayNumber?.takeIf { savedQuote.isOrder }?.let {
                         Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    // Discreto (decisão 114): o cliente vê um item só, e a divisão é de uso interno.
+                    printCountLabel(savedQuote)?.let {
+                        Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(formatDateTime(savedQuote.savedAtEpochMillis), style = MaterialTheme.typography.bodySmall)
@@ -731,3 +735,7 @@ private fun SavedQuoteRow(
         }
     }
 }
+
+/** "3 impressões", pro card de um pedido com mais de uma; `null` com uma só. */
+internal fun printCountLabel(savedQuote: SavedQuote): String? =
+    savedQuote.quote.prints.size.takeIf { it > 1 }?.let { "$it impressões" }

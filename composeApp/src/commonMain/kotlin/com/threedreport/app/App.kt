@@ -43,6 +43,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.threedreport.app.ui.quote.printTitle
+import com.threedreport.app.ui.quote.PrintInput
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -146,12 +155,19 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
     var draggingFile by remember { mutableStateOf(false) }
+    var dragPosition by remember { mutableStateOf<Offset?>(null) }
+    // Onde está cada área do aviso de arrastar ("Substituir a impressão 2", "Adicionar como nova"), pra
+    // saber em qual o arquivo foi solto (decisão 114).
+    val dropZones = remember { mutableStateMapOf<DropZone, Rect>() }
     // Ação que jogaria fora o orçamento em andamento na aba, esperando a confirmação.
     var pendingDiscard by remember { mutableStateOf<(() -> Unit)?>(null) }
     // Ação que precisa da aba do Orçamento livre, esperando a pessoa encerrar a edição em andamento.
     var pendingEndEditing by remember { mutableStateOf<(() -> Unit)?>(null) }
     val editForm by editQuoteViewModel.saveForm.collectAsState()
     val editing = editForm.editingQuoteId != null
+    // O Orçamento que está na tela: a edição, quando há uma, ou a aba.
+    val visibleQuoteViewModel = if (editing) editQuoteViewModel else quoteViewModel
+    val visibleInput by visibleQuoteViewModel.input.collectAsState()
     val originOf = { operation: QuoteOperation? ->
         if (operation?.originKind == QuoteKind.PRODUCT) AppDestination.CATALOG else AppDestination.ORDERS
     }
@@ -227,11 +243,20 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize().fileDropTarget(
-                        onDragActive = { draggingFile = it },
-                        onDrop = { dropped ->
+                        onDragActive = {
+                            draggingFile = it
+                            if (!it) dragPosition = null
+                        },
+                        onDragMoved = { dragPosition = it },
+                        onDrop = { dropped, position ->
                             // Seja qual for a aba aberta, o G-code vai pro Orçamento, que é onde o resultado aparece.
                             destination = AppDestination.QUOTE
-                            (if (editing) editQuoteViewModel else quoteViewModel).importDropped(dropped)
+                            val zone = position?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key }
+                            when (zone) {
+                                is DropZone.Replace -> visibleQuoteViewModel.importDroppedInto(zone.printId, dropped)
+                                DropZone.AddNew -> dropped.forEach(visibleQuoteViewModel::importDroppedAsNewPrint)
+                                null -> visibleQuoteViewModel.importDroppedFiles(dropped)
+                            }
                         },
                     ),
                 ) {
@@ -321,7 +346,15 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
                 )
 
-                if (draggingFile) GCodeDropOverlay()
+                if (draggingFile) {
+                    val hovered = dragPosition?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key }
+                    GCodeDropOverlay(
+                        prints = visibleInput.prints,
+                        hovered = hovered,
+                        onZonePlaced = { zone, bounds -> dropZones[zone] = bounds },
+                        onDispose = { dropZones.clear() },
+                    )
+                }
                 }
             }
 
@@ -532,28 +565,81 @@ private fun shortcutNumberOf(key: Key): Int? = when (key) {
     else -> null
 }
 
+/** Onde um G-code pode ser solto quando o pedido já tem impressão preenchida (decisão 114). */
+private sealed interface DropZone {
+    data class Replace(val printId: Int) : DropZone
+
+    data object AddNew : DropZone
+}
+
 /**
  * Aviso por cima da janela enquanto um arquivo é arrastado: diz onde soltar e o que vai acontecer.
  * Sem ele, arrastar um G-code pra janela não dá nenhum sinal de que funciona até soltar.
+ *
+ * Com o pedido ainda em branco, a janela inteira é um lugar só. Com alguma impressão preenchida, o aviso se
+ * divide: uma área pra substituir cada impressão e outra pra adicionar o arquivo como impressão nova. Vários
+ * arquivos soltos fora das áreas viram uma impressão cada.
  */
 @Composable
-private fun GCodeDropOverlay() {
+private fun GCodeDropOverlay(
+    prints: List<PrintInput>,
+    hovered: DropZone?,
+    onZonePlaced: (DropZone, Rect) -> Unit,
+    onDispose: () -> Unit,
+) {
+    DisposableEffect(Unit) { onDispose { onDispose() } }
+    val filled = prints.any { !it.isBlank }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
             .padding(32.dp)
-            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp)),
+            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+            .padding(24.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(AppIcons.RequestQuote, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-            Text("Solte o G-code pra montar o orçamento", style = MaterialTheme.typography.titleLarge)
-            Text(
-                "Comprimento, tempo, foto, impressora e filamento vêm do arquivo, quando batem com o que está cadastrado.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (!filled) {
+                Text("Solte o G-code pra montar o orçamento", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Comprimento, tempo, foto, impressora e filamento vêm do arquivo, quando batem com o que está cadastrado. " +
+                        "Vários arquivos de uma vez viram uma impressão cada.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                return@Column
+            }
+            Text("Solte o G-code em cima do que ele vai fazer", style = MaterialTheme.typography.titleLarge)
+            prints.forEachIndexed { index, print ->
+                val zone = DropZone.Replace(print.id)
+                DropZoneBox(
+                    text = "Substituir a ${printTitle(index + 1, print.name).replaceFirstChar { it.lowercase() }}",
+                    highlighted = hovered == zone,
+                    onPlaced = { onZonePlaced(zone, it) },
+                )
+            }
+            DropZoneBox(
+                text = "Adicionar como nova impressão",
+                highlighted = hovered == DropZone.AddNew,
+                onPlaced = { onZonePlaced(DropZone.AddNew, it) },
             )
         }
+    }
+}
+
+@Composable
+private fun DropZoneBox(text: String, highlighted: Boolean, onPlaced: (Rect) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .widthIn(min = 360.dp)
+            .onGloballyPositioned { onPlaced(it.boundsInRoot()) }
+            .background(if (highlighted) colors.primaryContainer else colors.surfaceContainer, RoundedCornerShape(12.dp))
+            .border(if (highlighted) 2.dp else 1.dp, if (highlighted) colors.primary else colors.outlineVariant, RoundedCornerShape(12.dp))
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.titleMedium, color = if (highlighted) colors.onPrimaryContainer else colors.onSurface)
     }
 }

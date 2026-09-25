@@ -461,13 +461,14 @@ class QuoteHistoryRepositoryTest {
     fun printSettingsSurviveNewRepositoryInstance() {
         val repository = QuoteHistoryRepository()
         val settings = PrintSettings(layerHeightMm = 0.2, infillPercentage = 15.0, infillPattern = "gyroid", supportsEnabled = true)
+        // As configurações vêm em cada impressão do próprio orçamento (decisão 114).
+        val withSettings = quote.copy(prints = quote.prints.map { it.copy(job = it.job.copy(settings = settings)) })
         val saved = repository.save(
             name = "Com configurações",
-            quote = quote,
+            quote = withSettings,
             services = emptyList(),
             photo = null,
             sourceLink = null,
-            printSettings = settings,
         )
 
         val reloaded = QuoteHistoryRepository().savedQuotes.value.first { it.id == saved.id }

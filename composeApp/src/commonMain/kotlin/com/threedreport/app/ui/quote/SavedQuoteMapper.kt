@@ -18,7 +18,8 @@ internal object SavedQuoteMapper {
     /**
      * As entradas da tela a partir do retrato salvo. Filamento, impressora e canal voltam pelo id; o que
      * não está mais no cadastro fica marcado com o nome antigo, e a tela pede pra escolher de novo (nunca
-     * cai em outro em silêncio, o que mudaria o preço).
+     * cai em outro em silêncio, o que mudaria o preço). Cada impressão volta com as próprias configurações e
+     * a miniatura ([thumbnail] lê o anexo pela chave).
      */
     fun inputStateFrom(
         savedQuote: SavedQuote,
@@ -26,6 +27,7 @@ internal object SavedQuoteMapper {
         printers: List<PrinterProfile>,
         channels: List<SalesChannel>,
         newId: () -> Int,
+        thumbnail: (String) -> PickedFile? = { null },
     ): QuoteInputState {
         val quote = savedQuote.quote
         // Pelo id; um canal excluído e recriado com o mesmo nome ganha id novo, então o nome é a segunda
@@ -50,6 +52,8 @@ internal object SavedQuoteMapper {
                     },
                     printTimeText = print.job.printTimeMinutes.toDurationInputText(),
                     runsText = if (print.job.runs > 1) print.job.runs.toString() else "",
+                    settings = print.job.settings ?: PrintSettings(),
+                    thumbnail = print.job.thumbnailFileName?.let(thumbnail),
                     id = newId(),
                 )
             },
@@ -85,7 +89,6 @@ internal object SavedQuoteMapper {
         clientName = savedQuote.client?.name.orEmpty(),
         clientContact = savedQuote.client?.contact.orEmpty(),
         clientId = savedQuote.client?.id,
-        printSettings = savedQuote.printSettings ?: PrintSettings(),
         deliveryDateEpochDay = savedQuote.deliveryDateEpochDay,
         category = savedQuote.category.orEmpty(),
     )

@@ -68,6 +68,8 @@ object QuoteFields {
 
     fun printTime(printId: Int) = "time:$printId"
 
+    fun runs(printId: Int) = "runs:$printId"
+
     fun length(printId: Int, rowId: Int) = "length:$printId:$rowId"
 
     fun service(serviceId: String) = "service:$serviceId"
