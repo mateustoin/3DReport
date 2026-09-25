@@ -989,4 +989,34 @@ class QuoteViewModelTest {
         val reprint = historyRepository.savedQuotes.value.first { it.isOrder && it.id != order.id }
         assertEquals(product.id, reprint.sourceProductId)
     }
+
+    @Test
+    fun sellingAtTheAnnouncedPriceIsMarkedAndSurvivesAnEdit() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.setTargetTotal("25")
+        viewModel.saveCurrentQuote()
+        val product = historyRepository.savedQuotes.value.single()
+
+        viewModel.sellFromProduct(product)
+        viewModel.saveCurrentQuote()
+        val order = historyRepository.savedQuotes.value.first { it.isOrder }
+        assertTrue(order.soldAtCatalogPrice)
+        assertFalse(order.isNegotiatedWithClient)
+
+        viewModel.loadForEditing(order)
+        assertEquals("", viewModel.input.value.targetTotalText)
+        viewModel.saveCurrentQuote()
+        val edited = historyRepository.savedQuotes.value.first { it.id == order.id }
+        assertTrue(edited.soldAtCatalogPrice)
+        assertEquals(25.0, edited.quote.salePrice, 1e-9)
+
+        viewModel.loadForEditing(edited)
+        viewModel.setTargetTotal("22")
+        viewModel.saveCurrentQuote()
+        val negotiated = historyRepository.savedQuotes.value.first { it.id == order.id }
+        assertFalse(negotiated.soldAtCatalogPrice, "outro preço digitado é negociação de verdade")
+        assertTrue(negotiated.isNegotiatedWithClient)
+    }
 }

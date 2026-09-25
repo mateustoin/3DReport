@@ -202,10 +202,10 @@ private fun CatalogSection(catalog: CatalogSummary) {
         StatDivider()
         StatTicker(
             "Faixa de preço",
-            if (catalog.minUnitPrice == catalog.maxUnitPrice) {
-                catalog.minUnitPrice!!.toMoney()
+            if (catalog.minPrice == catalog.maxPrice) {
+                catalog.minPrice!!.toMoney()
             } else {
-                "${catalog.minUnitPrice!!.toMoney()} a ${catalog.maxUnitPrice!!.toMoney()}"
+                "${catalog.minPrice!!.toMoney()} a ${catalog.maxPrice!!.toMoney()}"
             },
         )
     }
@@ -214,7 +214,7 @@ private fun CatalogSection(catalog: CatalogSummary) {
     catalog.products.forEach { product ->
         RankingRow(
             name = product.name,
-            count = product.unitPrice.toMoney(),
+            count = product.price.toMoney(),
             amount = product.profit.toMoney(),
             extra = product.profitPerPrintHour?.let { "${it.toMoney()}/h" } ?: "—",
         )

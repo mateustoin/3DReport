@@ -297,6 +297,9 @@ class QuoteViewModel(
     fun saveQuote(quote: Quote, services: List<QuoteService>) {
         val form = saveFormState.value
         val isProduct = inputState.value.isProduct
+        // Pelo "Vender", sem outro preço digitado: o pedido saiu pelo preço do catálogo, e isso não é
+        // negociação com o cliente (decisão 103).
+        val soldAtCatalogPrice = !isProduct && inputState.value.announcedUnitPrice != null && inputState.value.targetTotalText.isBlank()
         val client = if (isProduct) null else form.clientName.trim().ifEmpty { null }?.let { name ->
             Client(name = name, contact = form.clientContact.trim().ifEmpty { null })
         }
@@ -317,6 +320,7 @@ class QuoteViewModel(
                 shippingCost = shippingCostToSave(),
                 deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
                 category = form.category,
+                soldAtCatalogPrice = soldAtCatalogPrice,
             )
         } else {
             historyRepository.save(
@@ -335,6 +339,7 @@ class QuoteViewModel(
                 kind = inputState.value.kind,
                 sourceProductId = form.sourceProductId.takeUnless { isProduct },
                 category = form.category,
+                soldAtCatalogPrice = soldAtCatalogPrice,
             )
         }
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct)
@@ -410,7 +415,7 @@ class QuoteViewModel(
      * porque é histórico de venda.
      */
     fun copyToCatalog(order: SavedQuote) {
-        inputState.value = inputStateFrom(order).copy(kind = QuoteKind.PRODUCT, shippingCostText = "", targetTotalText = "")
+        inputState.value = inputStateFrom(order).copy(kind = QuoteKind.PRODUCT, shippingCostText = "", targetTotalText = "", announcedUnitPrice = null)
         saveFormState.value = saveFormFrom(order).copy(
             copiedFromOrderName = order.name,
             clientName = "",
@@ -446,7 +451,10 @@ class QuoteViewModel(
             shippingCostText = if (savedQuote.shippingCost > 0) formatSavedNumber(savedQuote.shippingCost) else "",
             // Sem isso, reabrir um orçamento negociado e salvar de novo voltaria em silêncio pro preço
             // de tabela. O campo recebe o total do cliente, igual ao que foi digitado (ver `calculate`).
-            targetTotalText = if (quote.isNegotiated) formatSavedNumber(savedQuote.totalWithServices) else "",
+            // Pedido vendido pelo preço do catálogo volta com o anunciado no lugar dele, e não como preço
+            // digitado: salvar de novo mantém o preço e continua fora dos números de negociação.
+            targetTotalText = if (quote.isNegotiated && !savedQuote.soldAtCatalogPrice) formatSavedNumber(savedQuote.totalWithServices) else "",
+            announcedUnitPrice = if (savedQuote.soldAtCatalogPrice) quote.unitSalePrice else null,
         )
     }
 
@@ -532,7 +540,7 @@ class QuoteViewModel(
         val servicesTotal = selectedServices.sumOf { it.total(input.quantity) }
         val negotiatedSalePrice = parseDecimal(input.targetTotalText)
             ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
-            ?: input.announcedUnitPrice?.let { it * input.quantity }
+            ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * input.quantity }
 
         if (filament == null || printer == null || length == null || time == null) {
             return QuoteResult(

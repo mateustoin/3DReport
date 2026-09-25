@@ -64,6 +64,10 @@ import kotlinx.serialization.Serializable
  * @property category categoria do produto no catálogo ("Chaveiros", "Decoração"), texto livre, ou
  *   `null` (decisão 102). Só produto guarda: serve pra filtrar a lista e separar o catálogo em PDF
  *   em seções, e pedido não tem catálogo.
+ * @property soldAtCatalogPrice se o pedido saiu pelo preço anunciado do produto, pelo "Vender", sem
+ *   ninguém digitar outro preço (decisão 103). O [Quote] guarda o anunciado como preço fechado e o
+ *   calculado em [Quote.tableSalePrice], mas isso não é negociação com o cliente: fica fora dos
+ *   números de desconto do Dashboard (ver [isNegotiatedWithClient]).
  */
 @Serializable
 data class SavedQuote(
@@ -84,6 +88,7 @@ data class SavedQuote(
     val kind: QuoteKind = QuoteKind.ORDER,
     val sourceProductId: String? = null,
     val category: String? = null,
+    val soldAtCatalogPrice: Boolean = false,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
@@ -104,6 +109,17 @@ data class SavedQuote(
      */
     val isOrder: Boolean
         get() = kind == QuoteKind.ORDER
+
+    /**
+     * Se o preço foi combinado com o cliente, e não só tirado do catálogo. É o que o Dashboard conta
+     * como negociação ([Quote.isNegotiated] sozinho também pega o preço anunciado do catálogo).
+     */
+    val isNegotiatedWithClient: Boolean
+        get() = quote.isNegotiated && !soldAtCatalogPrice
+
+    /** [Quote.negotiatedDiscount] só quando houve negociação com o cliente; zero no preço do catálogo. */
+    val clientDiscount: Double
+        get() = if (isNegotiatedWithClient) quote.negotiatedDiscount else 0.0
 
     /** Tempo de máquina do pedido inteiro: o de uma peça vezes a quantidade (mesma conta da fila de impressão). */
     val totalPrintTimeMinutes: Double

@@ -53,6 +53,7 @@ expect class QuoteHistoryRepository() {
         kind: QuoteKind = QuoteKind.ORDER,
         sourceProductId: String? = null,
         category: String? = null,
+        soldAtCatalogPrice: Boolean = false,
     ): SavedQuote
 
     fun delete(id: String)
@@ -82,6 +83,7 @@ expect class QuoteHistoryRepository() {
         shippingCost: Double = 0.0,
         deliveryDateEpochDay: Long? = null,
         category: String? = null,
+        soldAtCatalogPrice: Boolean = false,
     ): SavedQuote?
 
     /**

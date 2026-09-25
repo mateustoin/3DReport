@@ -255,4 +255,45 @@ class QuoteReportTest {
 
         assertEquals(QuoteSummary.EMPTY, summary)
     }
+
+    @Test
+    fun productRankingJoinsSalesOfTheSameCatalogProductEvenAfterARename() {
+        val quotes = listOf(
+            quoteOf("PLA", 20.0, 10.0, name = "Chaveiro").copy(id = "a", sourceProductId = "p1", savedAtEpochMillis = 1L),
+            quoteOf("PLA", 30.0, 10.0, name = "Chaveiro dragão").copy(id = "b", sourceProductId = "p1", savedAtEpochMillis = 2L),
+            quoteOf("PLA", 25.0, 10.0, name = "chaveiro dragão ").copy(id = "c", savedAtEpochMillis = 3L), // sem origem, mesmo nome
+            quoteOf("PLA", 50.0, 10.0, name = "Vaso").copy(id = "d"),
+        )
+
+        val ranking = QuoteReport.summarize(quotes).topProducts
+
+        assertEquals(2, ranking.size)
+        val keychain = ranking.first { it.orderCount == 3 }
+        assertEquals("chaveiro dragão", keychain.name)
+        assertEquals(45.0, keychain.totalProfit, 1e-9)
+        assertEquals(1, ranking.first { it.name == "Vaso" }.orderCount)
+    }
+
+    @Test
+    fun saleAtTheCatalogPriceIsNotANegotiationWithTheClient() {
+        fun closed(sale: Double, table: Double, catalog: Boolean) = quoteOf("PLA", sale, 10.0).let {
+            it.copy(
+                id = "$sale-$catalog",
+                client = Client(name = "Maria"),
+                quote = it.quote.copy(tableSalePrice = table),
+                soldAtCatalogPrice = catalog,
+            )
+        }
+        val summary = QuoteReport.summarize(
+            listOf(
+                closed(sale = 18.0, table = 18.37, catalog = true),
+                closed(sale = 18.9, table = 18.37, catalog = true),
+                closed(sale = 15.0, table = 20.0, catalog = false),
+            ),
+        )
+
+        assertEquals(1, summary.negotiatedCount)
+        assertEquals(5.0, summary.totalNegotiatedDiscount, 1e-9)
+        assertEquals(5.0, summary.topDiscountClients.single().totalDiscount, 1e-9)
+    }
 }

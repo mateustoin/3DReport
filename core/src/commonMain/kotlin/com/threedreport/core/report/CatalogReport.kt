@@ -5,14 +5,15 @@ import com.threedreport.core.model.SavedQuote
 /**
  * Um produto no resumo do catálogo.
  *
- * @property unitPrice preço de uma unidade, o que vai pro catálogo (o anunciado, quando houver).
- * @property profit lucro de uma unidade nesse preço.
+ * @property price o mesmo preço que sai no catálogo em PDF ([SavedQuote.totalWithServices]: o
+ *   anunciado, quando houver, com serviços e a quantidade do produto).
+ * @property profit lucro do produto nesse preço.
  * @property profitPerPrintHour lucro por hora de máquina, `null` sem tempo de impressão. É o que
  *   responde a pergunta de quem está começando: qual peça vale a pena oferecer primeiro.
  */
 data class CatalogProductStat(
     val name: String,
-    val unitPrice: Double,
+    val price: Double,
     val profit: Double,
     val profitPerPrintHour: Double?,
 )
@@ -22,8 +23,8 @@ data class CatalogProductStat(
  */
 data class CatalogSummary(
     val productCount: Int,
-    val minUnitPrice: Double?,
-    val maxUnitPrice: Double?,
+    val minPrice: Double?,
+    val maxPrice: Double?,
     val products: List<CatalogProductStat>,
 )
 
@@ -38,18 +39,19 @@ object CatalogReport {
         val products = savedQuotes.filterNot { it.isOrder }
         val stats = products.map { product ->
             val quote = product.quote
+            // Preço como o cliente vê no catálogo em PDF, pra os dois nunca mostrarem números diferentes.
             val hours = product.totalPrintTimeMinutes / 60.0
             CatalogProductStat(
                 name = product.name.trim(),
-                unitPrice = quote.unitSalePrice,
-                profit = quote.profit / quote.quantity,
+                price = product.totalWithServices,
+                profit = quote.profit,
                 profitPerPrintHour = if (hours > 0) quote.profit / hours else null,
             )
         }
         return CatalogSummary(
             productCount = stats.size,
-            minUnitPrice = stats.minOfOrNull { it.unitPrice },
-            maxUnitPrice = stats.maxOfOrNull { it.unitPrice },
+            minPrice = stats.minOfOrNull { it.price },
+            maxPrice = stats.maxOfOrNull { it.price },
             products = stats.sortedByDescending { it.profitPerPrintHour ?: Double.NEGATIVE_INFINITY },
         )
     }

@@ -599,6 +599,7 @@ private fun SavedQuoteRow(
                             append(
                                 when {
                                     isProduct -> " · Anunciado (calculado "
+                                    savedQuote.soldAtCatalogPrice -> " · Preço do catálogo (calculado "
                                     savedQuote.quote.negotiatedDiscount < 0 -> " · Acima da tabela ("
                                     else -> " · Negociado (tabela "
                                 },

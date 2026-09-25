@@ -40,8 +40,8 @@ object QuoteReport {
             totalProfit = totalProfit,
             mostUsedFilamentName = mostUsedFilament?.key,
             mostUsedFilamentCount = mostUsedFilament?.value ?: 0,
-            negotiatedCount = sold.count { it.quote.isNegotiated },
-            totalNegotiatedDiscount = sold.sumOf { it.quote.negotiatedDiscount },
+            negotiatedCount = sold.count { it.isNegotiatedWithClient },
+            totalNegotiatedDiscount = sold.sumOf { it.clientDiscount },
             openQuoteCount = open.size,
             openQuoteTotal = open.sumOf { it.totalWithServices },
             conversionRate = sold.size.toDouble() / quotes.size,
@@ -89,14 +89,14 @@ object QuoteReport {
     }
 
     private fun topDiscountClients(sold: List<SavedQuote>): List<ClientDiscountRanking> =
-        sold.filter { it.client != null && it.quote.isNegotiated }
+        sold.filter { it.client != null && it.isNegotiatedWithClient }
             .groupBy { it.client!!.name.trim().lowercase() }
             .values
             .map { orders ->
                 ClientDiscountRanking(
                     clientName = orders.maxBy { it.savedAtEpochMillis }.client!!.name.trim(),
                     negotiatedCount = orders.size,
-                    totalDiscount = orders.sumOf { it.quote.negotiatedDiscount },
+                    totalDiscount = orders.sumOf { it.clientDiscount },
                 )
             }
             .filter { it.totalDiscount > 0 }

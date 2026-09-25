@@ -42,6 +42,7 @@ actual class QuoteHistoryRepository actual constructor() {
         kind: QuoteKind,
         sourceProductId: String?,
         category: String?,
+        soldAtCatalogPrice: Boolean,
     ): SavedQuote {
         val id = Uuid.random().toString()
         val isProduct = kind == QuoteKind.PRODUCT
@@ -64,6 +65,7 @@ actual class QuoteHistoryRepository actual constructor() {
             kind = kind,
             sourceProductId = sourceProductId,
             category = if (isProduct) category.normalizedCategory() else null,
+            soldAtCatalogPrice = !isProduct && soldAtCatalogPrice,
         )
         state.value = state.value + saved
         persist()
@@ -85,6 +87,7 @@ actual class QuoteHistoryRepository actual constructor() {
         shippingCost: Double,
         deliveryDateEpochDay: Long?,
         category: String?,
+        soldAtCatalogPrice: Boolean,
     ): SavedQuote? {
         val existing = state.value.find { it.id == id } ?: return null
         val isProduct = !existing.isOrder
@@ -104,6 +107,7 @@ actual class QuoteHistoryRepository actual constructor() {
             shippingCost = if (isProduct) 0.0 else shippingCost,
             deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
             category = if (isProduct) category.normalizedCategory(excludingId = id) else null,
+            soldAtCatalogPrice = !isProduct && soldAtCatalogPrice,
         )
         // O novo estado precisa estar visível antes de decidir se o arquivo antigo ainda é
         // referenciado por outra linha (ex.: um orçamento duplicado que ainda aponta pra ele).
