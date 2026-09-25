@@ -175,8 +175,9 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
 - **Formato dos dados** (decisão 104): `~/.3dreport/format.json` guarda a
   versão do formato (`DATA_FORMAT_VERSION`, hoje 2). `prepareDataDir()`
   (`data/DataFormat.kt`) roda no `Main.kt` antes de qualquer repositório: uma
-  pasta de formato anterior é movida inteira, sem conversão e sem apagar nada,
-  pra `~/.3dreport-v1`, e o app avisa uma vez. Um arquivo que não dá pra ler é
+  pasta de outro formato (anterior ou mais novo) é movida inteira, sem
+  conversão e sem apagar nada, pra `~/.3dreport-v<versão>`, e o app avisa uma
+  vez. Se nem renomear nem copiar a pasta der certo, o app não abre. Um arquivo que não dá pra ler é
   guardado como `<nome>.ilegivel-<millis>.json` em vez de sobrescrito
   (`readJsonFile`).
 - Arquivos binários **não** vão dentro do JSON: a foto de um `SavedQuote`

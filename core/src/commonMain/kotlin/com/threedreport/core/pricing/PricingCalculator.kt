@@ -120,7 +120,7 @@ object PricingCalculator {
 
     /** Material e máquina de uma impressão, já vezes as rodadas dela e a quantidade do pedido. */
     private fun printCost(job: PrintJob, printer: PrinterProfile, settings: PricingSettings, quantity: Int): PrintCost {
-        val hours = job.printTimeHours * job.runs
+        val hours = job.allRunsPrintTimeMinutes / MINUTES_PER_HOUR
         val material = job.filaments.sumOf { it.weightGrams / GRAMS_PER_KG * it.filament.pricePerKg } * job.runs
         val energy = hours * (printer.printerPowerWatts / WATTS_PER_KW) * settings.energyPricePerKwh
         val maintenance = hours * printer.maintenanceCostPerHour

@@ -1151,6 +1151,93 @@ class QuoteViewModelTest {
         assertEquals(null, restored.printerId)
     }
 
+    /** Revisão de código: o Ctrl+S calculava com os filamentos esgotados também, e salvava outro preço. */
+    @Test
+    fun ctrlSSavesWhatTheScreenShowsAndNotAnOutOfStockFilament() {
+        val filamentRepository = FilamentRepository()
+        filamentRepository.filaments.value.forEach { filamentRepository.delete(it.id) }
+        val soldOut = Filament(id = "esgotado", name = "PLA caro", pricePerKg = 500.0, densityGPerCm3 = 1.24, colors = listOf(FilamentColor(id = "x", inStock = false)))
+        val pla = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24)
+        filamentRepository.add(soldOut)
+        filamentRepository.add(pla)
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+
+        viewModel.saveCurrentQuote()
+
+        assertEquals("pla", historyRepository.savedQuotes.value.single().quote.prints.single().job.filaments.single().filament.id)
+    }
+
+    /** Revisão de código: sem o consumo de cada extrusor, o import juntava as linhas que a pessoa separou. */
+    @Test
+    fun aGCodeWithoutPerExtruderLengthsKeepsTheRowsThePersonSplit() {
+        val filamentRepository = FilamentRepository()
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
+        val first = filamentRepository.filaments.value.first().id
+        viewModel.selectFilament(first)
+        viewModel.setLengthMeters("3")
+        viewModel.addFilament()
+        viewModel.setLengthMeters("1", slot = 1)
+        val before = viewModel.input.value.prints.single().filaments
+
+        // Três comprimentos pra dois tipos: não dá pra saber de quem é cada um.
+        viewModel.importGCode(gcodeFile("; filament used [mm] = 1000, 500, 250\n; filament_type = PLA;PETG\n; estimated printing time (normal mode) = 1h\n"))
+
+        val print = viewModel.input.value.prints.single()
+        assertEquals(before, print.filaments)
+        assertEquals("60", print.printTimeText)
+        assertTrue(print.gcodeImportMessage!!.contains("mantive as suas linhas de filamento"))
+    }
+
+    /** Revisão de código: quatro slots do mesmo PLA, sem consumo por slot, ainda são um filamento só. */
+    @Test
+    fun severalSlotsOfTheSameFilamentWithoutLengthsStillChooseIt() {
+        val filamentRepository = FilamentRepository()
+        filamentRepository.filaments.value.forEach { filamentRepository.delete(it.id) }
+        val pla = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24, materialType = "PLA")
+        val petg = Filament(id = "petg", name = "PETG", pricePerKg = 100.0, densityGPerCm3 = 1.27, materialType = "PETG")
+        filamentRepository.add(petg)
+        filamentRepository.add(pla)
+        val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository())
+        viewModel.selectFilament("petg")
+
+        viewModel.importGCode(gcodeFile("; filament used [mm] = 1000, 500\n; filament_type = PLA;PLA;PLA;PLA\n"))
+
+        val row = viewModel.input.value.prints.single().filaments.single()
+        assertEquals("pla", row.filamentId)
+        assertEquals("1.5", row.lengthText)
+    }
+
+    /** Revisão de código: canal excluído e recriado ganha id novo; reabrir perdia a taxa em silêncio. */
+    @Test
+    fun reopeningFindsTheChannelByNameWhenTheIdChangedAndWarnsWhenItIsGone() {
+        val channelRepository = SalesChannelRepository()
+        channelRepository.add(SalesChannel(id = "shopee-antigo", name = "Shopee", feeRate = 0.2))
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), channelRepository, historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.selectSalesChannel("shopee-antigo")
+        viewModel.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+
+        channelRepository.delete("shopee-antigo")
+        channelRepository.add(SalesChannel(id = "shopee-novo", name = "Shopee", feeRate = 0.2))
+        viewModel.loadForEditing(saved)
+        assertEquals("shopee-novo", viewModel.input.value.salesChannelId)
+        assertEquals(null, viewModel.input.value.missingChannelName)
+
+        channelRepository.delete("shopee-novo")
+        viewModel.loadForEditing(saved)
+        assertEquals(null, viewModel.input.value.salesChannelId)
+        assertEquals("Shopee", viewModel.input.value.missingChannelName)
+
+        viewModel.selectSalesChannel(null)
+        assertEquals(null, viewModel.input.value.missingChannelName)
+    }
+
     @Test
     fun savingAndReopeningATwoRowQuoteRestoresBothRows() {
         val filamentRepository = FilamentRepository()

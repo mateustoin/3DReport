@@ -75,4 +75,16 @@ data class PrintJob(
     /** Massa somada de todos os filamentos numa rodada, em gramas. */
     val weightGrams: Double
         get() = filaments.sumOf { it.weightGrams }
+
+    /**
+     * Tempo de máquina de todas as rodadas, em minutos: o que esta impressão ocupa por unidade do
+     * pedido. Todo total do [Quote] parte daqui (e de [allRunsWeightGrams]) e só multiplica pela
+     * quantidade, pra nenhuma conta esquecer as rodadas.
+     */
+    val allRunsPrintTimeMinutes: Double
+        get() = printTimeMinutes * runs
+
+    /** Massa de todas as rodadas, em gramas (ver [allRunsPrintTimeMinutes]). */
+    val allRunsWeightGrams: Double
+        get() = weightGrams * runs
 }

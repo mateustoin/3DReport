@@ -24,11 +24,18 @@ internal fun appDataDir(): File {
  *
  * O arquivo que não dá pra ler é guardado ao lado, como `<nome>.ilegivel-<millis>.json`, antes de
  * devolver o padrão (decisão 104). Sem isso, a próxima gravação do repositório sobrescrevia o
- * arquivo e o histórico sumia em silêncio.
+ * arquivo e o histórico sumia em silêncio. Dados de outro formato nem chegam aqui: [prepareDataDir]
+ * guarda a pasta inteira antes.
  */
 internal inline fun <reified T> readJsonFile(file: File, default: T): T {
     if (!file.exists()) return default
-    return runCatching { json.decodeFromString(serializer<T>(), file.readText()) }.getOrElse {
+    val text = runCatching { file.readText() }.getOrElse { return default }
+    return try {
+        json.decodeFromString(serializer<T>(), text)
+    } catch (_: IllegalArgumentException) {
+        // Só erro de formato (a `SerializationException` e um `require` de modelo são os dois
+        // `IllegalArgumentException`). Uma falha de leitura do disco não quer dizer que o conteúdo
+        // está errado, e o arquivo fica onde está.
         file.renameTo(File(file.parentFile, "${file.nameWithoutExtension}.ilegivel-${System.currentTimeMillis()}.${file.extension}"))
         default
     }

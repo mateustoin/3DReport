@@ -395,6 +395,15 @@ private fun QuoteInputs(
         )
     }
 
+    input.missingChannelName?.let { name ->
+        Text(
+            "O canal \"$name\" deste orçamento não existe mais no cadastro, então o preço abaixo está sem a " +
+                "taxa dele. Escolha o canal de novo pra cobrar a taxa.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+
     // Produto do catálogo não tem frete (decisão 101): quem paga e pra onde vai só existe na venda.
     if (!input.isProduct) {
         OutlinedTextField(

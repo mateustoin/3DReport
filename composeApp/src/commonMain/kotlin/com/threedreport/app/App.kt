@@ -130,7 +130,7 @@ private enum class AppTab(val label: String) {
 }
 
 @Composable
-fun App(oldDataPath: String? = null) {
+fun App(oldDataPath: String? = null, oldDataFromNewerVersion: Boolean = false) {
     val filamentRepository = remember { FilamentRepository() }
     val printerRepository = remember { PrinterRepository() }
     val maintenanceRepository = remember { MaintenanceRepository() }
@@ -308,7 +308,7 @@ fun App(oldDataPath: String? = null) {
 
             var showOldDataNotice by remember { mutableStateOf(oldDataPath != null) }
             if (showOldDataNotice && oldDataPath != null) {
-                OldDataNoticeDialog(oldDataPath, onDismiss = { showOldDataNotice = false })
+                OldDataNoticeDialog(oldDataPath, oldDataFromNewerVersion, onDismiss = { showOldDataNotice = false })
             }
 
             // O aviso dos dados antigos vem antes: o onboarding só aparece depois de ele ser lido.
@@ -359,21 +359,30 @@ private fun AppFooter(onHelpClick: () -> Unit) {
  * ficaram e como recuperar.
  */
 @Composable
-private fun OldDataNoticeDialog(oldDataPath: String, onDismiss: () -> Unit) {
+private fun OldDataNoticeDialog(oldDataPath: String, fromNewerVersion: Boolean, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text("Entendi") } },
-        title = { Text("Formato de dados novo") },
+        title = { Text(if (fromNewerVersion) "Dados de uma versão mais nova" else "Formato de dados novo") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Esta versão guarda os pedidos de um jeito novo, que aceita vários filamentos e várias " +
-                        "impressões por pedido, e começa com os dados em branco.",
+                    if (fromNewerVersion) {
+                        "Os dados eram de uma versão mais nova do 3DReport, que esta não consegue ler. Pra não " +
+                            "estragar nada, esta versão começa com os dados em branco."
+                    } else {
+                        "Esta versão guarda os pedidos de um jeito novo, que aceita vários filamentos e várias " +
+                            "impressões por pedido, e começa com os dados em branco."
+                    },
                 )
                 Text("O que você tinha foi guardado, sem apagar nada, em:")
                 Text(oldDataPath, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 Text(
-                    "Pra recuperar, reinstale a versão 1.44 e renomeie essa pasta de volta pra .3dreport.",
+                    if (fromNewerVersion) {
+                        "Pra recuperar, atualize o 3DReport e renomeie essa pasta de volta pra .3dreport."
+                    } else {
+                        "Pra recuperar, reinstale a versão 1.44 e renomeie essa pasta de volta pra .3dreport."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

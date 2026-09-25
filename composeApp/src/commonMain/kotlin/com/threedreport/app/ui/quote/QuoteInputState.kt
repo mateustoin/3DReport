@@ -54,6 +54,11 @@ data class QuoteInputState(
     val selectedServices: Map<String, ServiceInput> = emptyMap(),
     /** Canal de venda escolhido, ou `null` na venda direta (sem taxa). */
     val salesChannelId: String? = null,
+    /**
+     * Canal do orçamento reaberto que não existe mais no cadastro (nem pelo id, nem pelo nome). A tela
+     * avisa até a pessoa escolher um canal: sem isso, o preço seria recalculado sem a taxa em silêncio.
+     */
+    val missingChannelName: String? = null,
     /** Frete cobrado do cliente neste pedido (ver `SavedQuote.shippingCost`). */
     val shippingCostText: String = "",
     /**

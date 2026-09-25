@@ -124,11 +124,11 @@ data class Quote(
 
     /** Massa de filamento do pedido inteiro, em gramas: todas as impressões, rodadas e unidades. */
     val filamentWeightGrams: Double
-        get() = prints.sumOf { it.job.weightGrams * it.job.runs } * quantity
+        get() = prints.sumOf { it.job.allRunsWeightGrams } * quantity
 
     /** Tempo de máquina do pedido inteiro, em minutos, somando todas as impressoras. */
     val totalPrintTimeMinutes: Double
-        get() = prints.sumOf { it.job.printTimeMinutes * it.job.runs } * quantity
+        get() = prints.sumOf { it.job.allRunsPrintTimeMinutes } * quantity
 
     /** Impressoras que este pedido ocupa. */
     val printerIds: Set<String>
@@ -136,7 +136,7 @@ data class Quote(
 
     /** Tempo de máquina do pedido inteiro em [printerId], em minutos (zero se não usa ela). */
     fun printMinutesOn(printerId: String): Double =
-        prints.filter { it.printerId == printerId }.sumOf { it.job.printTimeMinutes * it.job.runs } * quantity
+        prints.filter { it.printerId == printerId }.sumOf { it.job.allRunsPrintTimeMinutes } * quantity
 
     /**
      * Consumo do pedido inteiro por filamento e cor, na ordem em que aparecem ("PLA preto 320 g,

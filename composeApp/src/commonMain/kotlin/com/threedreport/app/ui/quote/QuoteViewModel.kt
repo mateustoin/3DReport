@@ -198,17 +198,26 @@ class QuoteViewModel(
                 val found = extruder.match as? FilamentMatch.Found
                 FilamentInput(filamentId = found?.filament?.id, colorId = found?.color?.id, lengthText = formatImportedNumber(extruder.lengthMeters!!))
             }
+        } else if (extruders.size > 1 && current.filaments.size > 1) {
+            // Vários extrusores sem o consumo de cada um, e a pessoa já tinha separado as linhas à mão:
+            // juntar tudo numa linha cobraria tudo pelo primeiro filamento. As linhas ficam como estão.
+            current.filaments
         } else {
             val first = current.filaments.first()
-            val found = extruders.singleOrNull()?.match as? FilamentMatch.Found
+            val single = extruders.singleOrNull()?.match as? FilamentMatch.Found
+            // Vários slots que casam com o mesmo filamento (ex.: quatro PLA no AMS) ainda dão um
+            // filamento só, sem cor, que não dá pra saber.
+            val common = extruders.map { (it.match as? FilamentMatch.Found)?.filament }.distinct().singleOrNull()
+            val filament = single?.filament ?: common
             listOf(
                 FilamentInput(
-                    filamentId = found?.filament?.id ?: first.filamentId,
-                    colorId = if (found != null) found.color?.id else first.colorId,
+                    filamentId = filament?.id ?: first.filamentId,
+                    colorId = if (filament != null) single?.color?.id else first.colorId,
                     lengthText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: first.lengthText,
                 ),
             )
         }
+        val keptManualRows = rows === current.filaments
 
         updatePrint(print) {
             it.copy(
@@ -216,7 +225,7 @@ class QuoteViewModel(
                 filaments = rows,
                 printTimeText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: it.printTimeText,
                 beforeGCode = it.beforeGCode ?: it.copy(gcodeImportMessage = null),
-                gcodeImportMessage = gcodeImportMessage(metadata, photoApplied, printerMatch, extruders, perExtruder),
+                gcodeImportMessage = gcodeImportMessage(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows),
             )
         }
     }
@@ -269,7 +278,7 @@ class QuoteViewModel(
         input.copy(selectedServices = input.selectedServices + (id to transform(current)))
     }
 
-    fun selectSalesChannel(id: String?) = inputState.update { it.copy(salesChannelId = id) }
+    fun selectSalesChannel(id: String?) = inputState.update { it.copy(salesChannelId = id, missingChannelName = null) }
     fun setShippingCost(text: String) = inputState.update { it.copy(shippingCostText = text) }
     fun setTargetTotal(text: String) = inputState.update { it.copy(targetTotalText = text) }
 
@@ -464,6 +473,10 @@ class QuoteViewModel(
 
     private fun inputStateFrom(savedQuote: SavedQuote): QuoteInputState {
         val quote = savedQuote.quote
+        // Pelo id; um canal excluído e recriado com o mesmo nome ganha id novo, então o nome é a segunda
+        // tentativa. Sem nenhum dos dois, a tela avisa: recalcular sem a taxa em silêncio baixaria o preço.
+        val channel = quote.channelId?.let { id -> salesChannels.value.firstOrNull { it.id == id } }
+            ?: quote.channelName?.let { name -> salesChannels.value.firstOrNull { it.name == name } }
         return QuoteInputState(
             kind = savedQuote.kind,
             prints = quote.prints.map { print ->
@@ -488,7 +501,8 @@ class QuoteViewModel(
                     chargedPerOrder = service.chargedPerOrder,
                 )
             },
-            salesChannelId = quote.channelId?.takeIf { id -> salesChannels.value.any { it.id == id } },
+            salesChannelId = channel?.id,
+            missingChannelName = quote.channelName.takeIf { channel == null },
             shippingCostText = if (savedQuote.shippingCost > 0) formatSavedNumber(savedQuote.shippingCost) else "",
             // Sem isso, reabrir um orçamento negociado e salvar de novo voltaria em silêncio pro preço
             // de tabela. O campo recebe o total do cliente, igual ao que foi digitado (ver `calculate`).
@@ -523,7 +537,9 @@ class QuoteViewModel(
 
     /** Atalho de teclado (Ctrl/Cmd+S): recalcula com os valores atuais e salva, se houver um orçamento válido. */
     fun saveCurrentQuote() {
-        val result = calculate(filaments.value, printers.value, settings.value, services.value, input.value)
+        // A mesma lista que a tela usa (só o que está em estoque): o atalho não pode salvar um preço
+        // diferente do que a pessoa está vendo.
+        val result = calculate(filaments.value.filter { it.hasStockAvailable }, printers.value, settings.value, services.value, input.value)
         val quote = result.quote ?: return
         if (result.missingServicePrice) return
         saveQuote(quote, result.selectedServices)
@@ -653,9 +669,14 @@ class QuoteViewModel(
         printerMatch: PrinterMatch,
         extruders: List<ExtruderMatch>,
         perExtruder: Boolean,
+        keptManualRows: Boolean,
     ): String {
         val filled = buildList {
-            if (perExtruder) add("consumo de cada filamento") else if (metadata.filamentLengthMeters != null) add("comprimento de filamento")
+            when {
+                perExtruder -> add("consumo de cada filamento")
+                keptManualRows -> Unit
+                metadata.filamentLengthMeters != null -> add("comprimento de filamento")
+            }
             if (metadata.printTimeMinutes != null) add("tempo de impressão")
             if (photoApplied) add("foto do modelo")
             if (metadata.layerHeightMm != null || metadata.infillPercentage != null ||
@@ -665,16 +686,19 @@ class QuoteViewModel(
             }
         }
         val sentences = buildList {
-            add(
-                if (filled.isEmpty()) {
-                    "Não encontrei comprimento nem tempo nesse G-code — preencha manualmente."
-                } else {
-                    "Preenchido a partir do G-code: ${filled.joinToString(", ")}."
-                },
-            )
+            when {
+                filled.isNotEmpty() -> add("Preenchido a partir do G-code: ${filled.joinToString(", ")}.")
+                // As linhas mantidas já têm os comprimentos; a frase delas explica o resto.
+                !keptManualRows -> add("Não encontrei comprimento nem tempo nesse G-code — preencha manualmente.")
+            }
             printerSentence(printerMatch)?.let(::add)
             when {
                 perExtruder -> add(extrudersSentence(extruders))
+                keptManualRows -> add(
+                    "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um" +
+                        (metadata.filamentLengthMeters?.let { " (${formatImportedNumber(it)} m no total)" } ?: "") +
+                        ": mantive as suas linhas de filamento como estavam.",
+                )
                 extruders.size > 1 -> add(
                     "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um: o total ficou numa " +
                         "linha só. Separe em \"+ Adicionar filamento\" pra cobrar cada um pelo seu preço.",
