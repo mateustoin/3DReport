@@ -83,7 +83,8 @@ expect class QuoteHistoryRepository() {
 
     /**
      * "Transformar em pedido" (decisão 101): o produto [id] passa a ser pedido, nascendo
-     * [OrderStatus.ORCADO] como qualquer orçamento salvo. Pra quem salvou no lugar errado; vender
+     * [OrderStatus.ORCADO] como qualquer orçamento salvo, com
+     * [SavedQuote.savedAtEpochMillis] no momento da conversão. Pra quem salvou no lugar errado; vender
      * um produto de verdade é outro caminho, que cria um pedido novo e deixa o produto no catálogo.
      * Não faz nada se [id] não existir ou já for pedido.
      */

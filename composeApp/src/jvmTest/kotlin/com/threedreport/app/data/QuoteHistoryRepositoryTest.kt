@@ -608,4 +608,19 @@ class QuoteHistoryRepositoryTest {
         assertEquals(OrderStatus.ORCADO, converted.status)
         assertEquals(OrderStatus.ENTREGUE, reloaded.first { it.id == order.id }.status)
     }
+
+    @Test
+    fun convertToOrderDatesTheOrderAtTheConversion() {
+        val repository = QuoteHistoryRepository()
+        val product = repository.save(name = "Chaveiro", quote = quote, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT)
+        val before = System.currentTimeMillis()
+        Thread.sleep(5)
+
+        repository.convertToOrder(product.id)
+
+        val converted = QuoteHistoryRepository().savedQuotes.value.single()
+        assertTrue(converted.savedAtEpochMillis > product.savedAtEpochMillis)
+        assertTrue(converted.savedAtEpochMillis >= before)
+        assertNull(converted.lastEditedEpochMillis)
+    }
 }

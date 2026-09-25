@@ -153,7 +153,10 @@ actual class QuoteHistoryRepository actual constructor() {
 
     actual fun convertToOrder(id: String) {
         if (state.value.none { it.id == id && !it.isOrder }) return
-        state.value = state.value.map { if (it.id == id) it.copy(kind = QuoteKind.ORDER, status = OrderStatus.ORCADO) else it }
+        // A data passa a ser a da conversão: é um pedido novo do ponto de vista da venda, e com a
+        // data antiga do produto ele sumiria dos filtros de período e iria pro fim da lista.
+        val now = System.currentTimeMillis()
+        state.value = state.value.map { if (it.id == id) it.copy(kind = QuoteKind.ORDER, status = OrderStatus.ORCADO, savedAtEpochMillis = now, lastEditedEpochMillis = null) else it }
         persist()
     }
 
