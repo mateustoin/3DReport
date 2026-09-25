@@ -35,7 +35,7 @@ import com.threedreport.core.model.QuoteTemplate
  * Não é uma aba própria: seu único uso é dentro dessa seção de Configurações.
  */
 @Composable
-fun TemplateListDialog(viewModel: TemplateListViewModel, onDismiss: () -> Unit) {
+fun TemplateListDialog(viewModel: TemplateListViewModel, onLoad: (QuoteTemplate) -> Unit, onDismiss: () -> Unit) {
     val templates by viewModel.templates.collectAsState()
     val branding by viewModel.activeBranding.collectAsState()
     val activeId = viewModel.activeTemplateId(templates, branding)
@@ -61,7 +61,7 @@ fun TemplateListDialog(viewModel: TemplateListViewModel, onDismiss: () -> Unit) 
                     TemplateRow(
                         template = template,
                         isActive = template.id == activeId,
-                        onLoad = { viewModel.load(template.id) },
+                        onLoad = { onLoad(template) },
                         onDelete = { pendingDelete = template },
                     )
                 }

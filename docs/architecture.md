@@ -134,8 +134,11 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   - **Histórico** (`ui/history`): orçamentos salvos em lista ou Kanban por
     status (decisão 70), com busca, filtro e prazo de entrega em destaque.
     Ações por orçamento: exportar PDF, copiar texto, abrir no WhatsApp,
-    imagem quadrada, editar, duplicar, prazo, configurações de impressão,
-    baixar foto/STL, excluir (com `ConfirmDialog`). Tudo o que vai pro
+    imagem quadrada, editar o cálculo, editar só os detalhes (nome, cliente,
+    foto, prazo, link), duplicar, mover de etapa, configurações de impressão,
+    baixar foto/STL, excluir (com "Desfazer"). Lista e Kanban usam o mesmo menu
+    "Ações" (`QuoteActionsMenu`), e as ações terminam num aviso (`UserNotice`)
+    com "Abrir pasta" ou "Desfazer" quando cabe. Tudo o que vai pro
     cliente mostra só o que é do cliente (decisão 19): produção, lucro,
     link do modelo e cliente nunca aparecem. Envio com prazo vencido pede
     confirmação antes (decisão 85). Seleção múltipla exporta vários
@@ -160,67 +163,99 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     nome da marca, logo, contato, marca d'água, rodapé, borda, tempo de
     impressão, prévia "Ver como fica" e templates).
 
-### Persistência
-- Os repositórios de `data/` (filamentos, impressoras, serviços,
-  configurações, histórico, marca, templates, canais de venda, tema, moeda,
-  onboarding) guardam o estado compartilhado entre as telas (`StateFlow`) e
-  persistem em disco: um arquivo JSON por assunto em `~/.3dreport/`
-  (`filaments.json`, `quotes.json`, `branding.json` etc.), lido uma vez na
-  criação e regravado a cada mudança. Filamentos/impressoras vêm com um
-  catálogo/perfil padrão no primeiro uso; o resto começa vazio.
-- `data/BackupRepository` empacota a pasta de dados inteira num `.zip` e
-  restaura de forma transacional (decisão 75). Como todos os arquivos do app
-  moram nessa pasta, nada novo precisa ser registrado no backup. O manifesto
-  do `.zip` guarda `dataFormatVersion`, e backup de outro formato é recusado.
-- **Formato dos dados** (decisão 104): `~/.3dreport/format.json` guarda a
-  versão do formato (`DATA_FORMAT_VERSION`, hoje 2). `prepareDataDir()`
-  (`data/DataFormat.kt`) roda no `Main.kt` antes de qualquer repositório: uma
-  pasta de outro formato (anterior ou mais novo) é movida inteira, sem
-  conversão e sem apagar nada, pra `~/.3dreport-v<versão>`, e o app avisa uma
-  vez. Se nem renomear nem copiar a pasta der certo, o app não abre. Um arquivo que não dá pra ler é
-  guardado como `<nome>.ilegivel-<millis>.json` em vez de sobrescrito
-  (`readJsonFile`).
-- Arquivos binários **não** vão dentro do JSON: a foto de um `SavedQuote`
-  fica em `~/.3dreport/photos/`, o STL em `~/.3dreport/models/` e a logo do
-  vendedor em `~/.3dreport/branding/`, referenciados por nome de arquivo
-  (`photoFileName`, `stlFileName`, `logoFileName`). Motivo: manter o JSON pequeno e legível; o
-  `Quote` embutido no `SavedQuote` já tem os números todos (produção, venda,
-  detalhamento de custos), então o histórico não precisa recalcular nada.
-- Cada repositório é um `expect class` em `commonMain` (contrato) com um
-  `actual class` em `jvmMain` (implementação com `java.io.File`) — assim o
-  restante da UI (`ui/`, `App.kt`) continua compartilhado, só a leitura/escrita
-  de arquivo é específica da plataforma. Formato/local do arquivo em
-  `data/JsonFileStore.kt` (só em `jvmMain`).
-- Testado em `composeApp/src/jvmTest` (round-trip: grava, recria o
-  repositório, confere que o valor voltou do disco).
+### Persistência (decisões 104, 106 e 108)
+
+Camadas, de baixo pra cima:
+
+- **`DataFile<T>`** (`data/store/DataFile.kt`, `commonMain`): o único ponto que
+  toca o disco. Lê uma vez, na abertura, e regrava inteiro a cada mudança. No
+  desktop é o `JsonDataFile` (`jvmMain/data/JsonDataFile.kt`): grava em
+  `<nome>.tmp` forçado no disco e troca de nome, guardando a versão anterior em
+  `<nome>.bak`; um arquivo que não abre vira `<nome>.ilegivel-<millis>.json`, o
+  `.bak` é usado se abrir, e o `StorageHealth` avisa a tela. Uma falha de
+  leitura do disco é tentada de novo e, se continuar, vira `DataReadException`
+  (o app avisa e fecha em vez de abrir vazio e gravar por cima).
+- **`WriteBehindFile`** embrulha cada arquivo no app: o estado muda na memória na
+  hora e a gravação vai pra segundo plano, sempre do estado mais recente (várias
+  mudanças seguidas viram uma gravação). Falha de gravação fica na tela até dar
+  certo (`StorageHealth.writeFailures`), e ao fechar o app espera tudo chegar ao
+  disco (`PendingWrites`). Nos testes, `DataFileWrapper.Direct` grava na hora.
+- **`RecordCollection<T>` e `DocumentValue<T>`** (`data/store/Records.kt`): uma
+  lista de registros carimbados (`StoredRecord`: id, criação, alteração,
+  exclusão lógica) ou um documento com a data da última mudança. Excluir manda
+  pra lixeira por 30 dias, com "Desfazer"; depois fica só a marca de que o id
+  foi excluído, que é o que uma sincronização futura precisa. Mudança que não
+  muda nada não grava.
+- **Repositórios** (`data/*Repository.kt`, `commonMain`): **interfaces**
+  (`CatalogRepository<T>` pros cadastros, `DocumentRepository<T>` pros
+  documentos, e as específicas: histórico, clientes, marca, manutenção, backup,
+  preferências) com a implementação sobre as coleções acima. As telas só
+  conhecem as interfaces: trocar o armazenamento (SQLite, nuvem) ou usar uma
+  versão em memória é trocar a implementação.
+- **`AttachmentStore`**: fotos, STLs, logo e miniaturas do G-code, endereçados
+  pelo conteúdo (SHA-256 mais a extensão) em `~/.3dreport/attachments/`. O
+  mesmo arquivo é gravado uma vez só, um arquivo gravado nunca muda (editar a
+  foto de um pedido nunca mexe na de outro), e a chave já serve de chave de
+  blob pra nuvem. Miniaturas ficam em `attachments/thumbs/<px>/`. Na abertura,
+  o que nenhum registro (nem os da lixeira) referencia é apagado.
+- **`LocalStorage`** (`jvmMain`) monta tudo isso numa pasta; o
+  `createDesktopContainer` monta o **`AppContainer`** (todos os repositórios,
+  saúde do armazenamento e gravações pendentes), criado no `main()` e passado
+  pro `App()`. Nenhum repositório é criado dentro de um composable.
+
+Formato e migrações:
+
+- `~/.3dreport/format.json` guarda a versão do formato (`DATA_FORMAT_VERSION`,
+  hoje 2). `prepareDataDir()` (`data/DataFormat.kt`) roda no `Main.kt` antes de
+  qualquer repositório. Versão anterior **com migração conhecida**
+  (`DATA_MIGRATIONS`, uma `DataMigration` por versão, sobre o JSON): converte
+  numa cópia e só então troca de lugar, guardando o original em
+  `~/.3dreport-v<versão>`. Sem migração, ou de uma versão mais nova: a pasta é
+  guardada inteira à parte e o app começa numa nova. O backup restaurado passa
+  pelas mesmas migrações.
+- **Depois da tag 2.0.0, toda mudança incompatível no formato vem com
+  migração e teste** (decisão 106).
+- O arquivo grava todos os campos (`encodeDefaults`), e os enums têm nome fixo
+  em inglês no arquivo (`@SerialName`), separado do nome da constante.
+
+Outros:
+
+- **Instância única:** o `main()` trava `~/.3dreport.lock` antes de abrir a
+  pasta; uma segunda janela avisa e sai.
+- **Backup** (`LocalBackupRepository`): o `.zip` é escrito direto no arquivo
+  escolhido, sem montar tudo na memória, deixando de fora `logs/`, miniaturas e
+  arquivos de passagem. A restauração é transacional (decisão 75) e protegida
+  contra zip slip. Há backup automático diário (7 últimos, pasta configurável
+  em Configurações); apontar a pasta pro Drive, OneDrive ou Dropbox leva a cópia
+  pra nuvem sem servidor.
+- **Log** em `~/.3dreport/logs/3dreport.log` (rotação em 1 MB, `DesktopLog`), e
+  um tratador global de exceção mostra o erro com "Copiar detalhes" em vez de
+  fechar o app sem aviso.
+- Testado em `composeApp/src/jvmTest`: round-trip dos repositórios (grava,
+  recria, confere que voltou do disco, via `TestRepositories.kt`), gravação
+  atômica e recuperação, lixeira, gravação em segundo plano, anexos, migração e
+  backup.
 
 ### Capacidades de plataforma
-- `platform/` guarda funções (não classes) que dependem do SO/plataforma,
-  seguindo o mesmo padrão `expect`/`actual` da persistência: `pickImageFile`
-  e `saveBytesToFile` (diálogo nativo de escolher/salvar arquivo, via
-  `java.awt.FileDialog` no `jvmMain`), `decodeImageBitmap` (bytes → `ImageBitmap`
-  pra exibir no Compose, via Skia no `jvmMain`), `formatDateTime`
-  (formatação de data/hora, via `java.time` no `jvmMain`), `copyToClipboard`
-  (via `java.awt.Toolkit` no `jvmMain`), `renderSavedQuotesPdf` (monta o PDF
-  a partir de uma lista de `QuoteExportItem` — orçamento + foto já carregada
-  —, uma página por item, na ordem dada; nome, valor de venda, foto, marca
-  d'água/rodapé opcionais e independentes em cada página, via
-  [Apache PDFBox](https://pdfbox.apache.org/) no `jvmMain`; Apache 2.0,
-  mesma licença do projeto), `defaultDocumentsDirectory` (pasta
-  "Documents"/"Documentos" do usuário, decisão 22, com fallback pra pasta
-  pessoal) e `openUrl` (abre uma URL no navegador padrão do sistema, via
-  `java.awt.Desktop` no `jvmMain`, decisão 29 — usado por
-  `ui/components/LinkText`, um `Text` clicável e sublinhado reaproveitado
-  onde houver link do modelo e no rodapé/diálogo de ajuda). Um único item
-  produz o mesmo PDF de uma página do export individual — a tela de
-  Histórico usa a mesma função pra exportar 1 ou vários orçamentos, só muda
-  o tamanho da lista (decisão 24).
-- Quando configurados, marca d'água e rodapé são desenhados **por cima de
-  todo o conteúdo** (inclusive a foto — decisão 21; `PDExtendedGraphicsState`
-  pra opacidade, `Matrix.getRotateInstance` pra rotação da diagonal).
-- Usado pela tela de Orçamento (escolher foto ao salvar) e pela de Histórico
-  (baixar foto, mostrar miniatura, formatar a data salva, exportar PDF —
-  já abrindo o diálogo na pasta de Documentos —, copiar texto).
+- **`PlatformServices`** (`platform/PlatformServices.kt`) é a interface do que
+  depende do sistema: escolher arquivo ou pasta, "Salvar como", gravar, área de
+  transferência, abrir link ou pasta, pasta de Documentos, sair. Os ViewModels
+  recebem a interface (os testes usam `FakePlatform`, sem diálogo), e **nada
+  lança exceção**: escolher devolve `PickResult` (escolhido, cancelado ou falhou
+  com o motivo) e salvar devolve `SaveResult` (salvo com o caminho, cancelado
+  ou falhou). No desktop é o `DesktopPlatform` (`java.awt.FileDialog`, decisão
+  59, e `JFileChooser` só pra escolher pasta). G-code grande é lido só pelo
+  começo e pelo fim (8 MB), onde ficam os metadados.
+- Continuam como `expect`/`actual` as primitivas pequenas: `decodeImageBitmap`
+  (Skia), datas (`java.time`), períodos, a barra de rolagem, arrastar arquivo e
+  os exportadores.
+- `renderSavedQuotesPdf`/`renderCatalogPdf` ([Apache PDFBox](https://pdfbox.apache.org/),
+  Apache 2.0): uma página por orçamento, ou a grade do catálogo, na moeda de
+  cada orçamento. A foto entra reduzida (1200 px no orçamento, 800 px no
+  catálogo) e em JPEG; a logo, sem perda. Número, emissão e validade, a conta
+  quantidade × unitário, nome em até duas linhas e "Para" opcional (decisão
+  108). Marca d'água e rodapé são desenhados **por cima de todo o conteúdo**
+  (decisão 21). Gerar roda fora do thread da tela, com aviso de "Gerando PDF…".
 
 ### Workaround: janela em monitores com DPI diferentes
 `Main.kt` contorna um bug conhecido do Compose Desktop/Skiko (decisão 23):
@@ -239,13 +274,11 @@ Multiplatform, esse workaround pode ser removido.
 O app segue **SemVer** (decisão 53, que revisa a decisão 27): PATCH pra leva
 só de correção/documentação, MINOR pra leva com funcionalidade nova (ver
 [development.md](development.md#versionamento) pro critério completo). A
-versão tem fonte única mantida manualmente em
-sincronia em dois lugares (sem geração automática, pra não adicionar
-complexidade de build num projeto de um mantenedor só):
-- `gradle.properties` (`appVersion`) — usado como `packageVersion` do
-  instalador nativo em [`composeApp/build.gradle.kts`](../composeApp/build.gradle.kts).
-- [`AppVersion.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/AppVersion.kt)
-  (`APP_VERSION`) — usado em runtime, exibido no rodapé e no diálogo de ajuda.
+versão tem uma fonte só, `appVersion` em `gradle.properties` (decisão 108):
+- usada como `packageVersion` do instalador nativo em
+  [`composeApp/build.gradle.kts`](../composeApp/build.gradle.kts);
+- e gerada como a constante `APP_VERSION` (tarefa `generateAppVersion`, em
+  `build/generated/appVersion`), exibida no rodapé, na Ajuda e no diálogo de erro.
 
 [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt)
 também define um rodapé fixo (`AppFooter`, abaixo do conteúdo de todas as
@@ -272,13 +305,12 @@ no mesmo commit do bump de versão — ver
 3. Criar um módulo de aplicação Android (ex.: `androidApp`) que dependa de
    `composeApp`/`core` e contenha a `Activity` chamando `App()`.
 4. Nenhuma mudança em `core/commonMain` nem em `composeApp/commonMain` (telas,
-   ViewModels, `App.kt`) deve ser necessária — exceto tudo que é `expect` em
-   `data/` e `platform/`, que precisa de um `actual` para Android: os
-   repositórios (ex.: `DataStore` ou arquivo em `Context.filesDir`, já que
-   `java.io.File` com `user.home` do `jvmMain` não existe nesse alvo) e as
-   capacidades de plataforma (`pickImageFile`/`saveBytesToFile` via intents
-   do Android em vez de `FileDialog`, `decodeImageBitmap` via `BitmapFactory`
-   em vez de Skia).
+   ViewModels, `App.kt`, repositórios) deve ser necessária. O que muda é o que
+   fica atrás das interfaces (decisão 108): um `DataFile` e um `AttachmentStore`
+   pro Android (arquivo em `Context.filesDir`, ou um banco), um
+   `PlatformServices` com as intents do Android no lugar do `FileDialog`, um
+   `AppContainer` montado na `Activity`, e os `actual` das primitivas pequenas
+   (`decodeImageBitmap` via `BitmapFactory` em vez de Skia, datas, exportadores).
 
 Esse passo não foi feito agora para manter o build simples e independente do
 Android SDK enquanto o foco é desktop.

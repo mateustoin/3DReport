@@ -64,7 +64,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Histórico de orçamentos — consultar, filtrar, baixar foto, excluir
 - Cliente e status do pedido por orçamento
 - Produtos do catálogo separados dos pedidos: guarde peças com preço sem cliente (pra quem está começando ou monta vitrine), fora do Kanban e do Dashboard, e crie o pedido com um clique em "Vender"
-- Perfil de uso na primeira execução ("Já vendo" ou "Estou começando") e Dashboard que mostra o catálogo e qual peça vale a pena oferecer primeiro enquanto ainda não há vendas
+- Dashboard que mostra o catálogo e qual peça vale a pena oferecer primeiro enquanto ainda não há vendas
 - Catálogo vivo: aviso quando os custos mudaram e o preço do produto precisa ser atualizado, preço anunciado redondo (R$ 18,90) no lugar do calculado e categorias que separam o catálogo em PDF em seções
 - Exportar em PDF ou copiar/colar (nome + valor de venda + foto no PDF)
 - Abrir a conversa no WhatsApp com o orçamento já escrito, e gerar uma imagem quadrada da peça pro zap ou pro status

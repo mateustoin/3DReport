@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.settings
 
+import com.threedreport.app.ui.format.NumberKind
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,13 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplate
     CheckboxRow("Rodapé com o nome", branding.showFooter, viewModel::setShowFooter)
     CheckboxRow("Borda em volta da página", branding.showBorder, viewModel::setShowBorder)
     CheckboxRow("Tempo de impressão no PDF e na mensagem", branding.showPrintTime, viewModel::setShowPrintTime)
+    CheckboxRow("Nome do cliente no PDF (\"Para: Maria\")", branding.showClientName, viewModel::setShowClientName)
+    NumberField("Validade do orçamento (dias)", branding.validityDaysText, NumberKind.MEASURE, viewModel::setValidityDays)
+    Text(
+        "O PDF diz \"Válido até\" a data de emissão mais esses dias, pra um cliente que volta meses depois não " +
+            "cobrar o preço antigo. Deixe 0 pra não mostrar.",
+        style = MaterialTheme.typography.bodySmall,
+    )
     Text(
         "O tempo de impressão é o tempo de máquina do pedido (ex.: \"6 h 30 min\"). Ajuda o cliente a " +
             "entender o trabalho, mas também pode virar argumento pra pedir desconto, por isso começa desligado.",

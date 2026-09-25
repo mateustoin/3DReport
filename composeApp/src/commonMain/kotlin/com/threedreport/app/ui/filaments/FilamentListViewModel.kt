@@ -1,7 +1,9 @@
 package com.threedreport.app.ui.filaments
 
 import com.threedreport.app.data.FilamentRepository
-import com.threedreport.app.ui.format.toRequiredDouble
+import com.threedreport.app.ui.format.NumberKind
+import com.threedreport.app.ui.format.toRequiredNonNegative
+import com.threedreport.app.ui.format.toRequiredPositive
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,10 +58,10 @@ class FilamentListViewModel(private val repository: FilamentRepository) {
         val result = runCatching {
             Filament(
                 id = current.id ?: Uuid.random().toString(),
-                name = current.name.trim().ifEmpty { error("Nome não pode ser vazio") },
-                pricePerKg = current.pricePerKgText.toRequiredDouble("Preço/kg"),
-                densityGPerCm3 = current.densityGPerCm3Text.toRequiredDouble("Densidade"),
-                diameterMm = current.diameterMmText.toRequiredDouble("Diâmetro"),
+                name = current.name.trim().ifEmpty { error("Dê um nome ao filamento.") },
+                pricePerKg = current.pricePerKgText.toRequiredNonNegative("Preço/kg"),
+                densityGPerCm3 = current.densityGPerCm3Text.toRequiredPositive("Densidade", NumberKind.MEASURE),
+                diameterMm = current.diameterMmText.toRequiredPositive("Diâmetro", NumberKind.MEASURE),
                 brand = current.brand.trim().ifEmpty { null },
                 materialType = current.materialType.trim().ifEmpty { null },
                 colors = current.colors.ifEmpty { error("Cadastre ao menos uma cor") }.map {

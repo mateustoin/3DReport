@@ -100,7 +100,7 @@
         "name": "Como o app trata taxa de marketplace, imposto e frete?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "A taxa do canal de venda (Shopee, Mercado Livre, cartão) e o imposto são descontados do que você recebe, então o app sobe o preço o suficiente pra sua margem continuar a mesma, e o lucro que ele mostra já é o líquido. Marketplace e forma de pagamento são um campo só de propósito: somar a taxa da Shopee com a do cartão cobraria em dobro, porque o marketplace já embute o processamento do pagamento. Se você é MEI, o DAS não é percentual, então entra no custo fixo mensal e não no campo de imposto. O frete não passa por nada disso: aparece como linha própria no total, porque é repasse e não produto seu."
+          "text": "A taxa do canal de venda (Shopee, Mercado Livre, cartão) e o imposto são descontados do que você recebe, então o app sobe o preço o suficiente pra sua margem continuar a mesma, e o lucro que ele mostra já é o líquido. Marketplace e forma de pagamento são um campo só de propósito: somar a taxa da Shopee com a do cartão cobraria em dobro, porque o marketplace já embute o processamento do pagamento. Se você é MEI, o DAS não é percentual, então entra no custo fixo mensal e não no campo de imposto. Serviços e frete aparecem como linhas próprias no total e não passam pela sua margem, mas o marketplace e o imposto cobram sobre eles também: o app inclui essa parte no preço da peça, pra você não pagar a taxa do próprio bolso."
         }
       },
       {
@@ -383,10 +383,12 @@ CUSTO REFEITO     = custo por peça × quantidade + seu trabalho no pedido
 VALOR DE PRODUÇÃO = custo refeito + reserva de falhas + administrativo
 PREÇO BASE        = produção × (1 + margem de lucro)
 
-VALOR DE VENDA    = preço base / (1 − taxa do canal − imposto)
-TOTAL DO CLIENTE  = venda + serviços por peça × quantidade
+EXTRAS            = serviços por peça × quantidade
                     + serviços por pedido + frete
-LUCRO             = venda − produção
+VALOR DE VENDA    = (preço base + extras) / (1 − taxa do canal − imposto) − extras
+TOTAL DO CLIENTE  = venda + extras
+LUCRO             = total do cliente × (1 − taxa do canal − imposto)
+                    − extras − produção
         </div>
       </div>
     </section>
@@ -456,7 +458,7 @@ LUCRO             = venda − produção
         </details>
         <details class="faq-item">
           <summary>Como o app trata taxa de marketplace, imposto e frete?</summary>
-          <p>A taxa do canal de venda (Shopee, Mercado Livre, cartão) e o imposto são descontados do que você recebe, então o app sobe o preço o suficiente pra sua margem continuar a mesma, e o lucro que ele mostra já é o líquido. Marketplace e forma de pagamento são um campo só de propósito: somar a taxa da Shopee com a do cartão cobraria em dobro, porque o marketplace já embute o processamento do pagamento. Se você é MEI, o DAS não é percentual, então entra no custo fixo mensal e não no campo de imposto. O frete não passa por nada disso: aparece como linha própria no total, porque é repasse e não produto seu.</p>
+          <p>A taxa do canal de venda (Shopee, Mercado Livre, cartão) e o imposto são descontados do que você recebe, então o app sobe o preço o suficiente pra sua margem continuar a mesma, e o lucro que ele mostra já é o líquido. Marketplace e forma de pagamento são um campo só de propósito: somar a taxa da Shopee com a do cartão cobraria em dobro, porque o marketplace já embute o processamento do pagamento. Se você é MEI, o DAS não é percentual, então entra no custo fixo mensal e não no campo de imposto. Serviços e frete aparecem como linhas próprias no total e não passam pela sua margem, mas o marketplace e o imposto cobram sobre eles também: o app inclui essa parte no preço da peça, pra você não pagar a taxa do próprio bolso.</p>
         </details>
         <details class="faq-item">
           <summary>Dá pra saber até quanto posso baixar o preço numa negociação?</summary>

@@ -1,15 +1,20 @@
 package com.threedreport.app.data
 
+import com.threedreport.app.data.store.DocumentValue
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Lembra se a pessoa já passou pelas perguntas iniciais, pra elas aparecerem uma vez só.
- *
- * Fica num arquivo próprio em vez de um campo em `PricingSettings` porque não é parâmetro de custo:
- * é estado da interface, e misturar os dois faria um backup de configurações carregar junto o
- * "já vi isso" de outra máquina.
+ * Se o onboarding da primeira execução já foi concluído ou pulado. Arquivo próprio (decisão 81): é
+ * estado desta instalação, não parâmetro de custo.
  */
-expect class OnboardingRepository() {
+interface OnboardingRepository {
     val completed: StateFlow<Boolean>
+
     fun markCompleted()
+}
+
+class StoredOnboardingRepository(private val document: DocumentValue<Boolean>) : OnboardingRepository {
+    override val completed: StateFlow<Boolean> = document.value
+
+    override fun markCompleted() = document.set(true)
 }

@@ -8,31 +8,32 @@ import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SavedQuote
 
 /**
- * Texto simplificado pra copiar/colar (ex.: WhatsApp, marketplace): nome,
- * valor de venda e, se houver serviços escolhidos, cada um deles (os por
- * peça com "× N", os por pedido só com o nome, ver [SavedQuote.totalWithServices]), o
- * frete (se houver) e o total. Sem foto nem link interno.
+ * Texto simplificado pra copiar/colar (ex.: WhatsApp, marketplace): título, valor das peças e, se
+ * houver serviços escolhidos, cada um deles (os por peça com "× N", os por pedido só com o nome, ver
+ * [SavedQuote.totalWithServices]), o frete (se houver) e o total. Sem foto nem link interno.
  *
- * A linha "Total" aparece sempre que há serviço ou frete, mesmo que só um
- * dos dois exista, senão o cliente veria "Venda" e "Frete" soltos sem a soma.
+ * O título é o nome da peça com o número do pedido ("Suporte · #0042"), que é como o cliente se
+ * refere ao orçamento depois; nome automático ("Orçamento - 24/09/2026 14:30") nunca vai pro cliente
+ * (decisão 108).
  *
- * Quando [Quote.quantity] é maior que 1, vem "N peças · X cada", sempre a
- * partir do **total** que o cliente paga (com serviços e frete, portanto),
- * igual ao que a tela de Orçamento mostra. Calcular esse "cada" em cima do
- * valor de venda faria a mesma peça aparecer com dois preços unitários
- * diferentes na tela e na mensagem enviada ao cliente.
+ * A linha "Total" aparece sempre que há serviço ou frete, mesmo que só um dos dois exista, senão o
+ * cliente veria "Valor" e "Frete" soltos sem a soma.
  *
- * Fecha com o prazo de entrega (se houver) e o tempo de impressão (só com
- * [showPrintTime], ver `BrandingSettings.showPrintTime`), nessa ordem: o
- * prazo é o que o cliente usa pra decidir, o tempo é detalhe.
+ * Com mais de uma peça, o valor vem como conta ("10 × R$ 6,02 = R$ 60,20"): o preço de cada peça é o
+ * das peças, sem frete, que é do pedido (decisão 108; antes o "cada" dividia o frete também).
  *
- * Com quantidade 1, sem frete e sem prazo (os padrões), a saída é idêntica à
- * de antes desses campos existirem: nenhuma linha nova aparece.
+ * Fecha com o prazo de entrega (se houver) e o tempo de impressão (só com [showPrintTime], ver
+ * `BrandingSettings.showPrintTime`), nessa ordem: o prazo é o que o cliente usa pra decidir, o tempo
+ * é detalhe.
  */
-internal fun SavedQuote.toCopyPasteText(currency: Currency = Currency.BRL, showPrintTime: Boolean = false): String = buildString {
+internal fun SavedQuote.toCopyPasteText(currency: Currency = this.currency, showPrintTime: Boolean = false): String = buildString {
     val quantity = quote.quantity
-    appendLine(name)
-    append("Venda: ").append(quote.salePrice.toCurrencyText(currency))
+    appendLine(clientTitle())
+    append("Valor: ")
+    if (quantity > 1) {
+        append(quantity).append(" × ").append(quote.unitSalePrice.toCurrencyText(currency)).append(" = ")
+    }
+    append(quote.salePrice.toCurrencyText(currency))
     services.forEach { service ->
         appendLine()
         append(service.name)
@@ -47,10 +48,6 @@ internal fun SavedQuote.toCopyPasteText(currency: Currency = Currency.BRL, showP
         appendLine()
         append("Total: ").append(totalWithServices.toCurrencyText(currency))
     }
-    if (quantity > 1) {
-        appendLine()
-        append(quantity).append(" peças · ").append((totalWithServices / quantity).toCurrencyText(currency)).append(" cada")
-    }
     deliveryDateText()?.let {
         appendLine()
         append(it)
@@ -58,6 +55,21 @@ internal fun SavedQuote.toCopyPasteText(currency: Currency = Currency.BRL, showP
     if (showPrintTime) {
         appendLine()
         append(printTimeText())
+    }
+}
+
+/**
+ * Título do orçamento pro cliente: o nome da peça, com o número quando é pedido ("Suporte · #0042").
+ * Nome automático vira "Orçamento #0042" (ou "Produto", no catálogo), porque "Orçamento - 24/09/2026
+ * 14:30" é rótulo interno, não nome de peça.
+ */
+internal fun SavedQuote.clientTitle(withNumber: Boolean = true): String {
+    val number = displayNumber?.takeIf { isOrder && withNumber }
+    return when {
+        hasAutoName && !isOrder -> "Produto"
+        hasAutoName -> listOfNotNull("Orçamento", number).joinToString(" ")
+        number != null -> "$name · $number"
+        else -> name
     }
 }
 

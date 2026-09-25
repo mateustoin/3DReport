@@ -1,6 +1,5 @@
 package com.threedreport.app.ui.history
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -22,13 +21,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -37,11 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -49,87 +42,75 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
-import com.threedreport.app.platform.decodeImageBitmap
-import com.threedreport.app.ui.components.IconLabel
-import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.platform.HorizontalScrollbarFor
 import com.threedreport.app.ui.format.NumericText
-import com.threedreport.app.ui.format.toMoney
-import com.threedreport.app.ui.quote.PrintSettingsDialog
+import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
-import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.SavedQuote
 import kotlin.math.roundToInt
 
 /**
- * Quadro Kanban do Histórico: uma coluna por [OrderStatus], arrastando o card entre colunas pra
- * mudar o status — visão alternativa à lista, sobre o mesmo dado (não a substitui). O menu "Ações" de
- * cada card cobre o mesmo caso caso o arrasto não seja preciso o bastante numa tela/mouse
- * específico — ambos os caminhos levam à mesma mudança de status.
+ * Quadro Kanban do Histórico: uma coluna por etapa do fluxo ([OrderStatus.PIPELINE]), arrastando o
+ * card entre colunas pra mudar o status — visão alternativa à lista, sobre o mesmo dado. O menu "Ações"
+ * de cada card é o mesmo da lista ([QuoteActionsMenu]), com "Mover para" pra quem não quer arrastar.
  *
  * Sem scroll vertical próprio: a rolagem é a mesma da tela de Histórico por trás (evita rolagem
- * aninhada, mais simples e já suficiente pro volume de orçamentos esperado).
+ * aninhada). Na horizontal, uma barra de rolagem visível: com a roda do mouse rolando na vertical, quem
+ * não tem trackpad não descobria as colunas da direita.
  *
  * As posições usadas pro hit-test do arrasto vêm de [LayoutCoordinates.positionInWindow] + o
  * tamanho medido, não de `boundsInWindow()` — esse último é recortado pela área visível de todos
  * os ancestrais (inclusive o scroll vertical da tela de Histórico), então uma coluna parcialmente
- * fora da área visível reportava um retângulo bem menor que sua altura real (só o título "cabia"),
- * e soltar o card mais abaixo na coluna não contava como estar "dentro" dela. Além disso, cada
- * coluna esticada pra altura da mais alta (`Row(Modifier.height(IntrinsicSize.Max))` +
- * `fillMaxHeight()` em cada [KanbanColumn]) — sem isso, uma coluna com poucos cards media só a
- * altura do próprio conteúdo, então soltar num espaço "vazio" da coluna (abaixo do último card, ou
- * numa coluna sem nenhum item) caía fora do retângulo conhecido.
+ * fora da área visível reportava um retângulo bem menor que sua altura real, e soltar o card mais
+ * abaixo na coluna não contava como estar "dentro" dela. Cada coluna é esticada pra altura da mais alta
+ * (`IntrinsicSize.Max` + `fillMaxHeight()`), pra soltar num espaço vazio da coluna também contar.
+ *
+ * @param deliveredFooter embaixo da coluna Entregue: o "ver mais" dos entregues antigos.
  */
 @Composable
 fun KanbanBoard(
     quotes: List<SavedQuote>,
-    photoBytesFor: (SavedQuote) -> ByteArray?,
+    loadThumbnail: (SavedQuote) -> ByteArray?,
     onStatusChange: (String, OrderStatus) -> Unit,
-    onEdit: (SavedQuote) -> Unit,
-    onDuplicate: (SavedQuote) -> Unit,
-    onCopyToCatalog: (SavedQuote) -> Unit,
-    onDelete: (SavedQuote) -> Unit,
-    onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
+    actionsFor: (SavedQuote) -> QuoteActions,
     todayEpochDay: Long,
-    onEditDeliveryDate: (SavedQuote) -> Unit,
+    deliveredFooter: @Composable () -> Unit = {},
 ) {
-    // Posição+tamanho (em coordenadas de janela) de cada coluna, atualizado a cada posicionamento —
-    // usado como referência comum (independente de qual composable está aninhado onde) pra saber
-    // sobre qual coluna um card foi solto ou está sendo arrastado por cima.
+    // Posição+tamanho (em coordenadas de janela) de cada coluna, pra saber sobre qual coluna um card
+    // foi solto ou está sendo arrastado por cima.
     val columnBounds = remember { mutableStateMapOf<OrderStatus, Rect>() }
     val quotesByStatus = remember(quotes) { quotes.groupBy { it.status } }
-    // Coluna sob o ponteiro durante um arrasto em andamento (null se nada está sendo arrastado, ou
-    // se o ponteiro não está sobre nenhuma coluna) — usado só pra desenhar o indicador visual.
     var hoveredStatus by remember { mutableStateOf<OrderStatus?>(null) }
     var draggedFromStatus by remember { mutableStateOf<OrderStatus?>(null) }
+    val scrollState = rememberScrollState()
 
-    // IntrinsicSize.Max faz o Row medir a altura da coluna mais alta e esticar as outras até lá
-    // (fillMaxHeight em cada KanbanColumn) — sem isso, uma coluna com poucos cards tinha uma área
-    // de soltar bem menor que as vizinhas mais cheias, mesmo ocupando a mesma largura na tela.
-    Row(
-        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max).horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        OrderStatus.entries.forEach { status ->
-            KanbanColumn(
-                status = status,
-                quotes = quotesByStatus[status].orEmpty(),
-                photoBytesFor = photoBytesFor,
-                columnBounds = columnBounds,
-                onBoundsChanged = { bounds -> columnBounds[status] = bounds },
-                isDropTarget = hoveredStatus == status && draggedFromStatus != status,
-                onDragHover = { hovered -> hoveredStatus = hovered },
-                onDragSourceChange = { source -> draggedFromStatus = source },
-                onStatusChange = { savedQuote, newStatus -> onStatusChange(savedQuote.id, newStatus) },
-                onEdit = onEdit,
-                onDuplicate = onDuplicate,
-                onCopyToCatalog = onCopyToCatalog,
-                onDelete = onDelete,
-                onUpdatePrintSettings = onUpdatePrintSettings,
-                todayEpochDay = todayEpochDay,
-                onEditDeliveryDate = onEditDeliveryDate,
-            )
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max).horizontalScroll(scrollState),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OrderStatus.PIPELINE.forEach { status ->
+                KanbanColumn(
+                    status = status,
+                    quotes = quotesByStatus[status].orEmpty(),
+                    loadThumbnail = loadThumbnail,
+                    columnBounds = columnBounds,
+                    onBoundsChanged = { bounds -> columnBounds[status] = bounds },
+                    isDropTarget = hoveredStatus == status && draggedFromStatus != status,
+                    // A coluna de onde o card saiu fica por cima das outras enquanto ele é arrastado:
+                    // senão o card passava por baixo das colunas à direita.
+                    isDragSource = draggedFromStatus == status,
+                    onDragHover = { hovered -> hoveredStatus = hovered },
+                    onDragSourceChange = { source -> draggedFromStatus = source },
+                    onStatusChange = { savedQuote, newStatus -> onStatusChange(savedQuote.id, newStatus) },
+                    actionsFor = actionsFor,
+                    todayEpochDay = todayEpochDay,
+                    footer = if (status == OrderStatus.ENTREGUE) deliveredFooter else ({}),
+                )
+            }
         }
+        HorizontalScrollbarFor(scrollState, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -139,27 +120,25 @@ private fun LayoutCoordinates.fullBoundsInWindow(): Rect = Rect(positionInWindow
 private fun KanbanColumn(
     status: OrderStatus,
     quotes: List<SavedQuote>,
-    photoBytesFor: (SavedQuote) -> ByteArray?,
+    loadThumbnail: (SavedQuote) -> ByteArray?,
     columnBounds: Map<OrderStatus, Rect>,
     onBoundsChanged: (Rect) -> Unit,
     isDropTarget: Boolean,
+    isDragSource: Boolean,
     onDragHover: (OrderStatus?) -> Unit,
     onDragSourceChange: (OrderStatus?) -> Unit,
     onStatusChange: (SavedQuote, OrderStatus) -> Unit,
-    onEdit: (SavedQuote) -> Unit,
-    onDuplicate: (SavedQuote) -> Unit,
-    onCopyToCatalog: (SavedQuote) -> Unit,
-    onDelete: (SavedQuote) -> Unit,
-    onUpdatePrintSettings: (SavedQuote, PrintSettings?) -> Unit,
+    actionsFor: (SavedQuote) -> QuoteActions,
     todayEpochDay: Long,
-    onEditDeliveryDate: (SavedQuote) -> Unit,
+    footer: @Composable () -> Unit,
 ) {
     Column(
         modifier = Modifier
+            .zIndex(if (isDragSource) 1f else 0f)
             .width(260.dp)
             .fillMaxHeight()
             .background(
-                if (isDropTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                if (isDropTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerLow,
                 RoundedCornerShape(8.dp),
             )
             .padding(6.dp)
@@ -173,27 +152,24 @@ private fun KanbanColumn(
         HorizontalDivider()
         if (quotes.isEmpty()) {
             Text(
-                "Nenhum orçamento aqui.",
+                "Nenhum pedido aqui.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         quotes.forEach { savedQuote ->
-            KanbanCard(
-                savedQuote = savedQuote,
-                photoBytes = photoBytesFor(savedQuote),
-                columnBounds = columnBounds,
-                onDragHover = onDragHover,
-                onDragSourceChange = onDragSourceChange,
-                onStatusChange = { newStatus -> onStatusChange(savedQuote, newStatus) },
-                onEdit = { onEdit(savedQuote) },
-                onDuplicate = { onDuplicate(savedQuote) },
-                onCopyToCatalog = { onCopyToCatalog(savedQuote) },
-                onDelete = { onDelete(savedQuote) },
-                onUpdatePrintSettings = { settings -> onUpdatePrintSettings(savedQuote, settings) },
-                todayEpochDay = todayEpochDay,
-                onEditDeliveryDate = { onEditDeliveryDate(savedQuote) },
-            )
+            androidx.compose.runtime.key(savedQuote.id) {
+                KanbanCard(
+                    savedQuote = savedQuote,
+                    loadThumbnail = loadThumbnail,
+                    columnBounds = columnBounds,
+                    onDragHover = onDragHover,
+                    onDragSourceChange = onDragSourceChange,
+                    onStatusChange = { newStatus -> onStatusChange(savedQuote, newStatus) },
+                    actions = actionsFor(savedQuote),
+                    todayEpochDay = todayEpochDay,
+                )
+            }
         }
         if (isDropTarget) {
             Box(
@@ -203,30 +179,24 @@ private fun KanbanColumn(
                     .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)),
             )
         }
+        footer()
     }
 }
 
 @Composable
 private fun KanbanCard(
     savedQuote: SavedQuote,
-    photoBytes: ByteArray?,
+    loadThumbnail: (SavedQuote) -> ByteArray?,
     columnBounds: Map<OrderStatus, Rect>,
     onDragHover: (OrderStatus?) -> Unit,
     onDragSourceChange: (OrderStatus?) -> Unit,
     onStatusChange: (OrderStatus) -> Unit,
-    onEdit: () -> Unit,
-    onDuplicate: () -> Unit,
-    onCopyToCatalog: () -> Unit,
-    onDelete: () -> Unit,
-    onUpdatePrintSettings: (PrintSettings?) -> Unit,
+    actions: QuoteActions,
     todayEpochDay: Long,
-    onEditDeliveryDate: () -> Unit,
 ) {
     var dragOffset by remember(savedQuote.id) { mutableStateOf(Offset.Zero) }
     var isDragging by remember(savedQuote.id) { mutableStateOf(false) }
     var liveBounds by remember(savedQuote.id) { mutableStateOf<Rect?>(null) }
-    var showMenu by remember(savedQuote.id) { mutableStateOf(false) }
-    var showPrintSettingsDialog by remember(savedQuote.id) { mutableStateOf(false) }
 
     fun targetStatusUnderPointer(): OrderStatus? {
         val point = liveBounds?.center ?: return null
@@ -269,59 +239,25 @@ private fun KanbanCard(
                     },
                 )
             },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isDragging) 8.dp else 1.dp),
     ) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (photoBytes != null) {
-                    Image(
-                        bitmap = decodeImageBitmap(photoBytes),
-                        contentDescription = savedQuote.name,
-                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(6.dp)),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
+                PhotoThumbnail(savedQuote, size = 48.dp, load = loadThumbnail)
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(savedQuote.name, style = MaterialTheme.typography.titleSmall)
-                    savedQuote.client?.let { client ->
-                        Text(client.name, style = MaterialTheme.typography.bodySmall)
-                    }
-                    NumericText(savedQuote.totalWithServices.toMoney(), style = MaterialTheme.typography.bodyMedium)
+                    Text(savedQuote.name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
+                    Text(
+                        listOfNotNull(savedQuote.displayNumber, savedQuote.client?.name).joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    // O mesmo valor da lista: o que o cliente paga.
+                    NumericText(savedQuote.totalWithServices.toCurrencyText(savedQuote.currency), style = MaterialTheme.typography.bodyMedium)
                     DeliveryBadge(savedQuote, todayEpochDay)
                 }
             }
-
-            Box {
-                TextButton(onClick = { showMenu = true }) { IconLabel(AppIcons.MoreVert, "Ações") }
-                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(AppIcons.Edit, contentDescription = null) }, onClick = { showMenu = false; onEdit() })
-                    DropdownMenuItem(text = { Text("Duplicar") }, leadingIcon = { Icon(AppIcons.FileCopy, contentDescription = null) }, onClick = { showMenu = false; onDuplicate() })
-                    DropdownMenuItem(text = { Text("Guardar no catálogo") }, leadingIcon = { Icon(AppIcons.Storefront, contentDescription = null) }, onClick = { showMenu = false; onCopyToCatalog() })
-                    DropdownMenuItem(
-                        text = { Text(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega") },
-                        leadingIcon = { Icon(AppIcons.Event, contentDescription = null) },
-                        onClick = { showMenu = false; onEditDeliveryDate() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Configurações de impressão") },
-                        leadingIcon = { Icon(AppIcons.Tune, contentDescription = null) },
-                        onClick = { showMenu = false; showPrintSettingsDialog = true },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
-                        leadingIcon = { Icon(AppIcons.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                        onClick = { showMenu = false; onDelete() },
-                    )
-                }
-            }
+            QuoteActionsMenu(savedQuote, actions)
         }
-    }
-
-    if (showPrintSettingsDialog) {
-        PrintSettingsDialog(
-            initial = savedQuote.printSettings ?: PrintSettings(),
-            onDismiss = { showPrintSettingsDialog = false },
-            onSave = { settings -> onUpdatePrintSettings(settings.takeUnless { it.isEmpty }) },
-        )
     }
 }

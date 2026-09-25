@@ -22,9 +22,17 @@ jobs:
           - os: windows-latest
             artifact: windows-msi
             glob: composeApp/build/compose/binaries/main/msi/*.msi
+          # Dois .dmg: o runner macos-latest é Apple Silicon (arm64), e o JDK
+          # embutido no instalador só roda na arquitetura em que foi gerado.
+          # Mac com Intel precisa do seu (macos-13 é o último runner Intel).
           - os: macos-latest
             artifact: macos-dmg
             glob: composeApp/build/compose/binaries/main/dmg/*.dmg
+            dmg_suffix: apple-silicon
+          - os: macos-13
+            artifact: macos-intel-dmg
+            glob: composeApp/build/compose/binaries/main/dmg/*.dmg
+            dmg_suffix: intel
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +51,15 @@ jobs:
       - name: Gerar instalador do SO atual
         shell: bash
         run: ./gradlew :composeApp:packageDistributionForCurrentOS
+
+      # Os dois .dmg saem com o mesmo nome; o sufixo diz pra qual Mac é cada um.
+      - name: Nomear o .dmg pela arquitetura
+        if: matrix.dmg_suffix != ''
+        shell: bash
+        run: |
+          for f in composeApp/build/compose/binaries/main/dmg/*.dmg; do
+            mv "$f" "${f%.dmg}-${{ matrix.dmg_suffix }}.dmg"
+          done
 
       # O jpackage grava o erro real num arquivo à parte (não sai no stdout do
       # Gradle acima) — sem isso, uma falha só mostra "exit code 1" sem dizer o motivo.
@@ -112,7 +129,9 @@ jobs:
           - **Windows (`.msi`)** — o SmartScreen pode avisar "Editor
             desconhecido": clique em "Mais informações" → "Executar assim
             mesmo".
-          - **macOS (`.dmg`)** — pode bloquear a abertura. Tente clicar com
+          - **macOS (`.dmg`)** — baixe o `-apple-silicon` pra Mac com chip M1
+            ou mais novo, e o `-intel` pra Mac com processador Intel. O macOS
+            pode bloquear a abertura. Tente clicar com
             o botão direito no app → "Abrir"; se essa opção não resolver
             (comum em versões mais recentes do macOS), vá em **Ajustes do
             Sistema → Privacidade e Segurança**, role até o aviso de que o

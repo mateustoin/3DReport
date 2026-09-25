@@ -1,17 +1,14 @@
 package com.threedreport.app.data
 
+import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.core.model.PricingSettings
 import kotlinx.coroutines.flow.StateFlow
 
-/**
- * Guarda os parâmetros de custo do negócio ([PricingSettings]), compartilhados
- * entre a tela de Configurações (que os edita) e a tela de Orçamento (que os
- * lê para calcular o resultado).
- *
- * A implementação persiste em disco (ver `actual` na fonte de cada
- * plataforma), pré-carregada com valores padrão no primeiro uso.
- */
-expect class SettingsRepository() {
+/** Parâmetros de custo do negócio (ver [DocumentRepository]). */
+interface SettingsRepository : DocumentRepository<PricingSettings> {
     val settings: StateFlow<PricingSettings>
-    fun update(settings: PricingSettings)
+        get() = value
 }
+
+class StoredSettingsRepository(document: DocumentValue<PricingSettings>) :
+    StoredDocumentRepository<PricingSettings>(document), SettingsRepository

@@ -1,25 +1,33 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.AppLog
+import com.threedreport.app.data.ClientRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.platform.FileKind
+import com.threedreport.app.platform.PickResult
 import com.threedreport.app.platform.PickedFile
-import com.threedreport.app.platform.pickGCodeFile
-import com.threedreport.app.platform.pickImageFile
-import com.threedreport.app.platform.pickStlFile
-import com.threedreport.app.ui.filaments.displayLabel
+import com.threedreport.app.platform.PlatformServices
+import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.ui.components.matchingClients
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.format.parseDurationMinutes
+import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
@@ -29,26 +37,48 @@ import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
-import com.threedreport.core.slicer.CatalogMatcher
-import com.threedreport.core.slicer.ExtruderMatch
-import com.threedreport.core.slicer.FilamentMatch
-import com.threedreport.core.slicer.GCodeMetadata
 import com.threedreport.core.slicer.GCodeMetadataParser
-import com.threedreport.core.slicer.PrinterMatch
+import com.threedreport.core.stl.StlAnalysis
+import com.threedreport.core.stl.StlAnalyzer
+import com.threedreport.core.stl.StlMesh
+import com.threedreport.core.stl.parseStl
+import com.threedreport.core.stl.peekStlTriangleCount
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.round
+
+/** A prévia 3D do STL anexado, calculada fora do thread da tela (decisão 108). */
+sealed interface StlPreview {
+    data object Loading : StlPreview
+
+    /** Malha grande demais pra desenhar sem travar; o arquivo é salvo normalmente. */
+    data class TooComplex(val triangleCount: Long) : StlPreview
+
+    data object Unreadable : StlPreview
+
+    data class Ready(val mesh: StlMesh, val analysis: StlAnalysis) : StlPreview
+}
 
 /**
  * ViewModel da tela de Orçamento.
  *
- * [filaments], [printers], [services] e [settings] são repassados diretamente
- * dos repositórios compartilhados (sem cópia), então refletem na hora
- * qualquer cadastro/edição feito nas outras telas. [calculate] é uma função
- * pura, chamada pela tela a cada recomposição com os valores atuais desses
- * fluxos.
+ * [filaments], [printers], [services] e [settings] são repassados diretamente dos repositórios
+ * compartilhados (sem cópia), então refletem na hora qualquer cadastro/edição feito nas outras telas.
+ * [currentResult] é a conta da tela e do Ctrl+S, uma fonte só.
+ *
+ * O trabalho pesado (ler G-code, analisar STL) roda em [background] e volta pra [main]; os testes
+ * passam o padrão, `Unconfined`, e tudo acontece na hora.
+ *
+ * A importação de G-code ([GCodeImporter]) e o caminho de um orçamento salvo de volta pra tela
+ * ([SavedQuoteMapper]) moram em arquivos próprios (decisão 108).
  */
 class QuoteViewModel(
     filamentRepository: FilamentRepository,
@@ -57,8 +87,14 @@ class QuoteViewModel(
     serviceRepository: ServiceRepository,
     salesChannelRepository: SalesChannelRepository,
     private val historyRepository: QuoteHistoryRepository,
-    /** Pedido ou produto, conforme o perfil de uso (decisão 103): o que vem escolhido num orçamento novo. */
-    private val defaultKind: () -> QuoteKind = { QuoteKind.ORDER },
+    /** Cadastro de clientes (decisão 106): o cliente do pedido é achado ou criado ao salvar. */
+    private val clientRepository: ClientRepository? = null,
+    /** Moeda dos orçamentos novos (decisão 106), gravada no orçamento ao salvar. */
+    private val currency: () -> Currency = { Currency.BRL },
+    private val platform: PlatformServices = defaultPlatform,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
+    private val background: CoroutineDispatcher = Dispatchers.Unconfined,
+    private val main: CoroutineDispatcher = Dispatchers.Unconfined,
 ) {
     val filaments: StateFlow<List<Filament>> = filamentRepository.filaments
     val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
@@ -66,14 +102,32 @@ class QuoteViewModel(
     val services: StateFlow<List<Service>> = serviceRepository.services
     val salesChannels: StateFlow<List<SalesChannel>> = salesChannelRepository.channels
 
-    private val inputState = MutableStateFlow(QuoteInputState(kind = defaultKind()))
+    /** Clientes do cadastro, pra sugerir ao digitar o nome. */
+    val clients: StateFlow<List<Client>> = clientRepository?.clients ?: MutableStateFlow(emptyList())
+
+    private val inputState = MutableStateFlow(QuoteInputState())
     val input: StateFlow<QuoteInputState> = inputState.asStateFlow()
 
     private val saveFormState = MutableStateFlow(SaveQuoteFormState())
     val saveForm: StateFlow<SaveQuoteFormState> = saveFormState.asStateFlow()
 
+    private val importingState = MutableStateFlow(false)
+
+    /** Um G-code está sendo lido. */
+    val importing: StateFlow<Boolean> = importingState.asStateFlow()
+
+    private val stlPreviewState = MutableStateFlow<StlPreview?>(null)
+    val stlPreview: StateFlow<StlPreview?> = stlPreviewState.asStateFlow()
+
     /** Histórico, só pra dica de prazo saber o que já está na fila de cada impressora. */
     val savedQuotes: StateFlow<List<SavedQuote>> = historyRepository.savedQuotes
+
+    /** Foto e configurações do formulário antes da primeira importação de G-code, pra "Desfazer". */
+    private var formBeforeGCode: SaveQuoteFormState? = null
+
+    private var lastId = 0
+
+    private fun newId(): Int = ++lastId
 
     /**
      * Função pura: o que está na frente de uma peça nova em [printer] — pedidos aprovados ou em
@@ -90,13 +144,38 @@ class QuoteViewModel(
             statuses = setOf(OrderStatus.APROVADO, OrderStatus.EM_IMPRESSAO),
         ).single().takeIf { it.queuedQuoteCount > 0 }
 
-    fun selectFilament(id: String, print: Int = 0, slot: Int = 0) = updateFilament(print, slot) { it.copy(filamentId = id, colorId = null) }
-    fun selectFilamentColor(id: String, print: Int = 0, slot: Int = 0) = updateFilament(print, slot) { it.copy(colorId = id) }
-    fun selectPrinter(id: String, print: Int = 0) = updatePrint(print) { it.copy(printerId = id) }
-    fun setLengthMeters(text: String, print: Int = 0, slot: Int = 0) = updatePrint(print) { current ->
-        current.copy(filaments = current.filaments.replaced(slot) { it.copy(lengthText = text) }, gcodeImportMessage = null)
+    fun selectFilament(id: String, print: Int = 0, slot: Int = 0) = updateFilament(print, slot) { row ->
+        val changed = row.copy(filamentId = id, colorId = null, missingFilamentName = null)
+        // Quem digitou em gramas continua com o mesmo peso: os metros mudam com a densidade do filamento novo.
+        if (row.weightText != null) changed.withWeight(row.weightText, filaments.value.find { it.id == id }) else changed
     }
-    fun setPrintTimeMinutes(text: String, print: Int = 0) = updatePrint(print) { it.copy(printTimeText = text, gcodeImportMessage = null) }
+
+    fun selectFilamentColor(id: String, print: Int = 0, slot: Int = 0) = updateFilament(print, slot) { it.copy(colorId = id) }
+
+    fun selectPrinter(id: String, print: Int = 0) = updatePrint(print) { it.copy(printerId = id, missingPrinterName = null) }
+
+    fun setLengthMeters(text: String, print: Int = 0, slot: Int = 0) = updateFilament(print, slot) { it.copy(lengthText = text, weightText = null) }
+
+    /**
+     * Peso em gramas (decisão 107): quem vende pensa "essa peça gasta 42 g", e o fatiador mostra isso.
+     * Cada mudança vira metros pelo filamento da linha (densidade e diâmetro), que é o que vale pra conta.
+     */
+    fun setWeightGrams(text: String, print: Int = 0, slot: Int = 0) {
+        val filament = currentResult().prints.getOrNull(print)?.filaments?.getOrNull(slot)?.filament
+        updateFilament(print, slot) { it.withWeight(text, filament) }
+    }
+
+    private fun FilamentInput.withWeight(text: String, filament: Filament?): FilamentInput {
+        val grams = parseDecimal(text, NumberKind.AMOUNT)
+        val meters = when {
+            text.isBlank() -> ""
+            grams == null || grams < 0 || filament == null -> lengthText
+            else -> filament.lengthMeters(grams).toInputText()
+        }
+        return copy(weightText = text, lengthText = meters)
+    }
+
+    fun setPrintTimeMinutes(text: String, print: Int = 0) = updatePrint(print) { it.copy(printTimeText = text) }
 
     /**
      * "+ Adicionar filamento" (decisão 105). A linha nova já vem com o filamento da última, porque
@@ -105,15 +184,15 @@ class QuoteViewModel(
      */
     fun addFilament(print: Int = 0) = updatePrint(print) { current ->
         val inStock = filaments.value.filter { it.hasStockAvailable }
-        // Com uma linha só, nada escolhido (ou um filamento que esgotou) aparece como o primeiro em
-        // estoque (ver [calculate]). Com duas, essa regra não vale mais, então o que a tela mostrava vira
-        // escolha de verdade; senão a linha 1 trocaria sozinha pra "Escolha o filamento".
+        // Com uma linha só, nada escolhido aparece como o primeiro em estoque (ver [calculate]). Com
+        // duas, essa regra não vale mais, então o que a tela mostrava vira escolha de verdade; senão a
+        // linha 1 trocaria sozinha pra "Escolha o filamento".
         val rows = if (current.filaments.size == 1) {
-            current.filaments.map { row -> if (inStock.none { it.id == row.filamentId }) row.copy(filamentId = inStock.firstOrNull()?.id) else row }
+            current.filaments.map { row -> if (row.filamentId == null) row.copy(filamentId = inStock.firstOrNull()?.id) else row }
         } else {
             current.filaments
         }
-        current.copy(filaments = rows + FilamentInput(filamentId = rows.last().filamentId))
+        current.copy(filaments = rows + FilamentInput(filamentId = rows.last().filamentId, id = newId()))
     }
 
     /** Remove uma linha de filamento; a última que sobra não sai, porque impressão sem filamento não existe. */
@@ -128,8 +207,10 @@ class QuoteViewModel(
     private fun updateFilament(print: Int, slot: Int, transform: (FilamentInput) -> FilamentInput) = updatePrint(print) { current ->
         if (slot !in current.filaments.indices) current else current.copy(filaments = current.filaments.replaced(slot, transform))
     }
+
     fun setLaborMinutes(text: String) = inputState.update { it.copy(laborMinutesText = text) }
     fun setQuantity(text: String) = inputState.update { it.copy(quantityText = text) }
+
     /**
      * Trocar entre pedido e produto limpa o preço fechado: com cliente ele é o total combinado,
      * frete incluso, e em produto é o preço anunciado. Levar um pro outro mudaria o preço em silêncio.
@@ -139,113 +220,96 @@ class QuoteViewModel(
     }
 
     /** Abre o seletor de arquivo e importa o G-code escolhido (ver [importGCode]). */
-    fun pickAndImportGCode() {
-        val picked = pickGCodeFile() ?: return
-        importGCode(picked)
+    fun pickAndImportGCode(print: Int = 0) = importDropped(platform.pickFile(FileKind.GCODE), print)
+
+    /**
+     * Um arquivo arrastado pra janela (ver `fileDropTarget`): G-code é importado; outro tipo, ou um arquivo
+     * que não deu pra ler, vira a mensagem do bloco de importação.
+     */
+    fun importDropped(result: PickResult, print: Int = 0) {
+        when (result) {
+            is PickResult.Picked -> importGCode(result.file, print)
+            is PickResult.Failed -> updatePrint(print) { it.copy(gcodeImportMessage = result.message) }
+            PickResult.Cancelled -> Unit
+        }
     }
 
     /**
      * Monta o orçamento a partir de um G-code, escolhido pelo botão ou arrastado pra janela
-     * (decisão 89): preenche comprimento de filamento, tempo de impressão, configurações de
-     * impressão (ver [PrintSettings]) e a foto, se o arquivo tiver miniatura e nenhuma foto já
-     * tiver sido escolhida (não sobrescreve uma foto própria). Além disso, escolhe a impressora e
-     * o filamento que o fatiador gravou, **quando batem com os cadastrados** ([CatalogMatcher]):
-     * o que só parece ou não está cadastrado vira explicação na mensagem, nunca escolha.
+     * (decisão 89), pelo [GCodeImporter]. A leitura roda em [background] (um G-code tem dezenas de
+     * megabytes) enquanto [importing] avisa a tela. A foto vem da miniatura do arquivo quando não há foto
+     * escolhida à mão (uma miniatura de uma importação anterior é trocada pela nova).
      *
      * Tudo continua editável depois — é um atalho pra preencher, não uma trava. [undoGCodeImport]
      * desfaz de uma vez, inclusive a impressora e o filamento que estavam escolhidos antes.
      */
     fun importGCode(file: PickedFile, print: Int = 0) {
-        unsupportedGCodeMessage(file.fileName)?.let { message ->
+        GCodeImporter.unsupportedMessage(file.fileName)?.let { message ->
             updatePrint(print) { it.copy(gcodeImportMessage = message) }
             return
         }
-
-        val metadata = GCodeMetadataParser.parse(file.bytes.decodeToString())
-        val thumbnail = metadata.thumbnail
-        val photoApplied = thumbnail != null && saveFormState.value.photo == null
-        val printSettingsApplied = metadata.layerHeightMm != null || metadata.infillPercentage != null ||
-            metadata.infillPattern != null || metadata.supportsEnabled != null
-        if (photoApplied || printSettingsApplied) {
-            saveFormState.update { form ->
-                form.copy(
-                    photo = if (photoApplied) PickedFile("miniatura_do_gcode.${thumbnail.fileExtension}", thumbnail.bytes) else form.photo,
-                    photoFromGCode = if (photoApplied) true else form.photoFromGCode,
-                    photoReferenceFileName = if (photoApplied) null else form.photoReferenceFileName,
-                    printSettings = form.printSettings.copy(
-                        layerHeightMm = metadata.layerHeightMm ?: form.printSettings.layerHeightMm,
-                        infillPercentage = metadata.infillPercentage ?: form.printSettings.infillPercentage,
-                        infillPattern = metadata.infillPattern ?: form.printSettings.infillPattern,
-                        supportsEnabled = metadata.supportsEnabled ?: form.printSettings.supportsEnabled,
-                    ),
-                    savedConfirmation = false,
-                )
+        importingState.value = true
+        scope.launch(background) {
+            val metadata = runCatching { GCodeMetadataParser.parse(file.bytes.decodeToString()) }
+                .onFailure { AppLog.warn("Falha ao ler o G-code ${file.fileName}", it) }
+                .getOrNull()
+            withContext(main) {
+                importingState.value = false
+                if (metadata == null) {
+                    updatePrint(print) { it.copy(gcodeImportMessage = "Não consegui ler esse G-code. Confira se é o arquivo exportado pelo fatiador.") }
+                } else {
+                    applyGCode(metadata, print)
+                }
             }
         }
+    }
 
+    private fun applyGCode(metadata: com.threedreport.core.slicer.GCodeMetadata, print: Int) {
         val current = inputState.value.prints.getOrNull(print) ?: return
-        val inStock = filaments.value.filter { it.hasStockAvailable }
-        val preferredFilamentIds = current.filaments.mapNotNull { it.filamentId }.ifEmpty { listOfNotNull(inStock.firstOrNull()?.id) }
-        val printerMatch = CatalogMatcher.matchPrinter(metadata, printers.value)
-        val extruders = CatalogMatcher.matchFilaments(metadata, filaments.value, preferredFilamentIds)
-        val chosenPrinter = (printerMatch as? PrinterMatch.Found)?.printer
-        // Peça multicolor: uma linha por extrusor, cada uma com o próprio consumo (decisão 105). O que
-        // não casou fica sem filamento, pra escolher: cobrar a linha pelo filamento errado mudaria o
-        // preço sem ninguém ver.
-        val perExtruder = extruders.size > 1 && extruders.all { it.lengthMeters != null }
-        val rows = if (perExtruder) {
-            extruders.map { extruder ->
-                val found = extruder.match as? FilamentMatch.Found
-                FilamentInput(filamentId = found?.filament?.id, colorId = found?.color?.id, lengthText = formatImportedNumber(extruder.lengthMeters!!))
-            }
-        } else if (extruders.size > 1 && current.filaments.size > 1) {
-            // Vários extrusores sem o consumo de cada um, e a pessoa já tinha separado as linhas à mão:
-            // juntar tudo numa linha cobraria tudo pelo primeiro filamento. As linhas ficam como estão.
-            current.filaments
-        } else {
-            val first = current.filaments.first()
-            val single = extruders.singleOrNull()?.match as? FilamentMatch.Found
-            // Vários slots que casam com o mesmo filamento (ex.: quatro PLA no AMS) ainda dão um
-            // filamento só, sem cor, que não dá pra saber.
-            val common = extruders.map { (it.match as? FilamentMatch.Found)?.filament }.distinct().singleOrNull()
-            val filament = single?.filament ?: common
-            listOf(
-                FilamentInput(
-                    filamentId = filament?.id ?: first.filamentId,
-                    colorId = if (filament != null) single?.color?.id else first.colorId,
-                    lengthText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: first.lengthText,
-                ),
-            )
-        }
-        val keptManualRows = rows === current.filaments
+        val form = saveFormState.value
+        val thumbnail = metadata.thumbnail
+        val photoApplied = thumbnail != null && (form.photo == null || form.photoFromGCode)
+        val imported = GCodeImporter.apply(current, metadata, filaments.value, printers.value, photoApplied, ::newId)
 
-        updatePrint(print) {
-            it.copy(
-                printerId = chosenPrinter?.id ?: it.printerId,
-                filaments = rows,
-                printTimeText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: it.printTimeText,
-                beforeGCode = it.beforeGCode ?: it.copy(gcodeImportMessage = null),
-                gcodeImportMessage = gcodeImportMessage(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows),
+        if (formBeforeGCode == null) formBeforeGCode = form
+        saveFormState.update { state ->
+            val settings = imported.printSettings
+            state.copy(
+                photo = if (photoApplied) PickedFile("miniatura_do_gcode.${thumbnail!!.fileExtension}", thumbnail.bytes) else state.photo,
+                photoFromGCode = if (photoApplied) true else state.photoFromGCode,
+                printSettings = if (settings == null) {
+                    state.printSettings
+                } else {
+                    state.printSettings.copy(
+                        layerHeightMm = settings.layerHeightMm ?: state.printSettings.layerHeightMm,
+                        infillPercentage = settings.infillPercentage ?: state.printSettings.infillPercentage,
+                        infillPattern = settings.infillPattern ?: state.printSettings.infillPattern,
+                        supportsEnabled = settings.supportsEnabled ?: state.printSettings.supportsEnabled,
+                    )
+                },
+                savedConfirmation = false,
             )
         }
+        updatePrint(print) { imported.print }
     }
 
     /**
      * Desfaz a importação de G-code da impressão [print]: devolve a impressão exatamente como estava
-     * antes da primeira importação (impressora, linhas de filamento, comprimentos e tempo), limpa as
-     * configurações de impressão e, se a foto atual também veio de lá, remove ela também, sem mexer
-     * numa foto que o usuário tenha escolhido manualmente antes ou depois.
+     * antes da primeira importação (impressora, linhas de filamento, comprimentos e tempo), e a foto e as
+     * configurações de impressão como estavam (uma foto escolhida à mão depois da importação fica).
      */
     fun undoGCodeImport(print: Int = 0) {
         updatePrint(print) { it.beforeGCode ?: it.copy(gcodeImportMessage = null) }
+        val before = formBeforeGCode
         saveFormState.update {
             it.copy(
-                photo = if (it.photoFromGCode) null else it.photo,
-                photoFromGCode = if (it.photoFromGCode) false else it.photoFromGCode,
-                printSettings = PrintSettings(),
+                photo = if (it.photoFromGCode) before?.photo else it.photo,
+                photoFromGCode = if (it.photoFromGCode) before?.photoFromGCode == true else it.photoFromGCode,
+                printSettings = before?.printSettings ?: PrintSettings(),
                 savedConfirmation = false,
             )
         }
+        formBeforeGCode = null
     }
 
     /** Substitui as configurações de impressão do formulário de salvar (ver [PrintSettings]). */
@@ -262,7 +326,7 @@ class QuoteViewModel(
         val service = services.value.find { it.id == id } ?: return@update input
         val serviceInput = ServiceInput(
             name = service.name,
-            priceText = service.suggestedPrice?.let(::formatSavedNumber).orEmpty(),
+            priceText = service.suggestedPrice?.toInputText().orEmpty(),
             chargedPerOrder = service.chargedPerOrder,
         )
         input.copy(selectedServices = input.selectedServices + (id to serviceInput))
@@ -293,158 +357,225 @@ class QuoteViewModel(
         return (suggestion / 100.0).takeIf { suggestion != cents }
     }
 
-    fun applyShowcasePrice(value: Double) = inputState.update { it.copy(targetTotalText = formatSavedNumber(value)) }
+    fun applyShowcasePrice(value: Double) = inputState.update { it.copy(targetTotalText = value.toInputText()) }
 
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
     fun setSourceLink(text: String) = saveFormState.update { it.copy(sourceLink = text, savedConfirmation = false) }
-    fun setClientName(text: String) = saveFormState.update { it.copy(clientName = text, savedConfirmation = false) }
+
+    /** Digitar o nome desvincula do cliente escolhido na sugestão: pode ser outra pessoa. */
+    fun setClientName(text: String) = saveFormState.update { it.copy(clientName = text, clientId = null, savedConfirmation = false) }
     fun setClientContact(text: String) = saveFormState.update { it.copy(clientContact = text, savedConfirmation = false) }
-    fun setCategory(text: String) = saveFormState.update { it.copy(category = text, savedConfirmation = false) }
-    fun setDeliveryDate(epochDay: Long?) = saveFormState.update { it.copy(deliveryDateEpochDay = epochDay, savedConfirmation = false) }
-    fun clearPhoto() = saveFormState.update {
-        it.copy(photo = null, photoFromGCode = false, photoReferenceFileName = null, savedConfirmation = false)
+
+    /** Escolhe um cliente do cadastro na sugestão: nome e contato vêm dele. */
+    fun chooseClient(client: Client) = saveFormState.update {
+        it.copy(clientName = client.name, clientContact = client.contact.orEmpty(), clientId = client.id, savedConfirmation = false)
     }
 
+    /** Clientes do cadastro que batem com o que foi digitado, pra sugerir (até cinco). */
+    fun clientSuggestions(typed: String, clients: List<Client>): List<Client> = matchingClients(typed, clients)
+
+    fun setCategory(text: String) = saveFormState.update { it.copy(category = text, savedConfirmation = false) }
+    fun setDeliveryDate(epochDay: Long?) = saveFormState.update { it.copy(deliveryDateEpochDay = epochDay, savedConfirmation = false) }
+    fun clearPhoto() = saveFormState.update { it.copy(photo = null, photoFromGCode = false, photoError = null, savedConfirmation = false) }
+
+    /**
+     * Escolhe a foto e confere na hora se ela abre: descobrir que a imagem não abre só ao mandar o PDF
+     * pro cliente seria tarde demais (e uma imagem que não abre derrubava a tela do Histórico).
+     */
     fun pickPhoto() {
-        val picked = pickImageFile() ?: return
-        saveFormState.update {
-            it.copy(photo = picked, photoFromGCode = false, photoReferenceFileName = null, savedConfirmation = false)
+        when (val picked = platform.pickFile(FileKind.IMAGE)) {
+            is PickResult.Picked -> {
+                val readable = runCatching { decodeImageBitmap(picked.file.bytes) }.isSuccess
+                saveFormState.update {
+                    if (readable) {
+                        it.copy(photo = picked.file, photoFromGCode = false, photoError = null, savedConfirmation = false)
+                    } else {
+                        it.copy(photoError = "Não consegui ler essa imagem. Tente um PNG ou JPG.")
+                    }
+                }
+            }
+            is PickResult.Failed -> saveFormState.update { it.copy(photoError = picked.message) }
+            PickResult.Cancelled -> Unit
         }
     }
 
-    fun clearStlFile() = saveFormState.update {
-        it.copy(stlFile = null, stlReferenceFileName = null, savedConfirmation = false)
+    fun clearStlFile() {
+        saveFormState.update { it.copy(stlFile = null, savedConfirmation = false) }
+        loadStlPreview(null)
     }
 
     /**
      * Anexa o arquivo STL do modelo ao orçamento — guardado pra o criador recuperar depois no
-     * Histórico e reaproveitar numa venda futura da mesma peça (não usado pra visualização/cálculo
-     * ainda, ver Fase 1 do roadmap).
+     * Histórico e reaproveitar numa venda futura da mesma peça.
      */
     fun pickStl() {
-        val picked = pickStlFile() ?: return
-        saveFormState.update { it.copy(stlFile = picked, stlReferenceFileName = null, savedConfirmation = false) }
+        when (val picked = platform.pickFile(FileKind.STL)) {
+            is PickResult.Picked -> {
+                saveFormState.update { it.copy(stlFile = picked.file, savedConfirmation = false) }
+                loadStlPreview(picked.file)
+            }
+            is PickResult.Failed -> stlPreviewState.value = StlPreview.Unreadable
+            PickResult.Cancelled -> Unit
+        }
     }
 
     /** Usa uma captura do visualizador 3D (`Stl3DViewerState.captureSnapshot`) como foto do orçamento. */
     fun setPhotoFromStlSnapshot(pngBytes: ByteArray) {
         saveFormState.update {
-            it.copy(
-                photo = PickedFile("captura_stl.png", pngBytes),
-                photoFromGCode = false,
-                photoReferenceFileName = null,
-                savedConfirmation = false,
-            )
+            it.copy(photo = PickedFile("captura_stl.png", pngBytes), photoFromGCode = false, photoError = null, savedConfirmation = false)
+        }
+    }
+
+    /**
+     * Lê e analisa o STL fora do thread da tela: uma malha de centenas de milhares de triângulos levava
+     * segundos e travava a tela no meio do desenho.
+     */
+    private fun loadStlPreview(file: PickedFile?) {
+        if (file == null) {
+            stlPreviewState.value = null
+            return
+        }
+        stlPreviewState.value = StlPreview.Loading
+        scope.launch(background) {
+            val preview = runCatching {
+                val triangles = peekStlTriangleCount(file.bytes)
+                if (triangles > MAX_RENDERABLE_STL_TRIANGLES) {
+                    StlPreview.TooComplex(triangles)
+                } else {
+                    val mesh = parseStl(file.bytes)
+                    StlPreview.Ready(mesh, StlAnalyzer.analyze(mesh))
+                }
+            }.getOrElse { StlPreview.Unreadable }
+            withContext(main) {
+                // Outro arquivo pode ter sido escolhido enquanto este era lido.
+                if (saveFormState.value.stlFile === file) stlPreviewState.value = preview
+            }
         }
     }
 
     /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
     fun consumeSavedConfirmation() = saveFormState.update { it.copy(savedConfirmation = false) }
 
+    fun consumeBlockedMessage() = saveFormState.update { it.copy(blockedMessage = null) }
+
+    /**
+     * Salva o orçamento no histórico. Num orçamento novo, o formulário volta ao começo depois de salvar
+     * (mantendo pedido/produto): antes, os campos continuavam preenchidos e um segundo Ctrl+S criava um
+     * pedido repetido. Reabrindo, atualiza o mesmo orçamento.
+     */
     fun saveQuote(quote: Quote, services: List<QuoteService>) {
         val form = saveFormState.value
-        val isProduct = inputState.value.isProduct
+        val input = inputState.value
+        val isProduct = input.isProduct
         // Pelo "Vender", sem outro preço digitado: o pedido saiu pelo preço do catálogo, e isso não é
         // negociação com o cliente (decisão 103).
-        val soldAtCatalogPrice = !isProduct && inputState.value.announcedUnitPrice != null && inputState.value.targetTotalText.isBlank()
-        val client = if (isProduct) null else form.clientName.trim().ifEmpty { null }?.let { name ->
-            Client(name = name, contact = form.clientContact.trim().ifEmpty { null })
-        }
-        val editingId = form.editingQuoteId
-        if (editingId != null) {
-            historyRepository.update(
-                id = editingId,
-                name = form.name,
-                quote = quote,
-                services = services,
-                photo = form.photo,
-                photoReferenceFileName = form.photoReferenceFileName,
-                stlFile = form.stlFile,
-                stlReferenceFileName = form.stlReferenceFileName,
-                sourceLink = form.sourceLink,
-                client = client,
-                printSettings = form.printSettings.takeUnless { it.isEmpty },
-                shippingCost = shippingCostToSave(),
-                deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
-                category = form.category,
-                soldAtCatalogPrice = soldAtCatalogPrice,
-            )
+        val soldAtCatalogPrice = !isProduct && input.announcedUnitPrice != null && input.targetTotalText.isBlank()
+        val client = if (isProduct) {
+            null
         } else {
-            historyRepository.save(
+            form.clientName.trim().ifEmpty { null }?.let { name ->
+                val typed = Client(name = name, contact = form.clientContact.trim().ifEmpty { null }, id = form.clientId)
+                clientRepository?.resolve(typed) ?: typed
+            }
+        }
+        val shippingCost = if (isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
+        val printSettings = form.printSettings.takeUnless { it.isEmpty }
+
+        val editing = form.operation as? QuoteOperation.Editing
+        if (editing != null) {
+            historyRepository.update(
+                id = editing.savedQuote.id,
                 name = form.name,
                 quote = quote,
                 services = services,
                 photo = form.photo,
-                photoReferenceFileName = form.photoReferenceFileName,
                 stlFile = form.stlFile,
-                stlReferenceFileName = form.stlReferenceFileName,
                 sourceLink = form.sourceLink,
                 client = client,
-                printSettings = form.printSettings.takeUnless { it.isEmpty },
-                shippingCost = shippingCostToSave(),
+                printSettings = printSettings,
+                shippingCost = shippingCost,
                 deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
-                kind = inputState.value.kind,
-                sourceProductId = form.sourceProductId.takeUnless { isProduct },
                 category = form.category,
                 soldAtCatalogPrice = soldAtCatalogPrice,
             )
+            saveFormState.update { it.copy(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = editing.savedQuote.displayNumber) }
+            return
         }
-        saveFormState.value = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct)
+
+        val saved = historyRepository.save(
+            name = form.name,
+            quote = quote,
+            services = services,
+            photo = form.photo,
+            stlFile = form.stlFile,
+            sourceLink = form.sourceLink,
+            client = client,
+            printSettings = printSettings,
+            shippingCost = shippingCost,
+            deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
+            kind = input.kind,
+            sourceProductId = form.sourceProductId.takeUnless { isProduct },
+            category = form.category,
+            soldAtCatalogPrice = soldAtCatalogPrice,
+            currency = currency(),
+        )
+        inputState.value = QuoteInputState(kind = input.kind)
+        saveFormState.value = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = saved.displayNumber)
+        formBeforeGCode = null
+        stlPreviewState.value = null
     }
 
-    /** Produto não tem frete (decisão 101): o campo some da tela, e o que ficou digitado nele não vai junto. */
-    private fun shippingCostToSave(): Double =
-        if (inputState.value.isProduct) 0.0 else parseDecimal(inputState.value.shippingCostText) ?: 0.0
-
     /**
-     * Reabre [savedQuote] pra edição na aba Orçamento: preenche filamento/cor/impressora/
-     * comprimento/tempo/serviços/marketplace com os valores salvos, e o formulário de salvar
-     * (nome/foto/STL/link/cliente) com os anexos recarregados do disco. Salvar depois disso
-     * atualiza o mesmo orçamento no histórico (ver [saveQuote]) em vez de criar um novo — não
-     * muda [SavedQuote.savedAtEpochMillis], só marca [SavedQuote.lastEditedEpochMillis].
+     * Reabre [savedQuote] pra edição: preenche as entradas com os valores salvos e o formulário de salvar
+     * com os anexos recarregados. Salvar depois disso atualiza o mesmo orçamento (ver [saveQuote]). Enquanto
+     * nada que muda o preço for mexido, o cálculo continua o salvo ([currentResult]).
      */
     fun loadForEditing(savedQuote: SavedQuote) {
-        inputState.value = inputStateFrom(savedQuote)
-        saveFormState.value = saveFormFrom(savedQuote).copy(editingQuoteId = savedQuote.id)
+        val input = inputFrom(savedQuote)
+        val form = formFrom(savedQuote)
+        inputState.value = input
+        setForm(form.copy(operation = QuoteOperation.Editing(savedQuote, input, form)))
     }
 
     /**
-     * Reabre [savedQuote] como um **orçamento novo** na aba Orçamento — mesmos dados de
-     * [loadForEditing] (filamento/impressora/comprimento/tempo/serviços/nome/foto/STL/link/
-     * cliente, prontos pra ajustar), mas sem marcar `editingQuoteId`: salvar cria uma linha nova no
-     * Histórico (data de criação e status `ORCADO` novos), em vez de sobrescrever o original. Se a
-     * foto/STL não mudarem antes de salvar, o arquivo em disco é reaproveitado, não duplicado (ver
-     * `QuoteHistoryRepository.save`).
+     * Reabre [savedQuote] como um **orçamento novo**: mesmos dados de [loadForEditing], prontos pra
+     * ajustar, mas salvar cria uma linha nova no Histórico (data de criação e status novos). Não vêm
+     * junto o prazo (uma data de outro pedido, provavelmente já passada, decisão 85) nem o cliente
+     * (duplicar é, quase sempre, vender a mesma peça pra outra pessoa). A origem vem junto (decisão 103):
+     * reimprimir uma venda do catálogo continua sendo daquele produto no ranking do Dashboard.
      */
     fun duplicateForNewQuote(savedQuote: SavedQuote) {
-        inputState.value = inputStateFrom(savedQuote)
-        // O prazo não vem junto: uma data de outro pedido, provavelmente já passada, é exatamente o
-        // prazo vencido que o cliente não pode receber (decisão 85).
-        // A origem vem junto (decisão 103): reimprimir uma venda do catálogo continua sendo daquele
-        // produto no ranking do Dashboard.
-        saveFormState.value = saveFormFrom(savedQuote).copy(
-            duplicatedFromName = savedQuote.name,
-            deliveryDateEpochDay = null,
-            sourceProductId = savedQuote.sourceProductId,
+        inputState.value = inputFrom(savedQuote)
+        setForm(
+            formFrom(savedQuote).copy(
+                operation = QuoteOperation.Duplicating(savedQuote.name),
+                deliveryDateEpochDay = null,
+                sourceProductId = savedQuote.sourceProductId,
+                clientName = "",
+                clientContact = "",
+                clientId = null,
+            ),
         )
     }
 
     /**
-     * "Vender" um produto do catálogo (decisão 101): mesmo caminho de [duplicateForNewQuote], mas o
-     * que nasce é um **pedido**, que guarda de qual produto veio ([SavedQuote.sourceProductId]). Sem
-     * cliente e sem prazo, que são da venda nova. O produto continua no catálogo, intacto. Com preço
-     * anunciado, a peça sai por ele ([QuoteInputState.announcedUnitPrice]), e frete e serviços somam
-     * por fora (decisão 102).
+     * "Vender" um produto do catálogo (decisão 101): o que nasce é um **pedido**, que guarda de qual
+     * produto veio ([SavedQuote.sourceProductId]). Sem cliente e sem prazo, que são da venda nova. O
+     * produto continua no catálogo, intacto. Com preço anunciado, a peça sai por ele
+     * ([QuoteInputState.announcedUnitPrice]), e frete e serviços somam por fora (decisão 102).
      */
     fun sellFromProduct(product: SavedQuote) {
         val announced = product.quote.takeIf { it.isNegotiated }?.unitSalePrice
-        inputState.value = inputStateFrom(product).copy(kind = QuoteKind.ORDER, targetTotalText = "", announcedUnitPrice = announced)
-        saveFormState.value = saveFormFrom(product).copy(
-            sourceProductId = product.id,
-            soldFromProductName = product.name,
-            clientName = "",
-            clientContact = "",
-            deliveryDateEpochDay = null,
+        inputState.value = inputFrom(product).copy(kind = QuoteKind.ORDER, targetTotalText = "", announcedUnitPrice = announced)
+        setForm(
+            formFrom(product).copy(
+                operation = QuoteOperation.Selling(product),
+                sourceProductId = product.id,
+                clientName = "",
+                clientContact = "",
+                clientId = null,
+                deliveryDateEpochDay = null,
+            ),
         )
     }
 
@@ -462,106 +593,121 @@ class QuoteViewModel(
      * porque é histórico de venda.
      */
     fun copyToCatalog(order: SavedQuote) {
-        inputState.value = inputStateFrom(order).copy(kind = QuoteKind.PRODUCT, shippingCostText = "", targetTotalText = "", announcedUnitPrice = null)
-        saveFormState.value = saveFormFrom(order).copy(
-            copiedFromOrderName = order.name,
-            clientName = "",
-            clientContact = "",
-            deliveryDateEpochDay = null,
+        inputState.value = inputFrom(order).copy(kind = QuoteKind.PRODUCT, shippingCostText = "", targetTotalText = "", announcedUnitPrice = null)
+        setForm(
+            formFrom(order).copy(
+                operation = QuoteOperation.CopyingToCatalog(order.name),
+                clientName = "",
+                clientContact = "",
+                clientId = null,
+                deliveryDateEpochDay = null,
+            ),
         )
     }
 
-    private fun inputStateFrom(savedQuote: SavedQuote): QuoteInputState {
-        val quote = savedQuote.quote
-        // Pelo id; um canal excluído e recriado com o mesmo nome ganha id novo, então o nome é a segunda
-        // tentativa. Sem nenhum dos dois, a tela avisa: recalcular sem a taxa em silêncio baixaria o preço.
-        val channel = quote.channelId?.let { id -> salesChannels.value.firstOrNull { it.id == id } }
-            ?: quote.channelName?.let { name -> salesChannels.value.firstOrNull { it.name == name } }
-        return QuoteInputState(
-            kind = savedQuote.kind,
-            prints = quote.prints.map { print ->
-                PrintInput(
-                    name = print.job.name.orEmpty(),
-                    printerId = print.printerId,
-                    filaments = print.job.filaments.map { usage ->
-                        FilamentInput(filamentId = usage.filament.id, colorId = usage.color?.id, lengthText = formatSavedNumber(usage.lengthMeters))
-                    },
-                    printTimeText = formatSavedNumber(print.job.printTimeMinutes),
-                    runsText = if (print.job.runs > 1) print.job.runs.toString() else "",
-                )
-            },
-            laborMinutesText = if (quote.laborMinutes > 0) formatSavedNumber(quote.laborMinutes) else "",
-            quantityText = if (quote.quantity > 1) quote.quantity.toString() else "",
-            // Valor e forma de cobrança vêm do retrato salvo, não do catálogo atual: reabrir e salvar
-            // não pode reprecificar o pedido em silêncio.
-            selectedServices = savedQuote.services.associate { service ->
-                service.id to ServiceInput(
-                    name = service.name,
-                    priceText = formatSavedNumber(service.price),
-                    chargedPerOrder = service.chargedPerOrder,
-                )
-            },
-            salesChannelId = channel?.id,
-            missingChannelName = quote.channelName.takeIf { channel == null },
-            shippingCostText = if (savedQuote.shippingCost > 0) formatSavedNumber(savedQuote.shippingCost) else "",
-            // Sem isso, reabrir um orçamento negociado e salvar de novo voltaria em silêncio pro preço
-            // de tabela. O campo recebe o total do cliente, igual ao que foi digitado (ver `calculate`).
-            // Pedido vendido pelo preço do catálogo volta com o anunciado no lugar dele, e não como preço
-            // digitado: salvar de novo mantém o preço e continua fora dos números de negociação.
-            targetTotalText = if (quote.isNegotiated && !savedQuote.soldAtCatalogPrice) formatSavedNumber(savedQuote.totalWithServices) else "",
-            announcedUnitPrice = if (savedQuote.soldAtCatalogPrice) quote.unitSalePrice else null,
-        )
-    }
+    private fun inputFrom(savedQuote: SavedQuote): QuoteInputState =
+        SavedQuoteMapper.inputStateFrom(savedQuote, filaments.value, printers.value, salesChannels.value, ::newId)
 
-    private fun saveFormFrom(savedQuote: SavedQuote): SaveQuoteFormState {
+    private fun formFrom(savedQuote: SavedQuote): SaveQuoteFormState {
         val photo = savedQuote.photoFileName?.let { fileName ->
             historyRepository.photoBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
         }
         val stlFile = savedQuote.stlFileName?.let { fileName ->
             historyRepository.stlBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
         }
-        return SaveQuoteFormState(
-            name = savedQuote.name,
-            photo = photo,
-            photoReferenceFileName = if (photo != null) savedQuote.photoFileName else null,
-            stlFile = stlFile,
-            stlReferenceFileName = if (stlFile != null) savedQuote.stlFileName else null,
-            sourceLink = savedQuote.sourceLink.orEmpty(),
-            clientName = savedQuote.client?.name.orEmpty(),
-            clientContact = savedQuote.client?.contact.orEmpty(),
-            printSettings = savedQuote.printSettings ?: PrintSettings(),
-            deliveryDateEpochDay = savedQuote.deliveryDateEpochDay,
-            category = savedQuote.category.orEmpty(),
-        )
+        return SavedQuoteMapper.saveFormFrom(savedQuote, photo, stlFile)
     }
 
-    /** Atalho de teclado (Ctrl/Cmd+S): recalcula com os valores atuais e salva, se houver um orçamento válido. */
-    fun saveCurrentQuote() {
-        // A mesma lista que a tela usa (só o que está em estoque): o atalho não pode salvar um preço
-        // diferente do que a pessoa está vendo.
-        val result = calculate(filaments.value.filter { it.hasStockAvailable }, printers.value, settings.value, services.value, input.value)
-        val quote = result.quote ?: return
-        if (result.missingServicePrice) return
-        saveQuote(quote, result.selectedServices)
+    private fun setForm(form: SaveQuoteFormState) {
+        saveFormState.value = form
+        formBeforeGCode = null
+        loadStlPreview(form.stlFile)
     }
 
-    /** Atalho de teclado (Ctrl/Cmd+N): limpa a peça e o formulário de salvar, pra começar um orçamento novo. */
     /**
-     * O perfil de uso mudou em Configurações (decisão 103): o orçamento em branco passa a vir no
-     * tipo novo na hora. Se já tem algo digitado, ou uma operação/edição em andamento, fica como
-     * está, pra trocar o perfil nunca mexer no que a pessoa estava fazendo.
+     * Atalho de teclado (Ctrl/Cmd+S): salva o que a tela mostra ([currentResult], a mesma conta). Se não
+     * der, diz por quê em [SaveQuoteFormState.blockedMessage], em vez de não fazer nada. Devolve se salvou.
      */
-    fun applyDefaultKindIfUntouched() {
-        val input = inputState.value
-        val untouched = input == QuoteInputState(kind = input.kind) && saveFormState.value == SaveQuoteFormState()
-        if (untouched) inputState.value = QuoteInputState(kind = defaultKind())
+    fun saveCurrentQuote(): Boolean {
+        val result = currentResult()
+        val quote = result.quote
+        val blocked = when {
+            result.fieldErrors.isNotEmpty() -> "Não salvei: ${result.fieldErrors.values.first()}"
+            quote == null -> result.errorMessage?.let { "Não salvei: $it" }
+                ?: "Não salvei: preencha filamento, impressora, comprimento e tempo."
+            result.missingServicePrice -> "Não salvei: informe o valor de cada serviço marcado."
+            else -> null
+        }
+        if (blocked != null || quote == null) {
+            saveFormState.update { it.copy(blockedMessage = blocked) }
+            return false
+        }
+        saveQuote(quote, result.selectedServices)
+        return true
     }
 
+    /** Reabrindo um orçamento, se algo foi mudado desde que ele abriu (cancelar perderia a mudança). */
+    val hasUnsavedEdits: Boolean
+        get() {
+            val editing = saveFormState.value.operation as? QuoteOperation.Editing ?: return false
+            val form = saveFormState.value.copy(operation = null, savedConfirmation = false, blockedMessage = null, photoError = null)
+            return inputState.value != editing.originalInput || form != editing.originalForm
+        }
+
+    /** Se há algo digitado ou uma operação em andamento, que "Limpar" ou outra operação jogaria fora. */
+    val hasDraft: Boolean
+        get() {
+            val input = inputState.value
+            val form = saveFormState.value.copy(savedConfirmation = false, savedAsProduct = false, savedNumber = null, blockedMessage = null)
+            return input != QuoteInputState(kind = input.kind) || form != SaveQuoteFormState()
+        }
+
+    /** Limpa a peça e o formulário de salvar, pra começar um orçamento novo (Ctrl/Cmd+N, cancelar). */
     fun resetForm() {
-        inputState.value = QuoteInputState(kind = defaultKind())
+        inputState.value = QuoteInputState()
         saveFormState.value = SaveQuoteFormState()
+        formBeforeGCode = null
+        stlPreviewState.value = null
     }
 
+    /**
+     * A conta da tela, do Ctrl+S e do salvar: uma fonte só. Reabrindo um orçamento sem mudar nada que
+     * mexe no preço, o resultado é o cálculo congelado dele (decisão 108): corrigir o contato do cliente
+     * não pode trocar o preço que o cliente já recebeu pelos custos de hoje. Com alguma mudança, a conta é
+     * refeita e o preço antigo vem junto, pra tela mostrar a diferença.
+     */
+    fun currentResult(): QuoteResult {
+        val input = inputState.value
+        val result = calculate(filaments.value, printers.value, settings.value, services.value, input, salesChannels.value)
+        val editing = saveFormState.value.operation as? QuoteOperation.Editing ?: return result
+        val original = editing.savedQuote
+        return if (input == editing.originalInput) {
+            result.copy(
+                quote = original.quote,
+                selectedServices = original.services,
+                shippingCost = original.shippingCost,
+                keepsOriginalPrice = true,
+                todaysQuote = result.quote,
+                errorMessage = null,
+                fieldErrors = emptyMap(),
+                missingServicePrice = false,
+            )
+        } else {
+            result.copy(originalQuote = original.quote)
+        }
+    }
+
+    /**
+     * A conta pra [input] com os cadastros dados. Função pura (a tela de testes e [comparePrinters] usam).
+     *
+     * Um valor que não é número (ou negativo onde não pode) vira erro no campo ([QuoteResult.fieldErrors])
+     * e não há orçamento: antes, frete inválido virava zero, quantidade inválida virava 1, e frete negativo
+     * derrubava o salvar. Um filamento ou impressora escolhidos que saíram do cadastro também não caem no
+     * primeiro da lista: a tela pede pra escolher de novo.
+     *
+     * @param filaments todos os filamentos, inclusive os esgotados: um escolhido que esgotou continua
+     *   valendo (a tela marca). Só o padrão, quando nada foi escolhido, sai dos que estão em estoque.
+     */
     fun calculate(
         filaments: List<Filament>,
         printers: List<PrinterProfile>,
@@ -570,8 +716,14 @@ class QuoteViewModel(
         input: QuoteInputState,
         channels: List<SalesChannel> = salesChannels.value,
     ): QuoteResult {
+        val errors = LinkedHashMap<String, String>()
+        val quantity = input.quantityOrNull ?: 1.also { errors[QuoteFields.QUANTITY] = "Quantidade: use um número inteiro, 1 ou mais." }
         val selectedServices = input.selectedServices.mapNotNull { (id, serviceInput) ->
-            val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 } ?: return@mapNotNull null
+            val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 }
+            if (price == null) {
+                if (serviceInput.priceText.isNotBlank()) errors[QuoteFields.service(id)] = "Valor de ${serviceInput.name}: não é um número."
+                return@mapNotNull null
+            }
             QuoteService(
                 id = id,
                 name = services.find { it.id == id }?.name ?: serviceInput.name,
@@ -580,30 +732,51 @@ class QuoteViewModel(
             )
         }
         val missingServicePrice = selectedServices.size < input.selectedServices.size
+        val inStock = filaments.filter { it.hasStockAvailable }
         val resolved = input.prints.map { print ->
             ResolvedPrint(
-                printer = printers.find { it.id == print.printerId } ?: printers.firstOrNull(),
+                printer = if (print.printerId == null) printers.firstOrNull() else printers.find { it.id == print.printerId },
                 filaments = print.filaments.map { row ->
-                    // Com uma linha só, nada escolhido ainda vale o primeiro filamento: é a tela de
-                    // sempre. Numa peça multicolor, cada linha precisa de uma escolha de verdade.
-                    val filament = filaments.find { it.id == row.filamentId } ?: filaments.firstOrNull()?.takeIf { print.filaments.size == 1 }
-                    val available = filament?.colors?.filter { it.inStock }.orEmpty()
-                    ResolvedFilament(filament, available.find { it.id == row.colorId } ?: available.firstOrNull())
+                    // Com uma linha só, nada escolhido ainda vale o primeiro filamento em estoque: é a tela
+                    // de sempre. Numa peça multicolor, cada linha precisa de uma escolha de verdade.
+                    val filament = if (row.filamentId == null) {
+                        inStock.firstOrNull()?.takeIf { print.filaments.size == 1 }
+                    } else {
+                        filaments.find { it.id == row.filamentId }
+                    }
+                    val color = filament?.let { chosen ->
+                        row.colorId?.let { id -> chosen.colors.find { it.id == id } } ?: chosen.colors.firstOrNull { it.inStock }
+                    }
+                    ResolvedFilament(filament, color)
                 },
             )
         }
         val channel = channels.find { it.id == input.salesChannelId }
         // Produto do catálogo não tem frete (decisão 101): o campo some da tela, e o que tiver ficado
-        // digitado nele não pode mexer no preço. O preço fechado, em produto, é o preço anunciado no
-        // catálogo (decisão 102), e por isso continua valendo.
-        val shippingCost = if (input.isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
+        // digitado nele não pode mexer no preço.
+        val shippingCost = if (input.isProduct) 0.0 else amount(input.shippingCostText, QuoteFields.SHIPPING, "Frete", errors) ?: 0.0
+        val servicesTotal = selectedServices.sumOf { it.total(quantity) }
         // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
-        // que de fato é a peça. Se o alvo nem cobre os extras, a peça vale zero e o prejuízo
-        // aparece no lucro, que é justamente o aviso.
-        val servicesTotal = selectedServices.sumOf { it.total(input.quantity) }
-        val negotiatedSalePrice = parseDecimal(input.targetTotalText)
-            ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
-            ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * input.quantity }
+        // que de fato é a peça. Um alvo que nem cobre os extras é erro no campo: zerar a peça salvaria
+        // um total diferente do digitado, sem ninguém ver.
+        val target = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors)?.let { typed ->
+            val extras = servicesTotal + shippingCost
+            if (typed < extras) {
+                errors[QuoteFields.TARGET] = "Esse preço não cobre serviços e frete (${extras.toInputText()}): digite pelo menos esse valor."
+                null
+            } else {
+                typed
+            }
+        }
+        val negotiatedSalePrice = target?.let { it - servicesTotal - shippingCost }
+            ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * quantity }
+        val laborMinutes = if (input.laborMinutesText.isBlank()) {
+            0.0
+        } else {
+            parseDurationMinutes(input.laborMinutesText) ?: 0.0.also {
+                errors[QuoteFields.LABOR] = "Tempo de trabalho: use minutos (90) ou horas e minutos (1h30)."
+            }
+        }
 
         val base = QuoteResult(
             prints = resolved,
@@ -612,40 +785,111 @@ class QuoteViewModel(
             shippingCost = shippingCost,
             missingServicePrice = missingServicePrice,
         )
+        missingFromCatalog(input, resolved)?.let { return base.copy(errorMessage = it, fieldErrors = errors) }
+        val jobs = printJobs(input, resolved, errors)
+        if (errors.isNotEmpty()) return base.copy(fieldErrors = errors)
+        jobs ?: return base
         return runCatching {
-            val jobs = printJobs(input, resolved) ?: return base
             PricingCalculator.calculate(
                 prints = jobs,
                 settings = settings,
                 channel = channel,
-                quantity = input.quantity,
+                quantity = quantity,
                 // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
-                laborMinutes = parseDecimal(input.laborMinutesText) ?: 0.0,
+                laborMinutes = laborMinutes,
                 negotiatedSalePrice = negotiatedSalePrice,
+                extrasTotal = servicesTotal + shippingCost,
             )
         }.fold(
             onSuccess = { base.copy(quote = it) },
-            onFailure = { base.copy(errorMessage = it.message) },
+            onFailure = { error ->
+                // As mensagens do `core` que chegam aqui já foram escritas pra tela (a de canal + imposto
+                // chegando a 100%); o resto é validação que a tela já fez, e não deveria acontecer.
+                val message = error.message?.takeIf { it.startsWith("A taxa do canal") } ?: "Confira os valores digitados."
+                base.copy(errorMessage = message)
+            },
         )
     }
 
-    /** As impressões prontas pro cálculo, ou `null` enquanto falta escolher ou preencher alguma coisa. */
-    private fun printJobs(input: QuoteInputState, resolved: List<ResolvedPrint>): List<Pair<PrintJob, PrinterProfile>>? =
-        input.prints.zip(resolved).map { (print, resolvedPrint) ->
-            val printer = resolvedPrint.printer ?: return null
-            val usages = print.filaments.zip(resolvedPrint.filaments).map { (row, resolvedFilament) ->
-                val filament = resolvedFilament.filament ?: return null
-                val length = parseDecimal(row.lengthText) ?: return null
-                FilamentUsage(filament = filament, lengthMeters = length, color = resolvedFilament.color)
-            }
-            val time = parseDecimal(print.printTimeText) ?: return null
-            PrintJob(filaments = usages, printTimeMinutes = time, runs = print.runs, name = print.name.trim().ifEmpty { null }) to printer
+    /** Valor em dinheiro opcional: vazio é `null`, e o que não é número (ou é negativo) vira erro no campo. */
+    private fun amount(text: String, field: String, label: String, errors: MutableMap<String, String>): Double? {
+        if (text.isBlank()) return null
+        val value = parseDecimal(text, NumberKind.AMOUNT)
+        return when {
+            value == null -> null.also { errors[field] = "$label: não é um número. Use vírgula nos centavos (19,90)." }
+            value < 0 -> null.also { errors[field] = "$label não pode ser negativo." }
+            else -> value
         }
+    }
+
+    /** Um filamento ou impressora escolhidos que saíram do cadastro (orçamento reaberto), com o nome. */
+    private fun missingFromCatalog(input: QuoteInputState, resolved: List<ResolvedPrint>): String? {
+        // Canal que saiu do cadastro: recalcular sem a taxa baixaria o preço em silêncio. Escolher outro
+        // canal, ou "Venda direta", limpa isto (ver [selectSalesChannel]).
+        input.missingChannelName?.let { name ->
+            return "O canal \"$name\" não existe mais. Escolha outro canal, ou \"Venda direta\", pra calcular o preço."
+        }
+        input.prints.zip(resolved).forEach { (print, resolvedPrint) ->
+            if (print.printerId != null && resolvedPrint.printer == null) {
+                return "A impressora \"${print.missingPrinterName ?: "escolhida"}\" não está mais cadastrada. Escolha outra."
+            }
+            print.filaments.zip(resolvedPrint.filaments).forEach { (row, resolvedFilament) ->
+                if (row.filamentId != null && resolvedFilament.filament == null) {
+                    return "O filamento \"${row.missingFilamentName ?: "escolhido"}\" não está mais cadastrado. Escolha outro."
+                }
+            }
+        }
+        return null
+    }
+
+    /**
+     * As impressões prontas pro cálculo, ou `null` enquanto falta escolher ou preencher alguma coisa.
+     * Um campo preenchido com o que não é número vira erro em [errors].
+     */
+    private fun printJobs(
+        input: QuoteInputState,
+        resolved: List<ResolvedPrint>,
+        errors: MutableMap<String, String>,
+    ): List<Pair<PrintJob, PrinterProfile>>? {
+        var complete = true
+        val jobs = input.prints.zip(resolved).map { (print, resolvedPrint) ->
+            val usages = print.filaments.zip(resolvedPrint.filaments).map { (row, resolvedFilament) ->
+                val length = parseDecimal(row.lengthText, NumberKind.MEASURE)
+                when {
+                    row.weightText != null && row.weightText.isNotBlank() && (parseDecimal(row.weightText, NumberKind.AMOUNT) ?: -1.0) < 0 ->
+                        errors[QuoteFields.length(print.id, row.id)] = "Peso: use um número em gramas (42 ou 42,5)."
+                    row.lengthText.isNotBlank() && (length == null || length < 0) ->
+                        errors[QuoteFields.length(print.id, row.id)] = "Comprimento: use um número em metros (27,5)."
+                }
+                val filament = resolvedFilament.filament
+                if (filament == null || length == null || length < 0) {
+                    complete = false
+                    null
+                } else {
+                    FilamentUsage(filament = filament, lengthMeters = length, color = resolvedFilament.color)
+                }
+            }
+            val time = print.printTimeMinutes
+            if (print.printTimeText.isNotBlank() && time == null) {
+                errors[QuoteFields.printTime(print.id)] = "Tempo de impressão: use minutos (200) ou horas e minutos (3h20)."
+            }
+            val printer = resolvedPrint.printer
+            if (printer == null || time == null || usages.any { it == null }) {
+                complete = false
+                null
+            } else {
+                PrintJob(filaments = usages.filterNotNull(), printTimeMinutes = time, runs = print.runs, name = print.name.trim().ifEmpty { null }) to printer
+            }
+        }
+        return if (complete) jobs.filterNotNull() else null
+    }
 
     /**
      * O mesmo orçamento calculado em cada impressora cadastrada, com todas as impressões nela, pra
-     * responder "em qual máquina essa peça sai mais barata". Só faz sentido com mais de uma impressora; devolve lista vazia
-     * quando não há o que comparar ou quando os dados da peça ainda não dão um cálculo válido.
+     * responder "em qual máquina essa peça sai mais barata". Só faz sentido com mais de uma impressora;
+     * devolve lista vazia quando não há o que comparar ou quando os dados da peça ainda não dão um cálculo
+     * válido. Compara o preço que a conta dá: um preço fechado ou anunciado é o mesmo em todas e não diria
+     * nada (a tela usa `tableSalePrice` quando existe).
      */
     fun comparePrinters(
         filaments: List<Filament>,
@@ -657,128 +901,16 @@ class QuoteViewModel(
     ): List<Pair<PrinterProfile, Quote>> {
         if (printers.size < 2) return emptyList()
         return printers.mapNotNull { printer ->
-            val allOnThisPrinter = input.copy(prints = input.prints.map { it.copy(printerId = printer.id) })
+            val allOnThisPrinter = input.copy(prints = input.prints.map { it.copy(printerId = printer.id, missingPrinterName = null) })
             val result = calculate(filaments, listOf(printer), settings, services, allOnThisPrinter, channels)
             result.quote?.let { printer to it }
         }
     }
 
-    private fun gcodeImportMessage(
-        metadata: GCodeMetadata,
-        photoApplied: Boolean,
-        printerMatch: PrinterMatch,
-        extruders: List<ExtruderMatch>,
-        perExtruder: Boolean,
-        keptManualRows: Boolean,
-    ): String {
-        val filled = buildList {
-            when {
-                perExtruder -> add("consumo de cada filamento")
-                keptManualRows -> Unit
-                metadata.filamentLengthMeters != null -> add("comprimento de filamento")
-            }
-            if (metadata.printTimeMinutes != null) add("tempo de impressão")
-            if (photoApplied) add("foto do modelo")
-            if (metadata.layerHeightMm != null || metadata.infillPercentage != null ||
-                metadata.infillPattern != null || metadata.supportsEnabled != null
-            ) {
-                add("configurações de impressão")
-            }
-        }
-        val sentences = buildList {
-            when {
-                filled.isNotEmpty() -> add("Preenchido a partir do G-code: ${filled.joinToString(", ")}.")
-                // As linhas mantidas já têm os comprimentos; a frase delas explica o resto.
-                !keptManualRows -> add("Não encontrei comprimento nem tempo nesse G-code — preencha manualmente.")
-            }
-            printerSentence(printerMatch)?.let(::add)
-            when {
-                perExtruder -> add(extrudersSentence(extruders))
-                keptManualRows -> add(
-                    "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um" +
-                        (metadata.filamentLengthMeters?.let { " (${formatImportedNumber(it)} m no total)" } ?: "") +
-                        ": mantive as suas linhas de filamento como estavam.",
-                )
-                extruders.size > 1 -> add(
-                    "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um: o total ficou numa " +
-                        "linha só. Separe em \"+ Adicionar filamento\" pra cobrar cada um pelo seu preço.",
-                )
-                else -> extruders.singleOrNull()?.let { filamentSentence(it.match) }?.let(::add)
-            }
-            if (metadata.thumbnail != null && !photoApplied) add("Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido.")
-        }
-        return sentences.joinToString(" ")
-    }
-
-    private fun printerSentence(match: PrinterMatch): String? = when (match) {
-        is PrinterMatch.Found -> "Impressora: ${match.printer.name}."
-        is PrinterMatch.Similar ->
-            "O G-code é de uma \"${match.gcodeName}\"; a mais parecida cadastrada é \"${match.printer.name}\" — escolha na lista se for ela."
-        is PrinterMatch.NotRegistered ->
-            "O G-code é de uma \"${match.gcodeName}\", que não está cadastrada (Impressoras → Escolher da lista)."
-        PrinterMatch.Unknown -> null
-    }
-
-    private fun filamentSentence(match: FilamentMatch): String? = when (match) {
-        is FilamentMatch.Found -> "Filamento: ${match.filament.name}" + (match.color?.let { ", cor ${it.displayLabel()}" } ?: "") + "."
-        is FilamentMatch.Ambiguous -> "Há ${match.count} filamentos ${match.type} em estoque — escolha qual usou."
-        is FilamentMatch.NotRegistered ->
-            "O G-code usa ${match.type}" + (match.vendor?.let { " da $it" } ?: "") + ", que não está cadastrado em estoque."
-        FilamentMatch.Unknown -> null
-    }
-
-    /** "Um filamento por extrusor: 1) PLA, cor Verde; 2) PETG (não cadastrado em estoque, escolha)." */
-    private fun extrudersSentence(extruders: List<ExtruderMatch>): String =
-        "Um filamento por extrusor: " + extruders.mapIndexed { index, extruder ->
-            "${index + 1}) " + when (val match = extruder.match) {
-                is FilamentMatch.Found -> match.filament.name + (match.color?.let { ", cor ${it.displayLabel()}" } ?: "")
-                is FilamentMatch.Ambiguous -> "${match.type} (há ${match.count} em estoque, escolha qual)"
-                is FilamentMatch.NotRegistered -> match.type + (match.vendor?.let { " da $it" } ?: "") + " (não cadastrado em estoque, escolha)"
-                FilamentMatch.Unknown -> "material não informado (escolha)"
-            }
-        }.joinToString("; ") + "."
-
-    /**
-     * Arquivos que parecem G-code mas o app ainda não lê, com o caminho pra resolver. `null`
-     * quando dá pra tentar ler (inclusive extensão desconhecida, que o parser decide).
-     */
-    private fun unsupportedGCodeMessage(fileName: String): String? {
-        val name = fileName.lowercase()
-        return when {
-            name.endsWith(".bgcode") ->
-                "G-code binário (.bgcode) ainda não é lido. No PrusaSlicer, desligue \"G-code binário\" nas " +
-                    "configurações da impressora e exporte de novo."
-            name.endsWith(".3mf") ->
-                "Esse é um arquivo de projeto (.3mf), não um G-code. No fatiador, use \"Exportar G-code\" e " +
-                    "arraste o arquivo .gcode."
-            GCODE_EXTENSIONS.none { name.endsWith(it) } ->
-                "\"$fileName\" não é um G-code. Use o arquivo .gcode exportado pelo fatiador."
-            else -> null
-        }
-    }
-
-    /**
-     * Número salvo de volta num campo, ao reabrir um orçamento ou marcar um serviço. Mantém até 6
-     * casas, e não 2 como [formatImportedNumber]: arredondar mudaria o valor ao salvar de novo
-     * (2,345 por peça em 1000 peças viraria R$ 5 a mais só por reabrir). As 6 casas ainda limpam o
-     * ruído de ponto flutuante de somas (36.190000000000005) e nunca caem em notação científica,
-     * que o campo não entenderia. Valores são sempre >= 0.
-     */
-    private fun formatSavedNumber(value: Double): String {
-        val scaled = round(value * 1_000_000).toLong()
-        val integerPart = (scaled / 1_000_000).toString()
-        val fraction = (scaled % 1_000_000).toString().padStart(6, '0').trimEnd('0')
-        return if (fraction.isEmpty()) integerPart else "$integerPart.$fraction"
-    }
-
-    /** Arredonda pra 2 casas decimais e evita ".0" à toa (ex.: 5.0 vira "5", não "5.0"). */
-    private fun formatImportedNumber(value: Double): String {
-        val rounded = round(value * 100) / 100
-        return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
+    private companion object {
+        /** Acima disso, a prévia 3D não é desenhada (decisão 63): o arquivo é salvo normalmente. */
+        const val MAX_RENDERABLE_STL_TRIANGLES = 500_000L
     }
 }
-
-/** Extensões de G-code em texto que os fatiadores exportam. */
-private val GCODE_EXTENSIONS = listOf(".gcode", ".gco", ".g")
 
 private fun <T> List<T>.replaced(index: Int, transform: (T) -> T): List<T> = mapIndexed { i, item -> if (i == index) transform(item) else item }

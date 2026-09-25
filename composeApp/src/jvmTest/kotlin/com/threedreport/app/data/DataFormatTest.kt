@@ -40,6 +40,18 @@ class DataFormatTest {
         assertEquals(listOf("format.json"), dataDir.list()!!.toList())
     }
 
+    /** Decisão 110: o log começa antes da checagem, e fazia toda instalação nova parecer da 1.x. */
+    @Test
+    fun aNewInstallWithOnlyTheLogIsNotOldData() {
+        File(dataDir, "$LOGS_DIR_NAME/3dreport.log").apply { parentFile.mkdirs() }.writeText("3DReport iniciado\n")
+
+        assertEquals(DataDirResult.Ready(), prepareDataDir())
+
+        assertEquals(listOf(".3dreport"), parent.list()!!.toList(), "nada foi guardado à parte")
+        assertTrue(File(dataDir, "$LOGS_DIR_NAME/3dreport.log").isFile)
+        assertEquals(DATA_FORMAT_VERSION, readDataFormatVersion(File(dataDir, "format.json")))
+    }
+
     @Test
     fun dataFromVersionOneIsMovedAsideWithEverythingInIt() {
         dataDir.mkdirs()
@@ -161,6 +173,43 @@ class DataFormatTest {
 
         assertIs<RestoreResult.Success>(result)
         assertEquals(DATA_FORMAT_VERSION, readDataFormatVersion(File(dataDir, "format.json")))
+    }
+
+    @Test
+    fun aKnownMigrationConvertsTheDataAndKeepsTheOriginalUntouched() {
+        dataDir.mkdirs()
+        File(dataDir, "format.json").writeText("""{"version": 1}""")
+        File(dataDir, "settings.json").writeText("""{"old": true}""")
+        val renameField = DataMigration { dir ->
+            File(dir, "settings.json").updateJson { kotlinx.serialization.json.buildJsonObject { put("new", kotlinx.serialization.json.JsonPrimitive(true)) } }
+        }
+
+        val result = assertIs<DataDirResult.Ready>(prepareDataDir(mapOf(1 to renameField)))
+
+        val migrated = result.migrated!!
+        assertEquals(1, migrated.fromVersion)
+        assertTrue(File(dataDir, "settings.json").readText().contains("\"new\""))
+        assertEquals(DATA_FORMAT_VERSION, readDataFormatVersion(File(dataDir, "format.json")))
+        assertEquals("""{"old": true}""", File(migrated.originalCopy, "settings.json").readText())
+    }
+
+    @Test
+    fun aMigrationThatFailsLeavesTheDataWhereItWasAndMovesItAsideInstead() {
+        dataDir.mkdirs()
+        File(dataDir, "format.json").writeText("""{"version": 1}""")
+        File(dataDir, "settings.json").writeText("""{"old": true}""")
+        val broken = DataMigration { error("falhou no meio") }
+
+        val result = assertIs<DataDirResult.Ready>(prepareDataDir(mapOf(1 to broken)))
+
+        assertEquals(null, result.migrated)
+        assertEquals("""{"old": true}""", File(result.moved!!.path, "settings.json").readText())
+        assertTrue(parent.listFiles()!!.none { it.name.endsWith("-migrando") }, "a cópia de trabalho não fica pra trás")
+    }
+
+    @Test
+    fun theCurrentFormatHasNoMigrationToRun() {
+        assertEquals(emptyList(), migrationPath(DATA_FORMAT_VERSION, DATA_MIGRATIONS))
     }
 
     private fun zipOf(vararg entries: Pair<String, String>): ByteArray {

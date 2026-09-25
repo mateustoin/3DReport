@@ -8,7 +8,8 @@ package com.threedreport.core.model
  * são só dos pedidos vendidos, menos os `open*`, que são dos orçamentos ainda em [OrderStatus.ORCADO].
  *
  * @property quoteCount quantos pedidos vendidos entraram na soma.
- * @property totalSalePrice soma de [SavedQuote.totalWithServices] (venda + serviços).
+ * @property totalSalePrice o que foi vendido: peça + serviços de cada pedido, **sem o frete**, que é
+ *   repasse pra transportadora e não faturamento seu.
  * @property totalProfit soma de [Quote.profit].
  * @property mostUsedFilamentName nome do filamento mais usado no período, ou
  *   `null` se não houver nenhuma venda.
@@ -18,8 +19,9 @@ package com.threedreport.core.model
  * @property totalNegotiatedDiscount soma de [Quote.negotiatedDiscount]: desconto líquido
  *   concedido na negociação (preços fechados acima da tabela abatem desta soma).
  * @property openQuoteCount orçamentos enviados que o cliente ainda não fechou.
- * @property openQuoteTotal quanto somam esses orçamentos em aberto (venda + serviços).
- * @property conversionRate vendidos ÷ (vendidos + em aberto), ou `null` sem nenhum orçamento.
+ * @property openQuoteTotal quanto somam esses orçamentos em aberto (peça + serviços, sem frete).
+ * @property conversionRate dos pedidos criados no período, quantos o cliente fechou (cancelados contam
+ *   como não fechados), ou `null` sem nenhum.
  * @property printHours horas de máquina dos pedidos vendidos (tempo de uma peça × quantidade).
  * @property profitPerPrintHour [totalProfit] ÷ [printHours]: quanto cada hora de máquina deixou
  *   de lucro. `null` quando nenhum pedido tem tempo de impressão.

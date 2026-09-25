@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
  * Quanto de um filamento uma impressão consome. Uma peça multicolor (AMS, MMU) tem um por
  * filamento; a maioria das peças tem um só.
  *
- * @property filament retrato do filamento usado (com preço e densidade no momento do orçamento).
+ * @property filament retrato do filamento usado (preço, densidade e identificação no momento do
+ *   orçamento, ver [FilamentSnapshot]).
  * @property lengthMeters comprimento consumido numa rodada da impressão, em metros. Quando vem do
  *   G-code, já inclui a purga e a torre de limpeza, que são custo de verdade (conferido em arquivos
  *   reais, decisão 105).
@@ -16,10 +17,14 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class FilamentUsage(
-    val filament: Filament,
+    val filament: FilamentSnapshot,
     val lengthMeters: Double,
     val color: FilamentColor? = null,
 ) {
+    /** Atalho a partir do cadastro: guarda só o retrato do filamento (ver [FilamentSnapshot]). */
+    constructor(filament: Filament, lengthMeters: Double, color: FilamentColor? = null) :
+        this(FilamentSnapshot.of(filament), lengthMeters, color)
+
     init {
         require(lengthMeters >= 0) { "lengthMeters não pode ser negativo: $lengthMeters" }
     }
@@ -42,6 +47,10 @@ data class FilamentUsage(
  *   Diferente de [Quote.quantity], que é quantos pedidos iguais: cada impressão multiplica pelos
  *   próprios [runs] e depois pela quantidade.
  * @property name nome opcional pra identificar a impressão ("Cabeça"). Uso interno.
+ * @property settings configurações de fatiamento desta mesa (ver [PrintSettings]), se informadas. Ficam
+ *   na impressão, e não no pedido, porque cada mesa de um pedido pode ter sido fatiada de um jeito.
+ * @property thumbnailFileName miniatura que o fatiador gravou no G-code desta mesa, no armazenamento
+ *   de anexos (mesmo tratamento de [SavedQuote.photoFileName]). Uso interno.
  */
 @Serializable
 data class PrintJob(
@@ -49,6 +58,8 @@ data class PrintJob(
     val printTimeMinutes: Double,
     val runs: Int = 1,
     val name: String? = null,
+    val settings: PrintSettings? = null,
+    val thumbnailFileName: String? = null,
 ) {
     /** Atalho pra impressão de um filamento só, que é a maioria. */
     constructor(

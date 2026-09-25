@@ -295,4 +295,41 @@ class QuoteReportTest {
         assertEquals(5.0, summary.totalNegotiatedDiscount, 1e-9)
         assertEquals(5.0, summary.topDiscountClients.single().totalDiscount, 1e-9)
     }
+
+    @Test
+    fun theSaleCountsInThePeriodTheClientClosedNotWhenTheQuoteWasCreated() {
+        // Orçado em agosto (1.000), aprovado em setembro (5.000).
+        val augustQuoteClosedInSeptember = quoteOf("PLA", 20.0, 10.0, status = OrderStatus.ORCADO)
+            .copy(savedAtEpochMillis = 1_000L)
+            .withStatus(OrderStatus.APROVADO, atEpochMillis = 5_000L)
+
+        val august = QuoteReport.summarize(listOf(augustQuoteClosedInSeptember), periodStartEpochMillis = 0L, periodEndEpochMillis = 4_000L)
+        val september = QuoteReport.summarize(listOf(augustQuoteClosedInSeptember), periodStartEpochMillis = 4_000L)
+
+        assertEquals(0, august.quoteCount)
+        assertEquals(1.0, august.conversionRate, "o orçamento criado em agosto já foi fechado")
+        assertEquals(1, september.quoteCount)
+        assertEquals(20.0, september.totalSalePrice)
+    }
+
+    @Test
+    fun cancelledOrdersAreNeitherSalesNorOpenButLowerTheConversion() {
+        val quotes = listOf(
+            quoteOf("PLA", 20.0, 10.0, status = OrderStatus.APROVADO),
+            quoteOf("PETG", 30.0, 10.0, status = OrderStatus.CANCELADO),
+        )
+
+        val summary = QuoteReport.summarize(quotes)
+
+        assertEquals(1, summary.quoteCount)
+        assertEquals(0, summary.openQuoteCount)
+        assertEquals(0.5, summary.conversionRate)
+    }
+
+    @Test
+    fun shippingIsNotCountedAsSales() {
+        val withShipping = quoteOf("PLA", 20.0, 10.0).copy(shippingCost = 15.0)
+
+        assertEquals(20.0, QuoteReport.summarize(listOf(withShipping)).totalSalePrice)
+    }
 }

@@ -9,7 +9,9 @@ import androidx.compose.ui.Modifier
  *
  * @param onDragActive `true` enquanto um arquivo está sendo arrastado por cima, `false` quando sai
  *   ou é solto — pra tela mostrar onde soltar.
- * @param onDrop o primeiro arquivo solto, já lido. Quem chama decide o que fazer com ele.
+ * @param onDrop o primeiro arquivo solto. Um G-code vem lido (grande, só pelas pontas, onde ficam os
+ *   metadados); outro tipo de arquivo vem só com o nome, sem ser lido, pra quem chama explicar o que
+ *   fazer com ele — ler um vídeo de vários GB arrastado por engano travaria o app.
  */
 @Composable
-expect fun Modifier.fileDropTarget(onDragActive: (Boolean) -> Unit, onDrop: (PickedFile) -> Unit): Modifier
+expect fun Modifier.fileDropTarget(onDragActive: (Boolean) -> Unit, onDrop: (PickResult) -> Unit): Modifier

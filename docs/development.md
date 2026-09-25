@@ -96,13 +96,13 @@ dela:
   (decisão 104): o formato dos dados mudou sem conversão, e a pasta antiga é
   guardada em `~/.3dreport-v1`.
 
-Ao fechar uma leva, atualize a versão **nos dois lugares** (fonte única
-mantida manualmente em sincronia, sem geração automática):
+Ao fechar uma leva, atualize a versão em **um lugar só**: `gradle.properties` →
+`appVersion`. A tarefa `generateAppVersion` do `composeApp` gera a constante
+`APP_VERSION` a partir dele a cada build (decisão 108; antes eram dois arquivos
+mantidos à mão).
 
-- `gradle.properties` → `appVersion`
-- [`composeApp/.../app/AppVersion.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/AppVersion.kt) → `APP_VERSION`
-
-A versão aparece no rodapé do app e no instalador nativo (`packageVersion`).
+A versão aparece no rodapé do app, na Ajuda, no diálogo de erro e no instalador
+nativo (`packageVersion`).
 
 ## Changelog
 
@@ -131,10 +131,11 @@ branch). Passo a passo:
    não crie/empurre a tag por conta própria.
 3. Com o aval:
    ```bash
-   git tag v1.0.0        # mesma versão do gradle.properties/AppVersion.kt
+   git tag v1.0.0        # mesma versão do appVersion em gradle.properties
    git push origin v1.0.0
    ```
-4. O workflow builda o `.deb` (Ubuntu), `.msi` (Windows) e `.dmg` (macOS) em
+4. O workflow builda o `.deb` (Ubuntu), `.msi` (Windows) e dois `.dmg` (macOS
+   Apple Silicon e Intel, com o sufixo no nome) em
    paralelo, um runner por SO — resolve a limitação de
    `packageDistributionForCurrentOS` sem precisar de máquina Windows/macOS
    própria — e junta os três num **GitHub Release em rascunho** (`draft`),
