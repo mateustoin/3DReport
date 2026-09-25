@@ -122,7 +122,10 @@ private fun runApp(container: AppContainer, notice: DataFolderNotice?) = applica
         Window(
             onCloseRequest = {
                 rememberWindowBounds(container, windowState)
-                if (flushBeforeClosing(container)) exitApplication()
+                if (flushBeforeClosing(container)) {
+                    ExitWatchdog.arm(exitDumpFile())
+                    exitApplication()
+                }
             },
             title = "3DReport",
             state = windowState,
@@ -201,6 +204,9 @@ private fun isOnSomeScreen(bounds: SavedWindowBounds): Boolean {
         !visible.isEmpty && visible.width >= 120 && bounds.width <= screen.width && bounds.height <= screen.height
     }
 }
+
+/** Onde o [ExitWatchdog] grava as pilhas das threads se o encerramento travar: junto do log. */
+internal fun exitDumpFile(): File = File(File(appDataDir(), LOGS_DIR_NAME), "encerramento-travado.txt")
 
 /**
  * Espera as gravações pendentes antes de fechar. Se alguma não der certo, pergunta: fechar assim perde

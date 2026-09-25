@@ -118,6 +118,10 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   decisão 116 (`8681a46c-4db6-3cbf-b285-250929ce61c5`, o mesmo valor que o
   jpackage já derivava de vendor+nome nas versões 1.x), pra instalar por
   cima em vez de duplicar ao atualizar.
+- Ao sair (fechar a janela ou depois de restaurar um backup), com tudo já
+  gravado, o `ExitWatchdog` força a saída se a JVM ainda estiver viva 10 s
+  depois, e grava as pilhas das threads em `logs/encerramento-travado.txt`
+  (decisão 117).
 - Padrão de apresentação: **MVVM**. Cada tela tem um estado (`data class`
   imutável), um `ViewModel` (Kotlin puro, sem `Composable`, expõe
   `StateFlow`) e um `*Screen` (`@Composable` que só observa o `ViewModel` e

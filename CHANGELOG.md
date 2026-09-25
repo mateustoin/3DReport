@@ -44,6 +44,8 @@ de volta pra `.3dreport`.
 
 ### Corrigido
 - Digitar o peso preenche o comprimento com duas casas ("16,76"), em vez de "16,764181".
+- **Fechar o app encerra de verdade.** Vez ou outra o processo continuava aberto sem janela depois de
+  fechar, e abrir de novo dizia que o 3DReport já estava aberto.
 
 ## [2.0.0] - 2026-09-25
 
