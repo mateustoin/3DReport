@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.services
 
+import com.threedreport.core.model.SavedQuote
+import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.ui.format.toRequiredDouble
 import com.threedreport.core.model.Service
@@ -13,7 +15,11 @@ import kotlin.uuid.Uuid
  * ViewModel da tela de Serviços: lista o catálogo e edita um item por vez
  * em [form] (nulo quando nenhum formulário está aberto).
  */
-class ServiceListViewModel(private val repository: ServiceRepository) {
+class ServiceListViewModel(
+    private val repository: ServiceRepository,
+    /** Pedidos e produtos salvos, pra saber quem usa cada serviço antes de excluir (decisão 115). */
+    val savedQuotes: StateFlow<List<SavedQuote>> = MutableStateFlow(emptyList()),
+) {
 
     val services: StateFlow<List<Service>> = repository.services
 
@@ -52,11 +58,21 @@ class ServiceListViewModel(private val repository: ServiceRepository) {
 
         result.fold(
             onSuccess = { service ->
-                if (current.id == null) repository.add(service) else repository.update(service)
+                val archived = repository.services.value.find { it.id == service.id }?.archived == true
+                if (current.id == null) repository.add(service) else repository.update(service.copy(archived = archived))
                 formState.value = null
             },
             onFailure = { formState.value = current.copy(errorMessage = it.message) },
         )
+    }
+
+    /** Quantos pedidos e produtos usam o serviço [id]. */
+    fun usageCount(id: String): Int = CatalogUsage.service(id, savedQuotes.value)
+
+    /** Arquiva (ou restaura) o serviço [id] (decisão 115). */
+    fun setArchived(id: String, archived: Boolean) {
+        val service = repository.services.value.find { it.id == id } ?: return
+        repository.update(service.copy(archived = archived))
     }
 
     fun delete(id: String) {

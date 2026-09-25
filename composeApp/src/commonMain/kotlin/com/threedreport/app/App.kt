@@ -140,9 +140,9 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val ordersViewModel = remember { newHistoryViewModel(QuoteKind.ORDER) }
     val catalogViewModel = remember { newHistoryViewModel(QuoteKind.PRODUCT) }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
-    val filamentListViewModel = remember { FilamentListViewModel(filamentRepository) }
+    val filamentListViewModel = remember { FilamentListViewModel(filamentRepository, historyRepository.savedQuotes) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, container.maintenance) }
-    val serviceListViewModel = remember { ServiceListViewModel(container.services) }
+    val serviceListViewModel = remember { ServiceListViewModel(container.services, historyRepository.savedQuotes) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
     val brandingViewModel = remember {
         BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value })
@@ -151,7 +151,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val themeViewModel = remember { ThemeViewModel(container.theme) }
     val currencyViewModel = remember { CurrencyViewModel(container.currency) }
     val backupViewModel = remember { BackupViewModel(container.backup, container.preferences, container.pendingWrites, scope = appScope) }
-    val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels) }
+    val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels, historyRepository.savedQuotes) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
     var draggingFile by remember { mutableStateOf(false) }

@@ -22,12 +22,15 @@ import kotlinx.serialization.Serializable
  * @property id identificador único, atribuído por quem cria o canal (UI).
  * @property name nome livre (ex.: "Shopee", "Cartão", "Pix").
  * @property feeRate fração descontada da venda (0,20 = 20%).
+ * @property archived arquivado (decisão 115): some das escolhas de um orçamento novo, mas continua no
+ *   cadastro pra quem já usou. Pedidos reabertos e produtos do catálogo continuam achando ele.
  */
 @Serializable
 data class SalesChannel(
     val id: String,
     val name: String,
     val feeRate: Double,
+    val archived: Boolean = false,
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }

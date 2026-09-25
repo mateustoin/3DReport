@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.settings
 
+import com.threedreport.core.model.SavedQuote
+import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
@@ -24,7 +26,11 @@ data class SalesChannelFormState(
 )
 
 /** Ver [SalesChannel] pro porquê de canal e forma de pagamento serem o mesmo campo. */
-class SalesChannelViewModel(private val repository: SalesChannelRepository) {
+class SalesChannelViewModel(
+    private val repository: SalesChannelRepository,
+    /** Pedidos e produtos salvos, pra saber quem usa cada canal antes de excluir (decisão 115). */
+    val savedQuotes: StateFlow<List<SavedQuote>> = MutableStateFlow(emptyList()),
+) {
 
     val channels: StateFlow<List<SalesChannel>> = repository.channels
 
@@ -68,11 +74,21 @@ class SalesChannelViewModel(private val repository: SalesChannelRepository) {
 
         formState.value = channel.fold(
             onSuccess = {
-                if (current.editingId != null) repository.update(it) else repository.add(it)
+                val archived = repository.channels.value.find { channel -> channel.id == it.id }?.archived == true
+                if (current.editingId != null) repository.update(it.copy(archived = archived)) else repository.add(it)
                 SalesChannelFormState()
             },
             onFailure = { current.copy(errorMessage = it.message) },
         )
+    }
+
+    /** Quantos pedidos e produtos usam o canal [id]. */
+    fun usageCount(id: String): Int = CatalogUsage.channel(id, savedQuotes.value)
+
+    /** Arquiva (ou restaura) o canal [id] (decisão 115). */
+    fun setArchived(id: String, archived: Boolean) {
+        val channel = repository.channels.value.find { it.id == id } ?: return
+        repository.update(channel.copy(archived = archived))
     }
 
     fun delete(id: String) {

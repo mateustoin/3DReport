@@ -208,7 +208,7 @@ class QuoteViewModel(
      */
     private fun PrintInput.withDefaultFilamentChosen(): PrintInput {
         if (filaments.size != 1 || filaments.single().filamentId != null) return this
-        val inStock = this@QuoteViewModel.filaments.value.firstOrNull { it.hasStockAvailable } ?: return this
+        val inStock = this@QuoteViewModel.filaments.value.firstOrNull { it.hasStockAvailable && !it.archived } ?: return this
         return copy(filaments = listOf(filaments.single().copy(filamentId = inStock.id)))
     }
 
@@ -226,7 +226,7 @@ class QuoteViewModel(
         val id = newId()
         inputState.update { input ->
             val last = input.prints.last()
-            val printerId = last.printerId ?: printers.value.firstOrNull()?.id
+            val printerId = last.printerId ?: printers.value.firstOrNull { !it.archived }?.id
             val rows = last.withDefaultFilamentChosen().filaments.map { FilamentInput(filamentId = it.filamentId, colorId = it.colorId, id = newId()) }
             input.copy(prints = input.prints + PrintInput(printerId = printerId, filaments = rows, id = id))
         }
@@ -403,7 +403,10 @@ class QuoteViewModel(
         // da mesa 3 não troca a foto que veio da mesa 1.
         val photoApplied = thumbnail != null &&
             (form.photo == null || (form.photoFromGCode && (photoGCodePrintId == printId || index == 0)))
-        val imported = GCodeImporter.apply(current, metadata, filaments.value, printers.value, photoApplied, ::newId)
+        // O G-code só escolhe entre o que não está arquivado (decisão 115).
+        val imported = GCodeImporter.apply(
+            current, metadata, filaments.value.filterNot { it.archived }, printers.value.filterNot { it.archived }, photoApplied, ::newId,
+        )
 
         if (photoApplied) {
             if (photoBeforeGCode == null) photoBeforeGCode = form
@@ -894,10 +897,11 @@ class QuoteViewModel(
             )
         }
         val missingServicePrice = selectedServices.size < input.selectedServices.size
-        val inStock = filaments.filter { it.hasStockAvailable }
+        // Arquivado não é escolhido sozinho (decisão 115); escolhido antes, continua valendo.
+        val inStock = filaments.filter { it.hasStockAvailable && !it.archived }
         val resolved = input.prints.map { print ->
             ResolvedPrint(
-                printer = if (print.printerId == null) printers.firstOrNull() else printers.find { it.id == print.printerId },
+                printer = if (print.printerId == null) printers.firstOrNull { !it.archived } else printers.find { it.id == print.printerId },
                 filaments = print.filaments.map { row ->
                     // Com uma linha só, nada escolhido ainda vale o primeiro filamento em estoque: é a tela
                     // de sempre. Numa peça multicolor, cada linha precisa de uma escolha de verdade.
@@ -1070,8 +1074,9 @@ class QuoteViewModel(
         input: QuoteInputState,
         channels: List<SalesChannel> = salesChannels.value,
     ): List<Pair<PrinterProfile, Quote>> {
-        if (printers.size < 2) return emptyList()
-        return printers.mapNotNull { printer ->
+        val candidates = printers.filterNot { it.archived }
+        if (candidates.size < 2) return emptyList()
+        return candidates.mapNotNull { printer ->
             val allOnThisPrinter = input.copy(prints = input.prints.map { it.copy(printerId = printer.id, missingPrinterName = null) })
             val result = calculate(filaments, listOf(printer), settings, services, allOnThisPrinter, channels)
             result.quote?.let { printer to it }

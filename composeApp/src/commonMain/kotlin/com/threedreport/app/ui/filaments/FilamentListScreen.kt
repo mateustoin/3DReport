@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.filaments
 
+import com.threedreport.app.ui.components.ArchivedSection
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.format.toInputText
 import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.FlowRow
@@ -60,18 +62,22 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
     ) {
         Text("Filamentos", style = MaterialTheme.typography.titleLarge)
 
-        if (filaments.isEmpty()) {
+        val (archived, active) = filaments.partition { it.archived }
+        if (active.isEmpty()) {
             EmptyState("Nenhum filamento cadastrado ainda. Cadastre o primeiro abaixo.")
         }
 
-        filaments.forEach { filament ->
+        val row: @Composable (Filament) -> Unit = { filament ->
             FilamentRow(
                 filament = filament,
                 onEdit = { viewModel.startEdit(filament) },
+                onArchiveToggle = { viewModel.setArchived(filament.id, !filament.archived) },
                 onDelete = { pendingDelete = filament },
                 onToggleColorInStock = { colorId -> viewModel.toggleColorInStock(filament.id, colorId) },
             )
         }
+        active.forEach { row(it) }
+        ArchivedSection(archived.size) { archived.forEach { row(it) } }
 
         val currentForm = form
         if (currentForm == null) {
@@ -91,12 +97,18 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
     }
 
     pendingDelete?.let { filament ->
-        ConfirmDialog(
+        DeleteOrArchiveDialog(
             title = "Excluir filamento?",
-            message = "\"${filament.name}\" sai da lista de filamentos. Pedidos e produtos já salvos guardam o próprio " +
+            what = "o filamento \"${filament.name}\"",
+            usageCount = viewModel.usageCount(filament.id),
+            deleteMessage = "\"${filament.name}\" sai da lista de filamentos. Pedidos e produtos já salvos guardam o próprio " +
                 "retrato e não mudam, mas um produto feito com ele só volta a ter o preço atualizado depois de você " +
                 "escolher outro filamento em \"Editar cálculo\".",
-            onConfirm = {
+            onArchive = if (filament.archived) null else ({
+                viewModel.setArchived(filament.id, true)
+                pendingDelete = null
+            }),
+            onDelete = {
                 viewModel.delete(filament.id)
                 pendingDelete = null
             },
@@ -109,6 +121,7 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
 private fun FilamentRow(
     filament: Filament,
     onEdit: () -> Unit,
+    onArchiveToggle: () -> Unit,
     onDelete: () -> Unit,
     onToggleColorInStock: (String) -> Unit,
 ) {
@@ -121,7 +134,11 @@ private fun FilamentRow(
             ) {
                 Column {
                     Text(
-                        filament.name + if (filament.hasStockAvailable) "" else " · esgotado",
+                        filament.name + when {
+                            filament.archived -> " · arquivado"
+                            filament.hasStockAvailable -> ""
+                            else -> " · esgotado"
+                        },
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
@@ -135,6 +152,7 @@ private fun FilamentRow(
                 }
                 Row {
                     TextButton(onClick = onEdit) { Text("Editar") }
+                    TextButton(onClick = onArchiveToggle) { Text(if (filament.archived) "Restaurar" else "Arquivar") }
                     TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
                 }
             }

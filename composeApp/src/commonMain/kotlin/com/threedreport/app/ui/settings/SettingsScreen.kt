@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.settings
 
+import com.threedreport.app.ui.components.ArchivedSection
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
@@ -350,28 +352,43 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
     )
 
     var pendingDelete by remember { mutableStateOf<SalesChannel?>(null) }
-    channels.forEach { channel ->
+    val (archived, active) = channels.partition { it.archived }
+    val row: @Composable (SalesChannel) -> Unit = { channel ->
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("${channel.name} · ${channel.feeRate.toPercentText()}", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "${channel.name} · ${channel.feeRate.toPercentText()}" + if (channel.archived) " · arquivado" else "",
+                style = MaterialTheme.typography.bodyMedium,
+            )
             TextButton(onClick = { viewModel.startEditing(channel) }) { Text("Editar") }
+            TextButton(onClick = { viewModel.setArchived(channel.id, !channel.archived) }) {
+                Text(if (channel.archived) "Restaurar" else "Arquivar")
+            }
             TextButton(onClick = { pendingDelete = channel }) {
                 Text("Excluir", color = MaterialTheme.colorScheme.error)
             }
         }
     }
+    active.forEach { row(it) }
+    ArchivedSection(archived.size) { archived.forEach { row(it) } }
     pendingDelete?.let { channel ->
-        ConfirmDialog(
+        DeleteOrArchiveDialog(
             title = "Excluir o canal \"${channel.name}\"?",
-            message = "Orçamentos já salvos continuam com a taxa que tinham. Produtos do catálogo desse canal " +
+            what = "o canal \"${channel.name}\"",
+            usageCount = viewModel.usageCount(channel.id),
+            deleteMessage = "Orçamentos já salvos continuam com a taxa que tinham. Produtos do catálogo desse canal " +
                 "passam a pedir um canal novo ao atualizar o preço.",
-            onConfirm = {
+            onArchive = if (channel.archived) null else ({
+                viewModel.setArchived(channel.id, true)
+                pendingDelete = null
+            }),
+            onDelete = {
                 viewModel.delete(channel.id)
                 pendingDelete = null
             },
             onDismiss = { pendingDelete = null },
         )
     }
-    if (channels.isEmpty()) {
+    if (active.isEmpty()) {
         Text(
             "Nenhum canal cadastrado: todo orçamento sai como venda direta, sem taxa.",
             style = MaterialTheme.typography.bodySmall,

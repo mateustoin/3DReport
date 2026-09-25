@@ -71,7 +71,8 @@ internal fun PrintsSection(
     currency: Currency,
 ) {
     val importing by viewModel.importing.collectAsState()
-    val inStock = allFilaments.filter { it.hasStockAvailable }
+    // Arquivado sai das escolhas (decisão 115); um já escolhido continua aparecendo, marcado.
+    val inStock = allFilaments.filter { it.hasStockAvailable && !it.archived }
 
     if (input.prints.size == 1) {
         val print = input.prints.single()
@@ -269,10 +270,10 @@ private fun PrintFields(
 
     LabeledDropdown(
         label = "Impressora",
-        items = printers,
+        items = printers.filter { !it.archived || it.id == resolved?.printer?.id },
         selected = resolved?.printer,
-        itemLabel = { it.name },
-        displayText = { it.name },
+        itemLabel = { it.name + if (it.archived) " (arquivada)" else "" },
+        displayText = { it.name + if (it.archived) " (arquivada)" else "" },
         onSelect = { viewModel.selectPrinter(it.id, print.id) },
         emptyText = print.missingPrinterName?.let { "$it (não cadastrada)" } ?: "Escolha a impressora",
     )
@@ -391,8 +392,8 @@ private fun FilamentRow(
                     label = if (multicolor) "Filamento $number" else "Filamento",
                     items = options,
                     selected = chosen,
-                    itemLabel = { "${it.name} · ${it.pricePerKg.toCurrencyText(currency)}/kg" + if (it.hasStockAvailable) "" else " (esgotado)" },
-                    displayText = { it.name + if (it.hasStockAvailable) "" else " (esgotado)" },
+                    itemLabel = { "${it.name} · ${it.pricePerKg.toCurrencyText(currency)}/kg" + it.availabilityMark() },
+                    displayText = { it.name + it.availabilityMark() },
                     onSelect = { viewModel.selectFilament(it.id, printId, row.id) },
                     emptyText = row.missingFilamentName?.let { "$it (não cadastrado)" } ?: "Escolha o filamento",
                 )
@@ -444,4 +445,11 @@ private fun FilamentRow(
             filament == null -> FieldHelp("Escolha o filamento pra digitar o peso em gramas: a conversão usa a densidade dele.")
         }
     }
+}
+
+/** " (arquivado)" ou " (esgotado)" ao lado do nome, quando é o caso. */
+private fun Filament.availabilityMark(): String = when {
+    archived -> " (arquivado)"
+    hasStockAvailable -> ""
+    else -> " (esgotado)"
 }

@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.services
 
+import com.threedreport.app.ui.components.ArchivedSection
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,17 +52,21 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
             style = MaterialTheme.typography.bodySmall,
         )
 
-        if (services.isEmpty()) {
+        val (archived, active) = services.partition { it.archived }
+        if (active.isEmpty()) {
             EmptyState("Nenhum serviço cadastrado ainda. Cadastre o primeiro abaixo.")
         }
 
-        services.forEach { service ->
+        val row: @Composable (Service) -> Unit = { service ->
             ServiceRow(
                 service = service,
                 onEdit = { viewModel.startEdit(service) },
+                onArchiveToggle = { viewModel.setArchived(service.id, !service.archived) },
                 onDelete = { pendingDelete = service },
             )
         }
+        active.forEach { row(it) }
+        ArchivedSection(archived.size) { archived.forEach { row(it) } }
 
         val currentForm = form
         if (currentForm == null) {
@@ -77,10 +83,16 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
     }
 
     pendingDelete?.let { service ->
-        ConfirmDialog(
+        DeleteOrArchiveDialog(
             title = "Excluir serviço?",
-            message = "\"${service.name}\" será removido do catálogo. Essa ação não pode ser desfeita.",
-            onConfirm = {
+            what = "o serviço \"${service.name}\"",
+            usageCount = viewModel.usageCount(service.id),
+            deleteMessage = "\"${service.name}\" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.",
+            onArchive = if (service.archived) null else ({
+                viewModel.setArchived(service.id, true)
+                pendingDelete = null
+            }),
+            onDelete = {
                 viewModel.delete(service.id)
                 pendingDelete = null
             },
@@ -90,7 +102,7 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
 }
 
 @Composable
-private fun ServiceRow(service: Service, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun ServiceRow(service: Service, onEdit: () -> Unit, onArchiveToggle: () -> Unit, onDelete: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -98,12 +110,13 @@ private fun ServiceRow(service: Service, onEdit: () -> Unit, onDelete: () -> Uni
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(service.name, style = MaterialTheme.typography.titleMedium)
+                Text(service.name + if (service.archived) " · arquivado" else "", style = MaterialTheme.typography.titleMedium)
                 val details = listOfNotNull(chargeLabel(service.chargedPerOrder), service.suggestedPrice?.let { "sugerido ${it.toMoney()}" })
                 Text(details.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
             }
             Row {
                 TextButton(onClick = onEdit) { Text("Editar") }
+                TextButton(onClick = onArchiveToggle) { Text(if (service.archived) "Restaurar" else "Arquivar") }
                 TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
             }
         }

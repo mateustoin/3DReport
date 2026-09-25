@@ -326,9 +326,10 @@ private fun QuoteInputs(
     // Serviço marcado num orçamento reaberto que já saiu do catálogo continua aparecendo, pra não
     // sumir do pedido ao salvar de novo.
     val orphanServices = input.selectedServices.filterKeys { id -> services.none { it.id == id } }
-    if (services.isNotEmpty() || orphanServices.isNotEmpty()) {
+    val offeredServices = services.filter { !it.archived || it.id in input.selectedServices }
+    if (offeredServices.isNotEmpty() || orphanServices.isNotEmpty()) {
         SectionTitle(AppIcons.Handyman, "Serviços opcionais")
-        services.forEach { service ->
+        offeredServices.forEach { service ->
             ServiceRow(
                 viewModel = viewModel,
                 id = service.id,
@@ -347,10 +348,11 @@ private fun QuoteInputs(
     SectionTitle(AppIcons.Storefront, "A venda")
     // Com o canal do orçamento excluído, o seletor aparece mesmo sem canais cadastrados: é nele que se
     // escolhe "Venda direta" pra liberar o cálculo.
-    if (salesChannels.isNotEmpty() || input.missingChannelName != null) {
+    val offeredChannels = salesChannels.filter { !it.archived || it.id == input.salesChannelId }
+    if (offeredChannels.isNotEmpty() || input.missingChannelName != null) {
         LabeledDropdown(
             label = "Canal de venda",
-            items = listOf(null) + salesChannels,
+            items = listOf(null) + offeredChannels,
             selected = result.salesChannel,
             itemLabel = { it?.let { channel -> "${channel.name} · ${channel.feeRate.toPercentText()}" } ?: DIRECT_SALE_LABEL },
             displayText = { it?.name ?: DIRECT_SALE_LABEL },

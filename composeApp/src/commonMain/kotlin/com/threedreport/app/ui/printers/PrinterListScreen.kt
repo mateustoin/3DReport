@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.printers
 
+import com.threedreport.app.ui.components.ArchivedSection
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,20 +57,24 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
     ) {
         Text("Impressoras", style = MaterialTheme.typography.titleLarge)
 
-        if (printers.isEmpty()) {
+        val (archived, active) = printers.partition { it.archived }
+        if (active.isEmpty()) {
             EmptyState("Nenhuma impressora cadastrada ainda. Cadastre a primeira abaixo.")
         }
 
-        printers.forEach { printer ->
+        val row: @Composable (PrinterProfile) -> Unit = { printer ->
             PrinterRow(
                 printer = printer,
                 queueEntry = queueByPrinterId[printer.id],
                 maintenanceStatuses = viewModel.componentStatuses(printer.id, savedQuotes, maintenance),
                 onMaintenance = { maintenanceFor = printer },
                 onEdit = { viewModel.startEdit(printer) },
+                onArchiveToggle = { viewModel.setArchived(printer.id, !printer.archived) },
                 onDelete = { pendingDelete = printer },
             )
         }
+        active.forEach { row(it) }
+        ArchivedSection(archived.size) { archived.forEach { row(it) } }
 
         val currentForm = form
         if (currentForm == null) {
@@ -88,11 +94,17 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
     }
 
     pendingDelete?.let { printer ->
-        ConfirmDialog(
+        DeleteOrArchiveDialog(
             title = "Excluir impressora?",
-            message = "\"${printer.name}\" será removida do catálogo, junto com os componentes, o diário de manutenção " +
+            what = "a impressora \"${printer.name}\"",
+            usageCount = viewModel.usageCount(printer.id),
+            deleteMessage = "\"${printer.name}\" será removida do catálogo, junto com os componentes, o diário de manutenção " +
                 "e as horas avulsas dela. Essa ação não pode ser desfeita.",
-            onConfirm = {
+            onArchive = if (printer.archived) null else ({
+                viewModel.setArchived(printer.id, true)
+                pendingDelete = null
+            }),
+            onDelete = {
                 viewModel.delete(printer.id)
                 pendingDelete = null
             },
@@ -122,6 +134,7 @@ private fun PrinterRow(
     maintenanceStatuses: List<ComponentStatus>,
     onMaintenance: () -> Unit,
     onEdit: () -> Unit,
+    onArchiveToggle: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -131,7 +144,7 @@ private fun PrinterRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(printer.name, style = MaterialTheme.typography.titleMedium)
+                Text(printer.name + if (printer.archived) " · arquivada" else "", style = MaterialTheme.typography.titleMedium)
                 Text(
                     "${printer.printerPowerWatts.toInt()} W · manutenção ${printer.maintenanceCostPerHour.toMoney()}/h · " +
                         "máquina ${printer.machineInvestment.machinePrice.toMoney()}",
@@ -151,6 +164,7 @@ private fun PrinterRow(
             Row {
                 TextButton(onClick = onMaintenance) { Text("Manutenção") }
                 TextButton(onClick = onEdit) { Text("Editar") }
+                TextButton(onClick = onArchiveToggle) { Text(if (printer.archived) "Restaurar" else "Arquivar") }
                 TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
             }
         }
