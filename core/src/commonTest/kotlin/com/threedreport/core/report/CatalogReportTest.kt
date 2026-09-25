@@ -1,6 +1,7 @@
 package com.threedreport.core.report
 
-import com.threedreport.core.model.CostBreakdown
+import com.threedreport.core.costsOf
+import com.threedreport.core.quotedPrint
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
@@ -19,10 +20,8 @@ class CatalogReportTest {
         id = name,
         name = name,
         quote = Quote(
-            job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = minutes),
-            filamentWeightGrams = 5.0,
-            costs = CostBreakdown(cost, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            productionCost = cost,
+            prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = minutes))),
+            costs = costsOf(cost),
             salePrice = salePrice,
             quantity = quantity,
         ),

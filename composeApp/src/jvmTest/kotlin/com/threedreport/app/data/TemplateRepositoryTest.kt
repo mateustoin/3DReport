@@ -30,22 +30,22 @@ class TemplateRepositoryTest {
     @Test
     fun addedTemplateSurvivesNewRepositoryInstance() {
         val original = TemplateRepository()
-        original.add(QuoteTemplate(id = "formal", name = "Formal", watermarkText = "Minha Loja"))
+        original.add(QuoteTemplate(id = "formal", name = "Formal", brandName = "Minha Loja"))
 
         val reloaded = TemplateRepository().templates.value
-        assertTrue(reloaded.any { it.id == "formal" && it.name == "Formal" && it.watermarkText == "Minha Loja" })
+        assertTrue(reloaded.any { it.id == "formal" && it.name == "Formal" && it.brandName == "Minha Loja" })
     }
 
     @Test
     fun updatePersistsChange() {
         val repository = TemplateRepository()
-        repository.add(QuoteTemplate(id = "formal", name = "Formal", watermarkText = "Minha Loja"))
+        repository.add(QuoteTemplate(id = "formal", name = "Formal", brandName = "Minha Loja"))
         val template = repository.templates.value.first()
 
-        repository.update(template.copy(watermarkText = "Outra Marca"))
+        repository.update(template.copy(brandName = "Outra Marca"))
 
         val reloaded = TemplateRepository().templates.value.first { it.id == template.id }
-        assertEquals("Outra Marca", reloaded.watermarkText)
+        assertEquals("Outra Marca", reloaded.brandName)
     }
 
     @Test

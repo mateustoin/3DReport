@@ -4,6 +4,7 @@ import com.threedreport.app.APP_VERSION
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -75,6 +76,20 @@ actual class BackupRepository actual constructor() {
             staging.deleteRecursively()
             return RestoreResult.Failure("Esse arquivo não parece ser um backup do 3DReport. Nada foi alterado.")
         }
+        // Um backup de outro formato de dados não abriria aqui (decisão 104): restaurar só trocaria os
+        // dados atuais por arquivos que o app não lê.
+        val backupFormat = dataFormatVersionOf(manifest)
+        if (backupFormat != DATA_FORMAT_VERSION) {
+            staging.deleteRecursively()
+            return RestoreResult.Failure(
+                if (backupFormat == null || backupFormat < DATA_FORMAT_VERSION) {
+                    "Esse backup é de uma versão com formato de dados anterior (1.x) e não abre nesta. " +
+                        "Abra com a versão em que ele foi feito. Nada foi alterado."
+                } else {
+                    "Esse backup é de uma versão mais nova do 3DReport. Atualize o app pra restaurar. Nada foi alterado."
+                },
+            )
+        }
         manifest.delete()
 
         if (dataDir.exists() && !dataDir.renameTo(previous)) {
@@ -122,6 +137,7 @@ actual class BackupRepository actual constructor() {
         buildJsonObject {
             put("app", MANIFEST_APP_NAME)
             put("appVersion", APP_VERSION)
+            put("dataFormatVersion", DATA_FORMAT_VERSION)
             put("createdAtEpochMillis", System.currentTimeMillis())
         },
     )
@@ -133,6 +149,10 @@ actual class BackupRepository actual constructor() {
         }.getOrNull()
         return app == MANIFEST_APP_NAME
     }
+
+    private fun dataFormatVersionOf(manifestFile: File): Int? = runCatching {
+        manifestJson.parseToJsonElement(manifestFile.readText()).jsonObject["dataFormatVersion"]?.jsonPrimitive?.int
+    }.getOrNull()
 
     private fun timestamp(): String =
         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss"))

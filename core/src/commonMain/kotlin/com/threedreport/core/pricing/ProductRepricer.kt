@@ -29,9 +29,9 @@ sealed interface RepriceResult {
  * congelado (KDoc de [SavedQuote]), e isso está certo pra venda; o produto é vitrine e precisa
  * acompanhar o filamento que subiu e a hora de trabalho que mudou.
  *
- * Função pura, no estilo do [PricingCalculator]: acha o filamento, a impressora e o canal pelo que
- * o produto guardou e refaz a conta com as mesmas quantidades (comprimento, tempo, quantidade,
- * tempo de trabalho e cor). O preço anunciado (o preço fechado da decisão 84, guardado como
+ * Função pura, no estilo do [PricingCalculator]: acha cada filamento e cada impressora de cada
+ * impressão, e o canal, pelo id que o produto guardou, e refaz a conta com as mesmas quantidades
+ * (comprimentos, tempos, rodadas, quantidade, tempo de trabalho e cores). O preço anunciado (o preço fechado da decisão 84, guardado como
  * [Quote.salePrice] com o calculado em [Quote.tableSalePrice]) continua o mesmo: mudar o que se
  * anuncia é decisão de quem vende, não do app.
  */
@@ -48,25 +48,28 @@ object ProductRepricer {
         channels: List<SalesChannel>,
     ): RepriceResult {
         val quote = saved.quote
-        val job = quote.job
-        val filament = filaments.firstOrNull { it.id == job.filament.id }
-            ?: return RepriceResult.Unavailable(RepriceResult.Reason.FILAMENT_MISSING, job.filament.name)
-        // Orçamento salvo antes de `printerId` existir não tem como saber qual impressora usou.
-        val printer = printers.firstOrNull { it.id == quote.printerId }
-            ?: return RepriceResult.Unavailable(RepriceResult.Reason.PRINTER_MISSING, quote.printerName)
-        val channel = quote.channelName?.let { name ->
-            channels.firstOrNull { it.name == name }
-                ?: return RepriceResult.Unavailable(RepriceResult.Reason.CHANNEL_MISSING, name)
+        val prints = quote.prints.map { print ->
+            val printer = printers.firstOrNull { it.id == print.printerId }
+                ?: return RepriceResult.Unavailable(RepriceResult.Reason.PRINTER_MISSING, print.printerName)
+            val usages = print.job.filaments.map { usage ->
+                val filament = filaments.firstOrNull { it.id == usage.filament.id }
+                    ?: return RepriceResult.Unavailable(RepriceResult.Reason.FILAMENT_MISSING, usage.filament.name)
+                usage.copy(filament = filament)
+            }
+            print.job.copy(filaments = usages) to printer
+        }
+        val channel = quote.channelId?.let { id ->
+            channels.firstOrNull { it.id == id }
+                ?: return RepriceResult.Unavailable(RepriceResult.Reason.CHANNEL_MISSING, quote.channelName)
         }
 
         val repriced = runCatching {
             PricingCalculator.calculate(
-                job = job.copy(filament = filament),
-                printer = printer,
+                prints = prints,
                 settings = settings,
                 channel = channel,
                 quantity = quote.quantity,
-                setupMinutes = quote.setupMinutes,
+                laborMinutes = quote.laborMinutes,
                 negotiatedSalePrice = if (quote.isNegotiated) quote.salePrice else null,
             )
         }.getOrElse { return RepriceResult.Unavailable(RepriceResult.Reason.INVALID, it.message) }

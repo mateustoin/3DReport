@@ -9,11 +9,9 @@ import kotlinx.serialization.Serializable
  * orçamento, ver [Quote]), e não de uma unidade. Não são arredondados;
  * arredonde apenas na exibição.
  *
- * @property labor seu tempo de trabalho: o de cada peça (ver
- *   [PrintJob.laborMinutes]) multiplicado pela quantidade, mais o preparo
- *   cobrado uma vez pelo pedido (ver [Quote.setupMinutes]). `0.0` em orçamentos
- *   salvos antes deste campo existir e para quem não configurou taxa de mão de obra.
- * @property fixedCost parcela do custo fixo mensal do negócio que esta peça paga, proporcional às
+ * @property labor seu tempo de trabalho no pedido (ver [Quote.laborMinutes]), cobrado uma vez.
+ *   Zero para quem não configurou taxa de mão de obra.
+ * @property fixedCost parcela do custo fixo mensal do negócio que este pedido paga, proporcional às
  *   horas de impressão (ver [PricingSettings.fixedCostPerHour]).
  * @property finishing acabamento como percentual do material (ver [PricingSettings.finishingRate]).
  *   Soma junto com [labor]; quem cobra lixar e pintar em minutos deixa a taxa em zero.
@@ -29,8 +27,8 @@ data class CostBreakdown(
     val finishing: Double,
     val investmentReturn: Double,
     val administrative: Double,
-    val labor: Double = 0.0,
-    val fixedCost: Double = 0.0,
+    val labor: Double,
+    val fixedCost: Double,
 ) {
     /** Soma de todos os custos: o valor de produção. */
     val total: Double
@@ -39,80 +37,123 @@ data class CostBreakdown(
 }
 
 /**
+ * O que uma impressão custa por conta própria: material e máquina. Já multiplicado pelos
+ * [PrintJob.runs] e pela [Quote.quantity]. O que é do pedido (trabalho, administrativo, falha)
+ * não é dividido entre as impressões e só aparece em [Quote.costs].
+ */
+@Serializable
+data class PrintCost(
+    val material: Double,
+    val energy: Double,
+    val maintenance: Double,
+    val finishing: Double,
+    val investmentReturn: Double,
+    val fixedCost: Double,
+) {
+    val total: Double
+        get() = material + energy + maintenance + finishing + investmentReturn + fixedCost
+}
+
+/**
+ * Retrato de uma impressão dentro de um orçamento: o que foi impresso, em qual impressora e quanto
+ * custou. Congelado junto com o [Quote], como o resto do orçamento salvo.
+ *
+ * @property printerId/[printerName] a impressora usada no cálculo. O nome fica guardado à parte
+ *   porque o perfil pode ser editado ou excluído do catálogo depois.
+ */
+@Serializable
+data class QuotedPrint(
+    val job: PrintJob,
+    val printerId: String,
+    val printerName: String,
+    val cost: PrintCost,
+)
+
+/** Quanto de um filamento (numa cor) o pedido inteiro consome, pra conferir no estoque. */
+data class FilamentTotal(val filament: Filament, val color: FilamentColor?, val weightGrams: Double)
+
+/**
  * Resultado de um orçamento.
  *
  * **Todos os valores em dinheiro e de massa aqui são do pedido inteiro**, já
- * multiplicados por [quantity] — é o que o cliente paga e o que sai do seu
+ * multiplicados por [quantity]: é o que o cliente paga e o que sai do seu
  * carretel. O preço de uma unidade é [unitSalePrice]. O que continua sendo
- * "de uma peça só" é o [job] (comprimento, tempo e minutos de trabalho por
- * unidade), porque é assim que o fatiador informa.
+ * "de uma rodada só" é cada [PrintJob] (comprimento e tempo), porque é assim
+ * que o fatiador informa.
  *
- * @property job peça orçada (dados de **uma** unidade).
- * @property quantity quantas peças iguais este orçamento cobre.
- * @property setupMinutes minutos de trabalho cobrados **uma vez** pelo pedido
- *   inteiro, independente de [quantity]. O app grava aqui o tempo de trabalho
- *   total do pedido, que é como quem vende pensa (decisão 94), e deixa
- *   [PrintJob.laborMinutes] em zero. Orçamentos anteriores podem ter os dois
- *   (ver [totalLaborMinutes]). O nome ficou pra não quebrar o histórico salvo.
- * @property filamentWeightGrams massa estimada de filamento do pedido
- *   inteiro, em gramas.
+ * @property prints as impressões do pedido, na ordem da tela. Nunca vazia.
+ * @property quantity quantos pedidos iguais este orçamento cobre.
+ * @property laborMinutes todo o seu tempo de trabalho no pedido, em minutos, cobrado **uma vez**
+ *   independente de [quantity] e de quantas impressões houver (decisão 94).
  * @property costs detalhamento dos custos do pedido inteiro.
- * @property productionCost valor de produção do pedido (= [CostBreakdown.total]).
  * @property salePrice valor de venda (= produção · (1 + margem), já ajustado
- *   pra compensar [marketplaceFeeRate] quando aplicável — é o preço de fato
+ *   pra compensar [channelFeeRate] e [taxRate] quando aplicável: é o preço de fato
  *   cobrado do cliente, o marketplace não aparece pra ele).
- * @property marketplaceFeeRate taxa do canal de venda escolhido (ver
- *   [SalesChannel]) já embutida em [salePrice] (`0.0` na venda direta). O
- *   nome do campo é o antigo de propósito: renomear faria orçamentos já
- *   salvos perderem a taxa e passarem a exibir um lucro maior do que o real.
- * @property channelName nome do canal usado, guardado à parte porque o
- *   catálogo pode mudar depois (mesmo motivo de [printerName]). `null` em
- *   venda direta e em orçamentos salvos antes deste campo existir.
+ * @property channelId/[channelName] canal de venda usado (ver [SalesChannel]), `null` na venda
+ *   direta. O nome fica guardado à parte, como o da impressora.
+ * @property channelFeeRate taxa do canal já embutida em [salePrice] (`0.0` na venda direta).
  * @property taxRate imposto sobre a venda já embutido em [salePrice]
  *   (ver [PricingSettings.taxRate]).
- * @property printerId/[printerName] identificam a impressora usada no
- *   cálculo (nome guardado à parte porque o perfil pode ser editado/
- *   excluído do catálogo depois) — uso interno, principalmente pra
- *   conseguir reabrir um orçamento salvo pra edição já com a mesma
- *   impressora selecionada. `null` em orçamentos salvos antes desse campo
- *   existir.
  * @property tableSalePrice valor de venda que a margem configurada daria,
  *   guardado **só quando o preço foi negociado** com o cliente (aí
- *   [salePrice] é o preço fechado). `null` quando não houve negociação e em
- *   orçamentos salvos antes deste campo existir. Uso interno: nunca entra
+ *   [salePrice] é o preço fechado). `null` quando não houve negociação. Uso interno: nunca entra
  *   em nenhum export.
  */
 @Serializable
 data class Quote(
-    val job: PrintJob,
-    val filamentWeightGrams: Double,
+    val prints: List<QuotedPrint>,
     val costs: CostBreakdown,
-    val productionCost: Double,
     val salePrice: Double,
-    val marketplaceFeeRate: Double = 0.0,
-    val printerId: String? = null,
-    val printerName: String? = null,
     val quantity: Int = 1,
-    val setupMinutes: Double = 0.0,
+    val laborMinutes: Double = 0.0,
+    val channelId: String? = null,
     val channelName: String? = null,
+    val channelFeeRate: Double = 0.0,
     val taxRate: Double = 0.0,
     val tableSalePrice: Double? = null,
 ) {
     init {
+        require(prints.isNotEmpty()) { "um orçamento precisa de pelo menos uma impressão" }
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
-        require(setupMinutes >= 0) { "setupMinutes não pode ser negativo: $setupMinutes" }
+        require(laborMinutes >= 0) { "laborMinutes não pode ser negativo: $laborMinutes" }
     }
 
+    /** Valor de produção do pedido (= [CostBreakdown.total]). */
+    val productionCost: Double
+        get() = costs.total
+
+    /** Massa de filamento do pedido inteiro, em gramas: todas as impressões, rodadas e unidades. */
+    val filamentWeightGrams: Double
+        get() = prints.sumOf { it.job.weightGrams * it.job.runs } * quantity
+
+    /** Tempo de máquina do pedido inteiro, em minutos, somando todas as impressoras. */
+    val totalPrintTimeMinutes: Double
+        get() = prints.sumOf { it.job.printTimeMinutes * it.job.runs } * quantity
+
+    /** Impressoras que este pedido ocupa. */
+    val printerIds: Set<String>
+        get() = prints.mapTo(linkedSetOf()) { it.printerId }
+
+    /** Tempo de máquina do pedido inteiro em [printerId], em minutos (zero se não usa ela). */
+    fun printMinutesOn(printerId: String): Double =
+        prints.filter { it.printerId == printerId }.sumOf { it.job.printTimeMinutes * it.job.runs } * quantity
+
     /**
-     * Todo o seu tempo de trabalho no pedido, em minutos: o de cada peça vezes a quantidade mais o
-     * cobrado uma vez pelo pedido. É o número que a tela mostra num campo só (decisão 94).
+     * Consumo do pedido inteiro por filamento e cor, na ordem em que aparecem ("PLA preto 320 g,
+     * PETG cinza 80 g"). O mesmo filamento na mesma cor em impressões diferentes vira uma linha só.
      */
-    val totalLaborMinutes: Double
-        get() = job.laborMinutes * quantity + setupMinutes
+    fun filamentTotals(): List<FilamentTotal> =
+        prints.flatMap { print -> print.job.filaments.map { usage -> usage to print.job.runs } }
+            .groupBy { (usage, _) -> usage.filament.id to usage.color?.id }
+            .values
+            .map { group ->
+                val (first, _) = group.first()
+                FilamentTotal(first.filament, first.color, group.sumOf { (usage, runs) -> usage.weightGrams * runs } * quantity)
+            }
 
     /** Tudo que é descontado da venda antes de o dinheiro chegar em você. */
     val totalDeductionRate: Double
-        get() = marketplaceFeeRate + taxRate
+        get() = channelFeeRate + taxRate
 
     /**
      * Lucro líquido real do pedido: o que sobra depois de canal e imposto

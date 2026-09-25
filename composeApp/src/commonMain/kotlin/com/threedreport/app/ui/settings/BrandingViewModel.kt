@@ -15,8 +15,10 @@ import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,7 +53,7 @@ class BrandingViewModel(
     private fun edit(transform: (BrandingUiState) -> BrandingUiState) =
         state.update { transform(it).copy(errorMessage = null, savedConfirmation = false) }
 
-    fun update(text: String) = edit { it.copy(watermarkTextInput = text) }
+    fun update(text: String) = edit { it.copy(brandNameInput = text) }
     fun setShowWatermark(show: Boolean) = edit { it.copy(showWatermark = show) }
     fun setShowFooter(show: Boolean) = edit { it.copy(showFooter = show) }
     fun setShowPrintTime(show: Boolean) = edit { it.copy(showPrintTime = show) }
@@ -107,7 +109,7 @@ class BrandingViewModel(
         val branding = current.toSettings().resolvePdfBranding(current.logoBytes)
         val pdf = renderSavedQuotesPdf(
             items = listOf(QuoteExportItem(sampleQuote(), photoBytes = null)),
-            watermarkText = branding.watermarkText,
+            brandName = branding.brandName,
             footerText = branding.footerText,
             currency = currency(),
             options = branding.options,
@@ -151,7 +153,7 @@ class BrandingViewModel(
                     QuoteTemplate(
                         id = Uuid.random().toString(),
                         name = name,
-                        watermarkText = settings.watermarkText,
+                        brandName = settings.brandName,
                         showWatermark = settings.showWatermark,
                         showFooter = settings.showFooter,
                         showPrintTime = settings.showPrintTime,
@@ -172,7 +174,7 @@ class BrandingViewModel(
 
 /** O formulário como [BrandingSettings], sem validar. A logo não entra aqui (ver [BrandingRepository.update]). */
 private fun BrandingUiState.toSettings() = BrandingSettings(
-    watermarkText = watermarkTextInput.trim().ifEmpty { null },
+    brandName = brandNameInput.trim().ifEmpty { null },
     showWatermark = showWatermark,
     showFooter = showFooter,
     showPrintTime = showPrintTime,
@@ -189,14 +191,14 @@ private fun BrandingUiState.toSettings() = BrandingSettings(
 private fun BrandingUiState.toSettingsOrError(): Result<BrandingSettings> {
     val settings = toSettings()
     val hasHeader = logoBytes != null || settings.contactLines.isNotEmpty()
-    if (settings.watermarkText != null && !showWatermark && !showFooter && !hasHeader) {
+    if (settings.brandName != null && !showWatermark && !showFooter && !hasHeader) {
         return Result.failure(IllegalStateException("Selecione ao menos uma opção: marca d'água ou rodapé."))
     }
     return Result.success(settings)
 }
 
 private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
-    watermarkTextInput = watermarkText.orEmpty(),
+    brandNameInput = brandName.orEmpty(),
     showWatermark = showWatermark,
     showFooter = showFooter,
     showPrintTime = showPrintTime,
@@ -215,14 +217,19 @@ private fun sampleQuote() = SavedQuote(
     id = "preview",
     name = "Exemplo: suporte de celular",
     quote = Quote(
-        job = PrintJob(
-            filament = Filament(id = "preview", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
-            filamentLengthMeters = 12.0,
-            printTimeMinutes = 190.0,
+        prints = listOf(
+            QuotedPrint(
+                job = PrintJob(
+                    filament = Filament(id = "preview", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
+                    filamentLengthMeters = 12.0,
+                    printTimeMinutes = 190.0,
+                ),
+                printerId = "preview",
+                printerName = "Impressora",
+                cost = PrintCost(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            ),
         ),
-        filamentWeightGrams = 35.8,
-        costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-        productionCost = 0.0,
+        costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
         salePrice = 45.0,
     ),
     savedAtEpochMillis = 0L,

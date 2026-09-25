@@ -16,7 +16,7 @@ sealed interface LogoChange {
  * contato e as opções de apresentação do PDF.
  *
  * A implementação persiste em disco (ver `actual` na fonte de cada
- * plataforma), começando sem marca d'água (`watermarkText = null`). A logo
+ * plataforma), começando sem marca d'água (`brandName = null`). A logo
  * fica como arquivo à parte dentro da pasta de dados, então entra no backup
  * sem nenhum tratamento especial.
  */

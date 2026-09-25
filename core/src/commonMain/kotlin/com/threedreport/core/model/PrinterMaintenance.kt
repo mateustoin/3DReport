@@ -43,7 +43,7 @@ data class MaintenanceComponent(
  * @property previousHoursAtLastService onde o contador de [componentId] estava antes desta
  *   manutenção zerá-lo. É o que permite desfazer: excluir a entrada mais recente de um componente
  *   devolve o contador a esse valor, então um "Feito hoje" clicado por engano não apaga as horas
- *   acumuladas. `null` sem componente e em entradas gravadas antes deste campo existir.
+ *   acumuladas. `null` sem componente.
  */
 @Serializable
 data class MaintenanceLogEntry(

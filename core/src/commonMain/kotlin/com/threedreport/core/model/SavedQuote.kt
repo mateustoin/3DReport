@@ -53,10 +53,8 @@ import kotlinx.serialization.Serializable
  *   conforme o fuso). Ao contrário de [client]/[sourceLink], **entra nos exports** (PDF, imagem,
  *   copiar/colar): é informação pro cliente, e não custo nem margem (decisão 19). Data fixa, e não
  *   "N dias após aprovar", porque cada vendedor conta prazo de um jeito; em troca, envelhece, e é
- *   por isso que duplicar um orçamento não copia a data. `null` quando não há prazo, inclusive em
- *   orçamentos salvos antes deste campo existir.
- * @property kind se é pedido ou produto do catálogo (decisão 101). Padrão [QuoteKind.ORDER], então
- *   todo orçamento salvo antes deste campo existir continua pedido. Produto guarda [client],
+ *   por isso que duplicar um orçamento não copia a data. `null` quando não há prazo.
+ * @property kind se é pedido ou produto do catálogo (decisão 101). Produto guarda [client],
  *   [shippingCost] e [deliveryDateEpochDay] vazios e ignora [status]; quem decide o que conta como
  *   pedido é [isOrder].
  * @property sourceProductId `id` do produto de onde este pedido nasceu pelo "Vender", ou `null`.
@@ -121,9 +119,9 @@ data class SavedQuote(
     val clientDiscount: Double
         get() = if (isNegotiatedWithClient) quote.negotiatedDiscount else 0.0
 
-    /** Tempo de máquina do pedido inteiro: o de uma peça vezes a quantidade (mesma conta da fila de impressão). */
+    /** Tempo de máquina do pedido inteiro, somando todas as impressões (ver [Quote.totalPrintTimeMinutes]). */
     val totalPrintTimeMinutes: Double
-        get() = quote.job.printTimeMinutes * quote.quantity
+        get() = quote.totalPrintTimeMinutes
 
     /**
      * Se o prazo já passou em [todayEpochDay] sem o pedido ter sido entregue. Um orçamento ainda

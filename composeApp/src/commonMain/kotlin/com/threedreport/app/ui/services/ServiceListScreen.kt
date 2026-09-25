@@ -99,7 +99,7 @@ private fun ServiceRow(service: Service, onEdit: () -> Unit, onDelete: () -> Uni
         ) {
             Column {
                 Text(service.name, style = MaterialTheme.typography.titleMedium)
-                val details = listOfNotNull(chargeLabel(service.chargedPerOrder), service.price?.let { "sugerido ${it.toMoney()}" })
+                val details = listOfNotNull(chargeLabel(service.chargedPerOrder), service.suggestedPrice?.let { "sugerido ${it.toMoney()}" })
                 Text(details.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
             }
             Row {

@@ -7,18 +7,21 @@ import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.QuoteService
 
+/** O filamento e a cor que uma linha de fato usa (com o padrão aplicado quando nada foi escolhido). */
+data class ResolvedFilament(val filament: Filament?, val color: FilamentColor?)
+
+/** A impressora e os filamentos que uma impressão de fato usa, pra os seletores da tela. */
+data class ResolvedPrint(val printer: PrinterProfile?, val filaments: List<ResolvedFilament>)
+
 /**
  * Resultado derivado de [QuoteInputState] + os catálogos/configurações atuais.
- * [filament]/[printer] são os itens efetivamente usados (com fallback para o
- * primeiro do catálogo quando nada foi escolhido ainda), para exibição nos
- * dropdowns mesmo antes do cálculo estar completo. [selectedServices] são os
+ * [prints] traz, pra cada impressão, a impressora e os filamentos efetivamente
+ * usados, para exibição nos seletores mesmo antes do cálculo estar completo. [selectedServices] são os
  * serviços marcados que já têm valor (não têm fallback, começam vazios);
  * [missingServicePrice] avisa que algum marcado ainda está sem valor.
  */
 data class QuoteResult(
-    val filament: Filament? = null,
-    val filamentColor: FilamentColor? = null,
-    val printer: PrinterProfile? = null,
+    val prints: List<ResolvedPrint> = emptyList(),
     val quote: Quote? = null,
     val errorMessage: String? = null,
     val selectedServices: List<QuoteService> = emptyList(),

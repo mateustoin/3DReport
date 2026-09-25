@@ -22,16 +22,19 @@ object QuoteReport {
 
         val (sold, open) = quotes.partition { it.status.isSold }
 
+        // Conta pedidos que usaram cada filamento: um pedido multicolor ou com várias impressões conta
+        // uma vez pra cada filamento diferente, e não uma vez por impressão.
         val mostUsedFilament = sold
-            .groupingBy { it.quote.job.filament.name }
+            .flatMap { order -> order.quote.prints.flatMap { print -> print.job.filaments.map { it.filament.name } }.distinct() }
+            .groupingBy { it }
             .eachCount()
             .maxByOrNull { it.value }
 
         val totalProfit = sold.sumOf { it.quote.profit }
         val printHours = sold.sumOf { it.totalPrintTimeMinutes } / 60.0
 
-        val withLabor = sold.filter { it.quote.totalLaborMinutes > 0 }
-        val laborHours = withLabor.sumOf { it.quote.totalLaborMinutes } / 60.0
+        val withLabor = sold.filter { it.quote.laborMinutes > 0 }
+        val laborHours = withLabor.sumOf { it.quote.laborMinutes } / 60.0
         val laborEarnings = withLabor.sumOf { it.quote.profit + it.quote.costs.labor }
 
         return QuoteSummary(

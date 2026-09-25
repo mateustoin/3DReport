@@ -4,8 +4,10 @@ import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.QuoteService
 import kotlin.test.Test
@@ -19,14 +21,22 @@ class QuoteExportTextTest {
         id = "1",
         name = "Suporte de celular",
         quote = Quote(
-            job = PrintJob(
-                filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
-                filamentLengthMeters = 12.0,
-                printTimeMinutes = 190.0,
+            prints = listOf(
+                QuotedPrint(
+                    job = PrintJob(
+                        filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
+                        filamentLengthMeters = 12.0,
+                        printTimeMinutes = 190.0,
+                    ),
+                    printerId = "printer",
+                    printerName = "Impressora",
+                    cost = PrintCost(material = 3.58, energy = 1.48, maintenance = 0.54, finishing = 0.36, investmentReturn = 1.78, fixedCost = 0.0),
+                ),
             ),
-            filamentWeightGrams = 35.79,
-            costs = CostBreakdown(3.58, 1.48, 0.54, 0.36, 0.36, 1.78, 0.0),
-            productionCost = 8.09,
+            costs = CostBreakdown(
+                material = 3.58, energy = 1.48, maintenance = 0.54, failures = 0.36, finishing = 0.36,
+                investmentReturn = 1.78, administrative = 0.0, labor = 0.0, fixedCost = 0.0,
+            ),
             salePrice = 16.19,
         ),
         sourceLink = "https://example.com/model",
@@ -67,7 +77,7 @@ class QuoteExportTextTest {
     @Test
     fun includesEachServiceAndTheGrandTotalWhenPresent() {
         val withServices = savedQuote.copy(
-            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0, chargedPerOrder = false)),
         )
 
         val text = withServices.toCopyPasteText()
@@ -95,7 +105,7 @@ class QuoteExportTextTest {
         val withQuantity = savedQuote.copy(
             quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
             services = listOf(
-                QuoteService(id = "paint", name = "Pintura", price = 1.0),
+                QuoteService(id = "paint", name = "Pintura", price = 1.0, chargedPerOrder = false),
                 QuoteService(id = "delivery", name = "Entrega", price = 15.0, chargedPerOrder = true),
             ),
         )
@@ -112,7 +122,7 @@ class QuoteExportTextTest {
     fun includesQuantityUnitPriceAndMultipliedServiceWhenQuantityIsGreaterThanOne() {
         val withQuantity = savedQuote.copy(
             quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
-            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0, chargedPerOrder = false)),
         )
 
         val text = withQuantity.toCopyPasteText()
@@ -141,7 +151,7 @@ class QuoteExportTextTest {
     fun includesShippingAfterServicesAndBeforeTotalWhenQuantityIsGreaterThanOne() {
         val withShippingAndServices = savedQuote.copy(
             quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
-            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0, chargedPerOrder = false)),
             shippingCost = 25.0,
         )
 
@@ -158,7 +168,7 @@ class QuoteExportTextTest {
     @Test
     fun quantityOneKeepsTheOutputExactlyAsBeforeQuantityExisted() {
         val quantityOne = savedQuote.copy(
-            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0, chargedPerOrder = false)),
         )
         check(quantityOne.quote.quantity == 1)
 

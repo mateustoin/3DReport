@@ -4,8 +4,10 @@ import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.QuoteService
 import org.apache.pdfbox.Loader
@@ -29,14 +31,22 @@ class QuotePdfExporterTest {
         id = "1",
         name = "Suporte de celular",
         quote = Quote(
-            job = PrintJob(
-                filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
-                filamentLengthMeters = 12.0,
-                printTimeMinutes = 190.0,
+            prints = listOf(
+                QuotedPrint(
+                    job = PrintJob(
+                        filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
+                        filamentLengthMeters = 12.0,
+                        printTimeMinutes = 190.0,
+                    ),
+                    printerId = "printer",
+                    printerName = "Impressora",
+                    cost = PrintCost(material = 3.58, energy = 1.48, maintenance = 0.54, finishing = 0.36, investmentReturn = 1.78, fixedCost = 0.0),
+                ),
             ),
-            filamentWeightGrams = 35.79,
-            costs = CostBreakdown(3.58, 1.48, 0.54, 0.36, 0.36, 1.78, 0.0),
-            productionCost = 8.09,
+            costs = CostBreakdown(
+                material = 3.58, energy = 1.48, maintenance = 0.54, failures = 0.36, finishing = 0.36,
+                investmentReturn = 1.78, administrative = 0.0, labor = 0.0, fixedCost = 0.0,
+            ),
             salePrice = 16.19,
         ),
         sourceLink = "https://example.com/model",
@@ -55,7 +65,7 @@ class QuotePdfExporterTest {
     fun pdfContainsNameAndSalePriceButNotInternalData() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -77,7 +87,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -99,7 +109,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, webpBytes)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -114,7 +124,7 @@ class QuotePdfExporterTest {
     fun pdfContainsWatermarkTextWhenProvided() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = "Marcenaria 3D do João",
+            brandName = "Marcenaria 3D do João",
             footerText = null,
         )
 
@@ -131,12 +141,12 @@ class QuotePdfExporterTest {
     fun blankWatermarkAndFooterAreNotDrawn() {
         val withBlank = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = "   ",
+            brandName = "   ",
             footerText = "   ",
         )
         val withNull = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -150,7 +160,7 @@ class QuotePdfExporterTest {
     fun footerShowsBrandNameAsCleanContiguousText() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = "Marcenaria 3D do João",
         )
 
@@ -164,13 +174,13 @@ class QuotePdfExporterTest {
 
     @Test
     fun watermarkAndFooterAreIndependent() {
-        fun textFor(watermarkText: String?, footerText: String?) = Loader.loadPDF(
-            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes = null)), watermarkText, footerText)
+        fun textFor(brandName: String?, footerText: String?) = Loader.loadPDF(
+            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes = null)), brandName, footerText)
         ).use { PDFTextStripper().getText(it) }
 
-        val onlyWatermark = textFor(watermarkText = "Marca", footerText = null)
-        val onlyFooter = textFor(watermarkText = null, footerText = "Marca")
-        val neither = textFor(watermarkText = null, footerText = null)
+        val onlyWatermark = textFor(brandName = "Marca", footerText = null)
+        val onlyFooter = textFor(brandName = null, footerText = "Marca")
+        val neither = textFor(brandName = null, footerText = null)
 
         // O rodapé sozinho contém "Marca" como string contígua; a marca d'água
         // sozinha quebra em fragmentos (é diagonal) mas ainda contém as letras.
@@ -195,7 +205,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes)),
-            watermarkText = "Marcenaria 3D do João",
+            brandName = "Marcenaria 3D do João",
             footerText = null,
         )
 
@@ -230,7 +240,7 @@ class QuotePdfExporterTest {
     fun multipleItemsProduceOnePagePerItemInOrder() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, null), QuoteExportItem(otherSavedQuote, null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -251,7 +261,7 @@ class QuotePdfExporterTest {
     fun multipleItemsAllGetTheSameWatermarkAndFooter() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, null), QuoteExportItem(otherSavedQuote, null)),
-            watermarkText = null,
+            brandName = null,
             footerText = "Marcenaria 3D do João",
         )
 
@@ -267,12 +277,12 @@ class QuotePdfExporterTest {
     @Test
     fun pdfListsEachServiceAndTheGrandTotalWhenPresent() {
         val quoteWithServices = savedQuote.copy(
-            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0, chargedPerOrder = false)),
         )
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithServices, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -293,7 +303,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithQuantity, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -308,12 +318,12 @@ class QuotePdfExporterTest {
     fun pdfShowsQuantityUnitPriceAndMultipliedServiceWhenQuantityIsGreaterThanOne() {
         val quoteWithQuantity = savedQuote.copy(
             quote = savedQuote.quote.copy(salePrice = 60.20, quantity = 10),
-            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0)),
+            services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0, chargedPerOrder = false)),
         )
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithQuantity, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -334,7 +344,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithShipping, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -350,7 +360,7 @@ class QuotePdfExporterTest {
     fun noTotalLineInPdfWhenThereAreNoServices() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -363,7 +373,7 @@ class QuotePdfExporterTest {
     fun catalogPdfContainsNameAndPriceOfEachItemButNotInternalData() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null), QuoteExportItem(otherSavedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -382,7 +392,7 @@ class QuotePdfExporterTest {
     fun catalogPdfFitsFewItemsOnOnePage() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null), QuoteExportItem(otherSavedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -395,7 +405,7 @@ class QuotePdfExporterTest {
     fun catalogPdfPaginatesWhenThereAreMoreItemsThanFitOnOnePage() {
         val items = (1..10).map { QuoteExportItem(savedQuote.copy(id = "item-$it", name = "Peça $it"), photoBytes = null) }
 
-        val pdfBytes = renderCatalogPdf(items, watermarkText = null, footerText = null)
+        val pdfBytes = renderCatalogPdf(items, brandName = null, footerText = null)
 
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.numberOfPages > 1)
@@ -406,7 +416,7 @@ class QuotePdfExporterTest {
     fun catalogPdfIncludesWatermarkAndFooterOnEveryPage() {
         val items = (1..10).map { QuoteExportItem(savedQuote.copy(id = "item-$it", name = "Peça $it"), photoBytes = null) }
 
-        val pdfBytes = renderCatalogPdf(items, watermarkText = "Marca", footerText = "Marcenaria 3D do João")
+        val pdfBytes = renderCatalogPdf(items, brandName = "Marca", footerText = "Marcenaria 3D do João")
 
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.numberOfPages > 1)
@@ -421,7 +431,7 @@ class QuotePdfExporterTest {
     fun catalogPdfWithNoPhotoStillShowsNameAndPrice() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
         )
 
@@ -435,7 +445,7 @@ class QuotePdfExporterTest {
     fun pdfUsesTheGivenCurrencyInsteadOfBrl() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
             currency = Currency.USD,
         )
@@ -450,7 +460,7 @@ class QuotePdfExporterTest {
     fun catalogPdfUsesTheGivenCurrencyInsteadOfBrl() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
-            watermarkText = null,
+            brandName = null,
             footerText = null,
             currency = Currency.USD,
         )

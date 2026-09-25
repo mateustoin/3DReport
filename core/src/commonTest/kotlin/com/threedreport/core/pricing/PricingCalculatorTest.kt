@@ -1,6 +1,7 @@
 package com.threedreport.core.pricing
 
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
@@ -107,9 +108,7 @@ class PricingCalculatorTest {
             monthlyFixedCost = 800.0,
             productiveHoursPerMonth = 200.0,
         )
-        val job = spreadsheetJob.copy(laborMinutes = 40.0)
-
-        val quote = PricingCalculator.calculate(job, spreadsheetPrinter, settings)
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, laborMinutes = 40.0)
 
         assertEquals(12.67, quote.costs.fixedCost, CENT_TOLERANCE)
         assertEquals(20.00, quote.costs.labor, CENT_TOLERANCE)
@@ -120,23 +119,21 @@ class PricingCalculatorTest {
     }
 
     @Test
-    fun laborIsChargedByTheTimeInformedInTheJob() {
+    fun laborIsChargedByTheTimeInformedForTheOrder() {
         val settings = spreadsheetSettings.copy(laborRatePerHour = 30.0)
-        val job = spreadsheetJob.copy(laborMinutes = 40.0)
 
-        val costs = PricingCalculator.calculate(job, spreadsheetPrinter, settings).costs
+        val costs = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, laborMinutes = 40.0).costs
 
         assertEquals(20.0, costs.labor, 1e-9)
     }
 
     @Test
     fun finishingPercentageAndLaborAreIndependentAndBothAdd() {
-        val job = spreadsheetJob.copy(laborMinutes = 40.0)
-
         val costs = PricingCalculator.calculate(
-            job,
+            spreadsheetJob,
             spreadsheetPrinter,
             spreadsheetSettings.copy(laborRatePerHour = 30.0),
+            laborMinutes = 40.0,
         ).costs
 
         assertEquals(0.36, costs.finishing, CENT_TOLERANCE)
@@ -153,7 +150,7 @@ class PricingCalculatorTest {
         val withRate = spreadsheetSettings.copy(laborRatePerHour = 50.0)
 
         listOf(0.0, 10.0).forEach { minutes ->
-            val quote = PricingCalculator.calculate(spreadsheetJob.copy(laborMinutes = minutes), spreadsheetPrinter, withRate)
+            val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, withRate, laborMinutes = minutes)
             assertEquals(withoutRate.costs.finishing, quote.costs.finishing, 1e-9)
             assertTrue(quote.salePrice >= withoutRate.salePrice, "com $minutes min, o preço caiu")
         }
@@ -162,9 +159,7 @@ class PricingCalculatorTest {
     @Test
     fun failureReserveCoversEveryCostExceptTheAdministrativeOne() {
         val settings = spreadsheetSettings.copy(administrativeCost = 50.0, laborRatePerHour = 30.0)
-        val job = spreadsheetJob.copy(laborMinutes = 40.0)
-
-        val costs = PricingCalculator.calculate(job, spreadsheetPrinter, settings).costs
+        val costs = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, laborMinutes = 40.0).costs
 
         val reprintable = costs.material + costs.energy + costs.maintenance +
             costs.investmentReturn + costs.fixedCost + costs.labor + costs.finishing
@@ -220,15 +215,15 @@ class PricingCalculatorTest {
     }
 
     @Test
-    fun setupTimeIsChargedOncePerOrderSoTheUnitPriceFallsWithQuantity() {
+    fun laborTimeIsChargedOncePerOrderSoTheUnitPriceFallsWithQuantity() {
         val settings = spreadsheetSettings.copy(laborRatePerHour = 30.0)
-        val job = spreadsheetJob.copy(laborMinutes = 3.0)
 
-        val one = PricingCalculator.calculate(settings = settings, job = job, printer = spreadsheetPrinter, quantity = 1, setupMinutes = 20.0)
-        val ten = PricingCalculator.calculate(settings = settings, job = job, printer = spreadsheetPrinter, quantity = 10, setupMinutes = 20.0)
+        // O tempo digitado é do pedido inteiro: 23 min pra uma peça, 50 min pro lote de 10 (os 20
+        // de preparo mais 3 por peça). Números iguais aos da tabela "Quantidade e lote" de
+        // docs/pricing-formulas.md.
+        val one = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, quantity = 1, laborMinutes = 23.0)
+        val ten = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, quantity = 10, laborMinutes = 50.0)
 
-        // Preparo (20 min) cobrado uma vez nos dois; o trabalho por peça (3 min) é que multiplica.
-        // Números iguais aos da tabela "Quantidade e lote" de docs/pricing-formulas.md.
         assertEquals(11.50, one.costs.labor, CENT_TOLERANCE)
         assertEquals(25.00, ten.costs.labor, CENT_TOLERANCE)
         assertEquals(2.50, ten.costs.labor / 10, CENT_TOLERANCE)
@@ -248,12 +243,12 @@ class PricingCalculatorTest {
     }
 
     @Test
-    fun invalidQuantityOrSetupTimeIsRejected() {
+    fun invalidQuantityOrLaborTimeIsRejected() {
         assertFailsWith<IllegalArgumentException> {
             PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, quantity = 0)
         }
         assertFailsWith<IllegalArgumentException> {
-            PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, setupMinutes = -1.0)
+            PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, laborMinutes = -1.0)
         }
     }
 
@@ -423,6 +418,92 @@ class PricingCalculatorTest {
         assertFailsWith<IllegalArgumentException> { SalesChannel(id = "x", name = "X", feeRate = -0.1) }
         assertFailsWith<IllegalArgumentException> { SalesChannel(id = "x", name = "X", feeRate = 1.0) }
         assertFailsWith<IllegalArgumentException> { spreadsheetSettings.copy(taxRate = 1.0) }
+    }
+
+    @Test
+    fun eachFilamentOfAMulticolorPrintIsChargedAtItsOwnPrice() {
+        val petg = Filament(id = "petg", name = "PETG", pricePerKg = 200.0, densityGPerCm3 = 1.24)
+        val multicolor = PrintJob(
+            filaments = listOf(FilamentUsage(pla, 6.0), FilamentUsage(petg, 6.0)),
+            printTimeMinutes = 190.0,
+        )
+
+        val quote = PricingCalculator.calculate(multicolor, spreadsheetPrinter, spreadsheetSettings)
+        val allPla = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+
+        // Metade do comprimento em PETG, que custa o dobro: material 1,5 vez o do mesmo tanto em PLA.
+        // Antes, o G-code somava os extrusores e tudo saía pelo preço de um filamento só.
+        assertEquals(allPla.costs.material * 1.5, quote.costs.material, 1e-9)
+        assertEquals(allPla.costs.finishing * 1.5, quote.costs.finishing, 1e-9)
+        assertEquals(allPla.filamentWeightGrams, quote.filamentWeightGrams, 1e-9)
+        assertEquals(allPla.costs.energy, quote.costs.energy, 1e-9)
+        assertEquals(listOf("PLA", "PETG"), quote.filamentTotals().map { it.filament.name })
+    }
+
+    @Test
+    fun eachPrintUsesTheCostsOfItsOwnPrinter() {
+        val smallPrinter = spreadsheetPrinter.copy(id = "small", name = "Pequena", printerPowerWatts = 120.0, maintenanceCostPerHour = 0.05)
+        val head = PrintJob(filament = pla, filamentLengthMeters = 12.0, printTimeMinutes = 190.0)
+        val base = PrintJob(filament = pla, filamentLengthMeters = 4.0, printTimeMinutes = 60.0)
+
+        val order = PricingCalculator.calculate(listOf(head to spreadsheetPrinter, base to smallPrinter), spreadsheetSettings)
+        val headAlone = PricingCalculator.calculate(head, spreadsheetPrinter, spreadsheetSettings)
+        val baseAlone = PricingCalculator.calculate(base, smallPrinter, spreadsheetSettings)
+
+        assertEquals(headAlone.costs.energy + baseAlone.costs.energy, order.costs.energy, 1e-9)
+        assertEquals(headAlone.costs.maintenance + baseAlone.costs.maintenance, order.costs.maintenance, 1e-9)
+        assertEquals(listOf("printer", "small"), order.prints.map { it.printerId })
+        assertEquals(headAlone.prints.single().cost, order.prints[0].cost)
+        assertEquals(190.0, order.printMinutesOn("printer"), 1e-9)
+        assertEquals(60.0, order.printMinutesOn("small"), 1e-9)
+        assertEquals(250.0, order.totalPrintTimeMinutes, 1e-9)
+    }
+
+    @Test
+    fun whatBelongsToTheOrderIsChargedOnceNoMatterHowManyPrints() {
+        val settings = spreadsheetSettings.copy(administrativeCost = 20.0, laborRatePerHour = 30.0)
+        val part = PrintJob(filament = pla, filamentLengthMeters = 6.0, printTimeMinutes = 95.0)
+
+        val order = PricingCalculator.calculate(
+            listOf(part to spreadsheetPrinter, part to spreadsheetPrinter, part to spreadsheetPrinter),
+            settings,
+            laborMinutes = 40.0,
+        )
+
+        // Três orçamentos separados cobrariam a modelagem e o trabalho três vezes.
+        assertEquals(20.0, order.costs.administrative, 1e-9)
+        assertEquals(20.0, order.costs.labor, 1e-9)
+        val reprintable = order.prints.sumOf { it.cost.total } + order.costs.labor
+        assertEquals(reprintable * 0.10, order.costs.failures, 1e-9)
+    }
+
+    @Test
+    fun runsRepeatThePrintBeforeTheQuantityMultiplies() {
+        val plate = spreadsheetJob
+        val once = PricingCalculator.calculate(plate, spreadsheetPrinter, spreadsheetSettings)
+        val fourRuns = PricingCalculator.calculate(plate.copy(runs = 4), spreadsheetPrinter, spreadsheetSettings, quantity = 2)
+
+        assertEquals(once.costs.material * 8, fourRuns.costs.material, 1e-9)
+        assertEquals(once.costs.energy * 8, fourRuns.costs.energy, 1e-9)
+        assertEquals(once.filamentWeightGrams * 8, fourRuns.filamentWeightGrams, 1e-9)
+        assertEquals(190.0 * 8, fourRuns.totalPrintTimeMinutes, 1e-9)
+    }
+
+    @Test
+    fun aPrintWithoutFilamentOrAnOrderWithoutPrintsIsRejected() {
+        assertFailsWith<IllegalArgumentException> { PrintJob(filaments = emptyList(), printTimeMinutes = 10.0) }
+        assertFailsWith<IllegalArgumentException> { spreadsheetJob.copy(runs = 0) }
+        assertFailsWith<IllegalArgumentException> { PricingCalculator.calculate(emptyList(), spreadsheetSettings) }
+    }
+
+    @Test
+    fun channelIdAndNameAreKeptForReopeningAndRepricing() {
+        val shopee = SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.15)
+
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, channel = shopee)
+
+        assertEquals("shopee", quote.channelId)
+        assertEquals(0.15, quote.channelFeeRate, 1e-9)
     }
 
     private companion object {

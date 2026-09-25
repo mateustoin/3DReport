@@ -26,7 +26,7 @@ class TemplateListViewModel(
      */
     fun activeTemplateId(templates: List<QuoteTemplate>, branding: BrandingSettings): String? =
         templates.firstOrNull {
-            it.watermarkText == branding.watermarkText &&
+            it.brandName == branding.brandName &&
                 it.showWatermark == branding.showWatermark &&
                 it.showFooter == branding.showFooter &&
                 it.showPrintTime == branding.showPrintTime &&
@@ -43,7 +43,7 @@ class TemplateListViewModel(
         val template = repository.templates.value.find { it.id == id } ?: return
         brandingRepository.update(
             brandingRepository.branding.value.copy(
-                watermarkText = template.watermarkText,
+                brandName = template.brandName,
                 showWatermark = template.showWatermark,
                 showFooter = template.showFooter,
                 showPrintTime = template.showPrintTime,

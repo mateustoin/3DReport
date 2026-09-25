@@ -18,6 +18,6 @@ data class ServiceFormState(
 internal fun Service.toFormState() = ServiceFormState(
     id = id,
     name = name,
-    priceText = price?.toString().orEmpty(),
+    priceText = suggestedPrice?.toString().orEmpty(),
     chargedPerOrder = chargedPerOrder,
 )

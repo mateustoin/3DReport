@@ -21,8 +21,11 @@ import kotlin.io.encoding.ExperimentalEncodingApi
  * @property printerSettingsName nome do perfil de impressora (`printer_settings_id`), já sem o
  *   bico ("0.4 nozzle") e sem o "- Copy" que o fatiador acrescenta a perfis copiados: às vezes é
  *   mais legível que [printerModel], que pode ser um identificador interno.
- * @property filaments um item por extrusor/slot, na ordem do fatiador. Vazio no Cura, que não
- *   grava tipo nem marca de filamento no G-code.
+ * @property filamentLengthMeters consumo total, somando todos os extrusores, em metros.
+ * @property filaments um item por extrusor/slot **usado**, na ordem do fatiador, com o consumo de
+ *   cada um quando o fatiador informa (ver [GCodeFilament.lengthMeters]). Slot declarado e sem
+ *   consumo (`0.00`) fica de fora: não é material da peça. No Cura só vem o consumo, sem tipo nem
+ *   marca.
  */
 data class GCodeMetadata(
     val filamentLengthMeters: Double?,
@@ -47,8 +50,12 @@ data class GCodeMetadata(
  * `filament_colour`). [vendor] vem `null` quando o fatiador grava um marcador genérico no lugar
  * da marca ("Generic", "(Undefined)", "(Unknown)", vistos em arquivos reais): isso não é uma marca
  * e não pode ser comparado com a marca cadastrada.
+ *
+ * @property lengthMeters consumo deste extrusor, em metros, ou `null` quando o fatiador não informa
+ *   por extrusor. Já inclui a purga e a torre de limpeza: num G-code real do OrcaSlicer com torre, a
+ *   extrusão somada de cada ferramenta bate com o valor do cabeçalho (decisão 105).
  */
-data class GCodeFilament(val type: String?, val vendor: String?, val colorHex: String?)
+data class GCodeFilament(val type: String?, val vendor: String?, val colorHex: String?, val lengthMeters: Double? = null)
 
 /**
  * Miniatura do modelo (prévia renderizada pelo fatiador) embutida no G-code,
@@ -70,34 +77,39 @@ private val IGNORE_CASE_MULTILINE = setOf(RegexOption.IGNORE_CASE, RegexOption.M
 object GCodeMetadataParser {
 
     @OptIn(ExperimentalEncodingApi::class)
-    fun parse(text: String): GCodeMetadata = GCodeMetadata(
-        filamentLengthMeters = parseFilamentLengthMeters(text),
-        printTimeMinutes = parsePrintTimeMinutes(text),
-        thumbnail = parseThumbnail(text),
-        layerHeightMm = layerHeightRegex.find(text)?.groupValues?.get(1)?.toDoubleOrNull(),
-        infillPercentage = infillDensityRegex.find(text)?.groupValues?.get(1)?.toDoubleOrNull(),
-        infillPattern = infillPatternRegex.find(text)?.groupValues?.get(1)?.trim(),
-        supportsEnabled = supportsRegex.find(text)?.groupValues?.get(1)?.let(::parseBooleanFlag),
-        printerModel = parsePrinterModel(text),
-        printerSettingsName = printerSettingsRegex.find(text)?.groupValues?.get(1)?.let(::cleanPrinterSettingsName),
-        filaments = parseFilaments(text),
-    )
+    fun parse(text: String): GCodeMetadata {
+        val lengthsMeters = parseFilamentLengthsMeters(text)
+        return GCodeMetadata(
+            filamentLengthMeters = lengthsMeters?.sum(),
+            printTimeMinutes = parsePrintTimeMinutes(text),
+            thumbnail = parseThumbnail(text),
+            layerHeightMm = layerHeightRegex.find(text)?.groupValues?.get(1)?.toDoubleOrNull(),
+            infillPercentage = infillDensityRegex.find(text)?.groupValues?.get(1)?.toDoubleOrNull(),
+            infillPattern = infillPatternRegex.find(text)?.groupValues?.get(1)?.trim(),
+            supportsEnabled = supportsRegex.find(text)?.groupValues?.get(1)?.let(::parseBooleanFlag),
+            printerModel = parsePrinterModel(text),
+            printerSettingsName = printerSettingsRegex.find(text)?.groupValues?.get(1)?.let(::cleanPrinterSettingsName),
+            filaments = parseFilaments(text, lengthsMeters),
+        )
+    }
 
-    // PrusaSlicer/Bambu Studio/OrcaSlicer, ex.: "; filament used [mm] = 1234.56"
-    // ou "; total filament length [mm] : 1234.56" (múltiplos extrusores separados por vírgula).
+    // PrusaSlicer/OrcaSlicer, ex.: "; filament used [mm] = 1384.73, 1805.62", e Bambu Studio, ex.:
+    // "; total filament length [mm] : 9035.47,11467.79": um valor por extrusor, separados por
+    // vírgula, na mesma ordem de "filament_type" (conferido em arquivos reais, decisão 105).
     private val filamentMillimetersRegex =
         Regex("""^;\s*(?:total\s+)?filament (?:used|length)\s*\[mm\]\s*[:=]\s*(.+)$""", IGNORE_CASE_MULTILINE)
 
-    // Cura, ex.: ";Filament used: 2.5m" (já em metros; múltiplos extrusores separados por vírgula).
+    // Cura, ex.: ";Filament used: 2.5m, 0m" (já em metros; um valor por extrusor).
     private val filamentMetersRegex =
         Regex("""^;\s*filament used\s*[:=]\s*(.+)$""", IGNORE_CASE_MULTILINE)
 
-    private fun parseFilamentLengthMeters(text: String): Double? {
+    /** Consumo de cada extrusor, em metros, na ordem do fatiador (inclusive os que ficaram em zero). */
+    private fun parseFilamentLengthsMeters(text: String): List<Double>? {
         filamentMillimetersRegex.find(text)?.let { match ->
-            sumNumbers(match.groupValues[1])?.let { return it / 1000.0 }
+            numbers(match.groupValues[1])?.let { values -> return values.map { it / 1000.0 } }
         }
         filamentMetersRegex.find(text)?.let { match ->
-            sumMeterValues(match.groupValues[1])?.let { return it }
+            meterValues(match.groupValues[1])?.let { return it }
         }
         return null
     }
@@ -124,17 +136,11 @@ object GCodeMetadataParser {
         return null
     }
 
-    private fun sumNumbers(value: String): Double? {
-        val numbers = Regex("""[0-9]+(?:\.[0-9]+)?""").findAll(value).map { it.value.toDouble() }.toList()
-        return numbers.takeIf { it.isNotEmpty() }?.sum()
-    }
+    private fun numbers(value: String): List<Double>? =
+        Regex("""[0-9]+(?:\.[0-9]+)?""").findAll(value).map { it.value.toDouble() }.toList().takeIf { it.isNotEmpty() }
 
-    private fun sumMeterValues(value: String): Double? {
-        val numbers = Regex("""([0-9]+(?:\.[0-9]+)?)\s*m""").findAll(value)
-            .map { it.groupValues[1].toDouble() }
-            .toList()
-        return numbers.takeIf { it.isNotEmpty() }?.sum()
-    }
+    private fun meterValues(value: String): List<Double>? =
+        Regex("""([0-9]+(?:\.[0-9]+)?)\s*m""").findAll(value).map { it.groupValues[1].toDouble() }.toList().takeIf { it.isNotEmpty() }
 
     private fun parseDurationToMinutes(value: String): Double? {
         val days = Regex("""(\d+)d""").find(value)?.groupValues?.get(1)?.toDouble() ?: 0.0
@@ -231,19 +237,28 @@ object GCodeMetadataParser {
     /** Marcadores que os fatiadores gravam no lugar da marca quando o perfil não tem uma (vistos em arquivos reais). */
     private val placeholderVendors = setOf("generic", "(undefined)", "(unknown)", "undefined", "unknown")
 
-    /** Um valor por extrusor, separados por ";" (ex.: "PLA;PETG"), como a família Prusa grava. */
-    private fun parseFilaments(text: String): List<GCodeFilament> {
+    /**
+     * Um valor por extrusor, separados por ";" (ex.: "PLA;PETG"), como a família Prusa grava, casado
+     * pela posição com o consumo de cada extrusor. Se as duas listas não tiverem o mesmo tamanho, a
+     * posição não é confiável e o consumo por extrusor fica de fora (só o total vale): cobrar o
+     * material errado é pior do que pedir pra pessoa preencher.
+     */
+    private fun parseFilaments(text: String, lengthsMeters: List<Double>?): List<GCodeFilament> {
         val types = splitPerExtruder(filamentTypeRegex.find(text)?.groupValues?.get(1))
         val vendors = splitPerExtruder(filamentVendorRegex.find(text)?.groupValues?.get(1))
         val colours = splitPerExtruder(filamentColourRegex.find(text)?.groupValues?.get(1))
-        val count = maxOf(types.size, vendors.size, colours.size)
+        val declared = maxOf(types.size, vendors.size, colours.size)
+        val lengths = lengthsMeters?.takeIf { declared == 0 || it.size == declared }
+        val count = maxOf(declared, lengths?.size ?: 0)
         return (0 until count).map { index ->
             GCodeFilament(
                 type = types.getOrNull(index),
                 vendor = vendors.getOrNull(index)?.takeUnless { it.lowercase() in placeholderVendors },
                 colorHex = colours.getOrNull(index)?.takeIf { it.startsWith("#") },
+                lengthMeters = lengths?.getOrNull(index),
             )
-        }.filter { it.type != null || it.vendor != null || it.colorHex != null }
+        }.filter { it.lengthMeters != 0.0 }
+            .filter { it.type != null || it.vendor != null || it.colorHex != null || it.lengthMeters != null }
     }
 
     private fun splitPerExtruder(raw: String?): List<String?> =

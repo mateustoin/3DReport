@@ -30,11 +30,8 @@ import kotlinx.serialization.Serializable
  * @property profitMargin margem de lucro aplicada sobre o custo de produção.
  * @property taxRate percentual de imposto sobre a venda (ex.: Simples Nacional), descontado do
  *   que você recebe junto com a taxa do canal. **MEI não entra aqui:** o DAS é um valor fixo por
- *   mês, então o lugar dele é [monthlyFixedCost], não este percentual.
- * @property marketplaceFeeRate **legado.** Era a taxa única de marketplace, hoje substituída pelo
- *   catálogo de canais de venda ([SalesChannel]), escolhido por orçamento. Mantido só pra
- *   converter a configuração de quem já usava o app (a primeira execução cria um canal com esse
- *   valor) e pra não perder o dado de orçamentos antigos; o cálculo não usa mais este campo.
+ *   mês, então o lugar dele é [monthlyFixedCost], não este percentual. A taxa de marketplace ou
+ *   de maquininha não fica aqui: é do canal de venda ([SalesChannel]), escolhido por orçamento.
  */
 @Serializable
 data class PricingSettings(
@@ -47,8 +44,6 @@ data class PricingSettings(
     val taxRate: Double = 0.0,
     val administrativeCost: Double = 0.0,
     val profitMargin: Double,
-    val marketplaceFeeRate: Double = 0.0,
-    val schemaVersion: Int = 1,
 ) {
     init {
         require(energyPricePerKwh >= 0) { "energyPricePerKwh não pode ser negativo" }
@@ -60,9 +55,6 @@ data class PricingSettings(
         require(taxRate >= 0 && taxRate < 1) { "taxRate deve estar entre 0 (inclusive) e 1 (exclusive)" }
         require(administrativeCost >= 0) { "administrativeCost não pode ser negativo" }
         require(profitMargin >= 0) { "profitMargin não pode ser negativo" }
-        require(marketplaceFeeRate >= 0 && marketplaceFeeRate < 1) {
-            "marketplaceFeeRate deve estar entre 0 (inclusive) e 1 (exclusive)"
-        }
     }
 
     /**
@@ -74,24 +66,4 @@ data class PricingSettings(
     val fixedCostPerHour: Double
         get() = if (productiveHoursPerMonth > 0) monthlyFixedCost / productiveHoursPerMonth else 0.0
 
-    /**
-     * Traz uma configuração salva por uma versão anterior do app pro formato atual. Até a versão 1
-     * do esquema, uma hora de trabalho configurada desligava sozinha o [finishingRate]; hoje os dois
-     * somam (decisão 93). Pra quem já tinha a hora configurada, o percentual é zerado **uma vez**,
-     * que é exatamente o que o cálculo antigo fazia, então o preço não muda ao atualizar. Depois de
-     * salva na versão atual, uma taxa digitada de propósito nunca mais é mexida.
-     */
-    fun migrated(): PricingSettings = when {
-        schemaVersion >= CURRENT_SCHEMA_VERSION -> this
-        laborRatePerHour > 0 -> copy(finishingRate = 0.0, schemaVersion = CURRENT_SCHEMA_VERSION)
-        else -> copy(schemaVersion = CURRENT_SCHEMA_VERSION)
-    }
-
-    companion object {
-        /**
-         * Versão do formato salvo. Um arquivo sem o campo é da versão 1 (ver [migrated]); só muda
-         * quando o significado de um campo muda, não a cada campo novo com valor padrão.
-         */
-        const val CURRENT_SCHEMA_VERSION = 2
-    }
 }

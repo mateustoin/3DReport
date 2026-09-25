@@ -42,14 +42,14 @@ object MaintenanceReport {
     const val DUE_SOON_FRACTION = 0.1
 
     /**
-     * Total de horas de uso de [printerId] que o app conhece: tempo de máquina dos pedidos já
-     * impressos nela (uma peça × quantidade) mais as horas avulsas dela. Voltar o status de um
+     * Total de horas de uso de [printerId] que o app conhece: tempo de máquina das impressões já
+     * feitas nela (rodadas × quantidade) mais as horas avulsas dela. Voltar o status de um
      * pedido ou excluí-lo diminui esse total; quem usa o número protege com `max(0, …)`.
      */
     fun printerHours(printerId: String, savedQuotes: List<SavedQuote>, manualUsage: List<ManualUsageEntry>): Double {
         val printedMinutes = savedQuotes
-            .filter { it.isOrder && it.quote.printerId == printerId && it.status in PRINTED_STATUSES }
-            .sumOf { it.totalPrintTimeMinutes }
+            .filter { it.isOrder && it.status in PRINTED_STATUSES }
+            .sumOf { it.quote.printMinutesOn(printerId) }
         return printedMinutes / 60.0 + manualUsage.filter { it.printerId == printerId }.sumOf { it.hours }
     }
 

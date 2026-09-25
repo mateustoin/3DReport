@@ -49,6 +49,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 **Orçamento**
 - Cálculo de custo de produção e preço de venda (`core`)
 - Arraste o G-code pra janela e o orçamento se monta: comprimento, tempo, foto, configurações de impressão e, quando o nome bate com o cadastrado, a impressora e o filamento (Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer, Cura)
+- Peça multicolor (AMS, MMU): vários filamentos na mesma impressão, cada um com os seus metros e o seu preço; o G-code multicolor já preenche o consumo de cada extrusor, com purga e torre
 - Tela de orçamento em duas colunas — entradas de um lado, o preço, a composição e a negociação do outro
 - Quantidade por orçamento, com preço unitário e o seu tempo de trabalho informado pelo pedido inteiro (lote sai mais barato por peça)
 - Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
@@ -90,7 +91,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Tema claro/escuro (segue o sistema por padrão)
 - Atalhos de teclado (navegação entre abas, salvar/limpar orçamento)
 - Confirmação antes de excluir (filamentos, impressoras, serviços, histórico)
-- Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos)
+- Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos). A 2.0 mudou o formato dos dados: ao abrir, os dados da 1.x são guardados em `~/.3dreport-v1`, sem conversão e sem apagar nada
 - Versão do app + rodapé com autor/GitHub/doação + ajuda
 
 </details>

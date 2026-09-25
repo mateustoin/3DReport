@@ -1,5 +1,7 @@
 package com.threedreport.core.model
 
+import com.threedreport.core.costsOf
+import com.threedreport.core.quotedPrint
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -8,7 +10,7 @@ class QuoteServiceTest {
 
     @Test
     fun perPieceServiceMultipliesByQuantity() {
-        val paint = QuoteService(id = "paint", name = "Pintura", price = 25.0)
+        val paint = QuoteService(id = "paint", name = "Pintura", price = 25.0, chargedPerOrder = false)
 
         assertEquals(250.0, paint.total(quantity = 10))
     }
@@ -27,15 +29,13 @@ class QuoteServiceTest {
             id = "q",
             name = "Chaveiros",
             quote = Quote(
-                job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = 10.0),
-                filamentWeightGrams = 5.0,
-                costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-                productionCost = 50.0,
+                prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = 10.0))),
+                costs = costsOf(50.0),
                 salePrice = 100.0,
                 quantity = 10,
             ),
             services = listOf(
-                QuoteService(id = "paint", name = "Pintura", price = 2.0),
+                QuoteService(id = "paint", name = "Pintura", price = 2.0, chargedPerOrder = false),
                 QuoteService(id = "delivery", name = "Entrega", price = 15.0, chargedPerOrder = true),
             ),
             savedAtEpochMillis = 0L,
@@ -50,13 +50,13 @@ class QuoteServiceTest {
     fun catalogServiceAcceptsNoSuggestedPrice() {
         val service = Service(id = "paint", name = "Pintura")
 
-        assertEquals(null, service.price)
+        assertEquals(null, service.suggestedPrice)
         assertEquals(false, service.chargedPerOrder)
     }
 
     @Test
     fun negativePriceIsRejected() {
-        assertFailsWith<IllegalArgumentException> { Service(id = "s", name = "Pintura", price = -1.0) }
-        assertFailsWith<IllegalArgumentException> { QuoteService(id = "s", name = "Pintura", price = -1.0) }
+        assertFailsWith<IllegalArgumentException> { Service(id = "s", name = "Pintura", suggestedPrice = -1.0) }
+        assertFailsWith<IllegalArgumentException> { QuoteService(id = "s", name = "Pintura", price = -1.0, chargedPerOrder = false) }
     }
 }

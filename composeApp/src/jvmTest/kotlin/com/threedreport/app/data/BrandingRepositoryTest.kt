@@ -27,22 +27,22 @@ class BrandingRepositoryTest {
 
     @Test
     fun startsWithoutWatermark() {
-        assertNull(BrandingRepository().branding.value.watermarkText)
+        assertNull(BrandingRepository().branding.value.brandName)
     }
 
     @Test
     fun updatedWatermarkSurvivesNewRepositoryInstance() {
         val original = BrandingRepository()
-        original.update(BrandingSettings(watermarkText = "Minha Marca"))
+        original.update(BrandingSettings(brandName = "Minha Marca"))
 
         val reloaded = BrandingRepository().branding.value
-        assertEquals("Minha Marca", reloaded.watermarkText)
+        assertEquals("Minha Marca", reloaded.brandName)
     }
 
     @Test
     fun showWatermarkAndShowFooterFlagsSurviveNewRepositoryInstance() {
         val original = BrandingRepository()
-        original.update(BrandingSettings(watermarkText = "Minha Marca", showWatermark = false, showFooter = true))
+        original.update(BrandingSettings(brandName = "Minha Marca", showWatermark = false, showFooter = true))
 
         val reloaded = BrandingRepository().branding.value
         assertEquals(false, reloaded.showWatermark)
@@ -73,10 +73,10 @@ class BrandingRepositoryTest {
         val logoName = repository.branding.value.logoFileName
 
         // O formulário salva outros campos sem mexer na logo, mesmo mandando um logoFileName qualquer.
-        repository.update(BrandingSettings(watermarkText = "Loja", logoFileName = "outra.png"))
+        repository.update(BrandingSettings(brandName = "Loja", logoFileName = "outra.png"))
 
         assertEquals(logoName, repository.branding.value.logoFileName)
-        assertEquals("Loja", repository.branding.value.watermarkText)
+        assertEquals("Loja", repository.branding.value.brandName)
     }
 
     @Test
@@ -110,23 +110,4 @@ class BrandingRepositoryTest {
         assertTrue(reloaded.showBorder)
     }
 
-    @Test
-    fun brandingSavedBeforeTheIdentityFieldsLoadsWithNeutralDefaults() {
-        java.io.File(dataDir(), "branding.json").writeText("""{"watermarkText":"Loja antiga","showWatermark":false,"showFooter":true}""")
-
-        val loaded = BrandingRepository().branding.value
-
-        assertEquals("Loja antiga", loaded.watermarkText)
-        assertNull(loaded.logoFileName)
-        assertTrue(loaded.contactLines.isEmpty())
-        assertFalse(loaded.showBorder)
-    }
-
-    @Test
-    fun brandingSavedWithTheOldSignatureSwitchStillLoads() {
-        // A opção de desligar a assinatura existiu numa versão local (decisão 88) e saiu (decisão 91).
-        java.io.File(dataDir(), "branding.json").writeText("""{"watermarkText":"Loja","showAppSignature":false}""")
-
-        assertEquals("Loja", BrandingRepository().branding.value.watermarkText)
-    }
 }

@@ -3,8 +3,10 @@ package com.threedreport.app.ui.history
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,14 +20,22 @@ class WhatsAppLinkTest {
         id = "1",
         name = "Suporte de celular",
         quote = Quote(
-            job = PrintJob(
-                filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
-                filamentLengthMeters = 12.0,
-                printTimeMinutes = 190.0,
+            prints = listOf(
+                QuotedPrint(
+                    job = PrintJob(
+                        filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
+                        filamentLengthMeters = 12.0,
+                        printTimeMinutes = 190.0,
+                    ),
+                    printerId = "printer",
+                    printerName = "Impressora",
+                    cost = PrintCost(material = 3.58, energy = 1.48, maintenance = 0.54, finishing = 0.36, investmentReturn = 1.78, fixedCost = 0.0),
+                ),
             ),
-            filamentWeightGrams = 35.79,
-            costs = CostBreakdown(3.58, 1.48, 0.54, 0.36, 0.36, 1.78, 0.0),
-            productionCost = 8.09,
+            costs = CostBreakdown(
+                material = 3.58, energy = 1.48, maintenance = 0.54, failures = 0.36, finishing = 0.36,
+                investmentReturn = 1.78, administrative = 0.0, labor = 0.0, fixedCost = 0.0,
+            ),
             salePrice = 16.19,
         ),
         savedAtEpochMillis = 0L,

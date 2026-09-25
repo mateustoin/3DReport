@@ -14,8 +14,10 @@ import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuotedPrint
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -38,14 +40,22 @@ class QuoteHistoryViewModelTest {
     }
 
     private val quote = Quote(
-        job = PrintJob(
-            filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
-            filamentLengthMeters = 12.0,
-            printTimeMinutes = 190.0,
+        prints = listOf(
+            QuotedPrint(
+                job = PrintJob(
+                    filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24),
+                    filamentLengthMeters = 12.0,
+                    printTimeMinutes = 190.0,
+                ),
+                printerId = "printer",
+                printerName = "Impressora",
+                cost = PrintCost(material = 3.58, energy = 1.48, maintenance = 0.54, finishing = 0.36, investmentReturn = 1.78, fixedCost = 0.0),
+            ),
         ),
-        filamentWeightGrams = 35.79,
-        costs = CostBreakdown(3.58, 1.48, 0.54, 0.36, 0.36, 1.78, 0.0),
-        productionCost = 8.09,
+        costs = CostBreakdown(
+            material = 3.58, energy = 1.48, maintenance = 0.54, failures = 0.36, finishing = 0.36,
+            investmentReturn = 1.78, administrative = 0.0, labor = 0.0, fixedCost = 0.0,
+        ),
         salePrice = 16.19,
     )
 
@@ -229,7 +239,7 @@ class QuoteHistoryViewModelTest {
             job = PrintJob(filament = filament, filamentLengthMeters = 12.0, printTimeMinutes = 190.0),
             printer = printer,
             settings = SettingsRepository().settings.value,
-        ).copy(printerId = printer.id, printerName = printer.name)
+        )
         return repository.save(name = "Chaveiro", quote = calculated, services = emptyList(), photo = null, sourceLink = null, kind = QuoteKind.PRODUCT, category = category)
     }
 

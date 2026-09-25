@@ -14,6 +14,7 @@ import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
@@ -29,6 +30,7 @@ import com.threedreport.core.pricing.PricingCalculator
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
 import com.threedreport.core.slicer.CatalogMatcher
+import com.threedreport.core.slicer.ExtruderMatch
 import com.threedreport.core.slicer.FilamentMatch
 import com.threedreport.core.slicer.GCodeMetadata
 import com.threedreport.core.slicer.GCodeMetadataParser
@@ -88,11 +90,44 @@ class QuoteViewModel(
             statuses = setOf(OrderStatus.APROVADO, OrderStatus.EM_IMPRESSAO),
         ).single().takeIf { it.queuedQuoteCount > 0 }
 
-    fun selectFilament(id: String) = inputState.update { it.copy(filamentId = id, filamentColorId = null) }
-    fun selectFilamentColor(id: String) = inputState.update { it.copy(filamentColorId = id) }
-    fun selectPrinter(id: String) = inputState.update { it.copy(printerId = id) }
-    fun setLengthMeters(text: String) = inputState.update { it.copy(lengthMetersText = text, gcodeImportMessage = null) }
-    fun setPrintTimeMinutes(text: String) = inputState.update { it.copy(printTimeMinutesText = text, gcodeImportMessage = null) }
+    fun selectFilament(id: String, print: Int = 0, slot: Int = 0) = updateFilament(print, slot) { it.copy(filamentId = id, colorId = null) }
+    fun selectFilamentColor(id: String, print: Int = 0, slot: Int = 0) = updateFilament(print, slot) { it.copy(colorId = id) }
+    fun selectPrinter(id: String, print: Int = 0) = updatePrint(print) { it.copy(printerId = id) }
+    fun setLengthMeters(text: String, print: Int = 0, slot: Int = 0) = updatePrint(print) { current ->
+        current.copy(filaments = current.filaments.replaced(slot) { it.copy(lengthText = text) }, gcodeImportMessage = null)
+    }
+    fun setPrintTimeMinutes(text: String, print: Int = 0) = updatePrint(print) { it.copy(printTimeText = text, gcodeImportMessage = null) }
+
+    /**
+     * "+ Adicionar filamento" (decisão 105). A linha nova já vem com o filamento da última, porque
+     * numa peça multicolor o mais comum é o mesmo filamento em outra cor; a cor e os metros ficam
+     * pra escolher.
+     */
+    fun addFilament(print: Int = 0) = updatePrint(print) { current ->
+        val inStock = filaments.value.filter { it.hasStockAvailable }
+        // Com uma linha só, nada escolhido (ou um filamento que esgotou) aparece como o primeiro em
+        // estoque (ver [calculate]). Com duas, essa regra não vale mais, então o que a tela mostrava vira
+        // escolha de verdade; senão a linha 1 trocaria sozinha pra "Escolha o filamento".
+        val rows = if (current.filaments.size == 1) {
+            current.filaments.map { row -> if (inStock.none { it.id == row.filamentId }) row.copy(filamentId = inStock.firstOrNull()?.id) else row }
+        } else {
+            current.filaments
+        }
+        current.copy(filaments = rows + FilamentInput(filamentId = rows.last().filamentId))
+    }
+
+    /** Remove uma linha de filamento; a última que sobra não sai, porque impressão sem filamento não existe. */
+    fun removeFilament(slot: Int, print: Int = 0) = updatePrint(print) { current ->
+        if (current.filaments.size <= 1) current else current.copy(filaments = current.filaments.filterIndexed { index, _ -> index != slot })
+    }
+
+    private fun updatePrint(print: Int, transform: (PrintInput) -> PrintInput) = inputState.update { input ->
+        if (print !in input.prints.indices) input else input.copy(prints = input.prints.replaced(print, transform))
+    }
+
+    private fun updateFilament(print: Int, slot: Int, transform: (FilamentInput) -> FilamentInput) = updatePrint(print) { current ->
+        if (slot !in current.filaments.indices) current else current.copy(filaments = current.filaments.replaced(slot, transform))
+    }
     fun setLaborMinutes(text: String) = inputState.update { it.copy(laborMinutesText = text) }
     fun setQuantity(text: String) = inputState.update { it.copy(quantityText = text) }
     /**
@@ -120,9 +155,9 @@ class QuoteViewModel(
      * Tudo continua editável depois — é um atalho pra preencher, não uma trava. [undoGCodeImport]
      * desfaz de uma vez, inclusive a impressora e o filamento que estavam escolhidos antes.
      */
-    fun importGCode(file: PickedFile) {
+    fun importGCode(file: PickedFile, print: Int = 0) {
         unsupportedGCodeMessage(file.fileName)?.let { message ->
-            inputState.update { it.copy(gcodeImportMessage = message) }
+            updatePrint(print) { it.copy(gcodeImportMessage = message) }
             return
         }
 
@@ -148,49 +183,52 @@ class QuoteViewModel(
             }
         }
 
-        val current = inputState.value
+        val current = inputState.value.prints.getOrNull(print) ?: return
         val inStock = filaments.value.filter { it.hasStockAvailable }
-        val currentFilamentId = current.filamentId ?: inStock.firstOrNull()?.id
+        val preferredFilamentIds = current.filaments.mapNotNull { it.filamentId }.ifEmpty { listOfNotNull(inStock.firstOrNull()?.id) }
         val printerMatch = CatalogMatcher.matchPrinter(metadata, printers.value)
-        val filamentMatch = CatalogMatcher.matchFilament(metadata, filaments.value, currentFilamentId)
+        val extruders = CatalogMatcher.matchFilaments(metadata, filaments.value, preferredFilamentIds)
         val chosenPrinter = (printerMatch as? PrinterMatch.Found)?.printer
-        val chosenFilament = filamentMatch as? FilamentMatch.Found
+        // Peça multicolor: uma linha por extrusor, cada uma com o próprio consumo (decisão 105). O que
+        // não casou fica sem filamento, pra escolher: cobrar a linha pelo filamento errado mudaria o
+        // preço sem ninguém ver.
+        val perExtruder = extruders.size > 1 && extruders.all { it.lengthMeters != null }
+        val rows = if (perExtruder) {
+            extruders.map { extruder ->
+                val found = extruder.match as? FilamentMatch.Found
+                FilamentInput(filamentId = found?.filament?.id, colorId = found?.color?.id, lengthText = formatImportedNumber(extruder.lengthMeters!!))
+            }
+        } else {
+            val first = current.filaments.first()
+            val found = extruders.singleOrNull()?.match as? FilamentMatch.Found
+            listOf(
+                FilamentInput(
+                    filamentId = found?.filament?.id ?: first.filamentId,
+                    colorId = if (found != null) found.color?.id else first.colorId,
+                    lengthText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: first.lengthText,
+                ),
+            )
+        }
 
-        inputState.value = current.copy(
-            lengthMetersText = metadata.filamentLengthMeters?.let(::formatImportedNumber) ?: current.lengthMetersText,
-            printTimeMinutesText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: current.printTimeMinutesText,
-            printerId = chosenPrinter?.id ?: current.printerId,
-            filamentId = chosenFilament?.filament?.id ?: current.filamentId,
-            filamentColorId = when {
-                chosenFilament == null -> current.filamentColorId
-                else -> chosenFilament.color?.id
-            },
-            selectionBeforeGCode = current.selectionBeforeGCode
-                ?: SelectionBeforeGCode(current.filamentId, current.filamentColorId, current.printerId),
-            gcodeImportMessage = gcodeImportMessage(metadata, photoApplied, printerMatch, filamentMatch),
-        )
+        updatePrint(print) {
+            it.copy(
+                printerId = chosenPrinter?.id ?: it.printerId,
+                filaments = rows,
+                printTimeText = metadata.printTimeMinutes?.let(::formatImportedNumber) ?: it.printTimeText,
+                beforeGCode = it.beforeGCode ?: it.copy(gcodeImportMessage = null),
+                gcodeImportMessage = gcodeImportMessage(metadata, photoApplied, printerMatch, extruders, perExtruder),
+            )
+        }
     }
 
     /**
-     * Desfaz a última importação de G-code: limpa comprimento/tempo/configurações de impressão
-     * (volta pro texto em branco/vazio, não pro valor anterior a importar), devolve a impressora,
-     * o filamento e a cor que estavam escolhidos antes e, se a foto atual também veio de lá,
-     * remove ela também — sem mexer numa foto que o usuário tenha escolhido manualmente antes ou
-     * depois.
+     * Desfaz a importação de G-code da impressão [print]: devolve a impressão exatamente como estava
+     * antes da primeira importação (impressora, linhas de filamento, comprimentos e tempo), limpa as
+     * configurações de impressão e, se a foto atual também veio de lá, remove ela também, sem mexer
+     * numa foto que o usuário tenha escolhido manualmente antes ou depois.
      */
-    fun undoGCodeImport() {
-        inputState.update {
-            val before = it.selectionBeforeGCode
-            it.copy(
-                lengthMetersText = "",
-                printTimeMinutesText = "",
-                gcodeImportMessage = null,
-                filamentId = before?.filamentId ?: it.filamentId,
-                filamentColorId = if (before != null) before.filamentColorId else it.filamentColorId,
-                printerId = before?.printerId ?: it.printerId,
-                selectionBeforeGCode = null,
-            )
-        }
+    fun undoGCodeImport(print: Int = 0) {
+        updatePrint(print) { it.beforeGCode ?: it.copy(gcodeImportMessage = null) }
         saveFormState.update {
             it.copy(
                 photo = if (it.photoFromGCode) null else it.photo,
@@ -215,7 +253,7 @@ class QuoteViewModel(
         val service = services.value.find { it.id == id } ?: return@update input
         val serviceInput = ServiceInput(
             name = service.name,
-            priceText = service.price?.let(::formatSavedNumber).orEmpty(),
+            priceText = service.suggestedPrice?.let(::formatSavedNumber).orEmpty(),
             chargedPerOrder = service.chargedPerOrder,
         )
         input.copy(selectedServices = input.selectedServices + (id to serviceInput))
@@ -426,17 +464,20 @@ class QuoteViewModel(
 
     private fun inputStateFrom(savedQuote: SavedQuote): QuoteInputState {
         val quote = savedQuote.quote
-        val job = quote.job
         return QuoteInputState(
             kind = savedQuote.kind,
-            filamentId = job.filament.id,
-            filamentColorId = job.filamentColor?.id,
-            printerId = quote.printerId,
-            lengthMetersText = formatSavedNumber(job.filamentLengthMeters),
-            printTimeMinutesText = formatSavedNumber(job.printTimeMinutes),
-            // Orçamento de antes da decisão 94 pode ter tempo por peça e preparo separados: somados,
-            // viram o mesmo total, e salvar de novo não muda o preço.
-            laborMinutesText = if (quote.totalLaborMinutes > 0) formatSavedNumber(quote.totalLaborMinutes) else "",
+            prints = quote.prints.map { print ->
+                PrintInput(
+                    name = print.job.name.orEmpty(),
+                    printerId = print.printerId,
+                    filaments = print.job.filaments.map { usage ->
+                        FilamentInput(filamentId = usage.filament.id, colorId = usage.color?.id, lengthText = formatSavedNumber(usage.lengthMeters))
+                    },
+                    printTimeText = formatSavedNumber(print.job.printTimeMinutes),
+                    runsText = if (print.job.runs > 1) print.job.runs.toString() else "",
+                )
+            },
+            laborMinutesText = if (quote.laborMinutes > 0) formatSavedNumber(quote.laborMinutes) else "",
             quantityText = if (quote.quantity > 1) quote.quantity.toString() else "",
             // Valor e forma de cobrança vêm do retrato salvo, não do catálogo atual: reabrir e salvar
             // não pode reprecificar o pedido em silêncio.
@@ -447,7 +488,7 @@ class QuoteViewModel(
                     chargedPerOrder = service.chargedPerOrder,
                 )
             },
-            salesChannelId = salesChannels.value.firstOrNull { it.name == quote.channelName }?.id,
+            salesChannelId = quote.channelId?.takeIf { id -> salesChannels.value.any { it.id == id } },
             shippingCostText = if (savedQuote.shippingCost > 0) formatSavedNumber(savedQuote.shippingCost) else "",
             // Sem isso, reabrir um orçamento negociado e salvar de novo voltaria em silêncio pro preço
             // de tabela. O campo recebe o total do cliente, igual ao que foi digitado (ver `calculate`).
@@ -513,8 +554,6 @@ class QuoteViewModel(
         input: QuoteInputState,
         channels: List<SalesChannel> = salesChannels.value,
     ): QuoteResult {
-        val filament = filaments.find { it.id == input.filamentId } ?: filaments.firstOrNull()
-        val printer = printers.find { it.id == input.printerId } ?: printers.firstOrNull()
         val selectedServices = input.selectedServices.mapNotNull { (id, serviceInput) ->
             val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 } ?: return@mapNotNull null
             QuoteService(
@@ -525,10 +564,18 @@ class QuoteViewModel(
             )
         }
         val missingServicePrice = selectedServices.size < input.selectedServices.size
-        val availableColors = filament?.colors?.filter { it.inStock }.orEmpty()
-        val filamentColor = availableColors.find { it.id == input.filamentColorId } ?: availableColors.firstOrNull()
-        val length = parseDecimal(input.lengthMetersText)
-        val time = parseDecimal(input.printTimeMinutesText)
+        val resolved = input.prints.map { print ->
+            ResolvedPrint(
+                printer = printers.find { it.id == print.printerId } ?: printers.firstOrNull(),
+                filaments = print.filaments.map { row ->
+                    // Com uma linha só, nada escolhido ainda vale o primeiro filamento: é a tela de
+                    // sempre. Numa peça multicolor, cada linha precisa de uma escolha de verdade.
+                    val filament = filaments.find { it.id == row.filamentId } ?: filaments.firstOrNull()?.takeIf { print.filaments.size == 1 }
+                    val available = filament?.colors?.filter { it.inStock }.orEmpty()
+                    ResolvedFilament(filament, available.find { it.id == row.colorId } ?: available.firstOrNull())
+                },
+            )
+        }
         val channel = channels.find { it.id == input.salesChannelId }
         // Produto do catálogo não tem frete (decisão 101): o campo some da tela, e o que tiver ficado
         // digitado nele não pode mexer no preço. O preço fechado, em produto, é o preço anunciado no
@@ -542,54 +589,46 @@ class QuoteViewModel(
             ?.let { (it - servicesTotal - shippingCost).coerceAtLeast(0.0) }
             ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * input.quantity }
 
-        if (filament == null || printer == null || length == null || time == null) {
-            return QuoteResult(
-                filament = filament,
-                filamentColor = filamentColor,
-                printer = printer,
-                selectedServices = selectedServices,
-                salesChannel = channel,
-                shippingCost = shippingCost,
-                missingServicePrice = missingServicePrice,
-            )
-        }
-
-        val job = PrintJob(
-            filament = filament,
-            filamentLengthMeters = length,
-            printTimeMinutes = time,
-            filamentColor = filamentColor,
+        val base = QuoteResult(
+            prints = resolved,
+            selectedServices = selectedServices,
+            salesChannel = channel,
+            shippingCost = shippingCost,
+            missingServicePrice = missingServicePrice,
         )
         return runCatching {
+            val jobs = printJobs(input, resolved) ?: return base
             PricingCalculator.calculate(
-                job = job,
-                printer = printer,
+                prints = jobs,
                 settings = settings,
                 channel = channel,
                 quantity = input.quantity,
                 // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
-                setupMinutes = parseDecimal(input.laborMinutesText) ?: 0.0,
+                laborMinutes = parseDecimal(input.laborMinutesText) ?: 0.0,
                 negotiatedSalePrice = negotiatedSalePrice,
             )
         }.fold(
-            onSuccess = {
-                QuoteResult(
-                    filament, filamentColor, printer, quote = it, selectedServices = selectedServices,
-                    salesChannel = channel, shippingCost = shippingCost, missingServicePrice = missingServicePrice,
-                )
-            },
-            onFailure = {
-                QuoteResult(
-                    filament, filamentColor, printer, errorMessage = it.message, selectedServices = selectedServices,
-                    salesChannel = channel, shippingCost = shippingCost, missingServicePrice = missingServicePrice,
-                )
-            },
+            onSuccess = { base.copy(quote = it) },
+            onFailure = { base.copy(errorMessage = it.message) },
         )
     }
 
+    /** As impressões prontas pro cálculo, ou `null` enquanto falta escolher ou preencher alguma coisa. */
+    private fun printJobs(input: QuoteInputState, resolved: List<ResolvedPrint>): List<Pair<PrintJob, PrinterProfile>>? =
+        input.prints.zip(resolved).map { (print, resolvedPrint) ->
+            val printer = resolvedPrint.printer ?: return null
+            val usages = print.filaments.zip(resolvedPrint.filaments).map { (row, resolvedFilament) ->
+                val filament = resolvedFilament.filament ?: return null
+                val length = parseDecimal(row.lengthText) ?: return null
+                FilamentUsage(filament = filament, lengthMeters = length, color = resolvedFilament.color)
+            }
+            val time = parseDecimal(print.printTimeText) ?: return null
+            PrintJob(filaments = usages, printTimeMinutes = time, runs = print.runs, name = print.name.trim().ifEmpty { null }) to printer
+        }
+
     /**
-     * O mesmo orçamento calculado em cada impressora cadastrada, pra responder "em qual máquina
-     * essa peça sai mais barata". Só faz sentido com mais de uma impressora; devolve lista vazia
+     * O mesmo orçamento calculado em cada impressora cadastrada, com todas as impressões nela, pra
+     * responder "em qual máquina essa peça sai mais barata". Só faz sentido com mais de uma impressora; devolve lista vazia
      * quando não há o que comparar ou quando os dados da peça ainda não dão um cálculo válido.
      */
     fun comparePrinters(
@@ -602,7 +641,8 @@ class QuoteViewModel(
     ): List<Pair<PrinterProfile, Quote>> {
         if (printers.size < 2) return emptyList()
         return printers.mapNotNull { printer ->
-            val result = calculate(filaments, listOf(printer), settings, services, input.copy(printerId = printer.id), channels)
+            val allOnThisPrinter = input.copy(prints = input.prints.map { it.copy(printerId = printer.id) })
+            val result = calculate(filaments, listOf(printer), settings, services, allOnThisPrinter, channels)
             result.quote?.let { printer to it }
         }
     }
@@ -611,10 +651,11 @@ class QuoteViewModel(
         metadata: GCodeMetadata,
         photoApplied: Boolean,
         printerMatch: PrinterMatch,
-        filamentMatch: FilamentMatch,
+        extruders: List<ExtruderMatch>,
+        perExtruder: Boolean,
     ): String {
         val filled = buildList {
-            if (metadata.filamentLengthMeters != null) add("comprimento de filamento")
+            if (perExtruder) add("consumo de cada filamento") else if (metadata.filamentLengthMeters != null) add("comprimento de filamento")
             if (metadata.printTimeMinutes != null) add("tempo de impressão")
             if (photoApplied) add("foto do modelo")
             if (metadata.layerHeightMm != null || metadata.infillPercentage != null ||
@@ -632,7 +673,14 @@ class QuoteViewModel(
                 },
             )
             printerSentence(printerMatch)?.let(::add)
-            filamentSentence(filamentMatch)?.let(::add)
+            when {
+                perExtruder -> add(extrudersSentence(extruders))
+                extruders.size > 1 -> add(
+                    "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um: o total ficou numa " +
+                        "linha só. Separe em \"+ Adicionar filamento\" pra cobrar cada um pelo seu preço.",
+                )
+                else -> extruders.singleOrNull()?.let { filamentSentence(it.match) }?.let(::add)
+            }
             if (metadata.thumbnail != null && !photoApplied) add("Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido.")
         }
         return sentences.joinToString(" ")
@@ -652,10 +700,19 @@ class QuoteViewModel(
         is FilamentMatch.Ambiguous -> "Há ${match.count} filamentos ${match.type} em estoque — escolha qual usou."
         is FilamentMatch.NotRegistered ->
             "O G-code usa ${match.type}" + (match.vendor?.let { " da $it" } ?: "") + ", que não está cadastrado em estoque."
-        is FilamentMatch.Multimaterial ->
-            "O G-code usa mais de um material (${match.types.joinToString(", ")}); o orçamento ainda considera um filamento só — escolha o principal."
         FilamentMatch.Unknown -> null
     }
+
+    /** "Um filamento por extrusor: 1) PLA, cor Verde; 2) PETG (não cadastrado em estoque, escolha)." */
+    private fun extrudersSentence(extruders: List<ExtruderMatch>): String =
+        "Um filamento por extrusor: " + extruders.mapIndexed { index, extruder ->
+            "${index + 1}) " + when (val match = extruder.match) {
+                is FilamentMatch.Found -> match.filament.name + (match.color?.let { ", cor ${it.displayLabel()}" } ?: "")
+                is FilamentMatch.Ambiguous -> "${match.type} (há ${match.count} em estoque, escolha qual)"
+                is FilamentMatch.NotRegistered -> match.type + (match.vendor?.let { " da $it" } ?: "") + " (não cadastrado em estoque, escolha)"
+                FilamentMatch.Unknown -> "material não informado (escolha)"
+            }
+        }.joinToString("; ") + "."
 
     /**
      * Arquivos que parecem G-code mas o app ainda não lê, com o caminho pra resolver. `null`
@@ -699,3 +756,5 @@ class QuoteViewModel(
 
 /** Extensões de G-code em texto que os fatiadores exportam. */
 private val GCODE_EXTENSIONS = listOf(".gcode", ".gco", ".g")
+
+private fun <T> List<T>.replaced(index: Int, transform: (T) -> T): List<T> = mapIndexed { i, item -> if (i == index) transform(item) else item }

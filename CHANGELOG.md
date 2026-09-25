@@ -5,6 +5,44 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [2.0.0] - 2026-09-25
+
+Primeira versão MAJOR: o formato dos dados mudou e **os dados da versão
+anterior não são convertidos**. Ao abrir, o app guarda a pasta antiga inteira
+em `~/.3dreport-v1`, sem apagar nada, e avisa uma vez onde ela ficou. Pra
+recuperar, reinstale a 1.44 e renomeie a pasta de volta pra `.3dreport`.
+
+### Adicionado
+- **Peça multicolor (AMS, MMU).** "+ Adicionar filamento" na tela de
+  Orçamento: cada filamento com os próprios metros, cobrado pelo preço dele.
+  Antes, PLA com PETG saía como se fosse tudo do mesmo material.
+- **G-code multicolor vira uma linha por extrusor.** Arrastar um G-code do
+  Bambu Studio, OrcaSlicer ou PrusaSlicer com várias cores preenche o consumo
+  de cada filamento, já com a purga e a torre, e escolhe filamento e cor
+  quando batem com os cadastrados. O que não bate fica em branco pra escolher.
+- **Consumo por filamento** na nota do resultado e no card do Histórico
+  ("PLA · Preto 42 g, PETG 80 g"), pra conferir no estoque.
+- Por dentro, o pedido já aceita várias impressões, cada uma na sua
+  impressora: a fila, as horas de manutenção e o Dashboard já somam cada
+  impressão na máquina dela. A tela pra montar pedidos assim vem na 2.1.
+
+### Alterado
+- **Dados em formato novo** (ver acima), sem os campos que existiam só pra
+  abrir arquivos antigos.
+- **Backup:** restaurar um backup da versão 1.x é recusado com aviso, sem
+  mexer nos dados atuais.
+- Um arquivo de dados que não abre é guardado ao lado
+  (`<nome>.ilegivel-<data>.json`) em vez de ser sobrescrito na próxima
+  gravação.
+- "Desfazer importação do G-code" devolve a impressão exatamente como estava
+  antes, inclusive os filamentos.
+- Renomear um canal de venda não deixa mais os produtos do catálogo sem
+  canal na hora de atualizar o preço.
+
+### Corrigido
+- G-code com um slot de filamento declarado e sem uso não dispara mais o
+  aviso de "mais de um material".
+
 ## [1.44.0] - 2026-09-24
 
 ### Adicionado

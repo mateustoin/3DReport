@@ -660,8 +660,9 @@ modelo supõe "1 pedido = 1 impressão = 1 filamento": `PrintJob` tem um
   representável, e pior, o parser de G-code **soma** os extrusores num total
   só, então uma peça com PLA + PETG é cobrada como se tudo fosse do mesmo
   preço/kg. Desde a decisão 89, importar um G-code com materiais diferentes
-  em extrusores diferentes pelo menos **avisa** e não escolhe filamento
-  sozinho; o consumo continua somado.
+  em extrusores diferentes pelo menos **avisava** e não escolhia filamento
+  sozinho. **Resolvido na 2.0.0 (decisão 105):** cada extrusor vira uma linha
+  com o próprio consumo e o próprio preço.
 - **Pedido feito de várias impressões** (levantado pelo responsável do
   projeto, 2026-09-24): uma action figure grande ou um diorama sai em várias
   rodadas de impressão, às vezes em impressoras e filamentos diferentes, mas
@@ -693,41 +694,41 @@ margem (decisão 19); o modelo é migrado **uma vez**, já suportando as duas
 coisas, e as telas vêm em fases, multicolor primeiro porque corrige uma
 conta errada.
 
-**Fase 1: modelo e cálculo (nada muda na tela)**
+**Fase 1: modelo e cálculo** (feita, decisões 104 e 105, 2026-09-25, v2.0.0)
 
-- [ ] **`FilamentUsage` (filamento, cor, metros).** `PrintJob` mantém os
-  campos atuais como filamento principal, pra JSON antigo continuar válido,
-  e ganha `additionalFilaments`, `name`, impressora (`printerId` e
-  `printerName`, pelo mesmo motivo do `Quote`) e `runs` (quantas vezes a
-  mesma mesa roda, padrão 1).
-- [ ] **`Quote` ganha `additionalJobs`.** O `job` atual continua sendo a
-  impressão 1, então nenhum orçamento salvo muda. O custo de cada impressão
-  fica congelado junto, pra o detalhamento sair igual ao reabrir.
-- [ ] **`PricingCalculator` por impressão.** Material por filamento;
-  energia, manutenção, retorno e custo fixo com a impressora **daquela**
-  impressão; soma; e só então o que é do pedido (preparo, administrativo,
-  falha, margem, canal, imposto). A assinatura atual vira atalho pra uma
-  impressão. O acabamento, por ser percentual do material, fica em cada
-  impressão junto com o material dela. O `PrintJob.laborMinutes` continua
-  em zero pelo app (decisão 94): o tempo de trabalho é só do pedido.
-  **Garantia:** os testes de `commonTest` passam sem alteração,
-  nos alvos JVM e JS, e a calculadora do site (decisão 98) não muda.
-- [ ] `quantity` continua sendo "quantos pedidos iguais" (2 dioramas); cada
-  impressão multiplica pelos próprios `runs` e depois pela quantidade.
+- [x] **Modelo em lista, não "principal + adicionais".** **Feito de outro jeito
+  (decisão 104):** como o app ainda não está em produção, o formato do JSON foi
+  quebrado de propósito e o app recomeça do zero, guardando a pasta antiga em
+  `~/.3dreport-v1`. `FilamentUsage` (filamento, metros, cor); `PrintJob` com
+  `filaments`, tempo, `runs` e nome; `QuotedPrint` (a impressão, a impressora e
+  o custo dela, congelados); `Quote.prints`. Texto original: `PrintJob` mantinha
+  os campos atuais como filamento principal e ganhava `additionalFilaments`, e
+  `Quote` ganhava `additionalJobs`, pra JSON antigo continuar válido.
+- [x] **`PricingCalculator` por impressão.** Material por filamento; energia,
+  manutenção, retorno e custo fixo com a impressora **daquela** impressão;
+  soma; e só então o que é do pedido. Acabamento em cada impressão, junto com o
+  material dela. O tempo de trabalho é só do pedido: `PrintJob.laborMinutes`
+  saiu (decisão 104). Os números da planilha de referência não mudaram, nos
+  alvos JVM e JS, e a calculadora do site usa o atalho de uma impressão.
+- [x] `quantity` continua sendo "quantos pedidos iguais"; cada impressão
+  multiplica pelos próprios `runs` e depois pela quantidade.
+- [x] **Legado de compatibilidade removido na mesma quebra** (decisão 104):
+  nomes antigos mantidos só pelo JSON (`marketplaceFeeRate`, `setupMinutes`,
+  `watermarkText`, `Service.price`), dados gravados em duplicidade
+  (`productionCost`, `filamentWeightGrams`), migrações de configuração e o
+  canal achado pelo nome.
 
-**Fase 2: vários filamentos numa impressão (multicolor/AMS)**
+**Fase 2: vários filamentos numa impressão (multicolor/AMS)** (feita, decisão 105, 2026-09-25, v2.0.0)
 
-- [ ] **"+ Adicionar filamento"** na linha do filamento. Com mais de um,
-  cada linha tem filamento, cor e metros; com um só, a tela fica
-  exatamente como hoje.
-- [ ] **G-code por extrusor:** o parser para de somar e devolve o consumo de
-  cada extrusor, e o `CatalogMatcher` casa cada um com a mesma regra de
-  precisão da decisão 89 (o que não bate fica em branco pra escolher).
-  Primeiro passo obrigatório: conferir em G-codes multicolor reais (Bambu
-  Studio, OrcaSlicer, PrusaSlicer com MMU) se o consumo por extrusor já
-  inclui a purga e a torre, que são custo de verdade.
-- [ ] **Resultado mostra o consumo por filamento** ("PLA preto 320 g, PETG
-  80 g"), que é o que o vendedor confere no estoque.
+- [x] **"+ Adicionar filamento"** abaixo do filamento. Com mais de um, cada
+  linha tem filamento, cor, metros e remover; com um só, a tela fica como antes.
+- [x] **G-code por extrusor:** o parser para de somar e devolve o consumo de
+  cada extrusor, e o `CatalogMatcher` casa cada um com a regra da decisão 89.
+  **Conferido em G-codes multicolor reais** (Bambu Studio com AMS lite,
+  OrcaSlicer IDEX com torre, OrcaSlicer com slot sem uso): o valor por extrusor
+  já inclui a purga e a torre.
+- [x] **Resultado mostra o consumo por filamento** ("PLA · Preto 320 g · PETG
+  80 g"), e o card do Histórico também.
 
 **Fase 3: várias impressões num pedido**
 
@@ -752,17 +753,24 @@ conta errada.
 
 **Fase 4: o resto do app entende o pedido com várias impressões**
 
+O núcleo saiu junto da Fase 1 (v2.0.0), porque com o modelo em lista cada
+consumidor precisou tratar a lista.
+
 - [ ] **Histórico e Kanban:** um cartão por pedido, com "3 impressões"
   discreto.
-- [ ] **Fila de impressão e horas de manutenção:** cada impressão soma na
-  impressora dela (`PrintQueueReport`, `MaintenanceReport`).
-- [ ] **Dashboard:** horas de máquina somadas; o filamento mais usado conta
-  cada filamento de cada impressão (`QuoteReport`).
-- [ ] **PDF, texto/WhatsApp e imagem:** um item só; o tempo de impressão
-  (opção da decisão 85) é a soma.
+- [x] **Fila de impressão e horas de manutenção:** cada impressão soma na
+  impressora dela (`PrintQueueReport`, `MaintenanceReport`, via
+  `Quote.printMinutesOn`).
+- [x] **Dashboard:** horas de máquina somadas; o filamento mais usado conta
+  cada filamento de cada pedido (`QuoteReport`), sem repetir por impressão.
+- [x] **PDF, texto/WhatsApp e imagem:** um item só; o tempo de impressão
+  (opção da decisão 85) é a soma (`Quote.totalPrintTimeMinutes`).
 - [ ] **Duplicar, reimprimir, editar e o "Vender" do catálogo** (leva 7B)
-  copiam todas as impressões.
-- [ ] **Backup:** o formato só ganha campos opcionais.
+  copiam todas as impressões. O código já lê a lista inteira; faltam os testes
+  com várias impressões, que só existem na tela na Fase 3.
+- [x] **Backup:** o manifesto guarda a versão do formato de dados, e backup de
+  outro formato é recusado (decisão 104). Texto original: "o formato só ganha
+  campos opcionais".
 
 **Cuidados de usabilidade na implementação:**
 

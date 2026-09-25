@@ -14,7 +14,7 @@ class RealGCodeParserTest {
 
         assertEquals("Bambu Lab X1 Carbon", metadata.printerModel)
         assertEquals("Bambu Lab X1 Carbon", metadata.printerSettingsName)
-        assertEquals(listOf(GCodeFilament(type = "PLA", vendor = null, colorHex = "#00AE42")), metadata.filaments)
+        assertEquals(listOf(GCodeFilament(type = "PLA", vendor = null, colorHex = "#00AE42", lengthMeters = 0.32549)), metadata.filaments)
         assertEquals(0.32549, metadata.filamentLengthMeters!!, 1e-9)
         // Bambu Studio 2.x grava "model printing time: ...; total estimated time: ..." numa linha só:
         // antes desta correção, o tempo ficava null.
@@ -26,7 +26,7 @@ class RealGCodeParserTest {
         val metadata = GCodeMetadataParser.parse(RealGCodeFixtures.BAMBU_STUDIO_A1_MINI)
 
         assertEquals("Bambu Lab A1 mini", metadata.printerModel)
-        assertEquals(GCodeFilament(type = "TPU", vendor = null, colorHex = "#00AE42"), metadata.filaments.single())
+        assertEquals(GCodeFilament(type = "TPU", vendor = null, colorHex = "#00AE42", lengthMeters = 0.07574), metadata.filaments.single())
         assertEquals(9.0 + 3.0 / 60, metadata.printTimeMinutes!!, 1e-9)
     }
 
@@ -47,7 +47,7 @@ class RealGCodeParserTest {
 
         assertEquals("Voron_v2_300_aferburner", metadata.printerModel)
         assertEquals("Voron_v2_300_afterburner", metadata.printerSettingsName)
-        assertEquals(GCodeFilament(type = "ABS", vendor = null, colorHex = "#A768DF"), metadata.filaments.single())
+        assertEquals(GCodeFilament(type = "ABS", vendor = null, colorHex = "#A768DF", lengthMeters = 0.21544), metadata.filaments.single())
         assertEquals(8.0 + 56.0 / 60, metadata.printTimeMinutes!!, 1e-9)
     }
 
@@ -57,7 +57,9 @@ class RealGCodeParserTest {
 
         assertEquals("Creality Ender-3 V2", metadata.printerModel)
         assertNull(metadata.printerSettingsName)
-        assertTrue(metadata.filaments.isEmpty())
+        // Só o consumo: o Cura não grava tipo nem marca.
+        assertNull(metadata.filaments.single().type)
+        assertEquals(metadata.filamentLengthMeters, metadata.filaments.single().lengthMeters)
         assertEquals(7.0, metadata.printTimeMinutes!!, 1e-9)
     }
 
@@ -84,5 +86,45 @@ class RealGCodeParserTest {
             ),
             metadata.filaments,
         )
+    }
+
+    @Test
+    fun bambuStudioTwoColorsGiveTheLengthOfEachExtruder() {
+        val metadata = GCodeMetadataParser.parse(RealGCodeFixtures.BAMBU_STUDIO_A1_TWO_COLORS)
+
+        assertEquals(
+            listOf(
+                GCodeFilament(type = "PLA", vendor = "Bambu Lab", colorHex = "#00AE42", lengthMeters = 9.03547),
+                GCodeFilament(type = "PLA", vendor = "Bambu Lab", colorHex = "#FFFF00", lengthMeters = 11.46779),
+            ),
+            metadata.filaments,
+        )
+        assertEquals(9.03547 + 11.46779, metadata.filamentLengthMeters!!, 1e-9)
+        assertEquals(4 * 60 + 12 + 53.0 / 60, metadata.printTimeMinutes!!, 1e-9)
+    }
+
+    @Test
+    fun orcaSlicerIdexKeepsTheExtrudersInOrderAndTheSumMatchesTheTotal() {
+        val metadata = GCodeMetadataParser.parse(RealGCodeFixtures.ORCA_SLICER_IDEX_PURGE_TOWER)
+
+        assertEquals(1.38473, metadata.filaments[0].lengthMeters!!, 1e-9)
+        assertEquals(1.80562, metadata.filaments[1].lengthMeters!!, 1e-9)
+        assertEquals(listOf("#26A69A", "#FFFF00"), metadata.filaments.map { it.colorHex })
+        assertEquals(metadata.filamentLengthMeters!!, metadata.filaments.sumOf { it.lengthMeters!! }, 1e-9)
+    }
+
+    @Test
+    fun aDeclaredSlotThatWasNotUsedIsLeftOut() {
+        val metadata = GCodeMetadataParser.parse(RealGCodeFixtures.ORCA_SLICER_UNUSED_SLOT)
+
+        assertEquals(listOf(GCodeFilament(type = "PLA", vendor = null, colorHex = "#ffffff", lengthMeters = 1.48569)), metadata.filaments)
+    }
+
+    @Test
+    fun lengthsThatDoNotLineUpWithTheTypesAreNotGuessed() {
+        val metadata = GCodeMetadataParser.parse("; filament used [mm] = 1000, 500, 250\n; filament_type = PLA;PETG\n")
+
+        assertEquals(listOf(null, null), metadata.filaments.map { it.lengthMeters })
+        assertEquals(1.75, metadata.filamentLengthMeters!!, 1e-9)
     }
 }

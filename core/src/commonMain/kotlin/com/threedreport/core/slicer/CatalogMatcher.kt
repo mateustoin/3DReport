@@ -19,7 +19,7 @@ sealed interface PrinterMatch {
     data object Unknown : PrinterMatch
 }
 
-/** O que o G-code diz sobre o filamento, cruzado com os filamentos em estoque. */
+/** O que o G-code diz sobre o filamento de um extrusor, cruzado com os filamentos em estoque. */
 sealed interface FilamentMatch {
     /** [color] é `null` quando não dá pra saber a cor com segurança. */
     data class Found(val filament: Filament, val color: FilamentColor?) : FilamentMatch
@@ -29,11 +29,17 @@ sealed interface FilamentMatch {
 
     data class NotRegistered(val type: String, val vendor: String?) : FilamentMatch
 
-    /** Materiais diferentes em extrusores diferentes: o app ainda orça um filamento só (leva 9). */
-    data class Multimaterial(val types: List<String>) : FilamentMatch
-
+    /** O G-code não diz o material deste extrusor (o Cura só grava o consumo). */
     data object Unknown : FilamentMatch
 }
+
+/**
+ * Um extrusor usado no G-code: quanto consumiu e com qual filamento cadastrado ele casa.
+ *
+ * @property lengthMeters consumo deste extrusor, com purga e torre, ou `null` quando o fatiador
+ *   só informa o total (ver [GCodeFilament.lengthMeters]).
+ */
+data class ExtruderMatch(val lengthMeters: Double?, val match: FilamentMatch)
 
 /**
  * Casa o que o fatiador gravou no G-code com os catálogos de impressoras e filamentos, pra montar
@@ -62,17 +68,23 @@ object CatalogMatcher {
     }
 
     /**
-     * @param currentFilamentId filamento já escolhido na tela: se ele for um dos candidatos, fica
-     *   (o G-code confirma a escolha em vez de trocá-la).
+     * Um item por extrusor usado, na ordem do fatiador (leva 9, decisão 105): uma peça multicolor
+     * vira um filamento por extrusor, cada um com o próprio consumo e casado sozinho, pela mesma
+     * regra de precisão. O que não bate fica em branco pra escolher.
+     *
+     * @param preferredFilamentIds filamentos já escolhidos na tela: quando um deles está entre os
+     *   candidatos, fica (o G-code confirma a escolha em vez de trocá-la).
      */
-    fun matchFilament(metadata: GCodeMetadata, filaments: List<Filament>, currentFilamentId: String?): FilamentMatch {
-        val used = metadata.filaments.filter { it.type != null }
-        if (used.isEmpty()) return FilamentMatch.Unknown
+    fun matchFilaments(
+        metadata: GCodeMetadata,
+        filaments: List<Filament>,
+        preferredFilamentIds: Collection<String> = emptyList(),
+    ): List<ExtruderMatch> =
+        metadata.filaments.map { ExtruderMatch(it.lengthMeters, matchFilament(it, filaments, preferredFilamentIds)) }
 
-        val types = used.mapNotNull { it.type }.distinctBy(::normalize)
-        if (types.size > 1) return FilamentMatch.Multimaterial(types)
-        val type = types.single()
-        val vendor = used.mapNotNull { it.vendor }.distinctBy(::normalize).singleOrNull()
+    private fun matchFilament(gcode: GCodeFilament, filaments: List<Filament>, preferredFilamentIds: Collection<String>): FilamentMatch {
+        val type = gcode.type ?: return FilamentMatch.Unknown
+        val vendor = gcode.vendor
 
         val sameType = filaments.filter { it.hasStockAvailable && it.materialType?.let(::normalize) == normalize(type) }
         val candidates = if (vendor != null) sameType.filter { it.brand?.let(::normalize) == normalize(vendor) } else sameType
@@ -80,20 +92,19 @@ object CatalogMatcher {
         val chosen = when {
             candidates.isEmpty() -> return FilamentMatch.NotRegistered(type, vendor)
             candidates.size == 1 -> candidates.single()
-            else -> candidates.firstOrNull { it.id == currentFilamentId } ?: return FilamentMatch.Ambiguous(type, candidates.size)
+            else -> candidates.firstOrNull { it.id in preferredFilamentIds } ?: return FilamentMatch.Ambiguous(type, candidates.size)
         }
-        val colors = used.mapNotNull { it.colorHex }.distinctBy { it.uppercase() }
-        return FilamentMatch.Found(chosen, colorFor(chosen, colors))
+        return FilamentMatch.Found(chosen, colorFor(chosen, gcode.colorHex))
     }
 
     /**
-     * A cor só é escolhida quando o G-code usa uma cor só e há uma cor cadastrada parecida em
-     * estoque. Um filamento com uma única cor em estoque dispensa a comparação.
+     * A cor só é escolhida quando há uma cor cadastrada parecida em estoque. Um filamento com uma
+     * única cor em estoque dispensa a comparação.
      */
-    private fun colorFor(filament: Filament, gcodeColors: List<String>): FilamentColor? {
+    private fun colorFor(filament: Filament, gcodeColor: String?): FilamentColor? {
         val inStock = filament.colors.filter { it.inStock }
         if (inStock.size == 1) return inStock.single()
-        val target = gcodeColors.singleOrNull()?.let(::parseRgb) ?: return null
+        val target = gcodeColor?.let(::parseRgb) ?: return null
         return inStock
             .mapNotNull { color -> color.hex?.let(::parseRgb)?.let { color to distance(it, target) } }
             .filter { (_, distance) -> distance <= MAX_COLOR_DISTANCE }

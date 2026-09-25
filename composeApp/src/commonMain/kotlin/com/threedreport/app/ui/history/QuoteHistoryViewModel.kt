@@ -317,7 +317,7 @@ class QuoteHistoryViewModel(
 
         val branding = resolvePdfBranding()
         val items = selected.map { QuoteExportItem(it, photoBytes(it)) }
-        val pdfBytes = renderCatalogPdf(items, branding.watermarkText, branding.footerText, currencyRepository.currency.value, branding.options)
+        val pdfBytes = renderCatalogPdf(items, branding.brandName, branding.footerText, currencyRepository.currency.value, branding.options)
 
         saveBytesToFile(
             pdfBytes,
@@ -330,7 +330,7 @@ class QuoteHistoryViewModel(
     private fun performExportPdf(savedQuote: SavedQuote) {
         val branding = resolvePdfBranding()
         val item = QuoteExportItem(savedQuote, photoBytes(savedQuote))
-        val pdfBytes = renderSavedQuotesPdf(listOf(item), branding.watermarkText, branding.footerText, currencyRepository.currency.value, branding.options)
+        val pdfBytes = renderSavedQuotesPdf(listOf(item), branding.brandName, branding.footerText, currencyRepository.currency.value, branding.options)
         saveBytesToFile(pdfBytes, "${sanitizeFileName(savedQuote.name)}.pdf", defaultDocumentsDirectory())
     }
 
@@ -365,7 +365,7 @@ class QuoteHistoryViewModel(
     private fun performExportSelectedPdf(selected: List<SavedQuote>) {
         val branding = resolvePdfBranding()
         val items = selected.map { QuoteExportItem(it, photoBytes(it)) }
-        val pdfBytes = renderSavedQuotesPdf(items, branding.watermarkText, branding.footerText, currencyRepository.currency.value, branding.options)
+        val pdfBytes = renderSavedQuotesPdf(items, branding.brandName, branding.footerText, currencyRepository.currency.value, branding.options)
 
         saveBytesToFile(
             pdfBytes,

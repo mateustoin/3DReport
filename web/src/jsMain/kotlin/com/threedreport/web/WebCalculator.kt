@@ -101,7 +101,7 @@ fun calculateQuote(
         settings = settings,
         channel = channel,
         quantity = quantity,
-        setupMinutes = laborMinutes,
+        laborMinutes = laborMinutes,
     )
     WebQuote(
         salePrice = quote.salePrice,

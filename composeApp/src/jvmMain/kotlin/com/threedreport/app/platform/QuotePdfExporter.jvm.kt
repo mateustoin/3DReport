@@ -123,7 +123,7 @@ private fun PDFont.widthOf(text: String, size: Float): Float = getStringWidth(pd
 
 actual fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
-    watermarkText: String?,
+    brandName: String?,
     footerText: String?,
     currency: Currency,
     options: PdfLayoutOptions,
@@ -134,7 +134,7 @@ actual fun renderSavedQuotesPdf(
         items.forEach { item ->
             val page = PDPage(PDRectangle.A4)
             document.addPage(page)
-            drawQuotePage(context, page, item, watermarkText, footerText)
+            drawQuotePage(context, page, item, brandName, footerText)
         }
 
         val output = ByteArrayOutputStream()
@@ -154,7 +154,7 @@ private fun drawQuotePage(
     context: PdfContext,
     page: PDPage,
     item: QuoteExportItem,
-    watermarkText: String?,
+    brandName: String?,
     footerText: String?,
 ) {
     val margin = 50f
@@ -230,7 +230,7 @@ private fun drawQuotePage(
             content.drawImage(pdImage, margin, cursorY - drawHeight, drawWidth, drawHeight)
         }
 
-        drawPageDecorations(context, content, page, watermarkText, footerText, margin)
+        drawPageDecorations(context, content, page, brandName, footerText, margin)
     }
 }
 
@@ -243,14 +243,14 @@ private fun drawPageDecorations(
     context: PdfContext,
     content: PDPageContentStream,
     page: PDPage,
-    watermarkText: String?,
+    brandName: String?,
     footerText: String?,
     margin: Float,
 ) {
     // Com borda, rodapé e assinatura sobem um pouco pra não encostar nela.
     val footerY = if (context.options.showBorder) 36f else 28f
     if (context.options.showBorder) drawBorder(content, page)
-    if (!watermarkText.isNullOrBlank()) drawWatermark(content, page, context.titleFont, watermarkText)
+    if (!brandName.isNullOrBlank()) drawWatermark(content, page, context.titleFont, brandName)
     if (!footerText.isNullOrBlank()) drawFooter(content, page, context.bodyFont, footerText, margin, textY = footerY)
     if (context.options.showAppSignature) drawAppSignature(content, page, context.bodyFont, margin, baselineY = footerY)
 }
@@ -343,7 +343,7 @@ private fun drawIdentityHeader(
 
 actual fun renderCatalogPdf(
     items: List<QuoteExportItem>,
-    watermarkText: String?,
+    brandName: String?,
     footerText: String?,
     currency: Currency,
     options: PdfLayoutOptions,
@@ -390,7 +390,7 @@ actual fun renderCatalogPdf(
 
         fun finishPage() {
             val current = content ?: return
-            drawPageDecorations(context, current, page!!, watermarkText, footerText, margin)
+            drawPageDecorations(context, current, page!!, brandName, footerText, margin)
             current.close()
         }
 

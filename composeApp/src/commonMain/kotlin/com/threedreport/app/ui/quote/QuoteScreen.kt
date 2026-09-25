@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import com.threedreport.app.ui.components.IconLabel
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.AssistChip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,6 +63,7 @@ import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.components.SubsectionTitle
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.filaments.displayLabel
+import com.threedreport.app.ui.filaments.displayText
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumericText
@@ -250,53 +252,62 @@ private fun QuoteInputs(
     result: QuoteResult,
     currency: Currency,
 ) {
-    LabeledDropdown(
-        label = "Filamento",
-        items = filaments,
-        selected = result.filament,
-        itemLabel = { "${it.name} · ${it.pricePerKg.toCurrencyText(currency)}/kg" },
-        displayText = { it.name },
-        onSelect = { viewModel.selectFilament(it.id) },
-    )
+    // A 2.0 mostra a primeira impressão; o estado já é uma lista pro pedido com várias (leva 9).
+    val print = input.prints.first()
+    val resolvedPrint = result.prints.firstOrNull()
+    val multicolor = print.filaments.size > 1
 
-    val availableColors = result.filament?.colors?.filter { it.inStock }.orEmpty()
-    if (availableColors.size > 1) {
-        LabeledDropdown(
-            label = "Cor",
-            items = availableColors,
-            selected = result.filamentColor,
-            itemLabel = { it.displayLabel() },
-            displayText = { it.displayLabel() },
-            onSelect = { viewModel.selectFilamentColor(it.id) },
+    print.filaments.forEachIndexed { slot, row ->
+        FilamentRow(
+            viewModel = viewModel,
+            filaments = filaments,
+            row = row,
+            resolved = resolvedPrint?.filaments?.getOrNull(slot),
+            slot = slot,
+            multicolor = multicolor,
+            currency = currency,
+        )
+    }
+    TextButton(onClick = { viewModel.addFilament() }) { Text("+ Adicionar filamento") }
+    if (multicolor) {
+        Text(
+            "Peça multicolor: cada filamento com os metros que o fatiador informa pra ele (a purga e a " +
+                "torre entram junto) e cobrado pelo preço dele.",
+            style = MaterialTheme.typography.bodySmall,
         )
     }
 
     LabeledDropdown(
         label = "Impressora",
         items = printers,
-        selected = result.printer,
+        selected = resolvedPrint?.printer,
         itemLabel = { it.name },
         displayText = { it.name },
         onSelect = { viewModel.selectPrinter(it.id) },
     )
 
     OutlinedButton(onClick = viewModel::pickAndImportGCode) { Text("Preencher a partir do G-code") }
-    input.gcodeImportMessage?.let { message ->
+    print.gcodeImportMessage?.let { message ->
         Text(message, style = MaterialTheme.typography.bodySmall)
-        OutlinedButton(onClick = viewModel::undoGCodeImport) { Text("Desfazer importação do G-code") }
+        if (print.beforeGCode != null) {
+            OutlinedButton(onClick = { viewModel.undoGCodeImport() }) { Text("Desfazer importação do G-code") }
+        }
+    }
+
+    // Com um filamento só, o comprimento fica aqui, como sempre; na peça multicolor ele vai em cada linha.
+    if (!multicolor) {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = print.filaments.single().lengthText,
+            onValueChange = { viewModel.setLengthMeters(it) },
+            label = { Text("Comprimento de filamento (m)") },
+        )
     }
 
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth().tabToNavigate(),
-        value = input.lengthMetersText,
-        onValueChange = viewModel::setLengthMeters,
-        label = { Text("Comprimento de filamento (m)") },
-    )
-
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth().tabToNavigate(),
-        value = input.printTimeMinutesText,
-        onValueChange = viewModel::setPrintTimeMinutes,
+        value = print.printTimeText,
+        onValueChange = { viewModel.setPrintTimeMinutes(it) },
         label = { Text("Tempo de impressão (min)") },
     )
 
@@ -353,7 +364,7 @@ private fun QuoteInputs(
                 viewModel = viewModel,
                 id = service.id,
                 name = service.name,
-                suggestedPrice = service.price,
+                suggestedPrice = service.suggestedPrice,
                 serviceInput = input.selectedServices[service.id],
                 quantity = input.quantity,
             )
@@ -397,6 +408,61 @@ private fun QuoteInputs(
                 "não produto seu. Não multiplica pela quantidade nem entra na margem.",
             style = MaterialTheme.typography.bodySmall,
         )
+    }
+}
+
+/**
+ * Uma linha de filamento da impressão. Com uma linha só, é a tela de sempre (filamento e cor, e o
+ * comprimento fica mais abaixo). Na peça multicolor, cada linha ganha número, os próprios metros e o
+ * botão de remover, e começa sem filamento quando o G-code não disse qual é (decisão 105).
+ */
+@Composable
+private fun FilamentRow(
+    viewModel: QuoteViewModel,
+    filaments: List<Filament>,
+    row: FilamentInput,
+    resolved: ResolvedFilament?,
+    slot: Int,
+    multicolor: Boolean,
+    currency: Currency,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(modifier = Modifier.weight(1f)) {
+                LabeledDropdown(
+                    label = if (multicolor) "Filamento ${slot + 1}" else "Filamento",
+                    items = filaments,
+                    selected = resolved?.filament,
+                    itemLabel = { "${it.name} · ${it.pricePerKg.toCurrencyText(currency)}/kg" },
+                    displayText = { it.name },
+                    onSelect = { viewModel.selectFilament(it.id, slot = slot) },
+                    emptyText = "Escolha o filamento",
+                )
+            }
+            if (multicolor) {
+                OutlinedTextField(
+                    modifier = Modifier.width(140.dp).tabToNavigate(),
+                    value = row.lengthText,
+                    onValueChange = { viewModel.setLengthMeters(it, slot = slot) },
+                    label = { Text("Metros") },
+                    singleLine = true,
+                )
+                IconButton(onClick = { viewModel.removeFilament(slot) }) {
+                    Icon(AppIcons.Close, contentDescription = "Remover filamento ${slot + 1}")
+                }
+            }
+        }
+        val availableColors = resolved?.filament?.colors?.filter { it.inStock }.orEmpty()
+        if (availableColors.size > 1) {
+            LabeledDropdown(
+                label = if (multicolor) "Cor ${slot + 1}" else "Cor",
+                items = availableColors,
+                selected = resolved?.color,
+                itemLabel = { it.displayLabel() },
+                displayText = { it.displayLabel() },
+                onSelect = { viewModel.selectFilamentColor(it.id, slot = slot) },
+            )
+        }
     }
 }
 
@@ -521,13 +587,16 @@ private fun SaveQuoteFormSection(
     val input by viewModel.input.collectAsState()
     val printers by viewModel.printers.collectAsState()
     val savedQuotes by viewModel.savedQuotes.collectAsState()
-    val printer = quote?.let { q -> printers.firstOrNull { it.id == q.printerId } }
-    val queueHint = if (quote != null && printer != null && !input.isProduct) {
-        viewModel.queueAheadOf(printer, savedQuotes, saveForm.editingQuoteId)?.let { queue ->
-            val orders = if (queue.queuedQuoteCount == 1) "1 pedido aprovado ou imprimindo" else "${queue.queuedQuoteCount} pedidos aprovados ou imprimindo"
-            "Fila da ${printer.name}: ${queue.queuedMinutes.minutesToDurationText()} de impressão em $orders · " +
-                "esta peça: ${(quote.job.printTimeMinutes * quote.quantity).minutesToDurationText()}."
-        }
+    // Uma linha por impressora que o pedido usa: cada uma tem a própria fila.
+    val queueHint = if (quote != null && !input.isProduct) {
+        quote.printerIds.mapNotNull { printerId ->
+            val printer = printers.firstOrNull { it.id == printerId } ?: return@mapNotNull null
+            viewModel.queueAheadOf(printer, savedQuotes, saveForm.editingQuoteId)?.let { queue ->
+                val orders = if (queue.queuedQuoteCount == 1) "1 pedido aprovado ou imprimindo" else "${queue.queuedQuoteCount} pedidos aprovados ou imprimindo"
+                "Fila da ${printer.name}: ${queue.queuedMinutes.minutesToDurationText()} de impressão em $orders · " +
+                    "este pedido: ${quote.printMinutesOn(printerId).minutesToDurationText()}."
+            }
+        }.joinToString("\n").ifEmpty { null }
     } else {
         null
     }
@@ -580,6 +649,15 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<QuoteService>, gra
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // Peça multicolor: quanto sai de cada carretel, que é o que se confere no estoque.
+            val filamentTotals = quote.filamentTotals()
+            if (filamentTotals.size > 1) {
+                Text(
+                    "Consumo: " + filamentTotals.joinToString(" · ") { it.displayText() },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             // O mesmo prazo que vai sair em destaque no PDF, pra o vendedor ver na nota o que o
             // cliente vai ler, enquanto ainda está escolhendo.
             deliveryDateEpochDay?.let {
@@ -592,7 +670,7 @@ private fun QuoteReceipt(quote: Quote, selectedServices: List<QuoteService>, gra
             }
             if (quote.totalDeductionRate > 0.0) {
                 val parts = buildList {
-                    quote.channelName?.let { add("$it ${quote.marketplaceFeeRate.toPercentText()}") }
+                    quote.channelName?.let { add("$it ${quote.channelFeeRate.toPercentText()}") }
                     if (quote.taxRate > 0.0) add("imposto ${quote.taxRate.toPercentText()}")
                 }
                 Text(

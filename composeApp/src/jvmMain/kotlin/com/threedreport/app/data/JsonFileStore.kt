@@ -19,10 +19,19 @@ internal fun appDataDir(): File {
     return dir.apply { mkdirs() }
 }
 
-/** Lê e desserializa [file], ou devolve [default] se o arquivo não existe ou está corrompido. */
+/**
+ * Lê e desserializa [file], ou devolve [default] se o arquivo não existe ou não dá pra ler.
+ *
+ * O arquivo que não dá pra ler é guardado ao lado, como `<nome>.ilegivel-<millis>.json`, antes de
+ * devolver o padrão (decisão 104). Sem isso, a próxima gravação do repositório sobrescrevia o
+ * arquivo e o histórico sumia em silêncio.
+ */
 internal inline fun <reified T> readJsonFile(file: File, default: T): T {
     if (!file.exists()) return default
-    return runCatching { json.decodeFromString(serializer<T>(), file.readText()) }.getOrDefault(default)
+    return runCatching { json.decodeFromString(serializer<T>(), file.readText()) }.getOrElse {
+        file.renameTo(File(file.parentFile, "${file.nameWithoutExtension}.ilegivel-${System.currentTimeMillis()}.${file.extension}"))
+        default
+    }
 }
 
 /** Serializa [value] e grava em [file], substituindo o conteúdo anterior. */

@@ -62,7 +62,7 @@ class CatalogMatcherTest {
         val black = FilamentColor(id = "preto", name = "Preto", hex = "#000000")
         val pla = filament("pla", "PLA", colors = listOf(black, green))
 
-        val match = CatalogMatcher.matchFilament(x1c, listOf(pla, filament("petg", "PETG")), currentFilamentId = null)
+        val match = matchOne(x1c, listOf(pla, filament("petg", "PETG")))
 
         assertEquals(FilamentMatch.Found(pla, green), match)
     }
@@ -71,7 +71,7 @@ class CatalogMatcherTest {
     fun farAwayColorIsNotGuessed() {
         val pla = filament("pla", "PLA", colors = listOf(FilamentColor(id = "vermelho", hex = "#FF0000"), FilamentColor(id = "azul", hex = "#0000FF")))
 
-        assertEquals(FilamentMatch.Found(pla, null), CatalogMatcher.matchFilament(x1c, listOf(pla), currentFilamentId = null))
+        assertEquals(FilamentMatch.Found(pla, null), matchOne(x1c, listOf(pla)))
     }
 
     @Test
@@ -79,8 +79,8 @@ class CatalogMatcherTest {
         val a = filament("a", "PLA", brand = "eSUN")
         val b = filament("b", "PLA", brand = "Voolt")
 
-        assertEquals(FilamentMatch.Ambiguous("PLA", 2), CatalogMatcher.matchFilament(x1c, listOf(a, b), currentFilamentId = null))
-        assertEquals(FilamentMatch.Found(b, b.colors.single()), CatalogMatcher.matchFilament(x1c, listOf(a, b), currentFilamentId = "b"))
+        assertEquals(FilamentMatch.Ambiguous("PLA", 2), matchOne(x1c, listOf(a, b)))
+        assertEquals(FilamentMatch.Found(b, b.colors.single()), matchOne(x1c, listOf(a, b), current = "b"))
     }
 
     @Test
@@ -89,28 +89,57 @@ class CatalogMatcherTest {
         val voolt = filament("voolt", "PLA", brand = "Voolt")
         val esun = filament("esun", "PLA", brand = "eSUN")
 
-        assertEquals(FilamentMatch.NotRegistered("PLA", "eSUN"), CatalogMatcher.matchFilament(gcode, listOf(voolt), currentFilamentId = null))
-        assertEquals(FilamentMatch.Found(esun, esun.colors.single()), CatalogMatcher.matchFilament(gcode, listOf(voolt, esun), currentFilamentId = null))
+        assertEquals(FilamentMatch.NotRegistered("PLA", "eSUN"), matchOne(gcode, listOf(voolt)))
+        assertEquals(FilamentMatch.Found(esun, esun.colors.single()), matchOne(gcode, listOf(voolt, esun)))
     }
 
     @Test
     fun outOfStockFilamentsAreNotCandidates() {
         val soldOut = filament("pla", "PLA", colors = listOf(FilamentColor(id = "x", inStock = false)))
 
-        assertEquals(FilamentMatch.NotRegistered("PLA", null), CatalogMatcher.matchFilament(x1c, listOf(soldOut), currentFilamentId = null))
+        assertEquals(FilamentMatch.NotRegistered("PLA", null), matchOne(x1c, listOf(soldOut)))
     }
 
     @Test
-    fun differentMaterialsInDifferentExtrudersAreNotReducedToOne() {
-        val gcode = GCodeMetadataParser.parse("; filament_type = PLA;PETG\n")
+    fun eachExtruderIsMatchedOnItsOwnWithItsOwnLength() {
+        // Antes, materiais diferentes viravam um aviso e o consumo era somado num filamento só.
+        val gcode = GCodeMetadataParser.parse(
+            "; filament used [mm] = 1000.00, 250.00\n; filament_type = PLA;PETG\n; filament_colour = #FFFFFF;#000000\n",
+        )
+        val pla = filament("pla", "PLA")
 
-        assertEquals(FilamentMatch.Multimaterial(listOf("PLA", "PETG")), CatalogMatcher.matchFilament(gcode, listOf(filament("pla", "PLA")), currentFilamentId = null))
+        val matches = CatalogMatcher.matchFilaments(gcode, listOf(pla))
+
+        assertEquals(
+            listOf(
+                ExtruderMatch(1.0, FilamentMatch.Found(pla, pla.colors.single())),
+                ExtruderMatch(0.25, FilamentMatch.NotRegistered("PETG", null)),
+            ),
+            matches,
+        )
+    }
+
+    @Test
+    fun realBambuTwoColorPrintBecomesTwoGreenAndYellowLines() {
+        val gcode = GCodeMetadataParser.parse(RealGCodeFixtures.BAMBU_STUDIO_A1_TWO_COLORS)
+        val green = FilamentColor(id = "verde", hex = "#00AE42")
+        val yellow = FilamentColor(id = "amarelo", hex = "#FFFF00")
+        val pla = filament("pla", "PLA", brand = "Bambu Lab", colors = listOf(green, yellow))
+
+        val matches = CatalogMatcher.matchFilaments(gcode, listOf(pla))
+
+        assertEquals(listOf(FilamentMatch.Found(pla, green), FilamentMatch.Found(pla, yellow)), matches.map { it.match })
+        assertEquals(9.03547, matches[0].lengthMeters!!, 1e-9)
+        assertEquals(11.46779, matches[1].lengthMeters!!, 1e-9)
     }
 
     @Test
     fun curaSaysNothingAboutTheFilament() {
         val cura = GCodeMetadataParser.parse(RealGCodeFixtures.CURA_ENDER3_V2)
 
-        assertEquals(FilamentMatch.Unknown, CatalogMatcher.matchFilament(cura, listOf(filament("pla", "PLA")), currentFilamentId = null))
+        assertEquals(FilamentMatch.Unknown, matchOne(cura, listOf(filament("pla", "PLA"))))
     }
+
+    private fun matchOne(gcode: GCodeMetadata, filaments: List<Filament>, current: String? = null): FilamentMatch =
+        CatalogMatcher.matchFilaments(gcode, filaments, listOfNotNull(current)).single().match
 }

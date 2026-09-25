@@ -7,29 +7,31 @@ As fórmulas foram derivadas da planilha de precificação usada atualmente
 
 ## Entradas
 
-### Por peça (`PrintJob`)
+### Por impressão (`PrintJob`)
 
-Vêm do fatiador. O seu tempo de trabalho não entra aqui: é do pedido
-inteiro (ver "Quantidade e lote").
+Vêm do fatiador: uma impressão é uma mesa que a impressora roda. Um pedido
+pode ter várias (decisão 105), cada uma na sua impressora. O seu tempo de
+trabalho não entra aqui: é do pedido inteiro (ver "Quantidade e lote").
 
 | Parâmetro | Campo | Unidade |
 |---|---|---|
-| Filamento (nome, preço/kg, densidade, diâmetro) | `filament` | R$/kg, g/cm³, mm |
-| Comprimento de filamento | `filamentLengthMeters` | m |
-| Tempo de impressão | `printTimeMinutes` | min |
-| Tempo de trabalho por peça (só histórico e uso do `core` como biblioteca; o app grava 0) | `laborMinutes` | min |
+| Filamentos usados, um por linha (peça multicolor tem vários) | `filaments` | lista |
+| Filamento (nome, preço/kg, densidade, diâmetro) | `filaments[i].filament` | R$/kg, g/cm³, mm |
+| Comprimento desse filamento numa rodada (do G-code, já com purga e torre) | `filaments[i].lengthMeters` | m |
+| Tempo de uma rodada | `printTimeMinutes` | min |
+| Quantas vezes a mesma mesa roda no pedido | `runs` | vezes (padrão 1) |
 
 ### Por pedido (`Quote`)
 
 | Parâmetro | Campo | Unidade |
 |---|---|---|
-| Quantidade de peças | `quantity` | un. |
-| Seu tempo de trabalho no pedido inteiro (decisão 94) | `setupMinutes` | min |
+| Quantidade (pedidos iguais) | `quantity` | un. |
+| Seu tempo de trabalho no pedido inteiro (decisão 94) | `laborMinutes` | min |
 
-### Perfil da impressora escolhida (`PrinterProfile`) — uma por orçamento
+### Perfil da impressora (`PrinterProfile`), um por impressão
 
 Uma pessoa costuma ter várias impressoras; cada uma tem seu próprio perfil
-salvo (tela Impressoras) e o orçamento escolhe qual usar.
+salvo (tela Impressoras) e cada impressão do orçamento escolhe em qual roda.
 
 | Parâmetro | Campo | Unidade |
 |---|---|---|
@@ -61,29 +63,35 @@ mudaram" abaixo).
 
 ## Cálculos
 
+Primeiro, cada impressão sozinha (com a impressora dela):
+
 ```
-horas              = tempo_min / 60
-horas_trabalho     = minutos_trabalho / 60
-área (mm²)         = π · (diâmetro / 2)²
+horas              = tempo_min / 60 · rodadas
+área (mm²)         = π · (diâmetro / 2)²                      (de cada filamento)
 volume (cm³)       = comprimento_m · 1000 · área / 1000
 peso (g)           = volume · densidade
 
-material           = peso / 1000 · preço_kg
+material           = Σ filamentos (peso / 1000 · preço_kg) · rodadas
 energia            = horas · (W / 1000) · preço_kWh
 manutenção         = horas · manutenção_por_hora
 valor_hora_máquina = valor_máquina / (meses · dias_mês · horas_dia)
 retorno_invest.    = horas · valor_hora_máquina
 custo_fixo_hora    = custo_fixo_mensal / horas_produtivas_mês   (0 se horas = 0)
 custo_fixo         = horas · custo_fixo_hora
-mão_de_obra        = horas_trabalho · valor_hora_trabalho   (por peça; 0 no app)
 acabamento         = material · taxa_acabamento
+
+custo_impressão    = material + energia + manutenção + retorno_invest.
+                     + custo_fixo + acabamento
+```
+
+Depois, o pedido, com o que entra **uma vez só** (somar orçamentos
+separados cobraria o administrativo e o trabalho uma vez por impressão):
+
+```
+trabalho_pedido    = minutos_trabalho_pedido / 60 · valor_hora_trabalho
 administrativo     = custo_administrativo
 
-custo_por_peça     = material + energia + manutenção + retorno_invest.
-                     + custo_fixo + mão_de_obra + acabamento
-trabalho_pedido    = minutos_trabalho_pedido / 60 · valor_hora_trabalho
-
-CUSTO REFEITO      = custo_por_peça · quantidade + trabalho_pedido
+CUSTO REFEITO      = Σ impressões (custo_impressão) · quantidade + trabalho_pedido
 falhas             = CUSTO REFEITO · taxa_falhas
 
 VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
@@ -97,11 +105,14 @@ LUCRO              = venda · (1 − deduções) − produção
 TOTAL DO CLIENTE   = venda + serviços_por_peça · quantidade + serviços_por_pedido + frete
 ```
 
-Todos os valores acima são do **pedido inteiro**. As entradas de peça
-(comprimento, tempo de impressão, minutos de trabalho) são de **uma
-unidade**, e é o app que multiplica pela quantidade: é assim que o fatiador
-informa quando você fatia uma peça só. Se você fatiou a mesa cheia de uma
-vez e os números já são do lote todo, mantenha a quantidade em 1.
+Todos os valores acima são do **pedido inteiro**. As entradas de cada
+impressão (comprimentos e tempo) são de **uma rodada**, e é o app que
+multiplica pelas rodadas e pela quantidade: é assim que o fatiador informa.
+Se você fatiou a mesa cheia de uma vez e os números já são do lote todo,
+mantenha rodadas e quantidade em 1.
+
+Com uma impressão, um filamento e uma rodada, as fórmulas dão exatamente o
+mesmo de antes da decisão 105: é a conta da planilha de referência.
 
 Os valores são mantidos em `Double` sem arredondamento; o arredondamento para
 centavos acontece apenas na exibição.
@@ -153,7 +164,7 @@ essa diferença que faz o preço por unidade cair sozinho:
 | Parcela | Multiplica pela quantidade? |
 |---|---|
 | Material, energia, manutenção, retorno da máquina, custo fixo | Sim, cada peça consome o seu |
-| Seu tempo de trabalho no pedido (`Quote.setupMinutes`) | **Não**, você já informa o total do pedido |
+| Seu tempo de trabalho no pedido (`Quote.laborMinutes`) | **Não**, você já informa o total do pedido |
 | Custo administrativo (ex.: modelagem) | **Não**, é por orçamento |
 | Serviços por peça (pintura, lixamento) | Sim, são trabalho peça a peça |
 | Serviços por pedido (entrega, modelagem) | **Não**, cobrados uma vez (decisão 92) |
@@ -177,8 +188,8 @@ R$ 30,00/h, 20 min pra fatiar e montar a mesa e 3 min de acabamento por peça:
 | 10 peças | 50 min (20 + 10 × 3) | R$ 25,00 (R$ 2,50 por peça) |
 
 Se a quantidade mudar depois, o tempo não se ajusta sozinho: a tela lembra de
-revisar. Orçamentos salvos com os dois campos abrem com o total já somado
-(`Quote.totalLaborMinutes`) e mantêm o preço.
+revisar. Desde a decisão 104 existe um campo só também no modelo
+(`Quote.laborMinutes`); o tempo por peça saiu de vez.
 
 Não existe percentual de desconto por volume em lugar nenhum do app: o lote
 sai mais barato por unidade porque o trabalho do pedido não cresce na mesma

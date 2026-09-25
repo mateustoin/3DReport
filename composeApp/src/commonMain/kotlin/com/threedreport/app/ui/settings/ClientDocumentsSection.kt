@@ -49,7 +49,7 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplate
     )
 
     SubsectionTitle(AppIcons.Badge, "Sua marca", modifier = Modifier.padding(top = 4.dp))
-    LabeledField("Nome da sua marca (opcional)", branding.watermarkTextInput, viewModel::update)
+    LabeledField("Nome da sua marca (opcional)", branding.brandNameInput, viewModel::update)
 
     LogoPicker(branding, viewModel)
 

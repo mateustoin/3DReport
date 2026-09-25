@@ -1,7 +1,8 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.costsOf
+import com.threedreport.core.quotedPrint
 import com.threedreport.core.model.QuoteKind
-import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.OrderStatus
@@ -24,16 +25,13 @@ class PrintQueueReportTest {
         machineInvestment = MachineInvestment(2000.0, 12, 25, 8.0),
     )
 
-    private fun quoteOf(id: String, printerId: String?, status: OrderStatus, printTimeMinutes: Double) = SavedQuote(
+    private fun quoteOf(id: String, printerId: String, status: OrderStatus, printTimeMinutes: Double) = SavedQuote(
         id = id,
         name = "Peça $id",
         quote = Quote(
-            job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes),
-            filamentWeightGrams = 5.0,
-            costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            productionCost = 0.0,
+            prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes), printerId = printerId)),
+            costs = costsOf(),
             salePrice = 0.0,
-            printerId = printerId,
         ),
         savedAtEpochMillis = 0L,
         status = status,
@@ -93,14 +91,17 @@ class PrintQueueReportTest {
     }
 
     @Test
-    fun quotesWithoutAPrinterIdAreIgnored() {
-        // Orçamentos salvos antes de Quote.printerId existir (decisão 64) não entram em nenhuma fila.
-        val printer = printerOf("a", "Impressora A")
-        val quotes = listOf(quoteOf("1", printerId = null, status = OrderStatus.EM_IMPRESSAO, printTimeMinutes = 500.0))
+    fun anOrderWithPrintsOnTwoPrintersQueuesOnlyItsOwnTimeOnEach() {
+        val printers = listOf(printerOf("a", "Impressora A"), printerOf("b", "Impressora B"))
+        val base = quoteOf("1", printerId = "a", status = OrderStatus.EM_IMPRESSAO, printTimeMinutes = 120.0)
+        val secondPrint = quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = 45.0), printerId = "b")
+        val order = base.copy(quote = base.quote.copy(prints = base.quote.prints + secondPrint, quantity = 2))
 
-        val queue = PrintQueueReport.summarize(listOf(printer), quotes)
+        val queue = PrintQueueReport.summarize(printers, listOf(order))
 
-        assertEquals(0.0, queue.single().queuedMinutes)
+        assertEquals(240.0, queue[0].queuedMinutes)
+        assertEquals(90.0, queue[1].queuedMinutes)
+        assertEquals(listOf(1, 1), queue.map { it.queuedQuoteCount })
     }
 
     @Test

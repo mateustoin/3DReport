@@ -26,7 +26,7 @@ class TemplateListViewModelTest {
     private fun sampleTemplate(name: String = "Formal") = QuoteTemplate(
         id = name,
         name = name,
-        watermarkText = "Minha Loja",
+        brandName = "Minha Loja",
         showWatermark = true,
         showFooter = false,
     )
@@ -54,7 +54,7 @@ class TemplateListViewModelTest {
         viewModel.load(template.id)
 
         val branding = brandingRepository.branding.value
-        assertEquals("Minha Loja", branding.watermarkText)
+        assertEquals("Minha Loja", branding.brandName)
         assertTrue(branding.showWatermark)
         assertEquals(false, branding.showFooter)
     }
@@ -66,7 +66,7 @@ class TemplateListViewModelTest {
 
         viewModel.load("does-not-exist")
 
-        assertNull(brandingRepository.branding.value.watermarkText)
+        assertNull(brandingRepository.branding.value.brandName)
     }
 
     @Test

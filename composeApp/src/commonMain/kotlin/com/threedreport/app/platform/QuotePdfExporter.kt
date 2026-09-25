@@ -49,13 +49,13 @@ data class PdfLayoutOptions(
  * resolvidos pelo chamador antes de invocar esta função) — e aparecem em
  * todas as páginas quando presentes.
  *
- * @param watermarkText texto da marca d'água diagonal e translúcida, desenhada
+ * @param brandName texto da marca d'água diagonal e translúcida, desenhada
  *   por cima de todo o conteúdo (inclusive a foto, pra continuar visível ali).
  * @param footerText texto do rodapé (linha fina + texto centralizado no fim da página).
  */
 expect fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
-    watermarkText: String?,
+    brandName: String?,
     footerText: String?,
     currency: Currency = Currency.BRL,
     options: PdfLayoutOptions = PdfLayoutOptions(),
@@ -70,12 +70,12 @@ expect fun renderSavedQuotesPdf(
  * link do modelo. Item sem foto aparece só com nome + preço, sem quebrar o
  * layout da grade.
  *
- * @param watermarkText ver [renderSavedQuotesPdf].
+ * @param brandName ver [renderSavedQuotesPdf].
  * @param footerText ver [renderSavedQuotesPdf].
  */
 expect fun renderCatalogPdf(
     items: List<QuoteExportItem>,
-    watermarkText: String?,
+    brandName: String?,
     footerText: String?,
     currency: Currency = Currency.BRL,
     options: PdfLayoutOptions = PdfLayoutOptions(),
@@ -92,12 +92,12 @@ expect fun renderPdfFirstPagePng(pdf: ByteArray, dpi: Float = 90f): ByteArray
  * prévia de Configurações nunca montarem o documento de jeitos diferentes. A logo vem à parte
  * porque mora num arquivo, não na configuração.
  */
-data class ResolvedPdfBranding(val watermarkText: String?, val footerText: String?, val options: PdfLayoutOptions)
+data class ResolvedPdfBranding(val brandName: String?, val footerText: String?, val options: PdfLayoutOptions)
 
 fun BrandingSettings.resolvePdfBranding(logoBytes: ByteArray?): ResolvedPdfBranding {
-    val brandName = watermarkText?.takeIf { it.isNotBlank() }
+    val brandName = brandName?.takeIf { it.isNotBlank() }
     return ResolvedPdfBranding(
-        watermarkText = brandName?.takeIf { showWatermark },
+        brandName = brandName?.takeIf { showWatermark },
         footerText = brandName?.takeIf { showFooter },
         options = PdfLayoutOptions(
             showPrintTime = showPrintTime,

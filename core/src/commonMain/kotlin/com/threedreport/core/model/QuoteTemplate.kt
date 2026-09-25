@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
  *
  * @property id identificador único, atribuído ao criar.
  * @property name nome pra identificar o template (ex.: "Formal", "Simples").
- * @property watermarkText texto da marca d'água/rodapé, ou `null`/vazio pra nenhum.
+ * @property brandName nome da marca na marca d'água/rodapé, ou `null`/vazio pra nenhum.
  * @property showWatermark se este preset liga a marca d'água diagonal.
  * @property showFooter se este preset liga o rodapé.
  * @property showPrintTime se este preset mostra o tempo de impressão (ver [BrandingSettings.showPrintTime]).
@@ -25,7 +25,7 @@ import kotlinx.serialization.Serializable
 data class QuoteTemplate(
     val id: String,
     val name: String,
-    val watermarkText: String? = null,
+    val brandName: String? = null,
     val showWatermark: Boolean = true,
     val showFooter: Boolean = true,
     val showPrintTime: Boolean = false,

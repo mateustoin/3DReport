@@ -1,7 +1,8 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.costsOf
+import com.threedreport.core.quotedPrint
 import com.threedreport.core.model.QuoteKind
-import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MaintenanceComponent
 import com.threedreport.core.model.ManualUsageEntry
@@ -17,17 +18,14 @@ class MaintenanceReportTest {
 
     private val filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24)
 
-    private fun printed(printerId: String?, minutes: Double, status: OrderStatus, quantity: Int = 1) = SavedQuote(
+    private fun printed(printerId: String, minutes: Double, status: OrderStatus, quantity: Int = 1) = SavedQuote(
         id = "$printerId-$minutes-$status-$quantity",
         name = "Peça",
         status = status,
         quote = Quote(
-            job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = minutes),
-            filamentWeightGrams = 5.0,
-            costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            productionCost = 0.0,
+            prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = minutes), printerId = printerId)),
+            costs = costsOf(),
             salePrice = 0.0,
-            printerId = printerId,
             quantity = quantity,
         ),
         savedAtEpochMillis = 0L,
@@ -45,7 +43,6 @@ class MaintenanceReportTest {
             printed("p1", 600.0, OrderStatus.APROVADO),
             printed("p1", 600.0, OrderStatus.ORCADO),
             printed("p2", 600.0, OrderStatus.ENTREGUE),
-            printed(null, 600.0, OrderStatus.ENTREGUE),
         )
 
         assertEquals(3.0, MaintenanceReport.printerHours("p1", quotes, emptyList()), 1e-9)

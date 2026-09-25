@@ -92,7 +92,9 @@ dela:
   (se a leva mistura correção com funcionalidade nova, o bump é MINOR — a
   funcionalidade nova já exige isso; PATCH é só pra leva que **não** tem nada
   de funcionalidade nova).
-- **MAJOR** (`x`) — quebra de compatibilidade; sem caso de uso previsto ainda.
+- **MAJOR** (`x`) — quebra de compatibilidade. Primeiro uso na 2.0.0
+  (decisão 104): o formato dos dados mudou sem conversão, e a pasta antiga é
+  guardada em `~/.3dreport-v1`.
 
 Ao fechar uma leva, atualize a versão **nos dois lugares** (fonte única
 mantida manualmente em sincronia, sem geração automática):

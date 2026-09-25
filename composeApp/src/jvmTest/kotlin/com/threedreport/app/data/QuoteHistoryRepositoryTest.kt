@@ -18,7 +18,6 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -113,7 +112,7 @@ class QuoteHistoryRepositoryTest {
     @Test
     fun servicesSurviveNewRepositoryInstance() {
         val repository = QuoteHistoryRepository()
-        val services = listOf(QuoteService(id = "s1", name = "Pintura", price = 20.0))
+        val services = listOf(QuoteService(id = "s1", name = "Pintura", price = 20.0, chargedPerOrder = false))
 
         val saved = repository.save(name = "Com serviço", quote = quote, services = services, photo = null, sourceLink = null)
 
@@ -530,16 +529,6 @@ class QuoteHistoryRepositoryTest {
         repository.delete(saved.id)
 
         assertNull(repository.stlBytes(saved))
-    }
-
-    @Test
-    fun ordersKeepTheOldFileFormat() {
-        QuoteHistoryRepository().save(name = "Vaso", quote = quote, services = emptyList(), photo = null, sourceLink = null)
-
-        val json = java.io.File(appDataDir(), "quotes.json").readText()
-
-        assertFalse("\"kind\"" in json, "pedido não grava o campo novo: o arquivo continua igual ao de antes")
-        assertTrue(QuoteHistoryRepository().savedQuotes.value.single().isOrder)
     }
 
     @Test

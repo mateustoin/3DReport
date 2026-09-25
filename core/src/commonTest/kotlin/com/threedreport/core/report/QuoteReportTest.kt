@@ -1,8 +1,9 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.costsOf
+import com.threedreport.core.quotedPrint
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.Client
-import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintJob
@@ -29,10 +30,8 @@ class QuoteReportTest {
             name = name,
             status = status,
             quote = Quote(
-                job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes),
-                filamentWeightGrams = 5.0,
-                costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0).copy(material = productionCost),
-                productionCost = productionCost,
+                prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes))),
+                costs = costsOf(productionCost),
                 salePrice = salePrice,
             ),
             savedAtEpochMillis = 0L,
@@ -95,7 +94,7 @@ class QuoteReportTest {
     @Test
     fun includesServicesInTotalSalePrice() {
         val withServices = quoteOf("PLA", salePrice = 20.0, productionCost = 10.0)
-            .copy(services = listOf(com.threedreport.core.model.QuoteService(id = "s", name = "Pintura", price = 5.0)))
+            .copy(services = listOf(com.threedreport.core.model.QuoteService(id = "s", name = "Pintura", price = 5.0, chargedPerOrder = false)))
 
         val summary = QuoteReport.summarize(listOf(withServices))
 
@@ -156,7 +155,7 @@ class QuoteReportTest {
     fun earningsPerLaborHourAddsLaborBackAndIgnoresOrdersWithoutLaborTime() {
         // 60 min de trabalho, R$ 25 de mão de obra dentro do custo, lucro 10: levou R$ 35 na hora.
         val withLabor = quoteOf("PLA", salePrice = 50.0, productionCost = 40.0).let {
-            it.copy(quote = it.quote.copy(setupMinutes = 60.0, costs = it.quote.costs.copy(material = 15.0, labor = 25.0)))
+            it.copy(quote = it.quote.copy(laborMinutes = 60.0, costs = it.quote.costs.copy(material = 15.0, labor = 25.0)))
         }
         val withoutLabor = quoteOf("PLA", salePrice = 100.0, productionCost = 10.0)
 

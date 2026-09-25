@@ -41,6 +41,6 @@ expect fun renderQuoteImage(
  */
 fun BrandingSettings.imageBrandLine(): String? =
     listOfNotNull(
-        watermarkText?.trim()?.takeIf { it.isNotEmpty() },
+        brandName?.trim()?.takeIf { it.isNotEmpty() },
         instagramHandle ?: contactWhatsApp?.trim()?.takeIf { it.isNotEmpty() },
     ).joinToString(" · ").ifEmpty { null }

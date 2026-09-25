@@ -59,7 +59,7 @@ class BackupRepositoryTest {
     fun theSellerLogoTravelsInTheBackupAndComesBackOnRestore() {
         val logoBytes = byteArrayOf(9, 8, 7)
         BrandingRepository().update(
-            com.threedreport.core.model.BrandingSettings(watermarkText = "Loja"),
+            com.threedreport.core.model.BrandingSettings(brandName = "Loja"),
             LogoChange.Replace(com.threedreport.app.platform.PickedFile("logo.png", logoBytes)),
         )
         val backup = BackupRepository().createBackupZip()

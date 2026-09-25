@@ -56,6 +56,7 @@ import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.filaments.displayLabel
+import com.threedreport.app.ui.filaments.displayText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.app.ui.quote.DeliveryDateDialog
@@ -643,8 +644,14 @@ private fun SavedQuoteRow(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                savedQuote.quote.job.filamentColor?.let { color ->
-                    Text("Cor: ${color.displayLabel()}", style = MaterialTheme.typography.bodySmall)
+                // Peça multicolor mostra o consumo de cada filamento, que é o que se confere no estoque.
+                val filamentTotals = savedQuote.quote.filamentTotals()
+                if (filamentTotals.size > 1) {
+                    Text("Filamentos: ${filamentTotals.joinToString(", ") { it.displayText() }}", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    filamentTotals.single().color?.let { color ->
+                        Text("Cor: ${color.displayLabel()}", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
 
                 // Produto não tem andamento nem prazo (decisão 101).

@@ -3,8 +3,10 @@ package com.threedreport.core.pricing
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SalesChannel
 
 /**
@@ -35,51 +37,61 @@ object PricingCalculator {
         settings: PricingSettings,
         channel: SalesChannel? = null,
         quantity: Int = 1,
-        setupMinutes: Double = 0.0,
+        laborMinutes: Double = 0.0,
+        negotiatedSalePrice: Double? = null,
+    ): Quote = calculate(listOf(job to printer), settings, channel, quantity, laborMinutes, negotiatedSalePrice)
+
+    /**
+     * O pedido com várias impressões (leva 9, decisão 105): cada uma com a própria impressora. O
+     * material é somado filamento por filamento, e energia, manutenção, retorno da máquina e custo
+     * fixo usam as horas e a impressora **daquela** impressão. Só depois de somar as impressões
+     * entra o que é do pedido, uma vez só: o tempo de trabalho, o administrativo, a reserva de
+     * falha, a margem, o canal, o imposto e o preço negociado. Somar orçamentos separados cobraria
+     * o administrativo uma vez por impressão.
+     *
+     * @param prints as impressões, na ordem da tela, cada uma com a impressora em que roda.
+     * @param laborMinutes todo o seu tempo de trabalho no pedido, cobrado uma vez (decisão 94).
+     */
+    fun calculate(
+        prints: List<Pair<PrintJob, PrinterProfile>>,
+        settings: PricingSettings,
+        channel: SalesChannel? = null,
+        quantity: Int = 1,
+        laborMinutes: Double = 0.0,
         negotiatedSalePrice: Double? = null,
     ): Quote {
+        require(prints.isNotEmpty()) { "um orçamento precisa de pelo menos uma impressão" }
         require(negotiatedSalePrice == null || negotiatedSalePrice >= 0) {
             "negotiatedSalePrice não pode ser negativo: $negotiatedSalePrice"
         }
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
-        require(setupMinutes >= 0) { "setupMinutes não pode ser negativo: $setupMinutes" }
+        require(laborMinutes >= 0) { "laborMinutes não pode ser negativo: $laborMinutes" }
 
-        val hours = job.printTimeHours
-        val weightGrams = job.filament.weightGrams(job.filamentLengthMeters)
+        val quotedPrints = prints.map { (job, printer) ->
+            QuotedPrint(job = job, printerId = printer.id, printerName = printer.name, cost = printCost(job, printer, settings, quantity))
+        }
 
-        val material = weightGrams / GRAMS_PER_KG * job.filament.pricePerKg
-        val energy = hours * (printer.printerPowerWatts / WATTS_PER_KW) * settings.energyPricePerKwh
-        val maintenance = hours * printer.maintenanceCostPerHour
-        val investmentReturn = hours * printer.machineInvestment.costPerHour
-        val fixedCost = hours * settings.fixedCostPerHour
-        val labor = job.laborHours * settings.laborRatePerHour
-        // Acabamento e mão de obra são independentes e os dois só somam: configurar a hora nunca
-        // pode baixar o preço (decisão 93). Quem cobra lixar e pintar em minutos zera a taxa.
-        val finishing = material * settings.finishingRate
-
-        // Preparar o arquivo, fatiar e montar a mesa se faz uma vez só, não uma vez por peça — é
-        // isso que faz o preço unitário cair quando a quantidade sobe, sem desconto artificial.
-        val setupCost = setupMinutes / MINUTES_PER_HOUR * settings.laborRatePerHour
+        // Tempo de trabalho é do pedido: fatiar, montar a mesa, tirar, lixar e embalar se contam
+        // uma vez, e é isso que faz o preço unitário cair quando a quantidade sobe.
+        val labor = laborMinutes / MINUTES_PER_HOUR * settings.laborRatePerHour
 
         // Tudo que se paga de novo ao reimprimir o que falhou. O administrativo fica de fora: uma
         // modelagem já feita não precisa ser refeita.
-        val perUnitReprintableCost = material + energy + maintenance + investmentReturn + fixedCost + labor + finishing
-        val reprintableCost = perUnitReprintableCost * quantity + setupCost
+        val reprintableCost = quotedPrints.sumOf { it.cost.total } + labor
 
         val costs = CostBreakdown(
-            material = material * quantity,
-            energy = energy * quantity,
-            maintenance = maintenance * quantity,
+            material = quotedPrints.sumOf { it.cost.material },
+            energy = quotedPrints.sumOf { it.cost.energy },
+            maintenance = quotedPrints.sumOf { it.cost.maintenance },
             failures = reprintableCost * settings.failureRate,
-            finishing = finishing * quantity,
-            investmentReturn = investmentReturn * quantity,
+            finishing = quotedPrints.sumOf { it.cost.finishing },
+            investmentReturn = quotedPrints.sumOf { it.cost.investmentReturn },
             administrative = settings.administrativeCost,
-            labor = labor * quantity + setupCost,
-            fixedCost = fixedCost * quantity,
+            labor = labor,
+            fixedCost = quotedPrints.sumOf { it.cost.fixedCost },
         )
 
-        val productionCost = costs.total
-        val baseSalePrice = productionCost * (1 + settings.profitMargin)
+        val baseSalePrice = costs.total * (1 + settings.profitMargin)
 
         // Canal e imposto são descontados do mesmo valor recebido, então somam antes de dividir:
         // vender a P deixa P · (1 − canal − imposto) na sua mão.
@@ -93,19 +105,37 @@ object PricingCalculator {
         val salePrice = negotiatedSalePrice ?: tableSalePrice
 
         return Quote(
-            job = job,
-            filamentWeightGrams = weightGrams * quantity,
+            prints = quotedPrints,
             costs = costs,
-            productionCost = productionCost,
             salePrice = salePrice,
-            marketplaceFeeRate = channelFeeRate,
-            printerId = printer.id,
-            printerName = printer.name,
             quantity = quantity,
-            setupMinutes = setupMinutes,
+            laborMinutes = laborMinutes,
+            channelId = channel?.id,
             channelName = channel?.name,
+            channelFeeRate = channelFeeRate,
             taxRate = settings.taxRate,
             tableSalePrice = tableSalePrice.takeIf { negotiatedSalePrice != null },
+        )
+    }
+
+    /** Material e máquina de uma impressão, já vezes as rodadas dela e a quantidade do pedido. */
+    private fun printCost(job: PrintJob, printer: PrinterProfile, settings: PricingSettings, quantity: Int): PrintCost {
+        val hours = job.printTimeHours * job.runs
+        val material = job.filaments.sumOf { it.weightGrams / GRAMS_PER_KG * it.filament.pricePerKg } * job.runs
+        val energy = hours * (printer.printerPowerWatts / WATTS_PER_KW) * settings.energyPricePerKwh
+        val maintenance = hours * printer.maintenanceCostPerHour
+        val investmentReturn = hours * printer.machineInvestment.costPerHour
+        val fixedCost = hours * settings.fixedCostPerHour
+        // Acabamento e mão de obra são independentes e os dois só somam: configurar a hora nunca
+        // pode baixar o preço (decisão 93). Quem cobra lixar e pintar em minutos zera a taxa.
+        val finishing = material * settings.finishingRate
+        return PrintCost(
+            material = material * quantity,
+            energy = energy * quantity,
+            maintenance = maintenance * quantity,
+            finishing = finishing * quantity,
+            investmentReturn = investmentReturn * quantity,
+            fixedCost = fixedCost * quantity,
         )
     }
 

@@ -3,16 +3,46 @@ package com.threedreport.app.ui.quote
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.QuoteKind
 
+/**
+ * Uma linha de filamento de uma impressão: qual filamento, qual cor e quanto dele. Uma peça
+ * multicolor tem uma linha por filamento (decisão 105).
+ */
+data class FilamentInput(
+    val filamentId: String? = null,
+    val colorId: String? = null,
+    val lengthText: String = "",
+)
+
+/**
+ * Uma impressão do pedido como está na tela: uma mesa, numa impressora (ver `PrintJob`). A 2.0 mostra
+ * só a primeira; o estado já é uma lista pra o pedido com várias impressões não refazer tudo.
+ *
+ * @property filaments nunca vazia. Com uma linha só, a tela é a de sempre.
+ * @property runsText quantas vezes a mesma mesa roda; vazio conta como 1.
+ * @property gcodeImportMessage mensagem sobre a última importação de G-code nesta impressão.
+ * @property beforeGCode como a impressão estava antes da primeira importação de G-code, pra
+ *   "Desfazer" devolver tudo de uma vez (inclusive as linhas de filamento).
+ */
+data class PrintInput(
+    val name: String = "",
+    val printerId: String? = null,
+    val filaments: List<FilamentInput> = listOf(FilamentInput()),
+    val printTimeText: String = "",
+    val runsText: String = "",
+    val gcodeImportMessage: String? = null,
+    val beforeGCode: PrintInput? = null,
+) {
+    val runs: Int
+        get() = runsText.trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
+}
+
 /** Entradas da tela de Orçamento controladas pelo usuário (o resto vem dos repositórios). */
 data class QuoteInputState(
-    val filamentId: String? = null,
-    val filamentColorId: String? = null,
-    val printerId: String? = null,
-    val lengthMetersText: String = "",
-    val printTimeMinutesText: String = "",
+    /** As impressões do pedido, na ordem da tela. Nunca vazia. */
+    val prints: List<PrintInput> = listOf(PrintInput()),
     /**
-     * Minutos do seu trabalho no pedido **inteiro**, sem multiplicar pela quantidade (ver
-     * `Quote.totalLaborMinutes`); só afeta o preço se houver taxa horária configurada.
+     * Minutos do seu trabalho no pedido **inteiro**, sem multiplicar pela quantidade nem pelas
+     * impressões (ver `Quote.laborMinutes`); só afeta o preço se houver taxa horária configurada.
      */
     val laborMinutesText: String = "",
     /** Quantas peças iguais o cliente quer. Vazio ou inválido conta como 1. */
@@ -45,10 +75,6 @@ data class QuoteInputState(
      * cadastra vários produtos seguidos não precisar escolher de novo.
      */
     val kind: QuoteKind = QuoteKind.ORDER,
-    /** Mensagem sobre a última tentativa de importar dados de um G-code, exibida abaixo do botão. */
-    val gcodeImportMessage: String? = null,
-    /** O que estava escolhido antes da última importação de G-code, pra "Desfazer" devolver. */
-    val selectionBeforeGCode: SelectionBeforeGCode? = null,
 ) {
     /** [quantityText] como número; campo vazio, texto inválido ou zero contam como uma peça. */
     val quantity: Int
@@ -64,9 +90,6 @@ data class QuoteInputState(
     val isLaborTimeMissing: Boolean
         get() = (parseDecimal(laborMinutesText) ?: 0.0) <= 0.0
 }
-
-/** Impressora, filamento e cor escolhidos antes de importar um G-code (ver `QuoteViewModel.undoGCodeImport`). */
-data class SelectionBeforeGCode(val filamentId: String?, val filamentColorId: String?, val printerId: String?)
 
 /**
  * Um serviço marcado no orçamento, como o usuário deixou na tela.

@@ -13,7 +13,7 @@ import com.threedreport.app.data.LogoChange
  * @property previewPng primeira página do PDF de exemplo, quando "Ver como fica" está aberto.
  */
 data class BrandingUiState(
-    val watermarkTextInput: String = "",
+    val brandNameInput: String = "",
     val showWatermark: Boolean = true,
     val showFooter: Boolean = true,
     val showPrintTime: Boolean = false,

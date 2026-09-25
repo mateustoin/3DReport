@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -129,7 +130,7 @@ private enum class AppTab(val label: String) {
 }
 
 @Composable
-fun App() {
+fun App(oldDataPath: String? = null) {
     val filamentRepository = remember { FilamentRepository() }
     val printerRepository = remember { PrinterRepository() }
     val maintenanceRepository = remember { MaintenanceRepository() }
@@ -305,7 +306,13 @@ fun App() {
                 HelpDialog(onDismiss = { showHelp = false })
             }
 
-            if (!onboardingCompleted) {
+            var showOldDataNotice by remember { mutableStateOf(oldDataPath != null) }
+            if (showOldDataNotice && oldDataPath != null) {
+                OldDataNoticeDialog(oldDataPath, onDismiss = { showOldDataNotice = false })
+            }
+
+            // O aviso dos dados antigos vem antes: o onboarding só aparece depois de ele ser lido.
+            if (!onboardingCompleted && !showOldDataNotice) {
                 OnboardingDialog(
                     currentSettings = settingsRepository.settings.value,
                     onFinish = { settings, profile ->
@@ -344,6 +351,34 @@ private fun AppFooter(onHelpClick: () -> Unit) {
         Text("·", style = MaterialTheme.typography.bodySmall)
         TextButton(onClick = onHelpClick) { Text("Ajuda") }
     }
+}
+
+/**
+ * Aviso único de que os dados de uma versão anterior foram guardados à parte (decisão 104): a 2.0
+ * mudou o formato dos dados e não converte o que existia, então a pessoa precisa saber onde eles
+ * ficaram e como recuperar.
+ */
+@Composable
+private fun OldDataNoticeDialog(oldDataPath: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Entendi") } },
+        title = { Text("Formato de dados novo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Esta versão guarda os pedidos de um jeito novo, que aceita vários filamentos e várias " +
+                        "impressões por pedido, e começa com os dados em branco.",
+                )
+                Text("O que você tinha foi guardado, sem apagar nada, em:")
+                Text(oldDataPath, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(
+                    "Pra recuperar, reinstale a versão 1.44 e renomeie essa pasta de volta pra .3dreport.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        },
+    )
 }
 
 @Composable

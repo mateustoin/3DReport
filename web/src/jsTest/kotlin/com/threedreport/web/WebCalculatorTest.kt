@@ -55,7 +55,7 @@ class WebCalculatorTest {
             ),
             channel = SalesChannel("c", "Shopee", 0.20),
             quantity = 3,
-            setupMinutes = 20.0,
+            laborMinutes = 20.0,
         )
 
         val result = web()

@@ -42,7 +42,7 @@ class BrandingViewModelTest {
         viewModel.save()
 
         assertNotNull(viewModel.uiState.value.errorMessage)
-        assertNull(repository.branding.value.watermarkText) // nada foi persistido
+        assertNull(repository.branding.value.brandName) // nada foi persistido
     }
 
     @Test
@@ -56,7 +56,7 @@ class BrandingViewModelTest {
         viewModel.save()
 
         assertNull(viewModel.uiState.value.errorMessage)
-        assertEquals("Minha Marca", repository.branding.value.watermarkText)
+        assertEquals("Minha Marca", repository.branding.value.brandName)
         assertEquals(false, repository.branding.value.showWatermark)
         assertEquals(true, repository.branding.value.showFooter)
     }
@@ -71,7 +71,7 @@ class BrandingViewModelTest {
         viewModel.save()
 
         assertNull(viewModel.uiState.value.errorMessage)
-        assertNull(repository.branding.value.watermarkText)
+        assertNull(repository.branding.value.brandName)
     }
 
     @Test
@@ -87,7 +87,7 @@ class BrandingViewModelTest {
         viewModel.confirmSaveAsTemplate()
 
         val saved = templateRepository.templates.value.first { it.name == "Formal" }
-        assertEquals("Minha Marca", saved.watermarkText)
+        assertEquals("Minha Marca", saved.brandName)
         assertTrue(saved.showWatermark)
         assertEquals(false, saved.showFooter)
         assertTrue(viewModel.uiState.value.templateSavedConfirmation)
@@ -195,7 +195,7 @@ class BrandingViewModelTest {
 
         val saved = templateRepository.templates.value.first { it.name == "Com borda" }
         assertTrue(saved.showBorder)
-        assertEquals("Minha Marca", saved.watermarkText)
+        assertEquals("Minha Marca", saved.brandName)
     }
 
     @Test
@@ -209,7 +209,7 @@ class BrandingViewModelTest {
 
         val png = assertNotNull(viewModel.uiState.value.previewPng)
         assertNotNull(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(png)))
-        assertNull(repository.branding.value.watermarkText, "a prévia não salva nada")
+        assertNull(repository.branding.value.brandName, "a prévia não salva nada")
 
         viewModel.closePreview()
         assertNull(viewModel.uiState.value.previewPng)

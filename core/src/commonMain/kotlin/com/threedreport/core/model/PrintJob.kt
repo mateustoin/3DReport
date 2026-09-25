@@ -3,46 +3,76 @@ package com.threedreport.core.model
 import kotlinx.serialization.Serializable
 
 /**
- * Dados de uma peça a ser orçada, normalmente informados pelo fatiador.
+ * Quanto de um filamento uma impressão consome. Uma peça multicolor (AMS, MMU) tem um por
+ * filamento; a maioria das peças tem um só.
  *
- * Estes são os únicos parâmetros que variam de peça para peça; o restante
- * vem de [PricingSettings].
+ * @property filament retrato do filamento usado (com preço e densidade no momento do orçamento).
+ * @property lengthMeters comprimento consumido numa rodada da impressão, em metros. Quando vem do
+ *   G-code, já inclui a purga e a torre de limpeza, que são custo de verdade (conferido em arquivos
+ *   reais, decisão 105).
+ * @property color qual [FilamentColor] de [filament] foi usado, se o filamento tiver mais de uma
+ *   cor cadastrada. Não afeta o cálculo (preço/densidade são do filamento, não da cor): é registro
+ *   e é o que diferencia duas cores do mesmo filamento numa peça multicolor.
+ */
+@Serializable
+data class FilamentUsage(
+    val filament: Filament,
+    val lengthMeters: Double,
+    val color: FilamentColor? = null,
+) {
+    init {
+        require(lengthMeters >= 0) { "lengthMeters não pode ser negativo: $lengthMeters" }
+    }
+
+    /** Massa consumida numa rodada, em gramas. */
+    val weightGrams: Double
+        get() = filament.weightGrams(lengthMeters)
+}
+
+/**
+ * Uma impressão: uma mesa que a impressora roda, como o fatiador informa. Um pedido pode ter
+ * várias (uma action figure em cabeça, corpo e base), cada uma na sua impressora (ver
+ * [QuotedPrint]); o que é do pedido inteiro (trabalho, quantidade, canal) fica no [Quote].
  *
- * @property filament filamento utilizado (com preço e densidade).
- * @property filamentLengthMeters comprimento de filamento consumido, em metros.
- * @property printTimeMinutes tempo de impressão, em minutos.
- * @property filamentColor qual [FilamentColor] de [filament] foi usado nesta
- *   peça, se o filamento tiver mais de uma cor cadastrada. Não afeta o
- *   cálculo (preço/densidade são do filamento, não da cor) — é só registro.
- * @property laborMinutes minutos do **seu** trabalho em **uma** peça (num
- *   orçamento de 10 unidades, esse tempo é cobrado 10 vezes), somando tudo
- *   que a impressora não faz sozinha: preparar o arquivo, fatiar, tirar da
- *   mesa, remover suporte, lixar, pintar, embalar. Diferente de
- *   [printTimeMinutes], que é a máquina trabalhando enquanto você faz outra
- *   coisa. Só entra no custo se houver [PricingSettings.laborRatePerHour]
- *   configurada. O app deixa em zero e cobra o tempo total do pedido em
- *   [Quote.setupMinutes] (decisão 94); o campo continua pro histórico e pra
- *   quem usa o `core` como biblioteca.
+ * O custo é da mesa, não de cada parte que está nela: uma mesa com três partes é uma impressão só.
+ *
+ * @property filaments o que esta impressão consome, um item por filamento. Nunca vazio.
+ * @property printTimeMinutes tempo de uma rodada, em minutos.
+ * @property runs quantas vezes a mesma mesa roda num pedido (4 mesas iguais de peças pequenas).
+ *   Diferente de [Quote.quantity], que é quantos pedidos iguais: cada impressão multiplica pelos
+ *   próprios [runs] e depois pela quantidade.
+ * @property name nome opcional pra identificar a impressão ("Cabeça"). Uso interno.
  */
 @Serializable
 data class PrintJob(
-    val filament: Filament,
-    val filamentLengthMeters: Double,
+    val filaments: List<FilamentUsage>,
     val printTimeMinutes: Double,
-    val filamentColor: FilamentColor? = null,
-    val laborMinutes: Double = 0.0,
+    val runs: Int = 1,
+    val name: String? = null,
 ) {
+    /** Atalho pra impressão de um filamento só, que é a maioria. */
+    constructor(
+        filament: Filament,
+        filamentLengthMeters: Double,
+        printTimeMinutes: Double,
+        filamentColor: FilamentColor? = null,
+    ) : this(filaments = listOf(FilamentUsage(filament, filamentLengthMeters, filamentColor)), printTimeMinutes = printTimeMinutes)
+
     init {
-        require(filamentLengthMeters >= 0) { "filamentLengthMeters não pode ser negativo: $filamentLengthMeters" }
+        require(filaments.isNotEmpty()) { "uma impressão precisa de pelo menos um filamento" }
         require(printTimeMinutes >= 0) { "printTimeMinutes não pode ser negativo: $printTimeMinutes" }
-        require(laborMinutes >= 0) { "laborMinutes não pode ser negativo: $laborMinutes" }
+        require(runs >= 1) { "runs deve ser pelo menos 1: $runs" }
     }
 
-    /** Tempo de impressão convertido para horas. */
+    /** Tempo de uma rodada, em horas. */
     val printTimeHours: Double
         get() = printTimeMinutes / 60.0
 
-    /** Tempo de trabalho convertido para horas. */
-    val laborHours: Double
-        get() = laborMinutes / 60.0
+    /** Comprimento somado de todos os filamentos numa rodada, em metros. */
+    val totalLengthMeters: Double
+        get() = filaments.sumOf { it.lengthMeters }
+
+    /** Massa somada de todos os filamentos numa rodada, em gramas. */
+    val weightGrams: Double
+        get() = filaments.sumOf { it.weightGrams }
 }

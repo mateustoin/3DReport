@@ -23,7 +23,7 @@ class BrandingSettingsTest {
 
     @Test
     fun identityIsLogoOrContactButNotTheNameAlone() {
-        assertFalse(BrandingSettings(watermarkText = "Minha Loja").hasIdentity)
+        assertFalse(BrandingSettings(brandName = "Minha Loja").hasIdentity)
         assertTrue(BrandingSettings(logoFileName = "logo.png").hasIdentity)
         assertTrue(BrandingSettings(contactEmail = "a@b.com").hasIdentity)
     }

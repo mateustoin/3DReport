@@ -56,11 +56,15 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     interno de produção/lucro (decisão 25).
   - Canais de venda (`SalesChannel`, decisão 78) substituíram a taxa única de
     marketplace: cada canal tem a própria taxa, **descontada** da venda pelo
-    marketplace (não somada ao total do cliente). `PricingSettings.marketplaceFeeRate`
-    ficou como campo legado, e `Quote.marketplaceFeeRate` guarda a taxa do
-    canal efetivamente aplicada (o nome antigo foi mantido pra orçamentos já
-    salvos não perderem a taxa). `PricingSettings.taxRate` (imposto) é
-    tratado do mesmo jeito.
+    marketplace (não somada ao total do cliente). `Quote.channelFeeRate` guarda
+    a taxa do canal efetivamente aplicada, e `Quote.channelId`/`channelName`
+    qual canal foi. `PricingSettings.taxRate` (imposto) é tratado do mesmo
+    jeito.
+  - Um orçamento é uma lista de impressões (decisão 105): `PrintJob` é uma
+    mesa que a impressora roda (vários `FilamentUsage` numa peça multicolor,
+    tempo, `runs`), e `QuotedPrint` é o retrato dela dentro do `Quote`
+    (impressora usada e `PrintCost`). O que é do pedido (trabalho, quantidade,
+    canal, negociação) fica no `Quote`, uma vez só.
   - `SavedQuote` é o retrato congelado de um orçamento salvo: além do `Quote`,
     guarda serviços, frete, cliente (uso interno), status do pedido, prazo de
     entrega, configurações de impressão e referências aos arquivos de foto e
@@ -73,7 +77,10 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   hoje (decisão 102), mantendo o preço anunciado; devolve o motivo quando falta
   filamento, impressora ou canal.
 - `pricing/PricingCalculator`: função pura
-  `calculate(job, printer, settings, channel = null, quantity = 1, setupMinutes = 0.0, negotiatedSalePrice = null): Quote`.
+  `calculate(prints: List<Pair<PrintJob, PrinterProfile>>, settings, channel = null, quantity = 1, laborMinutes = 0.0, negotiatedSalePrice = null): Quote`,
+  com o atalho `calculate(job, printer, …)` pra uma impressão só. Cada
+  impressão é calculada com a própria impressora, e o que é do pedido entra
+  depois, uma vez só.
   Fórmulas em [pricing-formulas.md](pricing-formulas.md). Não conhece
   serviços nem frete. Com canal e/ou imposto, o valor de venda é inflado
   (`venda = base / (1 − deduções)`) pra que o lucro real, depois das
@@ -85,9 +92,10 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   Dashboard, `PrintQueueReport` pra fila de cada impressora,
   `MaintenanceReport` pras horas de uso e a situação de cada componente de
   manutenção), mesmo estilo do `PricingCalculator`.
-- `slicer/` e `stl/`: leitura dos metadados de G-code (consumo, tempo,
-  miniatura, configurações de impressão) e da malha STL (parser e análise de
-  complexidade), ambos sem dependência de plataforma.
+- `slicer/` e `stl/`: leitura dos metadados de G-code (consumo total e por
+  extrusor, tempo, miniatura, configurações de impressão, impressora e
+  filamentos, casados com os cadastros por `CatalogMatcher`) e da malha STL
+  (parser e análise de complexidade), ambos sem dependência de plataforma.
 - Alvo atual: `jvm()`.
 
 ### `web`
@@ -162,7 +170,15 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   catálogo/perfil padrão no primeiro uso; o resto começa vazio.
 - `data/BackupRepository` empacota a pasta de dados inteira num `.zip` e
   restaura de forma transacional (decisão 75). Como todos os arquivos do app
-  moram nessa pasta, nada novo precisa ser registrado no backup.
+  moram nessa pasta, nada novo precisa ser registrado no backup. O manifesto
+  do `.zip` guarda `dataFormatVersion`, e backup de outro formato é recusado.
+- **Formato dos dados** (decisão 104): `~/.3dreport/format.json` guarda a
+  versão do formato (`DATA_FORMAT_VERSION`, hoje 2). `prepareDataDir()`
+  (`data/DataFormat.kt`) roda no `Main.kt` antes de qualquer repositório: uma
+  pasta de formato anterior é movida inteira, sem conversão e sem apagar nada,
+  pra `~/.3dreport-v1`, e o app avisa uma vez. Um arquivo que não dá pra ler é
+  guardado como `<nome>.ilegivel-<millis>.json` em vez de sobrescrito
+  (`readJsonFile`).
 - Arquivos binários **não** vão dentro do JSON: a foto de um `SavedQuote`
   fica em `~/.3dreport/photos/`, o STL em `~/.3dreport/models/` e a logo do
   vendedor em `~/.3dreport/branding/`, referenciados por nome de arquivo

@@ -10,11 +10,10 @@ import kotlinx.serialization.Serializable
  * uma só por vendedor, que nunca entra num [QuoteTemplate]) e **apresentação** (os `show*`, o que
  * um template guarda e aplica).
  *
- * @property watermarkText nome da marca do vendedor. O nome do campo é o antigo, de quando só
- *   servia de marca d'água: renomear faria quem já configurou perder o valor. Aparece na marca
- *   d'água, no rodapé, no cabeçalho (quando há logo ou contato) e na imagem quadrada.
- * @property showWatermark exibe [watermarkText] como marca d'água diagonal no PDF.
- * @property showFooter exibe [watermarkText] no rodapé do PDF.
+ * @property brandName nome da marca do vendedor. Aparece na marca d'água, no rodapé, no cabeçalho
+ *   (quando há logo ou contato) e na imagem quadrada.
+ * @property showWatermark exibe [brandName] como marca d'água diagonal no PDF.
+ * @property showFooter exibe [brandName] no rodapé do PDF.
  * @property showPrintTime mostra o tempo de impressão do pedido no PDF e no texto de
  *   copiar/colar/WhatsApp. Desligado por padrão: é tempo de máquina, não custo nem margem (não
  *   fere a decisão 19), mas nem todo vendedor quer dar ao cliente o argumento "só 2 h de máquina?"
@@ -28,7 +27,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class BrandingSettings(
-    val watermarkText: String? = null,
+    val brandName: String? = null,
     val showWatermark: Boolean = true,
     val showFooter: Boolean = true,
     val showPrintTime: Boolean = false,

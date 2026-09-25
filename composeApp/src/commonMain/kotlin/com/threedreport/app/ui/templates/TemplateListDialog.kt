@@ -102,7 +102,7 @@ private fun TemplateRow(template: QuoteTemplate, isActive: Boolean, onLoad: () -
                     }
                 }
                 Text(
-                    template.watermarkText?.let { "Marca d'água: \"$it\"" } ?: "Sem marca d'água configurada",
+                    template.brandName?.let { "Marca d'água: \"$it\"" } ?: "Sem marca d'água configurada",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

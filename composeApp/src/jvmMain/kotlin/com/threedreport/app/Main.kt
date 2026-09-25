@@ -8,19 +8,27 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.threedreport.app.data.prepareDataDir
 import java.awt.Dimension
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
 /** Ponto de entrada do app desktop. */
-fun main() = application {
+fun main() {
+    // Antes de qualquer repositório abrir um arquivo: dados de uma versão com outro formato vão
+    // pra uma pasta à parte (decisão 104).
+    val oldDataDir = prepareDataDir()
+    runApp(oldDataDir?.path)
+}
+
+private fun runApp(oldDataPath: String?) = application {
     // Largo o bastante pra tela de Orçamento abrir em duas colunas (entradas à esquerda, resultado
     // à direita) sem a pessoa precisar redimensionar a janela na mão. Continua redimensionável: em
     // janela estreita a tela volta sozinha pra uma coluna só.
     val windowState = rememberWindowState(size = DpSize(1280.dp, 820.dp))
     Window(onCloseRequest = ::exitApplication, title = "3DReport", state = windowState) {
         FixMultiMonitorDpiRedrawBug()
-        App()
+        App(oldDataPath = oldDataPath)
     }
 }
 

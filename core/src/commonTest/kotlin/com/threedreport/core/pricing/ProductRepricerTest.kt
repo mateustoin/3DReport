@@ -1,6 +1,7 @@
 package com.threedreport.core.pricing
 
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrintJob
@@ -34,9 +35,9 @@ class ProductRepricerTest {
             settings = settings,
             channel = channel,
             quantity = quantity,
-            setupMinutes = 15.0,
+            laborMinutes = 15.0,
             negotiatedSalePrice = announced,
-        ).copy(printerId = printer.id, printerName = printer.name, channelName = channel?.name)
+        )
         return SavedQuote(id = "1", name = "Chaveiro", quote = quote, savedAtEpochMillis = 0L, kind = QuoteKind.PRODUCT)
     }
 
@@ -57,7 +58,7 @@ class ProductRepricerTest {
         assertFalse(result.changed)
         assertEquals(product.quote.salePrice, result.quote.salePrice, 1e-9)
         assertEquals(3, result.quote.quantity)
-        assertEquals(15.0, result.quote.setupMinutes)
+        assertEquals(15.0, result.quote.laborMinutes)
     }
 
     @Test
@@ -68,7 +69,7 @@ class ProductRepricerTest {
 
         assertTrue(result.changed)
         assertTrue(result.quote.salePrice > product.quote.salePrice)
-        assertEquals(150.0, result.quote.job.filament.pricePerKg)
+        assertEquals(150.0, result.quote.prints.single().job.filaments.single().filament.pricePerKg)
     }
 
     @Test
@@ -83,13 +84,15 @@ class ProductRepricerTest {
     }
 
     @Test
-    fun channelIsFoundByNameAndItsCurrentFeeApplies() {
+    fun channelIsFoundByIdAndItsCurrentNameAndFeeApply() {
         val product = productOf(channel = shopee)
 
-        val result = assertIs<RepriceResult.Repriced>(reprice(product, channels = listOf(shopee.copy(id = "outro", feeRate = 0.25))))
+        // Renomear o canal no cadastro não deixa o produto sem canal.
+        val result = assertIs<RepriceResult.Repriced>(reprice(product, channels = listOf(shopee.copy(name = "Shopee Brasil", feeRate = 0.25))))
 
         assertTrue(result.changed)
-        assertEquals(0.25, result.quote.marketplaceFeeRate)
+        assertEquals(0.25, result.quote.channelFeeRate)
+        assertEquals("Shopee Brasil", result.quote.channelName)
     }
 
     @Test
@@ -111,9 +114,24 @@ class ProductRepricerTest {
     }
 
     @Test
-    fun quoteSavedWithoutPrinterIdCannotBeRepriced() {
-        val product = productOf().let { it.copy(quote = it.quote.copy(printerId = null, printerName = null)) }
+    fun everyFilamentOfEveryPrintIsRepriced() {
+        val petg = Filament(id = "petg", name = "PETG", pricePerKg = 120.0, densityGPerCm3 = 1.27)
+        val quote = PricingCalculator.calculate(
+            prints = listOf(
+                PrintJob(filaments = listOf(FilamentUsage(filament, 5.0), FilamentUsage(petg, 2.0)), printTimeMinutes = 60.0) to printer,
+                PrintJob(filament = petg, filamentLengthMeters = 8.0, printTimeMinutes = 90.0) to printer,
+            ),
+            settings = settings,
+        )
+        val product = SavedQuote(id = "1", name = "Diorama", quote = quote, savedAtEpochMillis = 0L, kind = QuoteKind.PRODUCT)
 
-        assertEquals(RepriceResult.Unavailable(RepriceResult.Reason.PRINTER_MISSING, null), reprice(product))
+        val result = assertIs<RepriceResult.Repriced>(reprice(product, filaments = listOf(filament, petg.copy(pricePerKg = 240.0))))
+
+        assertTrue(result.changed)
+        assertEquals(listOf(100.0, 240.0, 240.0), result.quote.prints.flatMap { p -> p.job.filaments.map { it.filament.pricePerKg } })
+        assertEquals(
+            RepriceResult.Unavailable(RepriceResult.Reason.FILAMENT_MISSING, "PETG"),
+            reprice(product, filaments = listOf(filament)),
+        )
     }
 }

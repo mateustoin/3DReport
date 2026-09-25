@@ -1,5 +1,7 @@
 package com.threedreport.core.model
 
+import com.threedreport.core.costsOf
+import com.threedreport.core.quotedPrint
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -18,10 +20,8 @@ class SavedQuoteTest {
         id = "1",
         name = "Peça",
         quote = Quote(
-            job = PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes),
-            filamentWeightGrams = 5.0,
-            costs = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            productionCost = 0.0,
+            prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes))),
+            costs = costsOf(),
             salePrice = 10.0,
             quantity = quantity,
         ),
