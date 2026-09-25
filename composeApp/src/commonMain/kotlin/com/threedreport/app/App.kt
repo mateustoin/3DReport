@@ -358,10 +358,10 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                 )
 
                 if (draggingFile) {
-                    val hovered = dragPosition?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key }
                     GCodeDropOverlay(
                         prints = visibleInput.prints,
-                        hovered = hovered,
+                        // Lido dentro do aviso: cada movimento do mouse redesenha só ele, e não a tela inteira.
+                        hovered = { dragPosition?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key } },
                         onZonePlaced = { zone, bounds -> dropZones[zone] = bounds },
                         onDispose = { dropZones.clear() },
                     )
@@ -379,9 +379,10 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
             // Com a opção ligada, uma verificação ao abrir, e o aviso uma vez por versão nova (decisão 116).
             LaunchedEffect(Unit) { updateViewModel.checkOnStart() }
             val updateState by updateViewModel.state.collectAsState()
-            val available = (updateState as? UpdateState.Available)?.release
+            val available = updateViewModel.unannounced(updateState)
             LaunchedEffect(available?.version) {
                 if (available == null || destination == AppDestination.ABOUT) return@LaunchedEffect
+                updateViewModel.markAnnounced(available)
                 val result = snackbarHostState.showSnackbar(
                     "Versão ${available.version} do 3DReport disponível.",
                     actionLabel = "Ver novidades",
@@ -608,7 +609,7 @@ private sealed interface DropZone {
 @Composable
 private fun GCodeDropOverlay(
     prints: List<PrintInput>,
-    hovered: DropZone?,
+    hovered: () -> DropZone?,
     onZonePlaced: (DropZone, Rect) -> Unit,
     onDispose: () -> Unit,
 ) {
@@ -640,13 +641,13 @@ private fun GCodeDropOverlay(
                 val zone = DropZone.Replace(print.id)
                 DropZoneBox(
                     text = "Substituir a ${printTitle(index + 1, print.name).replaceFirstChar { it.lowercase() }}",
-                    highlighted = hovered == zone,
+                    highlighted = hovered() == zone,
                     onPlaced = { onZonePlaced(zone, it) },
                 )
             }
             DropZoneBox(
                 text = "Adicionar como nova impressão",
-                highlighted = hovered == DropZone.AddNew,
+                highlighted = hovered() == DropZone.AddNew,
                 onPlaced = { onZonePlaced(DropZone.AddNew, it) },
             )
         }

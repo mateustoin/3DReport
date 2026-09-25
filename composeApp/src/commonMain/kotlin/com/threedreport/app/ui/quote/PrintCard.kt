@@ -143,7 +143,10 @@ private fun PrintCard(
 ) {
     var expanded by rememberSaveable(print.id) { mutableStateOf(true) }
     var editingSettings by remember { mutableStateOf(false) }
-    val hasError = result.fieldErrors.keys.any { it.startsWith("time:${print.id}") || it.startsWith("runs:${print.id}") || it.startsWith("length:${print.id}:") }
+    val hasError = result.fieldErrors.keys.any { key ->
+        key == QuoteFields.printTime(print.id) || key == QuoteFields.runs(print.id) ||
+            print.filaments.any { key == QuoteFields.length(print.id, it.id) }
+    }
 
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

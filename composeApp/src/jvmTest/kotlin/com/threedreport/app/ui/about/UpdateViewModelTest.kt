@@ -7,6 +7,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class UpdateViewModelTest {
@@ -65,5 +66,38 @@ class UpdateViewModelTest {
             UpdateState.Failed,
             UpdateViewModel(PreferencesRepository(), { error("sem internet") }, "2.1.0").apply { checkNow() }.state.value,
         )
+    }
+
+    @Test
+    fun aCheckThatEndsAfterTurningOffShowsNothing() {
+        var finish: (() -> Unit)? = null
+        val preferences = PreferencesRepository()
+        val viewModel = UpdateViewModel(
+            preferences,
+            { LatestRelease("9.0.0", "https://x") },
+            "2.1.0",
+            // A leitura fica parada até a gente soltar, como uma rede lenta.
+            background = object : kotlinx.coroutines.CoroutineDispatcher() {
+                override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) { finish = { block.run() } }
+            },
+        )
+        viewModel.setEnabled(true)
+        viewModel.setEnabled(false)
+
+        finish!!.invoke()
+
+        assertEquals(UpdateState.Idle, viewModel.state.value)
+    }
+
+    @Test
+    fun aNewVersionIsAnnouncedOnce() {
+        val preferences = PreferencesRepository()
+        val viewModel = UpdateViewModel(preferences, { LatestRelease("2.2.0", "https://x") }, "2.1.0")
+        viewModel.checkNow()
+        val release = assertNotNull(viewModel.unannounced(viewModel.state.value))
+
+        viewModel.markAnnounced(release)
+
+        assertEquals(null, UpdateViewModel(preferences, { release }, "2.1.0").apply { checkNow() }.let { it.unannounced(it.state.value) })
     }
 }

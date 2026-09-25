@@ -290,4 +290,29 @@ class MultiPrintQuoteTest {
         viewModel.loadForEditing(saved)
         assertContentEquals(second, viewModel.prints[1].thumbnail?.bytes)
     }
+
+    @Test
+    fun savingAnEditOfAnOrderSentToTheTrashMeanwhileBringsItBackWithTheChanges() {
+        val viewModel = twoPrints()
+        viewModel.saveCurrentQuote()
+        val saved = history.savedQuotes.value.single()
+        viewModel.loadForEditing(saved)
+        viewModel.setPrintName("Cabeça", viewModel.prints[0].id)
+
+        history.delete(saved.id)
+
+        assertTrue(viewModel.saveCurrentQuote())
+        assertEquals("Cabeça", history.savedQuotes.value.single().quote.prints[0].job.name)
+    }
+
+    @Test
+    fun aGCodeWithoutThumbnailDoesNotKeepThePreviousOne() {
+        val viewModel = viewModel()
+        viewModel.importDroppedFiles(listOf(gcode("a.gcode", 5.0, 60, tinyPng())))
+        assertNotNull(viewModel.prints.single().thumbnail)
+
+        viewModel.importDroppedFiles(listOf(gcode("b.gcode", 6.0, 60)))
+
+        assertNull(viewModel.prints.single().thumbnail)
+    }
 }

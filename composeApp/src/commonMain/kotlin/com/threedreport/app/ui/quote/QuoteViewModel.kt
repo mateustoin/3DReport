@@ -116,6 +116,7 @@ class QuoteViewModel(
     val saveForm: StateFlow<SaveQuoteFormState> = saveFormState.asStateFlow()
 
     private val importingState = MutableStateFlow(false)
+    private var pendingImports = 0
 
     /** Um G-code está sendo lido. */
     val importing: StateFlow<Boolean> = importingState.asStateFlow()
@@ -380,12 +381,15 @@ class QuoteViewModel(
             return
         }
         importingState.value = true
+        pendingImports++
         scope.launch(background) {
             val metadata = runCatching { GCodeMetadataParser.parse(file.bytes.decodeToString()) }
                 .onFailure { AppLog.warn("Falha ao ler o G-code ${file.fileName}", it) }
                 .getOrNull()
             withContext(main) {
-                importingState.value = false
+                // Vários G-codes soltos juntos são lidos ao mesmo tempo: "Lendo…" só sai depois do último.
+                pendingImports--
+                importingState.value = pendingImports > 0
                 if (metadata == null) {
                     updatePrint(id) { it.copy(gcodeImportMessage = "Não consegui ler esse G-code. Confira se é o arquivo exportado pelo fatiador.") }
                 } else {
@@ -613,7 +617,7 @@ class QuoteViewModel(
      * (mantendo pedido/produto): antes, os campos continuavam preenchidos e um segundo Ctrl+S criava um
      * pedido repetido. Reabrindo, atualiza o mesmo orçamento.
      */
-    fun saveQuote(calculated: Quote, services: List<QuoteService>) {
+    fun saveQuote(calculated: Quote, services: List<QuoteService>): Boolean {
         val form = saveFormState.value
         val input = inputState.value
         // Nome e configurações de cada impressão não mudam o preço, então vêm da tela mesmo quando o cálculo
@@ -644,7 +648,8 @@ class QuoteViewModel(
 
         val editing = form.operation as? QuoteOperation.Editing
         if (editing != null) {
-            historyRepository.update(
+            val update = {
+                historyRepository.update(
                 id = editing.savedQuote.id,
                 name = form.name,
                 quote = quote,
@@ -659,8 +664,18 @@ class QuoteViewModel(
                 category = form.category,
                 soldAtCatalogPrice = soldAtCatalogPrice,
             )
+            }
+            // A edição não é mais modal (decisão 113): o pedido pode ter ido pra lixeira enquanto era editado.
+            // Salvar tira ele de lá com as alterações; sem ele nem na lixeira, avisa em vez de dizer que salvou.
+            val updated = update() ?: historyRepository.restore(editing.savedQuote.id)?.let { update() }
+            if (updated == null) {
+                saveFormState.update {
+                    it.copy(blockedMessage = "Não salvei: \"${editing.savedQuote.name}\" foi excluído. Cancele a edição e use Duplicar num pedido parecido.")
+                }
+                return false
+            }
             saveFormState.update { it.copy(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = editing.savedQuote.displayNumber) }
-            return
+            return true
         }
 
         val saved = historyRepository.save(
@@ -684,6 +699,7 @@ class QuoteViewModel(
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = saved.displayNumber)
         forgetUndo()
         stlPreviewState.value = null
+        return true
     }
 
     /**
@@ -812,8 +828,7 @@ class QuoteViewModel(
             saveFormState.update { it.copy(blockedMessage = blocked) }
             return false
         }
-        saveQuote(quote, result.selectedServices)
-        return true
+        return saveQuote(quote, result.selectedServices)
     }
 
     /** Reabrindo um orçamento, se algo foi mudado desde que ele abriu (cancelar perderia a mudança). */

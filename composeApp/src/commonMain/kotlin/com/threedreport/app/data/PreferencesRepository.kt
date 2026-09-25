@@ -16,6 +16,7 @@ import kotlinx.serialization.Serializable
  * @property checkForUpdates consulta o GitHub ao abrir pra avisar de versão nova. Desligado por padrão:
  *   o app é 100% local, e só sai da máquina o que a pessoa escolheu.
  * @property window onde a janela estava ao fechar (decisão 111), pra abrir no mesmo lugar.
+ * @property announcedUpdateVersion a última versão nova já avisada (decisão 116), pro aviso aparecer uma vez só.
  */
 @Serializable
 data class AppPreferences(
@@ -24,6 +25,7 @@ data class AppPreferences(
     val lastBackupEpochMillis: Long? = null,
     val checkForUpdates: Boolean = false,
     val window: SavedWindowBounds? = null,
+    val announcedUpdateVersion: String? = null,
 )
 
 /**

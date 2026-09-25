@@ -93,7 +93,8 @@ object GCodeImporter {
             beforeGCode = current.beforeGCode ?: current.copy(gcodeImportMessage = null),
             gcodeImportMessage = message(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows),
             settings = settings,
-            thumbnail = thumbnail ?: current.thumbnail,
+            // A miniatura é do G-code desta impressão: um arquivo sem miniatura não fica com a do anterior.
+            thumbnail = thumbnail,
         )
     }
 

@@ -482,6 +482,15 @@ private fun QuoteResultSection(
         )
         allFilaments.isEmpty() -> Text("Cadastre um filamento em Filamentos.", style = MaterialTheme.typography.bodyMedium)
         printers.isEmpty() -> Text("Cadastre uma impressora em Impressoras.", style = MaterialTheme.typography.bodyMedium)
+        // Tudo arquivado (decisão 115): não há o que escolher, e pedir peso e tempo não ajudaria.
+        allFilaments.none { it.hasStockAvailable && !it.archived } -> Text(
+            "Todos os filamentos em estoque estão arquivados. Restaure um em Filamentos, na seção Arquivados.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        printers.all { it.archived } -> Text(
+            "Todas as impressoras estão arquivadas. Restaure uma em Impressoras, na seção Arquivados.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
         input.prints.size > 1 -> Text(
             "Preencha peso (ou comprimento) e tempo de cada impressão pra calcular, ou arraste os G-codes.",
             style = MaterialTheme.typography.bodyMedium,

@@ -65,13 +65,33 @@ class UpdateViewModel(
     val enabled: StateFlow<Boolean> = enabledState.asStateFlow()
 
     private val stateFlow = MutableStateFlow<UpdateState>(UpdateState.Idle)
+
+    /** Sobe a cada desligar: uma verificação que termina depois disso não mostra mais nada. */
+    private var generation = 0
     val state: StateFlow<UpdateState> = stateFlow.asStateFlow()
 
     /** Liga ou desliga; ao ligar, já verifica. */
     fun setEnabled(enabled: Boolean) {
         preferences.update(preferences.preferences.value.copy(checkForUpdates = enabled))
         enabledState.value = enabled
-        if (enabled) checkNow() else stateFlow.value = UpdateState.Idle
+        if (enabled) {
+            checkNow()
+        } else {
+            generation++
+            stateFlow.value = UpdateState.Idle
+        }
+    }
+
+    /**
+     * A versão nova que ainda não foi avisada, pro aviso ao abrir aparecer uma vez por versão; quem quiser
+     * ver de novo tem o Sobre.
+     */
+    fun unannounced(state: UpdateState): LatestRelease? =
+        (state as? UpdateState.Available)?.release?.takeIf { it.version != preferences.preferences.value.announcedUpdateVersion }
+
+    /** Marca [release] como avisada. */
+    fun markAnnounced(release: LatestRelease) {
+        preferences.update(preferences.preferences.value.copy(announcedUpdateVersion = release.version))
     }
 
     /** Ao abrir o app, só com a opção ligada. */
@@ -83,11 +103,13 @@ class UpdateViewModel(
     fun checkNow() {
         if (stateFlow.value == UpdateState.Checking) return
         stateFlow.value = UpdateState.Checking
+        val started = generation
         scope.launch(background) {
             val latest = runCatching { source.latest() }
                 .onFailure { AppLog.warn("Não consegui verificar atualizações", it) }
                 .getOrNull()
             withContext(main) {
+                if (started != generation) return@withContext
                 stateFlow.value = when {
                     latest == null -> UpdateState.Failed
                     isNewerVersion(latest.version, currentVersion) -> UpdateState.Available(latest)

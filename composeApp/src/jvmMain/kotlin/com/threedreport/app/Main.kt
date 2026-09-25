@@ -164,7 +164,18 @@ private fun rememberWindowBounds(container: AppContainer, state: WindowState) {
     val maximized = state.placement == WindowPlacement.Maximized
     val position = state.position
     val bounds = when {
-        maximized -> prefs.window?.copy(maximized = true)
+        // Maximizada sem retângulo guardado (maximizou logo na primeira vez): guarda o tamanho inicial, que é
+        // pra onde "restaurar" volta.
+        maximized -> prefs.window?.copy(maximized = true) ?: initialWindowSize().let { size ->
+            val origin = position as? WindowPosition.Absolute
+            SavedWindowBounds(
+                x = origin?.x?.value?.roundToInt() ?: 0,
+                y = origin?.y?.value?.roundToInt() ?: 0,
+                width = size.width.value.roundToInt(),
+                height = size.height.value.roundToInt(),
+                maximized = true,
+            )
+        }
         state.placement == WindowPlacement.Floating && position is WindowPosition.Absolute -> SavedWindowBounds(
             x = position.x.value.roundToInt(),
             y = position.y.value.roundToInt(),
