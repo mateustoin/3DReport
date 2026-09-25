@@ -5,6 +5,46 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [2.1.0] - 2026-09-25
+
+Primeira versão publicada da linha 2. Ela traz também tudo o que está na 2.0.0, logo abaixo, que não
+chegou a ser publicada sozinha. **Os dados da 1.x não são convertidos:** ao abrir, o app guarda a pasta
+antiga inteira em `~/.3dreport-v1`, sem apagar nada. Pra recuperar, reinstale a 1.37 e renomeie a pasta
+de volta pra `.3dreport`.
+
+### Adicionado
+- **Pedido feito de várias impressões.** Uma action figure em cabeça, corpo e base, cada mesa na sua
+  impressora e com o seu filamento, vira um pedido só, com um preço só pro cliente. "+ Adicionar outra
+  impressão" abre um cartão por mesa, com nome, impressora, filamentos, tempo, "× vezes", G-code e
+  configurações próprios. Recolhido, o cartão mostra um resumo com o custo daquela mesa.
+- **Arrastar vários G-codes de uma vez** cria uma impressão por arquivo. Com o pedido já preenchido, ao
+  arrastar dá pra escolher entre substituir uma impressão e adicionar uma nova.
+- **"Por impressão"** no resultado: quanto custa cada mesa e o que é do pedido (trabalho, falhas,
+  administrativo). O PDF e a mensagem continuam mostrando um item só.
+- **Arquivar** filamento, impressora, serviço e canal que você não usa mais: sai das escolhas do
+  Orçamento, mas os pedidos e produtos que usavam continuam funcionando. Excluir algo em uso agora diz
+  em quantos pedidos ele está e sugere arquivar.
+- **Avisar quando sair uma versão nova**, opcional e desligado por padrão, em Sobre. Ligado, o app
+  pergunta ao GitHub qual é a versão mais recente ao abrir; seus dados continuam só no computador.
+- **A janela abre do tamanho e no lugar em que você deixou.**
+
+### Alterado
+- **Barra lateral no lugar das abas**, em dois grupos: Vendas (Orçamento, Pedidos, Catálogo, Dashboard) e
+  Cadastros (Filamentos, Impressoras, Serviços), com Configurações e Sobre embaixo. Em janela estreita,
+  ela fica só com os ícones. Os atalhos agora vão de Ctrl/Cmd+1 a 8, na ordem da barra.
+- **Histórico agora se chama Pedidos, e o Catálogo tem tela própria**, em vez de dividir a mesma tela.
+- **Editar um pedido abre no próprio Orçamento**, em duas colunas, em vez de numa janela estreita. O que
+  você estava fazendo no Orçamento fica guardado e volta quando você salva ou cancela a edição.
+- **Configurações em seções** (Negócio e custos, Canais, Documentos pro cliente, Aparência, Dados), uma
+  por vez. Um botão só, numa barra fixa embaixo, salva ou descarta tudo o que foi mudado.
+- **Sobre** reúne versão, links, apoio ao projeto, como usar e atalhos, que antes ficavam no rodapé e na
+  Ajuda.
+- O instalador do Windows mantém a mesma identificação das versões anteriores, pra continuar
+  atualizando por cima.
+
+### Corrigido
+- Digitar o peso preenche o comprimento com duas casas ("16,76"), em vez de "16,764181".
+
 ## [2.0.0] - 2026-09-25
 
 Primeira versão MAJOR: o formato dos dados mudou e **os dados da versão

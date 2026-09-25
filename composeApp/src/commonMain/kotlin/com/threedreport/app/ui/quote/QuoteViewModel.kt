@@ -259,8 +259,13 @@ class QuoteViewModel(
         val index = prints.indexOfFirst { it.id == printId }
         if (index < 0 || prints.size <= 1) return
         removedPrint = index to prints[index]
+        // A foto é do pedido: remover a impressão de onde a miniatura veio não tira a foto (e o Desfazer não
+        // teria como devolvê-la).
         inputState.update { it.copy(prints = it.prints.filterNot { print -> print.id == printId }) }
-        if (photoGCodePrintId == printId) undoGCodePhoto()
+        if (photoGCodePrintId == printId) {
+            photoGCodePrintId = null
+            photoBeforeGCode = null
+        }
         notify("Impressão ${index + 1} removida.", actionLabel = "Desfazer", action = ::restoreRemovedPrint)
     }
 

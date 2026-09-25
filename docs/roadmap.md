@@ -731,34 +731,40 @@ conta errada.
 - [x] **Resultado mostra o consumo por filamento** ("PLA · Preto 320 g · PETG
   80 g"), e o card do Histórico também.
 
-**Fase 3: várias impressões num pedido**
+**Fase 3: várias impressões num pedido** (feita, decisão 114, 2026-09-25, v2.1.0)
 
-- [ ] **Revelação progressiva:** pedido de uma impressão continua idêntico
+- [x] **Revelação progressiva:** pedido de uma impressão continua idêntico
   ao de hoje. "Adicionar outra impressão" transforma o bloco atual no cartão
   "Impressão 1" e cria a "Impressão 2", já com a impressora e o filamento da
   anterior.
-- [ ] **Cartão da impressão:** nome opcional ("Cabeça"), impressora,
+- [x] **Cartão da impressão:** nome opcional ("Cabeça"), impressora,
   filamentos, metros, tempo, "× N vezes", botão de G-code e miniatura.
   Recolhível, com resumo numa linha ("Corpo · K1 · 9h40 · 180 g · produção
-  R$ 32,10"). Duplicar e remover, remover com desfazer.
-- [ ] **O que é do pedido fica fora dos cartões:** tempo de trabalho,
+  R$ 32,10"). Duplicar e remover, remover com desfazer. **Feito (decisão
+  114):** o resumo mostra o custo da própria impressão ("· custo R$ 32,10"),
+  e o cartão fica em `ui/quote/PrintCard.kt`.
+- [x] **O que é do pedido fica fora dos cartões:** tempo de trabalho,
   serviços, frete, canal, negociação e prazo, uma vez só.
-- [ ] **Arrastar vários G-codes de uma vez cria uma impressão por arquivo**
+- [x] **Arrastar vários G-codes de uma vez cria uma impressão por arquivo**
   (o vendedor fatia 6 mesas e arrasta as 6). Com um arquivo só, o aviso de
   arraste se divide em "Substituir a impressão N" e "Adicionar como nova
   impressão"; soltar em cima de um cartão preenche aquele cartão. Desfazer
   continua valendo.
-- [ ] **Resultado:** total do pedido em destaque, "Por impressão" recolhido
-  logo abaixo.
-- [ ] **Comparar impressoras** (decisão 79) vira "tudo nesta impressora".
+- [x] **Resultado:** total do pedido em destaque, "Por impressão" recolhido
+  logo abaixo. **Feito (decisão 114):** o total mostra "N impressões · X de
+  máquina", e "Por impressão" recolhido soma o custo de cada impressão com
+  uma linha "Do pedido (trabalho, falhas, administrativo)".
+- [x] **Comparar impressoras** (decisão 79) vira "tudo nesta impressora".
+  **Feito (decisão 114):** o texto ficou "Tudo na <impressora>".
 
 **Fase 4: o resto do app entende o pedido com várias impressões**
 
 O núcleo saiu junto da Fase 1 (v2.0.0), porque com o modelo em lista cada
 consumidor precisou tratar a lista.
 
-- [ ] **Histórico e Kanban:** um cartão por pedido, com "3 impressões"
-  discreto.
+- [x] **Histórico e Kanban:** um cartão por pedido, com "3 impressões"
+  discreto. **Feito (decisão 114):** o Histórico virou a tela "Pedidos"
+  (decisão 111), mas o cartão e o Kanban seguem mostrando "N impressões".
 - [x] **Fila de impressão e horas de manutenção:** cada impressão soma na
   impressora dela (`PrintQueueReport`, `MaintenanceReport`, via
   `Quote.printMinutesOn`).
@@ -766,9 +772,13 @@ consumidor precisou tratar a lista.
   cada filamento de cada pedido (`QuoteReport`), sem repetir por impressão.
 - [x] **PDF, texto/WhatsApp e imagem:** um item só; o tempo de impressão
   (opção da decisão 85) é a soma (`Quote.totalPrintTimeMinutes`).
-- [ ] **Duplicar, reimprimir, editar e o "Vender" do catálogo** (leva 7B)
+- [x] **Duplicar, reimprimir, editar e o "Vender" do catálogo** (leva 7B)
   copiam todas as impressões. O código já lê a lista inteira; faltam os testes
-  com várias impressões, que só existem na tela na Fase 3.
+  com várias impressões, que só existem na tela na Fase 3. **Feito (decisão
+  114):** cada impressão guarda as próprias configurações e miniatura
+  (`PrintJob.settings`/`thumbnailFileName`) e elas voltam ao reabrir,
+  duplicar, vender ou copiar pro catálogo; editar só o nome ou as
+  configurações de uma impressão reaberta não reprecifica.
 - [x] **Backup:** o manifesto guarda a versão do formato de dados, e backup de
   outro formato é recusado (decisão 104). Texto original: "o formato só ganha
   campos opcionais".
@@ -800,25 +810,40 @@ usar, e o que trava a nuvem e o Android depois?". Entrou na própria 2.0.0:
 - [x] **Arquitetura aberta a mudança** (decisão 108): repositórios como
   interfaces, `AppContainer`, serviços de plataforma injetados.
 - [x] **UX essencial** (decisão 108): Orçamento, Histórico/Kanban, PDF,
-  onboarding, cadastros, janela e tema.
+  onboarding, cadastros, janela e tema (Histórico virou "Pedidos" na 2.1,
+  decisão 111).
 
 Leva seguinte, a 2.1 (decisão 109):
 
-- [ ] **Barra lateral agrupada** (Vendas: Orçamento, Pedidos, Catálogo,
+- [x] **Barra lateral agrupada** (Vendas: Orçamento, Pedidos, Catálogo,
   Dashboard; Cadastros: Filamentos, Impressoras, Serviços; Configurações
-  embaixo), com atalhos renumerados e o rodapé indo pro "Sobre".
-- [ ] **Configurações em seções**, com barra fixa de "Alterações não salvas" e
-  largura máxima de leitura.
-- [ ] **Editar na própria aba**, com a barra de operação, em duas colunas.
-- [ ] **Fase 3 da Leva 9** (várias impressões num pedido), sobre os ids
-  estáveis e o retrato por impressão.
-- [ ] "Arquivar" um cadastro em uso, lembrar tamanho e posição da janela,
-  textos em `composeResources`, fixar o `upgradeUuid` do instalador do Windows
-  (conferindo antes o valor que o jpackage já deriva, pra não quebrar a
-  atualização da 1.x) e a verificação opcional de atualizações.
+  embaixo), com atalhos renumerados e o rodapé indo pro "Sobre". **Feito
+  (decisão 111, 2026-09-25, v2.1.0):** abaixo de 1280dp de largura a barra
+  vira um trilho só de ícones com tooltip; atalhos são Ctrl/Cmd+1 a 8 na
+  ordem da barra (Sobre não tem atalho); o rodapé e o diálogo de ajuda
+  viraram a tela "Sobre".
+- [x] **Configurações em seções**, com barra fixa de "Alterações não salvas" e
+  largura máxima de leitura. **Feito (decisão 112, 2026-09-25, v2.1.0).**
+- [x] **Editar na própria aba**, com a barra de operação, em duas colunas.
+  **Feito (decisão 113, 2026-09-25, v2.1.0):** `EditQuoteDialog` foi removido;
+  a edição abre no próprio Orçamento, numa segunda instância do `QuoteViewModel`
+  (a da decisão 108), então o rascunho que estava na aba fica intacto e volta
+  depois de salvar ou cancelar.
+- [x] **Fase 3 da Leva 9** (várias impressões num pedido), sobre os ids
+  estáveis e o retrato por impressão. **Feito (decisão 114, 2026-09-25,
+  v2.1.0)**, ver seção acima.
+- [x] "Arquivar" um cadastro em uso, lembrar tamanho e posição da janela,
+  fixar o `upgradeUuid` do instalador do Windows (conferindo antes o valor
+  que o jpackage já deriva, pra não quebrar a atualização da 1.x) e a
+  verificação opcional de atualizações. **Feito:** arquivar (decisão 115),
+  lembrar tamanho e posição da janela (decisão 111), `upgradeUuid` fixo e
+  verificação opcional de atualizações (decisão 116), todos 2026-09-25,
+  v2.1.0. **Textos em `composeResources` ficaram pra depois da 2.1**
+  (idioma da interface configurável, ver "Fora das levas").
 - [ ] **Nuvem e Android:** SQLite (ou outro banco) como nova implementação das
   mesmas interfaces de repositório; sincronizar por registro usando
-  `updatedAt`/`deletedAt` e anexos pela chave de conteúdo.
+  `updatedAt`/`deletedAt` e anexos pela chave de conteúdo. Ficou de fora da
+  2.1, continua pra depois.
 
 ### Fora das levas
 

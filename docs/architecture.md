@@ -15,7 +15,7 @@ Projeto **Kotlin Multiplatform** com três módulos Gradle:
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/app/
-│     │  ├─ App.kt            # raiz: navegação por abas (Orçamento / Histórico / Filamentos / Impressoras / Serviços / Configurações)
+│     │  ├─ App.kt            # raiz: navegação pela barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Configurações, Sobre)
 │     │  ├─ data/              # contratos dos repositórios (expect class — ver "Persistência" abaixo)
 │     │  ├─ platform/          # capacidades específicas de plataforma (expect fun — ver "Capacidades de plataforma")
 │     │  └─ ui/                # uma pasta por tela: <tela>/<Tela>Screen.kt + <Tela>ViewModel.kt + <Tela>UiState.kt/FormState.kt
@@ -113,14 +113,29 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
 ### `composeApp`
 - Compose Multiplatform + Material 3.
 - Alvo atual: `jvm()` (desktop). Empacotamento nativo via `compose.desktop`
-  (`.deb`, `.msi`, `.dmg`).
+  (`.deb`, `.msi`, `.dmg`). O `.msi` do Windows tem `upgradeUuid` fixo em
+  [`composeApp/build.gradle.kts`](../composeApp/build.gradle.kts) desde a
+  decisão 116 (`8681a46c-4db6-3cbf-b285-250929ce61c5`, o mesmo valor que o
+  jpackage já derivava de vendor+nome nas versões 1.x), pra instalar por
+  cima em vez de duplicar ao atualizar.
 - Padrão de apresentação: **MVVM**. Cada tela tem um estado (`data class`
   imutável), um `ViewModel` (Kotlin puro, sem `Composable`, expõe
   `StateFlow`) e um `*Screen` (`@Composable` que só observa o `ViewModel` e
   envia eventos — sem lógica de cálculo).
-- Sete abas em [`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt),
-  cada uma com ícone ao lado do nome (decisão 87; só texto em janela
-  estreita) e atalho `Ctrl/Cmd+1` a `7` (decisão 43):
+- **Barra lateral agrupada** (decisão 111, `ui/navigation`): `AppDestination`
+  lista as nove telas em três grupos (`DestinationGroup`): **Vendas**
+  (Orçamento, Pedidos, Catálogo, Dashboard), **Cadastros** (Filamentos,
+  Impressoras, Serviços) e, no pé da barra, Configurações e Sobre, com a
+  versão embaixo. `AppSidebar` desenha isso; abaixo de
+  `SIDEBAR_LABELS_MIN_WINDOW_WIDTH` (1280dp) ela vira um trilho só de ícones
+  com tooltip (o Orçamento perde as duas colunas antes disso). Atalho
+  `Ctrl/Cmd+1` a `8` na ordem da barra (`AppDestination.shortcutNumber`;
+  Sobre não tem atalho). `Main.kt` guarda posição, tamanho e se a janela
+  estava maximizada em `AppPreferences.window` (`SavedWindowBounds`, em
+  `preferences.json`) e só reaplica se o retângulo ainda cabe nalgum monitor
+  conectado (`isOnSomeScreen`). Cancelar Vender/Duplicar/Guardar no catálogo
+  no Orçamento devolve a pessoa pra tela de onde a operação começou
+  (`QuoteOperation.originKind`).
   - **Orçamento** (`ui/quote`): em janela larga, duas colunas (decisão 81) —
     à esquerda as entradas (filamento/cor, impressora, comprimento e tempo,
     que podem vir do G-code, trabalho, quantidade, serviços, canal de venda,
@@ -129,20 +144,61 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     configurações de impressão, link, cliente); à direita a "nota" com o
     valor cobrado, a barra de composição do preço, a negociação e a
     comparação entre impressoras. Recalcula a cada mudança
-    (`QuoteViewModel.calculate`, função pura). Editar um orçamento salvo abre
-    a mesma tela num diálogo (`EditQuoteDialog`).
-  - **Histórico** (`ui/history`): orçamentos salvos em lista ou Kanban por
-    status (decisão 70), com busca, filtro e prazo de entrega em destaque.
-    Ações por orçamento: exportar PDF, copiar texto, abrir no WhatsApp,
-    imagem quadrada, editar o cálculo, editar só os detalhes (nome, cliente,
-    foto, prazo, link), duplicar, mover de etapa, configurações de impressão,
-    baixar foto/STL, excluir (com "Desfazer"). Lista e Kanban usam o mesmo menu
-    "Ações" (`QuoteActionsMenu`), e as ações terminam num aviso (`UserNotice`)
-    com "Abrir pasta" ou "Desfazer" quando cabe. Tudo o que vai pro
-    cliente mostra só o que é do cliente (decisão 19): produção, lucro,
-    link do modelo e cliente nunca aparecem. Envio com prazo vencido pede
-    confirmação antes (decisão 85). Seleção múltipla exporta vários
-    orçamentos num PDF ou um catálogo em grade.
+    (`QuoteViewModel.calculate`, função pura).
+    - **Várias impressões por pedido** (decisão 114): com uma impressão só a
+      tela é como antes, mais um botão "+ Adicionar outra impressão". Com
+      duas ou mais, cada impressão vira um cartão recolhível
+      (`ui/quote/PrintCard.kt`) com nome opcional, impressora, filamentos,
+      tempo, "× N vezes", o G-code, miniatura e configurações da própria
+      impressão, duplicar e remover (com "Desfazer"); recolhido mostra um
+      resumo numa linha ("Corpo · K1 · 9h40 · 180 g · custo R$ 32,10"). O que
+      é do pedido (trabalho, serviços, frete, canal, negociação, prazo) fica
+      fora dos cartões. `GCodeImporter.apply` devolve um `PrintInput` por
+      arquivo; soltar vários G-codes de uma vez cria uma impressão por
+      arquivo, e soltar um sobre um pedido já preenchido oferece "Substituir
+      a impressão N" ou "Adicionar como nova impressão" conforme a posição
+      do soltar. O resultado mostra "N impressões · X de máquina" e um "Por
+      impressão" recolhido com o custo de cada uma mais uma linha "Do pedido
+      (trabalho, falhas, administrativo)"; "Comparar impressoras" (decisão
+      79) virou "Tudo na `<impressora>`". Cada impressão grava as próprias
+      configurações e miniatura (`PrintJob.settings`/`thumbnailFileName`, via
+      `QuoteHistoryRepository.save`/`update(printThumbnails = …)`), que
+      voltam ao reabrir, duplicar, vender ou copiar pro catálogo; mudar só o
+      nome ou as configurações de uma impressão reaberta não reprecifica.
+      Toda operação (duplicar, remover, importar G-code, desfazer) endereça
+      impressões pelo id estável da linha, nunca por posição.
+    - **Editar na própria aba** (decisão 113): reabrir um pedido ou produto
+      não abre mais diálogo (`EditQuoteDialog` foi removido): enquanto
+      `editQuoteViewModel` (uma segunda instância de `QuoteViewModel`, criada no
+      `App.kt`) está em `QuoteOperation.Editing`, a tela de Orçamento mostra ele
+      no lugar do `quoteViewModel` da aba, que continua com o rascunho intacto
+      e volta sozinho ao salvar ou cancelar. `originalInput`/`originalForm`
+      são como o pedido editado abriu, pra saber se há alteração a perder. A barra de operação no rodapé mostra
+      `Editando #0042 "nome"` com "Cancelar edição" (pede confirmação se algo
+      mudou); a barra lateral mostra "Editando" ao lado de Orçamento.
+      `Ctrl+S` e um G-code solto na tela vão pra edição em andamento;
+      Duplicar, Vender, Guardar no catálogo e `Ctrl+N` perguntam antes de
+      encerrar uma edição com alterações. Enquanto nada que muda o preço é
+      mexido, salvar mantém o cálculo congelado do orçamento original.
+  - **Pedidos** (`ui/history`, chamada de "Histórico" até a decisão 111):
+    pedidos salvos em lista ou Kanban por status (decisão 70), com busca,
+    filtro e prazo de entrega em destaque; o cartão mostra "N impressões"
+    quando há mais de uma. Ações por pedido: exportar PDF, copiar texto,
+    abrir no WhatsApp, imagem quadrada, editar (abre na aba Orçamento),
+    editar só os detalhes (nome, cliente, foto, prazo, link), duplicar, mover
+    de etapa, configurações de impressão, baixar foto/STL, excluir (com
+    "Desfazer"). Lista e Kanban usam o mesmo menu "Ações"
+    (`QuoteActionsMenu`), e as ações terminam num aviso (`UserNotice`) com
+    "Abrir pasta" ou "Desfazer" quando cabe. Tudo o que vai pro cliente
+    mostra só o que é do cliente (decisão 19): produção, lucro, link do
+    modelo e cliente nunca aparecem. Envio com prazo vencido pede confirmação
+    antes (decisão 85). Seleção múltipla exporta vários orçamentos num PDF ou
+    um catálogo em grade.
+  - **Catálogo** (`ui/history`, decisão 111): tela própria (deixou de ser um
+    seletor `Pedidos | Produtos` dentro do Histórico), a mesma
+    `QuoteHistoryScreen`/`QuoteHistoryViewModel` de Pedidos, mas com
+    `kind = QuoteKind.PRODUCT` fixo, então cada tela tem o próprio
+    ViewModel.
   - **Dashboard** (`ui/dashboard`): só vendas (`OrderStatus.isSold`, decisão
     95): total vendido, lucro, descontos dados, filamento mais usado, lucro
     por hora de máquina e de trabalho, ranking de peças e de clientes com
@@ -157,11 +213,44 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     opcional e cada um tem um padrão "por peça / uma vez no pedido": o que
     vale é o digitado no orçamento (`ServiceInput`), congelado em
     `QuoteService` (decisão 92).
-  - **Configurações** (`ui/settings`): parâmetros do negócio
-    (`PricingSettings`, gravados só no "Salvar"), canais de venda, moeda,
-    tema, backup/restauração, e "Documentos pro cliente" (`BrandingViewModel`:
-    nome da marca, logo, contato, marca d'água, rodapé, borda, tempo de
-    impressão, prévia "Ver como fica" e templates).
+    - **Arquivar** (decisão 115): `Filament`, `PrinterProfile`, `Service` e
+      `SalesChannel` ganharam `archived: Boolean = false` (campo aditivo, sem
+      migração). Cada tela de cadastro tem "Arquivar" e uma seção recolhida
+      "Arquivados (n)" com "Restaurar". Um item arquivado some das escolhas
+      de um orçamento novo (padrões, casamento automático do G-code,
+      "Comparar impressoras"), mas pedidos/produtos que já usavam ele
+      continuam calculando, marcados "(arquivado)". Excluir um item em uso
+      mostra em quantos pedidos/produtos ele aparece (`CatalogUsage`) e
+      sugere Arquivar como botão principal ("Excluir mesmo assim" continua
+      possível). Arquivar uma impressora mantém os dados de manutenção dela.
+  - **Configurações** (`ui/settings`, decisão 112): uma lista de seções à
+    esquerda (`SettingsSection`: Negócio e custos, que inclui Moeda,
+    Canais, Documentos pro cliente, Aparência, Dados) mostra uma seção por
+    vez, com ~720dp de largura de leitura. Custos (`PricingSettings`) e
+    "Documentos pro cliente" (`BrandingViewModel`: nome da marca, logo,
+    contato, marca d'água, rodapé, borda, tempo de impressão, prévia "Ver
+    como fica" e templates) são rascunho; no lugar dos dois botões "Salvar"
+    separados, uma barra fixa embaixo ("Alterações não salvas" com
+    "Descartar"/"Salvar") salva ou descarta os dois rascunhos juntos, e um
+    erro pula pra seção dele. O rascunho sobrevive a trocar de seção ou de
+    tela; a barra lateral mostra um pontinho em Configurações enquanto há
+    rascunho. Tema, moeda, canais e backup continuam aplicando na hora.
+  - **Sobre** (`ui/about/AboutScreen.kt`, decisão 111): substitui o rodapé
+    fixo que ficava embaixo de toda aba (versão, autor, links pro GitHub e
+    pro Buy Me a Coffee) e o diálogo de Ajuda: agora é uma tela com a
+    versão, um resumo de cada tela e os atalhos de teclado.
+    - **Verificação opcional de atualizações** (decisão 116,
+      `ui/about/UpdateChecker.kt`): checkbox "Avisar quando sair uma versão
+      nova" (`AppPreferences.checkForUpdates`, desligado por padrão) e
+      "Verificar agora". Ligado, ao abrir o app um `ReleaseSource` pergunta
+      pra API pública de releases do GitHub
+      (`api.github.com/repos/mateustoin/3DReport/releases/latest`, sem
+      autenticação) qual é a versão publicada mais recente
+      (`isNewerVersion` compara MAJOR.MINOR.PATCH) e mostra um snackbar
+      "Versão X do 3DReport disponível" com "Ver novidades". É a única
+      requisição que sai da máquina, e só quando a opção está ligada; no
+      desktop quem faz a chamada é `platform/GitHubReleaseSource.kt`
+      (`java.net.http`, sem dependência nova).
 
 ### Persistência (decisões 104, 106 e 108)
 
@@ -270,7 +359,7 @@ redimensionamento de 1px programaticamente, que é o que já resolvia na mão.
 Se isso for corrigido oficialmente numa versão futura do Compose
 Multiplatform, esse workaround pode ser removido.
 
-### Versão do app e rodapé
+### Versão do app e a tela Sobre
 O app segue **SemVer** (decisão 53, que revisa a decisão 27): PATCH pra leva
 só de correção/documentação, MINOR pra leva com funcionalidade nova (ver
 [development.md](development.md#versionamento) pro critério completo). A
@@ -278,13 +367,13 @@ versão tem uma fonte só, `appVersion` em `gradle.properties` (decisão 108):
 - usada como `packageVersion` do instalador nativo em
   [`composeApp/build.gradle.kts`](../composeApp/build.gradle.kts);
 - e gerada como a constante `APP_VERSION` (tarefa `generateAppVersion`, em
-  `build/generated/appVersion`), exibida no rodapé, na Ajuda e no diálogo de erro.
+  `build/generated/appVersion`), exibida na barra lateral, em Sobre e no
+  diálogo de erro.
 
-[`App.kt`](../composeApp/src/commonMain/kotlin/com/threedreport/app/App.kt)
-também define um rodapé fixo (`AppFooter`, abaixo do conteúdo de todas as
-abas) com a versão, o nome do autor, links pro GitHub e pro Buy Me a Coffee
-(`ui/components/LinkText`) e um botão "Ajuda" que abre um `HelpDialog` com a
-versão, uma descrição curta do app e um resumo de cada aba (decisão 28).
+Até a decisão 111, `App.kt` desenhava um rodapé fixo (`AppFooter`, abaixo do
+conteúdo de toda aba) com a versão, o autor e os links, mais um botão "Ajuda"
+que abria um `HelpDialog`. Os dois viraram a tela **Sobre**
+(`ui/about/AboutScreen.kt`, ver "Barra lateral agrupada" acima).
 
 Toda leva de funcionalidades também ganha uma entrada em
 [`CHANGELOG.md`](../CHANGELOG.md) (formato Keep a Changelog, decisão 31),
