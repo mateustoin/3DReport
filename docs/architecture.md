@@ -80,7 +80,8 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   deduções, fique igual ao de uma venda direta (decisões 26 e 78). Com
   `negotiatedSalePrice`, o preço fechado com o cliente vira o `salePrice` e o
   de tabela fica em `Quote.tableSalePrice` (decisões 79 e 84).
-- `report/`: agregações puras sobre o histórico (`QuoteReport` pro
+- `report/`: agregações puras sobre o histórico (`CatalogReport` pro resumo do
+  catálogo no Dashboard de quem ainda não vende, decisão 103; `QuoteReport` pro
   Dashboard, `PrintQueueReport` pra fila de cada impressora,
   `MaintenanceReport` pras horas de uso e a situação de cada componente de
   manutenção), mesmo estilo do `PricingCalculator`.

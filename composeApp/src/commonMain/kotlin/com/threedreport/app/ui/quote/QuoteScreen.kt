@@ -4,9 +4,7 @@ import androidx.compose.foundation.Image
 import com.threedreport.app.ui.components.IconLabel
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AssistChip
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +13,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -185,42 +185,54 @@ fun QuoteScreen(
 /**
  * Faixa fixa no rodapé enquanto o formulário veio de uma operação começada no Histórico (Vender,
  * Duplicar, Guardar no catálogo), com o jeito de desistir sempre à vista (decisão 102). Antes o
- * "Cancelar" ficava no meio do formulário, entre os campos, e era difícil de achar. O fundo
- * avermelhado diz que há algo em andamento, sem ser alarme: nada foi salvo ainda.
+ * "Cancelar" ficava no meio do formulário, entre os campos, e era difícil de achar.
+ *
+ * Visual neutro com filete âmbar (decisão 103), a mesma assinatura das faixas de destaque do PDF
+ * (decisão 35): diz que há algo em andamento sem parecer erro. A primeira versão era vermelha, e
+ * no Material 3 vermelho é erro ou ação destrutiva; cancelar aqui não apaga nada, porque nada foi
+ * salvo ainda.
  */
 @Composable
 private fun OperationBar(form: SaveQuoteFormState, isProduct: Boolean, onCancel: () -> Unit) {
-    val (text, cancelLabel) = when {
-        form.soldFromProductName != null -> Pair(
-            "Vendendo o produto \"${form.soldFromProductName}\": preencha o cliente e o prazo e salve o pedido. " +
-                "O produto continua no catálogo, sem mudar nada.",
+    val (title, detail, cancelLabel) = when {
+        form.soldFromProductName != null -> Triple(
+            "Vendendo \"${form.soldFromProductName}\"",
+            "Preencha o cliente e o prazo e salve o pedido. O produto continua no catálogo, sem mudar nada.",
             "Cancelar venda",
         )
-        form.copiedFromOrderName != null -> Pair(
-            "Copiando o pedido \"${form.copiedFromOrderName}\" pro catálogo: revise e clique em \"Salvar no catálogo\". " +
-                "Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
+        form.copiedFromOrderName != null -> Triple(
+            "Copiando \"${form.copiedFromOrderName}\" pro catálogo",
+            "Revise e clique em \"Salvar no catálogo\". Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
             "Cancelar cópia",
         )
-        form.duplicatedFromName != null -> Pair(
-            "Duplicando \"${form.duplicatedFromName}\": revise os dados e salve pra criar " +
-                (if (isProduct) "um produto novo." else "um pedido novo.") + " O original não muda.",
+        form.duplicatedFromName != null -> Triple(
+            "Duplicando \"${form.duplicatedFromName}\"",
+            "Revise os dados e salve pra criar " + (if (isProduct) "um produto novo." else "um pedido novo.") + " O original não muda.",
             "Cancelar duplicação",
         )
         else -> return
     }
-    Surface(color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer) {
+    Column {
+        HorizontalDivider()
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
         ) {
-            Icon(AppIcons.Info, contentDescription = null)
-            Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            OutlinedButton(
-                onClick = onCancel,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            ) { IconLabel(AppIcons.Close, cancelLabel) }
+            Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(MaterialTheme.colorScheme.secondary))
+            Row(
+                modifier = Modifier.weight(1f).padding(start = 20.dp, end = 24.dp, top = 10.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Icon(AppIcons.Info, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleSmall)
+                    Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                OutlinedButton(onClick = onCancel) { IconLabel(AppIcons.Close, cancelLabel) }
+            }
         }
     }
 }

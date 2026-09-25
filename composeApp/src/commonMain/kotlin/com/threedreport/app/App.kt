@@ -51,6 +51,7 @@ import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.OnboardingRepository
+import com.threedreport.app.data.UsageProfileRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
@@ -85,6 +86,7 @@ import com.threedreport.app.ui.settings.SettingsViewModel
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.ThemeViewModel
+import com.threedreport.core.model.UsageProfile
 
 private const val GITHUB_URL = "https://github.com/mateustoin/3DReport"
 private const val BUY_ME_A_COFFEE_URL = "https://buymeacoffee.com/mateustoin"
@@ -141,17 +143,20 @@ fun App() {
     val backupRepository = remember { BackupRepository() }
     val salesChannelRepository = remember { SalesChannelRepository() }
     val onboardingRepository = remember { OnboardingRepository() }
+    val usageProfileRepository = remember { UsageProfileRepository() }
+    val defaultKind = { usageProfileRepository.profile.value.defaultKind }
 
     val quoteViewModel = remember {
         QuoteViewModel(
             filamentRepository, printerRepository, settingsRepository, serviceRepository,
-            salesChannelRepository, historyRepository,
+            salesChannelRepository, historyRepository, defaultKind,
         )
     }
     val historyViewModel = remember {
         QuoteHistoryViewModel(
             historyRepository, brandingRepository, currencyRepository,
             filamentRepository, printerRepository, settingsRepository, salesChannelRepository,
+            defaultKind = defaultKind,
         )
     }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
@@ -167,6 +172,14 @@ fun App() {
     val salesChannelViewModel = remember { SalesChannelViewModel(salesChannelRepository) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
+    val usageProfile by usageProfileRepository.profile.collectAsState()
+    // Perfil de uso (decisão 103): só muda o que vem escolhido, e vale na hora pro orçamento em
+    // branco e pra lista do Histórico.
+    val applyUsageProfile: (UsageProfile) -> Unit = { profile ->
+        usageProfileRepository.update(profile)
+        quoteViewModel.applyDefaultKindIfUntouched()
+        historyViewModel.setKindFilter(profile.defaultKind)
+    }
     var selectedTab by remember { mutableStateOf(AppTab.QUOTE) }
     var draggingFile by remember { mutableStateOf(false) }
     var showHelp by remember { mutableStateOf(false) }
@@ -270,6 +283,8 @@ fun App() {
                                 currencyViewModel,
                                 backupViewModel,
                                 salesChannelViewModel,
+                                usageProfile = usageProfile,
+                                onUsageProfileChange = applyUsageProfile,
                             )
                         }
                     }
@@ -293,8 +308,9 @@ fun App() {
             if (!onboardingCompleted) {
                 OnboardingDialog(
                     currentSettings = settingsRepository.settings.value,
-                    onFinish = {
-                        settingsRepository.update(it)
+                    onFinish = { settings, profile ->
+                        settingsRepository.update(settings)
+                        applyUsageProfile(profile)
                         onboardingRepository.markCompleted()
                     },
                     onSkip = onboardingRepository::markCompleted,

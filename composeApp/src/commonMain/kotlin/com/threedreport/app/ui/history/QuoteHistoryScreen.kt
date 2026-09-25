@@ -312,7 +312,8 @@ private fun RepriceNotice(result: RepriceResult, onReprice: () -> Unit) {
                 Text(
                     "Custos mudaram: hoje o preço calculado seria ${(result.quote.tableSalePrice ?: result.quote.salePrice).toMoney()}.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary,
+                    // Âmbar da paleta (o app não define `tertiary`, que cairia no roxo padrão do M3).
+                    color = MaterialTheme.colorScheme.secondary,
                 )
                 TextButton(onClick = onReprice) { IconLabel(AppIcons.Sync, "Atualizar preço") }
             }

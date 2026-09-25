@@ -57,10 +57,23 @@ object QuoteReport {
     /**
      * Nome automático ("Orçamento - 24/09/2026 14:30") fica fora: cada um seria uma "peça"
      * diferente e o ranking viraria uma lista de datas.
+     *
+     * Vendas do mesmo produto do catálogo juntam pelo produto de origem
+     * ([SavedQuote.sourceProductId], decisão 103), mesmo que o nome tenha mudado. Pedido sem origem
+     * com o nome de um produto vendido entra junto dele (uma reimpressão duplicada antes de a origem
+     * existir); o resto continua juntando pelo nome.
      */
-    private fun topProducts(sold: List<SavedQuote>): List<ProductRanking> =
-        sold.filterNot { it.hasAutoName }
-            .groupBy { it.name.trim().lowercase() }
+    private fun topProducts(sold: List<SavedQuote>): List<ProductRanking> {
+        val named = sold.filterNot { it.hasAutoName }
+        val sourceByName = named
+            .filter { it.sourceProductId != null }
+            .sortedBy { it.savedAtEpochMillis }
+            .associate { it.name.trim().lowercase() to it.sourceProductId!! }
+        return named
+            .groupBy { order ->
+                val source = order.sourceProductId ?: sourceByName[order.name.trim().lowercase()]
+                source?.let { "produto:$it" } ?: "nome:${order.name.trim().lowercase()}"
+            }
             .values
             .map { orders ->
                 val profit = orders.sumOf { it.quote.profit }
@@ -73,6 +86,7 @@ object QuoteReport {
             }
             .sortedByDescending { it.totalProfit }
             .take(QuoteSummary.RANKING_SIZE)
+    }
 
     private fun topDiscountClients(sold: List<SavedQuote>): List<ClientDiscountRanking> =
         sold.filter { it.client != null && it.quote.isNegotiated }

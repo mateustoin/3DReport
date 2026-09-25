@@ -289,6 +289,16 @@ class QuoteHistoryViewModelTest {
         assertNull(viewModel.repricing.value)
     }
 
+    @Test
+    fun starterProfileOpensTheHistoryOnProducts() {
+        val viewModel = QuoteHistoryViewModel(
+            QuoteHistoryRepository(), BrandingRepository(), CurrencyRepository(), FilamentRepository(), PrinterRepository(),
+            SettingsRepository(), SalesChannelRepository(), defaultKind = { QuoteKind.PRODUCT },
+        )
+
+        assertEquals(QuoteKind.PRODUCT, viewModel.filter.value.kind)
+    }
+
 }
 
 private object SavedQuoteFixture {

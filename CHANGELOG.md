@@ -5,6 +5,27 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [1.44.0] - 2026-09-24
+
+### Adicionado
+- **O app pergunta como você usa.** Na primeira vez, a pergunta "Como você vai
+  usar o 3DReport?" oferece "Já vendo sob encomenda" ou "Estou começando".
+  Quem está começando já salva no catálogo e abre o Histórico em Produtos.
+  Nada fica escondido: é só o que vem escolhido, e dá pra trocar em
+  Configurações, em "Como você usa o app".
+- **Dashboard pra quem ainda não vende.** Sem vendas no período, o Dashboard
+  mostra o seu catálogo: quantos produtos, a faixa de preço e qual peça vale a
+  pena oferecer primeiro, pelo lucro por hora de máquina.
+
+### Alterado
+- **Peças que mais deram lucro juntam as vendas do mesmo produto do
+  catálogo**, mesmo que o nome tenha mudado. Duplicar um pedido vendido pelo
+  catálogo mantém o vínculo com o produto.
+- **A faixa de "Vendendo", "Duplicando" e "Copiando" ficou mais discreta**:
+  sai o vermelho, que parecia erro, e entra uma faixa neutra com um filete
+  âmbar, no estilo do resto do app. O botão de cancelar continua no mesmo lugar.
+- O aviso "Custos mudaram" passou a usar o âmbar do app.
+
 ## [1.43.0] - 2026-09-24
 
 ### Adicionado

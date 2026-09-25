@@ -943,4 +943,50 @@ class QuoteViewModelTest {
         viewModel.setKind(QuoteKind.PRODUCT)
         assertEquals("30", viewModel.input.value.targetTotalText, "escolher o mesmo tipo de novo não apaga nada")
     }
+
+    @Test
+    fun starterProfileStartsAndResetsAsProduct() {
+        var kind = QuoteKind.PRODUCT
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository()) { kind }
+
+        assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
+        viewModel.setKind(QuoteKind.ORDER)
+        viewModel.resetForm()
+        assertEquals(QuoteKind.PRODUCT, viewModel.input.value.kind)
+
+        kind = QuoteKind.ORDER
+        viewModel.applyDefaultKindIfUntouched()
+        assertEquals(QuoteKind.ORDER, viewModel.input.value.kind)
+    }
+
+    @Test
+    fun changingTheProfileNeverTouchesAQuoteInProgress() {
+        var kind = QuoteKind.ORDER
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), QuoteHistoryRepository()) { kind }
+        viewModel.setLengthMeters("12")
+
+        kind = QuoteKind.PRODUCT
+        viewModel.applyDefaultKindIfUntouched()
+
+        assertEquals(QuoteKind.ORDER, viewModel.input.value.kind)
+        assertEquals("12", viewModel.input.value.lengthMetersText)
+    }
+
+    @Test
+    fun duplicatingASaleFromTheCatalogKeepsItsOrigin() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = viewModelWith(historyRepository = historyRepository)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        viewModel.saveCurrentQuote()
+        val product = historyRepository.savedQuotes.value.single()
+        viewModel.sellFromProduct(product)
+        viewModel.saveCurrentQuote()
+        val order = historyRepository.savedQuotes.value.first { it.isOrder }
+
+        viewModel.duplicateForNewQuote(order)
+        viewModel.saveCurrentQuote()
+
+        val reprint = historyRepository.savedQuotes.value.first { it.isOrder && it.id != order.id }
+        assertEquals(product.id, reprint.sourceProductId)
+    }
 }

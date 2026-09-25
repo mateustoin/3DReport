@@ -538,19 +538,19 @@ barra e os atalhos continuam como a decisão 82 deixou); salvar oferece
   a lista e separar o PDF do catálogo em seções. Texto livre com sugestão
   das já usadas, sem tela de cadastro nova.
 
-**Fase 3: quem está começando**
+**Fase 3: quem está começando** (feita, decisão 103, 2026-09-24, v1.44.0; leva 7B concluída)
 
-- [ ] **Onboarding pergunta como a pessoa usa o app:** "Já vendo sob
+- [x] **Onboarding pergunta como a pessoa usa o app:** "Já vendo sob
   encomenda" ou "Estou começando / quero precificar e montar portfólio". A
   resposta só define **padrões** (botão de salvar em destaque, vista inicial
   do Histórico); nada fica escondido e a escolha muda em Configurações.
   Entra no onboarding da decisão 81 sem transformá-lo em formulário.
-- [ ] **Dashboard sem vendas não fica vazio:** quem ainda não tem pedido vê
+- [x] **Dashboard sem vendas não fica vazio:** quem ainda não tem pedido vê
   o resumo do catálogo (quantos produtos, faixa de preço, lucro por hora de
   máquina de cada um) e o convite "quando aparecer um cliente, é só clicar
   em Vender". O lucro por hora responde a pergunta de quem está começando:
   qual peça vale a pena oferecer primeiro.
-- [ ] **Produto mais vendido do catálogo:** o pedido guarda de qual produto
+- [x] **Produto mais vendido do catálogo:** o pedido guarda de qual produto
   veio (id de origem), e o ranking da decisão 95 passa a juntar por produto
   de origem, e não só pelo nome.
 

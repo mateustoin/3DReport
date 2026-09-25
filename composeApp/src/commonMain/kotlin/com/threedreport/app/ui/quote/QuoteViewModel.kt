@@ -55,6 +55,8 @@ class QuoteViewModel(
     serviceRepository: ServiceRepository,
     salesChannelRepository: SalesChannelRepository,
     private val historyRepository: QuoteHistoryRepository,
+    /** Pedido ou produto, conforme o perfil de uso (decisão 103): o que vem escolhido num orçamento novo. */
+    private val defaultKind: () -> QuoteKind = { QuoteKind.ORDER },
 ) {
     val filaments: StateFlow<List<Filament>> = filamentRepository.filaments
     val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
@@ -62,7 +64,7 @@ class QuoteViewModel(
     val services: StateFlow<List<Service>> = serviceRepository.services
     val salesChannels: StateFlow<List<SalesChannel>> = salesChannelRepository.channels
 
-    private val inputState = MutableStateFlow(QuoteInputState())
+    private val inputState = MutableStateFlow(QuoteInputState(kind = defaultKind()))
     val input: StateFlow<QuoteInputState> = inputState.asStateFlow()
 
     private val saveFormState = MutableStateFlow(SaveQuoteFormState())
@@ -366,7 +368,13 @@ class QuoteViewModel(
         inputState.value = inputStateFrom(savedQuote)
         // O prazo não vem junto: uma data de outro pedido, provavelmente já passada, é exatamente o
         // prazo vencido que o cliente não pode receber (decisão 85).
-        saveFormState.value = saveFormFrom(savedQuote).copy(duplicatedFromName = savedQuote.name, deliveryDateEpochDay = null)
+        // A origem vem junto (decisão 103): reimprimir uma venda do catálogo continua sendo daquele
+        // produto no ranking do Dashboard.
+        saveFormState.value = saveFormFrom(savedQuote).copy(
+            duplicatedFromName = savedQuote.name,
+            deliveryDateEpochDay = null,
+            sourceProductId = savedQuote.sourceProductId,
+        )
     }
 
     /**
@@ -473,8 +481,19 @@ class QuoteViewModel(
     }
 
     /** Atalho de teclado (Ctrl/Cmd+N): limpa a peça e o formulário de salvar, pra começar um orçamento novo. */
+    /**
+     * O perfil de uso mudou em Configurações (decisão 103): o orçamento em branco passa a vir no
+     * tipo novo na hora. Se já tem algo digitado, ou uma operação/edição em andamento, fica como
+     * está, pra trocar o perfil nunca mexer no que a pessoa estava fazendo.
+     */
+    fun applyDefaultKindIfUntouched() {
+        val input = inputState.value
+        val untouched = input == QuoteInputState(kind = input.kind) && saveFormState.value == SaveQuoteFormState()
+        if (untouched) inputState.value = QuoteInputState(kind = defaultKind())
+    }
+
     fun resetForm() {
-        inputState.value = QuoteInputState()
+        inputState.value = QuoteInputState(kind = defaultKind())
         saveFormState.value = SaveQuoteFormState()
     }
 

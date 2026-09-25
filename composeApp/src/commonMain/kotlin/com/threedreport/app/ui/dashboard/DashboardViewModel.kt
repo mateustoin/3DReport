@@ -7,6 +7,8 @@ import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.periodStartEpochMillis
 import com.threedreport.core.model.QuoteSummary
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.report.CatalogReport
+import com.threedreport.core.report.CatalogSummary
 import com.threedreport.core.report.QuoteReport
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,4 +40,10 @@ class DashboardViewModel(repository: QuoteHistoryRepository, settingsRepository:
         }
         return QuoteReport.summarize(filtered)
     }
+
+    /**
+     * Resumo do catálogo (decisão 103), mostrado quando não há vendas no período. Sem recorte de
+     * período: o catálogo é o que se oferece hoje.
+     */
+    fun catalog(savedQuotes: List<SavedQuote>): CatalogSummary = CatalogReport.summarize(savedQuotes)
 }

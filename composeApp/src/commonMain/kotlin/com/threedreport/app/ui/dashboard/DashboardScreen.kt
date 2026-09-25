@@ -32,6 +32,7 @@ import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.core.model.QuoteSummary
+import com.threedreport.core.report.CatalogSummary
 
 /**
  * Tela de Dashboard: o que foi vendido no período, quanto cada hora de máquina e de trabalho
@@ -44,6 +45,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val period by viewModel.period.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val summary = viewModel.summarize(savedQuotes, period)
+    val catalog = viewModel.catalog(savedQuotes)
 
     Column(
         modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -62,8 +64,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
 
         when {
+            summary.quoteCount == 0 && summary.openQuoteCount == 0 && catalog.productCount > 0 -> CatalogSection(catalog)
             summary.quoteCount == 0 && summary.openQuoteCount == 0 -> Text(
-                "Nenhum orçamento salvo nesse período.",
+                "Nenhum orçamento salvo nesse período. Ainda não vende? Dá pra começar montando o " +
+                    "catálogo: na aba Orçamento, escolha \"Produto do catálogo\" antes de salvar.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             summary.quoteCount == 0 -> {
@@ -73,6 +77,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OpenQuotesLine(summary)
+                if (catalog.productCount > 0) CatalogSection(catalog)
             }
             else -> {
                 SalesRuler(summary)
@@ -178,9 +183,47 @@ private fun ProductRankingSection(summary: QuoteSummary) {
         )
     }
     Text(
-        "Pedidos com o mesmo nome contam como a mesma peça. Orçamentos salvos sem nome ficam de fora.",
+        "Pedidos com o mesmo nome, ou vendidos a partir do mesmo produto do catálogo, contam como a " +
+            "mesma peça. Orçamentos salvos sem nome ficam de fora.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/**
+ * O Dashboard de quem ainda não vende (decisão 103): em vez de uma tela vazia, o catálogo, com o
+ * lucro por hora de máquina de cada produto respondendo qual peça vale a pena oferecer primeiro.
+ */
+@Composable
+private fun CatalogSection(catalog: CatalogSummary) {
+    SectionTitle(AppIcons.Storefront, "Seu catálogo", modifier = Modifier.padding(top = 12.dp))
+    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+        StatTicker("Produtos", catalog.productCount.toString())
+        StatDivider()
+        StatTicker(
+            "Faixa de preço",
+            if (catalog.minUnitPrice == catalog.maxUnitPrice) {
+                catalog.minUnitPrice!!.toMoney()
+            } else {
+                "${catalog.minUnitPrice!!.toMoney()} a ${catalog.maxUnitPrice!!.toMoney()}"
+            },
+        )
+    }
+    Text("Qual vale a pena oferecer primeiro", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+    RankingHeader("Produto", "Preço", "Lucro", "Por hora de máquina")
+    catalog.products.forEach { product ->
+        RankingRow(
+            name = product.name,
+            count = product.unitPrice.toMoney(),
+            amount = product.profit.toMoney(),
+            extra = product.profitPerPrintHour?.let { "${it.toMoney()}/h" } ?: "—",
+        )
+    }
+    Text(
+        "Ainda não há vendas nesse período. Quando aparecer um cliente, é só clicar em \"Vender\" no " +
+            "Histórico, em Produtos, e o pedido já sai preenchido.",
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(top = 8.dp),
     )
 }
 
