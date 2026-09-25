@@ -70,7 +70,7 @@ data class QuotedPrint(
 )
 
 /** Quanto de um filamento (numa cor) o pedido inteiro consome, pra conferir no estoque. */
-data class FilamentTotal(val filament: Filament, val color: FilamentColor?, val weightGrams: Double)
+data class FilamentTotal(val filament: FilamentSnapshot, val color: FilamentColor?, val weightGrams: Double)
 
 /**
  * Resultado de um orçamento.
@@ -98,6 +98,9 @@ data class FilamentTotal(val filament: Filament, val color: FilamentColor?, val 
  *   guardado **só quando o preço foi negociado** com o cliente (aí
  *   [salePrice] é o preço fechado). `null` quando não houve negociação. Uso interno: nunca entra
  *   em nenhum export.
+ * @property extrasTotal serviços e frete cobrados do cliente junto com a peça (decisão 107). Não
+ *   passam pela margem, mas passam pelo canal e pelo imposto, que levam a parte deles do total
+ *   recebido: por isso entram aqui, pra [profit] e [breakEvenSalePrice] saírem do total de verdade.
  */
 @Serializable
 data class Quote(
@@ -111,11 +114,13 @@ data class Quote(
     val channelFeeRate: Double = 0.0,
     val taxRate: Double = 0.0,
     val tableSalePrice: Double? = null,
+    val extrasTotal: Double = 0.0,
 ) {
     init {
         require(prints.isNotEmpty()) { "um orçamento precisa de pelo menos uma impressão" }
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
         require(laborMinutes >= 0) { "laborMinutes não pode ser negativo: $laborMinutes" }
+        require(extrasTotal >= 0) { "extrasTotal não pode ser negativo: $extrasTotal" }
     }
 
     /** Valor de produção do pedido (= [CostBreakdown.total]). */
@@ -155,27 +160,30 @@ data class Quote(
     val totalDeductionRate: Double
         get() = channelFeeRate + taxRate
 
+    /** Tudo que o cliente paga: a peça ([salePrice]) mais serviços e frete ([extrasTotal]). */
+    val customerTotal: Double
+        get() = salePrice + extrasTotal
+
     /**
-     * Lucro líquido real do pedido: o que sobra depois de canal e imposto
-     * descontarem suas partes de [salePrice], menos a produção. Sem
+     * Lucro líquido real do pedido: o que chega depois de canal e imposto levarem a parte deles do
+     * total cobrado ([customerTotal]), menos o repasse de serviços e frete e menos a produção. Sem
      * deduções, é só venda − produção.
      */
     val profit: Double
-        get() = salePrice * (1 - totalDeductionRate) - productionCost
+        get() = customerTotal * (1 - totalDeductionRate) - extrasTotal - productionCost
 
     /** Preço de uma unidade: [salePrice] dividido por [quantity]. */
     val unitSalePrice: Double
         get() = salePrice / quantity
 
     /**
-     * Menor valor de venda que ainda não dá prejuízo: cobre o custo de
-     * produção depois de canal e imposto levarem a parte deles. Vender
-     * exatamente por isso significa trabalhar de graça; abaixo disso, você
-     * paga pra imprimir. É a referência pra negociar sem ter que refazer a
-     * conta de cabeça.
+     * Menor valor de venda da peça que ainda não dá prejuízo: cobre o custo de produção depois de
+     * canal e imposto levarem a parte deles do total (serviços e frete inclusos). Vender exatamente
+     * por isso significa trabalhar de graça; abaixo disso, você paga pra imprimir. É a referência
+     * pra negociar sem ter que refazer a conta de cabeça.
      */
     val breakEvenSalePrice: Double
-        get() = productionCost / (1 - totalDeductionRate)
+        get() = (productionCost + extrasTotal) / (1 - totalDeductionRate) - extrasTotal
 
     /** Se o preço foi fechado com o cliente em vez de vir da margem (ver [tableSalePrice]). */
     val isNegotiated: Boolean

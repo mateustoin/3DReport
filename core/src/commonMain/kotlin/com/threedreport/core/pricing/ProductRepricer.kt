@@ -1,6 +1,7 @@
 package com.threedreport.core.pricing
 
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.FilamentSnapshot
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
@@ -54,7 +55,7 @@ object ProductRepricer {
             val usages = print.job.filaments.map { usage ->
                 val filament = filaments.firstOrNull { it.id == usage.filament.id }
                     ?: return RepriceResult.Unavailable(RepriceResult.Reason.FILAMENT_MISSING, usage.filament.name)
-                usage.copy(filament = filament)
+                usage.copy(filament = FilamentSnapshot.of(filament))
             }
             print.job.copy(filaments = usages) to printer
         }
@@ -71,6 +72,7 @@ object ProductRepricer {
                 quantity = quote.quantity,
                 laborMinutes = quote.laborMinutes,
                 negotiatedSalePrice = if (quote.isNegotiated) quote.salePrice else null,
+                extrasTotal = quote.extrasTotal,
             )
         }.getOrElse { return RepriceResult.Unavailable(RepriceResult.Reason.INVALID, it.message) }
 

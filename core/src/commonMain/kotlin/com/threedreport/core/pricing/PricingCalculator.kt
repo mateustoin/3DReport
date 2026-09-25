@@ -30,6 +30,8 @@ object PricingCalculator {
      *   o lucro, o histórico e o Dashboard passam a falar do valor que foi
      *   realmente cobrado. O custo de produção não muda, então um preço
      *   abaixo dele aparece como lucro negativo, que é o aviso de prejuízo.
+     * @param extrasTotal serviços e frete cobrados junto (decisão 107): não passam pela margem, mas o
+     *   canal e o imposto levam a parte deles, então o preço da peça sobe o suficiente pra cobrir isso.
      */
     fun calculate(
         job: PrintJob,
@@ -39,7 +41,8 @@ object PricingCalculator {
         quantity: Int = 1,
         laborMinutes: Double = 0.0,
         negotiatedSalePrice: Double? = null,
-    ): Quote = calculate(listOf(job to printer), settings, channel, quantity, laborMinutes, negotiatedSalePrice)
+        extrasTotal: Double = 0.0,
+    ): Quote = calculate(listOf(job to printer), settings, channel, quantity, laborMinutes, negotiatedSalePrice, extrasTotal)
 
     /**
      * O pedido com várias impressões (leva 9, decisão 105): cada uma com a própria impressora. O
@@ -51,6 +54,7 @@ object PricingCalculator {
      *
      * @param prints as impressões, na ordem da tela, cada uma com a impressora em que roda.
      * @param laborMinutes todo o seu tempo de trabalho no pedido, cobrado uma vez (decisão 94).
+     * @param extrasTotal serviços e frete cobrados junto com a peça (ver [Quote.extrasTotal]).
      */
     fun calculate(
         prints: List<Pair<PrintJob, PrinterProfile>>,
@@ -59,6 +63,7 @@ object PricingCalculator {
         quantity: Int = 1,
         laborMinutes: Double = 0.0,
         negotiatedSalePrice: Double? = null,
+        extrasTotal: Double = 0.0,
     ): Quote {
         require(prints.isNotEmpty()) { "um orçamento precisa de pelo menos uma impressão" }
         require(negotiatedSalePrice == null || negotiatedSalePrice >= 0) {
@@ -66,6 +71,7 @@ object PricingCalculator {
         }
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
         require(laborMinutes >= 0) { "laborMinutes não pode ser negativo: $laborMinutes" }
+        require(extrasTotal >= 0) { "extrasTotal não pode ser negativo: $extrasTotal" }
 
         val quotedPrints = prints.map { (job, printer) ->
             QuotedPrint(job = job, printerId = printer.id, printerName = printer.name, cost = printCost(job, printer, settings, quantity))
@@ -94,14 +100,16 @@ object PricingCalculator {
         val baseSalePrice = costs.total * (1 + settings.profitMargin)
 
         // Canal e imposto são descontados do mesmo valor recebido, então somam antes de dividir:
-        // vender a P deixa P · (1 − canal − imposto) na sua mão.
+        // vender a P deixa P · (1 − canal − imposto) na sua mão. O valor recebido é o total do
+        // cliente, serviços e frete inclusos (decisão 107): a peça sobe o suficiente pra que, depois
+        // das deduções sobre tudo, sobre a base da peça mais o repasse de serviços e frete.
         val channelFeeRate = channel?.feeRate ?: 0.0
         val deductionRate = channelFeeRate + settings.taxRate
         require(deductionRate < 1) {
             "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. " +
                 "Revise a taxa do canal ou o imposto em Configurações."
         }
-        val tableSalePrice = if (deductionRate > 0.0) baseSalePrice / (1 - deductionRate) else baseSalePrice
+        val tableSalePrice = if (deductionRate > 0.0) (baseSalePrice + extrasTotal) / (1 - deductionRate) - extrasTotal else baseSalePrice
         val salePrice = negotiatedSalePrice ?: tableSalePrice
 
         return Quote(
@@ -115,6 +123,7 @@ object PricingCalculator {
             channelFeeRate = channelFeeRate,
             taxRate = settings.taxRate,
             tableSalePrice = tableSalePrice.takeIf { negotiatedSalePrice != null },
+            extrasTotal = extrasTotal,
         )
     }
 

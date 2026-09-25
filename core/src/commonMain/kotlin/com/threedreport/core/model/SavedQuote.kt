@@ -44,10 +44,6 @@ import kotlinx.serialization.Serializable
  *   preço da peça**: não passa pela margem, não multiplica pela quantidade
  *   e não sofre a taxa do canal, porque é um valor repassado, não um
  *   produto seu. `0.0` quando não há frete (retirada, entrega em mãos).
- * @property printSettings configurações de fatiamento usadas pra imprimir
- *   (altura de camada, preenchimento, suporte), se informadas — ver KDoc de
- *   [PrintSettings]. Editável direto no Histórico, sem precisar reabrir a
- *   edição completa do orçamento (mesmo tratamento de [status]).
  * @property deliveryDateEpochDay prazo de entrega prometido ao cliente, em dias desde 01/01/1970
  *   (uma data de calendário, e não um instante: guardar millis faria a data mudar de dia
  *   conforme o fuso). Ao contrário de [client]/[sourceLink], **entra nos exports** (PDF, imagem,
@@ -66,6 +62,13 @@ import kotlinx.serialization.Serializable
  *   ninguém digitar outro preço (decisão 103). O [Quote] guarda o anunciado como preço fechado e o
  *   calculado em [Quote.tableSalePrice], mas isso não é negociação com o cliente: fica fora dos
  *   números de desconto do Dashboard (ver [isNegotiatedWithClient]).
+ * @property number número sequencial do orçamento ("#0042", ver [displayNumber]), pra conversar com o
+ *   cliente e achar o pedido no PDF e no WhatsApp (decisão 106). Atribuído ao salvar; `0` = sem número.
+ * @property statusHistory cada mudança de [status] com o momento em que aconteceu (decisão 106), em
+ *   ordem. É o que dá a data da venda ([soldAtEpochMillis]) e da entrega, que a data de criação não
+ *   dá: um orçamento de agosto aprovado em setembro é venda de setembro.
+ * @property currency moeda em que o orçamento foi feito. Os valores são dessa moeda; trocar a moeda
+ *   padrão em Configurações não re-rotula o que já foi salvo.
  */
 @Serializable
 data class SavedQuote(
@@ -80,17 +83,83 @@ data class SavedQuote(
     val client: Client? = null,
     val status: OrderStatus = OrderStatus.ORCADO,
     val lastEditedEpochMillis: Long? = null,
-    val printSettings: PrintSettings? = null,
     val shippingCost: Double = 0.0,
     val deliveryDateEpochDay: Long? = null,
     val kind: QuoteKind = QuoteKind.ORDER,
     val sourceProductId: String? = null,
     val category: String? = null,
     val soldAtCatalogPrice: Boolean = false,
+    val number: Int = 0,
+    val statusHistory: List<StatusChange> = emptyList(),
+    val currency: Currency = Currency.BRL,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
+        require(number >= 0) { "number não pode ser negativo: $number" }
     }
+
+    /** Número pra mostrar ao cliente ("#0042"), ou `null` sem número. */
+    val displayNumber: String?
+        get() = if (number > 0) "#" + number.toString().padStart(4, '0') else null
+
+    /**
+     * Configurações de fatiamento da primeira impressão (ver [PrintJob.settings]). O Histórico da 2.0
+     * edita uma impressão por pedido; com várias impressões, cada uma tem as suas.
+     */
+    val printSettings: PrintSettings?
+        get() = quote.prints.first().job.settings
+
+    /** O mesmo pedido com [settings] na primeira impressão (ver [printSettings]). */
+    fun withPrintSettings(settings: PrintSettings?): SavedQuote {
+        val first = quote.prints.first()
+        val updated = first.copy(job = first.job.copy(settings = settings?.takeUnless { it.isEmpty }))
+        return copy(quote = quote.copy(prints = listOf(updated) + quote.prints.drop(1)))
+    }
+
+    /**
+     * O mesmo pedido em [newStatus], registrando a mudança em [statusHistory] com o momento [atEpochMillis].
+     * Sem mudança de status, devolve o próprio pedido (nada a registrar).
+     */
+    fun withStatus(newStatus: OrderStatus, atEpochMillis: Long): SavedQuote =
+        if (newStatus == status) this else copy(status = newStatus, statusHistory = statusHistory + StatusChange(newStatus, atEpochMillis))
+
+    /**
+     * Quando o pedido foi fechado: a última vez que ele entrou num status de venda ([OrderStatus.isSold])
+     * vindo de fora dele. `null` enquanto não é venda. Pedido sem histórico (salvo já vendido) usa a data
+     * de criação.
+     */
+    val soldAtEpochMillis: Long?
+        get() {
+            if (!status.isSold) return null
+            var soldAt: Long? = null
+            var wasSold = false
+            for (change in statusHistory) {
+                if (change.status.isSold && !wasSold) soldAt = change.atEpochMillis
+                wasSold = change.status.isSold
+            }
+            return soldAt ?: savedAtEpochMillis
+        }
+
+    /** Quando a impressão terminou (primeira vez em Pronto ou Entregue), ou `null` se ainda não terminou. */
+    val printedAtEpochMillis: Long?
+        get() = if (status != OrderStatus.PRONTO && status != OrderStatus.ENTREGUE) {
+            null
+        } else {
+            statusHistory.firstOrNull { it.status == OrderStatus.PRONTO || it.status == OrderStatus.ENTREGUE }?.atEpochMillis
+                ?: savedAtEpochMillis
+        }
+
+    /** Quando o pedido foi entregue (a última vez que foi pra Entregue), ou `null` se não foi. */
+    val deliveredAtEpochMillis: Long?
+        get() = if (status != OrderStatus.ENTREGUE) {
+            null
+        } else {
+            statusHistory.lastOrNull { it.status == OrderStatus.ENTREGUE }?.atEpochMillis ?: savedAtEpochMillis
+        }
+
+    /** Soma dos serviços cobrados (os por peça vezes a quantidade, os por pedido uma vez, ver [QuoteService.total]). */
+    val servicesTotal: Double
+        get() = services.sumOf { it.total(quote.quantity) }
 
     /**
      * Total de fato cobrado do cliente: valor de venda do pedido + serviços (os por peça
@@ -98,7 +167,7 @@ data class SavedQuote(
      * [shippingCost].
      */
     val totalWithServices: Double
-        get() = quote.salePrice + services.sumOf { it.total(quote.quantity) } + shippingCost
+        get() = quote.salePrice + servicesTotal + shippingCost
 
     /**
      * Se é pedido (e não produto do catálogo). É a única regra de "o que é pedido" (decisão 101),
@@ -131,7 +200,7 @@ data class SavedQuote(
     fun isDeliveryOverdue(todayEpochDay: Long): Boolean {
         if (!isOrder) return false
         val deadline = deliveryDateEpochDay ?: return false
-        return deadline < todayEpochDay && status != OrderStatus.ENTREGUE
+        return deadline < todayEpochDay && status != OrderStatus.ENTREGUE && status != OrderStatus.CANCELADO
     }
 
     /** Se [name] foi gerado pelo app porque o campo ficou em branco (ver [AUTO_NAME_PREFIX]). */

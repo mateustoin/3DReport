@@ -60,14 +60,68 @@ data class Filament(
      * volume (cm³) = comprimento (mm) · área (mm²) / 1000
      * massa (g)    = volume (cm³) · densidade (g/cm³)
      */
-    fun weightGrams(lengthMeters: Double): Double {
-        val volumeCm3 = lengthMeters * MM_PER_METER * crossSectionAreaMm2 / MM3_PER_CM3
-        return volumeCm3 * densityGPerCm3
-    }
+    fun weightGrams(lengthMeters: Double): Double = filamentWeightGrams(lengthMeters, diameterMm, densityGPerCm3)
+
+    /** Comprimento, em metros, que pesa [grams] gramas: o inverso de [weightGrams]. */
+    fun lengthMeters(grams: Double): Double = grams / weightGrams(1.0)
 
     companion object {
         const val DEFAULT_DIAMETER_MM = 1.75
-        private const val MM_PER_METER = 1000.0
-        private const val MM3_PER_CM3 = 1000.0
+    }
+}
+
+private const val MM_PER_METER = 1000.0
+private const val MM3_PER_CM3 = 1000.0
+
+/**
+ * Massa, em gramas, de [lengthMeters] metros de um filamento de [diameterMm] e [densityGPerCm3].
+ * Uma fórmula só pro cadastro ([Filament]) e pro retrato guardado no orçamento ([FilamentSnapshot]).
+ *
+ * volume (cm³) = comprimento (mm) · área (mm²) / 1000
+ * massa (g)    = volume (cm³) · densidade (g/cm³)
+ */
+internal fun filamentWeightGrams(lengthMeters: Double, diameterMm: Double, densityGPerCm3: Double): Double {
+    val crossSectionAreaMm2 = PI * (diameterMm / 2) * (diameterMm / 2)
+    val volumeCm3 = lengthMeters * MM_PER_METER * crossSectionAreaMm2 / MM3_PER_CM3
+    return volumeCm3 * densityGPerCm3
+}
+
+/**
+ * Retrato de um [Filament] dentro de um orçamento salvo: só o que a conta e o histórico usam (preço,
+ * densidade, diâmetro e identificação). Fica de fora a lista de cores com estoque do cadastro, que
+ * muda o tempo todo e não diz nada sobre o que foi orçado (a cor usada fica em [FilamentUsage.color]).
+ *
+ * @property id o [Filament.id] de origem, pra reabrir e recalcular com o cadastro atual.
+ */
+@Serializable
+data class FilamentSnapshot(
+    val id: String,
+    val name: String,
+    val pricePerKg: Double,
+    val densityGPerCm3: Double,
+    val diameterMm: Double = Filament.DEFAULT_DIAMETER_MM,
+    val brand: String? = null,
+    val materialType: String? = null,
+) {
+    init {
+        require(name.isNotBlank()) { "name não pode ser vazio" }
+        require(pricePerKg >= 0) { "pricePerKg não pode ser negativo: $pricePerKg" }
+        require(densityGPerCm3 > 0) { "densityGPerCm3 deve ser positivo: $densityGPerCm3" }
+        require(diameterMm > 0) { "diameterMm deve ser positivo: $diameterMm" }
+    }
+
+    /** Massa, em gramas, de [lengthMeters] metros deste filamento (mesma fórmula de [Filament.weightGrams]). */
+    fun weightGrams(lengthMeters: Double): Double = filamentWeightGrams(lengthMeters, diameterMm, densityGPerCm3)
+
+    companion object {
+        fun of(filament: Filament) = FilamentSnapshot(
+            id = filament.id,
+            name = filament.name,
+            pricePerKg = filament.pricePerKg,
+            densityGPerCm3 = filament.densityGPerCm3,
+            diameterMm = filament.diameterMm,
+            brand = filament.brand,
+            materialType = filament.materialType,
+        )
     }
 }

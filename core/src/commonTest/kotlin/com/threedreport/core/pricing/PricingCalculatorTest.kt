@@ -506,6 +506,60 @@ class PricingCalculatorTest {
         assertEquals(0.15, quote.channelFeeRate, 1e-9)
     }
 
+    /**
+     * Trava o exemplo de "Serviços e frete também pagam a taxa" em pricing-formulas.md (decisão 107):
+     * a peça de R$ 17,02 (venda direta) com R$ 10 de serviço e R$ 15 de frete, pela Shopee (20%) com
+     * 6% de Simples. O canal e o imposto levam 26% de tudo o que o cliente paga, então a peça sobe o
+     * suficiente pra cobrir também a parte que sai do serviço e do frete.
+     */
+    @Test
+    fun documentedExtrasDeductionExampleMatches() {
+        val shopee = SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.20)
+        val settings = spreadsheetSettings.copy(taxRate = 0.06)
+
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, channel = shopee, extrasTotal = 25.0)
+
+        assertEquals(31.78, quote.salePrice, CENT_TOLERANCE)
+        assertEquals(56.78, quote.customerTotal, CENT_TOLERANCE)
+        // O lucro continua o de uma venda direta sem serviço nem frete.
+        assertEquals(17.02 - 8.51, quote.profit, CENT_TOLERANCE)
+    }
+
+    @Test
+    fun extrasWithoutDeductionsDoNotChangeThePiecePrice() {
+        val plain = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings)
+        val withExtras = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, extrasTotal = 40.0)
+
+        assertEquals(plain.salePrice, withExtras.salePrice, 1e-9)
+        assertEquals(plain.profit, withExtras.profit, 1e-9)
+        assertEquals(plain.salePrice + 40.0, withExtras.customerTotal, 1e-9)
+    }
+
+    @Test
+    fun breakEvenWithExtrasCoversTheFeesOnServicesAndShipping() {
+        val card = SalesChannel(id = "cartao", name = "Cartão", feeRate = 0.05)
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, channel = card, extrasTotal = 30.0)
+
+        val atBreakEven = PricingCalculator.calculate(
+            spreadsheetJob,
+            spreadsheetPrinter,
+            spreadsheetSettings,
+            channel = card,
+            negotiatedSalePrice = quote.breakEvenSalePrice,
+            extrasTotal = 30.0,
+        )
+        assertEquals(0.0, atBreakEven.profit, 1e-9)
+        // Sem contar a taxa sobre os R$ 30, o mínimo seria menor e o vendedor pagaria pra vender.
+        assertTrue(quote.breakEvenSalePrice > quote.productionCost / (1 - 0.05))
+    }
+
+    @Test
+    fun negativeExtrasAreRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, spreadsheetSettings, extrasTotal = -1.0)
+        }
+    }
+
     private companion object {
         /** A planilha exibe valores com 2 casas; aceitamos diferença de até meio centavo. */
         const val CENT_TOLERANCE = 0.005

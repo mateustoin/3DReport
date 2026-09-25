@@ -9,18 +9,34 @@ import com.threedreport.core.model.SavedQuote
  * Agregação de orçamentos salvos, pra a tela de Dashboard.
  *
  * Função pura e sem estado, igual a [com.threedreport.core.pricing.PricingCalculator]:
- * mesma entrada, mesma saída. Quem filtra por período (ex.: só os últimos 30
- * dias) é quem chama, passando a lista já filtrada. Quem separa venda de orçamento em aberto é
- * esta função ([com.threedreport.core.model.OrderStatus.isSold]), e também quem deixa os produtos do catálogo de fora
- * ([SavedQuote.isOrder], decisão 101): produto não é venda nem orçamento em aberto.
+ * mesma entrada, mesma saída. Quem separa venda de orçamento em aberto é esta função
+ * ([com.threedreport.core.model.OrderStatus.isSold]), e também quem deixa os produtos do catálogo de
+ * fora ([SavedQuote.isOrder], decisão 101): produto não é venda nem orçamento em aberto.
+ *
+ * O período (decisão 106) conta cada coisa pela data que importa pra ela: venda pela data em que o
+ * cliente fechou ([SavedQuote.soldAtEpochMillis]), orçamento em aberto e conversão pela data em que
+ * o orçamento foi criado. Um orçamento de agosto aprovado em setembro é venda de setembro.
  */
 object QuoteReport {
 
-    fun summarize(savedQuotes: List<SavedQuote>): QuoteSummary {
-        val quotes = savedQuotes.filter { it.isOrder }
-        if (quotes.isEmpty()) return QuoteSummary.EMPTY
+    /**
+     * @param periodStartEpochMillis começo do período, ou `null` pra tudo.
+     * @param periodEndEpochMillis fim do período (exclusivo), ou `null` pra até agora.
+     */
+    fun summarize(
+        savedQuotes: List<SavedQuote>,
+        periodStartEpochMillis: Long? = null,
+        periodEndEpochMillis: Long? = null,
+    ): QuoteSummary {
+        fun inPeriod(epochMillis: Long) =
+            (periodStartEpochMillis == null || epochMillis >= periodStartEpochMillis) &&
+                (periodEndEpochMillis == null || epochMillis < periodEndEpochMillis)
 
-        val (sold, open) = quotes.partition { it.status.isSold }
+        val orders = savedQuotes.filter { it.isOrder }
+        val sold = orders.filter { order -> order.soldAtEpochMillis?.let(::inPeriod) == true }
+        val created = orders.filter { inPeriod(it.savedAtEpochMillis) }
+        val open = created.filter { it.status.isOpen }
+        if (sold.isEmpty() && created.isEmpty()) return QuoteSummary.EMPTY
 
         // Conta pedidos que usaram cada filamento: um pedido multicolor ou com várias impressões conta
         // uma vez pra cada filamento diferente, e não uma vez por impressão.
@@ -39,15 +55,15 @@ object QuoteReport {
 
         return QuoteSummary(
             quoteCount = sold.size,
-            totalSalePrice = sold.sumOf { it.totalWithServices },
+            totalSalePrice = sold.sumOf { it.totalWithServices - it.shippingCost },
             totalProfit = totalProfit,
             mostUsedFilamentName = mostUsedFilament?.key,
             mostUsedFilamentCount = mostUsedFilament?.value ?: 0,
             negotiatedCount = sold.count { it.isNegotiatedWithClient },
             totalNegotiatedDiscount = sold.sumOf { it.clientDiscount },
             openQuoteCount = open.size,
-            openQuoteTotal = open.sumOf { it.totalWithServices },
-            conversionRate = sold.size.toDouble() / quotes.size,
+            openQuoteTotal = open.sumOf { it.totalWithServices - it.shippingCost },
+            conversionRate = if (created.isEmpty()) null else created.count { it.status.isSold }.toDouble() / created.size,
             printHours = printHours,
             profitPerPrintHour = perHour(totalProfit, printHours),
             laborHours = laborHours,
