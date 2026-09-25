@@ -16,6 +16,7 @@ import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.data.ThemeRepository
 import com.threedreport.app.data.store.StorageHealth
+import com.threedreport.app.ui.about.ReleaseSource
 
 /**
  * Tudo que o app usa, montado uma vez na inicialização da plataforma (decisão 108), fora da composição:
@@ -41,6 +42,8 @@ class AppContainer(
     val backup: BackupRepository,
     val storageHealth: StorageHealth,
     val pendingWrites: PendingWrites = PendingWrites.None,
+    /** A versão mais recente publicada, pra verificação opcional de atualizações (decisão 116). */
+    val releases: ReleaseSource = ReleaseSource { null },
 )
 
 /** Gravações pedidas e ainda não confirmadas no disco (ver [com.threedreport.app.data.store.WriteBehindFile]). */

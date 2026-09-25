@@ -43,6 +43,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.IO
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
+import com.threedreport.app.platform.openUrl
+import com.threedreport.app.ui.about.UpdateViewModel
+import com.threedreport.app.ui.about.UpdateState
+import com.threedreport.app.ui.about.UpdateSection
 import com.threedreport.app.ui.quote.printTitle
 import com.threedreport.app.ui.quote.PrintInput
 import androidx.compose.foundation.layout.widthIn
@@ -151,6 +159,9 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val themeViewModel = remember { ThemeViewModel(container.theme) }
     val currencyViewModel = remember { CurrencyViewModel(container.currency) }
     val backupViewModel = remember { BackupViewModel(container.backup, container.preferences, container.pendingWrites, scope = appScope) }
+    val updateViewModel = remember {
+        UpdateViewModel(container.preferences, container.releases, APP_VERSION, scope = appScope, background = Dispatchers.IO, main = Dispatchers.Main)
+    }
     val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels, historyRepository.savedQuotes) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
@@ -335,7 +346,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
                                 section = settingsSection,
                                 onSectionChange = { settingsSection = it },
                             )
-                            AppDestination.ABOUT -> AboutScreen(version = APP_VERSION)
+                            AppDestination.ABOUT -> AboutScreen(version = APP_VERSION) { UpdateSection(updateViewModel) }
                         }
                     }
                 }
@@ -364,6 +375,20 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
             }
 
             StorageHealthDialogs(container)
+
+            // Com a opção ligada, uma verificação ao abrir, e o aviso uma vez por versão nova (decisão 116).
+            LaunchedEffect(Unit) { updateViewModel.checkOnStart() }
+            val updateState by updateViewModel.state.collectAsState()
+            val available = (updateState as? UpdateState.Available)?.release
+            LaunchedEffect(available?.version) {
+                if (available == null || destination == AppDestination.ABOUT) return@LaunchedEffect
+                val result = snackbarHostState.showSnackbar(
+                    "Versão ${available.version} do 3DReport disponível.",
+                    actionLabel = "Ver novidades",
+                    duration = SnackbarDuration.Long,
+                )
+                if (result == SnackbarResult.ActionPerformed) openUrl(available.url)
+            }
 
             // O aviso dos dados antigos vem antes: o onboarding só aparece depois de ele ser lido.
             if (!onboardingCompleted && !showOldDataNotice) {

@@ -91,6 +91,10 @@ compose.desktop {
                 // — só a opção de criar sempre ou nunca; ver decisão 42).
                 shortcut = true
                 menu = true
+                // Fixo (decisão 116): é o que o jpackage derivava do fabricante e do nome, lido da tabela
+                // Property dos .msi publicados da 1.8.0 e da 1.37.0 (iguais nos dois). Com ele fixo, trocar o
+                // nome do fabricante ou do pacote não faz o instalador novo deixar de atualizar o antigo.
+                upgradeUuid = "8681a46c-4db6-3cbf-b285-250929ce61c5"
             }
             macOS {
                 iconFile.set(project.file("packaging/icons/icon.icns"))
