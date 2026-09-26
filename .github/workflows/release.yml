@@ -24,12 +24,13 @@ jobs:
             glob: composeApp/build/compose/binaries/main/msi/*.msi
           # Dois .dmg: o runner macos-latest é Apple Silicon (arm64), e o JDK
           # embutido no instalador só roda na arquitetura em que foi gerado.
-          # Mac com Intel precisa do seu (macos-13 é o último runner Intel).
+          # Mac com Intel precisa do seu. O macos-13 foi aposentado pelo GitHub (o job
+          # ficava na fila sem runner); macos-15-intel é o runner Intel que sobrou.
           - os: macos-latest
             artifact: macos-dmg
             glob: composeApp/build/compose/binaries/main/dmg/*.dmg
             dmg_suffix: apple-silicon
-          - os: macos-13
+          - os: macos-15-intel
             artifact: macos-intel-dmg
             glob: composeApp/build/compose/binaries/main/dmg/*.dmg
             dmg_suffix: intel
