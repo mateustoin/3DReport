@@ -148,9 +148,9 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val ordersViewModel = remember { newHistoryViewModel(QuoteKind.ORDER) }
     val catalogViewModel = remember { newHistoryViewModel(QuoteKind.PRODUCT) }
     val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
-    val filamentListViewModel = remember { FilamentListViewModel(filamentRepository, historyRepository.savedQuotes) }
+    val filamentListViewModel = remember { FilamentListViewModel(filamentRepository, historyRepository::quotesIncludingTrash) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, container.maintenance) }
-    val serviceListViewModel = remember { ServiceListViewModel(container.services, historyRepository.savedQuotes) }
+    val serviceListViewModel = remember { ServiceListViewModel(container.services, historyRepository::quotesIncludingTrash) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
     val brandingViewModel = remember {
         BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value })
@@ -162,7 +162,7 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
     val updateViewModel = remember {
         UpdateViewModel(container.preferences, container.releases, APP_VERSION, scope = appScope, background = Dispatchers.IO, main = Dispatchers.Main)
     }
-    val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels, historyRepository.savedQuotes) }
+    val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels, historyRepository::quotesIncludingTrash) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
     var draggingFile by remember { mutableStateOf(false) }

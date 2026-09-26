@@ -2,6 +2,7 @@ package com.threedreport.app.data
 
 import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.app.data.store.RecordCollection
+import com.threedreport.core.model.Archivable
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -24,6 +25,20 @@ interface CatalogRepository<T> {
 
     /** Desfaz uma exclusão ainda na lixeira. */
     fun restore(id: String)
+}
+
+/**
+ * Salva a edição de [item] sem mexer no arquivamento (decisão 115): a marca não está no formulário, então
+ * editar um arquivado não tira ele do arquivo.
+ */
+fun <T : Archivable<T>> CatalogRepository<T>.updateKeepingArchived(item: T) {
+    update(item.withArchived(items.value.any { it.id == item.id && it.archived }))
+}
+
+/** Arquiva (ou restaura) o item [id] (decisão 115). Não faz nada se ele não existe. */
+fun <T : Archivable<T>> CatalogRepository<T>.setArchived(id: String, archived: Boolean) {
+    val item = items.value.find { it.id == id } ?: return
+    update(item.withArchived(archived))
 }
 
 /** [CatalogRepository] guardado numa [RecordCollection]. */

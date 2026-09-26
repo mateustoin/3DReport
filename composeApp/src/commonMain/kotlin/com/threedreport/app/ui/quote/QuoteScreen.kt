@@ -66,6 +66,7 @@ import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.ClientField
 import com.threedreport.app.ui.components.FieldHelp
+import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.components.SectionTitle
@@ -326,7 +327,7 @@ private fun QuoteInputs(
     // Serviço marcado num orçamento reaberto que já saiu do catálogo continua aparecendo, pra não
     // sumir do pedido ao salvar de novo.
     val orphanServices = input.selectedServices.filterKeys { id -> services.none { it.id == id } }
-    val offeredServices = services.filter { !it.archived || it.id in input.selectedServices }
+    val offeredServices = services.availableOrSelected { it.id in input.selectedServices }
     if (offeredServices.isNotEmpty() || orphanServices.isNotEmpty()) {
         SectionTitle(AppIcons.Handyman, "Serviços opcionais")
         offeredServices.forEach { service ->
@@ -348,7 +349,7 @@ private fun QuoteInputs(
     SectionTitle(AppIcons.Storefront, "A venda")
     // Com o canal do orçamento excluído, o seletor aparece mesmo sem canais cadastrados: é nele que se
     // escolhe "Venda direta" pra liberar o cálculo.
-    val offeredChannels = salesChannels.filter { !it.archived || it.id == input.salesChannelId }
+    val offeredChannels = salesChannels.availableOrSelected { it.id == input.salesChannelId }
     if (offeredChannels.isNotEmpty() || input.missingChannelName != null) {
         LabeledDropdown(
             label = "Canal de venda",

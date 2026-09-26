@@ -4,6 +4,8 @@ import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.data.setArchived
+import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.toRequiredNonNegative
@@ -33,7 +35,7 @@ import kotlin.uuid.Uuid
  */
 class PrinterListViewModel(
     private val repository: PrinterRepository,
-    historyRepository: QuoteHistoryRepository,
+    private val historyRepository: QuoteHistoryRepository,
     private val maintenanceRepository: MaintenanceRepository,
 ) {
 
@@ -91,22 +93,18 @@ class PrinterListViewModel(
 
         result.fold(
             onSuccess = { printer ->
-                val archived = repository.printers.value.find { it.id == printer.id }?.archived == true
-                if (current.id == null) repository.add(printer) else repository.update(printer.copy(archived = archived))
+                if (current.id == null) repository.add(printer) else repository.updateKeepingArchived(printer)
                 formState.value = null
             },
             onFailure = { formState.value = current.copy(errorMessage = it.message) },
         )
     }
 
-    /** Quantos pedidos e produtos usam a impressora [id]. */
-    fun usageCount(id: String): Int = CatalogUsage.printer(id, savedQuotes.value)
+    /** Quantos pedidos e produtos usam a impressora [id], inclusive os da lixeira. */
+    fun usageCount(id: String): Int = CatalogUsage.printer(id, historyRepository.quotesIncludingTrash())
 
     /** Arquiva (ou restaura) a impressora [id], com a manutenção dela intacta (decisão 115). */
-    fun setArchived(id: String, archived: Boolean) {
-        val printer = repository.printers.value.find { it.id == id } ?: return
-        repository.update(printer.copy(archived = archived))
-    }
+    fun setArchived(id: String, archived: Boolean) = repository.setArchived(id, archived)
 
     fun delete(id: String) {
         repository.delete(id)

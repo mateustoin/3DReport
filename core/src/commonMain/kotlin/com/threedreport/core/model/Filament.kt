@@ -32,7 +32,7 @@ import kotlin.math.PI
  */
 @Serializable
 data class Filament(
-    val id: String,
+    override val id: String,
     val name: String,
     val pricePerKg: Double,
     val densityGPerCm3: Double,
@@ -40,8 +40,10 @@ data class Filament(
     val brand: String? = null,
     val materialType: String? = null,
     val colors: List<FilamentColor> = listOf(FilamentColor(id = "default")),
-    val archived: Boolean = false,
-) {
+    override val archived: Boolean = false,
+) : Archivable<Filament> {
+    override fun withArchived(archived: Boolean): Filament = copy(archived = archived)
+
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
         require(pricePerKg >= 0) { "pricePerKg não pode ser negativo: $pricePerKg" }

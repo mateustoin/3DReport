@@ -81,6 +81,12 @@ compose.desktop {
             // Lido de gradle.properties, a mesma fonte do APP_VERSION do app (generateAppVersion).
             packageVersion = providers.gradleProperty("appVersion").get()
 
+            // O instalador leva um Java reduzido pelo jlink, só com os módulos padrão do Compose mais os
+            // listados aqui (decisão 119). Na IDE o app roda no JDK completo, então um `java.*` novo no
+            // código que fique de fora só quebra no app instalado: a 2.1.0 não abria por faltar o
+            // `java.net.http` (decisão 116). O CI confere esta lista com o jdeps.
+            modules("java.net.http")
+
             // Ícone do app (cubo isométrico "em camadas" + bico de impressão,
             // nas cores da paleta do app) — decisão 42. Cada plataforma exige
             // o formato nativo do seu instalador (.ico/.icns/.png).

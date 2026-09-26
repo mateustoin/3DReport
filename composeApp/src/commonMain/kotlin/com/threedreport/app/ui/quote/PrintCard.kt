@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.FieldHelp
+import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.components.SectionTitle
 import com.threedreport.app.ui.filaments.displayLabel
@@ -276,7 +277,7 @@ private fun PrintFields(
 
     LabeledDropdown(
         label = "Impressora",
-        items = printers.filter { !it.archived || it.id == resolved?.printer?.id },
+        items = printers.availableOrSelected { it.id == resolved?.printer?.id },
         selected = resolved?.printer,
         itemLabel = { it.name + if (it.archived) " (arquivada)" else "" },
         displayText = { it.name + if (it.archived) " (arquivada)" else "" },

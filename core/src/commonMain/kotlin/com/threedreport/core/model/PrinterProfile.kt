@@ -17,13 +17,15 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class PrinterProfile(
-    val id: String,
+    override val id: String,
     val name: String,
     val printerPowerWatts: Double,
     val maintenanceCostPerHour: Double,
     val machineInvestment: MachineInvestment,
-    val archived: Boolean = false,
-) {
+    override val archived: Boolean = false,
+) : Archivable<PrinterProfile> {
+    override fun withArchived(archived: Boolean): PrinterProfile = copy(archived = archived)
+
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
         require(printerPowerWatts >= 0) { "printerPowerWatts não pode ser negativo" }

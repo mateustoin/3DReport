@@ -1,12 +1,15 @@
 package com.threedreport.app.ui
 
 import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.filaments.FilamentListViewModel
+import com.threedreport.app.ui.printers.PrinterListViewModel
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.core.model.Filament
@@ -58,7 +61,7 @@ class ArchiveTest {
     fun usageCountsTheOrdersThatUseTheFilament() {
         saveOrder()
         saveOrder()
-        val viewModel = FilamentListViewModel(filaments, history.savedQuotes)
+        val viewModel = FilamentListViewModel(filaments, history::quotesIncludingTrash)
         val used = filaments.filaments.value.first().id
         filaments.add(petg)
 
@@ -67,8 +70,30 @@ class ArchiveTest {
     }
 
     @Test
+    fun usageCountsOrdersInTheTrash() {
+        saveOrder()
+        val saved = history.savedQuotes.value.single()
+        history.delete(saved.id)
+        val used = saved.quote.prints.single().job.filaments.single().filament.id
+        val printer = saved.quote.prints.single().printerId
+
+        // Na lixeira o pedido ainda pode voltar, então excluir o filamento continua sugerindo arquivar.
+        assertEquals(1, FilamentListViewModel(filaments, history::quotesIncludingTrash).usageCount(used))
+        assertEquals(1, PrinterListViewModel(printers, history, MaintenanceRepository()).usageCount(printer))
+    }
+
+    @Test
+    fun anArchivedItemIsOfferedOnlyWhenAlreadySelected() {
+        val archived = petg.copy(archived = true)
+        val other = petg.copy(id = "outro", name = "Outro")
+
+        assertEquals(listOf(other), listOf(archived, other).availableOrSelected { false })
+        assertEquals(listOf(archived, other), listOf(archived, other).availableOrSelected { it.id == archived.id })
+    }
+
+    @Test
     fun editingAnArchivedFilamentKeepsItArchived() {
-        val viewModel = FilamentListViewModel(filaments, history.savedQuotes)
+        val viewModel = FilamentListViewModel(filaments, history::quotesIncludingTrash)
         filaments.add(petg)
         viewModel.setArchived(petg.id, true)
 
@@ -132,6 +157,6 @@ class ArchiveTest {
         }
         assertTrue(quote.saveCurrentQuote())
 
-        assertEquals(1, ServiceListViewModel(services, history.savedQuotes).usageCount("pintura"))
+        assertEquals(1, ServiceListViewModel(services, history::quotesIncludingTrash).usageCount("pintura"))
     }
 }

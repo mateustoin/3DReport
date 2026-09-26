@@ -13,11 +13,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import com.threedreport.core.model.Archivable
 import com.threedreport.core.model.SavedQuote
 
 /**
+ * O que um seletor do Orçamento oferece (decisão 115): arquivado sai das escolhas, mas o que já está
+ * escolhido continua aparecendo.
+ */
+fun <T : Archivable<T>> List<T>.availableOrSelected(isSelected: (T) -> Boolean): List<T> =
+    filter { !it.archived || isSelected(it) }
+
+/**
  * Quantos pedidos e produtos usam cada cadastro (decisão 115), contando pelos retratos salvos. Serve pra
- * confirmação de excluir sugerir arquivar quando o item está em uso.
+ * confirmação de excluir sugerir arquivar quando o item está em uso. Recebe também os da lixeira, que
+ * podem voltar e continuam usando o item.
  */
 object CatalogUsage {
     fun filament(id: String, quotes: List<SavedQuote>) =

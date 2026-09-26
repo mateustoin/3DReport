@@ -23,3 +23,32 @@ jobs:
 
       - name: Build e testes
         run: ./gradlew build
+
+      # O instalador leva um Java reduzido pelo jlink, e um módulo do JDK que fique de fora só quebra
+      # no app instalado, nunca na IDE nem nos testes (a 2.1.0 não abria sem o java.net.http, decisão
+      # 119). Aqui o jdeps diz quais módulos o app e as dependências usam, e o passo falha se algum
+      # deles não estiver no runtime gerado. Ficam de fora java.instrument e jdk.unsupported: só o
+      # agente de depuração das coroutines (AgentPremain) usa, e ele só carrega com -javaagent.
+      - name: Módulos do Java no instalador
+        # bash explícito liga o pipefail: sem ele, um erro do Gradle antes do tee passaria despercebido.
+        shell: bash
+        run: |
+          ./gradlew :composeApp:createDistributable :composeApp:suggestRuntimeModules --console=plain | tee suggest.log
+          suggested=$(grep -o 'modules(.*)' suggest.log | grep -o '"[^"]*"' | tr -d '"')
+          if [ -z "$suggested" ]; then
+            echo "::error::Não achei a sugestão do suggestRuntimeModules na saída do Gradle."
+            exit 1
+          fi
+          runtime=$(grep '^MODULES=' composeApp/build/compose/binaries/main/app/3DReport/lib/runtime/release | cut -d'"' -f2)
+          missing=""
+          for m in $suggested; do
+            case " java.instrument jdk.unsupported $runtime " in
+              *" $m "*) ;;
+              *) missing="$missing $m" ;;
+            esac
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Módulos do Java fora do instalador:$missing. Inclua em modules(...) no composeApp/build.gradle.kts."
+            exit 1
+          fi
+          echo "Runtime do instalador tem todos os módulos usados: $runtime"
