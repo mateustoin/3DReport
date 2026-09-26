@@ -224,9 +224,15 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
       de um orçamento novo (padrões, casamento automático do G-code,
       "Comparar impressoras"), mas pedidos/produtos que já usavam ele
       continuam calculando, marcados "(arquivado)". Excluir um item em uso
-      mostra em quantos pedidos/produtos ele aparece (`CatalogUsage`) e
-      sugere Arquivar como botão principal ("Excluir mesmo assim" continua
-      possível). Arquivar uma impressora mantém os dados de manutenção dela.
+      mostra em quantos pedidos/produtos ele aparece (`CatalogUsage`,
+      contando também os da lixeira, que podem voltar:
+      `QuoteHistoryRepository.quotesIncludingTrash`) e sugere Arquivar como
+      botão principal ("Excluir mesmo assim" continua possível). Arquivar
+      uma impressora mantém os dados de manutenção dela. Os quatro modelos
+      implementam `Archivable` (`core`), e a regra fica num lugar só:
+      `updateKeepingArchived` e `setArchived` (em `CatalogRepository.kt`)
+      pra salvar sem perder a marca, e `availableOrSelected` (em
+      `ui/components/Archive.kt`) pros seletores do Orçamento.
   - **Configurações** (`ui/settings`, decisão 112): uma lista de seções à
     esquerda (`SettingsSection`: Negócio e custos, que inclui Moeda,
     Canais, Documentos pro cliente, Aparência, Dados) mostra uma seção por

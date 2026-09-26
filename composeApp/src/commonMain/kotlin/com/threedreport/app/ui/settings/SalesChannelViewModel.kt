@@ -3,6 +3,8 @@ package com.threedreport.app.ui.settings
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.SalesChannelRepository
+import com.threedreport.app.data.setArchived
+import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
@@ -28,8 +30,11 @@ data class SalesChannelFormState(
 /** Ver [SalesChannel] pro porquê de canal e forma de pagamento serem o mesmo campo. */
 class SalesChannelViewModel(
     private val repository: SalesChannelRepository,
-    /** Pedidos e produtos salvos, pra saber quem usa cada canal antes de excluir (decisão 115). */
-    val savedQuotes: StateFlow<List<SavedQuote>> = MutableStateFlow(emptyList()),
+    /**
+     * Pedidos e produtos salvos, inclusive os da lixeira, pra saber quem usa cada canal antes de excluir
+     * (decisão 115).
+     */
+    private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
 ) {
 
     val channels: StateFlow<List<SalesChannel>> = repository.channels
@@ -74,8 +79,7 @@ class SalesChannelViewModel(
 
         formState.value = channel.fold(
             onSuccess = {
-                val archived = repository.channels.value.find { channel -> channel.id == it.id }?.archived == true
-                if (current.editingId != null) repository.update(it.copy(archived = archived)) else repository.add(it)
+                if (current.editingId != null) repository.updateKeepingArchived(it) else repository.add(it)
                 SalesChannelFormState()
             },
             onFailure = { current.copy(errorMessage = it.message) },
@@ -83,13 +87,10 @@ class SalesChannelViewModel(
     }
 
     /** Quantos pedidos e produtos usam o canal [id]. */
-    fun usageCount(id: String): Int = CatalogUsage.channel(id, savedQuotes.value)
+    fun usageCount(id: String): Int = CatalogUsage.channel(id, usageQuotes())
 
     /** Arquiva (ou restaura) o canal [id] (decisão 115). */
-    fun setArchived(id: String, archived: Boolean) {
-        val channel = repository.channels.value.find { it.id == id } ?: return
-        repository.update(channel.copy(archived = archived))
-    }
+    fun setArchived(id: String, archived: Boolean) = repository.setArchived(id, archived)
 
     fun delete(id: String) {
         repository.delete(id)

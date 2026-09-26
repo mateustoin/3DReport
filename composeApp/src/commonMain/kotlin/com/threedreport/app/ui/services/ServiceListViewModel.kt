@@ -3,6 +3,8 @@ package com.threedreport.app.ui.services
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.ServiceRepository
+import com.threedreport.app.data.setArchived
+import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.ui.format.toRequiredDouble
 import com.threedreport.core.model.Service
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +19,11 @@ import kotlin.uuid.Uuid
  */
 class ServiceListViewModel(
     private val repository: ServiceRepository,
-    /** Pedidos e produtos salvos, pra saber quem usa cada serviço antes de excluir (decisão 115). */
-    val savedQuotes: StateFlow<List<SavedQuote>> = MutableStateFlow(emptyList()),
+    /**
+     * Pedidos e produtos salvos, inclusive os da lixeira, pra saber quem usa cada serviço antes de excluir
+     * (decisão 115).
+     */
+    private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
 ) {
 
     val services: StateFlow<List<Service>> = repository.services
@@ -58,8 +63,7 @@ class ServiceListViewModel(
 
         result.fold(
             onSuccess = { service ->
-                val archived = repository.services.value.find { it.id == service.id }?.archived == true
-                if (current.id == null) repository.add(service) else repository.update(service.copy(archived = archived))
+                if (current.id == null) repository.add(service) else repository.updateKeepingArchived(service)
                 formState.value = null
             },
             onFailure = { formState.value = current.copy(errorMessage = it.message) },
@@ -67,13 +71,10 @@ class ServiceListViewModel(
     }
 
     /** Quantos pedidos e produtos usam o serviço [id]. */
-    fun usageCount(id: String): Int = CatalogUsage.service(id, savedQuotes.value)
+    fun usageCount(id: String): Int = CatalogUsage.service(id, usageQuotes())
 
     /** Arquiva (ou restaura) o serviço [id] (decisão 115). */
-    fun setArchived(id: String, archived: Boolean) {
-        val service = repository.services.value.find { it.id == id } ?: return
-        repository.update(service.copy(archived = archived))
-    }
+    fun setArchived(id: String, archived: Boolean) = repository.setArchived(id, archived)
 
     fun delete(id: String) {
         repository.delete(id)

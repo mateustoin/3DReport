@@ -27,12 +27,14 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class Service(
-    val id: String,
+    override val id: String,
     val name: String,
     val suggestedPrice: Double? = null,
     val chargedPerOrder: Boolean = false,
-    val archived: Boolean = false,
-) {
+    override val archived: Boolean = false,
+) : Archivable<Service> {
+    override fun withArchived(archived: Boolean): Service = copy(archived = archived)
+
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
         require(suggestedPrice == null || suggestedPrice >= 0) { "suggestedPrice não pode ser negativo" }

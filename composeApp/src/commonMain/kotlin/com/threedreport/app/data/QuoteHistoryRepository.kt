@@ -129,6 +129,9 @@ interface QuoteHistoryRepository {
 
     /** Chaves de anexos em uso por algum orçamento (inclusive os na lixeira, que podem voltar). */
     fun referencedAttachments(): Set<String>
+
+    /** Os orçamentos vivos e os na lixeira, que podem voltar (pra contar quem usa um cadastro, decisão 115). */
+    fun quotesIncludingTrash(): List<SavedQuote>
 }
 
 /** Os dados de um orçamento que não mudam o preço (ver [QuoteHistoryRepository.updateDetails]). */
@@ -312,6 +315,8 @@ class StoredQuoteHistoryRepository(
         .flatMapTo(HashSet()) { saved ->
             listOfNotNull(saved.photoFileName, saved.stlFileName) + saved.quote.prints.mapNotNull { it.job.thumbnailFileName }
         }
+
+    override fun quotesIncludingTrash(): List<SavedQuote> = collection.allRecords.mapNotNull { it.data }
 
     private fun store(file: PickedFile): String = attachments.put(file.bytes, file.fileName)
 

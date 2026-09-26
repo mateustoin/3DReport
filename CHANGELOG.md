@@ -5,6 +5,12 @@ baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e o
 projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 [docs/decisions.md](docs/decisions.md), que revisa a decisão 27).
 
+## [Não publicado]
+
+### Corrigido
+- Excluir um filamento, impressora, serviço ou canal usado só por pedidos na lixeira agora também
+  sugere arquivar: esses pedidos ainda podem ser restaurados.
+
 ## [2.1.0] - 2026-09-25
 
 Primeira versão publicada da linha 2. Ela traz também tudo o que está na 2.0.0, logo abaixo, que não

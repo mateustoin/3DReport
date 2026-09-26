@@ -27,11 +27,13 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class SalesChannel(
-    val id: String,
+    override val id: String,
     val name: String,
     val feeRate: Double,
-    val archived: Boolean = false,
-) {
+    override val archived: Boolean = false,
+) : Archivable<SalesChannel> {
+    override fun withArchived(archived: Boolean): SalesChannel = copy(archived = archived)
+
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
         require(feeRate >= 0 && feeRate < 1) { "feeRate deve estar entre 0 (inclusive) e 1 (exclusive): $feeRate" }
