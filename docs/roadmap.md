@@ -1752,7 +1752,7 @@ funciona hoje.
     (prévia grande ao compartilhar o link, em vez de miniatura). Ainda vale um
     banner dedicado (1200×630, nome do app + composição de telas) no lugar da
     screenshot crua, se quiser refinar mais a prévia de compartilhamento —
-    ideia registrada, não crítica.
+    ideia registrada, não crítica. **Feito na decisão 120** (`og-banner.png`).
   - **Prints refeitos (decisão 90, 2026-09-23):** os três prints estavam
     numa versão de meses antes (sem duas colunas, canais, prazo, ícones).
     Foram gerados de novo pelo próprio app, renderizado sem janela
@@ -1770,6 +1770,14 @@ funciona hoje.
   chegaria a quem usa o app depois de criar a tag e publicar o rascunho
   que o workflow de release gera (decisão 33). Levantado na auditoria de
   2026-09-23.
+- [x] **Site pronto pra divulgação da 2.1** (decisão 120, 2026-09-26). Prints
+  da 2.1 gerados por `./gradlew :composeApp:renderScreenshots` (gerador agora
+  commitado), banner de compartilhamento 1200x630, página de imprensa
+  (`site/imprensa.html`), contagem de visitas sem cookies (GoatCounter, só no
+  site) e seção de vídeo com o player carregando só no clique, escondida até
+  o vídeo de apresentação sair. **Pendente do responsável:** criar a conta
+  `3dreport` no GoatCounter e, quando o vídeo sair, passar o ID pra tirar o
+  `hidden` da seção.
 
 ## 3. Instaladores desktop
 

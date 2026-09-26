@@ -70,6 +70,24 @@ kotlin {
     }
 }
 
+// Gera os prints do site (decisão 120) rodando só o teste de ScreenshotRenderer, com o mesmo classpath e
+// framework de teste do `jvmTest` de sempre. Sempre roda de novo (não é um teste que precise ficar em
+// cache) e recebe o caminho de saída e o da pasta de G-codes reais opcional vindos de fora, pra não
+// hardcodar caminho de máquina nenhuma no código.
+val renderScreenshots by tasks.registering(Test::class) {
+    group = "documentation"
+    description = "Gera os prints do site (site/assets/screenshots) renderizando o app com dados de exemplo."
+    val jvmTest = tasks.named<Test>("jvmTest").get()
+    testClassesDirs = jvmTest.testClassesDirs
+    classpath = jvmTest.classpath
+    filter { includeTestsMatching("com.threedreport.app.screenshots.ScreenshotRenderer.renderScreenshots") }
+    systemProperty("screenshots.out", rootProject.layout.projectDirectory.dir("site/assets/screenshots").asFile.absolutePath)
+    systemProperty("screenshots.iconPath", project.layout.projectDirectory.file("packaging/icons/icon.png").asFile.absolutePath)
+    providers.gradleProperty("screenshots.gcodes").orNull?.let { systemProperty("screenshots.gcodes", it) }
+    maxHeapSize = "2g" // alguns G-codes reais de exemplo passam de 50 MB
+    outputs.upToDateWhen { false }
+}
+
 compose.desktop {
     application {
         mainClass = "com.threedreport.app.MainKt"

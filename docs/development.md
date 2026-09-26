@@ -73,6 +73,23 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
   momento em que é criado, e um campo de classe é avaliado antes do
   `@BeforeTest` rodar.
 
+## Prints do site
+
+Os prints de `site/assets/screenshots/` e o banner `site/assets/og-banner.png`
+saem do próprio app, renderizado sem janela com dados de exemplo fictícios
+(decisão 120). Quando a interface mudar, gere de novo:
+
+```bash
+# Com fotos: aponte pra uma pasta com G-codes que tenham miniatura
+./gradlew :composeApp:renderScreenshots -Pscreenshots.gcodes=/caminho/dos/gcodes
+
+# Sem fotos
+./gradlew :composeApp:renderScreenshots
+```
+
+Confira cada imagem antes de commitar. O teste só roda por essa task: no
+`./gradlew build` ele não faz nada.
+
 ## Fluxo de mudanças
 
 1. Decisões de UI/UX, arquitetura, organização e funcionalidades são propostas e

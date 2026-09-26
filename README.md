@@ -105,10 +105,17 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 ## Screenshots
 
 <p align="center">
-  <img src="site/assets/screenshots/orcamento.png" width="32%" alt="Tela de Orçamento do 3DReport, com cálculo de valor de produção e venda">
-  <img src="site/assets/screenshots/historico.png" width="32%" alt="Tela de Pedidos do 3DReport">
-  <img src="site/assets/screenshots/pdf.png" width="32%" alt="Exemplo de PDF de orçamento exportado pelo 3DReport">
+  <img src="site/assets/screenshots/orcamento.png" width="49%" alt="Tela de Orçamento do 3DReport: um pedido com duas impressões, o preço de venda e de onde vem cada parte dele">
+  <img src="site/assets/screenshots/pedidos.png" width="49%" alt="Tela de Pedidos do 3DReport no modo Kanban, com os pedidos separados por andamento">
+  <img src="site/assets/screenshots/dashboard.png" width="49%" alt="Dashboard do 3DReport com vendas, lucro, lucro por hora de máquina e as peças que mais deram lucro">
+  <img src="site/assets/screenshots/catalogo.png" width="49%" alt="Catálogo de produtos do 3DReport, com categorias e o botão de vender">
+  <img src="site/assets/screenshots/pdf.png" width="49%" alt="PDF de orçamento gerado pelo 3DReport, com foto da peça, prazo e a marca da loja">
+  <img src="site/assets/screenshots/whatsapp.png" width="24%" alt="Imagem quadrada de orçamento pra mandar no WhatsApp">
 </p>
+
+Os prints saem do próprio app, com dados de exemplo (ver [development.md](docs/development.md#prints-do-site)).
+Textos prontos, fatos e imagens pra quem quiser escrever sobre o projeto estão na
+[página de imprensa](https://mateustoin.github.io/3DReport/imprensa.html).
 
 ## Apoie o projeto
 
