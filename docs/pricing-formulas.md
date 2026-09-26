@@ -95,7 +95,7 @@ CUSTO REFEITO      = Σ impressões (custo_impressão) · quantidade + trabalho_
 falhas             = CUSTO REFEITO · taxa_falhas
 
 VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
-PREÇO BASE         = produção · (1 + margem_lucro)
+PREÇO BASE         = (produção − trabalho_pedido) · (1 + margem_lucro) + trabalho_pedido
 
 deduções           = taxa_do_canal + imposto
 extras             = serviços_por_peça · quantidade + serviços_por_pedido + frete
@@ -145,6 +145,18 @@ Por isso existem as duas formas, e elas são independentes (decisão 93):
 Quem conta o acabamento nos minutos deixa a taxa em 0, pra não cobrar o mesmo
 trabalho duas vezes. Configurar o valor da hora nunca baixa o preço: ele só
 soma mão de obra.
+
+**A margem não incide sobre a hora de trabalho (decisão 118).** O trabalho
+entra no preço pelo valor dele: 40 min a R$ 30,00/h somam R$ 20,00 à venda,
+e não R$ 40,00 com uma margem de 100%. O valor da sua hora já é o que você
+quer ganhar por ela; passar a margem por cima dobrava a hora e levava a um
+preço que o cliente não paga. A margem continua sobre todo o resto, inclusive
+a reserva de falha e o administrativo. O trabalho segue sendo custo de
+produção, então o mínimo pra não ter prejuízo continua cobrindo a sua hora, e
+canal e imposto continuam incidindo sobre ele, porque incidem sobre tudo o que
+o cliente paga. A "margem obtida" é o lucro sobre a produção sem o trabalho,
+pra bater com a margem configurada quando o preço é o de tabela. Até a 2.1.0,
+a margem incidia sobre a produção inteira, trabalho incluso.
 
 Até a v1.38.0, informar o valor da hora zerava a taxa de acabamento sozinho,
 e o preço caía até alguém preencher os minutos. Na atualização para a 1.39.0,
@@ -268,7 +280,7 @@ verdade do orçamento, e não um número de simulação à parte:
 ```
 preço_da_peça  = preço_fechado − serviços − frete
 LUCRO          = preço_fechado · (1 − deduções) − serviços − frete − produção
-MARGEM OBTIDA  = lucro / produção
+MARGEM OBTIDA  = lucro / (produção − trabalho_pedido)
 ```
 
 O custo de produção não muda, então um preço abaixo dele vira lucro negativo.
@@ -349,9 +361,9 @@ mensal e 200 h de impressão por mês:
 | Acabamento | R$ 0,00 (taxa em 0, entra nos minutos) |
 | Falhas (10% do custo refeito) | R$ 4,00 |
 | **Produção** | **R$ 44,05** |
-| **Venda** | **R$ 88,10** |
+| **Venda** | **R$ 68,10** (margem sobre os R$ 24,05 que não são trabalho, mais os R$ 20,00 da hora) |
 
-O salto de R$ 17,02 para R$ 88,10 não é o app ficando caro: é o custo que já
+O salto de R$ 17,02 para R$ 68,10 não é o app ficando caro: é o custo que já
 existia e não estava sendo cobrado de ninguém. As 3,17 h de impressão e os 40
 min de trabalho sempre estiveram lá — só saíam do seu bolso em vez do bolso do
 cliente. Se o seu mercado não paga esse valor, o caminho é reduzir tempo de

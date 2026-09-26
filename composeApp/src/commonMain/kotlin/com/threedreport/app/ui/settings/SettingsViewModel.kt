@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * ViewModel da tela de Configurações gerais.
  *
  * Edição em rascunho: as mudanças só valem para o resto do app depois de
- * [save], que valida os campos e grava em [SettingsRepository].
+ * [save], que valida os campos e grava em [SettingsRepository], ou somem com [discard].
  */
 class SettingsViewModel(private val settingsRepository: SettingsRepository) {
 
@@ -45,6 +45,11 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository) {
         val wasClean = !hasUnsavedChanges
         baseline = saved
         if (wasClean) state.value = saved.toUiState()
+    }
+
+    /** Volta o formulário pro que está gravado ("Descartar" da barra de alterações, decisão 112). */
+    fun discard() {
+        state.value = baseline.toUiState()
     }
 
     /** Chamado depois de o aviso de sucesso aparecer, pra um novo salvamento poder avisar de novo. */

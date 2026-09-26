@@ -12,6 +12,8 @@ import kotlinx.serialization.Serializable
  * @property printerPowerWatts consumo médio da impressora, em W.
  * @property maintenanceCostPerHour custo de manutenção/desgaste por hora de impressão, em R$.
  * @property machineInvestment dados para diluir o valor da máquina nas horas de impressão.
+ * @property archived arquivado (decisão 115): some das escolhas de um orçamento novo, mas continua no
+ *   cadastro pra quem já usou. Pedidos reabertos e produtos do catálogo continuam achando ele.
  */
 @Serializable
 data class PrinterProfile(
@@ -20,6 +22,7 @@ data class PrinterProfile(
     val printerPowerWatts: Double,
     val maintenanceCostPerHour: Double,
     val machineInvestment: MachineInvestment,
+    val archived: Boolean = false,
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }

@@ -41,9 +41,9 @@
       {"@type": "HowToStep", "name": "Cadastre sua impressora", "text": "Em Impressoras, informe consumo de energia, custo de manutenção por hora e o investimento da máquina."},
       {"@type": "HowToStep", "name": "Cadastre seu filamento", "text": "Em Filamentos, informe marca, preço por kg, densidade e as cores disponíveis em estoque."},
       {"@type": "HowToStep", "name": "Ajuste as configurações do negócio", "text": "Em Configurações, defina preço do kWh, valor da sua hora de trabalho, custo fixo mensal, reserva para falhas, imposto, canais de venda, custo administrativo e margem de lucro."},
-      {"@type": "HowToStep", "name": "Gere o orçamento", "text": "Arraste o G-code do fatiador pra janela (ou, na aba Orçamento, escolha o filamento e a impressora e informe o comprimento de filamento e o tempo de impressão de uma peça) e informe a quantidade que o cliente quer."},
+      {"@type": "HowToStep", "name": "Gere o orçamento", "text": "Arraste o G-code do fatiador pra janela (ou, na tela Orçamento, escolha o filamento e a impressora e informe o comprimento de filamento e o tempo de impressão de uma peça) e informe a quantidade que o cliente quer."},
       {"@type": "HowToStep", "name": "Salve e exporte", "text": "Salve o orçamento (com nome, foto, cliente e link do modelo opcionais) e envie ao cliente: PDF, texto copiado, conversa do WhatsApp já preenchida ou imagem quadrada pro status."},
-      {"@type": "HowToStep", "name": "Acompanhe a venda até a entrega", "text": "No Histórico, atualize o status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) conforme a venda avança, e acompanhe o total vendido no Dashboard."}
+      {"@type": "HowToStep", "name": "Acompanhe a venda até a entrega", "text": "Em Pedidos, atualize o status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) conforme a venda avança, e acompanhe o total vendido no Dashboard."}
     ]
   }
   </script>
@@ -98,7 +98,7 @@
             <div class="step-number">2</div>
             <div>
               <h3>Cadastre sua impressora</h3>
-              <p>Na aba <strong>Impressoras</strong>, cadastre um perfil com o consumo de energia (W), o custo de manutenção por hora e o investimento da máquina (valor, prazo de retorno, dias e horas de uso). Você pode cadastrar mais de uma impressora e escolher qual usar em cada orçamento.</p>
+              <p>Na tela <strong>Impressoras</strong>, cadastre um perfil com o consumo de energia (W), o custo de manutenção por hora e o investimento da máquina (valor, prazo de retorno, dias e horas de uso). Você pode cadastrar mais de uma impressora e escolher qual usar em cada orçamento.</p>
               <p>O botão <strong>Manutenção</strong> de cada impressora guarda o que precisa ser feito de tempos em tempos (trocar o bico a cada 200 h, lubrificar os eixos a cada 100 h), cada um com o seu intervalo. As horas vêm dos pedidos Prontos ou Entregues naquela impressora; calibração, reimpressão e uso próprio você lança como horas avulsas. Quando algo está perto ou vencido, a linha da impressora avisa. "Feito hoje" registra no diário e recomeça o contador.</p>
             </div>
           </div>
@@ -106,7 +106,7 @@
             <div class="step-number">3</div>
             <div>
               <h3>Cadastre seu filamento</h3>
-              <p>Na aba <strong>Filamentos</strong>, informe a marca, o preço por quilo, a densidade e as cores disponíveis (com controle manual de "Em estoque"/"Acabou" por cor).</p>
+              <p>Na tela <strong>Filamentos</strong>, informe a marca, o preço por quilo, a densidade e as cores disponíveis (com controle manual de "Em estoque"/"Acabou" por cor).</p>
             </div>
           </div>
           <div class="step">
@@ -120,21 +120,21 @@
             <div class="step-number">5</div>
             <div>
               <h3>Gere o orçamento</h3>
-              <p>O jeito mais rápido é <strong>arrastar o G-code</strong> exportado pelo fatiador pra janela do app: comprimento, tempo, foto e configurações de impressão entram sozinhos, e a impressora e o filamento já vêm escolhidos quando o nome bate com o que você cadastrou. Se preferir, na aba <strong>Orçamento</strong>, escolha o filamento e a impressora cadastrados e informe o comprimento de filamento (em metros, direto do fatiador) e o tempo de impressão (em minutos). O app calcula o valor de produção e sugere o valor de venda com sua margem. Se você informou o valor da sua hora em Configurações, informe também o seu tempo de trabalho no pedido inteiro, somando tudo: fatiar, montar a mesa, tirar da mesa, remover suporte, lixar, pintar, embalar. Para vender várias peças iguais, informe a quantidade: os números de filamento e tempo continuam sendo de uma peça, e o app multiplica, mostrando o total e o preço de cada unidade. Se o cliente propuser um valor, digite no campo de negociação: o app mostra quanto sobra e avisa se o preço não cobrir o custo. O app guarda o preço da sua tabela junto do preço fechado, e o Dashboard mostra quanto de desconto você deu no período.</p>
+              <p>O jeito mais rápido é <strong>arrastar o G-code</strong> exportado pelo fatiador pra janela do app: comprimento, tempo, foto e configurações de impressão entram sozinhos, e a impressora e o filamento já vêm escolhidos quando o nome bate com o que você cadastrou. Se preferir, na tela <strong>Orçamento</strong>, escolha o filamento e a impressora cadastrados e informe o comprimento de filamento (em metros, direto do fatiador) e o tempo de impressão (em minutos). O app calcula o valor de produção e sugere o valor de venda com sua margem. Se você informou o valor da sua hora em Configurações, informe também o seu tempo de trabalho no pedido inteiro, somando tudo: fatiar, montar a mesa, tirar da mesa, remover suporte, lixar, pintar, embalar. Para vender várias peças iguais, informe a quantidade: os números de filamento e tempo continuam sendo de uma peça, e o app multiplica, mostrando o total e o preço de cada unidade. Se o cliente propuser um valor, digite no campo de negociação: o app mostra quanto sobra e avisa se o preço não cobrir o custo. O app guarda o preço da sua tabela junto do preço fechado, e o Dashboard mostra quanto de desconto você deu no período.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-number">6</div>
             <div>
               <h3>Salve e exporte</h3>
-              <p>Salve o orçamento (nome, foto e link do modelo são opcionais) e, na aba <strong>Histórico</strong>, exporte em PDF, copie um texto resumido, abra direto a conversa do cliente no WhatsApp com o orçamento já escrito, ou gere uma imagem quadrada com foto e preço para mandar no zap e postar no status. Ao salvar, você pode escolher o prazo de entrega com um clique (+3, +7 ou +15 dias, ou uma data no calendário): ele sai em destaque no PDF e na mensagem, e o Histórico avisa quando o prazo vence. Em Configurações dá pra mostrar também o tempo de impressão no PDF e na mensagem.</p>
+              <p>Salve o orçamento (nome, foto e link do modelo são opcionais) e, na tela <strong>Pedidos</strong>, exporte em PDF, copie um texto resumido, abra direto a conversa do cliente no WhatsApp com o orçamento já escrito, ou gere uma imagem quadrada com foto e preço para mandar no zap e postar no status. Ao salvar, você pode escolher o prazo de entrega com um clique (+3, +7 ou +15 dias, ou uma data no calendário): ele sai em destaque no PDF e na mensagem, e Pedidos avisa quando o prazo vence. Em Configurações dá pra mostrar também o tempo de impressão no PDF e na mensagem.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-number">7</div>
             <div>
               <h3>Acompanhe a venda até a entrega</h3>
-              <p>No <strong>Histórico</strong>, atualize o status do pedido conforme a venda avança: Orçado → Aprovado → Em impressão → Pronto → Entregue. O <strong>Dashboard</strong> conta como venda o que o cliente aprovou e mostra, por período, o total vendido, o lucro, quanto cada hora de máquina e de trabalho rendeu e as peças que mais dão lucro.</p>
+              <p>Em <strong>Pedidos</strong>, atualize o status do pedido conforme a venda avança: Orçado → Aprovado → Em impressão → Pronto → Entregue. O <strong>Dashboard</strong> conta como venda o que o cliente aprovou e mostra, por período, o total vendido, o lucro, quanto cada hora de máquina e de trabalho rendeu e as peças que mais dão lucro.</p>
             </div>
           </div>
         </div>
@@ -160,11 +160,11 @@
           </div>
           <div class="card">
             <h3>Produtos do catálogo</h3>
-            <p>Ainda não tem cliente, ou quer guardar as peças que oferece? Antes de salvar, escolha <strong>"Produto do catálogo"</strong> em vez de "Pedido de cliente". O produto guarda o preço, a foto e os arquivos, sem cliente, prazo nem frete, e fica no Histórico, em <strong>Produtos</strong>, fora do Kanban e do Dashboard. Dá pra anunciar um preço redondo (R$ 18,90 no lugar de R$ 18,37) e dar uma categoria, como Chaveiros ou Decoração. Quando o filamento sobe, o card avisa que os custos mudaram, e <strong>"Atualizar preço"</strong> mostra o antes e o depois. Quando alguém comprar, clique em <strong>"Vender"</strong>: o Orçamento abre preenchido pra criar o pedido, e o produto continua no catálogo. "Exportar catálogo" gera o PDF com todos os produtos, separado por categoria. Se você escolheu "Estou começando" na primeira vez (ou em Configurações, em "Como você usa o app"), o app já salva no catálogo, e o Dashboard mostra qual produto vale a pena oferecer primeiro enquanto ainda não há vendas.</p>
+            <p>Ainda não tem cliente, ou quer guardar as peças que oferece? Antes de salvar, escolha <strong>"Produto do catálogo"</strong> em vez de "Pedido de cliente". O produto guarda o preço, a foto e os arquivos, sem cliente, prazo nem frete, e fica na tela <strong>Catálogo</strong>, fora do Kanban e do Dashboard. Dá pra anunciar um preço redondo (R$ 18,90 no lugar de R$ 18,37) e dar uma categoria, como Chaveiros ou Decoração. Quando o filamento sobe, o card avisa que os custos mudaram, e <strong>"Atualizar preço"</strong> mostra o antes e o depois. Quando alguém comprar, clique em <strong>"Vender"</strong>: o Orçamento abre preenchido pra criar o pedido, e o produto continua no catálogo. "Exportar catálogo" gera o PDF com todos os produtos, separado por categoria. Se você escolheu "Estou começando" na primeira vez (ou em Configurações, em "Como você usa o app"), o app já salva no catálogo, e o Dashboard mostra qual produto vale a pena oferecer primeiro enquanto ainda não há vendas.</p>
           </div>
           <div class="card">
             <h3>Dashboard</h3>
-            <p>Acompanhe na aba Dashboard, filtrando por período, o total vendido, o lucro, o lucro por hora de máquina, quanto o seu trabalho rendeu por hora (comparado com a hora que você configurou), as peças que mais deram lucro e os clientes que mais puxam o preço pra baixo. Orçamento que o cliente ainda não aprovou fica fora das somas e aparece numa linha à parte, com a taxa de conversão.</p>
+            <p>Acompanhe na tela Dashboard, filtrando por período, o total vendido, o lucro, o lucro por hora de máquina, quanto o seu trabalho rendeu por hora (comparado com a hora que você configurou), as peças que mais deram lucro e os clientes que mais puxam o preço pra baixo. Orçamento que o cliente ainda não aprovou fica fora das somas e aparece numa linha à parte, com a taxa de conversão.</p>
           </div>
           <div class="card">
             <h3>Visualizador 3D do STL</h3>

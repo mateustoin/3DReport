@@ -1,7 +1,9 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.parseWholeNumber
+import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.QuoteKind
 
 /**
@@ -25,8 +27,8 @@ data class FilamentInput(
 )
 
 /**
- * Uma impressão do pedido como está na tela: uma mesa, numa impressora (ver `PrintJob`). A 2.0 mostra
- * só a primeira; o estado já é uma lista pra o pedido com várias impressões não refazer tudo.
+ * Uma impressão do pedido como está na tela: uma mesa, numa impressora (ver `PrintJob`). Com uma só, a
+ * tela é a de sempre; com mais, cada uma vira um cartão (decisão 114).
  *
  * @property filaments nunca vazia. Com uma linha só, a tela é a de sempre.
  * @property printTimeText tempo de uma rodada, como digitado ("3h20", "200"; ver `parseDurationMinutes`).
@@ -36,7 +38,12 @@ data class FilamentInput(
  *   "Desfazer" devolver tudo de uma vez (inclusive as linhas de filamento).
  * @property missingPrinterName nome da impressora de um orçamento reaberto que não está mais no
  *   cadastro (ver [FilamentInput.missingFilamentName]).
- * @property id identifica a impressão enquanto a tela está aberta (ver [FilamentInput.id]).
+ * @property settings configurações de fatiamento desta mesa (decisão 106), do G-code ou digitadas.
+ * @property thumbnail miniatura do G-code desta mesa, guardada com a impressão ao salvar.
+ * @property createdByImport a impressão nasceu de um G-code arrastado como impressão nova: desfazer a
+ *   importação tira a impressão, em vez de deixar um cartão vazio.
+ * @property id identifica a impressão enquanto a tela está aberta (ver [FilamentInput.id]). Tudo que
+ *   mexe numa impressão acha ela pelo id: a leitura de um G-code termina depois, e a lista pode ter mudado.
  */
 data class PrintInput(
     val name: String = "",
@@ -47,10 +54,28 @@ data class PrintInput(
     val gcodeImportMessage: String? = null,
     val beforeGCode: PrintInput? = null,
     val missingPrinterName: String? = null,
+    val settings: PrintSettings = PrintSettings(),
+    val thumbnail: PickedFile? = null,
+    val createdByImport: Boolean = false,
     val id: Int = 0,
 ) {
+    /** Nada preenchido ainda: um G-code solto vai pra ela, em vez de abrir outra impressão. */
+    val isBlank: Boolean
+        get() = printTimeText.isBlank() && filaments.all { it.lengthText.isBlank() } && beforeGCode == null
+
+    /** O que muda o preço: sem nome, configurações, miniatura e mensagens (ver [QuoteInputState.pricingKey]). */
+    fun pricingKey(): PrintInput = copy(
+        name = "",
+        gcodeImportMessage = null,
+        beforeGCode = null,
+        settings = PrintSettings(),
+        thumbnail = null,
+        createdByImport = false,
+    )
+
+    /** Quantas vezes a mesa roda; vazio ou inválido conta como 1 (o inválido ainda vira erro no campo). */
     val runs: Int
-        get() = runsText.trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
+        get() = parseWholeNumber(runsText)?.takeIf { it >= 1 } ?: 1
 
     /** Tempo de uma rodada em minutos, ou `null` se vazio ou ilegível. */
     val printTimeMinutes: Double?
@@ -119,6 +144,12 @@ data class QuoteInputState(
      */
     val isLaborTimeMissing: Boolean
         get() = (parseDurationMinutes(laborMinutesText) ?: 0.0) <= 0.0
+
+    /**
+     * As entradas sem o que não muda o preço (nome da impressão, configurações, miniatura). Reabrindo um
+     * pedido, mudar só isso mantém o preço congelado (decisão 108).
+     */
+    fun pricingKey(): QuoteInputState = copy(prints = prints.map { it.pricingKey() })
 }
 
 /**

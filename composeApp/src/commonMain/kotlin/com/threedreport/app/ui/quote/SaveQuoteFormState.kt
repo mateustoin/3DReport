@@ -1,7 +1,6 @@
 package com.threedreport.app.ui.quote
 
 import com.threedreport.app.platform.PickedFile
-import com.threedreport.core.model.PrintSettings
 
 /** Campos opcionais preenchidos ao salvar o orçamento atual no histórico. */
 data class SaveQuoteFormState(
@@ -16,8 +15,6 @@ data class SaveQuoteFormState(
     val clientContact: String = "",
     /** Cliente do cadastro escolhido na sugestão (decisão 106), ou `null` quando foi digitado. */
     val clientId: String? = null,
-    /** Configurações de fatiamento (altura de camada, preenchimento, suporte), opcionais — ver KDoc de [PrintSettings]. */
-    val printSettings: PrintSettings = PrintSettings(),
     /** Prazo de entrega prometido ao cliente (dias desde 01/01/1970), ou `null` — ver `SavedQuote.deliveryDateEpochDay`. */
     val deliveryDateEpochDay: Long? = null,
     val savedConfirmation: Boolean = false,

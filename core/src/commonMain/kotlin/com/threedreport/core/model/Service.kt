@@ -22,6 +22,8 @@ import kotlinx.serialization.Serializable
  *   `false` multiplica pela quantidade (pintura, lixamento: trabalho peça a
  *   peça), `true` cobra uma vez pelo pedido (entrega, modelagem). O
  *   orçamento pode trocar.
+ * @property archived arquivado (decisão 115): some das escolhas de um orçamento novo, mas continua no
+ *   cadastro pra quem já usou. Pedidos reabertos e produtos do catálogo continuam achando ele.
  */
 @Serializable
 data class Service(
@@ -29,6 +31,7 @@ data class Service(
     val name: String,
     val suggestedPrice: Double? = null,
     val chargedPerOrder: Boolean = false,
+    val archived: Boolean = false,
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }

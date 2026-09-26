@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * ViewModel da tela de Histórico: lista os orçamentos salvos e permite excluir, baixar a foto,
+ * ViewModel das telas de Pedidos e Catálogo: lista os orçamentos salvos e permite excluir, baixar a foto,
  * exportar um orçamento por vez, ou selecionar vários e exportá-los juntos num PDF só (um orçamento
  * por página).
  *
@@ -80,6 +80,10 @@ class QuoteHistoryViewModel(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
     private val background: CoroutineDispatcher = Dispatchers.Unconfined,
     private val main: CoroutineDispatcher = Dispatchers.Unconfined,
+    /** Pedidos ou Catálogo (decisão 111): cada tela tem o seu ViewModel, com o tipo fixo. */
+    kind: QuoteKind = QuoteKind.ORDER,
+    /** Leva pra tela de Pedidos, pro "Ver pedidos" do aviso depois de transformar um produto em pedido. */
+    private val showOrders: () -> Unit = {},
 ) {
 
     val savedQuotes: StateFlow<List<SavedQuote>> = repository.savedQuotes
@@ -137,22 +141,12 @@ class QuoteHistoryViewModel(
     private val selectedIdsState = MutableStateFlow<Set<String>>(emptySet())
     val selectedIds: StateFlow<Set<String>> = selectedIdsState.asStateFlow()
 
-    private val filterState = MutableStateFlow(HistoryFilter())
+    private val filterState = MutableStateFlow(HistoryFilter(kind = kind))
     val filter: StateFlow<HistoryFilter> = filterState.asStateFlow()
 
     fun setSearchQuery(query: String) = filterState.update { it.copy(query = query) }
     fun setStatusFilter(status: OrderStatus?) = filterState.update { it.copy(status = status) }
     fun setPeriodFilter(period: PeriodPreset) = filterState.update { it.copy(period = period) }
-
-    /**
-     * Troca entre Pedidos e Produtos (decisão 101). A seleção é esvaziada, pra um PDF não levar
-     * junto itens marcados na outra lista sem ninguém ver, e o filtro de status sai, porque produto
-     * não tem andamento.
-     */
-    fun setKindFilter(kind: QuoteKind) {
-        filterState.update { it.copy(kind = kind, status = null, category = CategoryFilter.All) }
-        clearSelection()
-    }
 
     fun setCategoryFilter(category: CategoryFilter) = filterState.update { it.copy(category = category) }
 
@@ -293,7 +287,7 @@ class QuoteHistoryViewModel(
         val product = savedQuotes.value.find { it.id == id } ?: return
         repository.convertToOrder(id)
         selectedIdsState.update { it - id }
-        notify("\"${product.name}\" agora é um pedido, em Orçado.", actionLabel = "Ver pedidos", action = { setKindFilter(QuoteKind.ORDER) })
+        notify("\"${product.name}\" agora é um pedido, em Orçado.", actionLabel = "Ver pedidos", action = showOrders)
     }
 
     fun updatePrintSettings(id: String, printSettings: PrintSettings?) = repository.updatePrintSettings(id, printSettings)

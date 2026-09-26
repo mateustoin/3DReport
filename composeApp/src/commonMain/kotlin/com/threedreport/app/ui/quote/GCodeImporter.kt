@@ -1,10 +1,10 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.format.toDurationInputText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Filament
-import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.slicer.CatalogMatcher
 import com.threedreport.core.slicer.ExtruderMatch
@@ -14,19 +14,11 @@ import com.threedreport.core.slicer.PrinterMatch
 import kotlin.math.round
 
 /**
- * O que um G-code muda numa impressão (ver [GCodeImporter.apply]).
- *
- * @property print a impressão com os campos preenchidos e o estado de antes guardado pra desfazer.
- * @property printSettings as configurações de fatiamento que o arquivo trouxe, ou `null` sem nenhuma.
- */
-data class GCodeImport(val print: PrintInput, val printSettings: PrintSettings?)
-
-/**
  * Monta uma impressão a partir dos metadados de um G-code (decisão 89): comprimento, tempo e
  * configurações de impressão, e escolhe a impressora e o filamento que o fatiador gravou **quando batem
  * com os cadastrados** ([CatalogMatcher]); o que só parece ou não está cadastrado vira explicação na
- * mensagem, nunca escolha. Função pura, fora do ViewModel (decisão 108), pra ser testada sozinha e
- * reaproveitada quando um pedido tiver várias impressões.
+ * mensagem, nunca escolha. Função pura, fora do ViewModel (decisão 108): cada impressão do pedido
+ * importa o seu G-code (decisão 114).
  */
 object GCodeImporter {
 
@@ -42,7 +34,7 @@ object GCodeImporter {
         printers: List<PrinterProfile>,
         photoApplied: Boolean,
         newRowId: () -> Int,
-    ): GCodeImport {
+    ): PrintInput {
         val inStock = allFilaments.filter { it.hasStockAvailable }
         val preferredFilamentIds = current.filaments.mapNotNull { it.filamentId }.ifEmpty { listOfNotNull(inStock.firstOrNull()?.id) }
         val printerMatch = CatalogMatcher.matchPrinter(metadata, printers)
@@ -84,22 +76,26 @@ object GCodeImporter {
             )
         }
         val keptManualRows = rows === current.filaments
-        val printSettings = PrintSettings(
-            layerHeightMm = metadata.layerHeightMm,
-            infillPercentage = metadata.infillPercentage,
-            infillPattern = metadata.infillPattern,
-            supportsEnabled = metadata.supportsEnabled,
-        ).takeUnless { it.isEmpty }
+        // As configurações ficam na impressão (decisão 106): o que o arquivo não diz continua como estava.
+        val settings = current.settings.copy(
+            layerHeightMm = metadata.layerHeightMm ?: current.settings.layerHeightMm,
+            infillPercentage = metadata.infillPercentage ?: current.settings.infillPercentage,
+            infillPattern = metadata.infillPattern ?: current.settings.infillPattern,
+            supportsEnabled = metadata.supportsEnabled ?: current.settings.supportsEnabled,
+        )
+        val thumbnail = metadata.thumbnail?.let { PickedFile("miniatura_do_gcode.${it.fileExtension}", it.bytes) }
 
-        val print = current.copy(
+        return current.copy(
             printerId = chosenPrinter?.id ?: current.printerId,
             missingPrinterName = if (chosenPrinter != null) null else current.missingPrinterName,
             filaments = rows,
             printTimeText = metadata.printTimeMinutes?.let(::formatTime) ?: current.printTimeText,
             beforeGCode = current.beforeGCode ?: current.copy(gcodeImportMessage = null),
             gcodeImportMessage = message(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows),
+            settings = settings,
+            // A miniatura é do G-code desta impressão: um arquivo sem miniatura não fica com a do anterior.
+            thumbnail = thumbnail,
         )
-        return GCodeImport(print, printSettings)
     }
 
     /**

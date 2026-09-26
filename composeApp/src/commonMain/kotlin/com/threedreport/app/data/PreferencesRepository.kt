@@ -15,6 +15,8 @@ import kotlinx.serialization.Serializable
  *   Configurações e lembrar quem nunca fez.
  * @property checkForUpdates consulta o GitHub ao abrir pra avisar de versão nova. Desligado por padrão:
  *   o app é 100% local, e só sai da máquina o que a pessoa escolheu.
+ * @property window onde a janela estava ao fechar (decisão 111), pra abrir no mesmo lugar.
+ * @property announcedUpdateVersion a última versão nova já avisada (decisão 116), pro aviso aparecer uma vez só.
  */
 @Serializable
 data class AppPreferences(
@@ -22,6 +24,21 @@ data class AppPreferences(
     val backupDirectory: String? = null,
     val lastBackupEpochMillis: Long? = null,
     val checkForUpdates: Boolean = false,
+    val window: SavedWindowBounds? = null,
+    val announcedUpdateVersion: String? = null,
+)
+
+/**
+ * Posição e tamanho da janela em pixels lógicos (os do `Dp` no desktop). Com [maximized], o retângulo é o
+ * de antes de maximizar, pra voltar a ele quando a pessoa sair do maximizado.
+ */
+@Serializable
+data class SavedWindowBounds(
+    val x: Int,
+    val y: Int,
+    val width: Int,
+    val height: Int,
+    val maximized: Boolean = false,
 )
 
 interface PreferencesRepository : DocumentRepository<AppPreferences> {

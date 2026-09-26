@@ -50,6 +50,8 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Cálculo de custo de produção e preço de venda (`core`)
 - Arraste o G-code pra janela e o orçamento se monta: comprimento, tempo, foto, configurações de impressão e, quando o nome bate com o cadastrado, a impressora e o filamento (Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer, Cura)
 - Peça multicolor (AMS, MMU): vários filamentos na mesma impressão, cada um com os seus metros e o seu preço; o G-code multicolor já preenche o consumo de cada extrusor, com purga e torre
+- Pedido com várias impressões (peça grande, diorama, várias mesas numa entrega só): cada impressão é um cartão com a própria impressora, filamentos, tempo e G-code, mas o cliente vê um item, um preço e um prazo só
+- Editar um pedido ou produto salvo acontece na própria aba de Orçamento (duas colunas), sem diálogo, com uma barra "Editando #0042" e "Cancelar edição"
 - Tela de orçamento em duas colunas — entradas de um lado, o preço, a composição e a negociação do outro
 - Quantidade por orçamento, com preço unitário e o seu tempo de trabalho informado pelo pedido inteiro (lote sai mais barato por peça)
 - Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
@@ -60,15 +62,15 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Imposto sobre a venda e frete como linha própria, sem embutir no preço da peça
 - Link do modelo clicável (abre no navegador) e peso da peça (uso interno)
 
-**Histórico & Dashboard**
-- Histórico de orçamentos — consultar, filtrar, baixar foto, excluir
+**Pedidos, Catálogo & Dashboard**
+- Pedidos (histórico de orçamentos) em tela própria: consultar, filtrar, baixar foto, excluir; pedidos com mais de uma impressão mostram "N impressões"
 - Cliente e status do pedido por orçamento
-- Produtos do catálogo separados dos pedidos: guarde peças com preço sem cliente (pra quem está começando ou monta vitrine), fora do Kanban e do Dashboard, e crie o pedido com um clique em "Vender"
+- Catálogo em tela própria, separado dos pedidos: guarde peças com preço sem cliente (pra quem está começando ou monta vitrine), fora do Kanban e do Dashboard, e crie o pedido com um clique em "Vender"
 - Dashboard que mostra o catálogo e qual peça vale a pena oferecer primeiro enquanto ainda não há vendas
 - Catálogo vivo: aviso quando os custos mudaram e o preço do produto precisa ser atualizado, preço anunciado redondo (R$ 18,90) no lugar do calculado e categorias que separam o catálogo em PDF em seções
 - Exportar em PDF ou copiar/colar (nome + valor de venda + foto no PDF)
 - Abrir a conversa no WhatsApp com o orçamento já escrito, e gerar uma imagem quadrada da peça pro zap ou pro status
-- Prazo de entrega no orçamento, em destaque no PDF, na mensagem e na imagem, com aviso no Histórico quando o prazo vence
+- Prazo de entrega no orçamento, em destaque no PDF, na mensagem e na imagem, com aviso em Pedidos quando o prazo vence
 - Exportar vários orçamentos selecionados num PDF só (um por página)
 - Catálogo/portfólio exportável em PDF (grade, várias peças por página)
 - Dashboard: o que foi vendido no período (orçamento só conta quando o cliente aprova), quanto cada hora de máquina e de trabalho rendeu, as peças que mais dão lucro e os clientes que mais pedem desconto
@@ -77,6 +79,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Cadastro de filamentos — marca, tipo de material (com densidade sugerida), várias cores e controle manual de estoque por cor
 - Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento), com catálogo pré-cadastrado das principais marcas pra escolher
 - Manutenção por impressora: cada componente com o seu intervalo em horas (trocar bico, lubrificar eixos), aviso quando está perto ou vencido, diário do que foi feito e horas de uso fora de orçamento (calibração, reimpressão)
+- Arquivar filamento, impressora, serviço ou canal de venda em uso: some das escolhas de um orçamento novo sem apagar nada, e pedidos/produtos antigos continuam calculando normalmente
 
 **Personalização do PDF**
 - Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome
@@ -85,14 +88,17 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Templates — fotos salvas da aparência do PDF (marca d'água, rodapé, borda, tempo de impressão), com indicador do template ativo; logo e contato ficam de fora, pra não se perderem ao trocar de template
 
 **Configurações & plataforma**
-- Configurações gerais do negócio (energia, valor da sua hora de trabalho, custo fixo mensal, falhas, margem)
+- Barra lateral com as telas agrupadas (Vendas, Cadastros, Configurações e Sobre); abaixo de uma certa largura de janela vira um trilho só de ícones com dica ao passar o mouse
+- Configurações em seções (Negócio e custos, Canais, Documentos pro cliente, Aparência, Dados), com uma barra "Alterações não salvas" só, no lugar de vários botões "Salvar" espalhados
 - Backup e restauração dos seus dados num arquivo `.zip` (levar pro outro computador, recuperar depois de formatar)
 - Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
 - Tema claro/escuro (segue o sistema por padrão)
-- Atalhos de teclado (navegação entre abas, salvar/limpar orçamento)
-- Confirmação antes de excluir (filamentos, impressoras, serviços, histórico)
+- Atalhos de teclado: `Ctrl`/`Cmd` + `1` a `8` pulam direto pra cada tela da barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Configurações), fora salvar/limpar orçamento
+- Confirmação antes de excluir (filamentos, impressoras, serviços, pedidos)
+- A janela lembra tamanho, posição e se estava maximizada, e volta a abrir assim (se ainda couber na tela)
+- Verificação opcional de nova versão: desligada por padrão; quando ligada, ao abrir o app a única coisa que sai da sua máquina é uma consulta à página pública de releases do GitHub, pra avisar se há uma versão mais nova
 - Persistência em disco (`~/.3dreport/`, arquivos JSON + fotos). A 2.0 mudou o formato dos dados: ao abrir, os dados da 1.x são guardados em `~/.3dreport-v1`, sem conversão e sem apagar nada
-- Versão do app + rodapé com autor/GitHub/doação + ajuda
+- Versão do app e a tela Sobre (autor, GitHub, doação e um resumo de cada tela)
 
 </details>
 
@@ -100,7 +106,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 
 <p align="center">
   <img src="site/assets/screenshots/orcamento.png" width="32%" alt="Tela de Orçamento do 3DReport, com cálculo de valor de produção e venda">
-  <img src="site/assets/screenshots/historico.png" width="32%" alt="Tela de Histórico de orçamentos do 3DReport">
+  <img src="site/assets/screenshots/historico.png" width="32%" alt="Tela de Pedidos do 3DReport">
   <img src="site/assets/screenshots/pdf.png" width="32%" alt="Exemplo de PDF de orçamento exportado pelo 3DReport">
 </p>
 

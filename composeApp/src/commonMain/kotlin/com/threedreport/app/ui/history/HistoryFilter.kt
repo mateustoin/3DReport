@@ -5,10 +5,10 @@ import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.QuoteKind
 
 /**
- * Filtro aplicado à lista do Histórico: [query] busca por nome do orçamento
+ * Filtro aplicado à lista de Pedidos ou do Catálogo: [query] busca por nome do orçamento
  * ou nome do cliente (contains, sem diferenciar maiúsculas/minúsculas),
  * [status] restringe a um andamento específico (`null` = todos), [period] é
- * um atalho de intervalo relativo a hoje. [kind] é o seletor `Pedidos | Produtos` (decisão 101):
+ * um atalho de intervalo relativo a hoje. [kind] é fixo em cada tela (decisões 101 e 111):
  * a lista mostra um tipo por vez, e o [status] só vale pra pedidos. [category] só vale pra
  * produtos (decisão 102).
  */

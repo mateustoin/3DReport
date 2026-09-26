@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.printers
 
+import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -90,11 +91,21 @@ class PrinterListViewModel(
 
         result.fold(
             onSuccess = { printer ->
-                if (current.id == null) repository.add(printer) else repository.update(printer)
+                val archived = repository.printers.value.find { it.id == printer.id }?.archived == true
+                if (current.id == null) repository.add(printer) else repository.update(printer.copy(archived = archived))
                 formState.value = null
             },
             onFailure = { formState.value = current.copy(errorMessage = it.message) },
         )
+    }
+
+    /** Quantos pedidos e produtos usam a impressora [id]. */
+    fun usageCount(id: String): Int = CatalogUsage.printer(id, savedQuotes.value)
+
+    /** Arquiva (ou restaura) a impressora [id], com a manutenção dela intacta (decisão 115). */
+    fun setArchived(id: String, archived: Boolean) {
+        val printer = repository.printers.value.find { it.id == id } ?: return
+        repository.update(printer.copy(archived = archived))
     }
 
     fun delete(id: String) {

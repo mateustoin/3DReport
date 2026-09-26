@@ -9,6 +9,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -149,6 +150,22 @@ class BrandingViewModelTest {
 
         assertNotNull(viewModel.uiState.value.logoError)
         assertNull(viewModel.uiState.value.logoBytes)
+    }
+
+    @Test
+    fun discardDropsTheEditsAndThePickedLogo() {
+        val repository = BrandingRepository()
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", tinyPng()) })
+        viewModel.update("Loja Nova")
+        viewModel.pickLogo()
+        assertTrue(viewModel.hasUnsavedChanges)
+
+        viewModel.discard()
+
+        assertFalse(viewModel.hasUnsavedChanges)
+        assertEquals("", viewModel.uiState.value.brandNameInput)
+        assertNull(viewModel.uiState.value.logoBytes)
+        assertNull(repository.branding.value.logoFileName)
     }
 
     @Test

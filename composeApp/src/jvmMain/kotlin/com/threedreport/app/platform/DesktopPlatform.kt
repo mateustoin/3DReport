@@ -1,5 +1,7 @@
 package com.threedreport.app.platform
 
+import com.threedreport.app.ExitWatchdog
+import com.threedreport.app.exitDumpFile
 import com.threedreport.app.AppLog
 import java.awt.Desktop
 import java.awt.FileDialog
@@ -101,7 +103,11 @@ object DesktopPlatform : PlatformServices {
             ?: home
     }
 
-    override fun exitApp(): Unit = exitProcess(0)
+    override fun exitApp() {
+        // Depois de restaurar um backup: as gravações já estão seguradas, e o encerramento não pode travar.
+        ExitWatchdog.arm(exitDumpFile())
+        exitProcess(0)
+    }
 
     private fun showOpenDialog(kind: FileKind): File? {
         val dialog = FileDialog(null as Frame?, kind.dialogTitle, FileDialog.LOAD)

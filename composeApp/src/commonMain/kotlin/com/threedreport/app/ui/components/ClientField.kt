@@ -34,7 +34,9 @@ fun ClientField(name: String, suggestions: List<Client>, onNameChange: (String) 
             label = { Text("Cliente (opcional)") },
             singleLine = true,
         )
-        DropdownMenu(expanded = expanded && suggestions.isNotEmpty(), onDismissRequest = { expanded = false }) {
+        // ExposedDropdownMenu, e não DropdownMenu: com a âncora editável ele abre sem tirar o foco do campo, e
+        // dá pra continuar digitando com as sugestões na tela.
+        ExposedDropdownMenu(expanded = expanded && suggestions.isNotEmpty(), onDismissRequest = { expanded = false }) {
             suggestions.forEach { client ->
                 DropdownMenuItem(
                     text = { Text(client.name + (client.contact?.let { " · $it" } ?: "")) },

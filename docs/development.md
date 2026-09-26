@@ -65,6 +65,13 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 - O motor de cálculo é validado contra os valores da planilha de referência
   ([pricing-formulas.md](pricing-formulas.md)). Toda mudança de fórmula deve
   atualizar teste **e** documentação.
+- Em `composeApp/src/jvmTest`, a pasta de dados de cada teste vem da propriedade
+  de sistema `threedreport.dataDir` (um diretório temporário por teste). Ela
+  precisa estar setada **antes** de qualquer repositório ser construído: sempre
+  em `@BeforeTest` (ou dentro do próprio teste), nunca como campo de classe
+  (`val repo = LocalStorage()...`), porque o repositório já lê a pasta no
+  momento em que é criado, e um campo de classe é avaliado antes do
+  `@BeforeTest` rodar.
 
 ## Fluxo de mudanças
 
@@ -101,8 +108,8 @@ Ao fechar uma leva, atualize a versão em **um lugar só**: `gradle.properties` 
 `APP_VERSION` a partir dele a cada build (decisão 108; antes eram dois arquivos
 mantidos à mão).
 
-A versão aparece no rodapé do app, na Ajuda, no diálogo de erro e no instalador
-nativo (`packageVersion`).
+A versão aparece na barra lateral, na tela Sobre, no diálogo de erro e no
+instalador nativo (`packageVersion`).
 
 ## Changelog
 

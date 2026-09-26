@@ -517,6 +517,32 @@ class QuoteViewModelTest {
     }
 
     @Test
+    fun editingInTheQuoteTabLeavesTheTabDraftAlone() {
+        // O App usa um ViewModel pra aba e outro pra edição (decisões 108 e 113): editar um pedido salvo
+        // no Orçamento não pode apagar o rascunho que estava lá.
+        val historyRepository = QuoteHistoryRepository()
+        val tab = viewModelWith(historyRepository = historyRepository)
+        tab.setSaveName("Pedido salvo")
+        tab.saveCurrentQuote()
+        val saved = historyRepository.savedQuotes.value.single()
+        tab.setLengthMeters("30")
+        tab.setSaveName("Rascunho")
+        val draft = tab.input.value
+
+        val editing = viewModelWith(historyRepository = historyRepository)
+        editing.loadForEditing(saved)
+        editing.setSaveName("Pedido corrigido")
+        assertTrue(editing.hasUnsavedEdits)
+        assertTrue(editing.saveCurrentQuote())
+        assertEquals(QuoteKind.ORDER, editing.saveForm.value.operation?.originKind)
+        editing.resetForm()
+
+        assertEquals("Pedido corrigido", historyRepository.savedQuotes.value.single().name)
+        assertEquals(draft, tab.input.value)
+        assertEquals("Rascunho", tab.saveForm.value.name)
+    }
+
+    @Test
     fun editingANegotiatedQuoteKeepsTheNegotiatedPrice() {
         val historyRepository = QuoteHistoryRepository()
         val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
@@ -583,7 +609,7 @@ class QuoteViewModelTest {
         viewModel.resetForm()
         viewModel.loadForEditing(saved)
 
-        assertEquals(settings, viewModel.saveForm.value.printSettings)
+        assertEquals(settings, viewModel.input.value.prints.single().settings)
     }
 
     @Test
@@ -1014,11 +1040,11 @@ class QuoteViewModelTest {
         assertEquals(null, rows[1].colorId)
         assertEquals("", rows[1].lengthText)
 
-        viewModel.removeFilament(slot = 0)
+        viewModel.removeFilament(rows[0].id)
         assertEquals(1, viewModel.input.value.prints.first().filaments.size)
         assertEquals("pla", viewModel.input.value.prints.first().filaments.single().filamentId)
 
-        viewModel.removeFilament(slot = 0)
+        viewModel.removeFilament(viewModel.input.value.prints.first().filaments.single().id)
         assertEquals(1, viewModel.input.value.prints.first().filaments.size, "a última linha não pode sair")
     }
 
@@ -1171,7 +1197,7 @@ class QuoteViewModelTest {
         viewModel.selectFilament(first)
         viewModel.setLengthMeters("3")
         viewModel.addFilament()
-        viewModel.setLengthMeters("1", slot = 1)
+        viewModel.setLengthMeters("1", rowId = viewModel.input.value.prints.single().filaments[1].id)
         val before = viewModel.input.value.prints.single().filaments
 
         // Três comprimentos pra dois tipos: não dá pra saber de quem é cada um.
@@ -1243,12 +1269,13 @@ class QuoteViewModelTest {
         filamentRepository.add(pla)
         val historyRepository = QuoteHistoryRepository()
         val viewModel = QuoteViewModel(filamentRepository, PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
-        viewModel.selectFilament("pla", slot = 0)
-        viewModel.selectFilamentColor("verde", slot = 0)
-        viewModel.setLengthMeters("9.04", slot = 0)
+        viewModel.selectFilament("pla")
+        viewModel.selectFilamentColor("verde")
+        viewModel.setLengthMeters("9.04")
         viewModel.addFilament()
-        viewModel.selectFilamentColor("amarelo", slot = 1)
-        viewModel.setLengthMeters("11.47", slot = 1)
+        val second = viewModel.input.value.prints.single().filaments[1].id
+        viewModel.selectFilamentColor("amarelo", rowId = second)
+        viewModel.setLengthMeters("11.47", rowId = second)
         viewModel.setPrintTimeMinutes("190")
 
         viewModel.saveCurrentQuote()

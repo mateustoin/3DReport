@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
 
 /**
@@ -21,12 +22,21 @@ sealed interface QuoteOperation {
         val originalForm: SaveQuoteFormState,
     ) : QuoteOperation
 
-    /** Duplicando o orçamento chamado [fromName] (vira um orçamento novo). */
-    data class Duplicating(val fromName: String) : QuoteOperation
+    /** Duplicando o orçamento chamado [fromName], de Pedidos ou do Catálogo ([fromKind]); vira um orçamento novo. */
+    data class Duplicating(val fromName: String, val fromKind: QuoteKind) : QuoteOperation
 
     /** "Vender" o produto [product] do catálogo (vira um pedido novo, com a origem guardada). */
     data class Selling(val product: SavedQuote) : QuoteOperation
 
     /** "Guardar no catálogo" a partir do pedido chamado [fromName]. */
     data class CopyingToCatalog(val fromName: String) : QuoteOperation
+
+    /** De onde a operação começou, pra desistir ou salvar devolver a pessoa pra lá (decisão 111). */
+    val originKind: QuoteKind
+        get() = when (this) {
+            is Editing -> savedQuote.kind
+            is Duplicating -> fromKind
+            is Selling -> QuoteKind.PRODUCT
+            is CopyingToCatalog -> QuoteKind.ORDER
+        }
 }

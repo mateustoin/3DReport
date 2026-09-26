@@ -27,6 +27,8 @@ import kotlin.math.PI
  *   antigos continua coerente) mas não aparece pra seleção na tela de
  *   Orçamento. Nunca fica vazia depois de salvo pela UI — um filamento sem
  *   necessidade de diferenciar cor tem uma única entrada sem nome/hex.
+ * @property archived arquivado (decisão 115): some das escolhas de um orçamento novo, mas continua no
+ *   cadastro pra quem já usou. Pedidos reabertos e produtos do catálogo continuam achando ele.
  */
 @Serializable
 data class Filament(
@@ -38,6 +40,7 @@ data class Filament(
     val brand: String? = null,
     val materialType: String? = null,
     val colors: List<FilamentColor> = listOf(FilamentColor(id = "default")),
+    val archived: Boolean = false,
 ) {
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }

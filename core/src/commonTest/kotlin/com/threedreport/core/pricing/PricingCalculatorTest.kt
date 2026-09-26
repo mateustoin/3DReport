@@ -115,7 +115,29 @@ class PricingCalculatorTest {
         assertEquals(0.0, quote.costs.finishing, 1e-9)
         assertEquals(4.00, quote.costs.failures, CENT_TOLERANCE)
         assertEquals(44.05, quote.productionCost, CENT_TOLERANCE)
-        assertEquals(88.10, quote.salePrice, CENT_TOLERANCE)
+        // A margem de 100% vale sobre os R$ 24,05 que não são trabalho; os R$ 20,00 da hora entram pelo
+        // valor (decisão 118). Antes, com a margem em cima de tudo, dava R$ 88,10.
+        assertEquals(68.10, quote.salePrice, CENT_TOLERANCE)
+    }
+
+    @Test
+    fun laborAddsExactlyItsValueToThePriceWithoutMargin() {
+        val settings = spreadsheetSettings.copy(laborRatePerHour = 30.0, failureRate = 0.0)
+
+        val without = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings)
+        val with = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, laborMinutes = 40.0)
+
+        assertEquals(20.0, with.salePrice - without.salePrice, 1e-9)
+        assertEquals(without.profit, with.profit, 1e-9)
+    }
+
+    @Test
+    fun theObtainedMarginIsTheConfiguredOneEvenWithLabor() {
+        val settings = spreadsheetSettings.copy(laborRatePerHour = 30.0)
+
+        val quote = PricingCalculator.calculate(spreadsheetJob, spreadsheetPrinter, settings, laborMinutes = 40.0)
+
+        assertEquals(settings.profitMargin, quote.actualProfitMargin, 1e-9)
     }
 
     @Test

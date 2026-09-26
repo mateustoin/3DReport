@@ -12,7 +12,11 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.WindowExceptionHandlerFactory
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
+import com.threedreport.app.data.SavedWindowBounds
 import com.threedreport.app.data.DataDirResult
 import com.threedreport.app.data.DataReadException
 import com.threedreport.app.data.LOGS_DIR_NAME
@@ -28,6 +32,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
+import java.awt.Rectangle
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.awt.event.ComponentAdapter
@@ -37,6 +42,7 @@ import java.io.RandomAccessFile
 import java.nio.channels.FileLock
 import java.nio.channels.OverlappingFileLockException
 import javax.swing.JOptionPane
+import kotlin.math.roundToInt
 import kotlin.system.exitProcess
 
 /** Trava de instância única; guardada aqui pra não ser liberada pelo coletor de lixo enquanto o app roda. */
@@ -105,15 +111,26 @@ fun main() {
 }
 
 private fun runApp(container: AppContainer, notice: DataFolderNotice?) = application {
-    val windowState = rememberWindowState(size = initialWindowSize())
+    val saved = container.preferences.preferences.value.window?.takeIf(::isOnSomeScreen)
+    val windowState = rememberWindowState(
+        placement = if (saved?.maximized == true) WindowPlacement.Maximized else WindowPlacement.Floating,
+        position = saved?.let { WindowPosition(it.x.dp, it.y.dp) } ?: WindowPosition.PlatformDefault,
+        size = saved?.let { DpSize(it.width.dp, it.height.dp) } ?: initialWindowSize(),
+    )
     @OptIn(ExperimentalComposeUiApi::class)
     CompositionLocalProvider(LocalWindowExceptionHandlerFactory provides crashHandlerFactory(container)) {
         Window(
-            onCloseRequest = { if (flushBeforeClosing(container)) exitApplication() },
+            onCloseRequest = {
+                rememberWindowBounds(container, windowState)
+                if (flushBeforeClosing(container)) {
+                    ExitWatchdog.arm(exitDumpFile())
+                    exitApplication()
+                }
+            },
             title = "3DReport",
             state = windowState,
         ) {
-            window.minimumSize = Dimension(960, 640)
+            window.minimumSize = Dimension(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
             FixMultiMonitorDpiRedrawBug()
             App(container, notice)
         }
@@ -125,6 +142,9 @@ private fun runApp(container: AppContainer, notice: DataFolderNotice?) = applica
  * nunca maior que a área útil da tela: num notebook de 1366×768, a altura padrão escondia o rodapé
  * atrás da barra de tarefas.
  */
+private const val MIN_WINDOW_WIDTH = 960
+private const val MIN_WINDOW_HEIGHT = 640
+
 private fun initialWindowSize(): DpSize {
     val bounds = runCatching { GraphicsEnvironment.getLocalGraphicsEnvironment().maximumWindowBounds }.getOrNull()
         ?: return DpSize(1280.dp, 820.dp)
@@ -137,6 +157,56 @@ private fun initialWindowSize(): DpSize {
     AppLog.info("Área útil da tela: ${bounds.width}x${bounds.height} (escala $scale)")
     return DpSize(width.coerceAtLeast(960).dp, height.coerceAtLeast(600).dp)
 }
+
+/**
+ * Guarda onde a janela está (decisão 111). Maximizada, o tamanho do estado é o da tela inteira: guarda só
+ * a marca e mantém o retângulo de antes, pra "restaurar" voltar pra ele na próxima vez.
+ */
+private fun rememberWindowBounds(container: AppContainer, state: WindowState) {
+    val prefs = container.preferences.preferences.value
+    val maximized = state.placement == WindowPlacement.Maximized
+    val position = state.position
+    val bounds = when {
+        // Maximizada sem retângulo guardado (maximizou logo na primeira vez): guarda o tamanho inicial, que é
+        // pra onde "restaurar" volta.
+        maximized -> prefs.window?.copy(maximized = true) ?: initialWindowSize().let { size ->
+            val origin = position as? WindowPosition.Absolute
+            SavedWindowBounds(
+                x = origin?.x?.value?.roundToInt() ?: 0,
+                y = origin?.y?.value?.roundToInt() ?: 0,
+                width = size.width.value.roundToInt(),
+                height = size.height.value.roundToInt(),
+                maximized = true,
+            )
+        }
+        state.placement == WindowPlacement.Floating && position is WindowPosition.Absolute -> SavedWindowBounds(
+            x = position.x.value.roundToInt(),
+            y = position.y.value.roundToInt(),
+            width = state.size.width.value.roundToInt(),
+            height = state.size.height.value.roundToInt(),
+        )
+        else -> null
+    } ?: return
+    if (bounds != prefs.window) container.preferences.update(prefs.copy(window = bounds))
+}
+
+/**
+ * A janela guardada só volta pro mesmo lugar se a barra de título dela ainda cair numa tela: com o
+ * monitor de antes desligado, abrir lá deixava a janela invisível. O tamanho também precisa caber.
+ */
+private fun isOnSomeScreen(bounds: SavedWindowBounds): Boolean {
+    if (bounds.width < MIN_WINDOW_WIDTH || bounds.height < MIN_WINDOW_HEIGHT) return false
+    val screens = runCatching { GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { it.defaultConfiguration.bounds } }
+        .getOrNull() ?: return false
+    val titleBar = Rectangle(bounds.x, bounds.y, bounds.width, 40)
+    return screens.any { screen ->
+        val visible = screen.intersection(titleBar)
+        !visible.isEmpty && visible.width >= 120 && bounds.width <= screen.width && bounds.height <= screen.height
+    }
+}
+
+/** Onde o [ExitWatchdog] grava as pilhas das threads se o encerramento travar: junto do log. */
+internal fun exitDumpFile(): File = File(File(appDataDir(), LOGS_DIR_NAME), "encerramento-travado.txt")
 
 /**
  * Espera as gravações pendentes antes de fechar. Se alguma não der certo, pergunta: fechar assim perde

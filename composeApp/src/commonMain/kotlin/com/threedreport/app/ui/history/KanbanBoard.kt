@@ -248,7 +248,7 @@ private fun KanbanCard(
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(savedQuote.name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
                     Text(
-                        listOfNotNull(savedQuote.displayNumber, savedQuote.client?.name).joinToString(" · "),
+                        listOfNotNull(savedQuote.displayNumber, savedQuote.client?.name, printCountLabel(savedQuote)).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
