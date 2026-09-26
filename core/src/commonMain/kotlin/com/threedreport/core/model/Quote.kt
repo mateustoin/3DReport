@@ -197,7 +197,13 @@ data class Quote(
     val negotiatedDiscount: Double
         get() = (tableSalePrice ?: salePrice) - salePrice
 
-    /** Lucro como fração do custo de produção, que é a margem de fato obtida neste orçamento. */
+    /**
+     * A margem de fato obtida neste orçamento: o lucro como fração do custo de produção **sem o trabalho**,
+     * que é a base da margem (decisão 118). No preço de tabela, sem canal nem imposto, é a margem configurada.
+     */
     val actualProfitMargin: Double
-        get() = if (productionCost > 0) profit / productionCost else 0.0
+        get() {
+            val base = productionCost - costs.labor
+            return if (base > 0) profit / base else 0.0
+        }
 }

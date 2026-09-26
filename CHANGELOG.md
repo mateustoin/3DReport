@@ -41,9 +41,16 @@ de volta pra `.3dreport`.
   Ajuda.
 - O instalador do Windows mantém a mesma identificação das versões anteriores, pra continuar
   atualizando por cima.
+- **A margem de lucro não incide mais sobre a sua hora de trabalho.** O trabalho entra no preço pelo
+  valor da hora: 40 min a R$ 30,00/h somam R$ 20,00, e não R$ 40,00 com margem de 100%. Quem cobra o
+  próprio trabalho vai ver preços menores e mais realistas, e os produtos do catálogo com trabalho vão
+  sugerir "Atualizar preço". Pedidos já salvos mantêm o preço que tinham.
 
 ### Corrigido
 - Digitar o peso preenche o comprimento com duas casas ("16,76"), em vez de "16,764181".
+- **Digitar a categoria ou o nome do cliente com as sugestões abertas** não obriga mais a clicar no
+  campo de novo pra continuar.
+- **Impressões recolhidas continuam recolhidas** ao sair do Orçamento e voltar.
 - **Fechar o app encerra de verdade.** Vez ou outra o processo continuava aberto sem janela depois de
   fechar, e abrir de novo dizia que o 3DReport já estava aberto.
 

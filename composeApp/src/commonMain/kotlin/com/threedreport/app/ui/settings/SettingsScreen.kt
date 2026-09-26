@@ -268,7 +268,7 @@ private fun BusinessSection(viewModel: SettingsViewModel, currencyViewModel: Cur
     }
     Text(
         "Cobrado pelos minutos que você informa em cada orçamento (tirar da mesa, remover " +
-            "suporte, lixar, pintar, embalar). Só soma ao preço. Deixe zero pra não cobrar mão " +
+            "suporte, lixar, pintar, embalar). Soma ao preço pelo valor da hora, sem a margem por cima. Deixe zero pra não cobrar mão " +
             "de obra.",
         style = MaterialTheme.typography.bodySmall,
     )

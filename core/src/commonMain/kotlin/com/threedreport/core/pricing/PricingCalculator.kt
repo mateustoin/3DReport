@@ -49,7 +49,7 @@ object PricingCalculator {
      * material é somado filamento por filamento, e energia, manutenção, retorno da máquina e custo
      * fixo usam as horas e a impressora **daquela** impressão. Só depois de somar as impressões
      * entra o que é do pedido, uma vez só: o tempo de trabalho, o administrativo, a reserva de
-     * falha, a margem, o canal, o imposto e o preço negociado. Somar orçamentos separados cobraria
+     * falha, a margem (sobre tudo menos o trabalho, decisão 118), o canal, o imposto e o preço negociado. Somar orçamentos separados cobraria
      * o administrativo uma vez por impressão.
      *
      * @param prints as impressões, na ordem da tela, cada uma com a impressora em que roda.
@@ -97,7 +97,9 @@ object PricingCalculator {
             fixedCost = quotedPrints.sumOf { it.cost.fixedCost },
         )
 
-        val baseSalePrice = costs.total * (1 + settings.profitMargin)
+        // A margem vale sobre tudo menos a sua hora (decisão 118): o trabalho entra pelo valor dele. Com a
+        // margem em cima, a hora cobrada virava o dobro, e o preço saía de um valor que ninguém paga.
+        val baseSalePrice = (costs.total - labor) * (1 + settings.profitMargin) + labor
 
         // Canal e imposto são descontados do mesmo valor recebido, então somam antes de dividir:
         // vender a P deixa P · (1 − canal − imposto) na sua mão. O valor recebido é o total do

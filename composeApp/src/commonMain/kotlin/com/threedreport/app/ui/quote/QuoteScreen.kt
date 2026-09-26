@@ -307,7 +307,7 @@ private fun QuoteInputs(
         val quantity = input.quantity
         FieldHelp(
             (if (quantity > 1) "Total das $quantity peças" else "O pedido inteiro") +
-                ", cobrado a ${settings.laborRatePerHour.toCurrencyText(currency)}/h." +
+                ", cobrado a ${settings.laborRatePerHour.toCurrencyText(currency)}/h, sem a margem por cima." +
                 (if (quantity > 1) " Mudou a quantidade? Revise o tempo." else ""),
             "Fora o tempo de máquina: fatiar, montar a mesa, tirar da mesa, remover suporte, lixar, pintar, " +
                 "embalar. O valor da hora é ajustável em Configurações. Se o acabamento já está no percentual " +
