@@ -103,7 +103,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
-fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
+fun App(
+    container: AppContainer,
+    dataFolderNotice: DataFolderNotice? = null,
+    // Os dois parâmetros abaixo só existem pro gerador de screenshots do site (decisão 120): abrir
+    // direto numa aba e preencher o orçamento da aba com dados de exemplo, sem mudar o comportamento
+    // padrão do app (valores default preservam o de sempre).
+    startAt: AppDestination = AppDestination.QUOTE,
+    prepareQuote: (QuoteViewModel) -> Unit = {},
+) {
     val filamentRepository = container.filaments
     val printerRepository = container.printers
     val settingsRepository = container.settings
@@ -123,12 +131,12 @@ fun App(container: AppContainer, dataFolderNotice: DataFolderNotice? = null) {
             main = Dispatchers.Main,
         )
     }
-    val quoteViewModel = remember { newQuoteViewModel() }
+    val quoteViewModel = remember { newQuoteViewModel().also(prepareQuote) }
     // Editar um orçamento salvo tem o próprio ViewModel (decisão 108): usar o da aba apagava o rascunho
     // que estivesse em andamento lá. A edição aparece no próprio Orçamento (decisão 113), e o rascunho
     // da aba volta quando ela termina.
     val editQuoteViewModel = remember { newQuoteViewModel() }
-    var destination by remember { mutableStateOf(AppDestination.QUOTE) }
+    var destination by remember { mutableStateOf(startAt) }
     // Fica aqui, e não na tela, pra voltar a Configurações na mesma seção.
     var settingsSection by remember { mutableStateOf(SettingsSection.BUSINESS) }
     // Pedidos e Catálogo são a mesma tela com o tipo fixo (decisão 111): cada uma com o seu ViewModel,

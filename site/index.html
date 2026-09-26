@@ -18,16 +18,17 @@
   <meta property="og:title" content="3DReport: orçamento e venda de impressão 3D grátis">
   <meta property="og:description" content="Calcule o orçamento e o preço de venda de cada peça a partir do custo real e da margem de lucro. Gratuito, open source, com histórico de vendas, PDF e catálogo de peças.">
   <meta property="og:url" content="https://mateustoin.github.io/3DReport/">
-  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/orcamento.png">
-  <meta property="og:image:width" content="1280">
-  <meta property="og:image:height" content="800">
+  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/og-banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="3DReport, o sistema de quem vende impressão 3D: grátis, open source e 100% no seu computador">
   <meta property="og:locale" content="pt_BR">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="3DReport: orçamento e venda de impressão 3D grátis">
   <meta name="twitter:description" content="Ferramenta gratuita e open source para quem vende impressão 3D: orçamento, preço de venda, histórico e catálogo de peças.">
-  <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/orcamento.png">
+  <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/og-banner.png">
 
   <link rel="stylesheet" href="assets/style.css?v=dev">
 
@@ -42,7 +43,7 @@
     "url": "https://mateustoin.github.io/3DReport/",
     "downloadUrl": "https://github.com/mateustoin/3DReport/releases/latest",
     "license": "https://github.com/mateustoin/3DReport/blob/main/LICENSE",
-    "softwareVersion": "1.8.0",
+    "softwareVersion": "2.1.1",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -145,6 +146,14 @@
       },
       {
         "@type": "Question",
+        "name": "O site coleta algum dado de quem visita?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Só uma contagem de visitas, pelo GoatCounter: quantas pessoas abriram cada página e de onde vieram (um vídeo, um post, uma busca). Sem cookies, sem rastrear você entre sites e sem guardar dados pessoais. Isso vale só para este site: o app não manda nada pra lugar nenhum."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "Meus dados de orçamento ficam salvos onde?",
         "acceptedAnswer": {
           "@type": "Answer",
@@ -164,7 +173,7 @@
         "name": "O que significa o \"nível de dificuldade\" que aparece ao anexar um STL?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Ao anexar o arquivo STL do modelo, o 3DReport analisa a malha 3D e sugere um nível — Fácil, Médio ou Difícil — combinando quatro sinais: o quanto a forma foge de algo liso e compacto (tipo uma esfera) pro mesmo volume, quanta superfície fica pendurada precisando de suporte na impressão (overhang), quantos triângulos a malha tem, e se o arquivo tem várias peças soltas. É uma estimativa geométrica (não simula o fatiador de verdade) pra ajudar a decidir se vale cobrar uma margem extra por peças mais trabalhosas — a decisão de preço continua sua."
+          "text": "Ao anexar o arquivo STL do modelo, o 3DReport analisa a malha 3D e sugere um nível (Fácil, Médio ou Difícil) combinando quatro sinais: o quanto a forma foge de algo liso e compacto (tipo uma esfera) pro mesmo volume, quanta superfície fica pendurada precisando de suporte na impressão (overhang), quantos triângulos a malha tem, e se o arquivo tem várias peças soltas. É uma estimativa geométrica (não simula o fatiador de verdade) pra ajudar a decidir se vale cobrar uma margem extra por peças mais trabalhosas, e a decisão de preço continua sua."
         }
       }
     ]
@@ -190,6 +199,7 @@
         <a href="calculadora.html">Calculadora</a>
         <a href="manual.html">Manual</a>
         <a href="#faq">Perguntas frequentes</a>
+        <a href="imprensa.html">Imprensa</a>
         <a href="https://github.com/mateustoin/3DReport">GitHub</a>
       </div>
     </nav>
@@ -221,34 +231,59 @@
       </div>
     </section>
 
+    <!--
+      Vídeo de apresentação (decisão 120). Quando ele sair no YouTube: trocar VIDEO_ID pelo ID do vídeo
+      (o que vem depois de "v=" no link) e apagar o atributo hidden. O player do YouTube só carrega
+      depois do clique (assets/video.js): até lá, a capa é um print nosso e nada sai pro Google.
+    -->
+    <section id="video" hidden>
+      <div class="container">
+        <h2>Veja o 3DReport em ação</h2>
+        <p class="section-intro">
+          Do G-code arrastado ao pedido entregue, com todas as telas do app.
+        </p>
+        <div class="video" data-video-id="VIDEO_ID">
+          <button type="button" class="video-play" aria-label="Assistir ao vídeo de apresentação do 3DReport no YouTube">
+            <img src="assets/screenshots/orcamento.png" alt="" loading="lazy">
+            <span class="video-play-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="video-note">O vídeo abre pelo YouTube, sem cookies, só depois do clique.</p>
+      </div>
+    </section>
+
     <section id="screenshots">
       <div class="container">
         <h2>O app por dentro</h2>
         <p class="section-intro">
-          Da tela de orçamento ao PDF que vai pro cliente.
+          Do orçamento ao pedido entregue, passando pelo que vai pro cliente.
+          Clique numa imagem pra ver em tamanho real.
         </p>
-        <div class="grid">
-          <div class="screenshot">
-            <img src="assets/screenshots/orcamento.png" alt="Tela de Orçamento do 3DReport: entradas à esquerda e, à direita, o valor cobrado, o prazo de entrega, a composição do preço e a negociação" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-            <div class="screenshot-placeholder">
-              <strong>Tela de Orçamento</strong>
-              <span>assets/screenshots/orcamento.png</span>
-            </div>
-          </div>
-          <div class="screenshot">
-            <img src="assets/screenshots/historico.png" alt="Pedidos do 3DReport em Kanban, com os pedidos por status e o prazo de entrega de cada um" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-            <div class="screenshot-placeholder">
-              <strong>Pedidos em Kanban</strong>
-              <span>assets/screenshots/historico.png</span>
-            </div>
-          </div>
-          <div class="screenshot">
-            <img src="assets/screenshots/pdf.png" alt="PDF de orçamento com logo e contato do vendedor, prazo de entrega em destaque e foto da peça" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-            <div class="screenshot-placeholder">
-              <strong>PDF exportado</strong>
-              <span>assets/screenshots/pdf.png</span>
-            </div>
-          </div>
+        <div class="grid gallery">
+          <figure class="screenshot">
+            <a href="assets/screenshots/orcamento.png"><img src="assets/screenshots/orcamento.png" alt="Tela de Orçamento do 3DReport com um pedido de duas impressões: à direita, o valor cobrado, o prazo de entrega, a composição do preço e a negociação" loading="lazy"></a>
+            <figcaption><strong>Orçamento.</strong> Um pedido com duas impressões: o preço, o prazo, a composição do custo e a negociação ao lado das entradas</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="assets/screenshots/pedidos.png"><img src="assets/screenshots/pedidos.png" alt="Pedidos do 3DReport em Kanban, com os pedidos por status e o prazo de entrega de cada um" loading="lazy"></a>
+            <figcaption><strong>Pedidos em Kanban.</strong> Cada pedido no seu status, com o prazo de entrega à vista</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="assets/screenshots/dashboard.png"><img src="assets/screenshots/dashboard.png" alt="Dashboard do 3DReport com o total vendido no período, o lucro por hora de máquina e de trabalho e as peças que mais dão lucro" loading="lazy"></a>
+            <figcaption><strong>Dashboard.</strong> O que foi vendido no período, o lucro por hora e as peças que mais rendem</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="assets/screenshots/catalogo.png"><img src="assets/screenshots/catalogo.png" alt="Catálogo do 3DReport com produtos em categorias e o preço de cada um" loading="lazy"></a>
+            <figcaption><strong>Catálogo.</strong> Peças com preço pronto, separadas por categoria, pra vender com um clique</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="assets/screenshots/pdf.png"><img src="assets/screenshots/pdf.png" alt="PDF de orçamento com o nome e o contato do vendedor, o prazo de entrega em destaque e a foto da peça" loading="lazy"></a>
+            <figcaption><strong>PDF com a sua marca.</strong> O orçamento que vai pro cliente, com logo, contato e prazo em destaque</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="assets/screenshots/whatsapp.png"><img src="assets/screenshots/whatsapp.png" alt="Imagem quadrada gerada pelo 3DReport com a foto da peça, o preço e o prazo, pronta pra mandar no WhatsApp" loading="lazy"></a>
+            <figcaption><strong>Imagem pro WhatsApp.</strong> Foto, preço e prazo num quadrado pronto pro zap e pro status</figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -449,12 +484,16 @@ LUCRO             = total do cliente × (1 − taxa do canal − imposto)
           <p>Localmente, no seu computador. O 3DReport não envia nenhum dado para servidores externos.</p>
         </details>
         <details class="faq-item">
+          <summary>O site coleta algum dado de quem visita?</summary>
+          <p>Só uma contagem de visitas, pelo <a href="https://www.goatcounter.com/">GoatCounter</a>: quantas pessoas abriram cada página e de onde vieram (um vídeo, um post, uma busca). Sem cookies, sem rastrear você entre sites e sem guardar dados pessoais. Isso vale só para este site: o app não manda nada pra lugar nenhum.</p>
+        </details>
+        <details class="faq-item">
           <summary>O 3DReport serve só para orçamento avulso ou também para gerenciar a venda de impressão 3D como negócio?</summary>
           <p>As duas coisas. Além do cálculo do orçamento, cada venda tem cliente, status do pedido (Orçado, Aprovado, Em impressão, Pronto, Entregue) e entra no histórico e no dashboard, com total vendido, lucro acumulado e filamento mais usado por período.</p>
         </details>
         <details class="faq-item">
           <summary>O que significa o "nível de dificuldade" que aparece ao anexar um STL?</summary>
-          <p>Ao anexar o arquivo STL do modelo, o 3DReport analisa a malha 3D e sugere um nível — Fácil, Médio ou Difícil — combinando quatro sinais: o quanto a forma foge de algo liso e compacto (tipo uma esfera) pro mesmo volume, quanta superfície fica "pendurada" precisando de suporte na impressão (overhang), quantos triângulos a malha tem, e se o arquivo tem várias peças soltas. É uma estimativa geométrica (não simula o fatiador de verdade) pra te ajudar a decidir se vale cobrar uma margem extra por peças mais trabalhosas — a decisão de preço continua sua. Detalhes das fórmulas em <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>.</p>
+          <p>Ao anexar o arquivo STL do modelo, o 3DReport analisa a malha 3D e sugere um nível (Fácil, Médio ou Difícil) combinando quatro sinais: o quanto a forma foge de algo liso e compacto (tipo uma esfera) pro mesmo volume, quanta superfície fica "pendurada" precisando de suporte na impressão (overhang), quantos triângulos a malha tem, e se o arquivo tem várias peças soltas. É uma estimativa geométrica (não simula o fatiador de verdade) pra te ajudar a decidir se vale cobrar uma margem extra por peças mais trabalhosas, e a decisão de preço continua sua. Detalhes das fórmulas em <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>.</p>
         </details>
         <details class="faq-item">
           <summary>Como o app trata taxa de marketplace, imposto e frete?</summary>
@@ -502,10 +541,14 @@ LUCRO             = total do cliente × (1 − taxa do canal − imposto)
         <a href="manual.html">Manual</a>
         <a href="https://github.com/mateustoin/3DReport">GitHub</a>
         <a href="https://github.com/mateustoin/3DReport/releases/latest">Downloads</a>
+        <a href="imprensa.html">Imprensa</a>
         <a href="https://buymeacoffee.com/mateustoin">Doar</a>
       </div>
     </div>
   </footer>
   <script src="assets/nav.js?v=dev" defer></script>
+  <script src="assets/video.js?v=dev" defer></script>
+  <!-- Contagem de visitas sem cookies nem dados pessoais (decisão 120). Só o site: o app não manda nada. -->
+  <script data-goatcounter="https://3dreport.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
