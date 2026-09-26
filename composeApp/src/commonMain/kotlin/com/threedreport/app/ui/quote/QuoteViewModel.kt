@@ -248,6 +248,16 @@ class QuoteViewModel(
         input.copy(prints = input.prints.take(index + 1) + copy + input.prints.drop(index + 1))
     }
 
+    private val collapsedState = MutableStateFlow<Set<Int>>(emptySet())
+
+    /**
+     * Cartões de impressão recolhidos, pelo id. Fica no ViewModel, e não na tela, pra continuar recolhido
+     * ao sair do Orçamento e voltar; e fora de [input], porque recolher não é alterar o pedido.
+     */
+    val collapsedPrintIds: StateFlow<Set<Int>> = collapsedState.asStateFlow()
+
+    fun toggleCollapsed(printId: Int) = collapsedState.update { if (printId in it) it - printId else it + printId }
+
     /** A impressão removida por último e onde ela estava, pro "Desfazer" do aviso. */
     private var removedPrint: Pair<Int, PrintInput>? = null
 
@@ -803,8 +813,9 @@ class QuoteViewModel(
         loadStlPreview(form.stlFile)
     }
 
-    /** Um formulário novo não desfaz nada do anterior. */
+    /** Um formulário novo não desfaz nada do anterior, nem herda os cartões recolhidos dele. */
     private fun forgetUndo() {
+        collapsedState.value = emptySet()
         photoBeforeGCode = null
         photoGCodePrintId = null
         removedPrint = null

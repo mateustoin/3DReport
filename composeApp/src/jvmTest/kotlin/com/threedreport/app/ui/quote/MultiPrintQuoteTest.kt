@@ -315,4 +315,20 @@ class MultiPrintQuoteTest {
 
         assertNull(viewModel.prints.single().thumbnail)
     }
+
+    @Test
+    fun collapsedCardsStayInTheViewModelAndANewFormStartsExpanded() {
+        val viewModel = twoPrints()
+        val ids = viewModel.prints.map { it.id }
+
+        ids.forEach(viewModel::toggleCollapsed)
+        assertEquals(ids.toSet(), viewModel.collapsedPrintIds.value)
+        assertTrue(!viewModel.hasUnsavedEdits, "recolher não é alterar o pedido")
+
+        viewModel.toggleCollapsed(ids[0])
+        assertEquals(setOf(ids[1]), viewModel.collapsedPrintIds.value)
+
+        viewModel.resetForm()
+        assertTrue(viewModel.collapsedPrintIds.value.isEmpty())
+    }
 }

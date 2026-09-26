@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,6 +89,7 @@ internal fun PrintsSection(
         return
     }
 
+    val collapsed by viewModel.collapsedPrintIds.collectAsState()
     GCodeImportCard(
         importing = importing,
         message = null,
@@ -114,6 +114,8 @@ internal fun PrintsSection(
                 result = result,
                 currency = currency,
                 importing = importing,
+                expanded = print.id !in collapsed,
+                onToggleExpanded = { viewModel.toggleCollapsed(print.id) },
             )
         }
     }
@@ -140,8 +142,9 @@ private fun PrintCard(
     result: QuoteResult,
     currency: Currency,
     importing: Boolean,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
 ) {
-    var expanded by rememberSaveable(print.id) { mutableStateOf(true) }
     var editingSettings by remember { mutableStateOf(false) }
     val hasError = result.fieldErrors.keys.any { key ->
         key == QuoteFields.printTime(print.id) || key == QuoteFields.runs(print.id) ||
@@ -152,7 +155,7 @@ private fun PrintCard(
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
-                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) { expanded = !expanded }.padding(vertical = 6.dp),
+                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onToggleExpanded).padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {

@@ -1132,7 +1132,9 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
             },
             singleLine = true,
         )
-        DropdownMenu(expanded = expanded && matches.isNotEmpty(), onDismissRequest = { expanded = false }) {
+        // ExposedDropdownMenu, e não DropdownMenu: com a âncora editável ele abre sem tirar o foco do campo, e
+        // dá pra continuar digitando com as sugestões na tela.
+        ExposedDropdownMenu(expanded = expanded && matches.isNotEmpty(), onDismissRequest = { expanded = false }) {
             matches.forEach { category ->
                 DropdownMenuItem(text = { Text(category) }, onClick = { onValueChange(category); expanded = false })
             }
