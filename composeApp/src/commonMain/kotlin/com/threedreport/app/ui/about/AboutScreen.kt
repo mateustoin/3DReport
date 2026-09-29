@@ -61,7 +61,7 @@ fun AboutScreen(version: String, extra: @Composable () -> Unit = {}) {
             )
             Text("• Catálogo: as peças que você oferece, com preço. \"Vender\" cria o pedido a partir do produto.")
             Text("• Dashboard: vendas pela data em que o cliente fechou, lucro por hora e o que mais vende.")
-            Text("• Filamentos, Impressoras e Serviços: seus cadastros, usados no Orçamento.")
+            Text("• Filamentos, Impressoras, Serviços e Insumos: seus cadastros, usados no Orçamento.")
             Text(
                 "• Configurações: custos (energia, sua hora, margem, imposto), canais de venda com a taxa de cada " +
                     "um, documentos pro cliente (marca, logo, contato), tema, moeda e backup " +
@@ -69,10 +69,10 @@ fun AboutScreen(version: String, extra: @Composable () -> Unit = {}) {
             )
 
             SectionTitle(AppIcons.Tune, "Atalhos de teclado")
-            Text("• Ctrl/Cmd+1 a 8: pula direto pra cada tela da barra lateral, na ordem (Orçamento a Configurações).")
+            Text("• Ctrl/Cmd+1 a 9: pula direto pra cada tela da barra lateral, na ordem (Orçamento a Configurações).")
             Text("• Ctrl/Cmd+S: salva o orçamento (no Orçamento, inclusive editando um pedido).")
             Text("• Ctrl/Cmd+N: começa um orçamento novo (pergunta antes se houver algo preenchido).")
-            Text("• Esc: fecha o formulário aberto em Filamentos, Impressoras ou Serviços.")
+            Text("• Esc: fecha o formulário aberto em Filamentos, Impressoras, Serviços ou Insumos.")
         } }
     }
 }

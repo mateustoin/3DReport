@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.services
 
+import com.threedreport.app.ui.format.toDurationInputText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Service
 
@@ -13,6 +14,8 @@ data class ServiceFormState(
     /** Valor sugerido; vazio quando muda a cada pedido. */
     val priceText: String = "",
     val chargedPerOrder: Boolean = false,
+    /** Seu tempo neste serviço (decisão 123), em minutos; vazio quando não é contado. */
+    val minutesText: String = "",
     val errorMessage: String? = null,
 )
 
@@ -21,4 +24,5 @@ internal fun Service.toFormState() = ServiceFormState(
     name = name,
     priceText = suggestedPrice?.toInputText().orEmpty(),
     chargedPerOrder = chargedPerOrder,
+    minutesText = laborMinutes?.toDurationInputText().orEmpty(),
 )

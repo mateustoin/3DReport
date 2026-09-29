@@ -71,6 +71,8 @@ import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.LocalSnackbarHostState
+import com.threedreport.app.ui.consumables.ConsumableListScreen
+import com.threedreport.app.ui.consumables.ConsumableListViewModel
 import com.threedreport.app.ui.dashboard.DashboardScreen
 import com.threedreport.app.ui.dashboard.DashboardViewModel
 import com.threedreport.app.ui.filaments.FilamentListScreen
@@ -160,6 +162,7 @@ fun App(
     val filamentListViewModel = remember { FilamentListViewModel(filamentRepository, historyRepository::quotesIncludingTrash) }
     val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, container.maintenance) }
     val serviceListViewModel = remember { ServiceListViewModel(container.services, historyRepository::quotesIncludingTrash) }
+    val consumableListViewModel = remember { ConsumableListViewModel(container.consumables, historyRepository::quotesIncludingTrash) }
     val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
     val brandingViewModel = remember {
         BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value })
@@ -255,6 +258,7 @@ fun App(
                             AppDestination.FILAMENTS -> filamentListViewModel.form.value?.let { filamentListViewModel.cancelEdit(); true } ?: false
                             AppDestination.PRINTERS -> printerListViewModel.form.value?.let { printerListViewModel.cancelEdit(); true } ?: false
                             AppDestination.SERVICES -> serviceListViewModel.form.value?.let { serviceListViewModel.cancelEdit(); true } ?: false
+                            AppDestination.CONSUMABLES -> consumableListViewModel.form.value?.let { consumableListViewModel.cancelEdit(); true } ?: false
                             else -> false
                         }
                         else -> false
@@ -344,6 +348,7 @@ fun App(
                             AppDestination.FILAMENTS -> FilamentListScreen(filamentListViewModel)
                             AppDestination.PRINTERS -> PrinterListScreen(printerListViewModel)
                             AppDestination.SERVICES -> ServiceListScreen(serviceListViewModel)
+                            AppDestination.CONSUMABLES -> ConsumableListScreen(consumableListViewModel)
                             AppDestination.SETTINGS -> SettingsScreen(
                                 settingsViewModel,
                                 brandingViewModel,

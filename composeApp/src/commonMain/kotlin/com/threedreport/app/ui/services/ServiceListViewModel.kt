@@ -5,6 +5,7 @@ import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
+import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.toRequiredDouble
 import com.threedreport.core.model.Service
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +59,9 @@ class ServiceListViewModel(
                     ?.toRequiredDouble("Valor sugerido")
                     ?.also { if (it < 0) error("Valor sugerido não pode ser negativo") },
                 chargedPerOrder = current.chargedPerOrder,
+                laborMinutes = current.minutesText.trim().ifEmpty { null }?.let {
+                    parseDurationMinutes(it) ?: error("Confira o campo \"Seu tempo neste serviço\": não é um tempo válido.")
+                }?.also { if (it < 0) error("Seu tempo neste serviço não pode ser negativo") },
             )
         }
 
