@@ -122,7 +122,8 @@ data class FilamentTotal(val filament: FilamentSnapshot, val color: FilamentColo
  * @property shippingCoveringSalePrice o valor da peça que manteria o lucro de tabela mesmo pagando o frete
  *   grátis, pra sugerir ao vendedor. `null` sem frete grátis.
  * @property rush se o pedido foi marcado como urgente, e [rushSurcharge] o acréscimo que isso deu na peça
- *   (decisão 125), já embutido em [salePrice].
+ *   (decisão 125), já embutido em [salePrice]. Zero quando o preço fechado ou o preço mínimo passaram por
+ *   cima da tabela: aí o acréscimo não está no que o cliente paga.
  * @property priceBeforeMinimum o que a conta dava quando o preço mínimo do pedido
  *   ([PricingSettings.minimumOrderPrice]) subiu o preço de tabela (decisão 125). `null` quando o mínimo
  *   não foi aplicado.
@@ -254,7 +255,7 @@ data class Quote(
             extras = extrasTotal,
             quantity = quantity,
             taxRate = taxRate,
-        )
+        ).coerceAtLeast(0.0) // serviços que rendem mais que a produção não fazem a peça valer menos que nada
 
     /** Se o preço foi fechado com o cliente em vez de vir da margem (ver [tableSalePrice]). */
     val isNegotiated: Boolean

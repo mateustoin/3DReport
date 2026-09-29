@@ -58,8 +58,10 @@ fun EnergyTariffFormState.result(decimalSeparator: Char = ','): Double? = when (
 }
 
 private fun EnergyTariffFormState.billResult(separator: Char): Double? {
-    val total = parseDecimal(billTotalText, NumberKind.MEASURE, separator) ?: return null
-    val consumed = parseDecimal(billConsumedKwhText, NumberKind.MEASURE, separator) ?: return null
+    // Conta e consumo passam de mil ("1.250", "1.200 kWh"): o ponto seguido de três dígitos é milhar, como
+    // o campo mostra na tela.
+    val total = parseDecimal(billTotalText, NumberKind.AMOUNT, separator) ?: return null
+    val consumed = parseDecimal(billConsumedKwhText, NumberKind.AMOUNT, separator) ?: return null
     if (total < 0 || consumed <= 0) return null
     return EnergyTariff.fromBill(total, consumed)
 }
@@ -119,7 +121,7 @@ fun EnergyTariffDialog(onDismiss: () -> Unit, onUse: (Double) -> Unit) {
                         NumberField("Valor total da conta (${LocalCurrency.current.symbol})", state.billTotalText, NumberKind.AMOUNT) {
                             state = state.copy(billTotalText = it)
                         }
-                        NumberField("Consumo do mês (kWh)", state.billConsumedKwhText, NumberKind.MEASURE) {
+                        NumberField("Consumo do mês (kWh)", state.billConsumedKwhText, NumberKind.AMOUNT) {
                             state = state.copy(billConsumedKwhText = it)
                         }
                         Text(

@@ -154,6 +154,12 @@ data class QuoteInputState(
         get() = kind == QuoteKind.PRODUCT
 
     /**
+     * Se o frete grátis vale de fato (decisão 124): marcado, num pedido de cliente e com frete. É a mesma
+     * pergunta na conta e ao salvar, por isso fica aqui.
+     */
+    fun absorbsShipping(shippingCost: Double): Boolean = shippingAbsorbed && !isProduct && shippingCost > 0
+
+    /**
      * Nenhum minuto de trabalho informado: com a hora configurada, é o caso em que ela não muda o
      * preço. Só faz sentido mostrar com `laborRatePerHour > 0`.
      */

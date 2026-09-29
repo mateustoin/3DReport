@@ -428,16 +428,24 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
     }
 
     LabeledField("Nome do canal (ex.: Shopee, Cartão)", form.nameText, viewModel::setName)
-    NumberField("Taxa do canal (%)", form.feeRatePercentText, NumberKind.MEASURE, viewModel::setFeeRate)
+    // Com faixas, é a taxa de cada faixa que vale (decisão 121): os campos únicos ficam desligados, pra
+    // ninguém mudar um número que não muda nada.
+    val hasTiers = form.tiers.isNotEmpty()
+    NumberField("Taxa do canal (%)", form.feeRatePercentText, NumberKind.MEASURE, enabled = !hasTiers, onValueChange = viewModel::setFeeRate)
     NumberField(
         "Taxa fixa por item (${LocalCurrency.current.symbol})",
         form.fixedFeePerItemText,
         NumberKind.AMOUNT,
-        viewModel::setFixedFeePerItem,
+        enabled = !hasTiers,
+        onValueChange = viewModel::setFixedFeePerItem,
     )
     Text(
-        "A Shopee e o Mercado Livre cobram alguns reais por item vendido, além do percentual. " +
-            "Confira no painel do vendedor.",
+        if (hasTiers) {
+            "Este canal usa faixas de preço: a taxa e o valor fixo de cada faixa é que valem."
+        } else {
+            "A Shopee e o Mercado Livre cobram alguns reais por item vendido, além do percentual. " +
+                "Confira no painel do vendedor."
+        },
         style = MaterialTheme.typography.bodySmall,
     )
 
@@ -461,7 +469,17 @@ private fun ChannelTiersEditor(form: SalesChannelFormState, viewModel: SalesChan
     TextButton(onClick = { viewModel.setTiersExpanded(!form.tiersExpanded) }) {
         Text(if (form.tiersExpanded) "Faixas de preço (avançado) ▴" else "Faixas de preço (avançado) ▾")
     }
-    if (!form.tiersExpanded) return
+    form.tierNotice?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
+    if (!form.tiersExpanded) {
+        // Recolhidas, as faixas continuam valendo: dizer quantas, pra não ficarem escondidas em silêncio.
+        if (form.tiers.isNotEmpty()) {
+            Text(
+                "${form.tiers.size} faixas de preço ativas: elas substituem a taxa e o valor fixo acima.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        return
+    }
 
     Text(
         "Quando a taxa muda conforme o preço da peça (como na Shopee), cadastre as faixas. Elas " +
@@ -647,7 +665,7 @@ internal fun LabeledField(label: String, value: String, onValueChange: (String) 
  * zero ou outro número em silêncio.
  */
 @Composable
-internal fun NumberField(label: String, value: String, kind: NumberKind, onValueChange: (String) -> Unit) {
+internal fun NumberField(label: String, value: String, kind: NumberKind, enabled: Boolean = true, onValueChange: (String) -> Unit) {
     val separator = LocalCurrency.current.decimalSeparator
     val invalid = value.isNotBlank() && parseDecimal(value, kind, separator) == null
     val hint = interpretationHint(value, kind, separator)
@@ -657,6 +675,7 @@ internal fun NumberField(label: String, value: String, kind: NumberKind, onValue
         onValueChange = onValueChange,
         label = { Text(label) },
         singleLine = true,
+        enabled = enabled,
         isError = invalid,
         supportingText = when {
             invalid -> ({ Text("Não é um número. Use vírgula nos centavos: 1.250,50") })

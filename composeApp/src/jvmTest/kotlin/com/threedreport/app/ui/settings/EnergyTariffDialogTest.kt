@@ -77,4 +77,10 @@ class EnergyTariffDialogTest {
 
         assertNull(state.result())
     }
+
+    @Test
+    fun billAndConsumptionAboveAThousandReadTheDotAsThousands() {
+        val state = EnergyTariffFormState(mode = EnergyTariffMode.BILL, billTotalText = "1.250", billConsumedKwhText = "1.000")
+        assertEquals(1.25, state.result()!!, 1e-9)
+    }
 }

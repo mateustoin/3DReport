@@ -69,7 +69,7 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplate
     CheckboxRow("Borda em volta da página", branding.showBorder, viewModel::setShowBorder)
     CheckboxRow("Tempo de impressão no PDF e na mensagem", branding.showPrintTime, viewModel::setShowPrintTime)
     CheckboxRow("Nome do cliente no PDF (\"Para: Maria\")", branding.showClientName, viewModel::setShowClientName)
-    NumberField("Validade do orçamento (dias)", branding.validityDaysText, NumberKind.MEASURE, viewModel::setValidityDays)
+    NumberField("Validade do orçamento (dias)", branding.validityDaysText, NumberKind.MEASURE, onValueChange = viewModel::setValidityDays)
     Text(
         "O PDF diz \"Válido até\" a data de emissão mais esses dias, pra um cliente que volta meses depois não " +
             "cobrar o preço antigo. Deixe 0 pra não mostrar.",

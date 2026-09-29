@@ -131,4 +131,35 @@ class SalesChannelViewModelTest {
         assertEquals("50", form.tiers[0].upToUnitPriceText)
         assertEquals("14", form.tiers[0].feeRatePercentText)
     }
+
+    @Test
+    fun removingTheLastTierPromotesThePreviousOneAndWarnsAboutItsLimit() {
+        val viewModel = SalesChannelViewModel(SalesChannelRepository())
+        viewModel.addTierRow()
+        viewModel.addTierRow()
+        val (first, second, last) = viewModel.form.value.tiers
+        viewModel.updateTierRow(first.id) { it.copy(upToUnitPriceText = "50", feeRatePercentText = "14") }
+        viewModel.updateTierRow(second.id) { it.copy(upToUnitPriceText = "100", feeRatePercentText = "16") }
+
+        viewModel.removeTierRow(last.id)
+
+        val form = viewModel.form.value
+        assertEquals(2, form.tiers.size)
+        assertEquals("", form.tiers.last().upToUnitPriceText)
+        assertEquals("16", form.tiers.last().feeRatePercentText)
+        assertEquals("A faixa até 100 virou \"Acima disso\", e o limite dela foi descartado.", form.tierNotice)
+    }
+
+    @Test
+    fun removingAMiddleTierKeepsTheOthersWithoutNotice() {
+        val viewModel = SalesChannelViewModel(SalesChannelRepository())
+        viewModel.addTierRow()
+        viewModel.addTierRow()
+        val middle = viewModel.form.value.tiers[1]
+
+        viewModel.removeTierRow(middle.id)
+
+        assertEquals(2, viewModel.form.value.tiers.size)
+        assertEquals(null, viewModel.form.value.tierNotice)
+    }
 }

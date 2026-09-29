@@ -102,4 +102,31 @@ class ChannelFeeScheduleTest {
             ChannelFeeSchedule(feeRate = 0.5).priceLeaving(receipt = 10.0, extras = 0.0, quantity = 1, taxRate = 0.5)
         }
     }
+
+    @Test
+    fun withTiersTheExtrasMustBeCoveredToo() {
+        // Serviços e frete de R$ 10 passam pelo canal: a peça precisa deixar 9,50 mais os 10 do repasse.
+        val schedule = ChannelFeeSchedule(
+            tiers = listOf(
+                ChannelFeeTier(upToUnitPrice = 10.0, feeRate = 0.10),
+                ChannelFeeTier(upToUnitPrice = null, feeRate = 0.20),
+            ),
+        )
+        val price = schedule.priceLeaving(receipt = 9.5, extras = 10.0, quantity = 1, taxRate = 0.0)
+        assertEquals((9.5 + 10.0) / 0.8 - 10.0, price, 1e-9)
+        assertEquals(9.5 + 10.0, schedule.receiptAt(price, extras = 10.0, quantity = 1, taxRate = 0.0), 1e-9)
+    }
+
+    @Test
+    fun theFirstCentOfATierAlsoCoversTheExtras() {
+        val schedule = ChannelFeeSchedule(
+            tiers = listOf(
+                ChannelFeeTier(upToUnitPrice = 50.0, feeRate = 0.20, fixedFeePerItem = 5.0),
+                ChannelFeeTier(upToUnitPrice = null, feeRate = 0.10, fixedFeePerItem = 0.0),
+            ),
+        )
+        val price = schedule.priceLeaving(receipt = 38.0, extras = 6.0, quantity = 1, taxRate = 0.0)
+        assertTrue(schedule.receiptAt(price, extras = 6.0, quantity = 1, taxRate = 0.0) >= 38.0 + 6.0 - 1e-9)
+        assertTrue(schedule.receiptAt(price - 0.01, extras = 6.0, quantity = 1, taxRate = 0.0) < 38.0 + 6.0)
+    }
 }

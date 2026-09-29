@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.PrinterProfile
@@ -58,7 +59,7 @@ data class QuoteResult(
 
     /** Frete cobrado do cliente: zero com frete grátis (ver [shippingAbsorbed]). */
     val chargedShipping: Double
-        get() = if (shippingAbsorbed) 0.0 else shippingCost
+        get() = SavedQuote.chargedShipping(shippingCost, shippingAbsorbed)
 
     /** Valor de venda + serviços + frete cobrado: o que de fato será cobrado do cliente. */
     val grandTotal: Double?

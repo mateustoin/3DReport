@@ -106,8 +106,9 @@ data class ChannelFeeSchedule(
                 option.lowerUnitPrice?.let { (it + ONE_CENT) * quantity },
             )
         }
+        // O que sobra na mão inclui o repasse dos extras, então é contra base + extras que se confere.
         return candidates
-            .filter { receiptAt(it, extras, quantity, taxRate) >= receipt - PRICE_EPSILON }
+            .filter { receiptAt(it, extras, quantity, taxRate) >= receipt + extras - PRICE_EPSILON }
             .minOrNull()
             ?: candidates.max()
     }

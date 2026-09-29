@@ -38,6 +38,8 @@ data class SalesChannelFormState(
     val fixedFeePerItemText: String = "",
     val tiers: List<ChannelTierFormRow> = emptyList(),
     val tiersExpanded: Boolean = false,
+    /** Aviso de uma mudança nas faixas que a pessoa pode não ter percebido (ver [SalesChannelViewModel.removeTierRow]). */
+    val tierNotice: String? = null,
     val editingId: String? = null,
     val errorMessage: String? = null,
 )
@@ -71,20 +73,33 @@ class SalesChannelViewModel(
             } else {
                 form.tiers.toMutableList().apply { add(lastIndex, ChannelTierFormRow(id = newTierId())) }
             }
-            form.copy(tiers = tiers, tiersExpanded = true, errorMessage = null)
+            form.copy(tiers = tiers, tiersExpanded = true, errorMessage = null, tierNotice = null)
         }
     }
 
-    /** Com só uma faixa restando, ela sozinha não faz sentido: volta pra taxa única (sem faixas). */
+    /**
+     * Com só uma faixa restando, ela sozinha não faz sentido: volta pra taxa única (sem faixas). Remover a
+     * última ("Acima disso") faz a anterior virar a última, e o limite dela deixa de valer: isso vira um
+     * aviso, em vez de sumir sem ninguém ver.
+     */
     fun removeTierRow(id: String) {
         formState.update { form ->
+            val removedLast = form.tiers.lastOrNull()?.id == id
             val remaining = form.tiers.filterNot { it.id == id }
-            form.copy(tiers = if (remaining.size <= 1) emptyList() else remaining, errorMessage = null)
+            if (remaining.size <= 1) return@update form.copy(tiers = emptyList(), errorMessage = null, tierNotice = null)
+            val promoted = remaining.last()
+            val notice = if (removedLast && promoted.upToUnitPriceText.isNotBlank()) {
+                "A faixa até ${promoted.upToUnitPriceText} virou \"Acima disso\", e o limite dela foi descartado."
+            } else {
+                null
+            }
+            val tiers = if (removedLast) remaining.dropLast(1) + promoted.copy(upToUnitPriceText = "") else remaining
+            form.copy(tiers = tiers, errorMessage = null, tierNotice = notice)
         }
     }
 
     fun updateTierRow(id: String, transform: (ChannelTierFormRow) -> ChannelTierFormRow) {
-        formState.update { form -> form.copy(tiers = form.tiers.map { if (it.id == id) transform(it) else it }, errorMessage = null) }
+        formState.update { form -> form.copy(tiers = form.tiers.map { if (it.id == id) transform(it) else it }, errorMessage = null, tierNotice = null) }
     }
 
     fun startEditing(channel: SalesChannel) {

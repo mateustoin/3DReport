@@ -154,9 +154,11 @@ object PricingCalculator {
         val serviceProfit = timedServices.sumOf { it.total(quantity) } - serviceLaborCost
 
         // Frete grátis sai do lucro, não do preço (decisão 124). Pra quem quiser manter a margem, a peça
-        // que cobre o frete e ainda deixa o lucro de tabela.
+        // que cobre o frete e ainda deixa o que o preço de tabela deixaria. Parte do preço de tabela final
+        // (com o mínimo aplicado), senão a sugestão podia ficar abaixo do preço de hoje.
         val shippingCoveringSalePrice = if (absorbedShippingCost > 0) {
-            feeSchedule.priceLeaving(baseSalePrice + absorbedShippingCost, extrasTotal, quantity, settings.taxRate)
+            val tableReceipt = feeSchedule.receiptAt(tableSalePrice, extrasTotal, quantity, settings.taxRate) - extrasTotal
+            feeSchedule.priceLeaving(tableReceipt + absorbedShippingCost, extrasTotal, quantity, settings.taxRate)
         } else {
             null
         }
@@ -178,11 +180,13 @@ object PricingCalculator {
             channelFeeSchedule = channel?.feeSchedule,
             serviceLaborMinutes = serviceLaborMinutes,
             serviceLaborCost = serviceLaborCost,
-            serviceProfit = if (timedServices.isEmpty()) 0.0 else serviceProfit,
+            serviceProfit = serviceProfit,
             absorbedShippingCost = absorbedShippingCost,
             shippingCoveringSalePrice = shippingCoveringSalePrice,
             rush = rush,
-            rushSurcharge = rushSurcharge,
+            // O acréscimo só é o que o cliente paga quando o preço é o de tabela e o mínimo não passou por
+            // cima dele; senão, mostrá-lo na nota seria mostrar dinheiro que não entra.
+            rushSurcharge = if (negotiatedSalePrice == null && !minimumApplies) rushSurcharge else 0.0,
             priceBeforeMinimum = computedTablePrice.takeIf { minimumApplies },
         )
     }

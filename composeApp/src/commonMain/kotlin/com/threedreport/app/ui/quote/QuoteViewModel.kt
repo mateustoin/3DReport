@@ -704,7 +704,7 @@ class QuoteViewModel(
             }
         }
         val shippingCost = if (isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
-        val shippingAbsorbed = !isProduct && input.shippingAbsorbed && shippingCost > 0
+        val shippingAbsorbed = input.absorbsShipping(shippingCost)
 
         val editing = form.operation as? QuoteOperation.Editing
         if (editing != null) {
@@ -977,7 +977,7 @@ class QuoteViewModel(
             val laborMinutes = if (serviceInput.laborMinutesText.isBlank()) {
                 0.0
             } else {
-                parseDurationMinutes(serviceInput.laborMinutesText)?.takeIf { it >= 0 } ?: 0.0.also {
+                parseDurationMinutes(serviceInput.laborMinutesText) ?: 0.0.also {
                     errors[QuoteFields.serviceMinutes(id)] = "Tempo de ${serviceInput.name}: use minutos (30) ou horas e minutos (1h30)."
                 }
             }
@@ -1031,8 +1031,8 @@ class QuoteViewModel(
         // digitado nele não pode mexer no preço.
         val shippingCost = if (input.isProduct) 0.0 else amount(input.shippingCostText, QuoteFields.SHIPPING, "Frete", errors) ?: 0.0
         // Frete grátis (decisão 124): o frete é pago por você, então fica fora do que o cliente paga.
-        val shippingAbsorbed = input.shippingAbsorbed && shippingCost > 0
-        val chargedShipping = if (shippingAbsorbed) 0.0 else shippingCost
+        val shippingAbsorbed = input.absorbsShipping(shippingCost)
+        val chargedShipping = SavedQuote.chargedShipping(shippingCost, shippingAbsorbed)
         val servicesTotal = selectedServices.sumOf { it.total(quantity) }
         // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
         // que de fato é a peça. Um alvo que nem cobre os extras é erro no campo: zerar a peça salvaria
@@ -1191,12 +1191,13 @@ class QuoteViewModel(
         services: List<Service>,
         input: QuoteInputState,
         channels: List<SalesChannel> = salesChannels.value,
+        consumables: List<Consumable> = this.consumables.value,
     ): List<Pair<PrinterProfile, Quote>> {
         val candidates = printers.filterNot { it.archived }
         if (candidates.size < 2) return emptyList()
         return candidates.mapNotNull { printer ->
             val allOnThisPrinter = input.copy(prints = input.prints.map { it.copy(printerId = printer.id, missingPrinterName = null) })
-            val result = calculate(filaments, listOf(printer), settings, services, allOnThisPrinter, channels)
+            val result = calculate(filaments, listOf(printer), settings, services, allOnThisPrinter, channels, consumables)
             result.quote?.let { printer to it }
         }
     }

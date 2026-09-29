@@ -144,8 +144,8 @@ fun QuoteScreen(
 
     // Uma conta por mudança de entrada ou de cadastro, e não por redesenho: a mesma que o Ctrl+S salva.
     val result = remember(allFilaments, printers, settings, services, consumables, salesChannels, input, saveForm.operation) { viewModel.currentResult() }
-    val comparison = remember(allFilaments, printers, settings, services, salesChannels, input) {
-        viewModel.comparePrinters(allFilaments, printers, settings, services, input, salesChannels)
+    val comparison = remember(allFilaments, printers, settings, services, consumables, salesChannels, input) {
+        viewModel.comparePrinters(allFilaments, printers, settings, services, input, salesChannels, consumables)
     }
     val currency = LocalCurrency.current
 
@@ -807,9 +807,21 @@ private fun QuoteReceipt(
                     color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 )
             }
-            if (quote.totalDeductionRate > 0.0) {
+            // O que o canal cobra aparece sempre que ele cobra algo, percentual, valor fixo por item
+            // (decisão 121) ou os dois; um canal só com o fixo também sobe o preço e precisa da explicação.
+            val channelCharges = quote.channelName != null && (quote.channelFeeRate > 0.0 || quote.channelFixedFee > 0.0)
+            if (channelCharges || quote.taxRate > 0.0) {
                 val parts = buildList {
-                    quote.channelName?.let { add("$it ${quote.channelFeeRate.toPercentText()}") }
+                    if (channelCharges) {
+                        val perItem = (quote.channelFixedFee / quote.quantity).toMoney()
+                        add(
+                            when {
+                                quote.channelFixedFee <= 0.0 -> "${quote.channelName} ${quote.channelFeeRate.toPercentText()}"
+                                quote.channelFeeRate <= 0.0 -> "${quote.channelName} ($perItem por item)"
+                                else -> "${quote.channelName} (${quote.channelFeeRate.toPercentText()} + $perItem por item)"
+                            },
+                        )
+                    }
                     if (quote.taxRate > 0.0) add("imposto ${quote.taxRate.toPercentText()}")
                 }
                 Text(
@@ -818,14 +830,8 @@ private fun QuoteReceipt(
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            // Taxa fixa por item (decisão 121): sem ela, "20%" sozinho escondia o valor fixo que a
-            // Shopee e o Mercado Livre cobram além do percentual.
-            if (quote.channelFixedFee > 0.0 && quote.channelName != null) {
-                Text(
-                    "${quote.channelName} leva ${quote.channelFeeAmount.toMoney()} " +
-                        "(${quote.channelFeeRate.toPercentText()} + ${(quote.channelFixedFee / quote.quantity).toMoney()} por item)",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+            if (channelCharges) {
+                Text("${quote.channelName} leva ${quote.channelFeeAmount.toMoney()} deste pedido.", style = MaterialTheme.typography.bodySmall)
             }
             if (quote.minimumPriceApplied) {
                 Text(

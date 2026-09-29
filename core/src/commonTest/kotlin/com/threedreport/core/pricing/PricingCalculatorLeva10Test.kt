@@ -236,6 +236,47 @@ class PricingCalculatorLeva10Test {
         assertEquals(0.0, normal.rushSurcharge)
     }
 
+    @Test
+    fun aTieredChannelWithServicesStillLeavesTheSameProfit() {
+        val channel = SalesChannel(
+            id = "s", name = "Shopee", feeRate = 0.0,
+            tiers = listOf(
+                ChannelFeeTier(upToUnitPrice = 20.0, feeRate = 0.20, fixedFeePerItem = 4.0),
+                ChannelFeeTier(upToUnitPrice = null, feeRate = 0.14, fixedFeePerItem = 16.0),
+            ),
+        )
+        val quote = quote(channel = channel, extrasTotal = 25.0)
+        assertEquals(quote(extrasTotal = 25.0).profit, quote.profit, 1e-9)
+    }
+
+    @Test
+    fun theShippingCoveringPriceNeverGoesBelowTheMinimum() {
+        val withMinimum = settings.copy(minimumOrderPrice = 40.0)
+        val quote = quote(settings = withMinimum, absorbedShippingCost = 10.0)
+        assertEquals(40.0, quote.salePrice, 1e-9)
+        assertEquals(50.0, assertNotNull(quote.shippingCoveringSalePrice), 1e-9)
+    }
+
+    @Test
+    fun rushIsNotShownWhenTheMinimumOrANegotiatedPriceReplacesTheTable() {
+        val withRush = settings.copy(rushSurchargeRate = 0.5, minimumOrderPrice = 100.0)
+        val floored = quote(settings = withRush, rush = true)
+        assertTrue(floored.rush)
+        assertEquals(0.0, floored.rushSurcharge)
+
+        val negotiated = quote(settings = settings.copy(rushSurchargeRate = 0.5), rush = true, negotiatedSalePrice = 20.0)
+        assertTrue(negotiated.rush)
+        assertEquals(0.0, negotiated.rushSurcharge)
+    }
+
+    @Test
+    fun theBreakEvenPriceIsNeverNegative() {
+        val withRate = settings.copy(laborRatePerHour = 20.0)
+        val pintura = QuoteService(id = "p", name = "Pintura", price = 100.0, chargedPerOrder = true, laborMinutes = 30.0)
+        val quote = quote(settings = withRate, extrasTotal = 100.0, services = listOf(pintura))
+        assertEquals(0.0, quote.breakEvenSalePrice)
+    }
+
     private companion object {
         const val CENT = 0.005
     }
