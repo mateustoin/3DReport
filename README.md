@@ -57,9 +57,11 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
 - Comparação entre as suas impressoras: quanto a mesma peça custa em cada máquina
 - Salvar orçamento (nome, foto e link do modelo opcionais)
-- Serviços opcionais no orçamento (pintura, lixamento, entrega etc.), com o valor digitado em cada pedido e cobrança por peça ou uma vez pelo pedido
-- Canais de venda com taxa própria (Shopee, Mercado Livre, cartão, Pix), escolhidos por orçamento
-- Imposto sobre a venda e frete como linha própria, sem embutir no preço da peça
+- Serviços opcionais no orçamento (pintura, lixamento, entrega etc.), com o valor digitado em cada pedido e cobrança por peça ou uma vez pelo pedido; com o tempo do serviço informado, o valor vem sugerido pela sua hora e o lucro mostra quanto o serviço rende de verdade
+- Insumos no custo (argola, ímã, caixa, saquinho), por peça ou por pedido
+- Canais de venda com taxa própria (Shopee, Mercado Livre, cartão, Pix), escolhidos por orçamento, com taxa fixa por item e faixas de preço como as da Shopee
+- Imposto sobre a venda e frete como linha própria, sem embutir no preço da peça; frete grátis pro cliente saindo do seu lucro, com o preço que manteria a margem
+- Preço mínimo do pedido e acréscimo por urgência ("Entrega expressa" pro cliente)
 - Link do modelo clicável (abre no navegador) e peso da peça (uso interno)
 
 **Pedidos, Catálogo & Dashboard**
@@ -79,7 +81,8 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Cadastro de filamentos — marca, tipo de material (com densidade sugerida), várias cores e controle manual de estoque por cor
 - Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento), com catálogo pré-cadastrado das principais marcas pra escolher
 - Manutenção por impressora: cada componente com o seu intervalo em horas (trocar bico, lubrificar eixos), aviso quando está perto ou vencido, diário do que foi feito e horas de uso fora de orçamento (calibração, reimpressão)
-- Arquivar filamento, impressora, serviço ou canal de venda em uso: some das escolhas de um orçamento novo sem apagar nada, e pedidos/produtos antigos continuam calculando normalmente
+- Cadastro de insumos, com o custo de cada unidade
+- Arquivar filamento, impressora, serviço, insumo ou canal de venda em uso: some das escolhas de um orçamento novo sem apagar nada, e pedidos/produtos antigos continuam calculando normalmente
 
 **Personalização do PDF**
 - Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome
@@ -93,7 +96,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Backup e restauração dos seus dados num arquivo `.zip` (levar pro outro computador, recuperar depois de formatar)
 - Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
 - Tema claro/escuro (segue o sistema por padrão)
-- Atalhos de teclado: `Ctrl`/`Cmd` + `1` a `8` pulam direto pra cada tela da barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Configurações), fora salvar/limpar orçamento
+- Atalhos de teclado: `Ctrl`/`Cmd` + `1` a `9` pulam direto pra cada tela da barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Insumos, Configurações), fora salvar/limpar orçamento
 - Confirmação antes de excluir (filamentos, impressoras, serviços, pedidos)
 - A janela lembra tamanho, posição e se estava maximizada, e volta a abrir assim (se ainda couber na tela)
 - Verificação opcional de nova versão: desligada por padrão; quando ligada, ao abrir o app a única coisa que sai da sua máquina é uma consulta à página pública de releases do GitHub, pra avisar se há uma versão mais nova

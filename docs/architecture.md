@@ -15,7 +15,7 @@ Projeto **Kotlin Multiplatform** com três módulos Gradle:
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/app/
-│     │  ├─ App.kt            # raiz: navegação pela barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Configurações, Sobre)
+│     │  ├─ App.kt            # raiz: navegação pela barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Insumos, Configurações, Sobre)
 │     │  ├─ data/              # contratos dos repositórios (expect class — ver "Persistência" abaixo)
 │     │  ├─ platform/          # capacidades específicas de plataforma (expect fun — ver "Capacidades de plataforma")
 │     │  └─ ui/                # uma pasta por tela: <tela>/<Tela>Screen.kt + <Tela>ViewModel.kt + <Tela>UiState.kt/FormState.kt
@@ -53,13 +53,25 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   - `Service` não entra em `PricingCalculator` — seu preço já é o valor
     cobrado do cliente (não um custo com margem em cima), então soma
     diretamente no valor de venda na camada de UI/export, não no cálculo
-    interno de produção/lucro (decisão 25).
+    interno de produção/lucro (decisão 25). Exceção desde a decisão 123: o
+    serviço com tempo informado conta no lucro pelo que rende acima da hora
+    (`Quote.serviceProfit`).
   - Canais de venda (`SalesChannel`, decisão 78) substituíram a taxa única de
     marketplace: cada canal tem a própria taxa, **descontada** da venda pelo
     marketplace (não somada ao total do cliente). `Quote.channelFeeRate` guarda
     a taxa do canal efetivamente aplicada, e `Quote.channelId`/`channelName`
     qual canal foi. `PricingSettings.taxRate` (imposto) é tratado do mesmo
-    jeito.
+    jeito. O canal também tem valor fixo por item e faixas de preço (decisão
+    121), resolvidos por `ChannelFeeSchedule` (uma conta só pro preço, o lucro
+    e o preço mínimo); o pedido guarda a tabela da época em
+    `Quote.channelFeeSchedule`.
+  - Regras da Leva 10 que também mexem no preço, todas desligadas por padrão:
+    insumos (`Consumable`/`QuotedConsumable`, decisão 122), frete grátis
+    (`SavedQuote.shippingAbsorbed`, `Quote.absorbedShippingCost`, decisão 124;
+    o frete cobrado se lê sempre por `SavedQuote.chargedShipping`), preço
+    mínimo do pedido e urgência (`PricingSettings.minimumOrderPrice` e
+    `rushSurchargeRate`, decisão 125) e a ajuda do kWh (`pricing/EnergyTariff`,
+    decisão 126). As fórmulas estão em [pricing-formulas.md](pricing-formulas.md).
   - Um orçamento é uma lista de impressões (decisão 105): `PrintJob` é uma
     mesa que a impressora roda (vários `FilamentUsage` numa peça multicolor,
     tempo, `runs`), e `QuotedPrint` é o retrato dela dentro do `Quote`
@@ -127,13 +139,14 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   `StateFlow`) e um `*Screen` (`@Composable` que só observa o `ViewModel` e
   envia eventos — sem lógica de cálculo).
 - **Barra lateral agrupada** (decisão 111, `ui/navigation`): `AppDestination`
-  lista as nove telas em três grupos (`DestinationGroup`): **Vendas**
+  lista as dez telas em três grupos (`DestinationGroup`): **Vendas**
   (Orçamento, Pedidos, Catálogo, Dashboard), **Cadastros** (Filamentos,
-  Impressoras, Serviços) e, no pé da barra, Configurações e Sobre, com a
+  Impressoras, Serviços, Insumos) e, no pé da barra, Configurações e Sobre, com a
   versão embaixo. `AppSidebar` desenha isso; abaixo de
   `SIDEBAR_LABELS_MIN_WINDOW_WIDTH` (1280dp) ela vira um trilho só de ícones
   com tooltip (o Orçamento perde as duas colunas antes disso). Atalho
-  `Ctrl/Cmd+1` a `8` na ordem da barra (`AppDestination.shortcutNumber`;
+  `Ctrl/Cmd+1` a `9` na ordem da barra (`AppDestination.shortcutNumber`;
+  Insumos entrou no 8 e empurrou Configurações pro 9, decisão 122;
   Sobre não tem atalho). `Main.kt` guarda posição, tamanho e se a janela
   estava maximizada em `AppPreferences.window` (`SavedWindowBounds`, em
   `preferences.json`) e só reaplica se o retângulo ainda cabe nalgum monitor
@@ -216,9 +229,15 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     em `maintenance.json`, decisão 96). Em Serviços, o valor é só uma sugestão
     opcional e cada um tem um padrão "por peça / uma vez no pedido": o que
     vale é o digitado no orçamento (`ServiceInput`), congelado em
-    `QuoteService` (decisão 92).
+    `QuoteService` (decisão 92). O serviço pode ter tempo (decisão 123), que
+    sugere o valor pela hora e conta o serviço no lucro.
+  - **Insumos** (`ui/consumables`, decisão 122): o mesmo padrão de Serviços
+    (lista, formulário, arquivar, lixeira, uso em pedidos), gravado em
+    `consumables.json` pelo `ConsumableRepository`. No Orçamento, cada insumo
+    marcado vira um `QuotedConsumable` (retrato do nome e do custo), e o custo
+    entra em `CostBreakdown.consumables`, com margem e sem reserva de falha.
     - **Arquivar** (decisão 115): `Filament`, `PrinterProfile`, `Service` e
-      `SalesChannel` ganharam `archived: Boolean = false` (campo aditivo, sem
+      `SalesChannel` (e depois `Consumable`, decisão 122) ganharam `archived: Boolean = false` (campo aditivo, sem
       migração). Cada tela de cadastro tem "Arquivar" e uma seção recolhida
       "Arquivados (n)" com "Restaurar". Um item arquivado some das escolhas
       de um orçamento novo (padrões, casamento automático do G-code,

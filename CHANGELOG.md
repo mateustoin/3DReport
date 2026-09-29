@@ -7,6 +7,30 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
+Rumo à 2.2. Tudo o que mexe no preço entrou junto, pra você recalibrar uma vez só, e **nada
+muda sozinho**: cada regra nova começa desligada, e os pedidos salvos continuam com o preço e o
+lucro que tinham.
+
+### Adicionado
+- **Taxa fixa por item no canal de venda.** A Shopee e o Mercado Livre cobram alguns reais por item
+  vendido, além do percentual, e o app não contava isso: num chaveiro de R$ 15, os R$ 4 da Shopee
+  são 27% do preço. O canal ganhou o valor fixo e, pra quem precisa, faixas de preço ("até R$ 79,99
+  por peça: 20% + R$ 4,00"), copiadas do painel do vendedor. A calculadora do site também tem o fixo.
+- **Insumos.** Tela nova em Cadastros pra argola, ímã, parafuso, caixa, saquinho: o que entra na peça e
+  custa dinheiro. No Orçamento, marque os usados; o custo entra no preço, com a margem.
+- **Tempo nos serviços.** "Pintura: 30 min" sugere o valor pela sua hora e mostra quanto o serviço
+  rende de verdade, com aviso quando ele paga menos que a sua hora.
+- **Frete grátis.** Marque que você paga o frete: o cliente vê "Frete grátis", o valor sai do seu
+  lucro, e a nota mostra quanto cobrar pra manter a margem, com um botão que já preenche o preço.
+- **Preço mínimo do pedido** e **acréscimo por urgência**, em Negócio e custos. O pedido urgente
+  aparece pro cliente como "Entrega expressa", sem o valor separado.
+- **Calcular o kWh** pela conta de luz, pela bandeira do mês ou pela tarifa branca, em Negócio e custos.
+
+### Alterado
+- **Atalhos:** com a tela Insumos, Configurações passou de Ctrl/Cmd+8 pra Ctrl/Cmd+9. Insumos é o 8.
+- **Serviço com tempo informado passa a contar no lucro** pelo que rende acima da sua hora. Serviço sem
+  tempo continua como antes, fora do lucro.
+
 ## [2.1.1] - 2026-09-25
 
 ### Corrigido
