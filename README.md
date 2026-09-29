@@ -173,6 +173,7 @@ site/        Site institucional (GitHub Pages)
 | [docs/pricing-formulas.md](docs/pricing-formulas.md) | Parâmetros e fórmulas de cálculo |
 | [docs/decisions.md](docs/decisions.md) | Decisões aprovadas e pendentes |
 | [docs/roadmap.md](docs/roadmap.md) | Backlog de evoluções e próximas implementações |
+| [docs/pesquisa-de-mercado-2026-09.md](docs/pesquisa-de-mercado-2026-09.md) | Pesquisa de mercado de set/2026: concorrentes, o que falta no app e o que exigiria nuvem |
 | [core/README.md](core/README.md) | Módulo `core` |
 | [composeApp/README.md](composeApp/README.md) | Módulo `composeApp` |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Como propor mudanças e enviar um PR |
