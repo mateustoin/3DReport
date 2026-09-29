@@ -131,6 +131,7 @@ fun App(
             scope = appScope,
             background = Dispatchers.Default,
             main = Dispatchers.Main,
+            consumableRepository = container.consumables,
         )
     }
     val quoteViewModel = remember { newQuoteViewModel().also(prepareQuote) }

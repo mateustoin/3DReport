@@ -1,5 +1,9 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.ui.format.toDurationInputText
+import com.threedreport.core.model.QuotedConsumable
+import com.threedreport.core.model.Consumable
+import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.ClientRepository
 import com.threedreport.app.data.FilamentRepository
@@ -99,12 +103,15 @@ class QuoteViewModel(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
     private val background: CoroutineDispatcher = Dispatchers.Unconfined,
     private val main: CoroutineDispatcher = Dispatchers.Unconfined,
+    /** Cadastro de insumos (decisão 122). Sem ele, a seção de insumos não aparece. */
+    consumableRepository: ConsumableRepository? = null,
 ) {
     val filaments: StateFlow<List<Filament>> = filamentRepository.filaments
     val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
     val settings: StateFlow<PricingSettings> = settingsRepository.settings
     val services: StateFlow<List<Service>> = serviceRepository.services
     val salesChannels: StateFlow<List<SalesChannel>> = salesChannelRepository.channels
+    val consumables: StateFlow<List<Consumable>> = consumableRepository?.consumables ?: MutableStateFlow(emptyList())
 
     /** Clientes do cadastro, pra sugerir ao digitar o nome. */
     val clients: StateFlow<List<Client>> = clientRepository?.clients ?: MutableStateFlow(emptyList())
@@ -483,20 +490,62 @@ class QuoteViewModel(
 
     /**
      * Marca ou desmarca o serviço [id]. Ao marcar, o valor vem preenchido com o sugerido do
-     * catálogo (ou vazio, pra digitar) e a forma de cobrança com o padrão do cadastro.
+     * catálogo, ou, sem ele, com o tempo do serviço pago pela sua hora (decisão 123), ou vazio pra
+     * digitar; a forma de cobrança e o tempo vêm do cadastro.
      */
     fun toggleService(id: String) = inputState.update { input ->
         if (id in input.selectedServices) return@update input.copy(selectedServices = input.selectedServices - id)
         val service = services.value.find { it.id == id } ?: return@update input
         val serviceInput = ServiceInput(
             name = service.name,
-            priceText = service.suggestedPrice?.toInputText().orEmpty(),
+            priceText = service.suggestedPriceFor(settings.value.laborRatePerHour)?.toInputText().orEmpty(),
             chargedPerOrder = service.chargedPerOrder,
+            laborMinutesText = service.laborMinutes?.takeIf { it > 0 }?.toDurationInputText().orEmpty(),
         )
         input.copy(selectedServices = input.selectedServices + (id to serviceInput))
     }
 
     fun setServicePrice(id: String, text: String) = updateServiceInput(id) { it.copy(priceText = text) }
+
+    fun setServiceLaborMinutes(id: String, text: String) = updateServiceInput(id) { it.copy(laborMinutesText = text) }
+
+    /** Marca ou desmarca o insumo [id] (decisão 122): marcado, entra com 1 unidade e a forma do cadastro. */
+    fun toggleConsumable(id: String) = inputState.update { input ->
+        if (id in input.selectedConsumables) return@update input.copy(selectedConsumables = input.selectedConsumables - id)
+        val consumable = consumables.value.find { it.id == id } ?: return@update input
+        val consumableInput = ConsumableInput(
+            name = consumable.name,
+            unitCost = consumable.unitCost,
+            chargedPerOrder = consumable.chargedPerOrder,
+        )
+        input.copy(selectedConsumables = input.selectedConsumables + (id to consumableInput))
+    }
+
+    fun setConsumableQuantity(id: String, text: String) = updateConsumableInput(id) { it.copy(quantityText = text) }
+
+    fun setConsumableChargedPerOrder(id: String, chargedPerOrder: Boolean) =
+        updateConsumableInput(id) { it.copy(chargedPerOrder = chargedPerOrder) }
+
+    private fun updateConsumableInput(id: String, transform: (ConsumableInput) -> ConsumableInput) = inputState.update { input ->
+        val current = input.selectedConsumables[id] ?: return@update input
+        input.copy(selectedConsumables = input.selectedConsumables + (id to transform(current)))
+    }
+
+    /** Pedido urgente (decisão 125). */
+    fun setRush(rush: Boolean) = inputState.update { it.copy(rush = rush) }
+
+    /** Frete grátis pro cliente, pago por você (decisão 124). */
+    fun setShippingAbsorbed(absorbed: Boolean) = inputState.update { it.copy(shippingAbsorbed = absorbed) }
+
+    /**
+     * "Pra manter a margem, cobre R$ X" do frete grátis (decisão 124): põe no preço fechado o total que o
+     * cliente pagaria com a peça que cobre o frete. Não faz nada sem frete grátis na conta.
+     */
+    fun useShippingCoveringPrice() {
+        val result = currentResult()
+        val covering = result.quote?.shippingCoveringSalePrice ?: return
+        setTargetTotal((covering + result.servicesTotal).toInputText())
+    }
 
     fun setServiceChargedPerOrder(id: String, chargedPerOrder: Boolean) =
         updateServiceInput(id) { it.copy(chargedPerOrder = chargedPerOrder) }
@@ -655,6 +704,7 @@ class QuoteViewModel(
             }
         }
         val shippingCost = if (isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
+        val shippingAbsorbed = !isProduct && input.shippingAbsorbed && shippingCost > 0
 
         val editing = form.operation as? QuoteOperation.Editing
         if (editing != null) {
@@ -673,6 +723,7 @@ class QuoteViewModel(
                 deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
                 category = form.category,
                 soldAtCatalogPrice = soldAtCatalogPrice,
+                shippingAbsorbed = shippingAbsorbed,
             )
             }
             // A edição não é mais modal (decisão 113): o pedido pode ter ido pra lixeira enquanto era editado.
@@ -704,6 +755,7 @@ class QuoteViewModel(
             category = form.category,
             soldAtCatalogPrice = soldAtCatalogPrice,
             currency = currency(),
+            shippingAbsorbed = shippingAbsorbed,
         )
         inputState.value = QuoteInputState(kind = input.kind)
         saveFormState.value = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = saved.displayNumber)
@@ -882,6 +934,7 @@ class QuoteViewModel(
                 quote = original.quote,
                 selectedServices = original.services,
                 shippingCost = original.shippingCost,
+                shippingAbsorbed = original.shippingAbsorbed,
                 keepsOriginalPrice = true,
                 todaysQuote = result.quote,
                 errorMessage = null,
@@ -911,6 +964,7 @@ class QuoteViewModel(
         services: List<Service>,
         input: QuoteInputState,
         channels: List<SalesChannel> = salesChannels.value,
+        consumables: List<Consumable> = this.consumables.value,
     ): QuoteResult {
         val errors = LinkedHashMap<String, String>()
         val quantity = input.quantityOrNull ?: 1.also { errors[QuoteFields.QUANTITY] = "Quantidade: use um número inteiro, 1 ou mais." }
@@ -920,11 +974,35 @@ class QuoteViewModel(
                 if (serviceInput.priceText.isNotBlank()) errors[QuoteFields.service(id)] = "Valor de ${serviceInput.name}: não é um número."
                 return@mapNotNull null
             }
+            val laborMinutes = if (serviceInput.laborMinutesText.isBlank()) {
+                0.0
+            } else {
+                parseDurationMinutes(serviceInput.laborMinutesText)?.takeIf { it >= 0 } ?: 0.0.also {
+                    errors[QuoteFields.serviceMinutes(id)] = "Tempo de ${serviceInput.name}: use minutos (30) ou horas e minutos (1h30)."
+                }
+            }
             QuoteService(
                 id = id,
                 name = services.find { it.id == id }?.name ?: serviceInput.name,
                 price = price,
                 chargedPerOrder = serviceInput.chargedPerOrder,
+                laborMinutes = laborMinutes,
+            )
+        }
+        // Com o insumo no cadastro, vale o custo de hoje, como o filamento; saído do cadastro, o do pedido.
+        val usedConsumables = input.selectedConsumables.mapNotNull { (id, consumableInput) ->
+            val quantity = parseDecimal(consumableInput.quantityText)?.takeIf { it > 0 }
+            if (quantity == null) {
+                errors[QuoteFields.consumable(id)] = "Quantidade de ${consumableInput.name}: use um número maior que zero."
+                return@mapNotNull null
+            }
+            val fromCatalog = consumables.find { it.id == id }
+            QuotedConsumable(
+                id = id,
+                name = fromCatalog?.name ?: consumableInput.name,
+                unitCost = fromCatalog?.unitCost ?: consumableInput.unitCost,
+                quantity = quantity,
+                chargedPerOrder = consumableInput.chargedPerOrder,
             )
         }
         val missingServicePrice = selectedServices.size < input.selectedServices.size
@@ -952,12 +1030,15 @@ class QuoteViewModel(
         // Produto do catálogo não tem frete (decisão 101): o campo some da tela, e o que tiver ficado
         // digitado nele não pode mexer no preço.
         val shippingCost = if (input.isProduct) 0.0 else amount(input.shippingCostText, QuoteFields.SHIPPING, "Frete", errors) ?: 0.0
+        // Frete grátis (decisão 124): o frete é pago por você, então fica fora do que o cliente paga.
+        val shippingAbsorbed = input.shippingAbsorbed && shippingCost > 0
+        val chargedShipping = if (shippingAbsorbed) 0.0 else shippingCost
         val servicesTotal = selectedServices.sumOf { it.total(quantity) }
         // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
         // que de fato é a peça. Um alvo que nem cobre os extras é erro no campo: zerar a peça salvaria
         // um total diferente do digitado, sem ninguém ver.
         val target = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors)?.let { typed ->
-            val extras = servicesTotal + shippingCost
+            val extras = servicesTotal + chargedShipping
             if (typed < extras) {
                 errors[QuoteFields.TARGET] = "Esse preço não cobre serviços e frete (${extras.toInputText()}): digite pelo menos esse valor."
                 null
@@ -965,7 +1046,7 @@ class QuoteViewModel(
                 typed
             }
         }
-        val negotiatedSalePrice = target?.let { it - servicesTotal - shippingCost }
+        val negotiatedSalePrice = target?.let { it - servicesTotal - chargedShipping }
             ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * quantity }
         val laborMinutes = if (input.laborMinutesText.isBlank()) {
             0.0
@@ -980,6 +1061,7 @@ class QuoteViewModel(
             selectedServices = selectedServices,
             salesChannel = channel,
             shippingCost = shippingCost,
+            shippingAbsorbed = shippingAbsorbed,
             missingServicePrice = missingServicePrice,
         )
         missingFromCatalog(input, resolved)?.let { return base.copy(errorMessage = it, fieldErrors = errors) }
@@ -995,7 +1077,12 @@ class QuoteViewModel(
                 // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
                 laborMinutes = laborMinutes,
                 negotiatedSalePrice = negotiatedSalePrice,
-                extrasTotal = servicesTotal + shippingCost,
+                extrasTotal = servicesTotal + chargedShipping,
+                services = selectedServices,
+                consumables = usedConsumables,
+                // Urgência só existe com o acréscimo configurado e em pedido de cliente (decisão 125).
+                rush = input.rush && !input.isProduct && settings.rushSurchargeRate > 0,
+                absorbedShippingCost = if (shippingAbsorbed) shippingCost else 0.0,
             )
         }.fold(
             onSuccess = { base.copy(quote = it) },

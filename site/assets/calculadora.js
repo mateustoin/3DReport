@@ -7,12 +7,12 @@
     "peso", "horas", "minutos",
     "precoFilamento", "potencia", "precoKwh", "margem",
     "falhas", "acabamento", "valorHora", "tempoTrabalho",
-    "quantidade", "taxaCanal", "imposto",
+    "quantidade", "taxaCanal", "taxaFixaCanal", "imposto",
   ];
 
   var ADVANCED_FIELDS = [
     "falhas", "acabamento", "valorHora", "tempoTrabalho",
-    "quantidade", "taxaCanal", "imposto",
+    "quantidade", "taxaCanal", "taxaFixaCanal", "imposto",
   ];
 
   var ADVANCED_DEFAULTS = {
@@ -22,6 +22,7 @@
     tempoTrabalho: "0",
     quantidade: "1",
     taxaCanal: "0",
+    taxaFixaCanal: "0",
     imposto: "0",
   };
 
@@ -214,13 +215,14 @@
     var laborMinutes = parseDecimal(values.tempoTrabalho);
     var quantityRaw = parseDecimal(values.quantidade);
     var channelFeePercent = parseDecimal(values.taxaCanal);
+    var channelFixedFeePerItem = parseDecimal(values.taxaFixaCanal);
     var taxPercent = parseDecimal(values.imposto);
 
     var numericInputs = [
       filamentGrams, hours, minutes,
       filamentPricePerKg, printerPowerWatts, energyPricePerKwh, profitMarginPercent,
       failureRatePercent, finishingRatePercent, laborRatePerHour, laborMinutes,
-      quantityRaw, channelFeePercent, taxPercent,
+      quantityRaw, channelFeePercent, channelFixedFeePerItem, taxPercent,
     ];
     var allFinite = numericInputs.every(function (n) {
       return isFinite(n);
@@ -254,6 +256,7 @@
         laborMinutes,
         quantity,
         channelFeePercent,
+        channelFixedFeePerItem,
         taxPercent
       );
     } catch (e) {

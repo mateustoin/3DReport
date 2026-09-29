@@ -683,7 +683,11 @@ private fun SavedQuoteRow(
                             )
                         }
                         quote.channelName?.let { add("Canal $it") }
-                        if (savedQuote.shippingCost > 0) add("Frete ${money(savedQuote.shippingCost)}")
+                        if (quote.rush) add("Urgente")
+                        when {
+                            savedQuote.shippingAbsorbed -> add("Frete grátis")
+                            savedQuote.shippingCost > 0 -> add("Frete ${money(savedQuote.chargedShipping)}")
+                        }
                     }.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

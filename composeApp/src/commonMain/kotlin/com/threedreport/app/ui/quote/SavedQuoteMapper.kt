@@ -66,8 +66,21 @@ internal object SavedQuoteMapper {
                     name = service.name,
                     priceText = service.price.toInputText(),
                     chargedPerOrder = service.chargedPerOrder,
+                    laborMinutesText = service.laborMinutes.takeIf { it > 0 }?.toDurationInputText().orEmpty(),
                 )
             },
+            // Insumos, urgência e frete grátis voltam do retrato (decisões 122 a 125), senão reabrir e salvar
+            // mudaria o preço sem ninguém ter mexido neles.
+            selectedConsumables = quote.consumables.associate { used ->
+                used.id to ConsumableInput(
+                    name = used.name,
+                    unitCost = used.unitCost,
+                    quantityText = used.quantity.toInputText(),
+                    chargedPerOrder = used.chargedPerOrder,
+                )
+            },
+            rush = quote.rush,
+            shippingAbsorbed = savedQuote.shippingAbsorbed,
             salesChannelId = channel?.id,
             missingChannelName = quote.channelName.takeIf { channel == null },
             shippingCostText = if (savedQuote.shippingCost > 0) savedQuote.shippingCost.toInputText() else "",

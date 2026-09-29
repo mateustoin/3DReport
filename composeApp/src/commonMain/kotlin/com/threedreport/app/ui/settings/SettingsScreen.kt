@@ -69,8 +69,7 @@ import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
-import com.threedreport.app.ui.format.toMoney
-import com.threedreport.app.ui.format.toPercentText
+import com.threedreport.app.ui.format.channelFeeSummary
 import com.threedreport.app.ui.templates.TemplateListDialog
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
@@ -388,7 +387,7 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
     val row: @Composable (SalesChannel) -> Unit = { channel ->
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                "${channel.name} · ${channelFeeSummary(channel)}" + if (channel.archived) " · arquivado" else "",
+                "${channel.name} · ${channelFeeSummary(channel, LocalCurrency.current)}" + if (channel.archived) " · arquivado" else "",
                 style = MaterialTheme.typography.bodyMedium,
             )
             TextButton(onClick = { viewModel.startEditing(channel) }) { Text("Editar") }
@@ -451,14 +450,6 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
         }
     }
     form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-}
-
-/** "20%", "20% + R$ 4,00 por item" ou "N faixas de preço" (decisão 121), pra listar os canais. */
-@Composable
-private fun channelFeeSummary(channel: SalesChannel): String = when {
-    channel.tiers.isNotEmpty() -> "${channel.tiers.size} faixas de preço"
-    channel.fixedFeePerItem > 0 -> "${channel.feeRate.toPercentText()} + ${channel.fixedFeePerItem.toMoney()} por item"
-    else -> channel.feeRate.toPercentText()
 }
 
 /**

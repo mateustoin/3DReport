@@ -254,8 +254,11 @@ private fun drawQuotePage(
             cursorY -= 18f
         }
 
-        if (savedQuote.shippingCost > 0) {
-            content.text(bodyFont, 12f, margin, cursorY, "Frete: ${savedQuote.shippingCost.toCurrencyText(currency)}")
+        if (savedQuote.shippingAbsorbed) {
+            content.text(bodyFont, 12f, margin, cursorY, "Frete: grátis")
+            cursorY -= 18f
+        } else if (savedQuote.shippingCost > 0) {
+            content.text(bodyFont, 12f, margin, cursorY, "Frete: ${savedQuote.chargedShipping.toCurrencyText(currency)}")
             cursorY -= 18f
         }
 
@@ -267,8 +270,12 @@ private fun drawQuotePage(
         }
 
         // Em destaque, e não como mais uma linha da lista: é o que o cliente usa pra decidir se
-        // autoriza a fabricação (pedido do teste externo, decisão 83).
-        savedQuote.deliveryDateText()?.let { text ->
+        // autoriza a fabricação (pedido do teste externo, decisão 83). Entrega expressa (decisão 125)
+        // junto do prazo; sem prazo, vira a própria faixa de destaque.
+        val deliveryHighlight = savedQuote.deliveryDateText()?.let { text ->
+            if (savedQuote.quote.rush) "$text (entrega expressa)" else text
+        } ?: "Entrega expressa".takeIf { savedQuote.quote.rush }
+        deliveryHighlight?.let { text ->
             cursorY -= 4f
             cursorY = drawHighlightBand(content, titleFont, text, margin, cursorY, contentWidth)
             // O cursor é linha de base: a próxima linha precisa descer a altura dela, não só um respiro.

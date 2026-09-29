@@ -528,14 +528,22 @@ class QuoteHistoryViewModel(
             val currency = savedQuote.currency
             val quantity = savedQuote.quote.quantity
             val piecesTotal = savedQuote.totalWithServices - savedQuote.chargedShipping
+            // Curta ("30/09", sem o ano) porque a imagem é pra conversa do dia, não documento. Entrega
+            // expressa (decisão 125) junto do prazo; sem prazo, vira o próprio texto de entrega.
+            val deliveryDate = savedQuote.deliveryDateEpochDay?.let { "Entrega até ${formatShortDate(it)}" }
+            val deliveryText = when {
+                deliveryDate != null && savedQuote.quote.rush -> "$deliveryDate · entrega expressa"
+                deliveryDate != null -> deliveryDate
+                savedQuote.quote.rush -> "Entrega expressa"
+                else -> null
+            }
             renderQuoteImage(
                 title = savedQuote.name.takeUnless { savedQuote.hasAutoName } ?: "Orçamento",
                 priceText = savedQuote.totalWithServices.toCurrencyText(currency),
                 unitPriceText = if (quantity > 1) "$quantity peças · ${(piecesTotal / quantity).toCurrencyText(currency)} cada" else null,
                 photoBytes = photoBytes(savedQuote),
                 brandText = brandingRepository.branding.value.imageBrandLine(),
-                // Curta ("30/09", sem o ano) porque a imagem é pra conversa do dia, não documento.
-                deliveryText = savedQuote.deliveryDateEpochDay?.let { "Entrega até ${formatShortDate(it)}" },
+                deliveryText = deliveryText,
             )
         }
     }
