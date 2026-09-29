@@ -9,6 +9,8 @@
 > **Incorporada ao roadmap em 2026-09-28:** todas as ideias desta pesquisa
 > entraram no [Plano de evolução 2](roadmap.md#plano-de-evolução-2-revisão-de-2026-09-28-pesquisa-de-mercado),
 > Levas 10 a 23, com as que ficaram fora do foco registradas em "Sem posição".
+> O suporte a outros idiomas, que esta pesquisa não avaliou, foi analisado no
+> mesmo dia e entrou nas Levas 10B e 11B.
 
 ## Sumário
 

@@ -74,8 +74,8 @@ Quando dois itens mexem no mesmo lugar, entram na mesma leva, pelo motivo da Lev
 - Campo novo nasce neutro (zero ou desligado): atualizar o app não muda o preço de
   ninguém em silêncio, e pedido salvo continua congelado.
 
-**Resumo da ordem:** preço certo → receber e conversar → estoque → dinheiro →
-cliente → produção → oferta e pronta-entrega → chegar e ficar → conectado sem custo
+**Resumo da ordem:** preço certo → textos prontos pra tradução → receber e
+conversar → inglês → estoque → dinheiro → cliente → produção → oferta e pronta-entrega → chegar e ficar → conectado sem custo
 (D1, depois D2) → apostas locais → Android e sincronização sem servidor → servidor →
 depois do servidor.
 
@@ -130,6 +130,40 @@ junto.
   bandeira escolhido nas Configurações. Visto em: 3D Prime (tarifa da ANEEL por
   estado), ha-bambu-costs (tarifa por horário). Esforço P, impacto B.
 
+### Leva 10B: Textos prontos pra tradução (idioma, fase A)
+
+Primeira metade do item *(já no roadmap)* "Idioma da interface configurável"
+(seção UX extras), avaliado em 2026-09-28 a pedido do responsável do projeto: a
+pesquisa de mercado não tinha tratado disso. **Nada muda pro usuário**; o objetivo
+é que tudo o que vier depois já nasça traduzível. Vem logo depois da Leva 10 de
+propósito: as Levas 11 a 17 criam muitas telas novas, e preparar os textos antes
+evita refazer o trabalho em cima de umas 1.500 frases em vez das cerca de 1.050 de
+hoje. Pode sair junto da 2.2 ou numa versão só dela. Trabalho quase todo
+mecânico, bom pra subagentes com revisão.
+
+- [ ] **Textos em recursos.** As cerca de 1.050 frases escritas direto no código,
+  em uns 140 arquivos (as que mais têm: Orçamento, Configurações e Pedidos), vão
+  pra arquivos de texto do Compose (`composeResources`, com `stringResource`), só
+  em português por enquanto. Plurais ("3 impressões") como plurais de verdade.
+- [ ] **Mensagens dos ViewModels como chave e valores.** Avisos e mensagens montados
+  fora das telas (`QuoteHistoryViewModel`, `QuoteViewModel` e outros) passam a
+  levar a chave do texto e os valores, e a tela é que traduz, porque o
+  `stringResource` só existe dentro da tela.
+- [ ] **Rótulos fora do `core`.** `OrderStatus`, `QuoteKind` e `ThemeMode` carregam
+  o texto em português (`OrderStatus("Orçado")`); o rótulo passa pra interface, e
+  o `core` fica sem texto de tela.
+- [ ] **Nome automático do pedido sem depender do idioma.** O pedido sem nome ganha
+  o prefixo `"Orçamento - "` (`SavedQuote.AUTO_NAME_PREFIX`) e é reconhecido por uma
+  expressão regular sobre esse texto, que quebraria em outro idioma. Vira uma marca
+  no registro, com migração e teste (regra da decisão 106).
+- [ ] **PDF, mensagem e imagem com textos em recursos**, pelo mesmo mecanismo (fora
+  da tela, lendo o recurso diretamente).
+- [ ] **Datas e números pelo idioma.** `DateFormat.jvm.kt` usa `pt-BR` fixo, e a
+  entrada numérica (`DecimalInput`) supõe que "2.700" é dois mil e setecentos.
+  Passam a seguir o idioma escolhido (na fase A, continua pt-BR).
+
+Esforço G (somando as duas fases), impacto A no alcance (ver Leva 11B).
+
 ### Leva 11: Receber e conversar com o cliente
 
 O que o vendedor faz o dia inteiro depois de mandar o orçamento: cobrar, receber e
@@ -173,6 +207,39 @@ gerado no próprio computador).
 - [ ] **Observações internas no pedido.** Hoje o pedido não tem campo de texto
   livre ("cliente quer a cor mais escura", "entregar na portaria"). Uso só interno
   (decisão 19). Ideia derivada, comum nos sistemas de gestão. Esforço P, impacto M.
+
+### Leva 11B: Inglês no app, no README e no site (idioma, fase B)
+
+Segunda metade do item de idioma. Depois da Leva 11, o app já tem o núcleo que
+serve a qualquer vendedor, de qualquer país (G-code, preço certo, PDF, pedidos),
+e esperar a Leva 17 atrasaria em meses o público maior sem motivo técnico.
+
+**Por que vale** (avaliação de 2026-09-28): o nicho "grátis, sem internet e código
+aberto" está vazio fora do Brasil (o PrintQuote3D tem 0 estrelas; o projeto aberto
+mais popular achado na pesquisa, o de Reitberger, tem 53); quem usa o GitHub, o
+Reddit e o Printables lê em inglês, e é disso que dependem estrelas, colaboradores e
+divulgação espontânea; e a assinatura "Gerado com 3DReport" (decisão 91) passa a
+circular num mercado muito maior. **O que pesa contra:** a busca por "3D print cost
+calculator" é dominada pela Prusa, pela Omni e por dezenas de calculadoras, então o
+site em inglês deve atrair pouco pelo Google (a divulgação lá fora vem de
+comunidades); o diferencial brasileiro (Pix, MEI, Shopee, WhatsApp) não vai junto;
+e toda funcionalidade nova passa a ter texto em dois idiomas. Espanhol, pra América
+Latina (Mercado Libre, WhatsApp, venda informal), fica registrado como o próximo
+candidato natural.
+
+- [ ] **Inglês no app.** Tradução dos recursos da Leva 10B, escolha do idioma em
+  Configurações (seguindo o do sistema por padrão, como o tema, decisão 35), datas e
+  números no formato do idioma, PDF, mensagem e imagem no idioma do app.
+- [ ] **Padrões de produto pra quem não vende no Brasil.** Pix e MEI (Levas 11 e
+  13) aparecem só pra quem usa real; canais sugeridos passam a incluir Etsy, eBay e
+  Amazon; o imposto e a moeda já são genéricos (decisão 46).
+- [ ] **README em inglês** (um `README.en.md`, ligado no topo do README) e notas das
+  versões com um resumo em inglês, já que hoje saem do CHANGELOG em português. Os
+  documentos internos (`docs/`, decisões, roadmap) continuam em português.
+- [ ] **Site em inglês.** As 5 páginas (cerca de 9.400 palavras) e os textos da
+  calculadora (`calculadora.js`) numa pasta `/en/`, com seletor de idioma,
+  marcações `hreflang`, `sitemap` e dados estruturados em inglês. Esforço M; o maior
+  custo é manter as duas versões iguais depois.
 
 ### Leva 12: Estoque e compras
 
@@ -352,7 +419,6 @@ das levas que criam o que ela mostra.
   Continua esperando um arquivo real pra conferir a estrutura.
 - [ ] **Portfólio em grade pro Instagram** *(já no roadmap: ideias registradas da
   Leva 7B do Plano 1)*.
-- [ ] **Idioma da interface configurável** *(já no roadmap: seção UX extras)*.
 - [ ] **Tabela comparativa no site.** "3DReport, planilha e sistema por
   assinatura", sem citar concorrentes, destacando "sem limite de pedidos" e "seus
   dados não ficam presos se você parar de pagar". É divulgação, não funcionalidade
@@ -1392,7 +1458,7 @@ Leva seguinte, a 2.1 (decisão 109):
 Todos os itens que estavam aqui foram reagendados no Plano 2 (revisão de
 2026-09-28): custo de falha real acumulado e exportar pra CSV/Excel na Leva 13;
 sinal/pagamento parcial na Leva 11; compatibilidade com Spoolman na Leva 12;
-idioma da interface na Leva 17; assistente de IA na Leva 18; portal de
+idioma da interface nas Levas 10B e 11B; assistente de IA na Leva 18; portal de
 acompanhamento nas Levas 19 e 22; Fase 2 do STL e guardar o `.3mf` na Leva 20;
 Android na Leva 21. O banner de compartilhamento do site foi feito (decisão
 120). Só o `CODE_OF_CONDUCT.md` continua sem posição (seção 4).
@@ -2262,7 +2328,8 @@ funciona hoje.
   cards grandes demais — trocada de um banner no topo (largura total,
   100dp de altura) pra uma miniatura pequena (48dp) ao lado do texto,
   card bem mais compacto.
-- [ ] **Idioma da interface configurável** *Agendado na Leva 17 do Plano 2.*
+- [ ] **Idioma da interface configurável** *Agendado nas Levas 10B (textos prontos
+  pra tradução) e 11B (inglês) do Plano 2, com a avaliação completa lá.*
   (levantado em 2026-09-19, pesquisa
   de concorrentes — apps internacionais atendem público global). Hoje a UI é
   fixa em português. Baixa prioridade dado o foco atual no mercado
