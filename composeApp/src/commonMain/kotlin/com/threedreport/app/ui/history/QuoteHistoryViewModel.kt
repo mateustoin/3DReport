@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.core.model.Consumable
+import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.ClientRepository
@@ -84,6 +86,8 @@ class QuoteHistoryViewModel(
     kind: QuoteKind = QuoteKind.ORDER,
     /** Leva pra tela de Pedidos, pro "Ver pedidos" do aviso depois de transformar um produto em pedido. */
     private val showOrders: () -> Unit = {},
+    /** Cadastro de insumos (decisão 122), pro catálogo vivo recalcular com o custo de hoje de cada um. */
+    consumableRepository: ConsumableRepository? = null,
 ) {
 
     val savedQuotes: StateFlow<List<SavedQuote>> = repository.savedQuotes
@@ -166,6 +170,7 @@ class QuoteHistoryViewModel(
     val printers: StateFlow<List<PrinterProfile>> = printerRepository.printers
     val settings: StateFlow<PricingSettings> = settingsRepository.settings
     val salesChannels: StateFlow<List<SalesChannel>> = salesChannelRepository.channels
+    val consumables: StateFlow<List<Consumable>> = consumableRepository?.consumables ?: MutableStateFlow(emptyList())
 
     /**
      * O produto recalculado com os cadastros de hoje (decisão 102), pro card avisar quando os
@@ -177,7 +182,8 @@ class QuoteHistoryViewModel(
         printers: List<PrinterProfile> = this.printers.value,
         settings: PricingSettings = this.settings.value,
         channels: List<SalesChannel> = salesChannels.value,
-    ): RepriceResult = ProductRepricer.reprice(product, filaments, printers, settings, channels)
+        consumables: List<Consumable> = this.consumables.value,
+    ): RepriceResult = ProductRepricer.reprice(product, filaments, printers, settings, channels, consumables)
 
     /** Abre o diálogo com o antes e o depois; não faz nada se não der pra recalcular ou se nada mudou. */
     fun startRepricing(product: SavedQuote) {
@@ -521,7 +527,7 @@ class QuoteHistoryViewModel(
         saveGenerated("${fileNameFor(savedQuote)}.png", "Gerando imagem…", "Imagem salva.") {
             val currency = savedQuote.currency
             val quantity = savedQuote.quote.quantity
-            val piecesTotal = savedQuote.totalWithServices - savedQuote.shippingCost
+            val piecesTotal = savedQuote.totalWithServices - savedQuote.chargedShipping
             renderQuoteImage(
                 title = savedQuote.name.takeUnless { savedQuote.hasAutoName } ?: "Orçamento",
                 priceText = savedQuote.totalWithServices.toCurrencyText(currency),

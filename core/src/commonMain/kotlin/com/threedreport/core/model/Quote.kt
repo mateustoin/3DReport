@@ -16,7 +16,9 @@ import kotlinx.serialization.Serializable
  * @property finishing acabamento como percentual do material (ver [PricingSettings.finishingRate]).
  *   Soma junto com [labor]; quem cobra lixar e pintar em minutos deixa a taxa em zero.
  * @property failures reserva de falha, que incide sobre todos os outros custos menos
- *   [administrative] (ver [PricingSettings.failureRate]).
+ *   [administrative] e [consumables] (ver [PricingSettings.failureRate]).
+ * @property consumables insumos do pedido (argola, ímã, caixa, ver [QuotedConsumable]), decisão 122.
+ *   Passam pela margem, como o material, mas não pela reserva de falha.
  */
 @Serializable
 data class CostBreakdown(
@@ -29,11 +31,12 @@ data class CostBreakdown(
     val administrative: Double,
     val labor: Double,
     val fixedCost: Double,
+    val consumables: Double = 0.0,
 ) {
     /** Soma de todos os custos: o valor de produção. */
     val total: Double
         get() = material + energy + maintenance + failures + finishing + investmentReturn +
-            administrative + labor + fixedCost
+            administrative + labor + fixedCost + consumables
 }
 
 /**
@@ -101,6 +104,28 @@ data class FilamentTotal(val filament: FilamentSnapshot, val color: FilamentColo
  * @property extrasTotal serviços e frete cobrados do cliente junto com a peça (decisão 107). Não
  *   passam pela margem, mas passam pelo canal e pelo imposto, que levam a parte deles do total
  *   recebido: por isso entram aqui, pra [profit] e [breakEvenSalePrice] saírem do total de verdade.
+ *   Frete grátis não entra aqui, e sim em [absorbedShippingCost].
+ * @property consumables insumos usados, com o custo da época (decisão 122); a soma está em
+ *   [CostBreakdown.consumables].
+ * @property channelFixedFee valor fixo que o canal cobra no pedido inteiro (o fixo por item vezes a
+ *   quantidade, na faixa em que [salePrice] cai), decisão 121. Descontado do lucro, como [channelFeeRate].
+ * @property channelFeeSchedule a tabela do canal na época (percentual, fixo e faixas), pra
+ *   [breakEvenSalePrice] continuar exato num pedido antigo. `null` na venda direta e nos pedidos salvos
+ *   antes da 2.2, que só tinham o percentual ([channelFeeRate]).
+ * @property serviceLaborMinutes/[serviceLaborCost] seu tempo nos serviços que têm tempo informado, e o
+ *   que ele vale pela sua hora (decisão 123).
+ * @property serviceProfit o que esses serviços rendem acima da sua hora: o valor cobrado menos
+ *   [serviceLaborCost]. Soma no [profit]. Negativo quando o serviço paga menos que a sua hora. Serviço
+ *   sem tempo informado não entra (continua sendo repasse).
+ * @property absorbedShippingCost frete que você paga pra o cliente receber de graça (decisão 124). Não é
+ *   cobrado do cliente, então fica fora de [extrasTotal] e sai do [profit].
+ * @property shippingCoveringSalePrice o valor da peça que manteria o lucro de tabela mesmo pagando o frete
+ *   grátis, pra sugerir ao vendedor. `null` sem frete grátis.
+ * @property rush se o pedido foi marcado como urgente, e [rushSurcharge] o acréscimo que isso deu na peça
+ *   (decisão 125), já embutido em [salePrice].
+ * @property priceBeforeMinimum o que a conta dava quando o preço mínimo do pedido
+ *   ([PricingSettings.minimumOrderPrice]) subiu o preço de tabela (decisão 125). `null` quando o mínimo
+ *   não foi aplicado.
  */
 @Serializable
 data class Quote(
@@ -115,12 +140,27 @@ data class Quote(
     val taxRate: Double = 0.0,
     val tableSalePrice: Double? = null,
     val extrasTotal: Double = 0.0,
+    val consumables: List<QuotedConsumable> = emptyList(),
+    val channelFixedFee: Double = 0.0,
+    val channelFeeSchedule: ChannelFeeSchedule? = null,
+    val serviceLaborMinutes: Double = 0.0,
+    val serviceLaborCost: Double = 0.0,
+    val serviceProfit: Double = 0.0,
+    val absorbedShippingCost: Double = 0.0,
+    val shippingCoveringSalePrice: Double? = null,
+    val rush: Boolean = false,
+    val rushSurcharge: Double = 0.0,
+    val priceBeforeMinimum: Double? = null,
 ) {
     init {
         require(prints.isNotEmpty()) { "um orçamento precisa de pelo menos uma impressão" }
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
         require(laborMinutes >= 0) { "laborMinutes não pode ser negativo: $laborMinutes" }
         require(extrasTotal >= 0) { "extrasTotal não pode ser negativo: $extrasTotal" }
+        require(channelFixedFee >= 0) { "channelFixedFee não pode ser negativo: $channelFixedFee" }
+        require(serviceLaborMinutes >= 0) { "serviceLaborMinutes não pode ser negativo: $serviceLaborMinutes" }
+        require(absorbedShippingCost >= 0) { "absorbedShippingCost não pode ser negativo: $absorbedShippingCost" }
+        require(rushSurcharge >= 0) { "rushSurcharge não pode ser negativo: $rushSurcharge" }
     }
 
     /** Valor de produção do pedido (= [CostBreakdown.total]). */
@@ -156,9 +196,32 @@ data class Quote(
                 FilamentTotal(first.filament, first.color, group.sumOf { (usage, runs) -> usage.weightGrams * runs } * quantity)
             }
 
-    /** Tudo que é descontado da venda antes de o dinheiro chegar em você. */
+    /** Tudo que é descontado da venda antes de o dinheiro chegar em você, em percentual. */
     val totalDeductionRate: Double
         get() = channelFeeRate + taxRate
+
+    /**
+     * A tabela do canal usada neste pedido. Pedido salvo antes da 2.2 só guardava o percentual, e é com
+     * ele que continua sendo calculado.
+     */
+    val effectiveFeeSchedule: ChannelFeeSchedule
+        get() = channelFeeSchedule ?: ChannelFeeSchedule(feeRate = channelFeeRate)
+
+    /** Quanto o canal leva deste pedido, em R$: o percentual sobre o total do cliente mais o valor fixo. */
+    val channelFeeAmount: Double
+        get() = customerTotal * channelFeeRate + channelFixedFee
+
+    /** Quanto de imposto sai deste pedido, em R$. */
+    val taxAmount: Double
+        get() = customerTotal * taxRate
+
+    /** Custo dos insumos do pedido (ver [CostBreakdown.consumables]). */
+    val consumablesCost: Double
+        get() = costs.consumables
+
+    /** Se o preço mínimo do pedido subiu o preço de tabela (ver [priceBeforeMinimum]). */
+    val minimumPriceApplied: Boolean
+        get() = priceBeforeMinimum != null
 
     /** Tudo que o cliente paga: a peça ([salePrice]) mais serviços e frete ([extrasTotal]). */
     val customerTotal: Double
@@ -166,11 +229,14 @@ data class Quote(
 
     /**
      * Lucro líquido real do pedido: o que chega depois de canal e imposto levarem a parte deles do
-     * total cobrado ([customerTotal]), menos o repasse de serviços e frete e menos a produção. Sem
-     * deduções, é só venda − produção.
+     * total cobrado ([customerTotal]) e o canal levar o valor fixo ([channelFixedFee]), menos o repasse de
+     * serviços e frete, a produção e o frete grátis que você paga ([absorbedShippingCost]), mais o que os
+     * serviços com tempo rendem acima da sua hora ([serviceProfit]). Sem deduções nem nada disso, é só
+     * venda − produção.
      */
     val profit: Double
-        get() = customerTotal * (1 - totalDeductionRate) - extrasTotal - productionCost
+        get() = customerTotal * (1 - totalDeductionRate) - channelFixedFee - extrasTotal - productionCost -
+            absorbedShippingCost + serviceProfit
 
     /** Preço de uma unidade: [salePrice] dividido por [quantity]. */
     val unitSalePrice: Double
@@ -183,7 +249,12 @@ data class Quote(
      * pra negociar sem ter que refazer a conta de cabeça.
      */
     val breakEvenSalePrice: Double
-        get() = (productionCost + extrasTotal) / (1 - totalDeductionRate) - extrasTotal
+        get() = effectiveFeeSchedule.priceLeaving(
+            receipt = productionCost + absorbedShippingCost - serviceProfit,
+            extras = extrasTotal,
+            quantity = quantity,
+            taxRate = taxRate,
+        )
 
     /** Se o preço foi fechado com o cliente em vez de vir da margem (ver [tableSalePrice]). */
     val isNegotiated: Boolean

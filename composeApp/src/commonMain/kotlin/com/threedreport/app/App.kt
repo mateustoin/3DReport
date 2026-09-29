@@ -151,6 +151,7 @@ fun App(
             main = Dispatchers.Main,
             kind = kind,
             showOrders = { destination = AppDestination.ORDERS },
+            consumableRepository = container.consumables,
         )
     }
     val ordersViewModel = remember { newHistoryViewModel(QuoteKind.ORDER) }

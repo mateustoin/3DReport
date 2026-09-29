@@ -106,6 +106,7 @@ fun QuoteHistoryScreen(
     val printers by viewModel.printers.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val salesChannels by viewModel.salesChannels.collectAsState()
+    val consumables by viewModel.consumables.collectAsState()
     // Produto não tem andamento, então não tem Kanban: a lista de produtos é sempre lista.
     val effectiveViewMode = if (showingProducts) HistoryViewMode.LIST else viewMode
 
@@ -113,8 +114,8 @@ fun QuoteHistoryScreen(
     val visibleQuotes = remember(savedQuotes, filter) { viewModel.visibleQuotes(savedQuotes, filter) }
     val categories = remember(savedQuotes) { viewModel.productCategories(savedQuotes) }
     val soldProductIds = remember(savedQuotes) { viewModel.soldProductIds(savedQuotes) }
-    val repriced = remember(savedQuotes, filaments, printers, settings, salesChannels) {
-        savedQuotes.filterNot { it.isOrder }.associate { it.id to viewModel.repriceFor(it, filaments, printers, settings, salesChannels) }
+    val repriced = remember(savedQuotes, filaments, printers, settings, salesChannels, consumables) {
+        savedQuotes.filterNot { it.isOrder }.associate { it.id to viewModel.repriceFor(it, filaments, printers, settings, salesChannels, consumables) }
     }
     val selectedVisibleCount = visibleQuotes.count { it.id in selectedIds }
 
@@ -399,6 +400,7 @@ private fun RepriceNotice(result: RepriceResult, currencyText: (Double) -> Strin
                 RepriceResult.Reason.PRINTER_MISSING -> result.missingName?.let { "A impressora $it não está mais cadastrada" }
                     ?: "Este produto não guardou a impressora"
                 RepriceResult.Reason.CHANNEL_MISSING -> "O canal ${result.missingName.orEmpty()} não está mais cadastrado"
+                RepriceResult.Reason.CONSUMABLE_MISSING -> "O insumo ${result.missingName.orEmpty()} não está mais cadastrado"
                 RepriceResult.Reason.INVALID -> "Não deu pra recalcular com os cadastros de hoje"
             } + ": abra em \"Editar cálculo\" pra escolher de novo e conferir o preço.",
             style = MaterialTheme.typography.bodySmall,
