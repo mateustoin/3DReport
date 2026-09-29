@@ -91,6 +91,32 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun minimumPriceAndRushSurchargeRoundTrip() {
+        val repository = SettingsRepository()
+        val viewModel = SettingsViewModel(repository)
+        viewModel.update { it.copy(minimumOrderPriceText = "25", rushSurchargeRatePercentText = "15") }
+
+        viewModel.save()
+
+        assertEquals(25.0, repository.settings.value.minimumOrderPrice, 1e-9)
+        assertEquals(0.15, repository.settings.value.rushSurchargeRate, 1e-9)
+        assertEquals("25", viewModel.uiState.value.minimumOrderPriceText)
+        assertEquals("15", viewModel.uiState.value.rushSurchargeRatePercentText)
+    }
+
+    @Test
+    fun blankMinimumPriceAndRushSurchargeSaveAsZero() {
+        val repository = SettingsRepository()
+        val viewModel = SettingsViewModel(repository)
+        viewModel.update { it.copy(minimumOrderPriceText = "", rushSurchargeRatePercentText = "") }
+
+        viewModel.save()
+
+        assertEquals(0.0, repository.settings.value.minimumOrderPrice)
+        assertEquals(0.0, repository.settings.value.rushSurchargeRate)
+    }
+
+    @Test
     fun aFixedCostWithoutHoursWarnsThatItIsNotCharged() {
         val repository = SettingsRepository()
         val viewModel = SettingsViewModel(repository)

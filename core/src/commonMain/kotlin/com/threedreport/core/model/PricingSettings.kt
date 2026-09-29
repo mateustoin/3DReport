@@ -32,6 +32,12 @@ import kotlinx.serialization.Serializable
  *   que você recebe junto com a taxa do canal. **MEI não entra aqui:** o DAS é um valor fixo por
  *   mês, então o lugar dele é [monthlyFixedCost], não este percentual. A taxa de marketplace ou
  *   de maquininha não fica aqui: é do canal de venda ([SalesChannel]), escolhido por orçamento.
+ * @property minimumOrderPrice menor valor que a peça de um pedido pode sair pela tabela, em R$ (decisão
+ *   125): um chaveiro de 3 g sai por centavos mesmo com a conta certa, e ligar a impressora por isso não
+ *   vale a pena. Vale pro pedido inteiro, sem serviços nem frete. Zero (padrão) desliga.
+ * @property rushSurchargeRate acréscimo sobre o preço da peça quando o pedido é marcado como urgente
+ *   (decisão 125): fura a fila e às vezes ocupa outra impressora. Zero (padrão) desliga, e aí o
+ *   orçamento nem mostra a opção.
  */
 @Serializable
 data class PricingSettings(
@@ -44,6 +50,8 @@ data class PricingSettings(
     val taxRate: Double = 0.0,
     val administrativeCost: Double = 0.0,
     val profitMargin: Double,
+    val minimumOrderPrice: Double = 0.0,
+    val rushSurchargeRate: Double = 0.0,
 ) {
     init {
         require(energyPricePerKwh >= 0) { "energyPricePerKwh não pode ser negativo" }
@@ -55,6 +63,8 @@ data class PricingSettings(
         require(taxRate >= 0 && taxRate < 1) { "taxRate deve estar entre 0 (inclusive) e 1 (exclusive)" }
         require(administrativeCost >= 0) { "administrativeCost não pode ser negativo" }
         require(profitMargin >= 0) { "profitMargin não pode ser negativo" }
+        require(minimumOrderPrice >= 0) { "minimumOrderPrice não pode ser negativo" }
+        require(rushSurchargeRate >= 0) { "rushSurchargeRate não pode ser negativo" }
     }
 
     /**

@@ -69,6 +69,9 @@ import kotlinx.serialization.Serializable
  *   dá: um orçamento de agosto aprovado em setembro é venda de setembro.
  * @property currency moeda em que o orçamento foi feito. Os valores são dessa moeda; trocar a moeda
  *   padrão em Configurações não re-rotula o que já foi salvo.
+ * @property shippingAbsorbed frete grátis pro cliente (decisão 124): [shippingCost] é pago por você, não
+ *   entra no total do cliente e sai do lucro ([Quote.absorbedShippingCost]). Quem lê o frete cobrado usa
+ *   [chargedShipping].
  */
 @Serializable
 data class SavedQuote(
@@ -92,6 +95,7 @@ data class SavedQuote(
     val number: Int = 0,
     val statusHistory: List<StatusChange> = emptyList(),
     val currency: Currency = Currency.BRL,
+    val shippingAbsorbed: Boolean = false,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
@@ -162,12 +166,19 @@ data class SavedQuote(
         get() = services.sumOf { it.total(quote.quantity) }
 
     /**
+     * Frete cobrado do cliente: [shippingCost], ou zero quando o frete é grátis pra ele
+     * ([shippingAbsorbed]). É o único jeito de ler o frete pra mostrar ou somar ao que o cliente paga.
+     */
+    val chargedShipping: Double
+        get() = chargedShipping(shippingCost, shippingAbsorbed)
+
+    /**
      * Total de fato cobrado do cliente: valor de venda do pedido + serviços (os por peça
      * multiplicados pela quantidade, os por pedido uma vez só, ver [QuoteService.total]) +
-     * [shippingCost].
+     * [chargedShipping].
      */
     val totalWithServices: Double
-        get() = quote.salePrice + servicesTotal + shippingCost
+        get() = quote.salePrice + servicesTotal + chargedShipping
 
     /**
      * Se é pedido (e não produto do catálogo). É a única regra de "o que é pedido" (decisão 101),
@@ -208,6 +219,12 @@ data class SavedQuote(
         get() = AUTO_NAME_PATTERN.matches(name)
 
     companion object {
+        /**
+         * Frete cobrado do cliente, a regra única (decisão 124): o valor digitado, ou zero quando o frete é
+         * grátis pra ele. Usada aqui e pela tela de Orçamento, que ainda não tem um pedido salvo.
+         */
+        fun chargedShipping(shippingCost: Double, shippingAbsorbed: Boolean): Double = if (shippingAbsorbed) 0.0 else shippingCost
+
         /**
          * Começo do nome que o app dá quando o campo fica em branco, seguido de data e hora
          * ("Orçamento - 24/09/2026 14:30"). Fica aqui, e não só em quem salva, porque o ranking do

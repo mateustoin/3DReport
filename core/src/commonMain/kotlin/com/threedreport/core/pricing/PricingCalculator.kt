@@ -1,11 +1,14 @@
 package com.threedreport.core.pricing
 
+import com.threedreport.core.model.ChannelFeeSchedule
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteService
+import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SalesChannel
 
@@ -42,7 +45,15 @@ object PricingCalculator {
         laborMinutes: Double = 0.0,
         negotiatedSalePrice: Double? = null,
         extrasTotal: Double = 0.0,
-    ): Quote = calculate(listOf(job to printer), settings, channel, quantity, laborMinutes, negotiatedSalePrice, extrasTotal)
+    ): Quote = calculate(
+        prints = listOf(job to printer),
+        settings = settings,
+        channel = channel,
+        quantity = quantity,
+        laborMinutes = laborMinutes,
+        negotiatedSalePrice = negotiatedSalePrice,
+        extrasTotal = extrasTotal,
+    )
 
     /**
      * O pedido com várias impressões (leva 9, decisão 105): cada uma com a própria impressora. O
@@ -54,7 +65,13 @@ object PricingCalculator {
      *
      * @param prints as impressões, na ordem da tela, cada uma com a impressora em que roda.
      * @param laborMinutes todo o seu tempo de trabalho no pedido, cobrado uma vez (decisão 94).
-     * @param extrasTotal serviços e frete cobrados junto com a peça (ver [Quote.extrasTotal]).
+     * @param extrasTotal serviços e frete cobrados junto com a peça (ver [Quote.extrasTotal]). O frete
+     *   grátis não entra aqui, e sim em [absorbedShippingCost].
+     * @param services os serviços cobrados (já somados em [extrasTotal]), só pra os que têm tempo
+     *   informado contarem no lucro pelo que rendem acima da sua hora (decisão 123).
+     * @param consumables insumos usados no pedido (decisão 122).
+     * @param rush pedido urgente: a peça ganha [PricingSettings.rushSurchargeRate] (decisão 125).
+     * @param absorbedShippingCost frete que você paga pra o cliente receber de graça (decisão 124).
      */
     fun calculate(
         prints: List<Pair<PrintJob, PrinterProfile>>,
@@ -64,6 +81,10 @@ object PricingCalculator {
         laborMinutes: Double = 0.0,
         negotiatedSalePrice: Double? = null,
         extrasTotal: Double = 0.0,
+        services: List<QuoteService> = emptyList(),
+        consumables: List<QuotedConsumable> = emptyList(),
+        rush: Boolean = false,
+        absorbedShippingCost: Double = 0.0,
     ): Quote {
         require(prints.isNotEmpty()) { "um orçamento precisa de pelo menos uma impressão" }
         require(negotiatedSalePrice == null || negotiatedSalePrice >= 0) {
@@ -72,6 +93,7 @@ object PricingCalculator {
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
         require(laborMinutes >= 0) { "laborMinutes não pode ser negativo: $laborMinutes" }
         require(extrasTotal >= 0) { "extrasTotal não pode ser negativo: $extrasTotal" }
+        require(absorbedShippingCost >= 0) { "absorbedShippingCost não pode ser negativo: $absorbedShippingCost" }
 
         val quotedPrints = prints.map { (job, printer) ->
             QuotedPrint(job = job, printerId = printer.id, printerName = printer.name, cost = printCost(job, printer, settings, quantity))
@@ -81,8 +103,8 @@ object PricingCalculator {
         // uma vez, e é isso que faz o preço unitário cair quando a quantidade sobe.
         val labor = laborMinutes / MINUTES_PER_HOUR * settings.laborRatePerHour
 
-        // Tudo que se paga de novo ao reimprimir o que falhou. O administrativo fica de fora: uma
-        // modelagem já feita não precisa ser refeita.
+        // Tudo que se paga de novo ao reimprimir o que falhou. O administrativo e os insumos ficam de fora:
+        // uma modelagem já feita não precisa ser refeita, e argola e caixa entram depois da impressão.
         val reprintableCost = quotedPrints.sumOf { it.cost.total } + labor
 
         val costs = CostBreakdown(
@@ -95,24 +117,51 @@ object PricingCalculator {
             administrative = settings.administrativeCost,
             labor = labor,
             fixedCost = quotedPrints.sumOf { it.cost.fixedCost },
+            consumables = consumables.sumOf { it.total(quantity) },
         )
 
         // A margem vale sobre tudo menos a sua hora (decisão 118): o trabalho entra pelo valor dele. Com a
-        // margem em cima, a hora cobrada virava o dobro, e o preço saía de um valor que ninguém paga.
-        val baseSalePrice = (costs.total - labor) * (1 + settings.profitMargin) + labor
+        // margem em cima, a hora cobrada virava o dobro, e o preço saía de um valor que ninguém paga. Os
+        // insumos estão em costs.total, então passam pela margem como o material (decisão 122).
+        val marginPrice = (costs.total - labor) * (1 + settings.profitMargin) + labor
 
-        // Canal e imposto são descontados do mesmo valor recebido, então somam antes de dividir:
-        // vender a P deixa P · (1 − canal − imposto) na sua mão. O valor recebido é o total do
-        // cliente, serviços e frete inclusos (decisão 107): a peça sobe o suficiente pra que, depois
-        // das deduções sobre tudo, sobre a base da peça mais o repasse de serviços e frete.
-        val channelFeeRate = channel?.feeRate ?: 0.0
-        val deductionRate = channelFeeRate + settings.taxRate
-        require(deductionRate < 1) {
-            "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. " +
-                "Revise a taxa do canal ou o imposto em Configurações."
-        }
-        val tableSalePrice = if (deductionRate > 0.0) (baseSalePrice + extrasTotal) / (1 - deductionRate) - extrasTotal else baseSalePrice
+        // Urgência é um acréscimo sobre a peça inteira, trabalho incluso, antes do canal e do imposto: é
+        // cobrar mais por furar a fila, não um custo a mais (decisão 125).
+        val rushSurcharge = if (rush) marginPrice * settings.rushSurchargeRate else 0.0
+        val baseSalePrice = marginPrice + rushSurcharge
+
+        // Canal e imposto são descontados do mesmo valor recebido, e o canal ainda leva um valor fixo por
+        // item (decisão 121). O valor recebido é o total do cliente, serviços e frete inclusos (decisão
+        // 107): a peça sobe o suficiente pra que, depois das deduções sobre tudo, sobre a base da peça mais
+        // o repasse de serviços e frete. Com faixas de preço, a tabela escolhe a faixa coerente.
+        val feeSchedule = channel?.feeSchedule ?: ChannelFeeSchedule.NONE
+        val computedTablePrice = feeSchedule.priceLeaving(baseSalePrice, extrasTotal, quantity, settings.taxRate)
+
+        // O preço mínimo do pedido é o último degrau da tabela (decisão 125): vale sobre a peça inteira,
+        // sem serviços nem frete. Preço fechado com o cliente não é tabela, então passa por cima.
+        val minimumApplies = settings.minimumOrderPrice > 0 && computedTablePrice < settings.minimumOrderPrice
+        val tableSalePrice = if (minimumApplies) settings.minimumOrderPrice else computedTablePrice
         val salePrice = negotiatedSalePrice ?: tableSalePrice
+
+        // O que o canal de fato cobra depende da faixa em que o preço final caiu.
+        val appliedFee = feeSchedule.feeAt(salePrice / quantity)
+
+        // Serviço com tempo informado conta no lucro pelo que rende acima da sua hora (decisão 123); sem
+        // tempo, continua repasse (decisão 25).
+        val timedServices = services.filter { it.isTimed }
+        val serviceLaborMinutes = timedServices.sumOf { it.totalLaborMinutes(quantity) }
+        val serviceLaborCost = serviceLaborMinutes / MINUTES_PER_HOUR * settings.laborRatePerHour
+        val serviceProfit = timedServices.sumOf { it.total(quantity) } - serviceLaborCost
+
+        // Frete grátis sai do lucro, não do preço (decisão 124). Pra quem quiser manter a margem, a peça
+        // que cobre o frete e ainda deixa o que o preço de tabela deixaria. Parte do preço de tabela final
+        // (com o mínimo aplicado), senão a sugestão podia ficar abaixo do preço de hoje.
+        val shippingCoveringSalePrice = if (absorbedShippingCost > 0) {
+            val tableReceipt = feeSchedule.receiptAt(tableSalePrice, extrasTotal, quantity, settings.taxRate) - extrasTotal
+            feeSchedule.priceLeaving(tableReceipt + absorbedShippingCost, extrasTotal, quantity, settings.taxRate)
+        } else {
+            null
+        }
 
         return Quote(
             prints = quotedPrints,
@@ -122,10 +171,23 @@ object PricingCalculator {
             laborMinutes = laborMinutes,
             channelId = channel?.id,
             channelName = channel?.name,
-            channelFeeRate = channelFeeRate,
+            channelFeeRate = appliedFee.feeRate,
             taxRate = settings.taxRate,
             tableSalePrice = tableSalePrice.takeIf { negotiatedSalePrice != null },
             extrasTotal = extrasTotal,
+            consumables = consumables,
+            channelFixedFee = appliedFee.fixedFeePerItem * quantity,
+            channelFeeSchedule = channel?.feeSchedule,
+            serviceLaborMinutes = serviceLaborMinutes,
+            serviceLaborCost = serviceLaborCost,
+            serviceProfit = serviceProfit,
+            absorbedShippingCost = absorbedShippingCost,
+            shippingCoveringSalePrice = shippingCoveringSalePrice,
+            rush = rush,
+            // O acréscimo só é o que o cliente paga quando o preço é o de tabela e o mínimo não passou por
+            // cima dele; senão, mostrá-lo na nota seria mostrar dinheiro que não entra.
+            rushSurcharge = if (negotiatedSalePrice == null && !minimumApplies) rushSurcharge else 0.0,
+            priceBeforeMinimum = computedTablePrice.takeIf { minimumApplies },
         )
     }
 

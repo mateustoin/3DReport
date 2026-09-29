@@ -482,6 +482,7 @@ private fun buildContainer(dataDir: File): AppContainer {
         printers = storage.printers(),
         services = storage.services(),
         salesChannels = storage.salesChannels(),
+        consumables = storage.consumables(),
         templates = storage.templates(),
         clients = storage.clients(),
         maintenance = storage.maintenance(),

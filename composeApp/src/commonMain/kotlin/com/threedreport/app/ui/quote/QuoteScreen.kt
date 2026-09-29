@@ -79,6 +79,7 @@ import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.channelFeeSummary
 import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toCurrencyText
@@ -89,6 +90,7 @@ import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.services.ServiceChargeSelector
 import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PricingSettings
@@ -135,14 +137,15 @@ fun QuoteScreen(
     val printers by viewModel.printers.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val services by viewModel.services.collectAsState()
+    val consumables by viewModel.consumables.collectAsState()
     val salesChannels by viewModel.salesChannels.collectAsState()
     val input by viewModel.input.collectAsState()
     val saveForm by viewModel.saveForm.collectAsState()
 
     // Uma conta por mudança de entrada ou de cadastro, e não por redesenho: a mesma que o Ctrl+S salva.
-    val result = remember(allFilaments, printers, settings, services, salesChannels, input, saveForm.operation) { viewModel.currentResult() }
-    val comparison = remember(allFilaments, printers, settings, services, salesChannels, input) {
-        viewModel.comparePrinters(allFilaments, printers, settings, services, input, salesChannels)
+    val result = remember(allFilaments, printers, settings, services, consumables, salesChannels, input, saveForm.operation) { viewModel.currentResult() }
+    val comparison = remember(allFilaments, printers, settings, services, consumables, salesChannels, input) {
+        viewModel.comparePrinters(allFilaments, printers, settings, services, input, salesChannels, consumables)
     }
     val currency = LocalCurrency.current
 
@@ -157,7 +160,7 @@ fun QuoteScreen(
                         modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(24.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        QuoteInputs(viewModel, allFilaments, printers, services, salesChannels, settings, input, saveForm, result, currency)
+                        QuoteInputs(viewModel, allFilaments, printers, services, consumables, salesChannels, settings, input, saveForm, result, currency)
                         HorizontalDivider()
                         SaveQuoteFormSection(viewModel, saveForm, input, result, onSave)
                     }
@@ -166,7 +169,7 @@ fun QuoteScreen(
                         modifier = Modifier.weight(0.8f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(24.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        QuoteResultSection(viewModel, allFilaments, printers, input, saveForm, result, comparison)
+                        QuoteResultSection(viewModel, allFilaments, printers, settings, input, saveForm, result, comparison)
                     }
                 }
             } else {
@@ -174,9 +177,9 @@ fun QuoteScreen(
                     modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    QuoteInputs(viewModel, allFilaments, printers, services, salesChannels, settings, input, saveForm, result, currency)
+                    QuoteInputs(viewModel, allFilaments, printers, services, consumables, salesChannels, settings, input, saveForm, result, currency)
                     HorizontalDivider()
-                    QuoteResultSection(viewModel, allFilaments, printers, input, saveForm, result, comparison)
+                    QuoteResultSection(viewModel, allFilaments, printers, settings, input, saveForm, result, comparison)
                     HorizontalDivider()
                     SaveQuoteFormSection(viewModel, saveForm, input, result, onSave)
                 }
@@ -259,6 +262,7 @@ private fun QuoteInputs(
     allFilaments: List<Filament>,
     printers: List<PrinterProfile>,
     services: List<Service>,
+    consumables: List<Consumable>,
     salesChannels: List<SalesChannel>,
     settings: PricingSettings,
     input: QuoteInputState,
@@ -338,12 +342,43 @@ private fun QuoteInputs(
                 suggestedPrice = service.suggestedPrice,
                 serviceInput = input.selectedServices[service.id],
                 quantity = input.quantity,
+                minutesError = result.fieldErrors[QuoteFields.serviceMinutes(service.id)],
             )
         }
         orphanServices.forEach { (id, serviceInput) ->
-            ServiceRow(viewModel, id, serviceInput.name, suggestedPrice = null, serviceInput, input.quantity)
+            ServiceRow(viewModel, id, serviceInput.name, suggestedPrice = null, serviceInput, input.quantity, result.fieldErrors[QuoteFields.serviceMinutes(id)])
         }
         FieldHelp("O valor é deste pedido: marque o serviço e digite quanto vai cobrar por ele.")
+    }
+
+    // Insumo argola, ímã, caixa: vale pra pedido e pra produto do catálogo (decisão 122), diferente
+    // de frete e urgência, que só existem na venda a um cliente.
+    val orphanConsumables = input.selectedConsumables.filterKeys { id -> consumables.none { it.id == id } }
+    val offeredConsumables = consumables.availableOrSelected { it.id in input.selectedConsumables }
+    if (offeredConsumables.isNotEmpty() || orphanConsumables.isNotEmpty()) {
+        SectionTitle(AppIcons.Inventory2, "Insumos")
+        offeredConsumables.forEach { consumable ->
+            ConsumableRow(
+                viewModel = viewModel,
+                id = consumable.id,
+                name = consumable.name,
+                unitCost = consumable.unitCost,
+                consumableInput = input.selectedConsumables[consumable.id],
+                orderQuantity = input.quantity,
+                quantityError = result.fieldErrors[QuoteFields.consumable(consumable.id)],
+            )
+        }
+        orphanConsumables.forEach { (id, consumableInput) ->
+            ConsumableRow(
+                viewModel = viewModel,
+                id = id,
+                name = "${consumableInput.name} (saiu do cadastro)",
+                unitCost = consumableInput.unitCost,
+                consumableInput = consumableInput,
+                orderQuantity = input.quantity,
+                quantityError = result.fieldErrors[QuoteFields.consumable(id)],
+            )
+        }
     }
 
     SectionTitle(AppIcons.Storefront, "A venda")
@@ -355,7 +390,7 @@ private fun QuoteInputs(
             label = "Canal de venda",
             items = listOf(null) + offeredChannels,
             selected = result.salesChannel,
-            itemLabel = { it?.let { channel -> "${channel.name} · ${channel.feeRate.toPercentText()}" } ?: DIRECT_SALE_LABEL },
+            itemLabel = { it?.let { channel -> "${channel.name} · ${channelFeeSummary(channel, currency)}" } ?: DIRECT_SALE_LABEL },
             displayText = { it?.name ?: DIRECT_SALE_LABEL },
             onSelect = { viewModel.selectSalesChannel(it?.id) },
             emptyText = input.missingChannelName?.let { "$it (excluído)" } ?: DIRECT_SALE_LABEL,
@@ -393,6 +428,42 @@ private fun QuoteInputs(
             "Frete é repasse, não produto seu: não multiplica pela quantidade nem entra na margem. A taxa do " +
                 "canal e o imposto incidem sobre ele, porque o cliente paga tudo junto.",
         )
+
+        // Só aparece com um frete digitado (decisão 124): marcado sem valor não faria nada.
+        val shippingAmount = parseDecimal(input.shippingCostText) ?: 0.0
+        if (shippingAmount > 0) {
+            Row(
+                modifier = Modifier.toggleable(value = input.shippingAbsorbed, role = Role.Checkbox, onValueChange = viewModel::setShippingAbsorbed),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = input.shippingAbsorbed, onCheckedChange = null)
+                Text("Frete grátis pro cliente (você paga)")
+            }
+            if (input.shippingAbsorbed) {
+                Text(
+                    "O cliente vê \"Frete grátis\" e o valor sai do seu lucro.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        // Urgência (decisão 125): só existe com o acréscimo configurado, senão a opção não teria efeito.
+        if (settings.rushSurchargeRate > 0) {
+            Row(
+                modifier = Modifier.toggleable(value = input.rush, role = Role.Checkbox, onValueChange = viewModel::setRush),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = input.rush, onCheckedChange = null)
+                Text("Pedido urgente (+${settings.rushSurchargeRate.toPercentText()})")
+            }
+            val deadline = form.deliveryDateEpochDay
+            if (!input.rush && deadline != null && deadline - todayEpochDay() in 0..2) {
+                TextButton(onClick = { viewModel.setRush(true) }, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                    Text("Prazo curto: marcar como urgente?")
+                }
+            }
+        }
     }
 }
 
@@ -409,6 +480,7 @@ private fun ServiceRow(
     suggestedPrice: Double?,
     serviceInput: ServiceInput?,
     quantity: Int,
+    minutesError: String? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // A linha inteira marca e desmarca (e o leitor de tela lê o nome junto da caixa).
@@ -422,15 +494,31 @@ private fun ServiceRow(
         if (serviceInput == null) return@Column
 
         val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 }
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().padding(start = 48.dp).tabToNavigate(),
-            value = serviceInput.priceText,
-            onValueChange = { viewModel.setServicePrice(id, it) },
-            label = { Text(if (quantity > 1 && !serviceInput.chargedPerOrder) "Valor por peça" else "Valor") },
-            isError = price == null,
-            supportingText = if (price == null) ({ Text(if (serviceInput.priceText.isBlank()) "Informe o valor" else "Não é um número") }) else null,
-            singleLine = true,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 48.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedTextField(
+                modifier = Modifier.weight(1f).tabToNavigate(),
+                value = serviceInput.priceText,
+                onValueChange = { viewModel.setServicePrice(id, it) },
+                label = { Text(if (quantity > 1 && !serviceInput.chargedPerOrder) "Valor por peça" else "Valor") },
+                isError = price == null,
+                supportingText = if (price == null) ({ Text(if (serviceInput.priceText.isBlank()) "Informe o valor" else "Não é um número") }) else null,
+                singleLine = true,
+            )
+            // Opcional (decisão 123): sem tempo informado, o serviço continua sendo repasse, fora do lucro.
+            OutlinedTextField(
+                modifier = Modifier.width(120.dp).tabToNavigate(),
+                value = serviceInput.laborMinutesText,
+                onValueChange = { viewModel.setServiceLaborMinutes(id, it) },
+                label = { Text("Tempo (min)") },
+                placeholder = { Text("30") },
+                isError = minutesError != null,
+                supportingText = if (minutesError != null) ({ Text(minutesError) }) else null,
+                singleLine = true,
+            )
+        }
         if (quantity > 1) {
             Row(
                 modifier = Modifier.padding(start = 48.dp),
@@ -450,12 +538,69 @@ private fun ServiceRow(
     }
 }
 
+/**
+ * Um insumo na lista do orçamento (decisão 122): argola, ímã, caixa. Desmarcado, só o nome. Marcado,
+ * ganha a quantidade (por peça ou pelo pedido, com mais de uma peça) e o custo unitário do cadastro,
+ * só de referência: o custo de fato entra no cálculo, mas essa linha não é editável.
+ */
+@Composable
+private fun ConsumableRow(
+    viewModel: QuoteViewModel,
+    id: String,
+    name: String,
+    unitCost: Double,
+    consumableInput: ConsumableInput?,
+    orderQuantity: Int,
+    quantityError: String?,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.toggleable(value = consumableInput != null, role = Role.Checkbox, onValueChange = { viewModel.toggleConsumable(id) }),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = consumableInput != null, onCheckedChange = null)
+            Text(name)
+        }
+        if (consumableInput == null) return@Column
+
+        Row(
+            modifier = Modifier.padding(start = 48.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                modifier = Modifier.width(120.dp).tabToNavigate(),
+                value = consumableInput.quantityText,
+                onValueChange = { viewModel.setConsumableQuantity(id, it) },
+                label = { Text("Qtd.") },
+                placeholder = { Text("1") },
+                singleLine = true,
+                isError = quantityError != null,
+                supportingText = if (quantityError != null) ({ Text(quantityError) }) else null,
+            )
+            Text(
+                "${unitCost.toMoney()} cada",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (orderQuantity > 1) {
+            ServiceChargeSelector(
+                chargedPerOrder = consumableInput.chargedPerOrder,
+                onChange = { viewModel.setConsumableChargedPerOrder(id, it) },
+                modifier = Modifier.padding(start = 48.dp),
+            )
+        }
+    }
+}
+
 /** O lado do dinheiro: quanto cobrar, o que sobra e como isso muda numa negociação. */
 @Composable
 private fun QuoteResultSection(
     viewModel: QuoteViewModel,
     allFilaments: List<Filament>,
     printers: List<PrinterProfile>,
+    settings: PricingSettings,
     input: QuoteInputState,
     saveForm: SaveQuoteFormState,
     result: QuoteResult,
@@ -470,7 +615,12 @@ private fun QuoteResultSection(
             selectedServices = result.selectedServices,
             grandTotal = result.grandTotal ?: quote.salePrice,
             shippingCost = result.shippingCost,
+            chargedShipping = result.chargedShipping,
+            shippingAbsorbed = result.shippingAbsorbed,
+            servicesTotal = result.servicesTotal,
+            laborRatePerHour = settings.laborRatePerHour,
             deliveryDateEpochDay = saveForm.deliveryDateEpochDay.takeUnless { input.isProduct },
+            onUseShippingCoveringPrice = viewModel::useShippingCoveringPrice,
         )
         result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
         result.fieldErrors.isNotEmpty() -> Text(
@@ -538,6 +688,7 @@ private fun QuoteResultSection(
             },
             onApplyShowcaseSuggestion = viewModel::applyShowcasePrice,
             announcedPiecePrice = input.announcedUnitPrice?.takeIf { input.targetTotalText.isBlank() }?.let { it * input.quantity },
+            minimumOrderPrice = settings.minimumOrderPrice,
         )
 
         if (comparison.size > 1) PrinterComparison(comparison = comparison, allPrints = input.prints.size > 1)
@@ -596,7 +747,12 @@ private fun QuoteReceipt(
     selectedServices: List<QuoteService>,
     grandTotal: Double,
     shippingCost: Double,
+    chargedShipping: Double,
+    shippingAbsorbed: Boolean,
+    servicesTotal: Double,
+    laborRatePerHour: Double,
     deliveryDateEpochDay: Long?,
+    onUseShippingCoveringPrice: () -> Unit,
 ) {
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -616,9 +772,9 @@ private fun QuoteReceipt(
                 Text(
                     "${quote.quantity} × ${quote.unitSalePrice.toMoney()} = ${quote.salePrice.toMoney()}" +
                         when {
-                            selectedServices.isNotEmpty() && shippingCost > 0 -> " + serviços e frete"
+                            selectedServices.isNotEmpty() && chargedShipping > 0 -> " + serviços e frete"
                             selectedServices.isNotEmpty() -> " + serviços"
-                            shippingCost > 0 -> " + frete"
+                            chargedShipping > 0 -> " + frete"
                             else -> ""
                         },
                     style = MaterialTheme.typography.bodyMedium,
@@ -651,9 +807,21 @@ private fun QuoteReceipt(
                     color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 )
             }
-            if (quote.totalDeductionRate > 0.0) {
+            // O que o canal cobra aparece sempre que ele cobra algo, percentual, valor fixo por item
+            // (decisão 121) ou os dois; um canal só com o fixo também sobe o preço e precisa da explicação.
+            val channelCharges = quote.channelName != null && (quote.channelFeeRate > 0.0 || quote.channelFixedFee > 0.0)
+            if (channelCharges || quote.taxRate > 0.0) {
                 val parts = buildList {
-                    quote.channelName?.let { add("$it ${quote.channelFeeRate.toPercentText()}") }
+                    if (channelCharges) {
+                        val perItem = (quote.channelFixedFee / quote.quantity).toMoney()
+                        add(
+                            when {
+                                quote.channelFixedFee <= 0.0 -> "${quote.channelName} ${quote.channelFeeRate.toPercentText()}"
+                                quote.channelFeeRate <= 0.0 -> "${quote.channelName} ($perItem por item)"
+                                else -> "${quote.channelName} (${quote.channelFeeRate.toPercentText()} + $perItem por item)"
+                            },
+                        )
+                    }
                     if (quote.taxRate > 0.0) add("imposto ${quote.taxRate.toPercentText()}")
                 }
                 Text(
@@ -662,18 +830,69 @@ private fun QuoteReceipt(
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+            if (channelCharges) {
+                Text("${quote.channelName} leva ${quote.channelFeeAmount.toMoney()} deste pedido.", style = MaterialTheme.typography.bodySmall)
+            }
+            if (quote.minimumPriceApplied) {
+                Text(
+                    "Preço mínimo do pedido aplicado (a conta dava ${quote.priceBeforeMinimum!!.toMoney()})",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             PriceCompositionBar(quote)
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             ReceiptLine("Custo de produção", quote.productionCost.toMoney())
             if (quote.prints.size > 1) PerPrintCosts(quote)
+            if (quote.costs.consumables > 0.0) ReceiptLine("Insumos", quote.costs.consumables.toMoney())
             ReceiptLine("Lucro", quote.profit.toMoney())
+            if (quote.rush) {
+                // O percentual não vem das configurações (a nota não as recebe): é o que o próprio
+                // acréscimo, já embutido em salePrice, representa sobre o preço sem ele.
+                // Só o valor: o percentual configurado já aparece no "Pedido urgente (+X%)", e tirar o
+                // percentual do preço final erraria com canal, extras ou preço mínimo na conta.
+                ReceiptLine("Urgência", quote.rushSurcharge.toMoney())
+            }
             selectedServices.forEach { service ->
                 val multiplied = quote.quantity > 1 && !service.chargedPerOrder
                 val label = if (multiplied) "${service.name} (× ${quote.quantity})" else service.name
                 ReceiptLine(label, service.total(quote.quantity).toMoney())
+                if (service.laborMinutes > 0) {
+                    val totalMinutes = service.totalLaborMinutes(quote.quantity)
+                    val hourly = service.total(quote.quantity) / (totalMinutes / 60.0)
+                    Text(
+                        "· ${totalMinutes.minutesToDurationText()} · rende ${hourly.toMoney()}/h",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (laborRatePerHour > 0.0 && hourly < laborRatePerHour) {
+                        Text(
+                            "paga menos que a sua hora (${laborRatePerHour.toMoney()}/h)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
             }
-            if (shippingCost > 0) ReceiptLine("Frete", shippingCost.toMoney())
+            if (chargedShipping > 0) ReceiptLine("Frete", chargedShipping.toMoney())
+            if (shippingAbsorbed && shippingCost > 0) {
+                ReceiptLine("Frete grátis (você paga)", "− ${shippingCost.toMoney()}")
+                Text(
+                    "Sai do seu lucro.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val covering = quote.shippingCoveringSalePrice
+                if (covering != null && !quote.isNegotiated) {
+                    Text(
+                        "Pra manter a margem, cobre ${(covering + servicesTotal).toMoney()}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    TextButton(onClick = onUseShippingCoveringPrice, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                        Text("Usar esse preço")
+                    }
+                }
+            }
         }
     }
 }
@@ -713,6 +932,7 @@ private fun NegotiationSection(
     showcaseSuggestion: Double? = null,
     onApplyShowcaseSuggestion: (Double) -> Unit = {},
     announcedPiecePrice: Double? = null,
+    minimumOrderPrice: Double = 0.0,
 ) {
     // Produto do catálogo não tem cliente pra negociar (decisão 101), mas tem o preço que se
     // anuncia (decisão 102): o mesmo preço fechado, com outro nome.
@@ -778,6 +998,16 @@ private fun NegotiationSection(
             style = MaterialTheme.typography.bodySmall,
         )
     }
+
+    // Aviso, não bloqueio (decisão 125): um preço negociado pode ficar abaixo do mínimo de propósito
+    // (fidelizar um cliente), então a tela avisa em vez de impedir.
+    if (minimumOrderPrice > 0 && quote.isNegotiated && quote.salePrice < minimumOrderPrice) {
+        Text(
+            "Abaixo do seu preço mínimo do pedido (${minimumOrderPrice.toMoney()}).",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary,
+        )
+    }
 }
 
 /**
@@ -820,7 +1050,9 @@ private fun PrinterComparison(comparison: List<Pair<PrinterProfile, Quote>>, all
 @Composable
 private fun PriceCompositionBar(quote: Quote) {
     val costs = quote.costs
-    val deductions = quote.salePrice * quote.totalDeductionRate
+    // Inclui a taxa fixa por item (decisão 121): sem ela, a fatia do canal ficava menor que o que
+    // ele de fato leva.
+    val deductions = quote.channelFeeAmount + quote.taxAmount
     val slices = listOf(
         CompositionSlice("Material", costs.material, MaterialTheme.colorScheme.primary),
         CompositionSlice("Energia", costs.energy, MaterialTheme.colorScheme.tertiary),
@@ -829,11 +1061,15 @@ private fun PriceCompositionBar(quote: Quote) {
             costs.maintenance + costs.investmentReturn + costs.fixedCost,
             MaterialTheme.colorScheme.secondary,
         ),
+        CompositionSlice("Insumos", costs.consumables, MaterialTheme.colorScheme.inversePrimary),
         CompositionSlice("Seu trabalho", costs.labor + costs.finishing, MaterialTheme.colorScheme.tertiaryContainer),
         CompositionSlice("Reserva de falha", costs.failures, MaterialTheme.colorScheme.outline),
         CompositionSlice("Administrativo", costs.administrative, MaterialTheme.colorScheme.outlineVariant),
         CompositionSlice("Canal e imposto", deductions, MaterialTheme.colorScheme.secondaryContainer),
-        CompositionSlice("Lucro", quote.profit, MaterialTheme.colorScheme.primaryContainer),
+        // A barra é o preço da peça: o frete grátis sai dele (decisão 124), e o que os serviços com tempo
+        // rendem (decisão 123) é lucro do serviço, não da peça. Assim as fatias somam o preço da peça.
+        CompositionSlice("Frete grátis", quote.absorbedShippingCost, MaterialTheme.colorScheme.errorContainer),
+        CompositionSlice("Lucro", quote.profit - quote.serviceProfit, MaterialTheme.colorScheme.primaryContainer),
     ).filter { it.value > 0.0 }
 
     if (slices.isEmpty()) return

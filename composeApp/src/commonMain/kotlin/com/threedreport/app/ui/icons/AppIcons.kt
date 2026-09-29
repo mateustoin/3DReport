@@ -151,6 +151,18 @@ object AppIcons {
     /** `inventory_2` */
     val Inventory2: ImageVector by lazy { symbol("inventory_2", "M200-80q-33 0-56.5-23.5T120-160v-451q-18-11-29-28.5T80-680v-120q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v120q0 23-11 40.5T840-611v451q0 33-23.5 56.5T760-80H200Zm0-520v440h560v-440H200Zm-40-80h640v-120H160v120Zm200 280h240v-80H360v80Zm120 20Z") }
 
+    /**
+     * `inventory_2`, preenchido: não encontrado com confiança no repositório oficial do Material
+     * Symbols, então esta é uma caixa simples desenhada aqui (decisão 122), na mesma grade e traço
+     * do [Inventory2]: tampa, corpo e a fita central vazada.
+     */
+    val Inventory2Filled: ImageVector by lazy {
+        symbolEvenOdd(
+            "inventory_2_fill",
+            "M160,-880 H800 V-760 H160 Z M200,-760 H800 V-160 H200 Z M360,-440 H600 V-360 H360 Z",
+        )
+    }
+
     /** `lock` */
     val Lock: ImageVector by lazy { symbol("lock", "M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z") }
 
@@ -221,6 +233,14 @@ private fun symbol(name: String, path: String): ImageVector =
     ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 960f, viewportHeight = 960f)
         .group(translationY = 960f) {
             addPath(pathData = addPathNodes(path), fill = SolidColor(Color.Black))
+        }
+        .build()
+
+/** Como [symbol], mas com regra par-ímpar: uma região coberta duas vezes vira um vazado (a fita da caixa). */
+private fun symbolEvenOdd(name: String, path: String): ImageVector =
+    ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 960f, viewportHeight = 960f)
+        .group(translationY = 960f) {
+            addPath(pathData = addPathNodes(path), fill = SolidColor(Color.Black), pathFillType = PathFillType.EvenOdd)
         }
         .build()
 

@@ -17,6 +17,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.SalesChannel
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.model.ThemeMode
@@ -69,6 +70,7 @@ class LocalStorage(
     fun services(): ServiceRepository = RecordServiceRepository(records("services.json", Service.serializer(), { it.id }))
 
     fun salesChannels(): SalesChannelRepository = RecordSalesChannelRepository(records("channels.json", SalesChannel.serializer(), { it.id }))
+    fun consumables(): ConsumableRepository = RecordConsumableRepository(records("consumables.json", Consumable.serializer(), { it.id }))
 
     fun templates(): TemplateRepository = RecordTemplateRepository(records("templates.json", QuoteTemplate.serializer(), { it.id }))
 

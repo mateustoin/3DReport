@@ -1,5 +1,7 @@
 package com.threedreport.core.pricing
 
+import com.threedreport.core.model.QuotedConsumable
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.MachineInvestment
@@ -47,7 +49,8 @@ class ProductRepricerTest {
         printers: List<PrinterProfile> = listOf(printer),
         settings: PricingSettings = this.settings,
         channels: List<SalesChannel> = listOf(shopee),
-    ) = ProductRepricer.reprice(product, filaments, printers, settings, channels)
+        consumables: List<Consumable> = emptyList(),
+    ) = ProductRepricer.reprice(product, filaments, printers, settings, channels, consumables)
 
     @Test
     fun unchangedCostsKeepThePrice() {
@@ -133,5 +136,37 @@ class ProductRepricerTest {
             RepriceResult.Unavailable(RepriceResult.Reason.FILAMENT_MISSING, "PETG"),
             reprice(product, filaments = listOf(filament)),
         )
+    }
+
+    private val argola = Consumable(id = "argola", name = "Argola", unitCost = 0.5)
+
+    private fun productWithArgola(): SavedQuote {
+        val quote = PricingCalculator.calculate(
+            prints = listOf(PrintJob(filament = filament, filamentLengthMeters = 10.0, printTimeMinutes = 120.0) to printer),
+            settings = settings,
+            consumables = listOf(QuotedConsumable.of(argola, quantity = 1.0)),
+        )
+        return SavedQuote(id = "2", name = "Chaveiro", quote = quote, savedAtEpochMillis = 0L, kind = QuoteKind.PRODUCT)
+    }
+
+    @Test
+    fun unchangedConsumablesKeepThePrice() {
+        val result = reprice(productWithArgola(), channels = emptyList(), consumables = listOf(argola))
+        assertIs<RepriceResult.Repriced>(result)
+        assertFalse(result.changed)
+    }
+
+    @Test
+    fun aPricierConsumableRaisesThePrice() {
+        val result = reprice(productWithArgola(), channels = emptyList(), consumables = listOf(argola.copy(unitCost = 1.5)))
+        assertIs<RepriceResult.Repriced>(result)
+        assertTrue(result.changed)
+        assertEquals(1.5, result.quote.costs.consumables, 1e-9)
+    }
+
+    @Test
+    fun aConsumableThatLeftTheCatalogNeedsAChoice() {
+        val result = reprice(productWithArgola(), channels = emptyList(), consumables = emptyList())
+        assertEquals(RepriceResult.Unavailable(RepriceResult.Reason.CONSUMABLE_MISSING, "Argola"), result)
     }
 }

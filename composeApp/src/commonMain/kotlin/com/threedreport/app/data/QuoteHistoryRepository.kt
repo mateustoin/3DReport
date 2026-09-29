@@ -54,6 +54,7 @@ interface QuoteHistoryRepository {
         category: String? = null,
         soldAtCatalogPrice: Boolean = false,
         currency: Currency = Currency.BRL,
+        shippingAbsorbed: Boolean = false,
     ): SavedQuote
 
     /**
@@ -77,6 +78,7 @@ interface QuoteHistoryRepository {
         deliveryDateEpochDay: Long? = null,
         category: String? = null,
         soldAtCatalogPrice: Boolean = false,
+        shippingAbsorbed: Boolean = false,
     ): SavedQuote?
 
     /**
@@ -172,6 +174,7 @@ class StoredQuoteHistoryRepository(
         category: String?,
         soldAtCatalogPrice: Boolean,
         currency: Currency,
+        shippingAbsorbed: Boolean,
     ): SavedQuote {
         val isProduct = kind == QuoteKind.PRODUCT
         val now = clock.nowMillis()
@@ -194,6 +197,7 @@ class StoredQuoteHistoryRepository(
             number = lastNumber.value.value + 1,
             statusHistory = listOf(StatusChange(OrderStatus.ORCADO, now)),
             currency = currency,
+            shippingAbsorbed = !isProduct && shippingAbsorbed,
         )
         val saved = draft.copy(
             quote = draft.quote.withThumbnails(printThumbnails),
@@ -219,6 +223,7 @@ class StoredQuoteHistoryRepository(
         deliveryDateEpochDay: Long?,
         category: String?,
         soldAtCatalogPrice: Boolean,
+        shippingAbsorbed: Boolean,
     ): SavedQuote? {
         val existing = collection.find(id) ?: return null
         val isProduct = !existing.isOrder
@@ -233,6 +238,7 @@ class StoredQuoteHistoryRepository(
             deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
             category = if (isProduct) category.normalizedCategory(excludingId = id) else null,
             soldAtCatalogPrice = !isProduct && soldAtCatalogPrice,
+            shippingAbsorbed = !isProduct && shippingAbsorbed,
         )
         return collection.update(id) {
             draft.copy(
