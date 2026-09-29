@@ -5,6 +5,10 @@
 > está aprovado nem agendado. O [roadmap](roadmap.md) continua sendo a única fonte de
 > verdade das evoluções: uma ideia daqui só vira item de lá pela triagem de sempre
 > (decisão 83), com o motivo registrado.
+>
+> **Incorporada ao roadmap em 2026-09-28:** todas as ideias desta pesquisa
+> entraram no [Plano de evolução 2](roadmap.md#plano-de-evolução-2-revisão-de-2026-09-28-pesquisa-de-mercado),
+> Levas 10 a 23, com as que ficaram fora do foco registradas em "Sem posição".
 
 ## Sumário
 
