@@ -36,12 +36,6 @@ val generateAppVersion by tasks.registering {
 kotlin {
     jvmToolchain(21)
 
-    // expect/actual class: usado para a camada de persistência (data/), que
-    // precisa de I/O de arquivo específico por plataforma (java.io no JVM).
-    compilerOptions {
-        freeCompilerArgs.add("-Xexpect-actual-classes")
-    }
-
     // Desktop (Windows/Linux/macOS). Código específico de desktop fica em src/jvmMain.
     jvm()
 

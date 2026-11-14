@@ -32,7 +32,10 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 | Rodar todos os testes | `./gradlew allTests` |
 | Rodar só testes do core (JVM e JS) | `./gradlew :core:allTests` |
 | Rodar só testes do composeApp | `./gradlew :composeApp:jvmTest` |
-| Compilar e testar tudo | `./gradlew build` |
+| Compilar, conferir o estilo e testar tudo | `./gradlew build` |
+| Conferir o estilo (ktlint) | `./gradlew ktlintCheck` |
+| Corrigir o estilo automaticamente | `./gradlew ktlintFormat` |
+| Relatório de cobertura de testes | `./gradlew koverHtmlReport` |
 | Gerar a calculadora do site | `./gradlew :web:syncSiteCalculator` |
 | Gerar instalador do SO atual | `./gradlew :composeApp:packageDistributionForCurrentOS` |
 | Limpar build | `./gradlew clean` |
@@ -46,6 +49,9 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 - Pra abrir o app sem tocar nos seus dados reais, aponte a pasta de dados pra outro
   lugar: `JAVA_TOOL_OPTIONS=-Dthreedreport.dataDir=/tmp/3dreport-teste ./gradlew :composeApp:run`.
 - Relatório de testes: `core/build/reports/tests/jvmTest/index.html`.
+- Estilo: o ktlint confere o código (regras no `.editorconfig` da raiz) e o `./gradlew build`
+  falha se algo estiver fora do padrão. `./gradlew ktlintFormat` corrige o que dá pra
+  corrigir sozinho. Arquivos gerados (em `build/`) ficam de fora.
 - Instaladores gerados: `composeApp/build/compose/binaries/main/<formato>/`
   (ex.: `.../deb/3dreport_1.0.0_amd64.deb`, `.../msi/3DReport-1.0.0.msi`,
   `.../dmg/3DReport-1.0.0.dmg`). **`packageDistributionForCurrentOS` só gera
@@ -73,6 +79,10 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 - O motor de cálculo é validado contra os valores da planilha de referência
   ([pricing-formulas.md](pricing-formulas.md)). Toda mudança de fórmula deve
   atualizar teste **e** documentação.
+- Cobertura (Kover, só mede; não há limite mínimo): `./gradlew koverHtmlReport` gera o
+  relatório agregado de `core` e `composeApp` em `build/reports/kover/html/index.html`
+  (por módulo: `./gradlew :core:koverHtmlReport`). O CI publica esse HTML como artefato
+  do workflow. No `core` só conta o JVM.
 - Em `composeApp/src/jvmTest`, a pasta de dados de cada teste vem da propriedade
   de sistema `threedreport.dataDir` (um diretório temporário por teste). Ela
   precisa estar setada **antes** de qualquer repositório ser construído: sempre
@@ -185,7 +195,10 @@ branch). Passo a passo:
    git tag v1.0.0        # mesma versão do appVersion em gradle.properties
    git push origin v1.0.0
    ```
-4. O workflow builda o `.deb` (Ubuntu), `.msi` (Windows) e dois `.dmg` (macOS
+4. Antes de tudo o workflow confere que a tag bate com o `appVersion` de
+   `gradle.properties` (tag `v2.2.0` exige `appVersion=2.2.0`) e roda
+   `./gradlew build` (estilo e testes). Se falhar, nada é gerado.
+   Depois builda o `.deb` (Ubuntu), `.msi` (Windows) e dois `.dmg` (macOS
    Apple Silicon e Intel, com o sufixo no nome) em
    paralelo, um runner por SO — resolve a limitação de
    `packageDistributionForCurrentOS` sem precisar de máquina Windows/macOS
