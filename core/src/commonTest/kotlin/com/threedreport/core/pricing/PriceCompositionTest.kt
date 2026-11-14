@@ -11,7 +11,6 @@ import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /** Os quatro grupos da barra do painel de resultado somam o que o cliente paga, em qualquer combinação. */
@@ -103,10 +102,18 @@ class PriceCompositionTest {
     }
 
     @Test
-    fun chargedShippingMustFitInTheExtras() {
-        val quote = OrderPricing.quote(prints, settings, null, OrderTerms(shippingCost = 10.0))
+    fun aShippingThatDoesNotFitInTheExtrasIsLimitedInsteadOfFailing() {
+        // Registro inconsistente: frete guardado de 11 com só 10 de extras no orçamento.
+        val quote = OrderPricing.quote(prints, settings, shopee, OrderTerms(shippingCost = 10.0))
 
-        assertFailsWith<IllegalArgumentException> { quote.priceComposition(chargedShipping = 11.0) }
-        assertFailsWith<IllegalArgumentException> { quote.priceComposition(chargedShipping = -1.0) }
+        val tooMuch = quote.priceComposition(chargedShipping = 11.0)
+        assertEquals(quote.customerTotal, tooMuch.total, 1e-9)
+        assertEquals(quote.priceComposition(chargedShipping = 10.0), tooMuch)
+
+        val negative = quote.priceComposition(chargedShipping = -1.0)
+        assertEquals(quote.customerTotal, negative.total, 1e-9)
+        assertEquals(quote.priceComposition(chargedShipping = 0.0), negative)
+
+        assertEquals(quote.customerTotal, quote.priceComposition(chargedShipping = Double.NaN).total, 1e-9)
     }
 }

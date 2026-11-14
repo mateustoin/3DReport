@@ -63,7 +63,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.threedreport.core.pricing.showcasePriceSuggestion as coreShowcasePriceSuggestion
 
 /** A prévia 3D do STL anexado, calculada fora do thread da tela (decisão 108). */
 sealed interface StlPreview {
@@ -563,12 +562,6 @@ class QuoteViewModel(
     fun setShippingCost(text: String) = inputState.update { it.copy(shippingCostText = text) }
     fun setTargetTotal(text: String) = inputState.update { it.copy(targetTotalText = text) }
 
-    /**
-     * "Arredondar pra R$ 18,90" do preço anunciado (decisão 102). A conta é do `core`; a tela mostra o
-     * chip só quando há sugestão.
-     */
-    fun showcasePriceSuggestion(total: Double): Double? = coreShowcasePriceSuggestion(total)
-
     fun applyShowcasePrice(value: Double) = inputState.update { it.copy(targetTotalText = value.toInputText()) }
 
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
@@ -707,7 +700,9 @@ class QuoteViewModel(
             }
         }
         val shippingCost = if (isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
-        val shippingAbsorbed = input.absorbsShipping(shippingCost)
+        // Se o frete grátis vale de fato é a mesma regra da conta (decisão 124), que é do `core`.
+        val shippingAbsorbed =
+            OrderTerms(shippingCost = shippingCost, shippingAbsorbed = input.shippingAbsorbed, catalogProduct = isProduct).absorbsShipping
 
         val editing = form.operation as? QuoteOperation.Editing
         if (editing != null) {

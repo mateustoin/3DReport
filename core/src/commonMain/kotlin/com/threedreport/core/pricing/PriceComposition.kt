@@ -34,19 +34,19 @@ data class PriceComposition(
  * [com.threedreport.core.model.SavedQuote.chargedShipping] e [OrderTerms.chargedShipping]). O resto dos
  * extras são os serviços.
  *
- * A soma fecha porque [Quote.profit] é o total menos exatamente o que vai nos outros três grupos.
+ * A soma fecha porque [Quote.profit] é o total menos exatamente o que vai nos outros três grupos. Nunca
+ * lança: um [chargedShipping] fora de `0..extrasTotal` (registro antigo inconsistente) é limitado a esse
+ * intervalo, e a soma continua fechando.
  */
 fun Quote.priceComposition(chargedShipping: Double): PriceComposition {
-    require(chargedShipping >= 0 && chargedShipping <= extrasTotal + EXTRAS_EPSILON) {
-        "chargedShipping ($chargedShipping) precisa estar entre 0 e extrasTotal ($extrasTotal)"
-    }
-    val servicesTotal = extrasTotal - chargedShipping
+    // Um registro antigo ou inconsistente pode guardar um frete maior que os extras (ou negativo): o painel
+    // não pode cair por isso. O frete é limitado ao que cabe nos extras, e os grupos continuam somando o total.
+    val shipping = if (chargedShipping.isNaN()) 0.0 else chargedShipping.coerceIn(0.0, extrasTotal)
+    val servicesTotal = extrasTotal - shipping
     return PriceComposition(
         materialAndMachine = productionCost - costs.labor - costs.finishing,
         laborAndServices = costs.labor + costs.finishing + servicesTotal - serviceProfit,
-        feesAndTaxes = channelFeeAmount + taxAmount + chargedShipping + absorbedShippingCost,
+        feesAndTaxes = channelFeeAmount + taxAmount + shipping + absorbedShippingCost,
         profit = profit,
     )
 }
-
-private const val EXTRAS_EPSILON = 1e-9

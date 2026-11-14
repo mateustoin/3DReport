@@ -169,4 +169,19 @@ class ProductRepricerTest {
         val result = reprice(productWithArgola(), channels = emptyList(), consumables = emptyList())
         assertEquals(RepriceResult.Unavailable(RepriceResult.Reason.CONSUMABLE_MISSING, "Argola"), result)
     }
+
+    @Test
+    fun deductionsReachingTheWholeSaleTodayComeBackByType() {
+        // O canal subiu a taxa depois que o produto foi salvo: com o imposto de hoje, chega a 100%.
+        val product = productOf(channel = shopee)
+        val result = reprice(product, settings = settings.copy(taxRate = 0.4), channels = listOf(shopee.copy(feeRate = 0.6)))
+
+        val unavailable = assertIs<RepriceResult.Unavailable>(result)
+        assertEquals(RepriceResult.Reason.INVALID, unavailable.reason)
+        // O motivo vem pelo tipo; nada de frase de desenvolvedor no lugar do nome que faltou.
+        assertEquals(null, unavailable.missingName)
+        val error = assertIs<PricingError.DeductionsReachFullPrice>(unavailable.pricingError)
+        assertEquals(0.6, error.channelFeeRate)
+        assertEquals(0.4, error.taxRate)
+    }
 }

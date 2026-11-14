@@ -100,6 +100,7 @@ import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
+import com.threedreport.core.pricing.showcasePriceSuggestion
 import kotlin.math.abs
 import kotlin.math.round
 
@@ -695,7 +696,7 @@ private fun QuoteResultSection(
             // Só com o campo vazio: depois de aplicado, ou com um anunciado próprio, o atalho sobrava
             // e podia até sugerir baixar o preço.
             showcaseSuggestion = if (input.isProduct && input.targetTotalText.isBlank()) {
-                viewModel.showcasePriceSuggestion((quote.tableSalePrice ?: quote.salePrice) + quote.extrasTotal)
+                showcasePriceSuggestion((quote.tableSalePrice ?: quote.salePrice) + quote.extrasTotal)
             } else {
                 null
             },

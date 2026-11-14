@@ -18,6 +18,7 @@ import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.pricing.showcasePriceSuggestion
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -900,10 +901,10 @@ class QuoteViewModelTest {
     fun showcaseSuggestionIsTheNextValueEndingIn90() {
         val viewModel = viewModelWith()
 
-        assertEquals(18.90, viewModel.showcasePriceSuggestion(18.37)!!, 1e-9)
-        assertEquals(19.90, viewModel.showcasePriceSuggestion(18.95)!!, 1e-9)
-        assertEquals(0.90, viewModel.showcasePriceSuggestion(0.10)!!, 1e-9)
-        assertNull(viewModel.showcasePriceSuggestion(18.90))
+        assertEquals(18.90, showcasePriceSuggestion(18.37)!!, 1e-9)
+        assertEquals(19.90, showcasePriceSuggestion(18.95)!!, 1e-9)
+        assertEquals(0.90, showcasePriceSuggestion(0.10)!!, 1e-9)
+        assertNull(showcasePriceSuggestion(18.90))
 
         viewModel.applyShowcasePrice(18.90)
         assertEquals("18,9", viewModel.input.value.targetTotalText)
