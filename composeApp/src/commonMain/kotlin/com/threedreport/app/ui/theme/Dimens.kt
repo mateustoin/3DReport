@@ -32,11 +32,23 @@ object AppDimens {
 
     val sidebarWidth = 212.dp
     val sidebarCompactWidth = 72.dp
-    val resultPanelWidth = 380.dp
+
+    /** Painel fixo à direita: o resultado do Orçamento e o formulário dos cadastros. */
+    val sidePanelWidth = 380.dp
+    val resultPanelWidth = sidePanelWidth
     val formMaxWidth = 760.dp
+
+    /** Lista de cadastro: não passa disso quando o painel está fechado. */
+    val listMaxWidth = 760.dp
+
+    /** Abaixo dessa largura útil, o painel do formulário ocupa a área toda. */
+    val sidePanelFullWidthBelow = 960.dp
 
     /** Margem de cima da tela (as laterais são [AppSpacing.xxl]). */
     val screenTopPadding = 26.dp
+
+    /** Transições de hover, foco e troca de conteúdo (120 a 180 ms). */
+    const val MOTION_MILLIS = 150
 
     val borderWidth = 1.dp
     val focusRingWidth = 2.dp

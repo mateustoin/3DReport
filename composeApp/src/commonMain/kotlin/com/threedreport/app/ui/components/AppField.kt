@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.components
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_help_for
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,6 +59,7 @@ import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 
 /** Ajuda sob demanda: uma frase curta e, opcionalmente, o detalhe. Aparece numa dica, nunca como parágrafo fixo. */
 data class HelpText(val short: String, val detail: String? = null)
@@ -83,7 +86,7 @@ fun HelpHint(help: HelpText, label: String, modifier: Modifier = Modifier, tint:
     ) {
         Icon(
             AppIcons.Info,
-            contentDescription = "Ajuda: $label",
+            contentDescription = stringResource(Res.string.common_help_for, label),
             tint = if (tint == androidx.compose.ui.graphics.Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else tint,
             modifier = Modifier
                 .size(AppDimens.iconSize)
@@ -280,6 +283,22 @@ fun SegmentedChoice(options: List<String>, selectedIndex: Int, onSelect: (Int) -
                 )
             }
         }
+    }
+}
+
+/** [SegmentedChoice] com o rótulo em `label` acima (e a ajuda, se houver), como os outros campos do formulário. */
+@Composable
+fun AppChoiceField(
+    label: String,
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    help: HelpText? = null,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+        FieldLabel(label, help)
+        SegmentedChoice(options, selectedIndex, onSelect)
     }
 }
 

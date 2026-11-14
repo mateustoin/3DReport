@@ -35,12 +35,16 @@ import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 
-/** Os três botões do sistema de design: um principal por tela (âmbar), o secundário e o que vai sobre o azul-marinho. */
-enum class ButtonKind { Primary, Secondary, OnNavy }
+/**
+ * Os botões do sistema de design: um principal por tela (âmbar), o secundário, o que vai sobre o azul-marinho
+ * e o de ação destrutiva (excluir, descartar), que só aparece em diálogo de confirmação.
+ */
+enum class ButtonKind { Primary, Secondary, OnNavy, Danger }
 
 /**
  * Botão do kit. [Primary][ButtonKind.Primary]: fundo âmbar, texto `onAmber` em 600. [Secondary][ButtonKind.Secondary]:
- * fundo `card` com borda `line`. [OnNavy][ButtonKind.OnNavy]: transparente com borda `navyRaised`. Ícone opcional
+ * fundo `card` com borda `line`. [OnNavy][ButtonKind.OnNavy]: transparente com borda `navyRaised`.
+ * [Danger][ButtonKind.Danger]: como o secundário, com texto `error`. Ícone opcional
  * à esquerda do texto (nunca só ícone).
  */
 @Composable
@@ -79,11 +83,18 @@ fun AppButton(
             content = colors.onNavy
             border = if (hovered && enabled) colors.onNavyMuted else colors.navyRaised
         }
+
+        ButtonKind.Danger -> {
+            background = colors.card
+            content = MaterialTheme.colorScheme.error
+            border = if (hovered && enabled) MaterialTheme.colorScheme.error else colors.line
+        }
     }
     val ring = when (kind) {
         ButtonKind.OnNavy -> colors.onNavyMuted
         ButtonKind.Primary -> colors.onAmber
         ButtonKind.Secondary -> MaterialTheme.colorScheme.primary
+        ButtonKind.Danger -> MaterialTheme.colorScheme.error
     }
     Row(
         modifier = modifier
@@ -110,7 +121,7 @@ fun AppButton(
     }
 }
 
-/** Ação só de ícone: sempre com descrição pro leitor de tela e dica ao passar o mouse. */
+/** Ação só de ícone: sempre com descrição pro leitor de tela, dica ao passar o mouse e anel de foco no teclado. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun IconAction(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier, tint: Color = Color.Unspecified) {
@@ -120,10 +131,13 @@ fun IconAction(icon: ImageVector, description: String, onClick: () -> Unit, modi
         state = androidx.compose.material3.rememberTooltipState(),
         modifier = modifier,
     ) {
+        var focused by remember { mutableStateOf(false) }
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
                 .size(AppDimens.smallControlHeight)
                 .clip(MaterialTheme.shapes.small)
+                .then(if (focused) Modifier.border(AppDimens.focusRingWidth, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
+                .onFocusChanged { focused = it.isFocused }
                 .clickable(role = Role.Button, onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos da interface. Chave: <tela>_<o que e>, em ingles e minusculas (consumables_title,
+  services_field_price). Texto usado em mais de uma tela leva o prefixo common_.
+  Grupos de uma tela: _title, _action_, _field_, _help_, _error_, _notice_, _delete_, _empty.
+-->
+<resources>
+    <!-- Comum -->
+    <string name="common_save">Salvar</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_edit">Editar</string>
+    <string name="common_archive">Arquivar</string>
+    <string name="common_restore">Restaurar</string>
+    <string name="common_delete">Excluir</string>
+    <string name="common_delete_anyway">Excluir mesmo assim</string>
+    <string name="common_archived_section">Arquivados (%1$d)</string>
+    <string name="common_optional">Opcional</string>
+    <string name="common_help_for">Ajuda: %1$s</string>
+    <string name="common_field_charge">Cobrança</string>
+    <string name="common_charge_per_piece">Por peça</string>
+    <string name="common_charge_per_order">Uma vez no pedido</string>
+    <string name="common_help_charge">Dá pra trocar em cada orçamento.</string>
+    <string name="common_error_name_required">Informe o nome</string>
+    <string name="common_error_number_invalid">Digite um número</string>
+    <string name="common_error_negative">Não pode ser negativo</string>
+    <string name="common_delete_in_use">%1$s está em %2$s.</string>
+    <string name="common_delete_in_use_hint">Arquivar tira da lista do Orçamento e mantém o cadastro. Dá pra restaurar depois.</string>
+    <plurals name="common_orders_or_products">
+        <item quantity="one">%1$d pedido ou produto</item>
+        <item quantity="other">%1$d pedidos ou produtos</item>
+    </plurals>
+
+    <!-- Insumos -->
+    <string name="consumables_title">Insumos</string>
+    <string name="consumables_action_new">Novo insumo</string>
+    <string name="consumables_empty">Nenhum insumo ainda.</string>
+    <string name="consumables_form_new">Novo insumo</string>
+    <string name="consumables_form_edit">Editar insumo</string>
+    <string name="consumables_field_name">Nome</string>
+    <string name="consumables_field_name_hint">Argola de chaveiro</string>
+    <string name="consumables_field_cost">Custo por unidade (%1$s)</string>
+    <string name="consumables_help_cost">O custo entra no preço, como o material.</string>
+    <string name="consumables_help_charge">Uma argola por chaveiro é por peça. Uma caixa pra entrega inteira é uma vez no pedido.</string>
+    <string name="consumables_error_cost_required">Informe o custo</string>
+    <string name="consumables_notice_saved">Insumo salvo</string>
+    <string name="consumables_notice_archived">Insumo arquivado</string>
+    <string name="consumables_notice_restored">Insumo restaurado</string>
+    <string name="consumables_notice_deleted">Insumo excluído</string>
+    <string name="consumables_delete_title">Excluir insumo?</string>
+    <string name="consumables_delete_what">o insumo \"%1$s\"</string>
+    <string name="consumables_delete_message">\"%1$s\" será removido do catálogo. Pedidos já salvos continuam com o custo que tinham.</string>
+
+    <!-- Serviços -->
+    <string name="services_title">Serviços</string>
+    <string name="services_action_new">Novo serviço</string>
+    <string name="services_empty">Nenhum serviço ainda.</string>
+    <string name="services_form_new">Novo serviço</string>
+    <string name="services_form_edit">Editar serviço</string>
+    <string name="services_field_name">Nome</string>
+    <string name="services_field_name_hint">Pintura</string>
+    <string name="services_field_price">Valor sugerido (%1$s)</string>
+    <string name="services_field_minutes">Seu tempo (min)</string>
+    <string name="services_field_minutes_hint">1h30 ou 90</string>
+    <string name="services_help_price">Deixe em branco se o valor muda a cada peça.</string>
+    <string name="services_help_price_detail">É o valor cobrado do cliente, e já vem no orçamento ao marcar o serviço. Taxa de marketplace fica em Configurações.</string>
+    <string name="services_help_minutes">Com o tempo, o orçamento sugere o valor pela sua hora.</string>
+    <string name="services_help_charge">Pintura e lixamento costumam ser por peça. Entrega e modelagem, uma vez no pedido.</string>
+    <string name="services_error_minutes_invalid">Digite um tempo, como 1h30 ou 90</string>
+    <string name="services_notice_saved">Serviço salvo</string>
+    <string name="services_notice_archived">Serviço arquivado</string>
+    <string name="services_notice_restored">Serviço restaurado</string>
+    <string name="services_notice_deleted">Serviço excluído</string>
+    <string name="services_delete_title">Excluir serviço?</string>
+    <string name="services_delete_what">o serviço \"%1$s\"</string>
+    <string name="services_delete_message">\"%1$s\" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.</string>
+</resources>

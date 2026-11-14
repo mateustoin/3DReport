@@ -1,20 +1,39 @@
 package com.threedreport.app.ui.components
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_archive
+import _3dreport.composeapp.generated.resources.common_archived_section
+import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_delete_anyway
+import _3dreport.composeapp.generated.resources.common_delete_in_use
+import _3dreport.composeapp.generated.resources.common_delete_in_use_hint
+import _3dreport.composeapp.generated.resources.common_orders_or_products
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.theme.AppDimens
+import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Archivable
 import com.threedreport.core.model.SavedQuote
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * O que um seletor do Orçamento oferece (decisão 115): arquivado sai das escolhas, mas o que já está
@@ -41,8 +60,12 @@ object CatalogUsage {
     fun consumable(id: String, quotes: List<SavedQuote>) = quotes.count { saved -> saved.quote.consumables.any { it.id == id } }
 }
 
-/** "1 pedido ou produto", "3 pedidos ou produtos". */
-fun usageText(count: Int): String = if (count == 1) "1 pedido ou produto" else "$count pedidos ou produtos"
+/**
+ * Pergunta de exclusão pendente, no estado de uma tela de cadastro: qual item ([id], [name]), em quantos pedidos e
+ * produtos ele está ([usageCount], decisão 115) e se dá pra arquivar em vez de excluir ([canArchive]: não, se já
+ * está arquivado). O ViewModel monta; a tela mostra o [DeleteOrArchiveDialog].
+ */
+data class PendingDelete(val id: String, val name: String, val usageCount: Int, val canArchive: Boolean)
 
 /**
  * Confirmação de excluir um cadastro (decisão 115). Sem uso, é a confirmação de sempre. Em uso, diz em
@@ -67,27 +90,20 @@ fun DeleteOrArchiveDialog(
         ConfirmDialog(title = title, message = deleteMessage, onConfirm = onDelete, onDismiss = onDismiss)
         return
     }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${what.replaceFirstChar { it.uppercase() }} está em ${usageText(usageCount)}.")
-                Text(
-                    "Arquivar tira da lista de escolhas do Orçamento e mantém o cadastro: pedidos reabertos e " +
-                        "produtos do catálogo continuam funcionando, e dá pra restaurar depois.",
-                )
-                Text(deleteMessage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+    AppDialog(
+        title = title,
+        onDismiss = onDismiss,
+        buttons = {
+            AppButton(stringResource(Res.string.common_cancel), onDismiss)
+            AppButton(stringResource(Res.string.common_delete_anyway), onDelete, kind = ButtonKind.Danger)
+            AppButton(stringResource(Res.string.common_archive), onArchive, kind = ButtonKind.Primary)
         },
-        confirmButton = { TextButton(onClick = onArchive) { Text("Arquivar") } },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onDelete) { Text("Excluir mesmo assim", color = MaterialTheme.colorScheme.error) }
-                TextButton(onClick = onDismiss) { Text("Cancelar") }
-            }
-        },
-    )
+    ) {
+        val usage = pluralStringResource(Res.plurals.common_orders_or_products, usageCount, usageCount)
+        DialogText(stringResource(Res.string.common_delete_in_use, what.replaceFirstChar { it.uppercase() }, usage))
+        DialogText(stringResource(Res.string.common_delete_in_use_hint))
+        DialogText(deleteMessage, muted = true)
+    }
 }
 
 /** "Arquivados (n)" no fim de uma lista de cadastro, recolhido: o dia a dia é com os ativos. */
@@ -95,8 +111,26 @@ fun DeleteOrArchiveDialog(
 fun ArchivedSection(count: Int, content: @Composable () -> Unit) {
     if (count == 0) return
     var expanded by rememberSaveable { mutableStateOf(false) }
-    TextButton(onClick = { expanded = !expanded }) {
-        Text(if (expanded) "Arquivados ($count) ▴" else "Arquivados ($count) ▾")
+    Row(
+        modifier = Modifier
+            .padding(top = MaterialTheme.spacing.md)
+            .clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button) { expanded = !expanded }
+            .padding(horizontal = MaterialTheme.spacing.sm, vertical = MaterialTheme.spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
+    ) {
+        Text(
+            stringResource(Res.string.common_archived_section, count),
+            style = MaterialTheme.appType.label,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Icon(
+            if (expanded) AppIcons.ExpandLess else AppIcons.ExpandMore,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(AppDimens.iconSize),
+        )
     }
     if (expanded) content()
 }
