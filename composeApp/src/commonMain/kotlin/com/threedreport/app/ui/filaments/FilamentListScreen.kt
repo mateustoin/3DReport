@@ -104,16 +104,10 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
             deleteMessage = "\"${filament.name}\" sai da lista de filamentos. Pedidos e produtos já salvos guardam o próprio " +
                 "retrato e não mudam, mas um produto feito com ele só volta a ter o preço atualizado depois de você " +
                 "escolher outro filamento em \"Editar cálculo\".",
-            onArchive = if (filament.archived) {
-                null
-            } else {
-                (
-                    {
-                        viewModel.setArchived(filament.id, true)
-                        pendingDelete = null
-                    }
-                    )
-            },
+            onArchive = {
+                viewModel.setArchived(filament.id, true)
+                pendingDelete = null
+            }.takeUnless { filament.archived },
             onDelete = {
                 viewModel.delete(filament.id)
                 pendingDelete = null

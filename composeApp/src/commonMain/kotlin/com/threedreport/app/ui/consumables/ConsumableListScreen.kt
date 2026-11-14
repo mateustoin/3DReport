@@ -94,16 +94,10 @@ fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier 
             what = "o insumo \"${consumable.name}\"",
             usageCount = viewModel.usageCount(consumable.id),
             deleteMessage = "\"${consumable.name}\" será removido do catálogo. Pedidos já salvos continuam com o custo que tinham.",
-            onArchive = if (consumable.archived) {
-                null
-            } else {
-                (
-                    {
-                        viewModel.setArchived(consumable.id, true)
-                        pendingDelete = null
-                    }
-                    )
-            },
+            onArchive = {
+                viewModel.setArchived(consumable.id, true)
+                pendingDelete = null
+            }.takeUnless { consumable.archived },
             onDelete = {
                 viewModel.delete(consumable.id)
                 pendingDelete = null

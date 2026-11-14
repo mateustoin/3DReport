@@ -90,16 +90,10 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
             what = "o serviço \"${service.name}\"",
             usageCount = viewModel.usageCount(service.id),
             deleteMessage = "\"${service.name}\" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.",
-            onArchive = if (service.archived) {
-                null
-            } else {
-                (
-                    {
-                        viewModel.setArchived(service.id, true)
-                        pendingDelete = null
-                    }
-                    )
-            },
+            onArchive = {
+                viewModel.setArchived(service.id, true)
+                pendingDelete = null
+            }.takeUnless { service.archived },
             onDelete = {
                 viewModel.delete(service.id)
                 pendingDelete = null

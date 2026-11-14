@@ -408,16 +408,10 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
             usageCount = viewModel.usageCount(channel.id),
             deleteMessage = "Orçamentos já salvos continuam com a taxa que tinham. Produtos do catálogo desse canal " +
                 "passam a pedir um canal novo ao atualizar o preço.",
-            onArchive = if (channel.archived) {
-                null
-            } else {
-                (
-                    {
-                        viewModel.setArchived(channel.id, true)
-                        pendingDelete = null
-                    }
-                    )
-            },
+            onArchive = {
+                viewModel.setArchived(channel.id, true)
+                pendingDelete = null
+            }.takeUnless { channel.archived },
             onDelete = {
                 viewModel.delete(channel.id)
                 pendingDelete = null

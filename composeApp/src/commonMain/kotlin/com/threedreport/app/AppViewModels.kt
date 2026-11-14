@@ -28,14 +28,10 @@ import kotlinx.coroutines.IO
 class AppViewModels(
     private val container: AppContainer,
     private val scope: CoroutineScope,
+    /** Pra onde "ver pedidos" leva (o Catálogo usa depois de vender): abre Pedidos. */
+    private val showOrders: () -> Unit,
     private val prepareQuote: (QuoteViewModel) -> Unit = {},
 ) {
-    /**
-     * Pra onde "ver pedidos" leva (o Catálogo usa depois de vender). Quem cria o navegador liga isto:
-     * o navegador precisa dos ViewModels do Orçamento, e os de histórico precisam do navegador.
-     */
-    var showOrders: () -> Unit = {}
-
     private fun newQuoteViewModel() = QuoteViewModel(
         container.filaments, container.printers, container.settings, container.services,
         container.salesChannels, container.quoteHistory,

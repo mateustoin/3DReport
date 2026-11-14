@@ -39,13 +39,12 @@ class AppNavigator(
     var confirmingEditDiscard: Boolean by mutableStateOf(false)
         private set
 
-    /** Se o Orçamento mostra a edição de um orçamento salvo, e não a aba. */
+    /**
+     * Se o Orçamento mostra a edição de um orçamento salvo. Lido na hora, pras regras abaixo; não é
+     * observável pelo Compose, então o `App()` desenha a partir do `saveForm` que coleta, e não disto.
+     */
     val editing: Boolean
         get() = edit.saveForm.value.editingQuoteId != null
-
-    /** O Orçamento que está na tela: a edição, quando há uma, ou a aba. */
-    val visibleQuote: QuoteViewModel
-        get() = if (editing) edit else quote
 
     fun goTo(target: AppDestination) {
         destination = target
@@ -101,11 +100,6 @@ class AppNavigator(
 
     /** Ctrl/Cmd+N no Orçamento. */
     fun newQuote() = unlessDraft(quote::resetForm)
-
-    /** Ctrl/Cmd+S no Orçamento: salva a edição, quando há uma, ou o orçamento da aba. */
-    fun save() {
-        if (editing) saveEditing() else quote.saveCurrentQuote()
-    }
 
     fun saveEditing() {
         if (edit.saveCurrentQuote()) {

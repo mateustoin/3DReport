@@ -100,16 +100,10 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
             usageCount = viewModel.usageCount(printer.id),
             deleteMessage = "\"${printer.name}\" será removida do catálogo, junto com os componentes, o diário de manutenção " +
                 "e as horas avulsas dela. Essa ação não pode ser desfeita.",
-            onArchive = if (printer.archived) {
-                null
-            } else {
-                (
-                    {
-                        viewModel.setArchived(printer.id, true)
-                        pendingDelete = null
-                    }
-                    )
-            },
+            onArchive = {
+                viewModel.setArchived(printer.id, true)
+                pendingDelete = null
+            }.takeUnless { printer.archived },
             onDelete = {
                 viewModel.delete(printer.id)
                 pendingDelete = null

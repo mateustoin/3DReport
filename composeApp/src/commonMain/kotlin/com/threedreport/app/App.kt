@@ -120,14 +120,18 @@ fun App(
 
     val appScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val viewModels = remember { AppViewModels(container, appScope, prepareQuote) }
-    val navigator = remember {
-        AppNavigator(
+    // O navegador precisa dos ViewModels do Orçamento, e o de histórico precisa do navegador (pra "ver
+    // pedidos"): o `nav` é preenchido logo abaixo, antes de qualquer toque na tela.
+    val (viewModels, navigator) = remember {
+        lateinit var nav: AppNavigator
+        val models = AppViewModels(container, appScope, showOrders = { nav.goTo(AppDestination.ORDERS) }, prepareQuote = prepareQuote)
+        nav = AppNavigator(
             startAt,
-            viewModels.quoteViewModel,
-            viewModels.editQuoteViewModel,
+            models.quoteViewModel,
+            models.editQuoteViewModel,
             onEditSaved = { appScope.launch { snackbarHostState.showSnackbar("Alterações salvas.") } },
-        ).also { navigator -> viewModels.showOrders = { navigator.goTo(AppDestination.ORDERS) } }
+        )
+        models to nav
     }
     val destination = navigator.destination
     // Fica aqui, e não na tela, pra voltar a Configurações na mesma seção.
@@ -142,7 +146,9 @@ fun App(
     // Coletado pra recompor quando a edição abre ou fecha, e pro diálogo mostrar o nome do orçamento.
     val editForm by viewModels.editQuoteViewModel.saveForm.collectAsState()
     val editing = editForm.editingQuoteId != null
-    val visibleQuoteViewModel = navigator.visibleQuote
+    // O Orçamento na tela, do mesmo valor coletado que escolhe a tela: tudo o que depende dele (aviso de
+    // arrastar, destino do G-code solto, Ctrl+S) concorda com o que está desenhado.
+    val visibleQuoteViewModel = if (editing) viewModels.editQuoteViewModel else viewModels.quoteViewModel
     val visibleInput by visibleQuoteViewModel.input.collectAsState()
     val themeMode by viewModels.themeViewModel.mode.collectAsState()
     val currency by viewModels.currencyViewModel.currency.collectAsState()
@@ -169,7 +175,7 @@ fun App(
 
                     when {
                         accel && event.key == Key.S && navigator.destination == AppDestination.QUOTE -> {
-                            navigator.save()
+                            if (editing) navigator.saveEditing() else viewModels.quoteViewModel.saveCurrentQuote()
                             true
                         }
 

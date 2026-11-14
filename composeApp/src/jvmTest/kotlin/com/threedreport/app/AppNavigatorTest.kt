@@ -85,7 +85,6 @@ class AppNavigatorTest {
         assertEquals(saved.id, editor.saveForm.value.editingQuoteId)
         assertNull(nav.pendingDiscard)
         assertNull(nav.pendingEndEditing)
-        assertTrue(nav.visibleQuote === editor)
     }
 
     @Test
@@ -394,24 +393,6 @@ class AppNavigatorTest {
         assertEquals(AppDestination.QUOTE, nav.destination)
         assertEquals(0, editSavedCalls)
         assertNotNull(editor.saveForm.value.blockedMessage)
-    }
-
-    @Test
-    fun saveShortcutSavesTheEditionWhenThereIsOneAndTheTabOtherwise() {
-        val saved = saveQuote("Pedido A")
-        val nav = navigator(AppDestination.QUOTE)
-
-        tab.setLengthMeters("12")
-        tab.setPrintTimeMinutes("190")
-        tab.setSaveName("Da aba")
-        nav.save()
-        assertEquals(2, history.savedQuotes.value.size)
-
-        nav.editQuote(saved)
-        editor.setSaveName("Da edição")
-        nav.save()
-        assertEquals(setOf("Da aba", "Da edição"), history.savedQuotes.value.map { it.name }.toSet())
-        assertFalse(nav.editing)
     }
 
     // ---- desistir de uma operação da aba, Ctrl+N
