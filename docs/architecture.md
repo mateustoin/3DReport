@@ -10,20 +10,23 @@ Projeto **Kotlin Multiplatform** com três módulos Gradle:
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/core/
 │     │  ├─ model/            # Filament, PrinterProfile, Service, PrintJob, PricingSettings, BrandingSettings, Quote, SavedQuote
-│     │  └─ pricing/          # PricingCalculator
+│     │  ├─ pricing/          # PricingCalculator, ProductRepricer, EnergyTariff
+│     │  ├─ report/           # textos e números das saídas (nota, relatório)
+│     │  ├─ slicer/           # leitura de G-code
+│     │  └─ stl/              # parser e análise de STL
 │     └─ commonTest/          # testes unitários (kotlin.test)
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/app/
 │     │  ├─ App.kt            # raiz: navegação pela barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Insumos, Configurações, Sobre)
-│     │  ├─ data/              # contratos dos repositórios (expect class — ver "Persistência" abaixo)
+│     │  ├─ data/              # repositórios: interface + implementação sobre data/store (ver "Persistência" abaixo)
 │     │  ├─ platform/          # capacidades específicas de plataforma (expect fun — ver "Capacidades de plataforma")
 │     │  └─ ui/                # uma pasta por tela: <tela>/<Tela>Screen.kt + <Tela>ViewModel.kt + <Tela>UiState.kt/FormState.kt
 │     ├─ jvmMain/kotlin/com/threedreport/app/
-│     │  ├─ data/              # persistência real (actual class): arquivos JSON em ~/.3dreport/
+│     │  ├─ data/              # persistência real: arquivos JSON em ~/.3dreport/ (JsonDataFile, LocalStorage)
 │     │  ├─ platform/          # actual fun: java.awt.FileDialog, Skia, java.time
 │     │  └─ Main.kt            # entrada do desktop (janela)
-│     └─ jvmTest/              # testes da persistência (kotlin.test)
+│     └─ jvmTest/              # testes de persistência, ViewModels, PDF e capturas de tela (kotlin.test)
 ├─ web/                       # calculadora do site: fachada JS sobre o core (decisão 98)
 │  └─ src/jsMain/kotlin/com/threedreport/web/WebCalculator.kt
 ├─ site/                      # site estático (GitHub Pages); site/assets/calc/ é gerado pelo :web
@@ -47,9 +50,10 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   modelos — usada pela persistência do `composeApp`, não pelo `core` em si).
 - `model/`: classes imutáveis (`data class`) que validam suas entradas no `init`
   (`IllegalArgumentException` para valores negativos/zero inválidos).
-  - `Filament`, `PrinterProfile` e `Service` têm `id: String` — são entidades
-    salvas em catálogo (a UI gera o id ao criar, com `kotlin.uuid.Uuid`); os
-    demais modelos continuam sendo apenas objetos de valor.
+  - `Filament`, `PrinterProfile`, `Service`, `Consumable`, `SalesChannel`,
+    `Client`, `QuoteTemplate` e os itens de manutenção têm `id: String` — são
+    entidades salvas como registros (a UI gera o id ao criar, com
+    `kotlin.uuid.Uuid`); os demais modelos continuam sendo apenas objetos de valor.
   - `Service` não entra em `PricingCalculator` — seu preço já é o valor
     cobrado do cliente (não um custo com margem em cima), então soma
     diretamente no valor de venda na camada de UI/export, não no cálculo
@@ -108,11 +112,11 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   extrusor, tempo, miniatura, configurações de impressão, impressora e
   filamentos, casados com os cadastros por `CatalogMatcher`) e da malha STL
   (parser e análise de complexidade), ambos sem dependência de plataforma.
-- Alvo atual: `jvm()`.
+- Alvos atuais: `jvm()` e `js { nodejs() }` (o `web` usa o alvo JS).
 
 ### `web`
 - Calculadora do site (`site/calculadora.html`, decisão 98). Kotlin/JS
-  (`js { browser() }`), gera um bundle UMD de ~75 KB que expõe o objeto global
+  (`js { browser(); nodejs() }`), gera um bundle UMD de ~75 KB que expõe o objeto global
   `web` com `calculateQuote(...)`.
 - `WebCalculator.kt` é só uma **fachada**: recebe números primitivos (peso em
   gramas, percentuais de 0 a 100), monta `Filament`/`PrintJob`/`PrinterProfile`/
@@ -134,10 +138,13 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   gravado, o `ExitWatchdog` força a saída se a JVM ainda estiver viva 10 s
   depois, e grava as pilhas das threads em `logs/encerramento-travado.txt`
   (decisão 117).
-- Padrão de apresentação: **MVVM**. Cada tela tem um estado (`data class`
-  imutável), um `ViewModel` (Kotlin puro, sem `Composable`, expõe
-  `StateFlow`) e um `*Screen` (`@Composable` que só observa o `ViewModel` e
-  envia eventos — sem lógica de cálculo).
+- Padrão de apresentação: **MVVM**. Cada tela tem um `ViewModel` (Kotlin puro,
+  sem `Composable`, expõe `StateFlow`) e um `*Screen` (`@Composable` que observa o
+  `ViewModel` e envia eventos). O formato do estado ainda varia: Configurações,
+  Marca e Backup têm um `UiState` único; os cadastros expõem a lista mais um
+  `FormState`; Orçamento e Pedidos expõem vários `StateFlow` separados, e o
+  `QuoteScreen` dispara o cálculo durante a composição. O padrão pra telas novas
+  está em [`composeApp/CLAUDE.md`](../composeApp/CLAUDE.md).
 - **Barra lateral agrupada** (decisão 111, `ui/navigation`): `AppDestination`
   lista as dez telas em três grupos (`DestinationGroup`): **Vendas**
   (Orçamento, Pedidos, Catálogo, Dashboard), **Cadastros** (Filamentos,
@@ -226,7 +233,8 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     manual por cor; Impressoras têm presets de fabricante, mostram a fila de
     impressão de cada máquina e abrem a manutenção dela (`MaintenanceDialog`:
     componentes com intervalo, diário, horas avulsas; `PrinterMaintenance`
-    em `maintenance.json`, decisão 96). Em Serviços, o valor é só uma sugestão
+    em `maintenance-components.json`, `maintenance-log.json` e
+    `maintenance-usage.json`, decisão 96). Em Serviços, o valor é só uma sugestão
     opcional e cada um tem um padrão "por peça / uma vez no pedido": o que
     vale é o digitado no orçamento (`ServiceInput`), congelado em
     `QuoteService` (decisão 92). O serviço pode ter tempo (decisão 123), que
@@ -358,7 +366,8 @@ Outros:
 - **`PlatformServices`** (`platform/PlatformServices.kt`) é a interface do que
   depende do sistema: escolher arquivo ou pasta, "Salvar como", gravar, área de
   transferência, abrir link ou pasta, pasta de Documentos, sair. Os ViewModels
-  recebem a interface (os testes usam `FakePlatform`, sem diálogo), e **nada
+  recebem a interface por construtor, com o `defaultPlatform` global como valor
+  padrão (os testes usam `FakePlatform`, sem diálogo), e **nada
   lança exceção**: escolher devolve `PickResult` (escolhido, cancelado ou falhou
   com o motivo) e salvar devolve `SaveResult` (salvo com o caminho, cancelado
   ou falhou). No desktop é o `DesktopPlatform` (`java.awt.FileDialog`, decisão
