@@ -150,6 +150,9 @@ class ScreenshotRenderer {
             ) {
                 App(container, startAt = AppDestination.CONSUMABLES)
             }
+            renderAppPng(File(outDir, "servicos$suffix.png"), afterSettle = { it.clickByText("Montagem") }) {
+                App(container, startAt = AppDestination.SERVICES)
+            }
         }
         container.theme.update(ThemeMode.LIGHT)
 
@@ -416,6 +419,10 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
 
     val serviceRepo = storage.services()
     serviceRepo.add(Service(id = Catalog.PINTURA_ID, name = "Pintura", suggestedPrice = 25.0, chargedPerOrder = false))
+    serviceRepo.add(Service(id = "service-lixamento", name = "Lixamento", suggestedPrice = 12.0, laborMinutes = 20.0))
+    serviceRepo.add(Service(id = "service-montagem", name = "Montagem", suggestedPrice = 18.0, laborMinutes = 30.0))
+    serviceRepo.add(Service(id = "service-modelagem", name = "Modelagem sob medida", chargedPerOrder = true, laborMinutes = 90.0))
+    serviceRepo.add(Service(id = "service-verniz", name = "Acabamento com verniz", suggestedPrice = 15.0, archived = true))
 
     val consumableRepo = storage.consumables()
     consumableRepo.add(Consumable(id = "insumo-argola", name = "Argola de chaveiro", unitCost = 0.35))

@@ -23,6 +23,3 @@ fun ServiceChargeSelector(
         FilterChip(selected = chargedPerOrder, onClick = { onChange(true) }, label = { Text("Uma vez no pedido") })
     }
 }
-
-/** Como o serviço é cobrado, em texto curto pra listas ("por peça" / "por pedido"). */
-fun chargeLabel(chargedPerOrder: Boolean): String = if (chargedPerOrder) "por pedido" else "por peça"

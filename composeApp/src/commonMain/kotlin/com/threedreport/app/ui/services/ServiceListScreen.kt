@@ -1,186 +1,167 @@
 package com.threedreport.app.ui.services
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_archive
+import _3dreport.composeapp.generated.resources.common_charge_per_order
+import _3dreport.composeapp.generated.resources.common_charge_per_piece
+import _3dreport.composeapp.generated.resources.common_delete
+import _3dreport.composeapp.generated.resources.common_edit
+import _3dreport.composeapp.generated.resources.common_field_charge
+import _3dreport.composeapp.generated.resources.common_help_charge
+import _3dreport.composeapp.generated.resources.common_optional
+import _3dreport.composeapp.generated.resources.common_restore
+import _3dreport.composeapp.generated.resources.services_action_new
+import _3dreport.composeapp.generated.resources.services_delete_message
+import _3dreport.composeapp.generated.resources.services_delete_title
+import _3dreport.composeapp.generated.resources.services_delete_what
+import _3dreport.composeapp.generated.resources.services_empty
+import _3dreport.composeapp.generated.resources.services_field_minutes
+import _3dreport.composeapp.generated.resources.services_field_minutes_hint
+import _3dreport.composeapp.generated.resources.services_field_name
+import _3dreport.composeapp.generated.resources.services_field_name_hint
+import _3dreport.composeapp.generated.resources.services_field_price
+import _3dreport.composeapp.generated.resources.services_form_edit
+import _3dreport.composeapp.generated.resources.services_form_new
+import _3dreport.composeapp.generated.resources.services_help_charge
+import _3dreport.composeapp.generated.resources.services_help_minutes
+import _3dreport.composeapp.generated.resources.services_help_price
+import _3dreport.composeapp.generated.resources.services_help_price_detail
+import _3dreport.composeapp.generated.resources.services_title
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppChoiceField
+import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
-import com.threedreport.app.ui.components.FieldHelp
-import com.threedreport.app.ui.focus.tabToNavigate
+import com.threedreport.app.ui.components.FormPanel
+import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.ListRow
+import com.threedreport.app.ui.components.ListScreenLayout
+import com.threedreport.app.ui.components.ObserveNotices
+import com.threedreport.app.ui.components.RowAction
+import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.text.asString
 import com.threedreport.core.model.Service
+import org.jetbrains.compose.resources.stringResource
 
-/** Tela de Serviços: catálogo salvo (pintura, lixamento, acabamento etc.), escolhido depois na tela de Orçamento. */
+/**
+ * Tela de Serviços: catálogo salvo (pintura, lixamento, montagem etc.), escolhido depois na tela de Orçamento.
+ * Mesmo molde da tela de Insumos.
+ */
 @Composable
 fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modifier) {
-    val services by viewModel.services.collectAsState()
-    val form by viewModel.form.collectAsState()
-    var pendingDelete by remember { mutableStateOf<Service?>(null) }
+    val state by viewModel.uiState.collectAsState()
+    ObserveNotices(viewModel.notices)
 
-    Column(
-        modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Serviços", style = MaterialTheme.typography.titleLarge)
-        Text(
-            "Serviços opcionais que você oferece junto com a impressão (ex.: pintura, lixamento, " +
-                "embalagem especial). O preço aqui já é o valor cobrado do cliente. Taxa de " +
-                "marketplace (ex.: Shopee) não entra aqui — ela é configurada em Configurações, " +
-                "porque desconta da sua venda em vez de somar no total do cliente.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        val (archived, active) = services.partition { it.archived }
-        if (active.isEmpty()) {
-            EmptyState("Nenhum serviço cadastrado ainda. Cadastre o primeiro abaixo.")
-        }
-
-        val row: @Composable (Service) -> Unit = { service ->
-            ServiceRow(
-                service = service,
-                onEdit = { viewModel.startEdit(service) },
-                onArchiveToggle = { viewModel.setArchived(service.id, !service.archived) },
-                onDelete = { pendingDelete = service },
-            )
-        }
-        active.forEach { row(it) }
-        ArchivedSection(archived.size) { archived.forEach { row(it) } }
-
-        val currentForm = form
-        if (currentForm == null) {
-            Button(onClick = viewModel::startAdd) { Text("+ Novo serviço") }
-        } else {
-            HorizontalDivider()
-            ServiceForm(
-                form = currentForm,
-                onChange = viewModel::updateForm,
-                onSave = viewModel::save,
-                onCancel = viewModel::cancelEdit,
-            )
-        }
+    val form = state.form
+    val panel: (@Composable () -> Unit)? = form?.let { open ->
+        { ServiceFormPanel(open, viewModel) }
     }
-
-    pendingDelete?.let { service ->
-        DeleteOrArchiveDialog(
-            title = "Excluir serviço?",
-            what = "o serviço \"${service.name}\"",
-            usageCount = viewModel.usageCount(service.id),
-            deleteMessage = "\"${service.name}\" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.",
-            onArchive = {
-                viewModel.setArchived(service.id, true)
-                pendingDelete = null
-            }.takeUnless { service.archived },
-            onDelete = {
-                viewModel.delete(service.id)
-                pendingDelete = null
-            },
-            onDismiss = { pendingDelete = null },
-        )
-    }
-}
-
-@Composable
-private fun ServiceRow(service: Service, onEdit: () -> Unit, onArchiveToggle: () -> Unit, onDelete: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(service.name + if (service.archived) " · arquivado" else "", style = MaterialTheme.typography.titleMedium)
-                val details = listOfNotNull(
-                    chargeLabel(service.chargedPerOrder),
-                    service.suggestedPrice?.let { "sugerido ${it.toMoney()}" },
-                    service.laborMinutes?.let { it.minutesToDurationText() },
+    ListScreenLayout(panel = panel, modifier = modifier) {
+        ScreenHeader(stringResource(Res.string.services_title)) {
+            if (!state.isEmpty) {
+                AppButton(
+                    stringResource(Res.string.services_action_new),
+                    onClick = viewModel::startAdd,
+                    kind = if (form == null) ButtonKind.Primary else ButtonKind.Secondary,
+                    icon = AppIcons.Add,
                 )
-                Text(details.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
-            }
-            Row {
-                TextButton(onClick = onEdit) { Text("Editar") }
-                TextButton(onClick = onArchiveToggle) { Text(if (service.archived) "Restaurar" else "Arquivar") }
-                TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
             }
         }
+        if (state.active.isEmpty()) {
+            EmptyState(
+                stringResource(Res.string.services_empty),
+                actionLabel = stringResource(Res.string.services_action_new).takeIf { state.isEmpty },
+                onAction = viewModel::startAdd.takeIf { state.isEmpty },
+            )
+        }
+        state.active.forEach { key(it.id) { ServiceRow(it, viewModel) } }
+        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ServiceRow(it, viewModel) } } }
+    }
+
+    state.pendingDelete?.let { pending ->
+        DeleteOrArchiveDialog(
+            title = stringResource(Res.string.services_delete_title),
+            what = stringResource(Res.string.services_delete_what, pending.name),
+            usageCount = pending.usageCount,
+            deleteMessage = stringResource(Res.string.services_delete_message, pending.name),
+            onArchive = { viewModel.setArchived(pending.id, true) }.takeIf { pending.canArchive },
+            onDelete = { viewModel.delete(pending.id) },
+            onDismiss = viewModel::dismissDelete,
+        )
     }
 }
 
 @Composable
-private fun ServiceForm(
-    form: ServiceFormState,
-    onChange: ((ServiceFormState) -> ServiceFormState) -> Unit,
-    onSave: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(if (form.id == null) "Novo serviço" else "Editar serviço", style = MaterialTheme.typography.titleMedium)
+private fun ServiceRow(service: Service, viewModel: ServiceListViewModel) {
+    val archiveOrRestore = if (service.archived) {
+        RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(service.id, false) })
+    } else {
+        RowAction(AppIcons.Archive, stringResource(Res.string.common_archive), { viewModel.setArchived(service.id, true) })
+    }
+    ListRow(
+        title = service.name,
+        details = listOfNotNull(
+            stringResource(if (service.chargedPerOrder) Res.string.common_charge_per_order else Res.string.common_charge_per_piece),
+            service.laborMinutes?.minutesToDurationText(),
+        ),
+        value = service.suggestedPrice?.toMoney(),
+        muted = service.archived,
+        onClick = { viewModel.startEdit(service.id) },
+        actions = listOf(
+            RowAction(AppIcons.Edit, stringResource(Res.string.common_edit), { viewModel.startEdit(service.id) }),
+            archiveOrRestore,
+            RowAction(AppIcons.Delete, stringResource(Res.string.common_delete), { viewModel.requestDelete(service.id) }, danger = true),
+        ),
+    )
+}
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+@Composable
+private fun ServiceFormPanel(form: ServiceFormState, viewModel: ServiceListViewModel) {
+    FormPanel(
+        title = stringResource(if (form.id == null) Res.string.services_form_new else Res.string.services_form_edit),
+        onSave = viewModel::save,
+        onCancel = viewModel::cancelEdit,
+    ) {
+        AppTextField(
+            label = stringResource(Res.string.services_field_name),
             value = form.name,
-            onValueChange = { text -> onChange { it.copy(name = text) } },
-            label = { Text("Nome (ex.: Pintura)") },
+            onValueChange = { text -> viewModel.updateForm { it.copy(name = text) } },
+            placeholder = stringResource(Res.string.services_field_name_hint),
+            error = form.nameError?.asString(),
         )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        AppTextField(
+            label = stringResource(Res.string.services_field_price, LocalCurrency.current.symbol),
             value = form.priceText,
-            onValueChange = { text -> onChange { it.copy(priceText = text) } },
-            label = { Text("Valor sugerido (${LocalCurrency.current.symbol}, opcional)") },
+            onValueChange = { text -> viewModel.updateForm { it.copy(priceText = text) } },
+            placeholder = stringResource(Res.string.common_optional),
+            error = form.priceError?.asString(),
+            help = HelpText(stringResource(Res.string.services_help_price), stringResource(Res.string.services_help_price_detail)),
         )
-        Text(
-            "Deixe em branco se o valor muda a cada peça. Se preencher, ele já vem no orçamento " +
-                "quando você marcar o serviço, e dá pra mudar ali.",
-            style = MaterialTheme.typography.bodySmall,
+        AppChoiceField(
+            label = stringResource(Res.string.common_field_charge),
+            options = listOf(stringResource(Res.string.common_charge_per_piece), stringResource(Res.string.common_charge_per_order)),
+            selectedIndex = if (form.chargedPerOrder) 1 else 0,
+            onSelect = { index -> viewModel.updateForm { it.copy(chargedPerOrder = index == 1) } },
+            help = HelpText(stringResource(Res.string.common_help_charge), stringResource(Res.string.services_help_charge)),
         )
-        Text("Como cobrar quando o pedido tem várias peças", style = MaterialTheme.typography.labelLarge)
-        ServiceChargeSelector(
-            chargedPerOrder = form.chargedPerOrder,
-            onChange = { value -> onChange { it.copy(chargedPerOrder = value) } },
-        )
-        Text(
-            "Pintura e lixamento costumam ser por peça; entrega e modelagem, uma vez no pedido. " +
-                "Dá pra trocar em cada orçamento.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        AppTextField(
+            label = stringResource(Res.string.services_field_minutes),
             value = form.minutesText,
-            onValueChange = { text -> onChange { it.copy(minutesText = text) } },
-            label = { Text("Seu tempo neste serviço (min, opcional)") },
-            placeholder = { Text("1h30 ou 90 (minutos)") },
+            onValueChange = { text -> viewModel.updateForm { it.copy(minutesText = text) } },
+            placeholder = stringResource(Res.string.services_field_minutes_hint),
+            error = form.minutesError?.asString(),
+            help = HelpText(stringResource(Res.string.services_help_minutes)),
         )
-        FieldHelp("Com o tempo, o orçamento sugere o valor pela sua hora e mostra quanto o serviço rende de verdade.")
-
-        form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onSave) { Text("Salvar") }
-            TextButton(onClick = onCancel) { Text("Cancelar") }
-        }
     }
 }

@@ -77,7 +77,7 @@ class AppViewModels(
         PrinterListViewModel(container.printers, container.quoteHistory, container.maintenance)
     }
     val serviceListViewModel: ServiceListViewModel by lazy {
-        ServiceListViewModel(container.services, container.quoteHistory::quotesIncludingTrash)
+        ServiceListViewModel(container.services, scope, container.quoteHistory::quotesIncludingTrash)
     }
     val consumableListViewModel: ConsumableListViewModel by lazy {
         ConsumableListViewModel(container.consumables, scope, container.quoteHistory::quotesIncludingTrash)

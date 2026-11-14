@@ -14,6 +14,8 @@ import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.Service
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -157,6 +159,6 @@ class ArchiveTest {
         }
         assertTrue(quote.saveCurrentQuote())
 
-        assertEquals(1, ServiceListViewModel(services, history::quotesIncludingTrash).usageCount("pintura"))
+        assertEquals(1, ServiceListViewModel(services, CoroutineScope(Dispatchers.Unconfined), history::quotesIncludingTrash).usageCount("pintura"))
     }
 }
