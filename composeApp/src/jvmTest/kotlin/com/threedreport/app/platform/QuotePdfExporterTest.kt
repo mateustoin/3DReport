@@ -368,6 +368,22 @@ class QuotePdfExporterTest {
     }
 
     @Test
+    fun pdfShowsFreeShippingInsteadOfTheValue() {
+        val quoteWithFreeShipping = savedQuote.copy(shippingCost = 18.0, shippingAbsorbed = true)
+
+        val pdfBytes = renderSavedQuotesPdf(
+            listOf(QuoteExportItem(quoteWithFreeShipping, photoBytes = null)),
+            brandName = null,
+            footerText = null,
+        )
+
+        val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
+
+        assertTrue(text.contains("Frete: grátis"))
+        assertFalse(text.contains("18,00"))
+    }
+
+    @Test
     fun catalogPdfContainsNameAndPriceOfEachItemButNotInternalData() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null), QuoteExportItem(otherSavedQuote, photoBytes = null)),
@@ -476,6 +492,27 @@ class QuotePdfExporterTest {
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withDeadline, null)), null, null))
 
         assertTrue(text.contains("Prazo de entrega: até 30/09/2026"))
+    }
+
+    @Test
+    fun rushShowsNextToTheHighlightedDeliveryDate() {
+        val rushWithDeadline = savedQuote.copy(
+            quote = savedQuote.quote.copy(rush = true),
+            deliveryDateEpochDay = java.time.LocalDate.of(2026, 9, 30).toEpochDay(),
+        )
+
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(rushWithDeadline, null)), null, null))
+
+        assertTrue(text.contains("Prazo de entrega: até 30/09/2026 (entrega expressa)"))
+    }
+
+    @Test
+    fun rushWithoutADeadlineGetsItsOwnHighlightedLine() {
+        val rushWithoutDeadline = savedQuote.copy(quote = savedQuote.quote.copy(rush = true))
+
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(rushWithoutDeadline, null)), null, null))
+
+        assertTrue(text.contains("Entrega expressa"))
     }
 
     @Test

@@ -79,12 +79,12 @@ conversar → inglês → estoque → dinheiro → cliente → produção → of
 (D1, depois D2) → apostas locais → Android e sincronização sem servidor → servidor →
 depois do servidor.
 
-### Leva 10: Preço certo, parte 2 (alvo: a 2.2)
+### Leva 10: Preço certo, parte 2 (feita, decisões 121 a 126, para a 2.2)
 
 Tudo aqui mexe no custo ou no preço calculado (`PricingCalculator`), por isso sai
 junto.
 
-- [ ] **Taxa fixa por item no canal de venda, com faixas de preço.** O canal
+- [x] **Taxa fixa por item no canal de venda, com faixas de preço.** **Feito (decisão 121, 2026-09-29).** O canal
   (`SalesChannel`) só tem taxa percentual, mas Shopee e Mercado Livre cobram
   também um valor fixo por item vendido. Na Shopee, em 2026, ele vai de R$ 4 a
   R$ 26 conforme a faixa de preço (com R$ 3 a mais por item pra vendedor CPF de
@@ -98,7 +98,7 @@ junto.
   item, então multiplica pela quantidade. Visto em: regra dos próprios
   marketplaces; 3D Control e Printora calculam a taxa por marketplace. Esforço
   P/M, impacto A.
-- [ ] **Custo de embalagem e insumos por produto.** Argola de chaveiro, ímã,
+- [x] **Custo de embalagem e insumos por produto.** **Feito (decisão 122, 2026-09-29),** com tela própria em Cadastros; margem sim, reserva de falha não. Argola de chaveiro, ímã,
   parafuso, tinta, caixa e saquinho são custo real que hoje só cabe no custo
   administrativo (um valor único pra todo pedido) ou num serviço (que soma no preço
   cobrado sem custo, decisão 25, e por isso não protege a margem). Proposta: um
@@ -108,23 +108,23 @@ junto.
   não (como na hora de trabalho, desde a 2.1). O estoque dos insumos vem na Leva
   12. Visto em: 3DTAG, SISTEMA3D, Gestor 3D ("extras"), 3DPCC, Craftybase,
   CakeBoss. Esforço M, impacto A.
-- [ ] **Minutos de trabalho embutidos em cada serviço** *(já no roadmap: texto
+- [x] **Minutos de trabalho embutidos em cada serviço** **Feito (decisão 123, 2026-09-29),** sugerindo o valor e contando o serviço no lucro. *(já no roadmap: texto
   completo na Leva 1 do Plano 1)*. Entra aqui porque mexe no mesmo custo de
   produção.
-- [ ] **Frete grátis descontando do lucro** *(já no roadmap: Leva 3 do Plano 1)*.
+- [x] **Frete grátis descontando do lucro** **Feito (decisão 124, 2026-09-29).** *(já no roadmap: Leva 3 do Plano 1)*.
   Ganhou urgência: desde março de 2026 o programa de frete grátis é obrigatório pra
   todo vendedor da Shopee. Continua pendente a decisão de onde o lucro líquido
   passa a ser calculado.
-- [ ] **Preço mínimo por pedido.** Uma peça muito pequena (um chaveiro de 3 g) sai
+- [x] **Preço mínimo por pedido.** **Feito (decisão 125, 2026-09-29).** Uma peça muito pequena (um chaveiro de 3 g) sai
   por centavos mesmo com a conta certa, e o vendedor não quer ligar a impressora
   por menos de R$ X. Configuração opcional: se o preço calculado ficar abaixo do
   mínimo, sobe pra ele, e a nota mostra que o mínimo foi aplicado. Ideia derivada.
   Esforço P, impacto M.
-- [ ] **Acréscimo por urgência.** Prazo curto fura a fila e às vezes ocupa outra
+- [x] **Acréscimo por urgência.** **Feito (decisão 125, 2026-09-29).** Prazo curto fura a fila e às vezes ocupa outra
   impressora. Um percentual configurável aplicado quando o pedido é marcado como
   urgente, visível na nota e, se o vendedor quiser, no PDF como "entrega expressa".
   Visto em: DigiFabster e Xometry (preço conforme o prazo). Esforço P, impacto M.
-- [ ] **Bandeira tarifária e tarifa branca no kWh.** A conta de luz muda de preço
+- [x] **Bandeira tarifária e tarifa branca no kWh.** **Feito (decisão 126, 2026-09-29),** como um diálogo "Calcular o kWh". A conta de luz muda de preço
   pela bandeira (verde, amarela, vermelha) e, na tarifa branca, pelo horário.
   Mínimo viável: um ajudante pra calcular o kWh efetivo, ou um acréscimo por
   bandeira escolhido nas Configurações. Visto em: 3D Prime (tarifa da ANEEL por
@@ -743,7 +743,7 @@ preencher.
   valor da máquina por hora de impressão — basta aplicar a mesma fórmula a
   um "custo fixo mensal do negócio ÷ horas produtivas por mês". Fica em
   `PricingSettings` (é do negócio, não de uma impressora específica).
-- [ ] **Minutos de trabalho embutidos em cada serviço cadastrado** *Agendado na Leva 10 do Plano 2.*
+- [x] **Minutos de trabalho embutidos em cada serviço cadastrado** *Feito na Leva 10 do Plano 2 (decisão 123).*
   (separado
   da leva 1 em 2026-09-22, decisão 76). A ideia original era "Pintura" já
   trazer seus 30 min por padrão ao ser marcada num orçamento. Ficou de fora
@@ -810,7 +810,7 @@ preencher.
   explicitamente — assim o vendedor vê quanto o "frete grátis" custou de
   verdade.
 
-- [ ] **Frete grátis descontando do lucro** *Agendado na Leva 10 do Plano 2.*
+- [x] **Frete grátis descontando do lucro** *Feito na Leva 10 do Plano 2 (decisão 124).*
   (separado da leva 3 em
   2026-09-22, decisão 78). A ideia é registrar que o vendedor absorveu o
   frete e mostrar quanto isso custou de lucro. Ficou de fora porque exigiria

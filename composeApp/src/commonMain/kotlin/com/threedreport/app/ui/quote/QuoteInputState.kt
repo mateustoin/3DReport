@@ -126,6 +126,21 @@ data class QuoteInputState(
      * cadastra vários produtos seguidos não precisar escolher de novo.
      */
     val kind: QuoteKind = QuoteKind.ORDER,
+    /**
+     * Insumos marcados neste orçamento (decisão 122), pelo id do `Consumable` no catálogo, na ordem em que
+     * foram marcados (ver [ConsumableInput]).
+     */
+    val selectedConsumables: Map<String, ConsumableInput> = emptyMap(),
+    /**
+     * Pedido urgente (decisão 125): a peça ganha o acréscimo configurado. Só vale com o acréscimo
+     * configurado e em pedido de cliente; a tela nem mostra a opção fora disso.
+     */
+    val rush: Boolean = false,
+    /**
+     * Frete grátis pro cliente (decisão 124): o frete digitado é pago por você, fica fora do total do
+     * cliente e sai do lucro. Só vale em pedido de cliente com frete.
+     */
+    val shippingAbsorbed: Boolean = false,
 ) {
     /** [quantityText] como número: vazio conta como 1; `null` quando não é um inteiro de 1 pra cima. */
     val quantityOrNull: Int?
@@ -137,6 +152,12 @@ data class QuoteInputState(
 
     val isProduct: Boolean
         get() = kind == QuoteKind.PRODUCT
+
+    /**
+     * Se o frete grátis vale de fato (decisão 124): marcado, num pedido de cliente e com frete. É a mesma
+     * pergunta na conta e ao salvar, por isso fica aqui.
+     */
+    fun absorbsShipping(shippingCost: Double): Boolean = shippingAbsorbed && !isProduct && shippingCost > 0
 
     /**
      * Nenhum minuto de trabalho informado: com a hora configurada, é o caso em que ela não muda o
@@ -164,5 +185,24 @@ data class QuoteInputState(
 data class ServiceInput(
     val name: String,
     val priceText: String = "",
+    val chargedPerOrder: Boolean = false,
+    /**
+     * Seu tempo no serviço (decisão 123), por peça ou pelo pedido como o valor, como digitado ("30",
+     * "1h"). Vem do cadastro ao marcar. Vazio deixa o serviço como repasse, fora do lucro.
+     */
+    val laborMinutesText: String = "",
+)
+
+/**
+ * Um insumo marcado no orçamento (decisão 122), como o usuário deixou na tela.
+ *
+ * @property name/[unitCost] do cadastro quando foi marcado, ou do pedido reaberto. Valem só se o insumo
+ *   tiver saído do cadastro depois: com ele lá, a conta usa o custo de hoje, como faz com o filamento.
+ * @property quantityText quantas unidades, por peça ou no pedido inteiro conforme [chargedPerOrder].
+ */
+data class ConsumableInput(
+    val name: String,
+    val unitCost: Double,
+    val quantityText: String = "1",
     val chargedPerOrder: Boolean = false,
 )

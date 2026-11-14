@@ -332,4 +332,44 @@ class QuoteReportTest {
 
         assertEquals(20.0, QuoteReport.summarize(listOf(withShipping)).totalSalePrice)
     }
+
+    @Test
+    fun timedServicesCountInTheEarningsPerHourOfYourWork() {
+        val filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24)
+        // Peça: venda 50, produção 20. Pintura: 1 h valendo R$ 30 pela sua hora, cobrada R$ 50 (rende 20).
+        val order = SavedQuote(
+            id = "1",
+            name = "Peça",
+            status = OrderStatus.APROVADO,
+            quote = Quote(
+                prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = 10.0))),
+                costs = costsOf(20.0),
+                salePrice = 50.0,
+                extrasTotal = 50.0,
+                serviceLaborMinutes = 60.0,
+                serviceLaborCost = 30.0,
+                serviceProfit = 20.0,
+            ),
+            savedAtEpochMillis = 0L,
+        )
+
+        val summary = QuoteReport.summarize(listOf(order))
+
+        assertEquals(50.0, summary.totalProfit, 1e-9)
+        assertEquals(1.0, summary.laborHours, 1e-9)
+        // Lucro 50 + o valor da sua hora no serviço (30), numa hora de trabalho.
+        assertEquals(80.0, summary.earningsPerLaborHour!!, 1e-9)
+    }
+
+    @Test
+    fun freeShippingStaysOutOfTheRevenue() {
+        val order = quoteOf("PLA", salePrice = 40.0, productionCost = 10.0).let {
+            it.copy(shippingCost = 15.0, shippingAbsorbed = true, quote = it.quote.copy(absorbedShippingCost = 15.0))
+        }
+
+        val summary = QuoteReport.summarize(listOf(order))
+
+        assertEquals(40.0, summary.totalSalePrice, 1e-9)
+        assertEquals(40.0 - 10.0 - 15.0, summary.totalProfit, 1e-9)
+    }
 }

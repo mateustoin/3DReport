@@ -11,6 +11,7 @@ import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.interpretationHint
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.SalesChannel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -67,7 +69,7 @@ import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
-import com.threedreport.app.ui.format.toPercentText
+import com.threedreport.app.ui.format.channelFeeSummary
 import com.threedreport.app.ui.templates.TemplateListDialog
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
@@ -261,6 +263,18 @@ private fun BusinessSection(viewModel: SettingsViewModel, currencyViewModel: Cur
     NumberField("Preço do kWh (${LocalCurrency.current.symbol})", state.energyPricePerKwhText, NumberKind.MEASURE) {
         viewModel.update { s -> s.copy(energyPricePerKwhText = it) }
     }
+    var showEnergyTariffDialog by remember { mutableStateOf(false) }
+    TextButton(onClick = { showEnergyTariffDialog = true }) { Text("Calcular o kWh") }
+    if (showEnergyTariffDialog) {
+        val decimalSeparator = LocalCurrency.current.decimalSeparator
+        EnergyTariffDialog(
+            onDismiss = { showEnergyTariffDialog = false },
+            onUse = {
+                viewModel.update { s -> s.copy(energyPricePerKwhText = it.toInputText(decimalSeparator)) }
+                showEnergyTariffDialog = false
+            },
+        )
+    }
 
     SectionTitle(AppIcons.Schedule, "Seu trabalho")
     NumberField("Valor da sua hora de trabalho (${LocalCurrency.current.symbol}/h)", state.laborRatePerHourText, NumberKind.AMOUNT) {
@@ -317,6 +331,23 @@ private fun BusinessSection(viewModel: SettingsViewModel, currencyViewModel: Cur
         viewModel.update { s -> s.copy(profitMarginPercentText = it) }
     }
 
+    SectionTitle(AppIcons.Calculate, "Preço mínimo e urgência")
+    NumberField("Preço mínimo do pedido (${LocalCurrency.current.symbol})", state.minimumOrderPriceText, NumberKind.AMOUNT) {
+        viewModel.update { s -> s.copy(minimumOrderPriceText = it) }
+    }
+    Text(
+        "A peça de um pedido nunca sai da tabela por menos que isso. Serviços e frete ficam de fora. " +
+            "Deixe 0 pra não usar.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    NumberField("Acréscimo por urgência (%)", state.rushSurchargeRatePercentText, NumberKind.MEASURE) {
+        viewModel.update { s -> s.copy(rushSurchargeRatePercentText = it) }
+    }
+    Text(
+        "Quanto a mais você cobra quando marca um pedido como urgente. Com 0, a opção nem aparece no orçamento.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
     SectionTitle(AppIcons.AccountBalance, "Imposto")
     NumberField("Imposto sobre a venda (%)", state.taxRatePercentText, NumberKind.MEASURE) {
         viewModel.update { s -> s.copy(taxRatePercentText = it) }
@@ -356,7 +387,7 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
     val row: @Composable (SalesChannel) -> Unit = { channel ->
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                "${channel.name} · ${channel.feeRate.toPercentText()}" + if (channel.archived) " · arquivado" else "",
+                "${channel.name} · ${channelFeeSummary(channel, LocalCurrency.current)}" + if (channel.archived) " · arquivado" else "",
                 style = MaterialTheme.typography.bodyMedium,
             )
             TextButton(onClick = { viewModel.startEditing(channel) }) { Text("Editar") }
@@ -397,7 +428,29 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
     }
 
     LabeledField("Nome do canal (ex.: Shopee, Cartão)", form.nameText, viewModel::setName)
-    NumberField("Taxa do canal (%)", form.feeRatePercentText, NumberKind.MEASURE, viewModel::setFeeRate)
+    // Com faixas, é a taxa de cada faixa que vale (decisão 121): os campos únicos ficam desligados, pra
+    // ninguém mudar um número que não muda nada.
+    val hasTiers = form.tiers.isNotEmpty()
+    NumberField("Taxa do canal (%)", form.feeRatePercentText, NumberKind.MEASURE, enabled = !hasTiers, onValueChange = viewModel::setFeeRate)
+    NumberField(
+        "Taxa fixa por item (${LocalCurrency.current.symbol})",
+        form.fixedFeePerItemText,
+        NumberKind.AMOUNT,
+        enabled = !hasTiers,
+        onValueChange = viewModel::setFixedFeePerItem,
+    )
+    Text(
+        if (hasTiers) {
+            "Este canal usa faixas de preço: a taxa e o valor fixo de cada faixa é que valem."
+        } else {
+            "A Shopee e o Mercado Livre cobram alguns reais por item vendido, além do percentual. " +
+                "Confira no painel do vendedor."
+        },
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    ChannelTiersEditor(form, viewModel)
+
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = viewModel::save) { Text(if (form.editingId != null) "Salvar canal" else "Adicionar canal") }
         if (form.editingId != null) {
@@ -405,6 +458,62 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
         }
     }
     form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+}
+
+/**
+ * Faixas de preço de um canal (decisão 121), recolhidas por padrão: só quem precisa (Shopee) vai atrás.
+ * Editar um canal que já tem faixas abre a área expandida.
+ */
+@Composable
+private fun ChannelTiersEditor(form: SalesChannelFormState, viewModel: SalesChannelViewModel) {
+    TextButton(onClick = { viewModel.setTiersExpanded(!form.tiersExpanded) }) {
+        Text(if (form.tiersExpanded) "Faixas de preço (avançado) ▴" else "Faixas de preço (avançado) ▾")
+    }
+    form.tierNotice?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
+    if (!form.tiersExpanded) {
+        // Recolhidas, as faixas continuam valendo: dizer quantas, pra não ficarem escondidas em silêncio.
+        if (form.tiers.isNotEmpty()) {
+            Text(
+                "${form.tiers.size} faixas de preço ativas: elas substituem a taxa e o valor fixo acima.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        return
+    }
+
+    Text(
+        "Quando a taxa muda conforme o preço da peça (como na Shopee), cadastre as faixas. Elas " +
+            "substituem a taxa e o valor fixo acima.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    form.tiers.forEachIndexed { index, tier ->
+        val isLast = index == form.tiers.lastIndex
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(modifier = Modifier.weight(1f)) {
+                if (isLast) {
+                    Text("Acima disso", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    NumberField("Até ${LocalCurrency.current.symbol} (por peça)", tier.upToUnitPriceText, NumberKind.AMOUNT) { text ->
+                        viewModel.updateTierRow(tier.id) { it.copy(upToUnitPriceText = text) }
+                    }
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                NumberField("Taxa (%)", tier.feeRatePercentText, NumberKind.MEASURE) { text ->
+                    viewModel.updateTierRow(tier.id) { it.copy(feeRatePercentText = text) }
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                NumberField("Fixo por item (${LocalCurrency.current.symbol})", tier.fixedFeePerItemText, NumberKind.AMOUNT) { text ->
+                    viewModel.updateTierRow(tier.id) { it.copy(fixedFeePerItemText = text) }
+                }
+            }
+            IconButton(onClick = { viewModel.removeTierRow(tier.id) }) {
+                Icon(AppIcons.Close, contentDescription = "Remover faixa")
+            }
+        }
+    }
+    TextButton(onClick = viewModel::addTierRow) { Text("Adicionar faixa") }
 }
 
 @Composable
@@ -556,7 +665,7 @@ internal fun LabeledField(label: String, value: String, onValueChange: (String) 
  * zero ou outro número em silêncio.
  */
 @Composable
-internal fun NumberField(label: String, value: String, kind: NumberKind, onValueChange: (String) -> Unit) {
+internal fun NumberField(label: String, value: String, kind: NumberKind, enabled: Boolean = true, onValueChange: (String) -> Unit) {
     val separator = LocalCurrency.current.decimalSeparator
     val invalid = value.isNotBlank() && parseDecimal(value, kind, separator) == null
     val hint = interpretationHint(value, kind, separator)
@@ -566,6 +675,7 @@ internal fun NumberField(label: String, value: String, kind: NumberKind, onValue
         onValueChange = onValueChange,
         label = { Text(label) },
         singleLine = true,
+        enabled = enabled,
         isError = invalid,
         supportingText = when {
             invalid -> ({ Text("Não é um número. Use vírgula nos centavos: 1.250,50") })

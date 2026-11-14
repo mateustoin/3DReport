@@ -10,10 +10,11 @@ class AppDestinationTest {
     fun shortcutsFollowTheSidebarOrderAndSkipAbout() {
         val expected = listOf(
             AppDestination.QUOTE, AppDestination.ORDERS, AppDestination.CATALOG, AppDestination.DASHBOARD,
-            AppDestination.FILAMENTS, AppDestination.PRINTERS, AppDestination.SERVICES, AppDestination.SETTINGS,
+            AppDestination.FILAMENTS, AppDestination.PRINTERS, AppDestination.SERVICES, AppDestination.CONSUMABLES,
+            AppDestination.SETTINGS,
         )
-        assertEquals(expected, (1..8).map { destinationForShortcut(it) })
-        assertNull(destinationForShortcut(9))
+        assertEquals(expected, (1..9).map { destinationForShortcut(it) })
+        assertNull(destinationForShortcut(10))
         assertNull(destinationForShortcut(0))
         assertNull(AppDestination.ABOUT.shortcutNumber)
     }

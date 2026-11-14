@@ -54,6 +54,7 @@ fun calculateQuote(
     laborMinutes: Double,
     quantity: Int,
     channelFeePercent: Double,
+    channelFixedFeePerItem: Double,
     taxPercent: Double,
 ): WebQuote = if (channelFeePercent + taxPercent >= 100) {
     // O `core` também recusa, mas a mensagem dele manda revisar "Configurações", que só existe no app.
@@ -90,8 +91,8 @@ fun calculateQuote(
         taxRate = taxPercent / 100,
         profitMargin = profitMarginPercent / 100,
     )
-    val channel = if (channelFeePercent > 0) {
-        SalesChannel(id = "web", name = "Canal", feeRate = channelFeePercent / 100)
+    val channel = if (channelFeePercent > 0 || channelFixedFeePerItem > 0) {
+        SalesChannel(id = "web", name = "Canal", feeRate = channelFeePercent / 100, fixedFeePerItem = channelFixedFeePerItem)
     } else {
         null
     }

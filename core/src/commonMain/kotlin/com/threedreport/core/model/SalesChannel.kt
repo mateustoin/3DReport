@@ -22,6 +22,10 @@ import kotlinx.serialization.Serializable
  * @property id identificador único, atribuído por quem cria o canal (UI).
  * @property name nome livre (ex.: "Shopee", "Cartão", "Pix").
  * @property feeRate fração descontada da venda (0,20 = 20%).
+ * @property fixedFeePerItem valor fixo que o canal cobra por item vendido, em R$ (decisão 121): a Shopee e
+ *   o Mercado Livre cobram, além do percentual, alguns reais por item. `0.0` (padrão) não cobra.
+ * @property tiers faixas de preço (ver [ChannelFeeTier]); quando existem, substituem [feeRate] e
+ *   [fixedFeePerItem]. Vazio (padrão) usa os dois pra qualquer preço.
  * @property archived arquivado (decisão 115): some das escolhas de um orçamento novo, mas continua no
  *   cadastro pra quem já usou. Pedidos reabertos e produtos do catálogo continuam achando ele.
  */
@@ -31,11 +35,18 @@ data class SalesChannel(
     val name: String,
     val feeRate: Double,
     override val archived: Boolean = false,
+    val fixedFeePerItem: Double = 0.0,
+    val tiers: List<ChannelFeeTier> = emptyList(),
 ) : Archivable<SalesChannel> {
     override fun withArchived(archived: Boolean): SalesChannel = copy(archived = archived)
 
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
         require(feeRate >= 0 && feeRate < 1) { "feeRate deve estar entre 0 (inclusive) e 1 (exclusive): $feeRate" }
+        feeSchedule // valida o fixo e as faixas pelas mesmas regras do retrato
     }
+
+    /** Tudo o que este canal cobra, no formato que o cálculo e o orçamento salvo usam. */
+    val feeSchedule: ChannelFeeSchedule
+        get() = ChannelFeeSchedule(feeRate, fixedFeePerItem, tiers)
 }

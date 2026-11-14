@@ -24,6 +24,10 @@ import kotlinx.serialization.Serializable
  *   orçamento pode trocar.
  * @property archived arquivado (decisão 115): some das escolhas de um orçamento novo, mas continua no
  *   cadastro pra quem já usou. Pedidos reabertos e produtos do catálogo continuam achando ele.
+ * @property laborMinutes quanto do seu tempo o serviço leva (decisão 123), por peça ou pelo pedido,
+ *   conforme [chargedPerOrder]. Sugere o valor quando não há [suggestedPrice] (minutos vezes a sua hora)
+ *   e faz o lucro contar o serviço pelo que ele rende acima da sua hora. `null` (padrão) deixa o serviço
+ *   como sempre foi: repasse, fora do lucro.
  */
 @Serializable
 data class Service(
@@ -32,11 +36,20 @@ data class Service(
     val suggestedPrice: Double? = null,
     val chargedPerOrder: Boolean = false,
     override val archived: Boolean = false,
+    val laborMinutes: Double? = null,
 ) : Archivable<Service> {
     override fun withArchived(archived: Boolean): Service = copy(archived = archived)
 
     init {
         require(name.isNotBlank()) { "name não pode ser vazio" }
         require(suggestedPrice == null || suggestedPrice >= 0) { "suggestedPrice não pode ser negativo" }
+        require(laborMinutes == null || laborMinutes >= 0) { "laborMinutes não pode ser negativo" }
     }
+
+    /**
+     * Valor que o orçamento sugere ao marcar este serviço: o [suggestedPrice] do cadastro, ou, sem ele, os
+     * [laborMinutes] pagos pela sua hora de trabalho ([laborRatePerHour]). `null` quando não há nenhum dos dois.
+     */
+    fun suggestedPriceFor(laborRatePerHour: Double): Double? =
+        suggestedPrice ?: laborMinutes?.takeIf { it > 0 && laborRatePerHour > 0 }?.let { it / 60.0 * laborRatePerHour }
 }

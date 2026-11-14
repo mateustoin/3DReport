@@ -12,7 +12,7 @@ enum class DestinationGroup(val title: String?) {
 
 /**
  * As telas do app, na ordem da barra lateral (decisão 111): Vendas, Cadastros e, no pé, Configurações e
- * Sobre. A ordem também é a dos atalhos Ctrl/Cmd+1 a 8; o Sobre fica sem atalho.
+ * Sobre. A ordem também é a dos atalhos Ctrl/Cmd+1 a 9; o Sobre fica sem atalho.
  */
 enum class AppDestination(val label: String, val group: DestinationGroup) {
     QUOTE("Orçamento", DestinationGroup.SALES),
@@ -22,6 +22,7 @@ enum class AppDestination(val label: String, val group: DestinationGroup) {
     FILAMENTS("Filamentos", DestinationGroup.REGISTRIES),
     PRINTERS("Impressoras", DestinationGroup.REGISTRIES),
     SERVICES("Serviços", DestinationGroup.REGISTRIES),
+    CONSUMABLES("Insumos", DestinationGroup.REGISTRIES),
     SETTINGS("Configurações", DestinationGroup.FOOTER),
     ABOUT("Sobre", DestinationGroup.FOOTER);
 
@@ -43,6 +44,7 @@ enum class AppDestination(val label: String, val group: DestinationGroup) {
             FILAMENTS -> AppIcons.Spool
             PRINTERS -> AppIcons.Printer3d
             SERVICES -> AppIcons.Handyman
+            CONSUMABLES -> AppIcons.Inventory2
             SETTINGS -> AppIcons.Settings
             ABOUT -> AppIcons.Info
         }
@@ -54,6 +56,7 @@ enum class AppDestination(val label: String, val group: DestinationGroup) {
             FILAMENTS -> AppIcons.SpoolFilled
             PRINTERS -> AppIcons.Printer3dFilled
             SERVICES -> AppIcons.HandymanFilled
+            CONSUMABLES -> AppIcons.Inventory2Filled
             SETTINGS -> AppIcons.SettingsFilled
             else -> icon
         }

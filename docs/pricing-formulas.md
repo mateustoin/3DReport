@@ -27,6 +27,10 @@ trabalho não entra aqui: é do pedido inteiro (ver "Quantidade e lote").
 |---|---|---|
 | Quantidade (pedidos iguais) | `quantity` | un. |
 | Seu tempo de trabalho no pedido inteiro (decisão 94) | `laborMinutes` | min |
+| Insumos usados: custo, quantidade, por peça ou por pedido (decisão 122) | `consumables` | lista |
+| Pedido urgente (decisão 125) | `rush` | sim/não |
+| Frete grátis pago por você (decisão 124) | `absorbedShippingCost` | R$ |
+| Serviços, com o tempo de cada um quando informado (decisão 123) | `services` | lista |
 
 ### Perfil da impressora (`PrinterProfile`), um por impressão
 
@@ -54,6 +58,16 @@ salvo (tela Impressoras) e cada impressão do orçamento escolhe em qual roda.
 | Horas de impressão por mês (todas as impressoras) | `productiveHoursPerMonth` | h |
 | Custo administrativo (ex.: modelagem) | `administrativeCost` | R$ por orçamento |
 | Margem de lucro | `profitMargin` | fração (1,0 = 100%) |
+| Preço mínimo do pedido (decisão 125) | `minimumOrderPrice` | R$ por pedido |
+| Acréscimo por urgência (decisão 125) | `rushSurchargeRate` | fração |
+
+### Canal de venda (`SalesChannel`), escolhido por orçamento
+
+| Parâmetro | Campo | Unidade |
+|---|---|---|
+| Taxa sobre o valor recebido | `feeRate` | fração |
+| Valor fixo por item vendido (decisão 121) | `fixedFeePerItem` | R$ por item |
+| Faixas de preço, que substituem os dois acima (decisão 121) | `tiers` | lista |
 
 Os três campos novos (`laborRatePerHour`, `monthlyFixedCost`,
 `productiveHoursPerMonth`) nascem zerados, e zero desliga a parcela
@@ -91,20 +105,33 @@ separados cobraria o administrativo e o trabalho uma vez por impressão):
 trabalho_pedido    = minutos_trabalho_pedido / 60 · valor_hora_trabalho
 administrativo     = custo_administrativo
 
+insumos            = Σ custo · quantidade (· quantidade de peças, nos por peça)
+
 CUSTO REFEITO      = Σ impressões (custo_impressão) · quantidade + trabalho_pedido
 falhas             = CUSTO REFEITO · taxa_falhas
 
-VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo
-PREÇO BASE         = (produção − trabalho_pedido) · (1 + margem_lucro) + trabalho_pedido
+VALOR DE PRODUÇÃO  = CUSTO REFEITO + falhas + administrativo + insumos
+PREÇO DA MARGEM    = (produção − trabalho_pedido) · (1 + margem_lucro) + trabalho_pedido
+urgência           = PREÇO DA MARGEM · acréscimo_urgência        (só no pedido urgente)
+PREÇO BASE         = PREÇO DA MARGEM + urgência
 
-deduções           = taxa_do_canal + imposto
-extras             = serviços_por_peça · quantidade + serviços_por_pedido + frete
-VALOR DE VENDA     = (PREÇO BASE + extras) / (1 − deduções) − extras
+deduções           = taxa_do_canal + imposto                      (taxa da faixa em que o preço cai)
+fixo_do_canal      = fixo_por_item · quantidade
+extras             = serviços_por_peça · quantidade + serviços_por_pedido + frete cobrado
+VALOR DE VENDA     = (PREÇO BASE + extras + fixo_do_canal) / (1 − deduções) − extras
+                     (e nunca abaixo do preço mínimo do pedido)
 PREÇO UNITÁRIO     = venda / quantidade
 
 TOTAL DO CLIENTE   = venda + extras
-LUCRO              = TOTAL DO CLIENTE · (1 − deduções) − extras − produção
+rende_serviços     = Σ serviços com tempo (valor − minutos / 60 · valor_hora_trabalho)
+LUCRO              = TOTAL DO CLIENTE · (1 − deduções) − fixo_do_canal − extras − produção
+                     − frete_grátis + rende_serviços
 ```
+
+Com tudo o que a 2.2 trouxe desligado (sem insumo, sem urgência, sem valor fixo
+no canal, sem frete grátis, sem tempo nos serviços e sem preço mínimo), as
+fórmulas são exatamente as da 2.1. As regras novas estão explicadas em
+"Preço certo, parte 2", mais abaixo.
 
 Todos os valores acima são do **pedido inteiro**. As entradas de cada
 impressão (comprimentos e tempo) são de **uma rodada**, e é o app que
@@ -313,6 +340,101 @@ Não existe desconto percentual por volume em campo separado: quem quer dar
 desconto digita o preço fechado e vê na hora o que sobra. Ter duas formas de
 chegar ao mesmo número (um percentual e um valor) só criaria divergência.
 
+## Preço certo, parte 2 (2026-09-29, decisões 121 a 126)
+
+Seis regras que mexem no preço e entraram juntas na 2.2, pra quem vende
+recalibrar uma vez só. Todas nascem desligadas: quem atualiza o app e não
+configura nada continua com o mesmo preço.
+
+### Valor fixo por item e faixas do canal (decisão 121)
+
+Shopee e Mercado Livre cobram, além do percentual, um valor fixo por item
+vendido. Na Shopee, em 2026, ele vai de R$ 4 a R$ 26 conforme a faixa de preço;
+num chaveiro de R$ 15, os R$ 4 são 27% do preço. O canal ganhou esse valor e,
+opcionalmente, faixas de preço ("até R$ X por item: % e R$ fixo"), copiadas do
+painel do vendedor. O app não traz a tabela de nenhum marketplace, porque ela
+muda e um valor velho erraria o preço em silêncio.
+
+```
+VALOR DE VENDA = (PREÇO BASE + extras + fixo · quantidade) / (1 − taxa − imposto) − extras
+```
+
+**A faixa é escolhida pelo preço de uma peça** (a venda dividida pela
+quantidade). Com faixas, o app faz a conta com cada uma e fica com o menor
+preço que de fato cobre a base com a taxa da faixa em que ele cai. Quando o
+fixo muda de uma faixa pra outra, pode não existir preço exato perto do
+limite; aí vale um centavo acima do limite, o primeiro preço da faixa de cima
+que cobre. A conta é direta, sem tentativas, então dá sempre o mesmo resultado.
+Com preço fechado com o cliente, a faixa é a do preço fechado.
+
+O pedido guarda a tabela do canal da época (`Quote.channelFeeSchedule`), pra o
+preço mínimo continuar certo depois. Pedido salvo antes da 2.2 só tinha o
+percentual, e continua sendo calculado com ele.
+
+### Insumos (decisão 122)
+
+Argola, ímã, parafuso, tinta, caixa, saquinho: custo que antes só cabia no
+administrativo (um valor igual pra todo pedido) ou num serviço (que é cobrado
+do cliente, mas não é custo, decisão 25). Cada insumo tem o seu custo por
+unidade e é usado por peça ou uma vez pelo pedido.
+
+- **Passa pela margem**, como o material: é dinheiro que você põe antes de
+  vender.
+- **Fica fora da reserva de falha**: argola e caixa entram depois da
+  impressão, então uma peça que falha não gasta insumo (mesmo motivo do
+  administrativo).
+
+### Serviços com tempo (decisão 123, revisita a 25)
+
+Um serviço pode dizer quanto do seu tempo leva ("Pintura: 30 min"). Duas
+coisas mudam, e só pra esse serviço:
+
+- **Valor sugerido:** sem valor fixo no cadastro, o orçamento sugere
+  `minutos / 60 · valor da hora`.
+- **Lucro real:** até a 2.1, o serviço era repasse e ficava fora do lucro
+  (decisão 25). Com tempo informado, ele conta no lucro pelo que rende acima
+  da sua hora: `valor cobrado − minutos / 60 · valor da hora`. Uma pintura de
+  R$ 25,00 em 30 min, com a hora a R$ 30,00, rende R$ 10,00; uma de R$ 10,00
+  no mesmo tempo dá R$ 5,00 negativos, e a tela avisa que ela paga menos que a
+  sua hora.
+
+Serviço sem tempo continua como sempre foi. O "Seu trabalho rendeu por hora"
+do Dashboard soma os minutos dos serviços com tempo, e o valor da sua hora
+neles, pra continuar coerente.
+
+### Frete grátis (decisão 124)
+
+Com o frete grátis marcado, o valor do frete sai do total do cliente e passa
+a ser pago por você: **o preço da peça não muda, o lucro cai** e o preço
+mínimo sobe. A tela mostra quanto o frete grátis custou e o valor que a peça
+precisaria ter pra manter o lucro de tabela, se você preferir embutir o frete
+no preço:
+
+```
+peça_que_cobre_o_frete = (PREÇO BASE + frete + extras + fixo · quantidade) / (1 − deduções) − extras
+```
+
+O frete da Shopee é outro caso: o programa de frete grátis dela é cobrado
+dentro da taxa do canal, então já está no percentual.
+
+### Preço mínimo do pedido e urgência (decisão 125)
+
+- **Preço mínimo:** o valor da peça do pedido inteiro (sem serviços nem frete)
+  nunca sai da tabela abaixo dele. É o último passo da conta, depois da
+  urgência. Preço fechado com o cliente passa por cima, mas a tela avisa.
+- **Urgência:** um percentual sobre o preço da peça, trabalho incluso, antes
+  do canal e do imposto. Não incide sobre serviços e frete. Pro cliente, o
+  documento mostra "Entrega expressa", sem o valor separado, como a margem.
+
+### Ajuda pro preço do kWh (decisão 126)
+
+Não muda a conta: é uma calculadora que preenche o preço do kWh, por três
+caminhos. Pela conta de luz (total ÷ kWh consumidos, o mais exato, porque já
+tem imposto e bandeira); pela tarifa mais o acréscimo da bandeira do mês; ou
+pela tarifa branca (média dos preços de cada período, pesada pelas horas de
+impressão em cada um). Nenhum valor da ANEEL vem no app, pelo mesmo motivo
+das faixas dos marketplaces.
+
 ## Exemplo de referência (planilha)
 
 Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.
@@ -464,6 +586,6 @@ app avisa e o STL continua sendo salvo normalmente pra recuperar depois.
 - **Energia:** a planilha exibe o kWh como "1,2", mas o valor real usado é 1,23.
 - **Manutenção:** o campo "Depreciação por hora (%)" foi substituído por um
   custo fixo em R$ por hora (`maintenanceCostPerHour`), mais simples de entender.
-- **Taxas de marketplace (Shopee) e custo de embalagem/spray:** ainda não
-  implementados (não há mais "edição gratuita" limitando isso — é só uma
-  funcionalidade pendente, sem decisão de prioridade ainda).
+- **Taxas de marketplace (Shopee) e custo de embalagem/spray:** a planilha não
+  tinha. Viraram os canais de venda (decisões 78 e 121) e os insumos (decisão
+  122).

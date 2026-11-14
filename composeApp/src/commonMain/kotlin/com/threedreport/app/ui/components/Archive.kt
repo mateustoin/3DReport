@@ -37,6 +37,8 @@ object CatalogUsage {
     fun service(id: String, quotes: List<SavedQuote>) = quotes.count { saved -> saved.services.any { it.id == id } }
 
     fun channel(id: String, quotes: List<SavedQuote>) = quotes.count { it.quote.channelId == id }
+
+    fun consumable(id: String, quotes: List<SavedQuote>) = quotes.count { saved -> saved.quote.consumables.any { it.id == id } }
 }
 
 /** "1 pedido ou produto", "3 pedidos ou produtos". */

@@ -70,6 +70,8 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository) {
                 administrativeCost = current.administrativeCostText.nonNegative("Custo administrativo"),
                 profitMargin = current.profitMarginPercentText.percent("Margem de lucro"),
                 taxRate = current.taxRatePercentText.percent("Imposto sobre a venda", below100 = true),
+                minimumOrderPrice = current.minimumOrderPriceText.nonNegative("Preço mínimo do pedido"),
+                rushSurchargeRate = current.rushSurchargeRatePercentText.percent("Acréscimo por urgência"),
             )
         }
 
@@ -118,4 +120,6 @@ private fun PricingSettings.toUiState() = SettingsUiState(
     administrativeCostText = administrativeCost.toInputText(),
     profitMarginPercentText = (profitMargin * 100).toInputText(),
     taxRatePercentText = (taxRate * 100).toInputText(),
+    minimumOrderPriceText = minimumOrderPrice.toInputText(),
+    rushSurchargeRatePercentText = (rushSurchargeRate * 100).toInputText(),
 )

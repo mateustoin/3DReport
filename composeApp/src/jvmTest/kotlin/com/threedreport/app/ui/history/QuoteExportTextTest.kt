@@ -227,4 +227,35 @@ class QuoteExportTextTest {
 
         assertEquals("Suporte de celular\nValor: $ 16.19", inDollars.toCopyPasteText())
     }
+
+    @Test
+    fun freeShippingShowsAsGratisAndTotalExcludesTheValue() {
+        val withFreeShipping = savedQuote.copy(shippingCost = 18.0, shippingAbsorbed = true)
+
+        val text = withFreeShipping.toCopyPasteText()
+
+        assertEquals("Suporte de celular\nValor: R$ 16,19\nFrete: grátis\nTotal: R$ 16,19", text)
+        assertEquals(16.19, withFreeShipping.totalWithServices, 0.001)
+    }
+
+    @Test
+    fun rushAppearsNextToTheDeliveryDate() {
+        val rushWithDeadline = savedQuote.copy(
+            quote = savedQuote.quote.copy(rush = true),
+            deliveryDateEpochDay = september30,
+        )
+
+        val text = rushWithDeadline.toCopyPasteText()
+
+        assertEquals("Suporte de celular\nValor: R$ 16,19\nPrazo de entrega: até 30/09/2026 (entrega expressa)", text)
+    }
+
+    @Test
+    fun rushWithoutADeadlineIsItsOwnLine() {
+        val rushWithoutDeadline = savedQuote.copy(quote = savedQuote.quote.copy(rush = true))
+
+        val text = rushWithoutDeadline.toCopyPasteText()
+
+        assertEquals("Suporte de celular\nValor: R$ 16,19\nEntrega expressa", text)
+    }
 }

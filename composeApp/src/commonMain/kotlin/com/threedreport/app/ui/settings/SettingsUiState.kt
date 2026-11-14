@@ -17,6 +17,8 @@ data class SettingsUiState(
     val administrativeCostText: String = "",
     val profitMarginPercentText: String = "",
     val taxRatePercentText: String = "",
+    val minimumOrderPriceText: String = "",
+    val rushSurchargeRatePercentText: String = "",
     val errorMessage: String? = null,
     val savedConfirmation: Boolean = false,
     /** Aviso depois de salvar, quando algo gravado não vai ter o efeito que a pessoa espera. */

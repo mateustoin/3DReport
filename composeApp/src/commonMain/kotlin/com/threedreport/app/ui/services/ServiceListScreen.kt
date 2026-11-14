@@ -27,8 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.EmptyState
+import com.threedreport.app.ui.components.FieldHelp
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.Service
 
@@ -111,7 +113,11 @@ private fun ServiceRow(service: Service, onEdit: () -> Unit, onArchiveToggle: ()
         ) {
             Column {
                 Text(service.name + if (service.archived) " · arquivado" else "", style = MaterialTheme.typography.titleMedium)
-                val details = listOfNotNull(chargeLabel(service.chargedPerOrder), service.suggestedPrice?.let { "sugerido ${it.toMoney()}" })
+                val details = listOfNotNull(
+                    chargeLabel(service.chargedPerOrder),
+                    service.suggestedPrice?.let { "sugerido ${it.toMoney()}" },
+                    service.laborMinutes?.let { it.minutesToDurationText() },
+                )
                 Text(details.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
             }
             Row {
@@ -160,6 +166,15 @@ private fun ServiceForm(
                 "Dá pra trocar em cada orçamento.",
             style = MaterialTheme.typography.bodySmall,
         )
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+            value = form.minutesText,
+            onValueChange = { text -> onChange { it.copy(minutesText = text) } },
+            label = { Text("Seu tempo neste serviço (min, opcional)") },
+            placeholder = { Text("1h30 ou 90 (minutos)") },
+        )
+        FieldHelp("Com o tempo, o orçamento sugere o valor pela sua hora e mostra quanto o serviço rende de verdade.")
 
         form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 

@@ -3,6 +3,7 @@ package com.threedreport.app
 import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.ClientRepository
+import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.MaintenanceRepository
@@ -29,6 +30,7 @@ class AppContainer(
     val printers: PrinterRepository,
     val services: ServiceRepository,
     val salesChannels: SalesChannelRepository,
+    val consumables: ConsumableRepository,
     val templates: TemplateRepository,
     val clients: ClientRepository,
     val maintenance: MaintenanceRepository,

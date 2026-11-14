@@ -59,4 +59,20 @@ class QuoteServiceTest {
         assertFailsWith<IllegalArgumentException> { Service(id = "s", name = "Pintura", suggestedPrice = -1.0) }
         assertFailsWith<IllegalArgumentException> { QuoteService(id = "s", name = "Pintura", price = -1.0, chargedPerOrder = false) }
     }
+
+    @Test
+    fun laborMinutesFollowTheChargeMode() {
+        val perPiece = QuoteService(id = "p", name = "Pintura", price = 25.0, chargedPerOrder = false, laborMinutes = 30.0)
+        val perOrder = perPiece.copy(chargedPerOrder = true)
+        assertEquals(90.0, perPiece.totalLaborMinutes(3))
+        assertEquals(30.0, perOrder.totalLaborMinutes(3))
+    }
+
+    @Test
+    fun theSuggestedPriceComesFromTheMinutesWhenThereIsNoFixedValue() {
+        val byTime = Service(id = "p", name = "Pintura", laborMinutes = 30.0)
+        assertEquals(15.0, byTime.suggestedPriceFor(laborRatePerHour = 30.0))
+        assertEquals(null, byTime.suggestedPriceFor(laborRatePerHour = 0.0))
+        assertEquals(25.0, byTime.copy(suggestedPrice = 25.0).suggestedPriceFor(laborRatePerHour = 30.0))
+    }
 }

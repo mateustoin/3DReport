@@ -49,20 +49,22 @@ object QuoteReport {
         val totalProfit = sold.sumOf { it.quote.profit }
         val printHours = sold.sumOf { it.totalPrintTimeMinutes } / 60.0
 
-        val withLabor = sold.filter { it.quote.laborMinutes > 0 }
-        val laborHours = withLabor.sumOf { it.quote.laborMinutes } / 60.0
-        val laborEarnings = withLabor.sumOf { it.quote.profit + it.quote.costs.labor }
+        // O seu tempo inclui o dos serviços com tempo informado (decisão 123): o que eles rendem já está no
+        // lucro, e o valor da sua hora neles volta junto, como o do trabalho na peça.
+        val withLabor = sold.filter { it.quote.laborMinutes > 0 || it.quote.serviceLaborMinutes > 0 }
+        val laborHours = withLabor.sumOf { it.quote.laborMinutes + it.quote.serviceLaborMinutes } / 60.0
+        val laborEarnings = withLabor.sumOf { it.quote.profit + it.quote.costs.labor + it.quote.serviceLaborCost }
 
         return QuoteSummary(
             quoteCount = sold.size,
-            totalSalePrice = sold.sumOf { it.totalWithServices - it.shippingCost },
+            totalSalePrice = sold.sumOf { it.totalWithServices - it.chargedShipping },
             totalProfit = totalProfit,
             mostUsedFilamentName = mostUsedFilament?.key,
             mostUsedFilamentCount = mostUsedFilament?.value ?: 0,
             negotiatedCount = sold.count { it.isNegotiatedWithClient },
             totalNegotiatedDiscount = sold.sumOf { it.clientDiscount },
             openQuoteCount = open.size,
-            openQuoteTotal = open.sumOf { it.totalWithServices - it.shippingCost },
+            openQuoteTotal = open.sumOf { it.totalWithServices - it.chargedShipping },
             conversionRate = if (created.isEmpty()) null else created.count { it.status.isSold }.toDouble() / created.size,
             printHours = printHours,
             profitPerPrintHour = perHour(totalProfit, printHours),

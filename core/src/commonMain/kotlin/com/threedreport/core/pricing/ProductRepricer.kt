@@ -1,10 +1,12 @@
 package com.threedreport.core.pricing
 
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentSnapshot
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import kotlin.math.abs
@@ -22,7 +24,7 @@ sealed interface RepriceResult {
     /** Não dá pra recalcular sem a pessoa escolher de novo o que sumiu dos cadastros. */
     data class Unavailable(val reason: Reason, val missingName: String? = null) : RepriceResult
 
-    enum class Reason { FILAMENT_MISSING, PRINTER_MISSING, CHANNEL_MISSING, INVALID }
+    enum class Reason { FILAMENT_MISSING, PRINTER_MISSING, CHANNEL_MISSING, CONSUMABLE_MISSING, INVALID }
 }
 
 /**
@@ -32,7 +34,8 @@ sealed interface RepriceResult {
  *
  * Função pura, no estilo do [PricingCalculator]: acha cada filamento e cada impressora de cada
  * impressão, e o canal, pelo id que o produto guardou, e refaz a conta com as mesmas quantidades
- * (comprimentos, tempos, rodadas, quantidade, tempo de trabalho e cores). O preço anunciado (o preço fechado da decisão 84, guardado como
+ * (comprimentos, tempos, rodadas, quantidade, tempo de trabalho, cores, insumos, serviços e urgência). Os
+ * insumos também voltam com o custo de hoje (decisão 122). O preço anunciado (o preço fechado da decisão 84, guardado como
  * [Quote.salePrice] com o calculado em [Quote.tableSalePrice]) continua o mesmo: mudar o que se
  * anuncia é decisão de quem vende, não do app.
  */
@@ -47,6 +50,7 @@ object ProductRepricer {
         printers: List<PrinterProfile>,
         settings: PricingSettings,
         channels: List<SalesChannel>,
+        consumables: List<Consumable>,
     ): RepriceResult {
         val quote = saved.quote
         val prints = quote.prints.map { print ->
@@ -63,6 +67,11 @@ object ProductRepricer {
             channels.firstOrNull { it.id == id }
                 ?: return RepriceResult.Unavailable(RepriceResult.Reason.CHANNEL_MISSING, quote.channelName)
         }
+        val usedConsumables = quote.consumables.map { used ->
+            val consumable = consumables.firstOrNull { it.id == used.id }
+                ?: return RepriceResult.Unavailable(RepriceResult.Reason.CONSUMABLE_MISSING, used.name)
+            QuotedConsumable.of(consumable, used.quantity, used.chargedPerOrder)
+        }
 
         val repriced = runCatching {
             PricingCalculator.calculate(
@@ -73,6 +82,10 @@ object ProductRepricer {
                 laborMinutes = quote.laborMinutes,
                 negotiatedSalePrice = if (quote.isNegotiated) quote.salePrice else null,
                 extrasTotal = quote.extrasTotal,
+                services = saved.services,
+                consumables = usedConsumables,
+                rush = quote.rush,
+                absorbedShippingCost = quote.absorbedShippingCost,
             )
         }.getOrElse { return RepriceResult.Unavailable(RepriceResult.Reason.INVALID, it.message) }
 

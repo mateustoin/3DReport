@@ -127,4 +127,16 @@ class SavedQuoteTest {
         assertEquals(FilamentSnapshot.of(withColors), usage.filament)
         assertEquals(withColors.weightGrams(1.0), usage.weightGrams, 1e-12)
     }
+
+    @Test
+    fun freeShippingIsNotChargedToTheClient() {
+        val charged = savedQuoteOf().copy(shippingCost = 18.0)
+        val free = charged.copy(shippingAbsorbed = true)
+
+        assertEquals(18.0, charged.chargedShipping)
+        assertEquals(10.0 + 18.0, charged.totalWithServices)
+        assertEquals(0.0, free.chargedShipping)
+        assertEquals(10.0, free.totalWithServices)
+        assertEquals(18.0, free.shippingCost)
+    }
 }

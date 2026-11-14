@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.PrinterProfile
@@ -27,6 +28,8 @@ data class QuoteResult(
     val selectedServices: List<QuoteService> = emptyList(),
     val salesChannel: SalesChannel? = null,
     val shippingCost: Double = 0.0,
+    /** Frete grátis pro cliente (decisão 124): [shippingCost] é pago por você e fica fora de [grandTotal]. */
+    val shippingAbsorbed: Boolean = false,
     /**
      * Algum serviço marcado está com o valor vazio ou inválido. Bloqueia o salvar: contar como
      * zero cobraria de menos sem ninguém perceber.
@@ -54,9 +57,13 @@ data class QuoteResult(
     val servicesTotal: Double
         get() = selectedServices.sumOf { it.total(quote?.quantity ?: 1) }
 
-    /** Valor de venda + serviços + frete — o que de fato será cobrado do cliente. */
+    /** Frete cobrado do cliente: zero com frete grátis (ver [shippingAbsorbed]). */
+    val chargedShipping: Double
+        get() = SavedQuote.chargedShipping(shippingCost, shippingAbsorbed)
+
+    /** Valor de venda + serviços + frete cobrado: o que de fato será cobrado do cliente. */
     val grandTotal: Double?
-        get() = quote?.let { it.salePrice + servicesTotal + shippingCost }
+        get() = quote?.let { it.salePrice + servicesTotal + chargedShipping }
 }
 
 /** Chaves de [QuoteResult.fieldErrors]: um nome por campo, com a impressão e a linha quando é de uma delas. */
@@ -73,4 +80,8 @@ object QuoteFields {
     fun length(printId: Int, rowId: Int) = "length:$printId:$rowId"
 
     fun service(serviceId: String) = "service:$serviceId"
+
+    fun serviceMinutes(serviceId: String) = "serviceMinutes:$serviceId"
+
+    fun consumable(consumableId: String) = "consumable:$consumableId"
 }

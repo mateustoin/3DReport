@@ -40,17 +40,33 @@ internal fun SavedQuote.toCopyPasteText(currency: Currency = this.currency, show
         if (quantity > 1 && !service.chargedPerOrder) append(" (× ").append(quantity).append(")")
         append(": ").append(service.total(quantity).toCurrencyText(currency))
     }
-    if (shippingCost > 0) {
+    if (shippingAbsorbed) {
         appendLine()
-        append("Frete: ").append(shippingCost.toCurrencyText(currency))
+        append("Frete: grátis")
+    } else if (shippingCost > 0) {
+        appendLine()
+        append("Frete: ").append(chargedShipping.toCurrencyText(currency))
     }
     if (services.isNotEmpty() || shippingCost > 0) {
         appendLine()
         append("Total: ").append(totalWithServices.toCurrencyText(currency))
     }
-    deliveryDateText()?.let {
-        appendLine()
-        append(it)
+    // Entrega expressa (decisão 125) junto do prazo, que é como o cliente lê os dois num relance; sem
+    // prazo, vira linha própria em vez de sumir.
+    val delivery = deliveryDateText()
+    when {
+        delivery != null && quote.rush -> {
+            appendLine()
+            append(delivery).append(" (entrega expressa)")
+        }
+        delivery != null -> {
+            appendLine()
+            append(delivery)
+        }
+        quote.rush -> {
+            appendLine()
+            append("Entrega expressa")
+        }
     }
     if (showPrintTime) {
         appendLine()
