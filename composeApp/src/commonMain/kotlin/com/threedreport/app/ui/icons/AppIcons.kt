@@ -74,6 +74,15 @@ object AppIcons {
     /** `account_balance` */
     val AccountBalance: ImageVector by lazy { symbol("account_balance", "M200-280v-280h80v280h-80Zm240 0v-280h80v280h-80ZM80-120v-80h800v80H80Zm600-160v-280h80v280h-80ZM80-640v-80l400-200 400 200v80H80Zm178-80h444-444Zm0 0h444L480-830 258-720Z") }
 
+    /** `add` */
+    val Add: ImageVector by lazy { symbol("add", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z") }
+
+    /** `expand_more` */
+    val ExpandMore: ImageVector by lazy { symbol("expand_more", "M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z") }
+
+    /** `expand_less` */
+    val ExpandLess: ImageVector by lazy { symbol("expand_less", "m296-345-56-56 240-240 240 240-56 56-184-184-184 184Z") }
+
     /** `add_photo_alternate` */
     val AddPhotoAlternate: ImageVector by lazy { symbol("add_photo_alternate", "M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h360v80H200v560h560v-360h80v360q0 33-23.5 56.5T760-120H200Zm480-480v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM240-280h480L570-480 450-320l-90-120-120 160Zm-40-480v560-560Z") }
 

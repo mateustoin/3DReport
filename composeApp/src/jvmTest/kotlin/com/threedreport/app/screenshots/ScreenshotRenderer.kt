@@ -123,6 +123,17 @@ class ScreenshotRenderer {
             )
         }
 
+        // O mesmo Orçamento no tema escuro, pra conferir o tema novo nos dois.
+        container.theme.update(ThemeMode.DARK)
+        renderAppPng(File(outDir, "orcamento-escuro.png")) {
+            App(
+                container,
+                startAt = AppDestination.QUOTE,
+                prepareQuote = { vm -> fillDraftQuote(vm) },
+            )
+        }
+        container.theme.update(ThemeMode.LIGHT)
+
         // Kanban, não a lista: é o que mostra o pipeline de pedidos vivo (decisão 120).
         renderAppPng(File(outDir, "pedidos.png"), afterSettle = { it.clickByText("Kanban") }) {
             App(container, startAt = AppDestination.ORDERS)

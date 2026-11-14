@@ -1,15 +1,12 @@
 package com.threedreport.app.ui.quote
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,76 +15,57 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.encodeImageBitmapToPng
-import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.todayEpochDay
-import com.threedreport.app.platform.weekdayName
-import com.threedreport.app.ui.components.ClientField
-import com.threedreport.app.ui.components.FieldHelp
-import com.threedreport.app.ui.components.IconLabel
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppDropdownField
+import com.threedreport.app.ui.components.AppSuggestField
+import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.FormSection
+import com.threedreport.app.ui.components.HelpHint
+import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.LinkText
-import com.threedreport.app.ui.components.SectionTitle
+import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.components.ShowNotice
 import com.threedreport.app.ui.components.ShowSnackbarOnce
-import com.threedreport.app.ui.components.SubsectionTitle
 import com.threedreport.app.ui.components.availableOrSelected
-import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.filaments.displayText
-import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
-import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.channelFeeSummary
 import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toCurrencyText
-import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.services.ServiceChargeSelector
+import com.threedreport.app.ui.theme.AppDimens
+import com.threedreport.app.ui.theme.appColors
+import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
 import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
 import com.threedreport.core.model.Consumable
@@ -95,9 +73,7 @@ import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
-import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
-import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.showcasePriceSuggestion
@@ -108,12 +84,10 @@ import kotlin.math.round
 private const val DIRECT_SALE_LABEL = "Venda direta (sem taxa)"
 
 /**
- * Abaixo disso a tela volta pra uma coluna só. O valor cabe na janela padrão do app (1280) já descontada a
- * barra lateral com rótulos (decisão 111), e ainda deixa as duas colunas com uns 500 dp cada; espremer mais
- * faria os campos e a nota ficarem estreitos demais pra ler de relance, que é justamente o que o layout de
- * duas colunas tenta resolver.
+ * Abaixo disso a tela volta pra uma coluna só (o painel de resultado vai pro fim). Com o painel de 380 e a
+ * margem de 32 de cada lado, sobram uns 500 dp pra grade de três colunas do formulário.
  */
-private val TWO_COLUMN_MIN_WIDTH = 1040.dp
+private val TWO_COLUMN_MIN_WIDTH = 960.dp
 
 /** Arredonda pra 1 casa decimal, separador decimal brasileiro (vírgula) — mesmo estilo de `toWeightText()`. */
 private fun Double.formatOneDecimal(): String {
@@ -124,8 +98,9 @@ private fun Double.formatOneDecimal(): String {
 }
 
 /**
- * Tela de Orçamento: dados da peça e resultado calculado. [onSave] é o botão Salvar: num orçamento novo,
- * salva e limpa pra o próximo; editando um salvo (decisão 113), salva e volta pra onde a edição começou.
+ * Tela de Orçamento: à esquerda o formulário em seções numeradas, à direita o painel de resultado fixo.
+ * [onSave] é o botão Salvar: num orçamento novo, salva e limpa pra o próximo; editando um salvo
+ * (decisão 113), salva e volta pra onde a edição começou.
  */
 @Composable
 fun QuoteScreen(
@@ -149,120 +124,116 @@ fun QuoteScreen(
         viewModel.comparePrinters(allFilaments, printers, settings, services, input, salesChannels, consumables)
     }
     val currency = LocalCurrency.current
+    val space = MaterialTheme.spacing
 
-    // Em tela larga, entradas à esquerda e o dinheiro à direita, recalculando enquanto se digita:
-    // antes era uma coluna só e não dava pra ver o preço e os campos ao mesmo tempo. Janela
-    // estreita volta pra coluna única, que continua sendo o layout que sempre funcionou.
-    Column(modifier = modifier.fillMaxSize()) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            if (maxWidth >= TWO_COLUMN_MIN_WIDTH) {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        QuoteInputs(viewModel, allFilaments, printers, services, consumables, salesChannels, settings, input, saveForm, result, currency)
-                        HorizontalDivider()
-                        SaveQuoteFormSection(viewModel, saveForm, input, result, onSave)
-                    }
-                    VerticalDivider()
-                    Column(
-                        modifier = Modifier.weight(0.8f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        QuoteResultSection(viewModel, allFilaments, printers, settings, input, saveForm, result, comparison)
-                    }
-                }
-            } else {
+    val isEditing = saveForm.editingQuoteId != null
+    val canSave = result.quote != null && !result.missingServicePrice && result.fieldErrors.isEmpty()
+    val cannotSaveReason = when {
+        result.fieldErrors.isNotEmpty() -> "Corrija o campo marcado em vermelho pra poder salvar."
+        result.quote != null && result.missingServicePrice -> "Informe o valor de cada serviço marcado (ou desmarque) pra poder salvar."
+        result.errorMessage != null -> result.errorMessage
+        else -> "Preencha filamento, impressora, peso (ou comprimento) e tempo, ou arraste o G-code, pra poder salvar."
+    }
+    val saveLabel = when {
+        isEditing -> "Salvar alterações"
+        input.isProduct -> "Salvar no catálogo"
+        else -> "Salvar pedido"
+    }
+    val cancelLabel = operationTexts(saveForm, input.isProduct)?.cancelLabel
+
+    @Composable
+    fun Form() = QuoteForm(viewModel, allFilaments, printers, services, consumables, salesChannels, settings, input, saveForm, result, comparison, currency)
+
+    @Composable
+    fun Panel(fixed: Boolean, panelModifier: Modifier) = QuoteResultPanel(
+        result = result,
+        input = input,
+        saveForm = saveForm,
+        settings = settings,
+        allFilaments = allFilaments,
+        printers = printers,
+        comparison = comparison,
+        canSave = canSave,
+        cannotSaveReason = cannotSaveReason,
+        saveLabel = saveLabel,
+        cancelLabel = cancelLabel,
+        fixed = fixed,
+        onSave = onSave,
+        onCancel = onCancelOperation,
+        onUseShippingCoveringPrice = viewModel::useShippingCoveringPrice,
+        modifier = panelModifier,
+    )
+
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        if (maxWidth >= TWO_COLUMN_MIN_WIDTH) {
+            Row(modifier = Modifier.fillMaxSize()) {
                 Column(
-                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    QuoteInputs(viewModel, allFilaments, printers, services, consumables, salesChannels, settings, input, saveForm, result, currency)
-                    HorizontalDivider()
-                    QuoteResultSection(viewModel, allFilaments, printers, settings, input, saveForm, result, comparison)
-                    HorizontalDivider()
-                    SaveQuoteFormSection(viewModel, saveForm, input, result, onSave)
-                }
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = space.xxl, end = space.xxl, top = AppDimens.screenTopPadding, bottom = space.xxl),
+                ) { Form() }
+                Panel(fixed = true, panelModifier = Modifier.width(AppDimens.resultPanelWidth).fillMaxHeight())
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Column(modifier = Modifier.padding(start = space.xl, end = space.xl, top = AppDimens.screenTopPadding, bottom = space.xl)) { Form() }
+                Panel(fixed = false, panelModifier = Modifier.fillMaxWidth())
             }
         }
-        OperationBar(saveForm, isProduct = input.isProduct, onCancel = onCancelOperation)
     }
 
     saveForm.blockedMessage?.let { message ->
         ShowSnackbarOnce(true, message, viewModel::consumeBlockedMessage)
     }
+    ShowSnackbarOnce(
+        saveForm.savedConfirmation,
+        when {
+            saveForm.savedAsProduct -> "Produto ${saveForm.savedNumber.orEmpty()} salvo no Catálogo.".replace("  ", " ")
+            else -> "Pedido ${saveForm.savedNumber.orEmpty()} salvo em Pedidos.".replace("  ", " ")
+        },
+        viewModel::consumeSavedConfirmation,
+    )
     val notice by viewModel.notice.collectAsState()
     ShowNotice(notice, viewModel::consumeNotice)
 }
 
-/**
- * Faixa fixa no rodapé enquanto o formulário veio de uma operação começada em Pedidos ou no Catálogo
- * (Editar, Vender, Duplicar, Guardar no catálogo), com o jeito de desistir sempre à vista (decisões 102
- * e 113).
- *
- * Visual neutro com filete âmbar (decisão 103), a mesma assinatura das faixas de destaque do PDF
- * (decisão 35): diz que há algo em andamento sem parecer erro.
- */
-@Composable
-private fun OperationBar(form: SaveQuoteFormState, isProduct: Boolean, onCancel: () -> Unit) {
-    val (title, detail, cancelLabel) = when (val operation = form.operation) {
-        is QuoteOperation.Editing -> Triple(
-            "Editando " + listOfNotNull(operation.savedQuote.displayNumber?.takeIf { operation.savedQuote.isOrder }, "\"${operation.savedQuote.name}\"").joinToString(" "),
-            "Salve pra atualizar " + (if (isProduct) "o produto." else "o pedido.") +
-                " O que estava sendo feito no Orçamento volta quando você terminar.",
-            "Cancelar edição",
-        )
+/** O que a tela está fazendo além de um orçamento novo: título, o detalhe (numa dica) e o texto de desistir. */
+private data class OperationTexts(val title: String, val detail: String, val cancelLabel: String)
 
-        is QuoteOperation.Selling -> Triple(
-            "Vendendo \"${operation.product.name}\"",
-            "Preencha o cliente e o prazo e salve o pedido. O produto continua no catálogo, sem mudar nada.",
-            "Cancelar venda",
-        )
+private fun operationTexts(form: SaveQuoteFormState, isProduct: Boolean): OperationTexts? = when (val operation = form.operation) {
+    is QuoteOperation.Editing -> OperationTexts(
+        "Editando " + listOfNotNull(operation.savedQuote.displayNumber?.takeIf { operation.savedQuote.isOrder }, "\"${operation.savedQuote.name}\"").joinToString(" "),
+        "Salve pra atualizar " + (if (isProduct) "o produto." else "o pedido.") +
+            " A data de criação original é mantida. O que estava sendo feito no Orçamento volta quando você terminar.",
+        "Cancelar edição",
+    )
 
-        is QuoteOperation.CopyingToCatalog -> Triple(
-            "Copiando \"${operation.fromName}\" pro catálogo",
-            "Revise e clique em \"Salvar no catálogo\". Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
-            "Cancelar cópia",
-        )
+    is QuoteOperation.Selling -> OperationTexts(
+        "Vendendo \"${operation.product.name}\"",
+        "Preencha o cliente e o prazo e salve o pedido. O produto continua no catálogo, sem mudar nada.",
+        "Cancelar venda",
+    )
 
-        is QuoteOperation.Duplicating -> Triple(
-            "Duplicando \"${operation.fromName}\"",
-            "Revise os dados, preencha o cliente e salve pra criar " + (if (isProduct) "um produto novo." else "um pedido novo.") +
-                " O original não muda.",
-            "Cancelar duplicação",
-        )
+    is QuoteOperation.CopyingToCatalog -> OperationTexts(
+        "Copiando \"${operation.fromName}\" pro catálogo",
+        "Revise e clique em \"Salvar no catálogo\". Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
+        "Cancelar cópia",
+    )
 
-        else -> return
-    }
-    Column {
-        HorizontalDivider()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
-        ) {
-            Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(MaterialTheme.colorScheme.secondary))
-            Row(
-                modifier = Modifier.weight(1f).padding(start = 20.dp, end = 24.dp, top = 10.dp, bottom = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Icon(AppIcons.Info, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(title, style = MaterialTheme.typography.titleSmall)
-                    Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                OutlinedButton(onClick = onCancel) { IconLabel(AppIcons.Close, cancelLabel) }
-            }
-        }
-    }
+    is QuoteOperation.Duplicating -> OperationTexts(
+        "Duplicando \"${operation.fromName}\"",
+        "Revise os dados, preencha o cliente e salve pra criar " + (if (isProduct) "um produto novo." else "um pedido novo.") + " O original não muda.",
+        "Cancelar duplicação",
+    )
+
+    else -> null
 }
 
-/** Dados da peça: o que o criador preenche pra o cálculo acontecer. */
+/** O formulário: cabeçalho, área de G-code e as seções numeradas. */
 @Composable
-private fun QuoteInputs(
+private fun QuoteForm(
     viewModel: QuoteViewModel,
     allFilaments: List<Filament>,
     printers: List<PrinterProfile>,
@@ -273,209 +244,198 @@ private fun QuoteInputs(
     input: QuoteInputState,
     form: SaveQuoteFormState,
     result: QuoteResult,
+    comparison: List<Pair<PrinterProfile, com.threedreport.core.model.Quote>>,
     currency: Currency,
 ) {
+    val space = MaterialTheme.spacing
+    val orphanServices = input.selectedServices.filterKeys { id -> services.none { it.id == id } }
+    val offeredServices = services.availableOrSelected { it.id in input.selectedServices }
+    val orphanConsumables = input.selectedConsumables.filterKeys { id -> consumables.none { it.id == id } }
+    val offeredConsumables = consumables.availableOrSelected { it.id in input.selectedConsumables }
+    val hasServices = offeredServices.isNotEmpty() || orphanServices.isNotEmpty()
+    val hasConsumables = offeredConsumables.isNotEmpty() || orphanConsumables.isNotEmpty()
+    val hasExtras = settings.laborRatePerHour > 0 || hasServices || hasConsumables
+    var number = 0
+
+    Column(modifier = Modifier.widthIn(max = AppDimens.formMaxWidth), verticalArrangement = Arrangement.spacedBy(space.xl)) {
+        Header(viewModel, input, form)
+        GCodeDropArea(viewModel, input)
+
+        FormSection(++number, if (input.prints.size > 1) "Impressões" else "Impressão") {
+            Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
+                val quantityError = result.fieldErrors[QuoteFields.QUANTITY]
+                FormGrid {
+                    cell(2) {
+                        AppTextField(
+                            label = "Nome da peça (opcional)",
+                            value = form.name,
+                            onValueChange = viewModel::setSaveName,
+                        )
+                    }
+                    cell {
+                        AppTextField(
+                            label = "Quantidade de peças",
+                            value = input.quantityText,
+                            onValueChange = viewModel::setQuantity,
+                            placeholder = "1",
+                            error = quantityError,
+                            help = HelpText(
+                                "Peso, comprimento e tempo são de UMA peça: o app multiplica pela quantidade.",
+                                "Se você fatiou a mesa inteira de uma vez e os números já são do lote todo, deixe a quantidade em 1.",
+                            ),
+                        )
+                    }
+                }
+                PrintsSection(viewModel, allFilaments, printers, input, result, currency)
+            }
+        }
+
+        if (hasExtras) {
+            FormSection(++number, "Trabalho e extras") {
+                Column(verticalArrangement = Arrangement.spacedBy(space.md)) {
+                    // Só aparece pra quem configurou quanto vale a própria hora: sem isso, o campo não teria
+                    // efeito nenhum no preço. O tempo é do pedido inteiro (decisão 94).
+                    if (settings.laborRatePerHour > 0) LaborField(viewModel, settings, input, result, currency)
+                    if (hasServices) {
+                        ExtrasList("Serviços", HelpText("O valor é deste pedido: marque o serviço e digite quanto vai cobrar por ele.")) {
+                            // Serviço marcado num orçamento reaberto que já saiu do catálogo continua aparecendo.
+                            offeredServices.forEach { service ->
+                                ServiceRow(
+                                    viewModel, service.id, service.name, service.suggestedPrice, input.selectedServices[service.id],
+                                    input.quantity, result.fieldErrors[QuoteFields.serviceMinutes(service.id)],
+                                )
+                            }
+                            orphanServices.forEach { (id, serviceInput) ->
+                                ServiceRow(viewModel, id, serviceInput.name, null, serviceInput, input.quantity, result.fieldErrors[QuoteFields.serviceMinutes(id)])
+                            }
+                        }
+                    }
+                    if (hasConsumables) {
+                        // Insumo argola, ímã, caixa: vale pra pedido e pra produto (decisão 122).
+                        ExtrasList("Insumos", null) {
+                            offeredConsumables.forEach { consumable ->
+                                ConsumableRow(
+                                    viewModel, consumable.id, consumable.name, consumable.unitCost, input.selectedConsumables[consumable.id],
+                                    input.quantity, result.fieldErrors[QuoteFields.consumable(consumable.id)],
+                                )
+                            }
+                            orphanConsumables.forEach { (id, consumableInput) ->
+                                ConsumableRow(
+                                    viewModel, id, "${consumableInput.name} (saiu do cadastro)", consumableInput.unitCost, consumableInput,
+                                    input.quantity, result.fieldErrors[QuoteFields.consumable(id)],
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        FormSection(++number, "Venda") { SaleFields(viewModel, salesChannels, settings, input, form, result, currency) }
+
+        FormSection(
+            ++number,
+            "Detalhes",
+            help = HelpText("Foto e prazo saem no PDF e na mensagem. Contato, STL e link ficam só com você."),
+        ) { DetailsFields(viewModel, printers, input, form, result) }
+    }
+}
+
+@Composable
+private fun Header(viewModel: QuoteViewModel, input: QuoteInputState, form: SaveQuoteFormState) {
+    val operation = operationTexts(form, input.isProduct)
     // O tipo vem primeiro (decisão 108): ele esconde frete e negociação, então escolher depois de
     // preencher era jogar trabalho fora. Na edição, e quando o formulário veio de "Vender" ou de
     // "Guardar no catálogo", o destino já está decidido.
-    if (form.operation == null || form.operation is QuoteOperation.Duplicating) {
-        KindSelector(isProduct = input.isProduct, onSelect = viewModel::setKind)
+    val showKind = form.operation == null || form.operation is QuoteOperation.Duplicating
+    val title = operation?.title ?: if (input.isProduct) "Novo produto" else "Novo orçamento"
+    val help = operation?.detail ?: if (input.isProduct) {
+        "Uma peça que você oferece, com preço, sem cliente. Quando alguém comprar, é só clicar em \"Vender\"."
+    } else {
+        "Um orçamento pra um cliente, que segue o andamento de Orçado até Entregue."
     }
-
-    PrintsSection(viewModel, allFilaments, printers, input, result, currency)
-
-    val quantityError = result.fieldErrors[QuoteFields.QUANTITY]
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth().tabToNavigate(),
-        value = input.quantityText,
-        onValueChange = viewModel::setQuantity,
-        label = { Text("Quantidade de peças") },
-        placeholder = { Text("1") },
-        singleLine = true,
-        isError = quantityError != null,
-        supportingText = if (quantityError != null) ({ Text(quantityError) }) else null,
-    )
-    FieldHelp(
-        "Peso, comprimento e tempo acima são de UMA peça: o app multiplica pela quantidade.",
-        "Se você fatiou a mesa inteira de uma vez e os números já são do lote todo, deixe a quantidade em 1.",
-    )
-
-    // Só aparece pra quem configurou quanto vale a própria hora: sem isso, o campo não teria
-    // efeito nenhum no preço. Fica depois da quantidade porque o tempo é do pedido inteiro (decisão 94).
-    if (settings.laborRatePerHour > 0) {
-        val laborError = result.fieldErrors[QuoteFields.LABOR]
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.laborMinutesText,
-            onValueChange = viewModel::setLaborMinutes,
-            label = { Text("Seu tempo de trabalho no pedido") },
-            placeholder = { Text("1h30 ou 90 (minutos)") },
-            singleLine = true,
-            isError = laborError != null,
-            supportingText = if (laborError != null) ({ Text(laborError) }) else null,
-        )
-        val quantity = input.quantity
-        FieldHelp(
-            (if (quantity > 1) "Total das $quantity peças" else "O pedido inteiro") +
-                ", cobrado a ${settings.laborRatePerHour.toCurrencyText(currency)}/h, sem a margem por cima." +
-                (if (quantity > 1) " Mudou a quantidade? Revise o tempo." else ""),
-            "Fora o tempo de máquina: fatiar, montar a mesa, tirar da mesa, remover suporte, lixar, pintar, " +
-                "embalar. O valor da hora é ajustável em Configurações. Se o acabamento já está no percentual " +
-                "de Configurações, não conte ele aqui.",
-        )
-        // Lembrete, não erro: sem ele, configurar a hora e não ver o preço mudar parece defeito.
-        if (input.isLaborTimeMissing) {
-            Text(
-                "Seu trabalho ainda não entra no preço: informe quanto tempo este pedido te dá.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.md),
+    ) {
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+            Text(title, style = MaterialTheme.appType.headline, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f, fill = false))
+            HelpHint(HelpText(help), title)
+        }
+        if (showKind) {
+            SegmentedChoice(
+                options = listOf("Pedido de cliente", "Produto do catálogo"),
+                selectedIndex = if (input.isProduct) 1 else 0,
+                onSelect = { viewModel.setKind(if (it == 1) QuoteKind.PRODUCT else QuoteKind.ORDER) },
             )
-        }
-    }
-
-    // Serviço marcado num orçamento reaberto que já saiu do catálogo continua aparecendo, pra não
-    // sumir do pedido ao salvar de novo.
-    val orphanServices = input.selectedServices.filterKeys { id -> services.none { it.id == id } }
-    val offeredServices = services.availableOrSelected { it.id in input.selectedServices }
-    if (offeredServices.isNotEmpty() || orphanServices.isNotEmpty()) {
-        SectionTitle(AppIcons.Handyman, "Serviços opcionais")
-        offeredServices.forEach { service ->
-            ServiceRow(
-                viewModel = viewModel,
-                id = service.id,
-                name = service.name,
-                suggestedPrice = service.suggestedPrice,
-                serviceInput = input.selectedServices[service.id],
-                quantity = input.quantity,
-                minutesError = result.fieldErrors[QuoteFields.serviceMinutes(service.id)],
-            )
-        }
-        orphanServices.forEach { (id, serviceInput) ->
-            ServiceRow(viewModel, id, serviceInput.name, suggestedPrice = null, serviceInput, input.quantity, result.fieldErrors[QuoteFields.serviceMinutes(id)])
-        }
-        FieldHelp("O valor é deste pedido: marque o serviço e digite quanto vai cobrar por ele.")
-    }
-
-    // Insumo argola, ímã, caixa: vale pra pedido e pra produto do catálogo (decisão 122), diferente
-    // de frete e urgência, que só existem na venda a um cliente.
-    val orphanConsumables = input.selectedConsumables.filterKeys { id -> consumables.none { it.id == id } }
-    val offeredConsumables = consumables.availableOrSelected { it.id in input.selectedConsumables }
-    if (offeredConsumables.isNotEmpty() || orphanConsumables.isNotEmpty()) {
-        SectionTitle(AppIcons.Inventory2, "Insumos")
-        offeredConsumables.forEach { consumable ->
-            ConsumableRow(
-                viewModel = viewModel,
-                id = consumable.id,
-                name = consumable.name,
-                unitCost = consumable.unitCost,
-                consumableInput = input.selectedConsumables[consumable.id],
-                orderQuantity = input.quantity,
-                quantityError = result.fieldErrors[QuoteFields.consumable(consumable.id)],
-            )
-        }
-        orphanConsumables.forEach { (id, consumableInput) ->
-            ConsumableRow(
-                viewModel = viewModel,
-                id = id,
-                name = "${consumableInput.name} (saiu do cadastro)",
-                unitCost = consumableInput.unitCost,
-                consumableInput = consumableInput,
-                orderQuantity = input.quantity,
-                quantityError = result.fieldErrors[QuoteFields.consumable(id)],
-            )
-        }
-    }
-
-    SectionTitle(AppIcons.Storefront, "A venda")
-    // Com o canal do orçamento excluído, o seletor aparece mesmo sem canais cadastrados: é nele que se
-    // escolhe "Venda direta" pra liberar o cálculo.
-    val offeredChannels = salesChannels.availableOrSelected { it.id == input.salesChannelId }
-    if (offeredChannels.isNotEmpty() || input.missingChannelName != null) {
-        LabeledDropdown(
-            label = "Canal de venda",
-            items = listOf(null) + offeredChannels,
-            selected = result.salesChannel,
-            itemLabel = { it?.let { channel -> "${channel.name} · ${channelFeeSummary(channel, currency)}" } ?: DIRECT_SALE_LABEL },
-            displayText = { it?.name ?: DIRECT_SALE_LABEL },
-            onSelect = { viewModel.selectSalesChannel(it?.id) },
-            emptyText = input.missingChannelName?.let { "$it (excluído)" } ?: DIRECT_SALE_LABEL,
-        )
-        FieldHelp(
-            "A taxa do canal sai do que você recebe; o preço sobe o suficiente pra sua margem não mudar.",
-            "A taxa incide sobre tudo o que o cliente paga, inclusive serviços e frete, como a maquininha e o " +
-                "marketplace cobram de verdade. Cadastre os canais em Configurações.",
-        )
-    }
-
-    input.missingChannelName?.let { name ->
-        Text(
-            "O canal \"$name\" deste orçamento não existe mais no cadastro. O preço salvo continua valendo; " +
-                "pra recalcular, escolha outro canal ou \"Venda direta\" acima.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-        )
-    }
-
-    // Produto do catálogo não tem frete (decisão 101): quem paga e pra onde vai só existe na venda.
-    if (!input.isProduct) {
-        val shippingError = result.fieldErrors[QuoteFields.SHIPPING]
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = input.shippingCostText,
-            onValueChange = viewModel::setShippingCost,
-            label = { Text("Frete (${currency.symbol}, opcional)") },
-            singleLine = true,
-            isError = shippingError != null,
-            supportingText = if (shippingError != null) ({ Text(shippingError) }) else null,
-        )
-        FieldHelp(
-            "Linha própria no total, nunca embutido no preço da peça.",
-            "Frete é repasse, não produto seu: não multiplica pela quantidade nem entra na margem. A taxa do " +
-                "canal e o imposto incidem sobre ele, porque o cliente paga tudo junto.",
-        )
-
-        // Só aparece com um frete digitado (decisão 124): marcado sem valor não faria nada.
-        val shippingAmount = parseDecimal(input.shippingCostText) ?: 0.0
-        if (shippingAmount > 0) {
-            Row(
-                modifier = Modifier.toggleable(value = input.shippingAbsorbed, role = Role.Checkbox, onValueChange = viewModel::setShippingAbsorbed),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = input.shippingAbsorbed, onCheckedChange = null)
-                Text("Frete grátis pro cliente (você paga)")
-            }
-            if (input.shippingAbsorbed) {
-                Text(
-                    "O cliente vê \"Frete grátis\" e o valor sai do seu lucro.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        // Urgência (decisão 125): só existe com o acréscimo configurado, senão a opção não teria efeito.
-        if (settings.rushSurchargeRate > 0) {
-            Row(
-                modifier = Modifier.toggleable(value = input.rush, role = Role.Checkbox, onValueChange = viewModel::setRush),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = input.rush, onCheckedChange = null)
-                Text("Pedido urgente (+${settings.rushSurchargeRate.toPercentText()})")
-            }
-            val deadline = form.deliveryDateEpochDay
-            if (!input.rush && deadline != null && deadline - todayEpochDay() in 0..2) {
-                TextButton(onClick = { viewModel.setRush(true) }, contentPadding = PaddingValues(horizontal = 0.dp)) {
-                    Text("Prazo curto: marcar como urgente?")
-                }
-            }
         }
     }
 }
 
+@Composable
+private fun LaborField(viewModel: QuoteViewModel, settings: PricingSettings, input: QuoteInputState, result: QuoteResult, currency: Currency) {
+    val quantity = input.quantity
+    val error = result.fieldErrors[QuoteFields.LABOR]
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+        FormGrid {
+            cell {
+                AppTextField(
+                    label = "Seu trabalho",
+                    value = input.laborMinutesText,
+                    onValueChange = viewModel::setLaborMinutes,
+                    placeholder = "1h30 ou 90 (minutos)",
+                    error = error,
+                    help = HelpText(
+                        (if (quantity > 1) "Total das $quantity peças" else "O pedido inteiro") +
+                            ", cobrado a ${settings.laborRatePerHour.toCurrencyText(currency)}/h, sem a margem por cima." +
+                            (if (quantity > 1) " Mudou a quantidade? Revise o tempo." else ""),
+                        "Fora o tempo de máquina: fatiar, montar a mesa, tirar da mesa, remover suporte, lixar, pintar, " +
+                            "embalar. O valor da hora é ajustável em Configurações. Se o acabamento já está no percentual " +
+                            "de Configurações, não conte ele aqui.",
+                    ),
+                )
+            }
+        }
+        // Lembrete, não erro: sem ele, configurar a hora e não ver o preço mudar parece defeito.
+        if (input.isLaborTimeMissing) {
+            Text("Seu trabalho ainda não entra no preço: informe o tempo deste pedido.", style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+/** Um grupo de linhas marcáveis (serviços, insumos) com rótulo em `label`; é lista, não cartão. */
+@Composable
+private fun ExtrasList(label: String, help: HelpText?, content: @Composable () -> Unit) {
+    val space = MaterialTheme.spacing
+    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
+            Text(label, style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (help != null) HelpHint(help, label)
+        }
+        content()
+    }
+}
+
+@Composable
+private fun CheckRow(checked: Boolean, label: String, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.toggleable(value = checked, role = Role.Checkbox, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Text(label, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+/** Recuo do conteúdo de uma linha marcada, alinhado com o texto depois da caixa. */
+@Composable
+private fun indentUnderCheckbox(): Modifier = Modifier.padding(start = MaterialTheme.spacing.xxl + MaterialTheme.spacing.xs)
+
 /**
- * Um serviço na lista do orçamento. Desmarcado, só o nome (e o valor sugerido, se houver).
- * Marcado, ganha o campo de valor deste pedido e, com mais de uma peça, a escolha entre cobrar por
- * peça ou uma vez no pedido, com o total ao lado pra conta nunca virar surpresa.
+ * Um serviço na lista do orçamento. Desmarcado, só o nome (e o valor sugerido, se houver). Marcado, ganha o
+ * campo de valor deste pedido e, com mais de uma peça, a escolha entre cobrar por peça ou uma vez no pedido,
+ * com o total ao lado pra conta nunca virar surpresa.
  */
 @Composable
 private fun ServiceRow(
@@ -487,56 +447,45 @@ private fun ServiceRow(
     quantity: Int,
     minutesError: String? = null,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        // A linha inteira marca e desmarca (e o leitor de tela lê o nome junto da caixa).
-        Row(
-            modifier = Modifier.toggleable(value = serviceInput != null, role = Role.Checkbox, onValueChange = { viewModel.toggleService(id) }),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = serviceInput != null, onCheckedChange = null)
-            Text(if (serviceInput == null && suggestedPrice != null) "$name · sugerido ${suggestedPrice.toMoney()}" else name)
+    val space = MaterialTheme.spacing
+    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        CheckRow(serviceInput != null, if (serviceInput == null && suggestedPrice != null) "$name · sugerido ${suggestedPrice.toMoney()}" else name) {
+            viewModel.toggleService(id)
         }
         if (serviceInput == null) return@Column
 
         val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 48.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.weight(1f).tabToNavigate(),
-                value = serviceInput.priceText,
-                onValueChange = { viewModel.setServicePrice(id, it) },
-                label = { Text(if (quantity > 1 && !serviceInput.chargedPerOrder) "Valor por peça" else "Valor") },
-                isError = price == null,
-                supportingText = if (price == null) ({ Text(if (serviceInput.priceText.isBlank()) "Informe o valor" else "Não é um número") }) else null,
-                singleLine = true,
-            )
-            // Opcional (decisão 123): sem tempo informado, o serviço continua sendo repasse, fora do lucro.
-            OutlinedTextField(
-                modifier = Modifier.width(120.dp).tabToNavigate(),
-                value = serviceInput.laborMinutesText,
-                onValueChange = { viewModel.setServiceLaborMinutes(id, it) },
-                label = { Text("Tempo (min)") },
-                placeholder = { Text("30") },
-                isError = minutesError != null,
-                supportingText = if (minutesError != null) ({ Text(minutesError) }) else null,
-                singleLine = true,
-            )
-        }
-        if (quantity > 1) {
-            Row(
-                modifier = Modifier.padding(start = 48.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                ServiceChargeSelector(
-                    chargedPerOrder = serviceInput.chargedPerOrder,
-                    onChange = { viewModel.setServiceChargedPerOrder(id, it) },
-                )
-                if (price != null) {
-                    val total = if (serviceInput.chargedPerOrder) price else price * quantity
-                    NumericText("= ${total.toMoney()}", style = MaterialTheme.typography.bodyMedium)
+        Column(modifier = indentUnderCheckbox(), verticalArrangement = Arrangement.spacedBy(space.xs)) {
+            FormGrid {
+                cell {
+                    AppTextField(
+                        label = if (quantity > 1 && !serviceInput.chargedPerOrder) "Valor por peça" else "Valor",
+                        value = serviceInput.priceText,
+                        onValueChange = { viewModel.setServicePrice(id, it) },
+                        error = if (price == null) (if (serviceInput.priceText.isBlank()) "Informe o valor" else "Não é um número") else null,
+                    )
+                }
+                // Opcional (decisão 123): sem tempo informado, o serviço continua sendo repasse, fora do lucro.
+                cell {
+                    AppTextField(
+                        label = "Tempo (min)",
+                        value = serviceInput.laborMinutesText,
+                        onValueChange = { viewModel.setServiceLaborMinutes(id, it) },
+                        placeholder = "30",
+                        error = minutesError,
+                    )
+                }
+            }
+            if (quantity > 1) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
+                    ServiceChargeSelector(
+                        chargedPerOrder = serviceInput.chargedPerOrder,
+                        onChange = { viewModel.setServiceChargedPerOrder(id, it) },
+                    )
+                    if (price != null) {
+                        val total = if (serviceInput.chargedPerOrder) price else price * quantity
+                        NumericText("= ${total.toMoney()}", style = MaterialTheme.appType.body)
+                    }
                 }
             }
         }
@@ -544,9 +493,8 @@ private fun ServiceRow(
 }
 
 /**
- * Um insumo na lista do orçamento (decisão 122): argola, ímã, caixa. Desmarcado, só o nome. Marcado,
- * ganha a quantidade (por peça ou pelo pedido, com mais de uma peça) e o custo unitário do cadastro,
- * só de referência: o custo de fato entra no cálculo, mas essa linha não é editável.
+ * Um insumo na lista do orçamento (decisão 122): argola, ímã, caixa. Desmarcado, só o nome. Marcado, ganha a
+ * quantidade (por peça ou pelo pedido, com mais de uma peça) e o custo unitário do cadastro, só de referência.
  */
 @Composable
 private fun ConsumableRow(
@@ -558,173 +506,197 @@ private fun ConsumableRow(
     orderQuantity: Int,
     quantityError: String?,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(
-            modifier = Modifier.toggleable(value = consumableInput != null, role = Role.Checkbox, onValueChange = { viewModel.toggleConsumable(id) }),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = consumableInput != null, onCheckedChange = null)
-            Text(name)
-        }
+    val space = MaterialTheme.spacing
+    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        CheckRow(consumableInput != null, name) { viewModel.toggleConsumable(id) }
         if (consumableInput == null) return@Column
 
-        Row(
-            modifier = Modifier.padding(start = 48.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.width(120.dp).tabToNavigate(),
-                value = consumableInput.quantityText,
-                onValueChange = { viewModel.setConsumableQuantity(id, it) },
-                label = { Text("Qtd.") },
-                placeholder = { Text("1") },
-                singleLine = true,
-                isError = quantityError != null,
-                supportingText = if (quantityError != null) ({ Text(quantityError) }) else null,
-            )
-            Text(
-                "${unitCost.toMoney()} cada",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (orderQuantity > 1) {
-            ServiceChargeSelector(
-                chargedPerOrder = consumableInput.chargedPerOrder,
-                onChange = { viewModel.setConsumableChargedPerOrder(id, it) },
-                modifier = Modifier.padding(start = 48.dp),
-            )
+        Column(modifier = indentUnderCheckbox(), verticalArrangement = Arrangement.spacedBy(space.xs)) {
+            FormGrid {
+                cell {
+                    AppTextField(
+                        label = "Qtd. (${unitCost.toMoney()} cada)",
+                        value = consumableInput.quantityText,
+                        onValueChange = { viewModel.setConsumableQuantity(id, it) },
+                        placeholder = "1",
+                        error = quantityError,
+                    )
+                }
+            }
+            if (orderQuantity > 1) {
+                ServiceChargeSelector(
+                    chargedPerOrder = consumableInput.chargedPerOrder,
+                    onChange = { viewModel.setConsumableChargedPerOrder(id, it) },
+                )
+            }
         }
     }
 }
 
-/** O lado do dinheiro: quanto cobrar, o que sobra e como isso muda numa negociação. */
+/** Canal, frete, cliente, preço fechado (ou anunciado) e as opções de frete grátis e urgência. */
 @Composable
-private fun QuoteResultSection(
+private fun SaleFields(
     viewModel: QuoteViewModel,
-    allFilaments: List<Filament>,
-    printers: List<PrinterProfile>,
+    salesChannels: List<SalesChannel>,
     settings: PricingSettings,
     input: QuoteInputState,
-    saveForm: SaveQuoteFormState,
+    form: SaveQuoteFormState,
     result: QuoteResult,
-    comparison: List<Pair<PrinterProfile, Quote>>,
+    currency: Currency,
 ) {
-    SectionTitle(AppIcons.Calculate, "Resultado")
-
+    val space = MaterialTheme.spacing
     val quote = result.quote
-    when {
-        quote != null -> QuoteReceipt(
-            quote = quote,
-            selectedServices = result.selectedServices,
-            grandTotal = result.grandTotal ?: quote.salePrice,
-            shippingCost = result.shippingCost,
-            chargedShipping = result.chargedShipping,
-            shippingAbsorbed = result.shippingAbsorbed,
-            servicesTotal = result.servicesTotal,
-            laborRatePerHour = settings.laborRatePerHour,
-            deliveryDateEpochDay = saveForm.deliveryDateEpochDay.takeUnless { input.isProduct },
-            onUseShippingCoveringPrice = viewModel::useShippingCoveringPrice,
-        )
+    // Com o canal do orçamento excluído, o seletor aparece mesmo sem canais cadastrados: é nele que se
+    // escolhe "Venda direta" pra liberar o cálculo.
+    val offeredChannels = salesChannels.availableOrSelected { it.id == input.salesChannelId }
+    val clients by viewModel.clients.collectAsState()
 
-        result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
+    Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
+        FormGrid {
+            if (offeredChannels.isNotEmpty() || input.missingChannelName != null) {
+                cell {
+                    AppDropdownField(
+                        label = "Canal de venda",
+                        items = listOf(null) + offeredChannels,
+                        selected = result.salesChannel,
+                        itemLabel = { it?.let { channel -> "${channel.name} · ${channelFeeSummary(channel, currency)}" } ?: DIRECT_SALE_LABEL },
+                        displayText = { it?.name ?: DIRECT_SALE_LABEL },
+                        onSelect = { viewModel.selectSalesChannel(it?.id) },
+                        emptyText = input.missingChannelName?.let { "$it (excluído)" } ?: DIRECT_SALE_LABEL,
+                        help = HelpText(
+                            "A taxa do canal sai do que você recebe; o preço sobe o suficiente pra sua margem não mudar.",
+                            "A taxa incide sobre tudo o que o cliente paga, inclusive serviços e frete, como a maquininha e o " +
+                                "marketplace cobram de verdade. Cadastre os canais em Configurações.",
+                        ),
+                    )
+                }
+            }
+            // Produto do catálogo não tem frete (decisão 101): quem paga e pra onde vai só existe na venda.
+            if (!input.isProduct) {
+                cell {
+                    AppTextField(
+                        label = "Frete (${currency.symbol}, opcional)",
+                        value = input.shippingCostText,
+                        onValueChange = viewModel::setShippingCost,
+                        error = result.fieldErrors[QuoteFields.SHIPPING],
+                        help = HelpText(
+                            "Linha própria no total, nunca embutido no preço da peça.",
+                            "Frete é repasse, não produto seu: não multiplica pela quantidade nem entra na margem. A taxa do " +
+                                "canal e o imposto incidem sobre ele, porque o cliente paga tudo junto.",
+                        ),
+                    )
+                }
+                cell {
+                    AppSuggestField(
+                        label = "Cliente (opcional)",
+                        value = form.clientName,
+                        onValueChange = viewModel::setClientName,
+                        suggestions = viewModel.clientSuggestions(form.clientName, clients),
+                        suggestionLabel = { client -> client.name + (client.contact?.let { " · $it" } ?: "") },
+                        onChoose = viewModel::chooseClient,
+                        help = HelpText("Só pra você: não sai no PDF nem na mensagem."),
+                    )
+                }
+                cell {
+                    AppTextField(
+                        label = "Contato do cliente (opcional)",
+                        value = form.clientContact,
+                        onValueChange = viewModel::setClientContact,
+                        placeholder = "WhatsApp: (11) 99999-0000",
+                        help = HelpText("Só pra você: não sai no PDF nem na mensagem."),
+                    )
+                }
+            }
+            // Produto do catálogo não tem cliente pra negociar (decisão 101), mas tem o preço que se anuncia
+            // (decisão 102): o mesmo preço fechado, com outro nome.
+            cell {
+                AppTextField(
+                    label = if (input.isProduct) "Preço anunciado (opcional)" else "Preço fechado (opcional)",
+                    value = input.targetTotalText,
+                    onValueChange = viewModel::setTargetTotal,
+                    error = result.fieldErrors[QuoteFields.TARGET],
+                    help = if (input.isProduct) {
+                        HelpText(
+                            "Um valor redondo pra vitrine, no lugar do que a margem deu.",
+                            "É ele que sai no catálogo, no PDF e na imagem, e é o preço que o pedido recebe quando você clica em " +
+                                "\"Vender\". Deixe vazio pra anunciar o preço calculado.",
+                        )
+                    } else {
+                        HelpText(
+                            "O total que o cliente vai pagar, se for diferente do calculado.",
+                            "Digite o valor que o cliente propôs e veja o que sobra. Ele passa a ser o preço de verdade do " +
+                                "orçamento: é o que vai pro PDF, pro histórico e pro Dashboard. Deixe vazio pra usar o preço da sua margem.",
+                        )
+                    },
+                )
+            }
+        }
 
-        result.fieldErrors.isNotEmpty() -> Text(
-            "Corrija o campo marcado pra calcular: ${result.fieldErrors.values.first()}",
-            color = MaterialTheme.colorScheme.error,
-        )
+        input.missingChannelName?.let { name ->
+            Text(
+                "O canal \"$name\" deste orçamento não existe mais no cadastro. O preço salvo continua valendo; " +
+                    "pra recalcular, escolha outro canal ou \"Venda direta\" acima.",
+                style = MaterialTheme.appType.caption,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
 
-        allFilaments.none { it.hasStockAvailable } && allFilaments.isNotEmpty() -> Text(
-            "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" em Filamentos.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
-        allFilaments.isEmpty() -> Text("Cadastre um filamento em Filamentos.", style = MaterialTheme.typography.bodyMedium)
-
-        printers.isEmpty() -> Text("Cadastre uma impressora em Impressoras.", style = MaterialTheme.typography.bodyMedium)
-
-        // Tudo arquivado (decisão 115): não há o que escolher, e pedir peso e tempo não ajudaria.
-        allFilaments.none { it.hasStockAvailable && !it.archived } -> Text(
-            "Todos os filamentos em estoque estão arquivados. Restaure um em Filamentos, na seção Arquivados.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
-        printers.all { it.archived } -> Text(
-            "Todas as impressoras estão arquivadas. Restaure uma em Impressoras, na seção Arquivados.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
-        input.prints.size > 1 -> Text(
-            "Preencha peso (ou comprimento) e tempo de cada impressão pra calcular, ou arraste os G-codes.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
-        else -> Text("Preencha peso (ou comprimento) e tempo pra calcular, ou arraste o G-code.", style = MaterialTheme.typography.bodyMedium)
-    }
-
-    // Reabrindo um orçamento (decisão 108): o preço salvo fica até alguém mexer no que muda o preço, e a
-    // tela diz o que os custos de hoje dariam, pra decisão de reprecificar ser de quem vende.
-    if (quote != null && result.keepsOriginalPrice) {
-        val today = result.todaysQuote
-        Text(
-            "Preço do orçamento salvo, mantido." + if (today != null && abs(today.customerTotal - quote.customerTotal) >= 0.005) {
-                " Com os custos de hoje, sairia ${today.customerTotal.toMoney()}: mude qualquer valor da peça pra recalcular."
-            } else {
-                ""
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    val original = result.originalQuote
-    if (quote != null && original != null && abs(original.customerTotal - quote.customerTotal) >= 0.005) {
-        Text(
-            "Recalculado com os custos de hoje: era ${original.customerTotal.toMoney()} quando foi salvo.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.secondary,
-        )
-    }
-
-    if (quote != null) {
-        NegotiationSection(
-            quote = quote,
-            targetTotalText = input.targetTotalText,
-            targetError = result.fieldErrors[QuoteFields.TARGET],
-            onTargetTotalChange = viewModel::setTargetTotal,
-            isProduct = input.isProduct,
-            // Só com o campo vazio: depois de aplicado, ou com um anunciado próprio, o atalho sobrava
-            // e podia até sugerir baixar o preço.
-            showcaseSuggestion = if (input.isProduct && input.targetTotalText.isBlank()) {
+        if (quote != null) {
+            // Só com o campo vazio: depois de aplicado, ou com um anunciado próprio, o atalho sobrava.
+            val suggestion = if (input.isProduct && input.targetTotalText.isBlank()) {
                 showcasePriceSuggestion((quote.tableSalePrice ?: quote.salePrice) + quote.extrasTotal)
             } else {
                 null
-            },
-            onApplyShowcaseSuggestion = viewModel::applyShowcasePrice,
-            announcedPiecePrice = input.announcedUnitPrice?.takeIf { input.targetTotalText.isBlank() }?.let { it * input.quantity },
-            minimumOrderPrice = settings.minimumOrderPrice,
-        )
+            }
+            suggestion?.let { AppButton("Arredondar pra ${it.toMoney()}", onClick = { viewModel.applyShowcasePrice(it) }) }
+            input.announcedUnitPrice?.takeIf { input.targetTotalText.isBlank() && !input.isProduct }?.let { unit ->
+                Text(
+                    "Preço anunciado do produto: ${(unit * input.quantity).toMoney()}. Frete e serviços somam por fora. " +
+                        "Digite um valor em Preço fechado pra fechar outro preço.",
+                    style = MaterialTheme.appType.caption,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
 
-        if (comparison.size > 1) PrinterComparison(comparison = comparison, allPrints = input.prints.size > 1)
+        if (!input.isProduct) {
+            // Só aparece com um frete digitado (decisão 124): marcado sem valor não faria nada.
+            val shippingAmount = parseDecimal(input.shippingCostText) ?: 0.0
+            if (shippingAmount > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
+                    CheckRow(input.shippingAbsorbed, "Frete grátis pro cliente (você paga)", viewModel::setShippingAbsorbed)
+                    HelpHint(HelpText("O cliente vê \"Frete grátis\" e o valor sai do seu lucro."), "Frete grátis")
+                }
+            }
+            // Urgência (decisão 125): só existe com o acréscimo configurado, senão a opção não teria efeito.
+            if (settings.rushSurchargeRate > 0) {
+                CheckRow(input.rush, "Pedido urgente (+${settings.rushSurchargeRate.toPercentText()})", viewModel::setRush)
+                val deadline = form.deliveryDateEpochDay
+                if (!input.rush && deadline != null && deadline - todayEpochDay() in 0..2) {
+                    AppButton("Prazo curto: marcar como urgente?", onClick = { viewModel.setRush(true) })
+                }
+            }
+        }
     }
 }
 
+/** Prazo, categoria, link, foto, STL e configurações de impressão: o que acompanha o pedido ao salvar. */
 @Composable
-private fun SaveQuoteFormSection(
+private fun DetailsFields(
     viewModel: QuoteViewModel,
-    saveForm: SaveQuoteFormState,
+    printers: List<PrinterProfile>,
     input: QuoteInputState,
+    form: SaveQuoteFormState,
     result: QuoteResult,
-    onSave: () -> Unit,
 ) {
-    val quote = result.quote
-    val printers by viewModel.printers.collectAsState()
+    val space = MaterialTheme.spacing
     val savedQuotes by viewModel.savedQuotes.collectAsState()
+    val quote = result.quote
     // Uma linha por impressora que o pedido usa: cada uma tem a própria fila.
     val queueHint = if (quote != null && !input.isProduct) {
         quote.printerIds.mapNotNull { printerId ->
             val printer = printers.firstOrNull { it.id == printerId } ?: return@mapNotNull null
-            viewModel.queueAheadOf(printer, savedQuotes, saveForm.editingQuoteId)?.let { queue ->
+            viewModel.queueAheadOf(printer, savedQuotes, form.editingQuoteId)?.let { queue ->
                 val orders = if (queue.queuedQuoteCount == 1) "1 pedido aprovado ou imprimindo" else "${queue.queuedQuoteCount} pedidos aprovados ou imprimindo"
                 "Fila da ${printer.name}: ${queue.queuedMinutes.minutesToDurationText()} de impressão em $orders · " +
                     "este pedido: ${quote.printMinutesOn(printerId).minutesToDurationText()}."
@@ -733,632 +705,166 @@ private fun SaveQuoteFormSection(
     } else {
         null
     }
-    SaveQuoteForm(
-        form = saveForm,
-        singlePrint = input.prints.singleOrNull(),
-        isProduct = input.isProduct,
-        viewModel = viewModel,
-        canSave = quote != null && !result.missingServicePrice && result.fieldErrors.isEmpty(),
-        cannotSaveReason = when {
-            result.fieldErrors.isNotEmpty() -> "Corrija o campo marcado em vermelho pra poder salvar."
-            quote != null && result.missingServicePrice -> "Informe o valor de cada serviço marcado (ou desmarque) pra poder salvar."
-            result.errorMessage != null -> result.errorMessage
-            else -> "Preencha filamento, impressora, peso (ou comprimento) e tempo, ou arraste o G-code, pra poder salvar."
-        },
-        queueHint = queueHint,
-        onSave = onSave,
-    )
-}
 
-/**
- * Resultado do cálculo como uma "nota": o valor que de fato é cobrado do cliente
- * ([grandTotal] — venda + serviços + frete) em destaque no topo, com a composição do preço (custo de
- * produção, lucro, cada serviço) como itens de nota abaixo.
- */
-@Composable
-private fun QuoteReceipt(
-    quote: Quote,
-    selectedServices: List<QuoteService>,
-    grandTotal: Double,
-    shippingCost: Double,
-    chargedShipping: Double,
-    shippingAbsorbed: Boolean,
-    servicesTotal: Double,
-    laborRatePerHour: Double,
-    deliveryDateEpochDay: Long?,
-    onUseShippingCoveringPrice: () -> Unit,
-) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                "Você cobra",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            NumericText(
-                text = grandTotal.toMoney(),
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            if (quote.quantity > 1) {
-                // A mesma conta do PDF e da mensagem: o preço de cada peça, com serviços e frete à parte.
-                Text(
-                    "${quote.quantity} × ${quote.unitSalePrice.toMoney()} = ${quote.salePrice.toMoney()}" +
-                        when {
-                            selectedServices.isNotEmpty() && chargedShipping > 0 -> " + serviços e frete"
-                            selectedServices.isNotEmpty() -> " + serviços"
-                            chargedShipping > 0 -> " + frete"
-                            else -> ""
-                        },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    Column(verticalArrangement = Arrangement.spacedBy(space.md)) {
+        if (!input.isProduct) {
+            Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+                Text("Prazo de entrega (opcional)", style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, onChange = viewModel::setDeliveryDate)
+                queueHint?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            // Quanto sai de cada carretel, que é o que se confere no estoque.
-            val filamentTotals = quote.filamentTotals()
-            Text(
-                "Consumo: " + filamentTotals.joinToString(" · ") { it.displayText() },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            // Com várias impressões, o tempo total fica sempre à vista, mesmo com os cartões recolhidos.
-            if (quote.prints.size > 1) {
-                Text(
-                    "${quote.prints.size} impressões · ${quote.totalPrintTimeMinutes.minutesToDurationText()} de máquina",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            // O mesmo prazo que vai sair em destaque no PDF, pra o vendedor ver na nota o que o
-            // cliente vai ler, enquanto ainda está escolhendo.
-            deliveryDateEpochDay?.let {
-                val overdue = it < todayEpochDay()
-                Text(
-                    "Entrega até ${formatDate(it)} (${weekdayName(it)})" + if (overdue) " — data já passou" else "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            // O que o canal cobra aparece sempre que ele cobra algo, percentual, valor fixo por item
-            // (decisão 121) ou os dois; um canal só com o fixo também sobe o preço e precisa da explicação.
-            val channelCharges = quote.channelName != null && (quote.channelFeeRate > 0.0 || quote.channelFixedFee > 0.0)
-            if (channelCharges || quote.taxRate > 0.0) {
-                val parts = buildList {
-                    if (channelCharges) {
-                        val perItem = (quote.channelFixedFee / quote.quantity).toMoney()
-                        add(
-                            when {
-                                quote.channelFixedFee <= 0.0 -> "${quote.channelName} ${quote.channelFeeRate.toPercentText()}"
-                                quote.channelFeeRate <= 0.0 -> "${quote.channelName} ($perItem por item)"
-                                else -> "${quote.channelName} (${quote.channelFeeRate.toPercentText()} + $perItem por item)"
-                            },
-                        )
-                    }
-                    if (quote.taxRate > 0.0) add("imposto ${quote.taxRate.toPercentText()}")
-                }
-                Text(
-                    "Preço já elevado pra absorver ${parts.joinToString(" e ")}: o cliente paga esse " +
-                        "valor normalmente, e o lucro abaixo já é o que sobra pra você.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            if (channelCharges) {
-                Text("${quote.channelName} leva ${quote.channelFeeAmount.toMoney()} deste pedido.", style = MaterialTheme.typography.bodySmall)
-            }
-            if (quote.minimumPriceApplied) {
-                Text(
-                    "Preço mínimo do pedido aplicado (a conta dava ${quote.priceBeforeMinimum!!.toMoney()})",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            PriceCompositionBar(quote)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            ReceiptLine("Custo de produção", quote.productionCost.toMoney())
-            if (quote.prints.size > 1) PerPrintCosts(quote)
-            if (quote.costs.consumables > 0.0) ReceiptLine("Insumos", quote.costs.consumables.toMoney())
-            ReceiptLine("Lucro", quote.profit.toMoney())
-            if (quote.rush) {
-                // O percentual não vem das configurações (a nota não as recebe): é o que o próprio
-                // acréscimo, já embutido em salePrice, representa sobre o preço sem ele.
-                // Só o valor: o percentual configurado já aparece no "Pedido urgente (+X%)", e tirar o
-                // percentual do preço final erraria com canal, extras ou preço mínimo na conta.
-                ReceiptLine("Urgência", quote.rushSurcharge.toMoney())
-            }
-            selectedServices.forEach { service ->
-                val multiplied = quote.quantity > 1 && !service.chargedPerOrder
-                val label = if (multiplied) "${service.name} (× ${quote.quantity})" else service.name
-                ReceiptLine(label, service.total(quote.quantity).toMoney())
-                if (service.laborMinutes > 0) {
-                    val totalMinutes = service.totalLaborMinutes(quote.quantity)
-                    val hourly = service.total(quote.quantity) / (totalMinutes / 60.0)
-                    Text(
-                        "· ${totalMinutes.minutesToDurationText()} · rende ${hourly.toMoney()}/h",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (laborRatePerHour > 0.0 && hourly < laborRatePerHour) {
-                        Text(
-                            "paga menos que a sua hora (${laborRatePerHour.toMoney()}/h)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
+        }
+        FormGrid {
+            if (input.isProduct) {
+                cell {
+                    CategoryField(form.category, viewModel.knownCategories(savedQuotes), viewModel::setCategory)
                 }
             }
-            if (chargedShipping > 0) ReceiptLine("Frete", chargedShipping.toMoney())
-            if (shippingAbsorbed && shippingCost > 0) {
-                ReceiptLine("Frete grátis (você paga)", "− ${shippingCost.toMoney()}")
-                Text(
-                    "Sai do seu lucro.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                val covering = quote.shippingCoveringSalePrice
-                if (covering != null && !quote.isNegotiated) {
-                    Text(
-                        "Pra manter a margem, cobre ${(covering + servicesTotal).toMoney()}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    TextButton(onClick = onUseShippingCoveringPrice, contentPadding = PaddingValues(horizontal = 0.dp)) {
-                        Text("Usar esse preço")
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * "Por impressão", recolhido embaixo do custo de produção (decisão 114): o custo de cada mesa (material e
- * máquina) e, fechando a soma, o que é do pedido e não se divide entre elas (trabalho, falhas,
- * administrativo). Fica recolhido porque o que importa na conversa é o total.
- */
-@Composable
-private fun PerPrintCosts(quote: Quote) {
-    var expanded by remember { mutableStateOf(false) }
-    TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 0.dp)) {
-        Text(if (expanded) "Por impressão ▴" else "Por impressão ▾", style = MaterialTheme.typography.labelMedium)
-    }
-    if (!expanded) return
-    Column(modifier = Modifier.padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        quote.prints.forEachIndexed { index, print ->
-            ReceiptLine("${printTitle(index + 1, print.job.name.orEmpty())} · ${print.printerName}", print.cost.total.toMoney())
-        }
-        val orderLevel = quote.productionCost - quote.prints.sumOf { it.cost.total }
-        ReceiptLine("Do pedido (trabalho, falhas, administrativo)", orderLevel.toMoney())
-    }
-}
-
-/**
- * Ferramenta de negociação: o vendedor digita o valor que o cliente propôs e vê na hora o que
- * sobra. O piso fica sempre à vista, porque é o número que ele precisa ter na cabeça no meio da conversa.
- */
-@Composable
-private fun NegotiationSection(
-    quote: Quote,
-    targetTotalText: String,
-    targetError: String?,
-    onTargetTotalChange: (String) -> Unit,
-    isProduct: Boolean = false,
-    showcaseSuggestion: Double? = null,
-    onApplyShowcaseSuggestion: (Double) -> Unit = {},
-    announcedPiecePrice: Double? = null,
-    minimumOrderPrice: Double = 0.0,
-) {
-    // Produto do catálogo não tem cliente pra negociar (decisão 101), mas tem o preço que se
-    // anuncia (decisão 102): o mesmo preço fechado, com outro nome.
-    if (isProduct) {
-        SectionTitle(AppIcons.Sell, "Preço anunciado")
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = targetTotalText,
-            onValueChange = onTargetTotalChange,
-            label = { Text("Preço anunciado no catálogo (opcional)") },
-            singleLine = true,
-            isError = targetError != null,
-            supportingText = if (targetError != null) ({ Text(targetError) }) else null,
-        )
-        showcaseSuggestion?.let { suggestion ->
-            AssistChip(onClick = { onApplyShowcaseSuggestion(suggestion) }, label = { Text("Arredondar pra ${suggestion.toMoney()}") })
-        }
-        FieldHelp(
-            "Um valor redondo pra vitrine, no lugar do que a margem deu.",
-            "É ele que sai no catálogo, no PDF e na imagem, e é o preço que o pedido recebe quando você clica em " +
-                "\"Vender\". Deixe vazio pra anunciar o preço calculado.",
-        )
-    } else {
-        SectionTitle(AppIcons.Handshake, "Negociação")
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = targetTotalText,
-            onValueChange = onTargetTotalChange,
-            label = { Text("Preço fechado com o cliente (opcional)") },
-            singleLine = true,
-            isError = targetError != null,
-            supportingText = if (targetError != null) ({ Text(targetError) }) else null,
-        )
-        announcedPiecePrice?.let { price ->
-            Text(
-                "Preço anunciado do produto: ${price.toMoney()}. Frete e serviços somam por fora. " +
-                    "Digite um valor aqui pra fechar outro preço.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        FieldHelp(
-            "O total que o cliente vai pagar, se for diferente do calculado.",
-            "Digite o valor que o cliente propôs e veja o que sobra. Ele passa a ser o preço de verdade do " +
-                "orçamento: é o que vai pro PDF, pro histórico e pro Dashboard. Deixe vazio pra usar o preço da sua margem.",
-        )
-    }
-
-    val breakEvenTotal = quote.breakEvenSalePrice + quote.extrasTotal
-    if (quote.profit < 0) {
-        Text(
-            "Prejuízo: nesse valor você paga ${(-quote.profit).toMoney()} pra imprimir. " +
-                "O mínimo pra não sair no negativo é ${breakEvenTotal.toMoney()}.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-        )
-    } else {
-        Text(
-            "Mínimo pra não ter prejuízo: ${breakEvenTotal.toMoney()}. " +
-                "Margem obtida neste preço: ${quote.actualProfitMargin.toPercentText()}.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-
-    // Aviso, não bloqueio (decisão 125): um preço negociado pode ficar abaixo do mínimo de propósito
-    // (fidelizar um cliente), então a tela avisa em vez de impedir.
-    if (minimumOrderPrice > 0 && quote.isNegotiated && quote.salePrice < minimumOrderPrice) {
-        Text(
-            "Abaixo do seu preço mínimo do pedido (${minimumOrderPrice.toMoney()}).",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.secondary,
-        )
-    }
-}
-
-/**
- * Mesma peça calculada em cada impressora cadastrada: responde "em qual máquina sai mais barato". Com
- * preço fechado ou anunciado, a comparação usa o preço que a margem daria em cada uma (o fechado é o
- * mesmo em todas e marcaria a primeira como "mais barata" sem motivo).
- */
-@Composable
-private fun PrinterComparison(comparison: List<Pair<PrinterProfile, Quote>>, allPrints: Boolean) {
-    fun Quote.comparable() = (tableSalePrice ?: salePrice) + extrasTotal
-    val cheapest = comparison.minByOrNull { it.second.comparable() }?.first?.id
-
-    SectionTitle(AppIcons.Printer3d, "Comparar impressoras")
-    comparison.forEach { (printer, quote) ->
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            val name = if (allPrints) "Tudo na ${printer.name}" else printer.name
-            Text(
-                if (printer.id == cheapest) "$name (mais barata)" else name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (printer.id == cheapest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            )
-            NumericText(quote.comparable().toMoney(), style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-    FieldHelp(
-        if (allPrints) {
-            "Todas as impressões do pedido na mesma máquina, pelo preço que a sua margem dá em cada uma."
-        } else {
-            "Mesma peça, trocando só a máquina: pelo preço que a sua margem dá em cada uma."
-        },
-        "A diferença vem do consumo de energia, da manutenção e do retorno do investimento de cada impressora.",
-    )
-}
-
-/**
- * Onde o dinheiro do preço está, em barra empilhada mais legenda. Ver que a máquina pesa mais que o
- * plástico, ou que o próprio trabalho é a maior fatia, é o que ensina a precificar. Canal e imposto
- * aparecem como fatia própria (a barra soma o preço inteiro). Fatias zeradas são omitidas.
- */
-@Composable
-private fun PriceCompositionBar(quote: Quote) {
-    val costs = quote.costs
-    // Inclui a taxa fixa por item (decisão 121): sem ela, a fatia do canal ficava menor que o que
-    // ele de fato leva.
-    val deductions = quote.channelFeeAmount + quote.taxAmount
-    val slices = listOf(
-        CompositionSlice("Material", costs.material, MaterialTheme.colorScheme.primary),
-        CompositionSlice("Energia", costs.energy, MaterialTheme.colorScheme.tertiary),
-        CompositionSlice(
-            "Máquina",
-            costs.maintenance + costs.investmentReturn + costs.fixedCost,
-            MaterialTheme.colorScheme.secondary,
-        ),
-        CompositionSlice("Insumos", costs.consumables, MaterialTheme.colorScheme.inversePrimary),
-        CompositionSlice("Seu trabalho", costs.labor + costs.finishing, MaterialTheme.colorScheme.tertiaryContainer),
-        CompositionSlice("Reserva de falha", costs.failures, MaterialTheme.colorScheme.outline),
-        CompositionSlice("Administrativo", costs.administrative, MaterialTheme.colorScheme.outlineVariant),
-        CompositionSlice("Canal e imposto", deductions, MaterialTheme.colorScheme.secondaryContainer),
-        // A barra é o preço da peça: o frete grátis sai dele (decisão 124), e o que os serviços com tempo
-        // rendem (decisão 123) é lucro do serviço, não da peça. Assim as fatias somam o preço da peça.
-        CompositionSlice("Frete grátis", quote.absorbedShippingCost, MaterialTheme.colorScheme.errorContainer),
-        CompositionSlice("Lucro", quote.profit - quote.serviceProfit, MaterialTheme.colorScheme.primaryContainer),
-    ).filter { it.value > 0.0 }
-
-    if (slices.isEmpty()) return
-
-    Row(
-        modifier = Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(7.dp)),
-    ) {
-        slices.forEach { slice ->
-            Box(modifier = Modifier.weight(slice.value.toFloat()).fillMaxHeight().background(slice.color))
-        }
-    }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        slices.forEach { slice ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(modifier = Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(slice.color))
-                Text(
-                    "${slice.label} ${slice.value.toMoney()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            cell(2) {
+                AppTextField(
+                    label = "Link do modelo (opcional)",
+                    value = form.sourceLink,
+                    onValueChange = viewModel::setSourceLink,
                 )
             }
         }
-    }
-}
+        if (form.sourceLink.isNotBlank()) LinkText(text = "Abrir link no navegador", url = form.sourceLink)
 
-private data class CompositionSlice(val label: String, val value: Double, val color: Color)
-
-@Composable
-private fun ReceiptLine(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        NumericText(value, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun SaveQuoteForm(
-    form: SaveQuoteFormState,
-    /** A impressão, quando o pedido tem uma só: aí as configurações dela ficam aqui, como sempre ficaram. */
-    singlePrint: PrintInput?,
-    isProduct: Boolean,
-    viewModel: QuoteViewModel,
-    canSave: Boolean,
-    queueHint: String?,
-    cannotSaveReason: String,
-    onSave: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        val isEditing = form.editingQuoteId != null
-        SectionTitle(
-            AppIcons.Save,
-            when {
-                isEditing && isProduct -> "Editar produto"
-                isEditing -> "Editar pedido"
-                isProduct -> "Salvar no catálogo"
-                else -> "Salvar pedido"
-            },
-        )
-        if (isEditing) {
-            Text(
-                "A data de criação original é mantida.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        SubsectionTitle(AppIcons.Visibility, "O que o cliente vê", modifier = Modifier.padding(top = 8.dp))
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.name,
-            onValueChange = viewModel::setSaveName,
-            label = { Text("Nome da peça (opcional)") },
-            singleLine = true,
-        )
-        if (isProduct) {
-            val savedQuotes by viewModel.savedQuotes.collectAsState()
-            CategoryField(value = form.category, suggestions = viewModel.knownCategories(savedQuotes), onValueChange = viewModel::setCategory)
-        }
-
-        val photo = form.photo
-        if (photo != null) {
-            // Decodifica uma vez por foto, e não a cada tecla digitada em outro campo; uma imagem que não
-            // abre vira aviso, e não derruba a tela.
-            val bitmap = remember(photo) { runCatching { decodeImageBitmap(photo.bytes) }.getOrNull() }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (bitmap != null) {
-                    Image(bitmap = bitmap, contentDescription = "Foto da peça", modifier = Modifier.size(64.dp))
-                } else {
-                    Text("Não consegui mostrar essa imagem.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                }
-                Text(if (form.photoFromGCode) "Miniatura do G-code" else photo.fileName, style = MaterialTheme.typography.bodyMedium)
-                OutlinedButton(onClick = viewModel::clearPhoto) { Text("Remover foto") }
-            }
-        } else {
-            OutlinedButton(onClick = viewModel::pickPhoto) { Text("Escolher foto (opcional)") }
-        }
-        form.photoError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-
-        if (!isProduct) {
-            Text("Prazo de entrega (opcional)", style = MaterialTheme.typography.labelLarge)
-            DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, onChange = viewModel::setDeliveryDate)
-            queueHint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        }
-
-        // Daqui pra baixo nada vai pro cliente. O título separa as duas metades do formulário, em
-        // vez de depender de cada rótulo dizer "(uso interno)".
-        SubsectionTitle(AppIcons.Lock, "Só pra você (não sai no PDF nem na mensagem)", modifier = Modifier.padding(top = 8.dp))
-
-        if (!isProduct) {
-            val clients by viewModel.clients.collectAsState()
-            ClientField(
-                name = form.clientName,
-                suggestions = viewModel.clientSuggestions(form.clientName, clients),
-                onNameChange = viewModel::setClientName,
-                onChoose = viewModel::chooseClient,
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().tabToNavigate(),
-                value = form.clientContact,
-                onValueChange = viewModel::setClientContact,
-                label = { Text("Contato do cliente (opcional)") },
-                placeholder = { Text("WhatsApp: (11) 99999-0000") },
-                singleLine = true,
-            )
-        }
-
+        PhotoRow(viewModel, form)
         StlAttachment(viewModel, form)
 
-        // Com várias impressões, cada cartão tem as configurações da própria mesa (decisão 114).
+        // Com várias impressões, cada bloco tem as configurações da própria mesa (decisão 114).
+        val singlePrint = input.prints.singleOrNull()
         if (singlePrint != null) {
-            var showPrintSettingsDialog by remember { mutableStateOf(false) }
-            OutlinedButton(onClick = { showPrintSettingsDialog = true }) {
-                Text(if (singlePrint.settings.isEmpty) "Adicionar configurações de impressão" else "Editar configurações de impressão")
-            }
-            if (showPrintSettingsDialog) {
+            var showDialog by remember { mutableStateOf(false) }
+            AppButton(
+                if (singlePrint.settings.isEmpty) "Adicionar configurações de impressão" else "Editar configurações de impressão",
+                onClick = { showDialog = true },
+            )
+            if (showDialog) {
                 PrintSettingsDialog(
                     initial = singlePrint.settings,
-                    onDismiss = { showPrintSettingsDialog = false },
+                    onDismiss = { showDialog = false },
                     onSave = { viewModel.setPrintSettings(it, singlePrint.id) },
                 )
             }
         }
+    }
+}
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.sourceLink,
-            onValueChange = viewModel::setSourceLink,
-            label = { Text("Link do modelo (opcional)") },
-            singleLine = true,
-        )
-        if (form.sourceLink.isNotBlank()) {
-            LinkText(text = "Abrir link no navegador", url = form.sourceLink)
+@Composable
+private fun PhotoRow(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
+    val space = MaterialTheme.spacing
+    val photo = form.photo
+    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        if (photo != null) {
+            // Decodifica uma vez por foto, e não a cada tecla digitada em outro campo; uma imagem que não
+            // abre vira aviso, e não derruba a tela.
+            val bitmap = remember(photo) { runCatching { decodeImageBitmap(photo.bytes) }.getOrNull() }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = "Foto da peça",
+                        modifier = Modifier.size(AppDimens.thumbnailSize).clip(MaterialTheme.shapes.small),
+                    )
+                } else {
+                    Text("Não consegui mostrar essa imagem.", style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.error)
+                }
+                Text(if (form.photoFromGCode) "Miniatura do G-code" else photo.fileName, style = MaterialTheme.appType.body)
+                AppButton("Remover foto", onClick = viewModel::clearPhoto)
+            }
+        } else {
+            AppButton("Escolher foto (opcional)", onClick = viewModel::pickPhoto, icon = AppIcons.AddPhotoAlternate)
         }
-
-        Button(onClick = onSave, enabled = canSave) {
-            Text(
-                when {
-                    isEditing -> "Salvar alterações"
-                    isProduct -> "Salvar no catálogo"
-                    else -> "Salvar pedido"
-                },
-            )
-        }
-        if (!canSave) {
-            Text(cannotSaveReason, style = MaterialTheme.typography.bodySmall)
-        }
-
-        ShowSnackbarOnce(
-            form.savedConfirmation,
-            when {
-                form.savedAsProduct -> "Produto ${form.savedNumber.orEmpty()} salvo no Catálogo.".replace("  ", " ")
-                else -> "Pedido ${form.savedNumber.orEmpty()} salvo em Pedidos.".replace("  ", " ")
-            },
-            viewModel::consumeSavedConfirmation,
-        )
+        form.photoError?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.error) }
     }
 }
 
 /** O STL anexado, com a prévia 3D e a análise calculadas fora do thread da tela ([QuoteViewModel.stlPreview]). */
 @Composable
 private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
+    val space = MaterialTheme.spacing
     val stlFile = form.stlFile
     if (stlFile == null) {
-        OutlinedButton(onClick = viewModel::pickStl) { Text("Anexar arquivo STL (opcional)") }
-        FieldHelp("Guardado pra você baixar de novo em Pedidos ou no Catálogo e reaproveitar numa venda futura da mesma peça.")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+            AppButton("Anexar arquivo STL (opcional)", onClick = viewModel::pickStl)
+            HelpHint(
+                HelpText("Guardado pra você baixar de novo em Pedidos ou no Catálogo e reaproveitar numa venda futura da mesma peça."),
+                "Arquivo STL",
+            )
+        }
         return
     }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stlFile.fileName, style = MaterialTheme.typography.bodyMedium)
-        OutlinedButton(onClick = viewModel::clearStlFile) { Text("Remover STL") }
-    }
-    val preview by viewModel.stlPreview.collectAsState()
-    when (val current = preview) {
-        null, StlPreview.Loading -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            Text("Preparando a prévia 3D…", style = MaterialTheme.typography.bodySmall)
+    Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
+            Text(stlFile.fileName, style = MaterialTheme.appType.body)
+            AppButton("Remover STL", onClick = viewModel::clearStlFile)
         }
-
-        is StlPreview.TooComplex -> Text(
-            "Esse modelo é muito complexo pra pré-visualizar (~${current.triangleCount} triângulos) — " +
-                "o arquivo é salvo normalmente, só sem a prévia 3D, pra não travar o app.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        StlPreview.Unreadable -> Text(
-            "Não consegui ler esse arquivo STL — pode estar corrompido ou num formato não suportado.",
-            color = MaterialTheme.colorScheme.error,
-        )
-
-        is StlPreview.Ready -> {
-            Text("Arraste pra girar, use a roda do mouse pra zoom.", style = MaterialTheme.typography.bodySmall)
-            val viewerState = rememberStl3DViewerState(current.mesh)
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Stl3DViewer(state = viewerState, mesh = current.mesh, modifier = Modifier.fillMaxWidth().height(280.dp))
+        val preview by viewModel.stlPreview.collectAsState()
+        when (val current = preview) {
+            null, StlPreview.Loading -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                CircularProgressIndicator(modifier = Modifier.size(AppDimens.iconSize), strokeWidth = AppDimens.focusRingWidth)
+                Text("Preparando a prévia 3D…", style = MaterialTheme.appType.caption)
             }
-            val baseColor = MaterialTheme.colorScheme.primary
-            OutlinedButton(onClick = {
-                val snapshot = viewerState.captureSnapshot(baseColor, width = 1000, height = 1000)
-                viewModel.setPhotoFromStlSnapshot(encodeImageBitmapToPng(snapshot))
-            }) { Text("Capturar como foto do orçamento") }
 
-            val analysis = current.analysis
-            Text("Nível de dificuldade sugerido: ${analysis.difficulty.label}", style = MaterialTheme.typography.titleSmall)
-            Text(
-                "Área: ${(analysis.surfaceAreaMm2 / 100).formatOneDecimal()} cm² · " +
-                    "Volume: ${(analysis.volumeMm3 / 1000).formatOneDecimal()} cm³ · " +
-                    "Overhang: ${(analysis.overhangPercentage / 100).toPercentText()} · " +
-                    "Peças no arquivo: ${analysis.disconnectedComponents}",
-                style = MaterialTheme.typography.bodySmall,
+            is StlPreview.TooComplex -> Text(
+                "Esse modelo é muito complexo pra pré-visualizar (~${current.triangleCount} triângulos). " +
+                    "O arquivo é salvo normalmente, só sem a prévia 3D, pra não travar o app.",
+                style = MaterialTheme.appType.caption,
             )
-            if (!analysis.isManifold) {
+
+            StlPreview.Unreadable -> Text(
+                "Não consegui ler esse arquivo STL: pode estar corrompido ou num formato não suportado.",
+                style = MaterialTheme.appType.caption,
+                color = MaterialTheme.colorScheme.error,
+            )
+
+            is StlPreview.Ready -> {
+                Text("Arraste pra girar, use a roda do mouse pra zoom.", style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val viewerState = rememberStl3DViewerState(current.mesh)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .border(AppDimens.borderWidth, MaterialTheme.appColors.line, MaterialTheme.shapes.medium),
+                ) {
+                    Stl3DViewer(state = viewerState, mesh = current.mesh, modifier = Modifier.fillMaxWidth().height(AppDimens.stlViewerHeight))
+                }
+                val baseColor = MaterialTheme.colorScheme.primary
+                AppButton("Capturar como foto do orçamento", onClick = {
+                    val snapshot = viewerState.captureSnapshot(baseColor, width = 1000, height = 1000)
+                    viewModel.setPhotoFromStlSnapshot(encodeImageBitmapToPng(snapshot))
+                })
+
+                val analysis = current.analysis
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
+                    Text("Nível de dificuldade sugerido: ${analysis.difficulty.label}", style = MaterialTheme.appType.bodyStrong)
+                    HelpHint(
+                        HelpText(
+                            "Estimativas geométricas, só pra você decidir se cobra a mais pela complexidade.",
+                            "Nível de dificuldade e medidas não substituem o fatiador e não entram no PDF nem no copiar/colar.",
+                        ),
+                        "Análise do STL",
+                    )
+                }
                 Text(
-                    "Atenção: esse arquivo STL tem geometria com furos ou normais invertidas (não-manifold) " +
-                        "— pode dar problema na hora de fatiar.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
+                    "Área: ${(analysis.surfaceAreaMm2 / 100).formatOneDecimal()} cm² · " +
+                        "Volume: ${(analysis.volumeMm3 / 1000).formatOneDecimal()} cm³ · " +
+                        "Overhang: ${(analysis.overhangPercentage / 100).toPercentText()} · " +
+                        "Peças no arquivo: ${analysis.disconnectedComponents}",
+                    style = MaterialTheme.appType.caption,
                 )
+                if (!analysis.isManifold) {
+                    Text(
+                        "Atenção: esse arquivo STL tem geometria com furos ou normais invertidas (não-manifold). " +
+                            "Pode dar problema na hora de fatiar.",
+                        style = MaterialTheme.appType.caption,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
-            FieldHelp(
-                "Estimativas geométricas, só pra você decidir se cobra a mais pela complexidade.",
-                "Nível de dificuldade e medidas não substituem o fatiador e não entram no PDF nem no copiar/colar.",
-            )
         }
-    }
-}
-
-/**
- * Pedido de cliente ou produto do catálogo (decisão 101), no topo do formulário (decisão 108): o que
- * não faz sentido pra produto (cliente, prazo, frete, preço negociado) some antes de a pessoa gastar
- * tempo preenchendo.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun KindSelector(isProduct: Boolean, onSelect: (QuoteKind) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        SingleChoiceSegmentedButtonRow {
-            SegmentedButton(
-                selected = !isProduct,
-                onClick = { onSelect(QuoteKind.ORDER) },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-            ) { Text("Pedido de cliente") }
-            SegmentedButton(
-                selected = isProduct,
-                onClick = { onSelect(QuoteKind.PRODUCT) },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-            ) { Text("Produto do catálogo") }
-        }
-        FieldHelp(
-            if (isProduct) {
-                "Uma peça que você oferece, com preço, sem cliente. Quando alguém comprar, é só clicar em \"Vender\"."
-            } else {
-                "Um orçamento pra um cliente, que segue o andamento de Orçado até Entregue."
-            },
-        )
     }
 }
 
@@ -1366,72 +872,17 @@ private fun KindSelector(isProduct: Boolean, onSelect: (QuoteKind) -> Unit) {
  * Categoria do produto (decisão 102): texto livre com as já usadas sugeridas embaixo, filtradas pelo
  * que se digita. Sem tela de cadastro: a lista de categorias é o que já foi digitado antes.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
     val matches = suggestions.filter { it.contains(value.trim(), ignoreCase = true) && !it.equals(value.trim(), ignoreCase = true) }
-
-    ExposedDropdownMenuBox(expanded = expanded && matches.isNotEmpty(), onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).tabToNavigate(),
-            value = value,
-            onValueChange = { onValueChange(it); expanded = true },
-            label = { Text("Categoria (opcional)") },
-            placeholder = { Text("Ex.: Chaveiros, Decoração, Utilidades") },
-            trailingIcon = if (suggestions.isNotEmpty()) {
-                { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && matches.isNotEmpty()) }
-            } else {
-                null
-            },
-            singleLine = true,
-        )
-        // ExposedDropdownMenu, e não DropdownMenu: com a âncora editável ele abre sem tirar o foco do campo, e
-        // dá pra continuar digitando com as sugestões na tela.
-        ExposedDropdownMenu(expanded = expanded && matches.isNotEmpty(), onDismissRequest = { expanded = false }) {
-            matches.forEach { category ->
-                DropdownMenuItem(text = { Text(category) }, onClick = { onValueChange(category); expanded = false })
-            }
-        }
-    }
-    FieldHelp("Separa a lista de produtos e o catálogo em PDF em seções.")
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun <T> LabeledDropdown(
-    label: String,
-    items: List<T>,
-    selected: T?,
-    itemLabel: (T) -> String,
-    displayText: (T) -> String,
-    onSelect: (T) -> Unit,
-    // Pro seletor de canal, `null` não é "ainda não escolheu": é a venda direta, uma opção de
-    // verdade que precisa aparecer escrita em vez de deixar o campo em branco.
-    emptyText: String = "",
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).tabToNavigate(),
-            readOnly = true,
-            value = selected?.let(displayText) ?: emptyText,
-            onValueChange = {},
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            singleLine = true,
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            items.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(itemLabel(item)) },
-                    onClick = {
-                        onSelect(item)
-                        expanded = false
-                    },
-                )
-            }
-        }
-    }
+    AppSuggestField(
+        label = "Categoria (opcional)",
+        value = value,
+        onValueChange = onValueChange,
+        suggestions = matches,
+        suggestionLabel = { it },
+        onChoose = onValueChange,
+        placeholder = "Ex.: Chaveiros, Decoração",
+        help = HelpText("Separa a lista de produtos e o catálogo em PDF em seções."),
+    )
 }
