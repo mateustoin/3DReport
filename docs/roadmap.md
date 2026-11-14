@@ -82,7 +82,7 @@ Quando dois itens mexem no mesmo lugar, entram na mesma leva, pelo motivo da Lev
 - Campo novo nasce neutro (zero ou desligado): atualizar o app não muda o preço de
   ninguém em silêncio, e pedido salvo continua congelado.
 
-**Resumo da ordem:** preço certo → textos prontos pra tradução → receber e
+**Resumo da ordem:** preço certo → nova interface e textos prontos pra tradução → receber e
 conversar → inglês → estoque → dinheiro → cliente → produção → oferta e pronta-entrega → chegar e ficar → conectado sem custo
 (D1, depois D2) → apostas locais → Android e sincronização sem servidor → servidor →
 depois do servidor.
@@ -138,7 +138,43 @@ junto.
   bandeira escolhido nas Configurações. Visto em: 3D Prime (tarifa da ANEEL por
   estado), ha-bambu-costs (tarifa por horário). Esforço P, impacto B.
 
-### Leva 10B: Textos prontos pra tradução (idioma, fase A)
+### Leva 10B: Nova interface e textos prontos pra tradução (idioma, fase A)
+
+**Revisão de 2026-11-14.** A leva ganhou a nova interface (decisões 127 a 129) e uma
+fundação de arquitetura, e deixou de ser "nada muda pro usuário". Os dois trabalhos
+mexem nos mesmos arquivos de tela, então cada tela é reescrita uma vez só: já com o
+visual novo, no padrão de estado novo e com os textos em recursos. A ordem é:
+fundação, sistema de design, e depois as telas em grupos.
+
+- [ ] **Fundação de arquitetura.** Formatação e análise automáticas (ktlint) e
+  cobertura (Kover) no CI; a release passa a rodar os testes e a conferir a tag
+  contra a versão. Registro de telas no lugar dos `when` de `App.kt`, com cada
+  ViewModel criado na primeira visita. Regras de preço que hoje estão em
+  `QuoteViewModel.calculate` vão pro `core`, e o `core` passa a identificar erro por
+  tipo, sem frase (pré-requisito da tradução). Um padrão único de estado pra tela
+  nova. Sem mudança visível.
+- [ ] **Sistema de design** ([design-system.md](design-system.md), decisão 127).
+  Tema com tipografia, formas, espaçamento e as fontes embutidas (Inter e Space
+  Grotesk), e o kit de componentes em `ui/kit/` no lugar das reimplementações de
+  hoje (cinco wrappers de campo, quatro tratamentos de card, três barras de rodapé).
+- [ ] **Telas na nova interface**, em grupos: moldura e barra lateral; os quatro
+  cadastros; Orçamento (dividindo `QuoteScreen.kt`); Pedidos e Catálogo, com a
+  visualização lembrada (decisão 129); Dashboard, Configurações e Sobre. Depois, o
+  PDF e a imagem exportados, e o site.
+- [ ] **Ícone novo** (decisão 128) no instalador, na janela e no site.
+- [ ] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`.
+- [ ] **Atualizar o app por dentro.** *Ideia do responsável do projeto, 2026-11-14;
+  precisa de decisão própria antes de implementar.* Hoje o app só avisa que saiu
+  versão nova e abre a página (decisão 116). A proposta é um botão "Atualizar agora"
+  que baixa o instalador do sistema, confere a integridade, abre a instalação e
+  fecha o app. Sobra uma confirmação de administrador no Windows e um pedido de
+  senha no Linux; no macOS depende de teste, porque o app não é assinado.
+  Atualização silenciosa em segundo plano fica de fora: exige assinatura de código,
+  que é paga (decisão 15). **Conectado:** só baixa quando a pessoa clica, e continua
+  desligado por padrão. Só vale a partir da versão seguinte à que trouxer o
+  mecanismo. Esforço M, impacto M.
+
+O que segue é o texto original da leva, que continua valendo pros textos.
 
 Primeira metade do item *(já no roadmap)* "Idioma da interface configurável"
 (seção UX extras), avaliado em 2026-09-28 a pedido do responsável do projeto: a

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Direção C, Pedidos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+body{margin:0}
+.r{--bg:#F6F8FB;--card:#FFFFFF;--col:#ECF0F5;--line:#DCE2EA;--fg:#0F1B2B;--mut:#536173;--acc:#0B5FA8;--onacc:#FFFFFF;--navy:#0C2742;--navy2:#143657;--onnavy:#EAF1F8;--mutnavy:#A9BCD0;--amber:#F2A541;--onamber:#2A1A02;--warnbg:#FCEBD0;--warnfg:#7A4706;--latebg:#FBDAD6;--latefg:#8E1B13;--okbg:#E3ECF5;--okfg:#3B4A5C;--s1:#8292A6;--s2:#0B5FA8;--s3:#C97A12;--s4:#1F7A4D}
+.r[data-theme=dark]{--bg:#0B1420;--card:#152335;--col:#0F1B2A;--line:#22324A;--fg:#E8EEF5;--mut:#9DAEC2;--acc:#7DB8F5;--onacc:#06213A;--navy:#081526;--navy2:#12263D;--warnbg:#4A3210;--warnfg:#FFD79A;--latebg:#55201B;--latefg:#FFC2BB;--okbg:#1C2C40;--okfg:#B7C6D8;--s1:#8292A6;--s2:#7DB8F5;--s3:#F2A541;--s4:#6FCF9F}
+.r *{box-sizing:border-box}
+.nv{display:flex;align-items:center;gap:11px;height:36px;padding:0 12px;border-radius:8px;color:var(--mutnavy);text-decoration:none;font-size:14px}
+.nv:hover{background:var(--navy2);color:var(--onnavy)}
+.nv.on{background:var(--navy2);color:#FFFFFF;font-weight:600}
+.nv.on svg{color:var(--amber)}
+.nv svg{width:18px;height:18px;flex:none}
+.gh{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mutnavy);padding:16px 12px 6px}
+.btn{height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.btn.amb{background:var(--amber);border-color:var(--amber);color:var(--onamber);font-weight:600}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.seg button{height:38px;padding:0 14px;border:0;background:transparent;color:var(--mut);font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--acc);color:var(--onacc);font-weight:600}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.tile b{display:block;font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+.tile span{font-size:13px;color:var(--mut)}
+.cd{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;cursor:grab}
+.cd:hover{border-color:var(--acc)}
+.chip{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:3px 8px}
+</style>
+</helmet>
+<div class="r" data-theme="{{theme}}" style="width: 1280px; height: 800px; display: flex; background: var(--bg); color: var(--fg); font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<nav aria-label="Navegação" style="width: 212px; flex: none; background: var(--navy); padding: 18px 10px; display: flex; flex-direction: column">
+<div style="padding: 0 12px 4px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #FFFFFF">3D<span style="color: var(--amber)">Report</span></div>
+<div class="gh">Vendas</div>
+<sc-for list="{{vendas}}" as="n" hint-placeholder-count="4"><a href="#" class="{{n.cls}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg>{{n.t}}</a></sc-for>
+<div class="gh">Cadastros</div>
+<sc-for list="{{cadastros}}" as="n" hint-placeholder-count="4"><a href="#" class="{{n.cls}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg>{{n.t}}</a></sc-for>
+<div style="flex: 1"></div>
+<sc-for list="{{pe}}" as="n" hint-placeholder-count="2"><a href="#" class="{{n.cls}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg>{{n.t}}</a></sc-for>
+</nav>
+<main style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; padding: 26px 32px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -.01em">Pedidos</h1>
+<div style="display: flex; align-items: center; gap: 10px">
+<div class="seg" role="group" aria-label="Exibir como"><button type="button">Lista</button><button type="button" class="on">Kanban</button></div>
+<button type="button" class="btn amb">Novo orçamento</button>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+<div class="tile"><b>7</b><span>em andamento</span></div>
+<div class="tile"><b>R$ 1.195,64</b><span>a receber</span></div>
+<div class="tile"><b style="color: var(--s3)">1</b><span>pra entregar hoje</span></div>
+<div class="tile"><b style="color: var(--latefg)">1</b><span>atrasado</span></div>
+</div>
+<div style="flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+<sc-for list="{{colunas}}" as="c" hint-placeholder-count="4"><section aria-label="{{c.t}}" style="background: var(--col); border-radius: 12px; border-top: 3px solid {{c.cor}}; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600">{{c.t}}</h2><span style="font-size: 13px; color: var(--mut); font-variant-numeric: tabular-nums">{{c.total}}</span></div>
+<sc-for list="{{c.itens}}" as="p" hint-placeholder-count="2"><article class="cd">
+<div style="font-weight: 600; line-height: 1.3">{{p.nome}}</div>
+<div style="font-size: 13px; color: var(--mut)">{{p.n}} · {{p.cli}}</div>
+<div style="display: flex; justify-content: space-between; align-items: center"><span class="chip" style="background: {{p.bg}}; color: {{p.fg}}">{{p.prazo}}</span><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-variant-numeric: tabular-nums">{{p.valor}}</span></div>
+</article></sc-for>
+</section></sc-for>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"escuro":{"editor":"boolean","default":true},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+const nav = (t, d, on) => ({ t, d, cls: on ? 'nv on' : 'nv' });
+const tone = [['var(--okbg)', 'var(--okfg)'], ['var(--warnbg)', 'var(--warnfg)'], ['var(--latebg)', 'var(--latefg)']];
+const p = (n, nome, cli, prazo, valor, k) => ({ n: '#' + n, nome, cli, prazo, valor, bg: tone[k || 0][0], fg: tone[k || 0][1] });
+const col = (t, cor, total, itens) => ({ t, cor, total, itens });
+return {
+theme: (this.props.escuro ?? true) ? 'dark' : 'light',
+colunas: [
+col('Orçado', 'var(--s1)', 'R$ 270,34', [p('0012', 'Suporte de headset', 'Rafael N.', 'até 21/11', 'R$ 174,34'), p('0011', 'Vaso geométrico grande', 'Camila T.', 'até 24/11', 'R$ 96,00')]),
+col('Aprovado', 'var(--s2)', 'R$ 420,00', [p('0010', 'Chaveiro personalizado, 30 un.', 'Estúdio Lume', 'até 18/11', 'R$ 420,00')]),
+col('Imprimindo', 'var(--s3)', 'R$ 281,40', [p('0009', 'Engrenagem de reposição', 'Paulo M.', 'Hoje', 'R$ 48,90', 1), p('0008', 'Luminária articulada', 'Bianca R.', 'até 17/11', 'R$ 232,50')]),
+col('Pronto', 'var(--s4)', 'R$ 223,90', [p('0007', 'Organizador de cabos, 6 un.', 'Rafael N.', 'Atrasado 2 dias', 'R$ 84,00', 2), p('0006', 'Miniatura de dragão', 'Diego A.', 'até 16/11', 'R$ 139,90')])
+],
+vendas: [nav('Orçamento', 'M6 3h12v18H6zM9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01'), nav('Pedidos', 'M4 13l2-8h12l2 8v6H4zM4 13h5l1 2h4l1-2h5', true), nav('Catálogo', 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'), nav('Dashboard', 'M4 20V10M10 20V4M16 20v-7M21 20H3')],
+cadastros: [nav('Filamentos', 'M12 3a9 9 0 100 18 9 9 0 000-18zM12 9a3 3 0 100 6 3 3 0 000-6z'), nav('Impressoras', 'M5 4h14v12H5zM9 16v4M15 16v4M7 20h10M10 8h4v3h-4z'), nav('Serviços', 'M14 6l4 4-9 9H5v-4z'), nav('Insumos', 'M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8')],
+pe: [nav('Configurações', 'M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4'), nav('Sobre', 'M12 3a9 9 0 100 18 9 9 0 000-18zM12 11v5M12 8h.01')]
+};
+}
+}
+</script>
+</body>
+</html>

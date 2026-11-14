@@ -137,6 +137,9 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [124](decisions/124.md) | 2026-09-29 | Leva 10: frete grátis desconta do lucro sem mudar o preço da peça | Aprovada |
 | [125](decisions/125.md) | 2026-09-29 | Leva 10: preço mínimo do pedido e acréscimo por urgência | Aprovada |
 | [126](decisions/126.md) | 2026-09-29 | Leva 10: ajuda para calcular o kWh por conta de luz, bandeira ou tarifa branca | Aprovada |
+| [127](decisions/127.md) | 2026-11-14 | Nova interface na direção Oficina (azul-marinho e âmbar) pra todo o app | Aprovada |
+| [128](decisions/128.md) | 2026-11-14 | Ícone novo do app, três camadas com a última em âmbar | Aprovada |
+| [129](decisions/129.md) | 2026-11-14 | Pedidos abre na última visualização usada (kanban ou lista) | Aprovada |
 | [130](decisions/130.md) | 2026-11-14 | Fundação de arquitetura antes da nova interface | Aprovada |
 
 ## Pendentes de aprovação

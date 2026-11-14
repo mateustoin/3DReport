@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Ideia guardada: etiqueta de preço feita de camadas">
+  <rect width="120" height="120" rx="27" fill="#0C2742"/>
+  <path d="M30 34h36a8 8 0 016 2.7L92 60 72 83.3a8 8 0 01-6 2.7H30a8 8 0 01-8-8V42a8 8 0 018-8z" fill="#EAF1F8"/>
+  <circle cx="74" cy="60" r="5.5" fill="#0C2742"/>
+  <rect x="32" y="45" width="30" height="7" rx="3.5" fill="#F2A541"/>
+  <rect x="32" y="56.5" width="30" height="7" rx="3.5" fill="#4C8FD0"/>
+  <rect x="32" y="68" width="30" height="7" rx="3.5" fill="#0B5FA8"/>
+</svg>
