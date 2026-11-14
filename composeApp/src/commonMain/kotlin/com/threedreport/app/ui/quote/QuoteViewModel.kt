@@ -42,7 +42,8 @@ import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
-import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.pricing.OrderPricing
+import com.threedreport.core.pricing.OrderTerms
 import com.threedreport.core.pricing.PricingError
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
@@ -62,7 +63,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.round
+import com.threedreport.core.pricing.showcasePriceSuggestion as coreShowcasePriceSuggestion
 
 /** A prévia 3D do STL anexado, calculada fora do thread da tela (decisão 108). */
 sealed interface StlPreview {
@@ -563,15 +564,10 @@ class QuoteViewModel(
     fun setTargetTotal(text: String) = inputState.update { it.copy(targetTotalText = text) }
 
     /**
-     * "Arredondar pra R$ 18,90" do preço anunciado (decisão 102): o próximo valor terminado em ,90
-     * a partir do [total] calculado, ou `null` quando ele já termina assim. Função pura; a tela
-     * mostra o chip só quando há sugestão.
+     * "Arredondar pra R$ 18,90" do preço anunciado (decisão 102). A conta é do `core`; a tela mostra o
+     * chip só quando há sugestão.
      */
-    fun showcasePriceSuggestion(total: Double): Double? {
-        val cents = round(total * 100).toLong()
-        val suggestion = ((cents - 90 + 99) / 100) * 100 + 90
-        return (suggestion / 100.0).takeIf { suggestion != cents }
-    }
+    fun showcasePriceSuggestion(total: Double): Double? = coreShowcasePriceSuggestion(total)
 
     fun applyShowcasePrice(value: Double) = inputState.update { it.copy(targetTotalText = value.toInputText()) }
 
@@ -1038,26 +1034,27 @@ class QuoteViewModel(
         }
         val channel = channels.find { it.id == input.salesChannelId }
         // Produto do catálogo não tem frete (decisão 101): o campo some da tela, e o que tiver ficado
-        // digitado nele não pode mexer no preço.
+        // digitado nele não é lido (nem vira erro). O `core` também o ignora na conta.
         val shippingCost = if (input.isProduct) 0.0 else amount(input.shippingCostText, QuoteFields.SHIPPING, "Frete", errors) ?: 0.0
-        // Frete grátis (decisão 124): o frete é pago por você, então fica fora do que o cliente paga.
-        val shippingAbsorbed = input.absorbsShipping(shippingCost)
-        val chargedShipping = SavedQuote.chargedShipping(shippingCost, shippingAbsorbed)
-        val servicesTotal = selectedServices.sumOf { it.total(quantity) }
-        // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
-        // que de fato é a peça. Um alvo que nem cobre os extras é erro no campo: zerar a peça salvaria
-        // um total diferente do digitado, sem ninguém ver.
-        val target = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors)?.let { typed ->
-            val extras = servicesTotal + chargedShipping
-            if (typed < extras) {
-                errors[QuoteFields.TARGET] = "Esse preço não cobre serviços e frete (${extras.toInputText()}): digite pelo menos esse valor."
-                null
-            } else {
-                typed
-            }
+        // O que vem antes da conta (preço da peça a partir do total fechado, frete grátis, produto, urgência)
+        // é regra do `core` (decisão 130); aqui só entram os valores lidos.
+        val typedTerms = OrderTerms(
+            quantity = quantity,
+            services = selectedServices,
+            consumables = usedConsumables,
+            shippingCost = shippingCost,
+            shippingAbsorbed = input.shippingAbsorbed,
+            catalogProduct = input.isProduct,
+            customerTotal = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors),
+            announcedUnitPrice = input.announcedUnitPrice,
+            rush = input.rush,
+        )
+        // Um total que nem cobre os extras é erro no campo: zerar a peça salvaria um total diferente do
+        // digitado, sem ninguém ver.
+        if (!typedTerms.coversExtras) {
+            errors[QuoteFields.TARGET] =
+                "Esse preço não cobre serviços e frete (${typedTerms.extrasTotal.toInputText()}): digite pelo menos esse valor."
         }
-        val negotiatedSalePrice = target?.let { it - servicesTotal - chargedShipping }
-            ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * quantity }
         val laborMinutes = if (input.laborMinutesText.isBlank()) {
             0.0
         } else {
@@ -1065,13 +1062,15 @@ class QuoteViewModel(
                 errors[QuoteFields.LABOR] = "Tempo de trabalho: use minutos (90) ou horas e minutos (1h30)."
             }
         }
+        // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
+        val terms = typedTerms.copy(laborMinutes = laborMinutes)
 
         val base = QuoteResult(
             prints = resolved,
             selectedServices = selectedServices,
             salesChannel = channel,
             shippingCost = shippingCost,
-            shippingAbsorbed = shippingAbsorbed,
+            shippingAbsorbed = terms.absorbsShipping,
             missingServicePrice = missingServicePrice,
         )
         missingFromCatalog(input, resolved)?.let { return base.copy(errorMessage = it, fieldErrors = errors) }
@@ -1079,21 +1078,7 @@ class QuoteViewModel(
         if (errors.isNotEmpty()) return base.copy(fieldErrors = errors)
         jobs ?: return base
         return runCatching {
-            PricingCalculator.calculate(
-                prints = jobs,
-                settings = settings,
-                channel = channel,
-                quantity = quantity,
-                // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
-                laborMinutes = laborMinutes,
-                negotiatedSalePrice = negotiatedSalePrice,
-                extrasTotal = servicesTotal + chargedShipping,
-                services = selectedServices,
-                consumables = usedConsumables,
-                // Urgência só existe com o acréscimo configurado e em pedido de cliente (decisão 125).
-                rush = input.rush && !input.isProduct && settings.rushSurchargeRate > 0,
-                absorbedShippingCost = if (shippingAbsorbed) shippingCost else 0.0,
-            )
+            OrderPricing.quote(prints = jobs, settings = settings, channel = channel, terms = terms)
         }.fold(
             onSuccess = { base.copy(quote = it) },
             onFailure = { error ->
