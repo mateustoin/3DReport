@@ -114,68 +114,24 @@ fun App(
     startAt: AppDestination = AppDestination.QUOTE,
     prepareQuote: (QuoteViewModel) -> Unit = {},
 ) {
-    val filamentRepository = container.filaments
-    val printerRepository = container.printers
     val settingsRepository = container.settings
-    val historyRepository = container.quoteHistory
+    val printerRepository = container.printers
     val onboardingRepository = container.onboarding
 
     val appScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val newQuoteViewModel = {
-        QuoteViewModel(
-            filamentRepository, printerRepository, settingsRepository, container.services,
-            container.salesChannels, historyRepository,
-            clientRepository = container.clients,
-            currency = { container.currency.currency.value },
-            scope = appScope,
-            background = Dispatchers.Default,
-            main = Dispatchers.Main,
-            consumableRepository = container.consumables,
-        )
+    val viewModels = remember { AppViewModels(container, appScope, prepareQuote) }
+    val navigator = remember {
+        AppNavigator(
+            startAt,
+            viewModels.quoteViewModel,
+            viewModels.editQuoteViewModel,
+            onEditSaved = { appScope.launch { snackbarHostState.showSnackbar("Alterações salvas.") } },
+        ).also { navigator -> viewModels.showOrders = { navigator.goTo(AppDestination.ORDERS) } }
     }
-    val quoteViewModel = remember { newQuoteViewModel().also(prepareQuote) }
-    // Editar um orçamento salvo tem o próprio ViewModel (decisão 108): usar o da aba apagava o rascunho
-    // que estivesse em andamento lá. A edição aparece no próprio Orçamento (decisão 113), e o rascunho
-    // da aba volta quando ela termina.
-    val editQuoteViewModel = remember { newQuoteViewModel() }
-    var destination by remember { mutableStateOf(startAt) }
+    val destination = navigator.destination
     // Fica aqui, e não na tela, pra voltar a Configurações na mesma seção.
     var settingsSection by remember { mutableStateOf(SettingsSection.BUSINESS) }
-    // Pedidos e Catálogo são a mesma tela com o tipo fixo (decisão 111): cada uma com o seu ViewModel,
-    // pra busca, filtros e seleção de uma não vazarem pra outra.
-    val newHistoryViewModel = { kind: QuoteKind ->
-        QuoteHistoryViewModel(
-            historyRepository, container.branding,
-            filamentRepository, printerRepository, settingsRepository, container.salesChannels,
-            clientRepository = container.clients,
-            scope = appScope,
-            background = Dispatchers.Default,
-            main = Dispatchers.Main,
-            kind = kind,
-            showOrders = { destination = AppDestination.ORDERS },
-            consumableRepository = container.consumables,
-        )
-    }
-    val ordersViewModel = remember { newHistoryViewModel(QuoteKind.ORDER) }
-    val catalogViewModel = remember { newHistoryViewModel(QuoteKind.PRODUCT) }
-    val dashboardViewModel = remember { DashboardViewModel(historyRepository, settingsRepository) }
-    val filamentListViewModel = remember { FilamentListViewModel(filamentRepository, historyRepository::quotesIncludingTrash) }
-    val printerListViewModel = remember { PrinterListViewModel(printerRepository, historyRepository, container.maintenance) }
-    val serviceListViewModel = remember { ServiceListViewModel(container.services, historyRepository::quotesIncludingTrash) }
-    val consumableListViewModel = remember { ConsumableListViewModel(container.consumables, historyRepository::quotesIncludingTrash) }
-    val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
-    val brandingViewModel = remember {
-        BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value })
-    }
-    val templateListViewModel = remember { TemplateListViewModel(container.templates, container.branding) }
-    val themeViewModel = remember { ThemeViewModel(container.theme) }
-    val currencyViewModel = remember { CurrencyViewModel(container.currency) }
-    val backupViewModel = remember { BackupViewModel(container.backup, container.preferences, container.pendingWrites, scope = appScope) }
-    val updateViewModel = remember {
-        UpdateViewModel(container.preferences, container.releases, APP_VERSION, scope = appScope, background = Dispatchers.IO, main = Dispatchers.Main)
-    }
-    val salesChannelViewModel = remember { SalesChannelViewModel(container.salesChannels, historyRepository::quotesIncludingTrash) }
 
     val onboardingCompleted by onboardingRepository.completed.collectAsState()
     var draggingFile by remember { mutableStateOf(false) }
@@ -183,55 +139,20 @@ fun App(
     // Onde está cada área do aviso de arrastar ("Substituir a impressão 2", "Adicionar como nova"), pra
     // saber em qual o arquivo foi solto (decisão 114).
     val dropZones = remember { mutableStateMapOf<DropZone, Rect>() }
-    // Ação que jogaria fora o orçamento em andamento na aba, esperando a confirmação.
-    var pendingDiscard by remember { mutableStateOf<(() -> Unit)?>(null) }
-    // Ação que precisa da aba do Orçamento livre, esperando a pessoa encerrar a edição em andamento.
-    var pendingEndEditing by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val editForm by editQuoteViewModel.saveForm.collectAsState()
+    // Coletado pra recompor quando a edição abre ou fecha, e pro diálogo mostrar o nome do orçamento.
+    val editForm by viewModels.editQuoteViewModel.saveForm.collectAsState()
     val editing = editForm.editingQuoteId != null
-    // O Orçamento que está na tela: a edição, quando há uma, ou a aba.
-    val visibleQuoteViewModel = if (editing) editQuoteViewModel else quoteViewModel
+    val visibleQuoteViewModel = navigator.visibleQuote
     val visibleInput by visibleQuoteViewModel.input.collectAsState()
-    val originOf = { operation: QuoteOperation? ->
-        if (operation?.originKind == QuoteKind.PRODUCT) AppDestination.CATALOG else AppDestination.ORDERS
-    }
-    // Duplicar, Vender, Guardar no catálogo e Ctrl+N carregam no ViewModel da aba, que está por trás da
-    // edição: primeiro a edição termina (sem alteração, termina sozinha), depois pergunta do rascunho.
-    val unlessEditing: (() -> Unit) -> Unit = { action ->
-        when {
-            !editing -> action()
-
-            editQuoteViewModel.hasUnsavedEdits -> pendingEndEditing = action
-
-            else -> {
-                editQuoteViewModel.resetForm()
-                action()
-            }
-        }
-    }
-    val unlessDraft: (() -> Unit) -> Unit = { action ->
-        unlessEditing { if (quoteViewModel.hasDraft) pendingDiscard = action else action() }
-    }
-    var confirmingEditDiscard by remember { mutableStateOf(false) }
-    val endEditing = {
-        val origin = originOf(editQuoteViewModel.saveForm.value.operation)
-        editQuoteViewModel.resetForm()
-        destination = origin
-    }
-    val cancelEditing = { if (editQuoteViewModel.hasUnsavedEdits) confirmingEditDiscard = true else endEditing() }
-    val saveEditing = {
-        if (editQuoteViewModel.saveCurrentQuote()) {
-            endEditing()
-            appScope.launch { snackbarHostState.showSnackbar("Alterações salvas.") }
-        }
-    }
-    val themeMode by themeViewModel.mode.collectAsState()
-    val currency by currencyViewModel.currency.collectAsState()
+    val themeMode by viewModels.themeViewModel.mode.collectAsState()
+    val currency by viewModels.currencyViewModel.currency.collectAsState()
 
     // Coletados aqui pro pontinho de "alteração não salva" da barra lateral acompanhar o que se digita.
-    val settingsDraft by settingsViewModel.uiState.collectAsState()
-    val brandingDraft by brandingViewModel.uiState.collectAsState()
-    val settingsDirty = remember(settingsDraft, brandingDraft) { hasUnsavedSettings(settingsViewModel, brandingViewModel) }
+    val settingsDraft by viewModels.settingsViewModel.uiState.collectAsState()
+    val brandingDraft by viewModels.brandingViewModel.uiState.collectAsState()
+    val settingsDirty = remember(settingsDraft, brandingDraft) {
+        hasUnsavedSettings(viewModels.settingsViewModel, viewModels.brandingViewModel)
+    }
 
     AppTheme(themeMode) {
         CompositionLocalProvider(LocalCurrency provides currency, LocalSnackbarHostState provides snackbarHostState) {
@@ -242,28 +163,28 @@ fun App(
 
                     val shortcut = if (accel) destinationForShortcut(shortcutNumberOf(event.key) ?: 0) else null
                     if (shortcut != null) {
-                        destination = shortcut
+                        navigator.goTo(shortcut)
                         return@onPreviewKeyEvent true
                     }
 
                     when {
-                        accel && event.key == Key.S && destination == AppDestination.QUOTE -> {
-                            if (editing) saveEditing() else quoteViewModel.saveCurrentQuote()
+                        accel && event.key == Key.S && navigator.destination == AppDestination.QUOTE -> {
+                            navigator.save()
                             true
                         }
 
-                        accel && event.key == Key.N && destination == AppDestination.QUOTE -> {
-                            unlessDraft(quoteViewModel::resetForm)
+                        accel && event.key == Key.N && navigator.destination == AppDestination.QUOTE -> {
+                            navigator.newQuote()
                             true
                         }
 
                         // Esc fecha o formulário da aba que está na tela, e só ele: antes fechava os de
                         // todas as abas, inclusive um que a pessoa nem estava vendo.
-                        event.key == Key.Escape -> when (destination) {
-                            AppDestination.FILAMENTS -> filamentListViewModel.form.value?.let { filamentListViewModel.cancelEdit(); true } ?: false
-                            AppDestination.PRINTERS -> printerListViewModel.form.value?.let { printerListViewModel.cancelEdit(); true } ?: false
-                            AppDestination.SERVICES -> serviceListViewModel.form.value?.let { serviceListViewModel.cancelEdit(); true } ?: false
-                            AppDestination.CONSUMABLES -> consumableListViewModel.form.value?.let { consumableListViewModel.cancelEdit(); true } ?: false
+                        event.key == Key.Escape -> when (navigator.destination) {
+                            AppDestination.FILAMENTS -> viewModels.filamentListViewModel.let { vm -> vm.form.value?.let { vm.cancelEdit(); true } ?: false }
+                            AppDestination.PRINTERS -> viewModels.printerListViewModel.let { vm -> vm.form.value?.let { vm.cancelEdit(); true } ?: false }
+                            AppDestination.SERVICES -> viewModels.serviceListViewModel.let { vm -> vm.form.value?.let { vm.cancelEdit(); true } ?: false }
+                            AppDestination.CONSUMABLES -> viewModels.consumableListViewModel.let { vm -> vm.form.value?.let { vm.cancelEdit(); true } ?: false }
                             else -> false
                         }
 
@@ -280,7 +201,7 @@ fun App(
                         onDragMoved = { dragPosition = it },
                         onDrop = { dropped, position ->
                             // Seja qual for a aba aberta, o G-code vai pro Orçamento, que é onde o resultado aparece.
-                            destination = AppDestination.QUOTE
+                            navigator.goTo(AppDestination.QUOTE)
                             val zone = position?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key }
                             when (zone) {
                                 is DropZone.Replace -> visibleQuoteViewModel.importDroppedInto(zone.printId, dropped)
@@ -295,7 +216,7 @@ fun App(
                         Row(modifier = Modifier.fillMaxSize()) {
                             AppSidebar(
                                 selected = destination,
-                                onSelect = { destination = it },
+                                onSelect = navigator::goTo,
                                 compact = compactSidebar,
                                 version = APP_VERSION,
                                 status = { if (it == AppDestination.QUOTE && editing) "Editando" else null },
@@ -308,73 +229,48 @@ fun App(
                                     // A chave troca a tela inteira entre a edição e a aba, sem estado de uma vazar pra outra.
                                     AppDestination.QUOTE -> key(editing) {
                                         if (editing) {
-                                            QuoteScreen(editQuoteViewModel, onSave = saveEditing, onCancelOperation = cancelEditing)
-                                        } else {
                                             QuoteScreen(
-                                                quoteViewModel,
-                                                // Vender, Duplicar e Guardar no catálogo começam em Pedidos ou no Catálogo:
-                                                // desistir devolve a pessoa pra lá, com o formulário limpo.
-                                                onCancelOperation = {
-                                                    val origin = originOf(quoteViewModel.saveForm.value.operation)
-                                                    quoteViewModel.resetForm()
-                                                    destination = origin
-                                                },
+                                                viewModels.editQuoteViewModel,
+                                                onSave = navigator::saveEditing,
+                                                onCancelOperation = navigator::cancelEditing,
                                             )
+                                        } else {
+                                            QuoteScreen(viewModels.quoteViewModel, onCancelOperation = navigator::cancelQuoteOperation)
                                         }
                                     }
 
                                     AppDestination.ORDERS, AppDestination.CATALOG -> QuoteHistoryScreen(
-                                        if (destination == AppDestination.ORDERS) ordersViewModel else catalogViewModel,
-                                        onEditQuote = { savedQuote ->
-                                            unlessEditing {
-                                                editQuoteViewModel.loadForEditing(savedQuote)
-                                                destination = AppDestination.QUOTE
-                                            }
-                                        },
+                                        if (destination == AppDestination.ORDERS) viewModels.ordersViewModel else viewModels.catalogViewModel,
+                                        onEditQuote = navigator::editQuote,
                                         // As três começam um orçamento na aba: com um rascunho lá, pergunta antes.
-                                        onDuplicateQuote = { savedQuote ->
-                                            unlessDraft {
-                                                quoteViewModel.duplicateForNewQuote(savedQuote)
-                                                destination = AppDestination.QUOTE
-                                            }
-                                        },
-                                        onSellProduct = { product ->
-                                            unlessDraft {
-                                                quoteViewModel.sellFromProduct(product)
-                                                destination = AppDestination.QUOTE
-                                            }
-                                        },
-                                        onCopyToCatalog = { order ->
-                                            unlessDraft {
-                                                quoteViewModel.copyToCatalog(order)
-                                                destination = AppDestination.QUOTE
-                                            }
-                                        },
+                                        onDuplicateQuote = navigator::duplicateQuote,
+                                        onSellProduct = navigator::sellProduct,
+                                        onCopyToCatalog = navigator::copyToCatalog,
                                     )
 
-                                    AppDestination.DASHBOARD -> DashboardScreen(dashboardViewModel)
+                                    AppDestination.DASHBOARD -> DashboardScreen(viewModels.dashboardViewModel)
 
-                                    AppDestination.FILAMENTS -> FilamentListScreen(filamentListViewModel)
+                                    AppDestination.FILAMENTS -> FilamentListScreen(viewModels.filamentListViewModel)
 
-                                    AppDestination.PRINTERS -> PrinterListScreen(printerListViewModel)
+                                    AppDestination.PRINTERS -> PrinterListScreen(viewModels.printerListViewModel)
 
-                                    AppDestination.SERVICES -> ServiceListScreen(serviceListViewModel)
+                                    AppDestination.SERVICES -> ServiceListScreen(viewModels.serviceListViewModel)
 
-                                    AppDestination.CONSUMABLES -> ConsumableListScreen(consumableListViewModel)
+                                    AppDestination.CONSUMABLES -> ConsumableListScreen(viewModels.consumableListViewModel)
 
                                     AppDestination.SETTINGS -> SettingsScreen(
-                                        settingsViewModel,
-                                        brandingViewModel,
-                                        templateListViewModel,
-                                        themeViewModel,
-                                        currencyViewModel,
-                                        backupViewModel,
-                                        salesChannelViewModel,
+                                        viewModels.settingsViewModel,
+                                        viewModels.brandingViewModel,
+                                        viewModels.templateListViewModel,
+                                        viewModels.themeViewModel,
+                                        viewModels.currencyViewModel,
+                                        viewModels.backupViewModel,
+                                        viewModels.salesChannelViewModel,
                                         section = settingsSection,
                                         onSectionChange = { settingsSection = it },
                                     )
 
-                                    AppDestination.ABOUT -> AboutScreen(version = APP_VERSION) { UpdateSection(updateViewModel) }
+                                    AppDestination.ABOUT -> AboutScreen(version = APP_VERSION) { UpdateSection(viewModels.updateViewModel) }
                                 }
                             }
                         }
@@ -405,11 +301,12 @@ fun App(
             StorageHealthDialogs(container)
 
             // Com a opção ligada, uma verificação ao abrir, e o aviso uma vez por versão nova (decisão 116).
+            val updateViewModel = viewModels.updateViewModel
             LaunchedEffect(Unit) { updateViewModel.checkOnStart() }
             val updateState by updateViewModel.state.collectAsState()
             val available = updateViewModel.unannounced(updateState)
             LaunchedEffect(available?.version) {
-                if (available == null || destination == AppDestination.ABOUT) return@LaunchedEffect
+                if (available == null || navigator.destination == AppDestination.ABOUT) return@LaunchedEffect
                 updateViewModel.markAnnounced(available)
                 val result = snackbarHostState.showSnackbar(
                     "Versão ${available.version} do 3DReport disponível.",
@@ -432,48 +329,35 @@ fun App(
                 )
             }
 
-            if (confirmingEditDiscard) {
+            if (navigator.confirmingEditDiscard) {
                 ConfirmDialog(
                     title = "Descartar as alterações?",
                     message = "O que você mudou neste orçamento não foi salvo e vai se perder.",
                     confirmLabel = "Descartar",
-                    onConfirm = {
-                        confirmingEditDiscard = false
-                        endEditing()
-                    },
-                    onDismiss = { confirmingEditDiscard = false },
+                    onConfirm = navigator::confirmEditDiscard,
+                    onDismiss = navigator::keepEditing,
                 )
             }
 
-            pendingEndEditing?.let { action ->
+            if (navigator.pendingEndEditing != null) {
                 ConfirmDialog(
                     title = "Descartar a edição em andamento?",
                     message = "Você está editando \"${editForm.name}\" no Orçamento e ainda não salvou. Pra continuar, " +
                         "as alterações dessa edição se perdem.",
                     confirmLabel = "Descartar e continuar",
                     dismissLabel = "Voltar pra edição",
-                    onConfirm = {
-                        pendingEndEditing = null
-                        editQuoteViewModel.resetForm()
-                        action()
-                    },
-                    onDismiss = {
-                        pendingEndEditing = null
-                        destination = AppDestination.QUOTE
-                    },
+                    onConfirm = navigator::confirmEndEditing,
+                    onDismiss = navigator::dismissEndEditing,
                 )
             }
 
-            pendingDiscard?.let { action ->
+            if (navigator.pendingDiscard != null) {
                 ConfirmDialog(
                     title = "Descartar o orçamento em andamento?",
                     message = "O que está preenchido no Orçamento ainda não foi salvo e vai ser substituído.",
                     confirmLabel = "Descartar",
-                    onConfirm = {
-                        pendingDiscard = null
-                        action()
-                    },
-                    onDismiss = { pendingDiscard = null },
+                    onConfirm = navigator::confirmDiscard,
+                    onDismiss = navigator::dismissDiscard,
                 )
             }
         }
