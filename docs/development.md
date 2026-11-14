@@ -31,12 +31,20 @@ Todos na raiz do projeto (no Windows use `gradlew.bat`).
 | Executar o app desktop | `./gradlew :composeApp:run` |
 | Rodar todos os testes | `./gradlew allTests` |
 | Rodar só testes do core (JVM e JS) | `./gradlew :core:allTests` |
-| Rodar só testes do composeApp (persistência) | `./gradlew :composeApp:jvmTest` |
+| Rodar só testes do composeApp | `./gradlew :composeApp:jvmTest` |
 | Compilar e testar tudo | `./gradlew build` |
 | Gerar a calculadora do site | `./gradlew :web:syncSiteCalculator` |
 | Gerar instalador do SO atual | `./gradlew :composeApp:packageDistributionForCurrentOS` |
 | Limpar build | `./gradlew clean` |
 
+- Uma classe de teste só:
+  `./gradlew :composeApp:jvmTest --tests "com.threedreport.app.ui.quote.QuoteViewModelTest"`
+  (no `core`, use `:core:jvmTest`).
+- `scripts/check.sh <tarefa>` roda a mesma tarefa e mostra só "OK" ou as falhas, com
+  o log completo num arquivo temporário. É o jeito recomendado pra quem trabalha com
+  assistente de IA, porque o log do Gradle é longo.
+- Pra abrir o app sem tocar nos seus dados reais, aponte a pasta de dados pra outro
+  lugar: `JAVA_TOOL_OPTIONS=-Dthreedreport.dataDir=/tmp/3dreport-teste ./gradlew :composeApp:run`.
 - Relatório de testes: `core/build/reports/tests/jvmTest/index.html`.
 - Instaladores gerados: `composeApp/build/compose/binaries/main/<formato>/`
   (ex.: `.../deb/3dreport_1.0.0_amd64.deb`, `.../msi/3DReport-1.0.0.msi`,
@@ -93,7 +101,8 @@ Confira cada imagem antes de commitar. O teste só roda por essa task: no
 ## Fluxo de mudanças
 
 1. Decisões de UI/UX, arquitetura, organização e funcionalidades são propostas e
-   aprovadas antes da implementação e registradas em [decisions.md](decisions.md).
+   aprovadas antes da implementação. Cada uma ganha um arquivo em
+   [`decisions/`](decisions/) e uma linha no índice [decisions.md](decisions.md).
 2. Código e documentação mudam no mesmo commit; o `README.md` é mantido atualizado.
 3. `./gradlew build` deve passar antes de commitar.
 4. Ao fechar uma leva de funcionalidades, sempre: bump de versão (ver
@@ -103,6 +112,24 @@ Confira cada imagem antes de commitar. O teste só roda por essa task: no
    triagem responde na issue (aceita, mesclada, já existe ou descartada),
    registra o resultado no [roadmap](roadmap.md) com crédito a quem sugeriu
    e tira a label. Ver [CONTRIBUTING.md](../CONTRIBUTING.md#sugerindo-ideias).
+
+### Roteiro de uma leva
+
+Uma leva do [roadmap](roadmap.md) segue sempre as mesmas etapas, cada uma num commit:
+
+1. **Especificação** em [`levas/`](levas/), a partir de [`levas/_modelo.md`](levas/_modelo.md):
+   escopo, o que fica de fora, mudanças de modelo, telas e critérios de aceite.
+2. **Aprovação** das decisões em aberto pelo responsável do projeto.
+3. **Core e dados**, com teste antes do código (`feat(core): ...`).
+4. **Telas** (`feat(ui): ...`).
+5. **Revisão de design** sobre as capturas de tela.
+6. **Documentação**: decisões, changelog, roadmap, README e site (`docs: ...`).
+7. **Revisão de código** e correções (`fix: ...`).
+8. **PR** a partir da branch `feat/leva-N-nome`, com merge por squash.
+
+Quem desenvolve com o Claude Code tem esse roteiro pronto no comando `/leva N`
+(`.claude/skills/leva/`), com um agente por etapa em `.claude/agents/`. As regras
+que os agentes seguem estão no [`CLAUDE.md`](../CLAUDE.md) da raiz e nos de cada módulo.
 
 ## Versionamento
 
@@ -139,7 +166,7 @@ versão — escreva do ponto de vista de quem usa o app (o quê mudou e por quê
 importa), não em termos de arquivos/classes internos (isso já está em
 `decisions.md`/`architecture.md`). Serve de rascunho pronto pra colar como
 release notes quando um release for de fato publicado no GitHub (ver
-[roadmap.md](roadmap.md#3-instaladores-desktop)).
+[roadmap.md](roadmap/catalogo.md#3-instaladores-desktop)).
 
 ## Cortando um release
 

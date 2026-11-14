@@ -174,8 +174,9 @@ site/        Site institucional (GitHub Pages)
 | [docs/development.md](docs/development.md) | Setup, IDE, executar, testar, empacotar |
 | [docs/architecture.md](docs/architecture.md) | Módulos, plataformas, convenções |
 | [docs/pricing-formulas.md](docs/pricing-formulas.md) | Parâmetros e fórmulas de cálculo |
-| [docs/decisions.md](docs/decisions.md) | Decisões aprovadas e pendentes |
-| [docs/roadmap.md](docs/roadmap.md) | Backlog de evoluções e próximas implementações |
+| [docs/decisions.md](docs/decisions.md) | Índice das decisões aprovadas; o texto de cada uma fica em `docs/decisions/` |
+| [docs/roadmap.md](docs/roadmap.md) | Backlog de evoluções e próximas implementações; o histórico e o catálogo por assunto ficam em `docs/roadmap/` |
+| [CLAUDE.md](CLAUDE.md) | Guia curto pra quem desenvolve com assistente de IA: comandos, regras e onde ler cada coisa |
 | [docs/pesquisa-de-mercado-2026-09.md](docs/pesquisa-de-mercado-2026-09.md) | Pesquisa de mercado de set/2026: concorrentes, o que falta no app e o que exigiria nuvem |
 | [core/README.md](core/README.md) | Módulo `core` |
 | [composeApp/README.md](composeApp/README.md) | Módulo `composeApp` |

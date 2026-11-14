@@ -24,7 +24,8 @@ a dia, veja [docs/development.md](docs/development.md).
 Testou o app e teve uma ideia? Ótimo, e não precisa saber programar pra
 contribuir com ela.
 
-1. **Confira o [roadmap](docs/roadmap.md)** (Ctrl+F ajuda). Se a ideia já
+1. **Confira o [roadmap](docs/roadmap.md)** e o [catálogo por assunto](docs/roadmap/catalogo.md)
+   (Ctrl+F ajuda). Se a ideia já
    estiver lá, ainda vale abrir a issue pra complementar: um segundo pedido
    pela mesma coisa pesa na prioridade.
 2. **Abra uma issue por ideia** usando o template "Sugerir uma
