@@ -209,8 +209,8 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
       impressões pelo id estável da linha, nunca por posição.
     - **Editar na própria aba** (decisão 113): reabrir um pedido ou produto
       não abre mais diálogo (`EditQuoteDialog` foi removido): enquanto
-      `editQuoteViewModel` (uma segunda instância de `QuoteViewModel`, criada no
-      `App.kt`) está em `QuoteOperation.Editing`, a tela de Orçamento mostra ele
+      `editQuoteViewModel` (uma segunda instância de `QuoteViewModel`, criada em
+      `AppViewModels`) está em `QuoteOperation.Editing`, a tela de Orçamento mostra ele
       no lugar do `quoteViewModel` da aba, que continua com o rascunho intacto
       e volta sozinho ao salvar ou cancelar. `originalInput`/`originalForm`
       são como o pedido editado abriu, pra saber se há alteração a perder. A barra de operação no rodapé mostra
