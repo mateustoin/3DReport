@@ -9,6 +9,7 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,7 +50,8 @@ class RowAction(
  * Linha de lista dos cadastros (não é cartão): nome em `bodyStrong`, [details] em `caption` separados por " · "
  * e o [value] alinhado à direita com algarismos tabulares. As [actions] só aparecem com o mouse em cima ou com o
  * foco na linha (teclado), e continuam na ordem do Tab. Clicar na linha chama [onClick]. Divisor de 1 px embaixo.
- * [muted] apaga o nome (item arquivado).
+ * [muted] apaga o nome (item arquivado). [selected] destaca a linha com o fundo `tint` (o item aberto no painel).
+ * As ações ficam por cima do fim da linha, com o fundo dela, e cobrem o valor enquanto estão visíveis.
  */
 @Composable
 fun ListRow(
@@ -60,6 +62,7 @@ fun ListRow(
     details: List<String> = emptyList(),
     value: String? = null,
     muted: Boolean = false,
+    selected: Boolean = false,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
@@ -70,24 +73,29 @@ fun ListRow(
     val active = hovered || focusWithin
     val actionsAlpha by animateFloatAsState(if (active) 1f else 0f, tween(AppDimens.MOTION_MILLIS))
 
+    val rowBackground = when {
+        selected -> colors.tint
+        active -> colors.column
+        else -> Color.Transparent
+    }
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.small)
-                .background(if (active) colors.column else Color.Transparent)
+                .background(rowBackground)
                 .onFocusChanged { focusWithin = it.hasFocus }
                 .hoverable(interaction),
-            verticalAlignment = Alignment.CenterVertically,
+            contentAlignment = Alignment.CenterEnd,
         ) {
             Row(
                 modifier = Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .clip(MaterialTheme.shapes.small)
                     .then(if (focused) Modifier.border(AppDimens.focusRingWidth, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
                     .onFocusChanged { focused = it.isFocused }
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
-                    .padding(horizontal = space.sm, vertical = space.sm),
+                    .padding(start = space.sm, end = space.xs, top = space.sm, bottom = space.sm),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(space.md),
             ) {
@@ -118,7 +126,10 @@ fun ListRow(
                 }
             }
             Row(
-                modifier = Modifier.alpha(actionsAlpha).padding(horizontal = space.xxs),
+                modifier = Modifier
+                    .alpha(actionsAlpha)
+                    .background(if (selected) colors.tint else colors.column, MaterialTheme.shapes.small)
+                    .padding(horizontal = space.xxs),
                 horizontalArrangement = Arrangement.spacedBy(space.xxs),
             ) {
                 actions.forEach { action ->

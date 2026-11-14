@@ -79,8 +79,8 @@ fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier 
                 onAction = viewModel::startAdd.takeIf { state.isEmpty },
             )
         }
-        state.active.forEach { key(it.id) { ConsumableRow(it, viewModel) } }
-        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ConsumableRow(it, viewModel) } } }
+        state.active.forEach { key(it.id) { ConsumableRow(it, viewModel, selectedId = form?.id) } }
+        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ConsumableRow(it, viewModel, selectedId = form?.id) } } }
     }
 
     state.pendingDelete?.let { pending ->
@@ -97,7 +97,7 @@ fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier 
 }
 
 @Composable
-private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewModel) {
+private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewModel, selectedId: String?) {
     val archiveOrRestore = if (consumable.archived) {
         RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(consumable.id, false) })
     } else {
@@ -108,6 +108,7 @@ private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewM
         details = listOf(stringResource(if (consumable.chargedPerOrder) Res.string.common_charge_per_order else Res.string.common_charge_per_piece)),
         value = consumable.unitCost.toMoney(),
         muted = consumable.archived,
+        selected = selectedId == consumable.id,
         onClick = { viewModel.startEdit(consumable.id) },
         actions = listOf(
             RowAction(AppIcons.Edit, stringResource(Res.string.common_edit), { viewModel.startEdit(consumable.id) }),

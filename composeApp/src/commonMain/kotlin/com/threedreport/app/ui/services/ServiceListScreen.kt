@@ -85,8 +85,8 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
                 onAction = viewModel::startAdd.takeIf { state.isEmpty },
             )
         }
-        state.active.forEach { key(it.id) { ServiceRow(it, viewModel) } }
-        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ServiceRow(it, viewModel) } } }
+        state.active.forEach { key(it.id) { ServiceRow(it, viewModel, selectedId = form?.id) } }
+        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ServiceRow(it, viewModel, selectedId = form?.id) } } }
     }
 
     state.pendingDelete?.let { pending ->
@@ -103,7 +103,7 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
 }
 
 @Composable
-private fun ServiceRow(service: Service, viewModel: ServiceListViewModel) {
+private fun ServiceRow(service: Service, viewModel: ServiceListViewModel, selectedId: String?) {
     val archiveOrRestore = if (service.archived) {
         RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(service.id, false) })
     } else {
@@ -117,6 +117,7 @@ private fun ServiceRow(service: Service, viewModel: ServiceListViewModel) {
         ),
         value = service.suggestedPrice?.toMoney(),
         muted = service.archived,
+        selected = selectedId == service.id,
         onClick = { viewModel.startEdit(service.id) },
         actions = listOf(
             RowAction(AppIcons.Edit, stringResource(Res.string.common_edit), { viewModel.startEdit(service.id) }),
