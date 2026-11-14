@@ -50,6 +50,7 @@ import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.navigation.AppDestination
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
@@ -138,6 +139,19 @@ class ScreenshotRenderer {
         renderAppPng(File(outDir, "pedidos.png"), afterSettle = { it.clickByText("Kanban") }) {
             App(container, startAt = AppDestination.ORDERS)
         }
+
+        // Os cadastros (Leva 10B-2), nos dois temas: Insumos com a lista (no escuro, com os arquivados abertos) e
+        // Serviços com o painel de edição aberto.
+        for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+            container.theme.update(theme)
+            renderAppPng(
+                File(outDir, "insumos$suffix.png"),
+                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
+            ) {
+                App(container, startAt = AppDestination.CONSUMABLES)
+            }
+        }
+        container.theme.update(ThemeMode.LIGHT)
 
         renderAppPng(File(outDir, "dashboard.png")) {
             App(container, startAt = AppDestination.DASHBOARD)
@@ -402,6 +416,14 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
 
     val serviceRepo = storage.services()
     serviceRepo.add(Service(id = Catalog.PINTURA_ID, name = "Pintura", suggestedPrice = 25.0, chargedPerOrder = false))
+
+    val consumableRepo = storage.consumables()
+    consumableRepo.add(Consumable(id = "insumo-argola", name = "Argola de chaveiro", unitCost = 0.35))
+    consumableRepo.add(Consumable(id = "insumo-ima", name = "Ímã de neodímio 8 mm", unitCost = 1.2))
+    consumableRepo.add(Consumable(id = "insumo-parafuso", name = "Parafuso M3", unitCost = 0.15))
+    consumableRepo.add(Consumable(id = "insumo-caixa", name = "Caixa de papelão", unitCost = 2.8, chargedPerOrder = true))
+    consumableRepo.add(Consumable(id = "insumo-bolha", name = "Embalagem com plástico bolha", unitCost = 1.5, chargedPerOrder = true))
+    consumableRepo.add(Consumable(id = "insumo-saquinho", name = "Saquinho zip", unitCost = 0.25, archived = true))
 
     val channelRepo = storage.salesChannels()
     channelRepo.add(SalesChannel(id = Catalog.SHOPEE_ID, name = "Shopee", feeRate = 0.20))

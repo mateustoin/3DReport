@@ -80,7 +80,7 @@ class AppViewModels(
         ServiceListViewModel(container.services, container.quoteHistory::quotesIncludingTrash)
     }
     val consumableListViewModel: ConsumableListViewModel by lazy {
-        ConsumableListViewModel(container.consumables, container.quoteHistory::quotesIncludingTrash)
+        ConsumableListViewModel(container.consumables, scope, container.quoteHistory::quotesIncludingTrash)
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */

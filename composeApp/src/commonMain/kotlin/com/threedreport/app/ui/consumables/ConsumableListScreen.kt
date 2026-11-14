@@ -1,175 +1,149 @@
 package com.threedreport.app.ui.consumables
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_archive
+import _3dreport.composeapp.generated.resources.common_charge_per_order
+import _3dreport.composeapp.generated.resources.common_charge_per_piece
+import _3dreport.composeapp.generated.resources.common_delete
+import _3dreport.composeapp.generated.resources.common_edit
+import _3dreport.composeapp.generated.resources.common_field_charge
+import _3dreport.composeapp.generated.resources.common_help_charge
+import _3dreport.composeapp.generated.resources.common_restore
+import _3dreport.composeapp.generated.resources.consumables_action_new
+import _3dreport.composeapp.generated.resources.consumables_delete_message
+import _3dreport.composeapp.generated.resources.consumables_delete_title
+import _3dreport.composeapp.generated.resources.consumables_delete_what
+import _3dreport.composeapp.generated.resources.consumables_empty
+import _3dreport.composeapp.generated.resources.consumables_field_cost
+import _3dreport.composeapp.generated.resources.consumables_field_name
+import _3dreport.composeapp.generated.resources.consumables_field_name_hint
+import _3dreport.composeapp.generated.resources.consumables_form_edit
+import _3dreport.composeapp.generated.resources.consumables_form_new
+import _3dreport.composeapp.generated.resources.consumables_help_charge
+import _3dreport.composeapp.generated.resources.consumables_help_cost
+import _3dreport.composeapp.generated.resources.consumables_title
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppChoiceField
+import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
-import com.threedreport.app.ui.focus.tabToNavigate
+import com.threedreport.app.ui.components.FormPanel
+import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.ListRow
+import com.threedreport.app.ui.components.ListScreenLayout
+import com.threedreport.app.ui.components.ObserveNotices
+import com.threedreport.app.ui.components.RowAction
+import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toMoney
-import com.threedreport.app.ui.services.ServiceChargeSelector
-import com.threedreport.app.ui.services.chargeLabel
+import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.text.asString
 import com.threedreport.core.model.Consumable
+import org.jetbrains.compose.resources.stringResource
 
 /**
- * Tela de Insumos (decisão 122): argola, ímã, parafuso, caixa, saquinho, o que entra em cada peça
- * e custa dinheiro além do filamento. Espelha [com.threedreport.app.ui.services.ServiceListScreen].
+ * Tela de Insumos (decisão 122): argola, ímã, parafuso, caixa, saquinho, o que entra em cada peça e custa dinheiro
+ * além do filamento. É o molde das telas de lista: cabeçalho, linhas, painel de formulário à direita.
  */
 @Composable
 fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier = Modifier) {
-    val consumables by viewModel.consumables.collectAsState()
-    val form by viewModel.form.collectAsState()
-    var pendingDelete by remember { mutableStateOf<Consumable?>(null) }
+    val state by viewModel.uiState.collectAsState()
+    ObserveNotices(viewModel.notices)
 
-    Column(
-        modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Insumos", style = MaterialTheme.typography.titleLarge)
-        Text(
-            "O que entra em cada peça e custa dinheiro, além do filamento (ex.: argola de chaveiro, " +
-                "ímã, caixa). O custo entra no preço, como o material; escolha depois no Orçamento.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        val (archived, active) = consumables.partition { it.archived }
-        if (active.isEmpty()) {
-            EmptyState(
-                "Nenhum insumo cadastrado. Argola, ímã, parafuso, caixa, saquinho: o que entra em cada " +
-                    "peça e custa dinheiro. Cadastre aqui e escolha no orçamento; o custo entra no preço.",
-            )
-        }
-
-        val row: @Composable (Consumable) -> Unit = { consumable ->
-            ConsumableRow(
-                consumable = consumable,
-                onEdit = { viewModel.startEdit(consumable) },
-                onArchiveToggle = { viewModel.setArchived(consumable.id, !consumable.archived) },
-                onDelete = { pendingDelete = consumable },
-            )
-        }
-        active.forEach { row(it) }
-        ArchivedSection(archived.size) { archived.forEach { row(it) } }
-
-        val currentForm = form
-        if (currentForm == null) {
-            Button(onClick = viewModel::startAdd) { Text("+ Novo insumo") }
-        } else {
-            HorizontalDivider()
-            ConsumableForm(
-                form = currentForm,
-                onChange = viewModel::updateForm,
-                onSave = viewModel::save,
-                onCancel = viewModel::cancelEdit,
-            )
-        }
+    val form = state.form
+    val panel: (@Composable () -> Unit)? = form?.let { open ->
+        { ConsumableFormPanel(open, viewModel) }
     }
-
-    pendingDelete?.let { consumable ->
-        DeleteOrArchiveDialog(
-            title = "Excluir insumo?",
-            what = "o insumo \"${consumable.name}\"",
-            usageCount = viewModel.usageCount(consumable.id),
-            deleteMessage = "\"${consumable.name}\" será removido do catálogo. Pedidos já salvos continuam com o custo que tinham.",
-            onArchive = {
-                viewModel.setArchived(consumable.id, true)
-                pendingDelete = null
-            }.takeUnless { consumable.archived },
-            onDelete = {
-                viewModel.delete(consumable.id)
-                pendingDelete = null
-            },
-            onDismiss = { pendingDelete = null },
-        )
-    }
-}
-
-@Composable
-private fun ConsumableRow(consumable: Consumable, onEdit: () -> Unit, onArchiveToggle: () -> Unit, onDelete: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(consumable.name + if (consumable.archived) " · arquivado" else "", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "${consumable.unitCost.toMoney()} ${chargeLabel(consumable.chargedPerOrder)}",
-                    style = MaterialTheme.typography.bodyMedium,
+    ListScreenLayout(panel = panel, modifier = modifier) {
+        ScreenHeader(stringResource(Res.string.consumables_title)) {
+            if (!state.isEmpty) {
+                AppButton(
+                    stringResource(Res.string.consumables_action_new),
+                    onClick = viewModel::startAdd,
+                    kind = if (form == null) ButtonKind.Primary else ButtonKind.Secondary,
+                    icon = AppIcons.Add,
                 )
             }
-            Row {
-                TextButton(onClick = onEdit) { Text("Editar") }
-                TextButton(onClick = onArchiveToggle) { Text(if (consumable.archived) "Restaurar" else "Arquivar") }
-                TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
-            }
         }
+        if (state.active.isEmpty()) {
+            EmptyState(
+                stringResource(Res.string.consumables_empty),
+                actionLabel = stringResource(Res.string.consumables_action_new).takeIf { state.isEmpty },
+                onAction = viewModel::startAdd.takeIf { state.isEmpty },
+            )
+        }
+        state.active.forEach { key(it.id) { ConsumableRow(it, viewModel) } }
+        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ConsumableRow(it, viewModel) } } }
+    }
+
+    state.pendingDelete?.let { pending ->
+        DeleteOrArchiveDialog(
+            title = stringResource(Res.string.consumables_delete_title),
+            what = stringResource(Res.string.consumables_delete_what, pending.name),
+            usageCount = pending.usageCount,
+            deleteMessage = stringResource(Res.string.consumables_delete_message, pending.name),
+            onArchive = { viewModel.setArchived(pending.id, true) }.takeIf { pending.canArchive },
+            onDelete = { viewModel.delete(pending.id) },
+            onDismiss = viewModel::dismissDelete,
+        )
     }
 }
 
 @Composable
-private fun ConsumableForm(
-    form: ConsumableFormState,
-    onChange: ((ConsumableFormState) -> ConsumableFormState) -> Unit,
-    onSave: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(if (form.id == null) "Novo insumo" else "Editar insumo", style = MaterialTheme.typography.titleMedium)
+private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewModel) {
+    val archiveOrRestore = if (consumable.archived) {
+        RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(consumable.id, false) })
+    } else {
+        RowAction(AppIcons.Archive, stringResource(Res.string.common_archive), { viewModel.setArchived(consumable.id, true) })
+    }
+    ListRow(
+        title = consumable.name,
+        details = listOf(stringResource(if (consumable.chargedPerOrder) Res.string.common_charge_per_order else Res.string.common_charge_per_piece)),
+        value = consumable.unitCost.toMoney(),
+        muted = consumable.archived,
+        onClick = { viewModel.startEdit(consumable.id) },
+        actions = listOf(
+            RowAction(AppIcons.Edit, stringResource(Res.string.common_edit), { viewModel.startEdit(consumable.id) }),
+            archiveOrRestore,
+            RowAction(AppIcons.Delete, stringResource(Res.string.common_delete), { viewModel.requestDelete(consumable.id) }, danger = true),
+        ),
+    )
+}
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+@Composable
+private fun ConsumableFormPanel(form: ConsumableFormState, viewModel: ConsumableListViewModel) {
+    FormPanel(
+        title = stringResource(if (form.id == null) Res.string.consumables_form_new else Res.string.consumables_form_edit),
+        onSave = viewModel::save,
+        onCancel = viewModel::cancelEdit,
+    ) {
+        AppTextField(
+            label = stringResource(Res.string.consumables_field_name),
             value = form.name,
-            onValueChange = { text -> onChange { it.copy(name = text) } },
-            label = { Text("Nome") },
-            placeholder = { Text("Argola de chaveiro") },
+            onValueChange = { text -> viewModel.updateForm { it.copy(name = text) } },
+            placeholder = stringResource(Res.string.consumables_field_name_hint),
+            error = form.nameError?.asString(),
         )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+        AppTextField(
+            label = stringResource(Res.string.consumables_field_cost, LocalCurrency.current.symbol),
             value = form.unitCostText,
-            onValueChange = { text -> onChange { it.copy(unitCostText = text) } },
-            label = { Text("Custo por unidade (${LocalCurrency.current.symbol})") },
+            onValueChange = { text -> viewModel.updateForm { it.copy(unitCostText = text) } },
+            error = form.unitCostError?.asString(),
+            help = HelpText(stringResource(Res.string.consumables_help_cost)),
         )
-        Text("Como contar quando o pedido tem várias peças", style = MaterialTheme.typography.labelLarge)
-        ServiceChargeSelector(
-            chargedPerOrder = form.chargedPerOrder,
-            onChange = { value -> onChange { it.copy(chargedPerOrder = value) } },
+        AppChoiceField(
+            label = stringResource(Res.string.common_field_charge),
+            options = listOf(stringResource(Res.string.common_charge_per_piece), stringResource(Res.string.common_charge_per_order)),
+            selectedIndex = if (form.chargedPerOrder) 1 else 0,
+            onSelect = { index -> viewModel.updateForm { it.copy(chargedPerOrder = index == 1) } },
+            help = HelpText(stringResource(Res.string.common_help_charge), stringResource(Res.string.consumables_help_charge)),
         )
-        Text(
-            "Uma argola por chaveiro é por peça; uma caixa pra entrega inteira é uma vez no pedido. " +
-                "Dá pra trocar em cada orçamento.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onSave) { Text("Salvar") }
-            TextButton(onClick = onCancel) { Text("Cancelar") }
-        }
     }
 }
