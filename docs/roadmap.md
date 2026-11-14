@@ -155,7 +155,7 @@ fundação, sistema de design, e depois as telas em grupos.
   nova. Sem mudança visível.
 - [ ] **Sistema de design** ([design-system.md](design-system.md), decisão 127).
   Tema com tipografia, formas, espaçamento e as fontes embutidas (Inter e Space
-  Grotesk), e o kit de componentes em `ui/kit/` no lugar das reimplementações de
+  Grotesk), e o kit de componentes em `ui/components/` no lugar das reimplementações de
   hoje (cinco wrappers de campo, quatro tratamentos de card, três barras de rodapé).
 - [ ] **Telas na nova interface**, em grupos: moldura e barra lateral; os quatro
   cadastros; Orçamento (dividindo `QuoteScreen.kt`); Pedidos e Catálogo, com a
