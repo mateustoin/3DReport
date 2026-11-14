@@ -112,4 +112,18 @@ class WebCalculatorTest {
         assertNotNull(result.error)
         assertEquals(0.0, result.salePrice)
     }
+
+    @Test
+    fun aFraseDoCanalMaisImpostoNaoMuda() {
+        val expected = "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você."
+        // 70 + 30 em fração dá 0,9999..., e 100% sozinho é recusado ao montar o canal: a frase vale pros três.
+        assertEquals(expected, web(channelFeePercent = 60.0, taxPercent = 40.0).error)
+        assertEquals(expected, web(channelFeePercent = 70.0, taxPercent = 30.0).error)
+        assertEquals(expected, web(channelFeePercent = 100.0, taxPercent = 0.0).error)
+    }
+
+    @Test
+    fun valorNegativoContinuaComAMensagemDeConferir() {
+        assertEquals("Confira os valores: nenhum deles pode ser negativo.", web(grams = -1.0).error)
+    }
 }

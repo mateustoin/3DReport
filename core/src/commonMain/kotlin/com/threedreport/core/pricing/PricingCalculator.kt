@@ -72,6 +72,7 @@ object PricingCalculator {
      * @param consumables insumos usados no pedido (decisão 122).
      * @param rush pedido urgente: a peça ganha [PricingSettings.rushSurchargeRate] (decisão 125).
      * @param absorbedShippingCost frete que você paga pra o cliente receber de graça (decisão 124).
+     * @throws PricingError.DeductionsReachFullPrice quando a taxa do canal somada ao imposto chega a 100%.
      */
     fun calculate(
         prints: List<Pair<PrintJob, PrinterProfile>>,

@@ -9,6 +9,7 @@ import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.pricing.PricingError
 
 /**
  * Resultado da calculadora do site, só com números pra o JavaScript da página formatar. Valores
@@ -57,8 +58,10 @@ fun calculateQuote(
     channelFixedFeePerItem: Double,
     taxPercent: Double,
 ): WebQuote = if (channelFeePercent + taxPercent >= 100) {
-    // O `core` também recusa, mas a mensagem dele manda revisar "Configurações", que só existe no app.
-    WebQuote(error = "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você.")
+    // O `core` recusa o mesmo caso, mas a conferência fica também aqui, nos percentuais digitados: 100% de
+    // canal (ou de imposto) sozinho é recusado antes, ao montar o canal, e 70% + 30% em fração dá
+    // 0,9999..., que o `core` aceitaria. O motivo continua sendo o tipo do `core`.
+    WebQuote(error = errorMessage(PricingError.DeductionsReachFullPrice(channelFeePercent / 100, taxPercent / 100)))
 } else {
     try {
         val filament = Filament(
@@ -118,10 +121,20 @@ fun calculateQuote(
             finishing = quote.costs.finishing,
             labor = quote.costs.labor,
         )
+    } catch (error: PricingError) {
+        WebQuote(error = errorMessage(error))
     } catch (_: IllegalArgumentException) {
         // As mensagens do `core` são pra quem programa (nomes de campo em inglês); aqui o motivo é sempre um valor negativo.
         WebQuote(error = "Confira os valores: nenhum deles pode ser negativo.")
     }
+}
+
+/**
+ * A frase de cada erro de preço do `core` na calculadora do site. Sem o "Revise em Configurações" do app:
+ * no site não há Configurações.
+ */
+private fun errorMessage(error: PricingError): String = when (error) {
+    is PricingError.DeductionsReachFullPrice -> "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você."
 }
 
 // Com a entrada em gramas, a densidade só serve pra ir e voltar do comprimento: não muda o custo.

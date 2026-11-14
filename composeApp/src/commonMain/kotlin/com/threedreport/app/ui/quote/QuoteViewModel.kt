@@ -43,6 +43,7 @@ import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.pricing.PricingError
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
 import com.threedreport.core.slicer.GCodeMetadataParser
@@ -1096,9 +1097,9 @@ class QuoteViewModel(
         }.fold(
             onSuccess = { base.copy(quote = it) },
             onFailure = { error ->
-                // As mensagens do `core` que chegam aqui já foram escritas pra tela (a de canal + imposto
-                // chegando a 100%); o resto é validação que a tela já fez, e não deveria acontecer.
-                val message = error.message?.takeIf { it.startsWith("A taxa do canal") } ?: "Confira os valores digitados."
+                // O `core` diz o que aconteceu pelo tipo e a frase é escolhida aqui (decisão 130); o resto é
+                // validação que a tela já fez, e não deveria acontecer.
+                val message = (error as? PricingError)?.let(::pricingErrorMessage) ?: "Confira os valores digitados."
                 base.copy(errorMessage = message)
             },
         )
@@ -1219,3 +1220,13 @@ class QuoteViewModel(
 }
 
 private fun <T> List<T>.replaced(index: Int, transform: (T) -> T): List<T> = mapIndexed { i, item -> if (i == index) transform(item) else item }
+
+/**
+ * A frase de cada erro de preço do `core` (decisão 130). O texto é o mesmo de antes de o `core` passar a
+ * devolver o erro pelo tipo; muda pra recurso traduzível quando a tela de Orçamento for reescrita.
+ */
+internal fun pricingErrorMessage(error: PricingError): String = when (error) {
+    is PricingError.DeductionsReachFullPrice ->
+        "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. " +
+            "Revise a taxa do canal ou o imposto em Configurações."
+}
