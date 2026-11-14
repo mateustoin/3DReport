@@ -16,7 +16,7 @@ subprojects {
         version.set(rootProject.libs.versions.ktlint.get())
         // Arquivos gerados (ex.: AppVersion.kt, de generateAppVersion) ficam em build/.
         filter {
-            exclude { it.file.path.contains("/build/") }
+            exclude { it.file.invariantSeparatorsPath.contains("/build/") }
         }
     }
 }
