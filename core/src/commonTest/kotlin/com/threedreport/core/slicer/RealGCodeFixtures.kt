@@ -22,7 +22,7 @@ object RealGCodeFixtures {
 ; printer_model = Bambu Lab A1 mini
 ; printer_settings_id = Bambu Lab A1 mini 0.4 nozzle
 ; sparse_infill_density = 15%
-""".trimIndent()
+    """.trimIndent()
 
     /** Bambu Studio 02.03.01.51, Bambu Lab X1 Carbon, PLA. github.com/malekgxd/slicercompare (temp/plate_1.gcode, commit 17eb372) */
     val BAMBU_STUDIO_X1C = """
@@ -37,7 +37,7 @@ object RealGCodeFixtures {
 ; printer_model = Bambu Lab X1 Carbon
 ; printer_settings_id = Bambu Lab X1 Carbon 0.4 nozzle
 ; sparse_infill_density = 20%
-""".trimIndent()
+    """.trimIndent()
 
     /** OrcaSlicer 1.6.3, Voron 2.4 350, ASA. github.com/valadas/em-calibrator-postprocessor (samples/orca-slicer.gcode, commit e239351) */
     val ORCA_SLICER_VORON = """
@@ -55,7 +55,7 @@ object RealGCodeFixtures {
 ; printer_model = Voron 2.4 350
 ; printer_settings_id = Voron 2.4 350 0.6 nozzle
 ; sparse_infill_density = 40%
-""".trimIndent()
+    """.trimIndent()
 
     /** PrusaSlicer 2.4.0-alpha1, perfil de Voron vindo de um .3mf, ABS. github.com/kageurufu/preprocess_cancellation (GCode/prusaslicer.gcode, commit 3b9cf64) */
     val PRUSA_SLICER_VORON = """
@@ -73,7 +73,7 @@ object RealGCodeFixtures {
 ; layer_height = 0.2
 ; printer_model = Voron_v2_300_aferburner
 ; printer_settings_id = test_bed.3mf (Voron_v2_300_afterburner 0.4 nozzle - Copy)
-""".trimIndent()
+    """.trimIndent()
 
     /** Cura 5.3.1, Creality Ender-3 V2. github.com/mriscoc/Ender3V2S1 (slicer scripts/cura/SimpleCuraTest.gcode, commit 05903a8) */
     val CURA_ENDER3_V2 = """
@@ -98,7 +98,7 @@ object RealGCodeFixtures {
 ;SETTING_3 ze_wall_printing_order = False\\nretract_at_layer_change = True\\nski
 ;SETTING_3 rt_line_count = 2\\nspeed_layer_0 = 15\\nsupport_angle = 65\\nsupport
 ;SETTING_3 _infill_rate = 10\\nz_seam_type = sharpest_corner\\n\\n"]}
-""".trimIndent()
+    """.trimIndent()
 
     /**
      * Bambu Studio 01.10.01.50, Bambu Lab A1 com AMS lite, dois PLA (verde e amarelo) e torre de
@@ -117,7 +117,7 @@ object RealGCodeFixtures {
 ; filament_vendor = "Bambu Lab";"Bambu Lab"
 ; printer_model = Bambu Lab A1
 ; printer_settings_id = Bambu Lab A1 0.4 nozzle
-""".trimIndent()
+    """.trimIndent()
 
     /**
      * OrcaSlicer 2.2.0, RatRig V-Core IDEX, dois PETG e torre de purga. O arquivo completo foi
@@ -138,7 +138,7 @@ object RealGCodeFixtures {
 ; filament_vendor = Generic;Generic
 ; printer_model = RatRig V-Core 3 300
 ; printer_settings_id = RatRig V-Core 4 IDEX
-""".trimIndent()
+    """.trimIndent()
 
     /**
      * OrcaSlicer 2.3.0, impressora Marlin genérica com dois slots declarados e só o primeiro usado.
@@ -155,5 +155,5 @@ object RealGCodeFixtures {
 ; filament_vendor = Generic;Generic
 ; printer_model = Generic Marlin Printer
 ; printer_settings_id = MyMarlin 0.4 nozzle
-""".trimIndent()
+    """.trimIndent()
 }

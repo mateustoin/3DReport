@@ -3,9 +3,9 @@ package com.threedreport.core.pricing
 import com.threedreport.core.model.ChannelFeeSchedule
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.PricingSettings
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.QuotedConsumable

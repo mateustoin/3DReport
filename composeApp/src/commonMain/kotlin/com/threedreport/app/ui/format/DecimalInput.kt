@@ -52,7 +52,9 @@ fun parseDecimal(text: String, kind: NumberKind = NumberKind.AMOUNT, decimalSepa
             if (decimal in integer || !isValidGrouping(integer, grouping) || fraction.any { !it.isDigit() }) return null
             integer.replace(grouping.toString(), "") + "." + fraction
         }
+
         lastDot < 0 && lastComma < 0 -> cleaned
+
         else -> {
             val separator = if (lastDot >= 0) '.' else ','
             val occurrences = cleaned.count { it == separator }

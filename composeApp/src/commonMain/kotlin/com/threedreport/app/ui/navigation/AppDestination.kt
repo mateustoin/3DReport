@@ -24,7 +24,8 @@ enum class AppDestination(val label: String, val group: DestinationGroup) {
     SERVICES("Serviços", DestinationGroup.REGISTRIES),
     CONSUMABLES("Insumos", DestinationGroup.REGISTRIES),
     SETTINGS("Configurações", DestinationGroup.FOOTER),
-    ABOUT("Sobre", DestinationGroup.FOOTER);
+    ABOUT("Sobre", DestinationGroup.FOOTER),
+    ;
 
     /** O número do atalho Ctrl/Cmd+N, ou `null` pra quem não tem. */
     val shortcutNumber: Int?

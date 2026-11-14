@@ -59,10 +59,12 @@ internal fun SavedQuote.toCopyPasteText(currency: Currency = this.currency, show
             appendLine()
             append(delivery).append(" (entrega expressa)")
         }
+
         delivery != null -> {
             appendLine()
             append(delivery)
         }
+
         quote.rush -> {
             appendLine()
             append("Entrega expressa")

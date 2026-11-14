@@ -6,9 +6,9 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.pricing.PricingCalculator

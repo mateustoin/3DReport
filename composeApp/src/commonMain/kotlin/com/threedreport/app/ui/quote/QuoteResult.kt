@@ -1,12 +1,12 @@
 package com.threedreport.app.ui.quote
 
-import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
-import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.QuoteService
+import com.threedreport.core.model.SalesChannel
+import com.threedreport.core.model.SavedQuote
 
 /** O filamento e a cor que uma linha de fato usa (com o padrão aplicado quando nada foi escolhido). */
 data class ResolvedFilament(val filament: Filament?, val color: FilamentColor?)

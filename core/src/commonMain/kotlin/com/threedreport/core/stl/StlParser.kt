@@ -75,10 +75,12 @@ private fun parseAsciiStl(bytes: ByteArray): StlMesh {
                 currentNormal = if (numbers.size >= 3) Vec3(numbers[0], numbers[1], numbers[2]) else Vec3.ZERO
                 vertices.clear()
             }
+
             line.startsWith("vertex", ignoreCase = true) -> {
                 val numbers = asciiFloatRegex.findAll(line).map { it.value.toFloat() }.toList()
                 if (numbers.size >= 3) vertices += Vec3(numbers[0], numbers[1], numbers[2])
             }
+
             line.startsWith("endfacet", ignoreCase = true) -> {
                 if (vertices.size == 3) {
                     triangles += StlTriangle(currentNormal, vertices[0], vertices[1], vertices[2])

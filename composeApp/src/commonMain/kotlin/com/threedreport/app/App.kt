@@ -1,65 +1,46 @@
 package com.threedreport.app
 
-import androidx.compose.foundation.layout.Arrangement
-import com.threedreport.app.platform.fileDropTarget
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.border
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.VerticalDivider
-import com.threedreport.app.ui.about.AboutScreen
-import com.threedreport.app.ui.navigation.AppDestination
-import com.threedreport.app.ui.navigation.AppSidebar
-import com.threedreport.app.ui.navigation.SIDEBAR_LABELS_MIN_WINDOW_WIDTH
-import com.threedreport.app.ui.navigation.destinationForShortcut
-import com.threedreport.core.model.QuoteKind
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.ui.window.DialogProperties
-import com.threedreport.app.platform.openFolder
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.IO
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SnackbarDuration
-import com.threedreport.app.platform.openUrl
-import com.threedreport.app.ui.about.UpdateViewModel
-import com.threedreport.app.ui.about.UpdateState
-import com.threedreport.app.ui.about.UpdateSection
-import com.threedreport.app.ui.quote.printTitle
-import com.threedreport.app.ui.quote.PrintInput
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -67,8 +48,19 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.threedreport.app.ui.icons.AppIcons
+import androidx.compose.ui.window.DialogProperties
+import com.threedreport.app.data.PrinterRepository
+import com.threedreport.app.platform.fileDropTarget
+import com.threedreport.app.platform.openFolder
+import com.threedreport.app.platform.openUrl
+import com.threedreport.app.ui.about.AboutScreen
+import com.threedreport.app.ui.about.UpdateSection
+import com.threedreport.app.ui.about.UpdateState
+import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.consumables.ConsumableListScreen
@@ -80,28 +72,36 @@ import com.threedreport.app.ui.filaments.FilamentListViewModel
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.history.QuoteHistoryScreen
 import com.threedreport.app.ui.history.QuoteHistoryViewModel
+import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.navigation.AppDestination
+import com.threedreport.app.ui.navigation.AppSidebar
+import com.threedreport.app.ui.navigation.SIDEBAR_LABELS_MIN_WINDOW_WIDTH
+import com.threedreport.app.ui.navigation.destinationForShortcut
 import com.threedreport.app.ui.onboarding.OnboardingDialog
 import com.threedreport.app.ui.onboarding.OnboardingPrinter
-import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.ui.printers.PrinterListScreen
 import com.threedreport.app.ui.printers.PrinterListViewModel
+import com.threedreport.app.ui.quote.PrintInput
 import com.threedreport.app.ui.quote.QuoteOperation
 import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
+import com.threedreport.app.ui.quote.printTitle
 import com.threedreport.app.ui.services.ServiceListScreen
 import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.app.ui.settings.BackupViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.CurrencyViewModel
+import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsSection
-import com.threedreport.app.ui.settings.hasUnsavedSettings
-import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsViewModel
+import com.threedreport.app.ui.settings.hasUnsavedSettings
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.ThemeViewModel
+import com.threedreport.core.model.QuoteKind
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 
 @Composable
@@ -200,7 +200,9 @@ fun App(
     val unlessEditing: (() -> Unit) -> Unit = { action ->
         when {
             !editing -> action()
+
             editQuoteViewModel.hasUnsavedEdits -> pendingEndEditing = action
+
             else -> {
                 editQuoteViewModel.resetForm()
                 action()
@@ -249,10 +251,12 @@ fun App(
                             if (editing) saveEditing() else quoteViewModel.saveCurrentQuote()
                             true
                         }
+
                         accel && event.key == Key.N && destination == AppDestination.QUOTE -> {
                             unlessDraft(quoteViewModel::resetForm)
                             true
                         }
+
                         // Esc fecha o formulário da aba que está na tela, e só ele: antes fechava os de
                         // todas as abas, inclusive um que a pessoa nem estava vendo.
                         event.key == Key.Escape -> when (destination) {
@@ -262,6 +266,7 @@ fun App(
                             AppDestination.CONSUMABLES -> consumableListViewModel.form.value?.let { consumableListViewModel.cancelEdit(); true } ?: false
                             else -> false
                         }
+
                         else -> false
                     }
                 },
@@ -285,102 +290,110 @@ fun App(
                         },
                     ),
                 ) {
-                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                val compactSidebar = maxWidth < SIDEBAR_LABELS_MIN_WINDOW_WIDTH
-                Row(modifier = Modifier.fillMaxSize()) {
-                    AppSidebar(
-                        selected = destination,
-                        onSelect = { destination = it },
-                        compact = compactSidebar,
-                        version = APP_VERSION,
-                        status = { if (it == AppDestination.QUOTE && editing) "Editando" else null },
-                        hasPendingChanges = { it == AppDestination.SETTINGS && settingsDirty },
-                    )
-                    VerticalDivider()
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val compactSidebar = maxWidth < SIDEBAR_LABELS_MIN_WINDOW_WIDTH
+                        Row(modifier = Modifier.fillMaxSize()) {
+                            AppSidebar(
+                                selected = destination,
+                                onSelect = { destination = it },
+                                compact = compactSidebar,
+                                version = APP_VERSION,
+                                status = { if (it == AppDestination.QUOTE && editing) "Editando" else null },
+                                hasPendingChanges = { it == AppDestination.SETTINGS && settingsDirty },
+                            )
+                            VerticalDivider()
 
-                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                        when (destination) {
-                            // A chave troca a tela inteira entre a edição e a aba, sem estado de uma vazar pra outra.
-                            AppDestination.QUOTE -> key(editing) {
-                                if (editing) {
-                                    QuoteScreen(editQuoteViewModel, onSave = saveEditing, onCancelOperation = cancelEditing)
-                                } else {
-                                    QuoteScreen(
-                                        quoteViewModel,
-                                        // Vender, Duplicar e Guardar no catálogo começam em Pedidos ou no Catálogo:
-                                        // desistir devolve a pessoa pra lá, com o formulário limpo.
-                                        onCancelOperation = {
-                                            val origin = originOf(quoteViewModel.saveForm.value.operation)
-                                            quoteViewModel.resetForm()
-                                            destination = origin
+                            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                when (destination) {
+                                    // A chave troca a tela inteira entre a edição e a aba, sem estado de uma vazar pra outra.
+                                    AppDestination.QUOTE -> key(editing) {
+                                        if (editing) {
+                                            QuoteScreen(editQuoteViewModel, onSave = saveEditing, onCancelOperation = cancelEditing)
+                                        } else {
+                                            QuoteScreen(
+                                                quoteViewModel,
+                                                // Vender, Duplicar e Guardar no catálogo começam em Pedidos ou no Catálogo:
+                                                // desistir devolve a pessoa pra lá, com o formulário limpo.
+                                                onCancelOperation = {
+                                                    val origin = originOf(quoteViewModel.saveForm.value.operation)
+                                                    quoteViewModel.resetForm()
+                                                    destination = origin
+                                                },
+                                            )
+                                        }
+                                    }
+
+                                    AppDestination.ORDERS, AppDestination.CATALOG -> QuoteHistoryScreen(
+                                        if (destination == AppDestination.ORDERS) ordersViewModel else catalogViewModel,
+                                        onEditQuote = { savedQuote ->
+                                            unlessEditing {
+                                                editQuoteViewModel.loadForEditing(savedQuote)
+                                                destination = AppDestination.QUOTE
+                                            }
+                                        },
+                                        // As três começam um orçamento na aba: com um rascunho lá, pergunta antes.
+                                        onDuplicateQuote = { savedQuote ->
+                                            unlessDraft {
+                                                quoteViewModel.duplicateForNewQuote(savedQuote)
+                                                destination = AppDestination.QUOTE
+                                            }
+                                        },
+                                        onSellProduct = { product ->
+                                            unlessDraft {
+                                                quoteViewModel.sellFromProduct(product)
+                                                destination = AppDestination.QUOTE
+                                            }
+                                        },
+                                        onCopyToCatalog = { order ->
+                                            unlessDraft {
+                                                quoteViewModel.copyToCatalog(order)
+                                                destination = AppDestination.QUOTE
+                                            }
                                         },
                                     )
+
+                                    AppDestination.DASHBOARD -> DashboardScreen(dashboardViewModel)
+
+                                    AppDestination.FILAMENTS -> FilamentListScreen(filamentListViewModel)
+
+                                    AppDestination.PRINTERS -> PrinterListScreen(printerListViewModel)
+
+                                    AppDestination.SERVICES -> ServiceListScreen(serviceListViewModel)
+
+                                    AppDestination.CONSUMABLES -> ConsumableListScreen(consumableListViewModel)
+
+                                    AppDestination.SETTINGS -> SettingsScreen(
+                                        settingsViewModel,
+                                        brandingViewModel,
+                                        templateListViewModel,
+                                        themeViewModel,
+                                        currencyViewModel,
+                                        backupViewModel,
+                                        salesChannelViewModel,
+                                        section = settingsSection,
+                                        onSectionChange = { settingsSection = it },
+                                    )
+
+                                    AppDestination.ABOUT -> AboutScreen(version = APP_VERSION) { UpdateSection(updateViewModel) }
                                 }
                             }
-                            AppDestination.ORDERS, AppDestination.CATALOG -> QuoteHistoryScreen(
-                                if (destination == AppDestination.ORDERS) ordersViewModel else catalogViewModel,
-                                onEditQuote = { savedQuote ->
-                                    unlessEditing {
-                                        editQuoteViewModel.loadForEditing(savedQuote)
-                                        destination = AppDestination.QUOTE
-                                    }
-                                },
-                                // As três começam um orçamento na aba: com um rascunho lá, pergunta antes.
-                                onDuplicateQuote = { savedQuote ->
-                                    unlessDraft {
-                                        quoteViewModel.duplicateForNewQuote(savedQuote)
-                                        destination = AppDestination.QUOTE
-                                    }
-                                },
-                                onSellProduct = { product ->
-                                    unlessDraft {
-                                        quoteViewModel.sellFromProduct(product)
-                                        destination = AppDestination.QUOTE
-                                    }
-                                },
-                                onCopyToCatalog = { order ->
-                                    unlessDraft {
-                                        quoteViewModel.copyToCatalog(order)
-                                        destination = AppDestination.QUOTE
-                                    }
-                                },
-                            )
-                            AppDestination.DASHBOARD -> DashboardScreen(dashboardViewModel)
-                            AppDestination.FILAMENTS -> FilamentListScreen(filamentListViewModel)
-                            AppDestination.PRINTERS -> PrinterListScreen(printerListViewModel)
-                            AppDestination.SERVICES -> ServiceListScreen(serviceListViewModel)
-                            AppDestination.CONSUMABLES -> ConsumableListScreen(consumableListViewModel)
-                            AppDestination.SETTINGS -> SettingsScreen(
-                                settingsViewModel,
-                                brandingViewModel,
-                                templateListViewModel,
-                                themeViewModel,
-                                currencyViewModel,
-                                backupViewModel,
-                                salesChannelViewModel,
-                                section = settingsSection,
-                                onSectionChange = { settingsSection = it },
-                            )
-                            AppDestination.ABOUT -> AboutScreen(version = APP_VERSION) { UpdateSection(updateViewModel) }
                         }
                     }
-                }
-                }
 
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
-                )
-
-                if (draggingFile) {
-                    GCodeDropOverlay(
-                        prints = visibleInput.prints,
-                        // Lido dentro do aviso: cada movimento do mouse redesenha só ele, e não a tela inteira.
-                        hovered = { dragPosition?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key } },
-                        onZonePlaced = { zone, bounds -> dropZones[zone] = bounds },
-                        onDispose = { dropZones.clear() },
+                    SnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
                     )
-                }
+
+                    if (draggingFile) {
+                        GCodeDropOverlay(
+                            prints = visibleInput.prints,
+                            // Lido dentro do aviso: cada movimento do mouse redesenha só ele, e não a tela inteira.
+                            hovered = { dragPosition?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key } },
+                            onZonePlaced = { zone, bounds -> dropZones[zone] = bounds },
+                            onDispose = { dropZones.clear() },
+                        )
+                    }
                 }
             }
 
@@ -510,6 +523,7 @@ private fun DataFolderNoticeDialog(notice: DataFolderNotice, onDismiss: () -> Un
                         DataFolderNotice.Kind.MOVED_FROM_NEWER ->
                             "Os dados eram de uma versão mais nova do 3DReport, que esta não consegue ler. Pra não " +
                                 "estragar nada, esta versão começa com os dados em branco."
+
                         DataFolderNotice.Kind.MIGRATED ->
                             "Esta versão guarda os dados de um jeito novo, e os seus foram convertidos. Está tudo aqui."
                     },

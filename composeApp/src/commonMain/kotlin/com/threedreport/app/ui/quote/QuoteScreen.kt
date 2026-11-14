@@ -9,16 +9,17 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
@@ -58,7 +59,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.selection.toggleable
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.encodeImageBitmapToPng
 import com.threedreport.app.platform.formatDate
@@ -66,13 +66,13 @@ import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.ClientField
 import com.threedreport.app.ui.components.FieldHelp
-import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.components.SectionTitle
 import com.threedreport.app.ui.components.ShowNotice
 import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.components.SubsectionTitle
+import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.filaments.displayText
 import com.threedreport.app.ui.focus.tabToNavigate
@@ -212,22 +212,26 @@ private fun OperationBar(form: SaveQuoteFormState, isProduct: Boolean, onCancel:
                 " O que estava sendo feito no Orçamento volta quando você terminar.",
             "Cancelar edição",
         )
+
         is QuoteOperation.Selling -> Triple(
             "Vendendo \"${operation.product.name}\"",
             "Preencha o cliente e o prazo e salve o pedido. O produto continua no catálogo, sem mudar nada.",
             "Cancelar venda",
         )
+
         is QuoteOperation.CopyingToCatalog -> Triple(
             "Copiando \"${operation.fromName}\" pro catálogo",
             "Revise e clique em \"Salvar no catálogo\". Preço negociado, frete, cliente e prazo não vêm junto. O pedido não muda.",
             "Cancelar cópia",
         )
+
         is QuoteOperation.Duplicating -> Triple(
             "Duplicando \"${operation.fromName}\"",
             "Revise os dados, preencha o cliente e salve pra criar " + (if (isProduct) "um produto novo." else "um pedido novo.") +
                 " O original não muda.",
             "Cancelar duplicação",
         )
+
         else -> return
     }
     Column {
@@ -622,30 +626,39 @@ private fun QuoteResultSection(
             deliveryDateEpochDay = saveForm.deliveryDateEpochDay.takeUnless { input.isProduct },
             onUseShippingCoveringPrice = viewModel::useShippingCoveringPrice,
         )
+
         result.errorMessage != null -> Text(result.errorMessage, color = MaterialTheme.colorScheme.error)
+
         result.fieldErrors.isNotEmpty() -> Text(
             "Corrija o campo marcado pra calcular: ${result.fieldErrors.values.first()}",
             color = MaterialTheme.colorScheme.error,
         )
+
         allFilaments.none { it.hasStockAvailable } && allFilaments.isNotEmpty() -> Text(
             "Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" em Filamentos.",
             style = MaterialTheme.typography.bodyMedium,
         )
+
         allFilaments.isEmpty() -> Text("Cadastre um filamento em Filamentos.", style = MaterialTheme.typography.bodyMedium)
+
         printers.isEmpty() -> Text("Cadastre uma impressora em Impressoras.", style = MaterialTheme.typography.bodyMedium)
+
         // Tudo arquivado (decisão 115): não há o que escolher, e pedir peso e tempo não ajudaria.
         allFilaments.none { it.hasStockAvailable && !it.archived } -> Text(
             "Todos os filamentos em estoque estão arquivados. Restaure um em Filamentos, na seção Arquivados.",
             style = MaterialTheme.typography.bodyMedium,
         )
+
         printers.all { it.archived } -> Text(
             "Todas as impressoras estão arquivadas. Restaure uma em Impressoras, na seção Arquivados.",
             style = MaterialTheme.typography.bodyMedium,
         )
+
         input.prints.size > 1 -> Text(
             "Preencha peso (ou comprimento) e tempo de cada impressão pra calcular, ou arraste os G-codes.",
             style = MaterialTheme.typography.bodyMedium,
         )
+
         else -> Text("Preencha peso (ou comprimento) e tempo pra calcular, ou arraste o G-code.", style = MaterialTheme.typography.bodyMedium)
     }
 
@@ -1268,15 +1281,18 @@ private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             Text("Preparando a prévia 3D…", style = MaterialTheme.typography.bodySmall)
         }
+
         is StlPreview.TooComplex -> Text(
             "Esse modelo é muito complexo pra pré-visualizar (~${current.triangleCount} triângulos) — " +
                 "o arquivo é salvo normalmente, só sem a prévia 3D, pra não travar o app.",
             style = MaterialTheme.typography.bodySmall,
         )
+
         StlPreview.Unreadable -> Text(
             "Não consegui ler esse arquivo STL — pode estar corrompido ou num formato não suportado.",
             color = MaterialTheme.colorScheme.error,
         )
+
         is StlPreview.Ready -> {
             Text("Arraste pra girar, use a roda do mouse pra zoom.", style = MaterialTheme.typography.bodySmall)
             val viewerState = rememberStl3DViewerState(current.mesh)

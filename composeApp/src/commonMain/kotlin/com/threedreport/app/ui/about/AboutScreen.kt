@@ -38,41 +38,43 @@ fun AboutScreen(version: String, extra: @Composable () -> Unit = {}) {
         Column(
             modifier = Modifier.widthIn(max = READING_MAX_WIDTH).fillMaxWidth().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) { ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
-            Text("3DReport v$version", style = MaterialTheme.typography.titleLarge)
-            Text(
-                "Aplicativo gratuito e de código aberto pra orçar e vender impressão 3D. Feito por $AUTHOR_NAME.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            LinkText(text = "Ver código-fonte no GitHub", url = GITHUB_URL)
-            LinkText(text = "☕ Apoiar o projeto no Buy Me a Coffee", url = BUY_ME_A_COFFEE_URL)
+        ) {
+            ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
+                Text("3DReport v$version", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Aplicativo gratuito e de código aberto pra orçar e vender impressão 3D. Feito por $AUTHOR_NAME.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                LinkText(text = "Ver código-fonte no GitHub", url = GITHUB_URL)
+                LinkText(text = "☕ Apoiar o projeto no Buy Me a Coffee", url = BUY_ME_A_COFFEE_URL)
 
-            extra()
+                extra()
 
-            SectionTitle(AppIcons.Info, "Como usar")
-            Text(
-                "• Orçamento: arraste o G-code pra janela (ou use \"Escolher arquivo\") e peso, tempo, foto, " +
-                    "impressora e filamento vêm preenchidos. Escolha se é pedido de cliente ou produto do catálogo, " +
-                    "o canal de venda e os serviços, e salve.",
-            )
-            Text(
-                "• Pedidos: o que os clientes pediram, em lista ou Kanban. Exporte PDF, imagem pro WhatsApp ou o " +
-                    "texto; \"Ações\" tem mover de etapa, editar, duplicar e guardar no catálogo.",
-            )
-            Text("• Catálogo: as peças que você oferece, com preço. \"Vender\" cria o pedido a partir do produto.")
-            Text("• Dashboard: vendas pela data em que o cliente fechou, lucro por hora e o que mais vende.")
-            Text("• Filamentos, Impressoras, Serviços e Insumos: seus cadastros, usados no Orçamento.")
-            Text(
-                "• Configurações: custos (energia, sua hora, margem, imposto), canais de venda com a taxa de cada " +
-                    "um, documentos pro cliente (marca, logo, contato), tema, moeda e backup " +
-                    "(com cópia automática diária).",
-            )
+                SectionTitle(AppIcons.Info, "Como usar")
+                Text(
+                    "• Orçamento: arraste o G-code pra janela (ou use \"Escolher arquivo\") e peso, tempo, foto, " +
+                        "impressora e filamento vêm preenchidos. Escolha se é pedido de cliente ou produto do catálogo, " +
+                        "o canal de venda e os serviços, e salve.",
+                )
+                Text(
+                    "• Pedidos: o que os clientes pediram, em lista ou Kanban. Exporte PDF, imagem pro WhatsApp ou o " +
+                        "texto; \"Ações\" tem mover de etapa, editar, duplicar e guardar no catálogo.",
+                )
+                Text("• Catálogo: as peças que você oferece, com preço. \"Vender\" cria o pedido a partir do produto.")
+                Text("• Dashboard: vendas pela data em que o cliente fechou, lucro por hora e o que mais vende.")
+                Text("• Filamentos, Impressoras, Serviços e Insumos: seus cadastros, usados no Orçamento.")
+                Text(
+                    "• Configurações: custos (energia, sua hora, margem, imposto), canais de venda com a taxa de cada " +
+                        "um, documentos pro cliente (marca, logo, contato), tema, moeda e backup " +
+                        "(com cópia automática diária).",
+                )
 
-            SectionTitle(AppIcons.Tune, "Atalhos de teclado")
-            Text("• Ctrl/Cmd+1 a 9: pula direto pra cada tela da barra lateral, na ordem (Orçamento a Configurações).")
-            Text("• Ctrl/Cmd+S: salva o orçamento (no Orçamento, inclusive editando um pedido).")
-            Text("• Ctrl/Cmd+N: começa um orçamento novo (pergunta antes se houver algo preenchido).")
-            Text("• Esc: fecha o formulário aberto em Filamentos, Impressoras, Serviços ou Insumos.")
-        } }
+                SectionTitle(AppIcons.Tune, "Atalhos de teclado")
+                Text("• Ctrl/Cmd+1 a 9: pula direto pra cada tela da barra lateral, na ordem (Orçamento a Configurações).")
+                Text("• Ctrl/Cmd+S: salva o orçamento (no Orçamento, inclusive editando um pedido).")
+                Text("• Ctrl/Cmd+N: começa um orçamento novo (pergunta antes se houver algo preenchido).")
+                Text("• Esc: fecha o formulário aberto em Filamentos, Impressoras, Serviços ou Insumos.")
+            }
+        }
     }
 }

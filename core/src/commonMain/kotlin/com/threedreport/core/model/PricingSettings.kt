@@ -75,5 +75,4 @@ data class PricingSettings(
      */
     val fixedCostPerHour: Double
         get() = if (productiveHoursPerMonth > 0) monthlyFixedCost / productiveHoursPerMonth else 0.0
-
 }

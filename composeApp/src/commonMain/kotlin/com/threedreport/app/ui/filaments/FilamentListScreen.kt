@@ -1,10 +1,5 @@
 package com.threedreport.app.ui.filaments
 
-import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.DeleteOrArchiveDialog
-import com.threedreport.app.ui.format.toInputText
-import androidx.compose.material3.FilterChip
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -41,11 +38,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ArchivedSection
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.PresetChip
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.core.model.Filament
 
@@ -104,10 +104,16 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
             deleteMessage = "\"${filament.name}\" sai da lista de filamentos. Pedidos e produtos já salvos guardam o próprio " +
                 "retrato e não mudam, mas um produto feito com ele só volta a ter o preço atualizado depois de você " +
                 "escolher outro filamento em \"Editar cálculo\".",
-            onArchive = if (filament.archived) null else ({
-                viewModel.setArchived(filament.id, true)
-                pendingDelete = null
-            }),
+            onArchive = if (filament.archived) {
+                null
+            } else {
+                (
+                    {
+                        viewModel.setArchived(filament.id, true)
+                        pendingDelete = null
+                    }
+                    )
+            },
             onDelete = {
                 viewModel.delete(filament.id)
                 pendingDelete = null

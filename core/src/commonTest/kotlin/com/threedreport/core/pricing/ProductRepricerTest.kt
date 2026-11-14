@@ -1,6 +1,5 @@
 package com.threedreport.core.pricing
 
-import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
@@ -9,6 +8,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteKind
+import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import kotlin.test.Test

@@ -233,6 +233,7 @@ fun QuoteHistoryScreen(
                                 hiddenDelivered > 0 -> TextButton(onClick = { showAllDelivered = true }) {
                                     Text("Ver mais $hiddenDelivered entregues (mais de ${QuoteHistoryViewModel.RECENT_DELIVERED_DAYS} dias)")
                                 }
+
                                 showAllDelivered -> TextButton(onClick = { showAllDelivered = false }) {
                                     Text("Mostrar só os últimos ${QuoteHistoryViewModel.RECENT_DELIVERED_DAYS} dias")
                                 }
@@ -351,9 +352,12 @@ private fun HistoryHeader(
 
         Text(
             when {
-                showingProducts -> "Produtos são as peças que você oferece, com preço, sem cliente nem andamento. Quando " +
-                    "alguém comprar, clique em \"Vender\" pra criar o pedido."
+                showingProducts ->
+                    "Produtos são as peças que você oferece, com preço, sem cliente nem andamento. Quando " +
+                        "alguém comprar, clique em \"Vender\" pra criar o pedido."
+
                 viewMode == HistoryViewMode.LIST -> "Marque a caixinha de um ou mais orçamentos pra exportar todos juntos num PDF só."
+
                 else -> "Arraste um card pra outra coluna pra mudar o status, ou use \"Ações\" › \"Mover para\"."
             },
             style = MaterialTheme.typography.bodySmall,
@@ -394,13 +398,18 @@ private fun RepriceNotice(result: RepriceResult, currencyText: (Double) -> Strin
                 TextButton(onClick = onReprice) { IconLabel(AppIcons.Sync, "Atualizar preço") }
             }
         }
+
         is RepriceResult.Unavailable -> Text(
             when (result.reason) {
                 RepriceResult.Reason.FILAMENT_MISSING -> "O filamento ${result.missingName.orEmpty()} não está mais cadastrado"
+
                 RepriceResult.Reason.PRINTER_MISSING -> result.missingName?.let { "A impressora $it não está mais cadastrada" }
                     ?: "Este produto não guardou a impressora"
+
                 RepriceResult.Reason.CHANNEL_MISSING -> "O canal ${result.missingName.orEmpty()} não está mais cadastrado"
+
                 RepriceResult.Reason.CONSUMABLE_MISSING -> "O insumo ${result.missingName.orEmpty()} não está mais cadastrado"
+
                 RepriceResult.Reason.INVALID -> "Não deu pra recalcular com os cadastros de hoje"
             } + ": abra em \"Editar cálculo\" pra escolher de novo e conferir o preço.",
             style = MaterialTheme.typography.bodySmall,

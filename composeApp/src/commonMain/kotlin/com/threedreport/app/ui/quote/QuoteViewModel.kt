@@ -1,11 +1,8 @@
 package com.threedreport.app.ui.quote
 
-import com.threedreport.app.ui.format.toDurationInputText
-import com.threedreport.core.model.QuotedConsumable
-import com.threedreport.core.model.Consumable
-import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.ClientRepository
+import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -19,15 +16,17 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.ui.components.NoticeIds
+import com.threedreport.app.ui.components.UserNotice
 import com.threedreport.app.ui.components.matchingClients
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.parseWholeNumber
-import com.threedreport.app.ui.components.NoticeIds
-import com.threedreport.app.ui.components.UserNotice
+import com.threedreport.app.ui.format.toDurationInputText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
@@ -39,6 +38,7 @@ import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
+import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -184,7 +184,9 @@ class QuoteViewModel(
         val grams = parseDecimal(text, NumberKind.AMOUNT)
         val meters = when {
             text.isBlank() -> ""
+
             grams == null || grams < 0 || filament == null -> lengthText
+
             // Duas casas, como o G-code: com mais, o campo mostrava "16,764181" pra 50 g.
             else -> GCodeImporter.formatLength(filament.lengthMeters(grams))
         }
@@ -607,7 +609,9 @@ class QuoteViewModel(
                     }
                 }
             }
+
             is PickResult.Failed -> saveFormState.update { it.copy(photoError = picked.message) }
+
             PickResult.Cancelled -> Unit
         }
     }
@@ -627,7 +631,9 @@ class QuoteViewModel(
                 saveFormState.update { it.copy(stlFile = picked.file, savedConfirmation = false) }
                 loadStlPreview(picked.file)
             }
+
             is PickResult.Failed -> stlPreviewState.value = StlPreview.Unreadable
+
             PickResult.Cancelled -> Unit
         }
     }
@@ -710,21 +716,21 @@ class QuoteViewModel(
         if (editing != null) {
             val update = {
                 historyRepository.update(
-                id = editing.savedQuote.id,
-                name = form.name,
-                quote = quote,
-                services = services,
-                photo = form.photo,
-                stlFile = form.stlFile,
-                sourceLink = form.sourceLink,
-                client = client,
-                printThumbnails = thumbnails,
-                shippingCost = shippingCost,
-                deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
-                category = form.category,
-                soldAtCatalogPrice = soldAtCatalogPrice,
-                shippingAbsorbed = shippingAbsorbed,
-            )
+                    id = editing.savedQuote.id,
+                    name = form.name,
+                    quote = quote,
+                    services = services,
+                    photo = form.photo,
+                    stlFile = form.stlFile,
+                    sourceLink = form.sourceLink,
+                    client = client,
+                    printThumbnails = thumbnails,
+                    shippingCost = shippingCost,
+                    deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
+                    category = form.category,
+                    soldAtCatalogPrice = soldAtCatalogPrice,
+                    shippingAbsorbed = shippingAbsorbed,
+                )
             }
             // A edição não é mais modal (decisão 113): o pedido pode ter ido pra lixeira enquanto era editado.
             // Salvar tira ele de lá com as alterações; sem ele nem na lixeira, avisa em vez de dizer que salvou.
@@ -882,9 +888,12 @@ class QuoteViewModel(
         val quote = result.quote
         val blocked = when {
             result.fieldErrors.isNotEmpty() -> "Não salvei: ${result.fieldErrors.values.first()}"
+
             quote == null -> result.errorMessage?.let { "Não salvei: $it" }
                 ?: "Não salvei: preencha filamento, impressora, comprimento e tempo."
+
             result.missingServicePrice -> "Não salvei: informe o valor de cada serviço marcado."
+
             else -> null
         }
         if (blocked != null || quote == null) {
@@ -1142,6 +1151,7 @@ class QuoteViewModel(
                 when {
                     row.weightText != null && row.weightText.isNotBlank() && (parseDecimal(row.weightText, NumberKind.AMOUNT) ?: -1.0) < 0 ->
                         errors[QuoteFields.length(print.id, row.id)] = "Peso: use um número em gramas (42 ou 42,5)."
+
                     row.lengthText.isNotBlank() && (length == null || length < 0) ->
                         errors[QuoteFields.length(print.id, row.id)] = "Comprimento: use um número em metros (27,5)."
                 }

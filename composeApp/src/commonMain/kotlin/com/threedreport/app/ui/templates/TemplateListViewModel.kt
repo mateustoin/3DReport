@@ -48,7 +48,7 @@ class TemplateListViewModel(
                 showFooter = template.showFooter,
                 showPrintTime = template.showPrintTime,
                 showBorder = template.showBorder,
-            )
+            ),
         )
     }
 }

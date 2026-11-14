@@ -205,6 +205,7 @@ object GCodeMetadataParser {
     // várias linhas (inclusive no meio de uma palavra). "machine_name" só vem quando o perfil mexeu
     // no nome; "definition" (ex.: "creality_ender3") vem sempre.
     private val curaSettingsLineRegex = Regex("""^;SETTING_3 (.*)$""", RegexOption.MULTILINE)
+
     // Termina na próxima quebra escapada do JSON ("\\n", uma barra seguida de "n") ou no fim da linha.
     private val curaMachineNameRegex = Regex("""machine_name = ([^\\\r\n]+)""")
     private val curaDefinitionRegex = Regex("""definition = ([A-Za-z0-9_]+)""")

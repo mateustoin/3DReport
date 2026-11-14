@@ -1,7 +1,5 @@
 package com.threedreport.app.ui.quote
 
-import kotlin.test.assertNull
-import com.threedreport.core.model.QuoteKind
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -12,9 +10,10 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.MachineInvestment
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
@@ -24,8 +23,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -103,7 +103,7 @@ class QuoteViewModelTest {
                 printerPowerWatts = 200.0,
                 maintenanceCostPerHour = 0.05,
                 machineInvestment = MachineInvestment(1000.0, 10, 20, 8.0),
-            )
+            ),
         )
         val viewModel = QuoteViewModel(
             FilamentRepository(),

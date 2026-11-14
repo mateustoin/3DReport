@@ -1,45 +1,27 @@
 package com.threedreport.app.ui.settings
 
-import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.DeleteOrArchiveDialog
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.window.DialogProperties
-import com.threedreport.app.platform.formatDateTime
-import com.threedreport.app.ui.format.LocalCurrency
-import com.threedreport.app.ui.format.NumberKind
-import com.threedreport.app.ui.format.interpretationHint
-import com.threedreport.app.ui.format.parseDecimal
-import com.threedreport.app.ui.format.toInputText
-import com.threedreport.core.model.SalesChannel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.VerticalDivider
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
-import com.threedreport.app.ui.about.READING_MAX_WIDTH
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +29,8 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -54,7 +38,9 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,18 +48,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
+import com.threedreport.app.platform.formatDateTime
+import com.threedreport.app.ui.about.READING_MAX_WIDTH
+import com.threedreport.app.ui.components.ArchivedSection
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.SectionTitle
 import com.threedreport.app.ui.components.ShowSnackbarOnce
-import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.channelFeeSummary
+import com.threedreport.app.ui.format.interpretationHint
+import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.templates.TemplateListDialog
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
 import com.threedreport.core.model.Currency
+import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.ThemeMode
 
 /** As seções de Configurações, uma por vez na tela (decisão 112). */
@@ -82,7 +81,8 @@ enum class SettingsSection(val label: String) {
     CHANNELS("Canais"),
     DOCUMENTS("Documentos pro cliente"),
     APPEARANCE("Aparência"),
-    DATA("Dados");
+    DATA("Dados"),
+    ;
 
     val icon: ImageVector
         get() = when (this) {
@@ -408,10 +408,16 @@ private fun SalesChannelSection(viewModel: SalesChannelViewModel) {
             usageCount = viewModel.usageCount(channel.id),
             deleteMessage = "Orçamentos já salvos continuam com a taxa que tinham. Produtos do catálogo desse canal " +
                 "passam a pedir um canal novo ao atualizar o preço.",
-            onArchive = if (channel.archived) null else ({
-                viewModel.setArchived(channel.id, true)
-                pendingDelete = null
-            }),
+            onArchive = if (channel.archived) {
+                null
+            } else {
+                (
+                    {
+                        viewModel.setArchived(channel.id, true)
+                        pendingDelete = null
+                    }
+                    )
+            },
             onDelete = {
                 viewModel.delete(channel.id)
                 pendingDelete = null

@@ -7,9 +7,9 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
-import com.threedreport.core.model.QuoteService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

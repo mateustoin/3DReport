@@ -42,8 +42,10 @@ internal fun toInternationalPhone(contact: String): String? {
         val national = digits.trimStart('0')
         return when (national.length) {
             in 10..11 -> "55$national"
+
             // Operadora (2 dígitos) + DDD + número.
             in 12..13 -> "55${national.drop(2)}"
+
             else -> null
         }
     }

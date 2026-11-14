@@ -111,5 +111,4 @@ class BrandingRepositoryTest {
         assertEquals("@loja", reloaded.instagramHandle)
         assertTrue(reloaded.showBorder)
     }
-
 }

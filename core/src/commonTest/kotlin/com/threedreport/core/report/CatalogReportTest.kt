@@ -1,13 +1,13 @@
 package com.threedreport.core.report
 
 import com.threedreport.core.costsOf
-import com.threedreport.core.quotedPrint
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.quotedPrint
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

@@ -7,15 +7,14 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
-import com.threedreport.core.model.QuoteService
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.EncodedImageFormat
-import org.jetbrains.skia.Image as SkiaImage
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -24,6 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.jetbrains.skia.Image as SkiaImage
 
 class QuotePdfExporterTest {
 
@@ -175,7 +175,7 @@ class QuotePdfExporterTest {
     @Test
     fun watermarkAndFooterAreIndependent() {
         fun textFor(brandName: String?, footerText: String?) = Loader.loadPDF(
-            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes = null)), brandName, footerText)
+            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes = null)), brandName, footerText),
         ).use { PDFTextStripper().getText(it) }
 
         val onlyWatermark = textFor(brandName = "Marca", footerText = null)
