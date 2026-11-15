@@ -40,6 +40,7 @@ do `ColorScheme` do Material 3 a cor entra; as demais ficam num objeto próprio 
 | `background` | `#F6F8FB` | `#0B1420` | background, surface |
 | `card` | `#FFFFFF` | `#111D2C` | surfaceContainerLowest |
 | `column` (fundo de coluna do kanban, de campo desligado) | `#ECF0F5` | `#0F1B2A` | surfaceContainer |
+| `cardBlock` (bloco dentro de uma superfície `card`, como cada cor no painel do filamento) | `#ECF0F5` | `#16283D` | |
 | `line` (borda e divisor) | `#DCE2EA` | `#22324A` | outlineVariant |
 | `text` | `#0F1B2B` | `#E8EEF5` | onBackground, onSurface |
 | `textMuted` | `#536173` | `#9DAEC2` | onSurfaceVariant |
@@ -102,6 +103,7 @@ fonte. Não se usa fonte monoespaçada.
 | `displayPrice` | Space Grotesk | 52 / 700 | O preço no painel de resultado |
 | `headline` | Space Grotesk | 26 / 700 | Título da tela |
 | `statValue` | Space Grotesk | 22 a 24 / 600 | Números dos blocos de resumo |
+| `panelTitle` | Space Grotesk | 20 / 600 | Título do painel de formulário e de diálogo |
 | `sectionTitle` | Space Grotesk | 16 / 600 | Título de seção e de coluna |
 | `body` | Inter | 14 / 400 | Texto e valor de campo |
 | `bodyStrong` | Inter | 14 / 600 | Nome do item numa lista ou cartão |

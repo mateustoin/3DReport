@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -82,6 +83,7 @@ fun FormPanel(title: String, onSave: () -> Unit, onCancel: () -> Unit, modifier:
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
     val firstField = remember { FocusRequester() }
+    val scroll = rememberScrollState()
     LaunchedEffect(Unit) { runCatching { firstField.requestFocus() } }
     Row(modifier = modifier.fillMaxSize().background(colors.card)) {
         VerticalDivider(color = colors.line, thickness = AppDimens.borderWidth)
@@ -95,13 +97,15 @@ fun FormPanel(title: String, onSave: () -> Unit, onCancel: () -> Unit, modifier:
                     .padding(horizontal = space.xl),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                Text(title, style = MaterialTheme.appType.sectionTitle, color = MaterialTheme.colorScheme.onSurface)
+                Text(title, style = MaterialTheme.appType.panelTitle, color = MaterialTheme.colorScheme.onSurface)
             }
+            // O divisor só aparece com o conteúdo rolado, pra o campo não passar por baixo do título sem separação.
+            if (scroll.value > 0) HorizontalDivider(color = colors.line, thickness = AppDimens.borderWidth) else Spacer(Modifier.height(AppDimens.borderWidth))
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scroll)
                     .focusRequester(firstField)
                     .focusGroup()
                     .padding(horizontal = space.xl, vertical = space.xs),

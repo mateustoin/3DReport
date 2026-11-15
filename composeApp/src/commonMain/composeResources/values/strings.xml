@@ -14,6 +14,7 @@
     <string name="common_delete">Excluir</string>
     <string name="common_delete_anyway">Excluir mesmo assim</string>
     <string name="common_archived_section">Arquivados (%1$d)</string>
+    <string name="common_add">Adicionar</string>
     <string name="common_optional">Opcional</string>
     <string name="common_help_for">Ajuda: %1$s</string>
     <string name="common_field_charge">Cobrança</string>
@@ -52,7 +53,7 @@
     <string name="consumables_notice_deleted">Insumo excluído</string>
     <string name="consumables_delete_title">Excluir insumo?</string>
     <string name="consumables_delete_what">o insumo "%1$s"</string>
-    <string name="consumables_delete_message">"%1$s" será removido do catálogo. Pedidos já salvos continuam com o custo que tinham.</string>
+    <string name="consumables_delete_message">"%1$s" será removido do cadastro. Pedidos já salvos continuam com o custo que tinham.</string>
 
     <!-- Serviços -->
     <string name="services_title">Serviços</string>
@@ -76,7 +77,7 @@
     <string name="services_notice_deleted">Serviço excluído</string>
     <string name="services_delete_title">Excluir serviço?</string>
     <string name="services_delete_what">o serviço "%1$s"</string>
-    <string name="services_delete_message">"%1$s" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.</string>
+    <string name="services_delete_message">"%1$s" será removido do cadastro. Pedidos já salvos continuam com o valor que tinham.</string>
 
     <!-- Filamentos -->
     <string name="filaments_title">Filamentos</string>
@@ -95,7 +96,6 @@
     <string name="filaments_field_material_custom">Nome do tipo</string>
     <string name="filaments_material_custom_option">Outro tipo</string>
     <string name="filaments_field_brand">Marca</string>
-    <string name="filaments_field_brand_hint">Opcional</string>
     <string name="filaments_field_price">Preço por kg (%1$s)</string>
     <string name="filaments_field_density">Densidade (g/cm³)</string>
     <string name="filaments_field_diameter">Diâmetro (mm)</string>
@@ -115,14 +115,14 @@
     <string name="filaments_help_density_varies">Varia com o fabricante e a carga. Confira a ficha técnica do rolo.</string>
     <string name="filaments_row_price">%1$s/kg</string>
     <string name="filaments_row_density">%1$s g/cm³</string>
-    <string name="filaments_row_out_of_stock">esgotado</string>
+    <string name="filaments_row_out_of_stock">acabou</string>
     <string name="filaments_notice_saved">Filamento salvo</string>
     <string name="filaments_notice_archived">Filamento arquivado</string>
     <string name="filaments_notice_restored">Filamento restaurado</string>
     <string name="filaments_notice_deleted">Filamento excluído</string>
     <string name="filaments_delete_title">Excluir filamento?</string>
     <string name="filaments_delete_what">o filamento "%1$s"</string>
-    <string name="filaments_delete_message">"%1$s" sai da lista. Pedidos e produtos já salvos não mudam. Um produto feito com ele só atualiza o preço depois que você escolher outro filamento em "Editar cálculo".</string>
+    <string name="filaments_delete_message">"%1$s" será removido do cadastro. Pedidos e produtos já salvos não mudam. Um produto feito com ele só atualiza o preço depois que você escolher outro filamento em "Editar cálculo".</string>
     <string name="filaments_color_white">Branco</string>
     <string name="filaments_color_black">Preto</string>
     <string name="filaments_color_grey">Cinza</string>
@@ -180,13 +180,13 @@
     </plurals>
     <string name="printers_remaining_overdue">vencida há %1$s</string>
     <string name="printers_remaining_left">faltam %1$s</string>
-    <string name="printers_error_days_max">No máximo 31</string>
+    <string name="printers_error_whole_max">No máximo %1$d</string>
     <string name="printers_error_hours_max">No máximo 24</string>
     <string name="printers_error_component_name">Informe o nome do componente</string>
-    <string name="printers_error_interval">Intervalo: digite as horas de uso, maior que zero</string>
-    <string name="printers_error_hours_since">Horas desde a última vez: digite um número, zero ou mais</string>
+    <string name="printers_error_interval">Digite um número maior que zero</string>
+    <string name="printers_error_hours_since">Digite um número, zero ou mais</string>
     <string name="printers_error_log_description">Descreva o que foi feito</string>
-    <string name="printers_error_usage_hours">Horas: digite um número maior que zero</string>
+    <string name="printers_error_usage_hours">Digite um número maior que zero</string>
     <string name="printers_error_usage_reason">Informe o motivo</string>
     <string name="printers_notice_saved">Impressora salva</string>
     <string name="printers_notice_archived">Impressora arquivada</string>
@@ -194,10 +194,10 @@
     <string name="printers_notice_deleted">Impressora excluída</string>
     <string name="printers_delete_title">Excluir impressora?</string>
     <string name="printers_delete_what">a impressora "%1$s"</string>
-    <string name="printers_delete_message">"%1$s" sai do catálogo, com os componentes, o diário de manutenção e as horas avulsas. Não dá pra desfazer.</string>
+    <string name="printers_delete_message">"%1$s" será removido do cadastro, com os componentes, o diário de manutenção e as horas avulsas. Não dá pra desfazer.</string>
     <string name="printers_presets_title">Impressoras pré-cadastradas</string>
-    <string name="printers_presets_note">O consumo é a potência máxima do fabricante. Ajuste depois de escolher.</string>
     <string name="printers_presets_field_search">Buscar por marca ou modelo</string>
+    <string name="printers_presets_search_hint">Ex.: Ender 3</string>
     <string name="printers_presets_power">%1$d W (máxima)</string>
     <string name="printers_presets_use">Usar</string>
     <string name="printers_presets_none">Nenhuma impressora encontrada para "%1$s".</string>
@@ -207,7 +207,7 @@
     <string name="printers_maintenance_help_known_hours_detail">Pedidos prontos ou entregues nela, mais as horas avulsas lançadas aqui.</string>
     <string name="printers_maintenance_components">Componentes</string>
     <string name="printers_maintenance_component_empty">Nenhum componente ainda. Cadastre cada um com o intervalo em horas de uso.</string>
-    <string name="printers_maintenance_component_new">Componente</string>
+    <string name="printers_maintenance_component_new">Adicionar componente</string>
     <string name="printers_maintenance_component_done">Feito hoje</string>
     <string name="printers_maintenance_component_progress">%1$s de %2$s · %3$s</string>
     <string name="printers_maintenance_component_delete_title">Excluir componente?</string>

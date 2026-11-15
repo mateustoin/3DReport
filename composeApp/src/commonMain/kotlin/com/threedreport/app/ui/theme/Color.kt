@@ -119,6 +119,8 @@ data class AppColors(
     val column: Color,
     val line: Color,
     val tint: Color,
+    /** Bloco dentro de uma superfície `card` (cada cor do filamento no painel): `column` no claro, `tint` no escuro, um tom acima do painel. */
+    val cardBlock: Color,
     // Marca
     val navy: Color,
     val navyRaised: Color,
@@ -162,6 +164,7 @@ val LightAppColors = AppColors(
     column = Color(0xFFECF0F5),
     line = Color(0xFFDCE2EA),
     tint = Color(0xFFE6EFF8),
+    cardBlock = Color(0xFFECF0F5),
     navy = Color(0xFF0C2742),
     navyRaised = Color(0xFF143657),
     onNavy = OnNavy,
@@ -185,6 +188,7 @@ val DarkAppColors = AppColors(
     column = Color(0xFF0F1B2A),
     line = Color(0xFF22324A),
     tint = Color(0xFF16283D),
+    cardBlock = Color(0xFF16283D),
     navy = Color(0xFF081526),
     navyRaised = Color(0xFF12263D),
     onNavy = OnNavy,

@@ -45,14 +45,14 @@ fun <T> AppSwatchField(
 }
 
 /**
- * Bloco de um item repetido dentro de uma seção (cada cor do filamento): fundo `column`, raio 10, sem borda, pra não
+ * Bloco de um item repetido dentro de uma seção (cada cor do filamento): fundo `cardBlock`, sem borda, pra não
  * virar cartão dentro do painel. [title] em `bodyStrong` e, se houver, uma [action] só de ícone (remover) à direita.
  */
 @Composable
 fun FormBlock(title: String, modifier: Modifier = Modifier, action: RowAction? = null, content: @Composable ColumnScope.() -> Unit) {
     val space = MaterialTheme.spacing
     Column(
-        modifier = modifier.fillMaxWidth().background(MaterialTheme.appColors.column, MaterialTheme.shapes.medium).padding(space.sm),
+        modifier = modifier.fillMaxWidth().background(MaterialTheme.appColors.cardBlock, MaterialTheme.shapes.medium).padding(space.sm),
         verticalArrangement = Arrangement.spacedBy(space.sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -63,12 +63,12 @@ fun FormBlock(title: String, modifier: Modifier = Modifier, action: RowAction? =
     }
 }
 
-/** Resultado que o formulário calcula enquanto se preenche (o custo por hora da máquina): [label] e [value] numa faixa `column`. */
+/** Resultado que o formulário calcula enquanto se preenche (o custo por hora da máquina): [label] e [value] numa faixa `cardBlock`. */
 @Composable
 fun FormSummary(label: String, value: String, modifier: Modifier = Modifier, help: HelpText? = null) {
     val space = MaterialTheme.spacing
     Row(
-        modifier = modifier.fillMaxWidth().background(MaterialTheme.appColors.column, MaterialTheme.shapes.medium).padding(horizontal = space.sm, vertical = space.sm),
+        modifier = modifier.fillMaxWidth().background(MaterialTheme.appColors.cardBlock, MaterialTheme.shapes.medium).padding(horizontal = space.sm, vertical = space.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(space.xxs),
     ) {

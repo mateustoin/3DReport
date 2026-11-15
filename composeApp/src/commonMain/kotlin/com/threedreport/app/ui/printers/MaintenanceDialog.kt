@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.printers
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_add
 import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.common_close
 import _3dreport.composeapp.generated.resources.common_delete
@@ -108,19 +109,19 @@ import org.jetbrains.compose.resources.stringResource
 /** Horas como texto curto, ex.: "12,5 h". */
 internal fun Double.hoursText(): String = (this * 60).minutesToHoursText()
 
-/** Cor do texto do estado: erro quando vencido, âmbar quando perto, discreta quando em dia. */
+/** Cor do texto do estado: erro quando vencido, o par de prazo "Hoje" quando perto, discreta quando em dia. */
 @Composable
 internal fun MaintenanceState.textColor(): Color = when (this) {
     MaintenanceState.OVERDUE -> MaterialTheme.colorScheme.error
-    MaintenanceState.DUE_SOON -> MaterialTheme.appColors.amberText
+    MaintenanceState.DUE_SOON -> MaterialTheme.appColors.deadlineToday.content
     MaintenanceState.OK -> MaterialTheme.colorScheme.onSurfaceVariant
 }
 
-/** Cor da barra de progresso: erro, âmbar ou, em dia, a cor de destaque do tema. */
+/** Cor da barra de progresso: erro, o tom de "Hoje" ou, em dia, a cor de destaque do tema. */
 @Composable
 private fun MaintenanceState.barColor(): Color = when (this) {
     MaintenanceState.OVERDUE -> MaterialTheme.colorScheme.error
-    MaintenanceState.DUE_SOON -> MaterialTheme.appColors.amberText
+    MaintenanceState.DUE_SOON -> MaterialTheme.appColors.deadlineToday.content
     MaintenanceState.OK -> MaterialTheme.colorScheme.primary
 }
 
@@ -351,7 +352,7 @@ private fun ComponentFields(
         }
         FormError(error)
         Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
-            AppButton(stringResource(if (isNew) Res.string.printers_maintenance_log_add else Res.string.common_save), { error = onSubmit(name, interval, hoursSince) })
+            AppButton(stringResource(if (isNew) Res.string.common_add else Res.string.common_save), { error = onSubmit(name, interval, hoursSince) })
             AppButton(stringResource(Res.string.common_cancel), onCancel)
         }
     }
@@ -368,7 +369,9 @@ private fun LogForm(components: List<MaintenanceComponent>, onAdd: (date: Long, 
     val today = todayEpochDay()
     var description by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(today) }
-    var component by remember { mutableStateOf<MaintenanceComponent?>(null) }
+    var componentId by remember { mutableStateOf<String?>(null) }
+    // Resolvido contra a lista atual: um componente que sumiu (excluído com o formulário aberto) vira "nenhum".
+    val component = components.find { it.id == componentId }
     var showCalendar by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<UiText?>(null) }
     val noneLabel = stringResource(Res.string.printers_maintenance_reset_none)
@@ -396,7 +399,7 @@ private fun LogForm(components: List<MaintenanceComponent>, onAdd: (date: Long, 
                 itemLabel = { it?.name ?: noneLabel },
                 displayText = { it?.name ?: noneLabel },
                 onSelect = { chosen ->
-                    component = chosen
+                    componentId = chosen?.id
                     if (chosen != null && description.isBlank()) description = chosen.name
                 },
                 emptyText = noneLabel,

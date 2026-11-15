@@ -21,7 +21,7 @@ import com.threedreport.app.ui.theme.spacing
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Diálogo do kit: fundo `card`, raio 12, título em `sectionTitle`, o [content] e os [buttons] no pé, alinhados à
+ * Diálogo do kit: fundo `card`, raio 12, título em `panelTitle`, o [content] e os [buttons] no pé, alinhados à
  * direita (o último é o que confirma). Com [scrollable], o corpo rola (diálogo longo, como a manutenção). Base do [ConfirmDialog] e do [DeleteOrArchiveDialog].
  */
 @Composable
@@ -37,7 +37,7 @@ fun AppDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.appColors.card,
         shape = MaterialTheme.shapes.large,
-        title = { Text(title, style = MaterialTheme.appType.sectionTitle, color = MaterialTheme.colorScheme.onSurface) },
+        title = { Text(title, style = MaterialTheme.appType.panelTitle, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(
                 modifier = if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier,

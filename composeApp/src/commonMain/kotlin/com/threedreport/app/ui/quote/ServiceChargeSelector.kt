@@ -1,4 +1,4 @@
-package com.threedreport.app.ui.services
+package com.threedreport.app.ui.quote
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

@@ -61,7 +61,6 @@ import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.icons.AppIcons
-import com.threedreport.app.ui.services.ServiceChargeSelector
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType

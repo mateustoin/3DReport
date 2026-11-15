@@ -190,6 +190,11 @@ class ScreenshotRenderer {
         renderAppPng(File(outDir, "impressoras-manutencao.png"), afterSettle = { it.clickByDescription("Manutenção") }) {
             App(container, startAt = AppDestination.PRINTERS)
         }
+        container.theme.update(ThemeMode.DARK)
+        renderAppPng(File(outDir, "impressoras-manutencao-escuro.png"), afterSettle = { it.clickByDescription("Manutenção") }) {
+            App(container, startAt = AppDestination.PRINTERS)
+        }
+        container.theme.update(ThemeMode.LIGHT)
         renderAppPng(File(outDir, "impressoras-lista.png"), afterSettle = { it.clickByText("Escolher da lista") }) {
             App(container, startAt = AppDestination.PRINTERS)
         }

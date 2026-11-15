@@ -38,6 +38,9 @@ import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 
+/** Alfa do contorno da amostra: aparece mesmo com cor parecida com o fundo (preto no escuro, branco no claro). */
+private const val OUTLINE_ALPHA = 0.25f
+
 /** Círculo com a cor de um filamento. Sem [color] (hex vazio ou inválido), mostra só o contorno, no tom de campo desligado. */
 @Composable
 fun ColorSwatch(color: Color?, modifier: Modifier = Modifier, size: Dp = AppDimens.swatchSize, selected: Boolean = false) {
@@ -48,7 +51,7 @@ fun ColorSwatch(color: Color?, modifier: Modifier = Modifier, size: Dp = AppDime
             .background(color ?: colors.column, CircleShape)
             .border(
                 if (selected) AppDimens.focusRingWidth else AppDimens.borderWidth,
-                if (selected) MaterialTheme.colorScheme.primary else colors.line,
+                if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = OUTLINE_ALPHA),
                 CircleShape,
             ),
     )
@@ -74,7 +77,7 @@ fun SwatchButton(color: Color, description: String, selected: Boolean, onClick: 
                 .onFocusChanged { focused = it.isFocused }
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
                 .semantics { contentDescription = description }
-                .padding(MaterialTheme.spacing.xxs / 2),
+                .padding(MaterialTheme.spacing.xxs),
         ) {
             ColorSwatch(color, size = AppDimens.swatchSize, selected = selected || focused)
         }
@@ -83,10 +86,18 @@ fun SwatchButton(color: Color, description: String, selected: Boolean, onClick: 
 
 /**
  * Selo de uma cor do filamento na lista, que marca se tem em estoque: com amostra, nome e, quando acabou, o
- * [outOfStockLabel]. Clicar alterna ([onToggle]). Acabou fica apagado.
+ * [outOfStockLabel]. Clicar alterna ([onToggle]). Acabou fica apagado. Com [onSelectedRow] (linha selecionada, que já é `tint`), o fundo do selo vira `card`.
  */
 @Composable
-fun ColorChip(label: String, color: Color?, inStock: Boolean, outOfStockLabel: String, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+fun ColorChip(
+    label: String,
+    color: Color?,
+    inStock: Boolean,
+    outOfStockLabel: String,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    onSelectedRow: Boolean = false,
+) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
     var focused by remember { mutableStateOf(false) }
@@ -95,7 +106,7 @@ fun ColorChip(label: String, color: Color?, inStock: Boolean, outOfStockLabel: S
         modifier = modifier
             .alpha(if (inStock) 1f else 0.6f)
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(if (inStock) colors.tint else Color.Transparent)
+            .background(if (inStock) (if (onSelectedRow) colors.card else colors.tint) else Color.Transparent)
             .border(
                 if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth,
                 if (focused) MaterialTheme.colorScheme.primary else colors.line,
