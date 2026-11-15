@@ -20,7 +20,6 @@ import _3dreport.composeapp.generated.resources.history_menu_group_send
 import _3dreport.composeapp.generated.resources.history_menu_more
 import _3dreport.composeapp.generated.resources.history_menu_move_to
 import _3dreport.composeapp.generated.resources.history_menu_print_settings
-import _3dreport.composeapp.generated.resources.history_menu_print_settings_add
 import _3dreport.composeapp.generated.resources.history_menu_reprice
 import _3dreport.composeapp.generated.resources.history_menu_save_image
 import _3dreport.composeapp.generated.resources.history_menu_select
@@ -84,7 +83,7 @@ fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Mo
                 return@AppMenu
             }
             SendGroup(actions, close)
-            FilesGroup(savedQuote, actions, close)
+            FilesGroup(actions, close)
             OrganizeGroup(savedQuote, actions, close, onChooseStatus = { choosingStatus = true })
             HorizontalDivider()
             AppMenuItem(stringResource(Res.string.common_delete), { close(); actions.onDelete() }, AppIcons.Delete, danger = true)
@@ -102,15 +101,14 @@ private fun SendGroup(actions: QuoteActions, close: () -> Unit) {
 }
 
 @Composable
-private fun FilesGroup(savedQuote: SavedQuote, actions: QuoteActions, close: () -> Unit) {
+private fun FilesGroup(actions: QuoteActions, close: () -> Unit) {
     if (actions.onDownloadPhoto == null && actions.onDownloadStl == null && actions.onPrintSettings == null) return
     HorizontalDivider()
     AppMenuGroup(stringResource(Res.string.history_menu_group_files))
     actions.onDownloadPhoto?.let { AppMenuItem(stringResource(Res.string.history_menu_download_photo), { close(); it() }, AppIcons.Image) }
     actions.onDownloadStl?.let { AppMenuItem(stringResource(Res.string.history_menu_download_stl), { close(); it() }, AppIcons.Download) }
     actions.onPrintSettings?.let { onPrintSettings ->
-        val label = if (savedQuote.printSettings == null) Res.string.history_menu_print_settings_add else Res.string.history_menu_print_settings
-        AppMenuItem(stringResource(label), { close(); onPrintSettings() }, AppIcons.Tune)
+        AppMenuItem(stringResource(Res.string.history_menu_print_settings), { close(); onPrintSettings() }, AppIcons.Tune)
     }
 }
 

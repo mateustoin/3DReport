@@ -95,6 +95,9 @@ object AppDimens {
     val statusBandHeight = 3.dp
     val kanbanColumnMinWidth = 188.dp
 
+    /** Da largura da coluna pra cima, o selo de prazo e o valor ficam na mesma linha do cartão; abaixo, empilham. */
+    val kanbanRowMinWidth = 232.dp
+
     /** A foto pequena do cartão de pedido do kanban. */
     val kanbanPhotoSize = 32.dp
 

@@ -104,6 +104,7 @@ fun KanbanBoard(
                         // A coluna de onde o cartão saiu fica por cima das outras enquanto ele é arrastado.
                         isDragSource = draggedFromStatus == column.status,
                         columnBounds = columnBounds,
+                        compact = columnWidth < AppDimens.kanbanRowMinWidth,
                         onBoundsChanged = { bounds -> columnBounds[column.status] = bounds },
                         onDragHover = { hovered -> hoveredStatus = hovered },
                         onDragSourceChange = { source -> draggedFromStatus = source },
@@ -127,6 +128,7 @@ private fun KanbanColumn(
     isDropTarget: Boolean,
     isDragSource: Boolean,
     columnBounds: Map<OrderStatus, Rect>,
+    compact: Boolean,
     onBoundsChanged: (Rect) -> Unit,
     onDragHover: (OrderStatus?) -> Unit,
     onDragSourceChange: (OrderStatus?) -> Unit,
@@ -162,6 +164,7 @@ private fun KanbanColumn(
                         row = row,
                         loadThumbnail = loadThumbnail,
                         columnBounds = columnBounds,
+                        compact = compact,
                         onDragHover = onDragHover,
                         onDragSourceChange = onDragSourceChange,
                         callbacks = callbacks,

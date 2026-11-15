@@ -12,8 +12,8 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -61,6 +61,7 @@ fun KanbanCard(
     row: HistoryRow,
     loadThumbnail: (SavedQuote) -> ByteArray?,
     columnBounds: Map<OrderStatus, Rect>,
+    compact: Boolean,
     onDragHover: (OrderStatus?) -> Unit,
     onDragSourceChange: (OrderStatus?) -> Unit,
     callbacks: KanbanCallbacks,
@@ -154,19 +155,26 @@ fun KanbanCard(
                     )
                 }
             }
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(space.xxs),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                // O mesmo valor da tabela: o que o cliente paga.
-                row.deadline?.let { DeadlineBadgeView(it, Modifier.padding(end = space.xs)) }
+            // O mesmo valor da tabela: o que o cliente paga. Na coluna estreita o selo e o valor se empilham; um FlowRow
+            // aqui erra a altura intrínseca (a que iguala as colunas) quando quebra a linha, e corta o cartão.
+            val value: @Composable () -> Unit = {
                 NumericText(
                     quote.totalWithServices.toCurrencyText(quote.currency),
                     style = MaterialTheme.appType.sectionTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+            }
+            if (compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(space.xxs)) {
+                    row.deadline?.let { DeadlineBadgeView(it) }
+                    value()
+                }
+            } else {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    row.deadline?.let { DeadlineBadgeView(it) }
+                    Spacer(Modifier.weight(1f))
+                    value()
+                }
             }
         }
         QuoteActionsMenu(
