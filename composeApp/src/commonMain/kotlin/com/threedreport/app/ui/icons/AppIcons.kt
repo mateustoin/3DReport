@@ -98,6 +98,9 @@ object AppIcons {
     /** `bar_chart` */
     val BarChart: ImageVector by lazy { symbol("bar_chart", "M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z") }
 
+    /** `arrow_back`: voltar de um submenu */
+    val ArrowBack: ImageVector by lazy { symbol("arrow_back", "m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z") }
+
     /** `bar_chart (preenchido)` */
     val BarChartFilled: ImageVector by lazy { symbol("bar_chart_fill", "M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z") }
 

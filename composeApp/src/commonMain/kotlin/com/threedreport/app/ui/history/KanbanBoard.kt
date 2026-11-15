@@ -145,7 +145,8 @@ private fun KanbanColumn(
             .onGloballyPositioned { onBoundsChanged(it.fullBoundsInWindow()) },
     ) {
         Box(Modifier.fillMaxWidth().height(AppDimens.statusBandHeight).background(column.status.statusColor()))
-        Column(modifier = Modifier.padding(space.sm), verticalArrangement = Arrangement.spacedBy(space.sm)) {
+        val padding = if (compact) space.xs else space.sm
+        Column(modifier = Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(padding)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(column.status.labelRes()), style = MaterialTheme.appType.sectionTitle, color = MaterialTheme.colorScheme.onSurface)
                 NumericText(

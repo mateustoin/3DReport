@@ -8,6 +8,7 @@ import _3dreport.composeapp.generated.resources.history_details_field_client
 import _3dreport.composeapp.generated.resources.history_details_field_contact
 import _3dreport.composeapp.generated.resources.history_details_field_link
 import _3dreport.composeapp.generated.resources.history_details_field_name
+import _3dreport.composeapp.generated.resources.history_details_field_photo
 import _3dreport.composeapp.generated.resources.history_details_help
 import _3dreport.composeapp.generated.resources.history_details_help_detail
 import _3dreport.composeapp.generated.resources.history_details_photo_alt
@@ -15,7 +16,8 @@ import _3dreport.composeapp.generated.resources.history_details_photo_change
 import _3dreport.composeapp.generated.resources.history_details_photo_pick
 import _3dreport.composeapp.generated.resources.history_details_photo_remove
 import _3dreport.composeapp.generated.resources.history_details_placeholder_contact
-import _3dreport.composeapp.generated.resources.history_details_title
+import _3dreport.composeapp.generated.resources.history_details_title_order
+import _3dreport.composeapp.generated.resources.history_details_title_product
 import _3dreport.composeapp.generated.resources.quote_deadline_title
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +60,7 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
     val quote = editing.quote
     val form = editing.form
     AppDialog(
-        title = stringResource(Res.string.history_details_title, quote.name),
+        title = stringResource(if (quote.isOrder) Res.string.history_details_title_order else Res.string.history_details_title_product),
         onDismiss = viewModel::cancelEditingDetails,
         dismissOnClickOutside = false,
         scrollable = true,
@@ -114,6 +116,7 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
 @Composable
 private fun PhotoRow(editing: DetailsEditing, viewModel: QuoteHistoryViewModel) {
     val photo = editing.form.photo
+    Text(stringResource(Res.string.history_details_field_photo), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
         if (photo != null) {
             val bitmap = remember(photo) { runCatching { decodeImageBitmap(photo.bytes) }.getOrNull() }

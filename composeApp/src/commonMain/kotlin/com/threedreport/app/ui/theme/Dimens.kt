@@ -82,6 +82,9 @@ object AppDimens {
     val printThumbnailSize = 40.dp
     val smallControlHeight = 32.dp
 
+    /** Item de menu (o de ações do pedido tem 12 itens: com 48 não cabe numa janela baixa). */
+    val menuItemHeight = 40.dp
+
     /** Tabela (Pedidos em lista, Catálogo em lista): linha, cabeçalho e as colunas de largura fixa. */
     val tableRowHeight = 52.dp
     val tableHeaderHeight = 34.dp
@@ -89,6 +92,7 @@ object AppDimens {
     val tableStatusColumn = 130.dp
     val tableDeadlineColumn = 150.dp
     val tableMoneyColumn = 110.dp
+    val tableCategoryColumn = 150.dp
     val tableActionColumn = 96.dp
 
     /** Faixa de cor da situação no topo da coluna do kanban, e a largura mínima da coluna antes de rolar. */

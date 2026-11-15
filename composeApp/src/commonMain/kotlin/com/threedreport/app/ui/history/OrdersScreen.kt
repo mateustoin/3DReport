@@ -2,6 +2,7 @@ package com.threedreport.app.ui.history
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_clear_filters
 import _3dreport.composeapp.generated.resources.common_help_for
 import _3dreport.composeapp.generated.resources.history_selection_count
 import _3dreport.composeapp.generated.resources.history_selection_export_pdf
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.threedreport.app.data.OrdersView
 import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.BusyBar
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.HelpHint
@@ -128,12 +130,9 @@ private fun LazyListScope.kanbanItems(state: HistoryUiState, viewModel: QuoteHis
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
             ) {
-                Text(
-                    pluralStringResource(Res.plurals.orders_kanban_cancelled, state.cancelledCount, state.cancelledCount),
-                    style = MaterialTheme.appType.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                HelpHint(HelpText(stringResource(Res.string.orders_kanban_cancelled_help)), stringResource(Res.string.orders_title))
+                val cancelled = pluralStringResource(Res.plurals.orders_kanban_cancelled, state.cancelledCount, state.cancelledCount)
+                Text(cancelled, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                HelpHint(HelpText(stringResource(Res.string.orders_kanban_cancelled_help)), cancelled)
             }
         }
     }
@@ -141,7 +140,14 @@ private fun LazyListScope.kanbanItems(state: HistoryUiState, viewModel: QuoteHis
 
 private fun LazyListScope.tableItems(state: HistoryUiState, columns: List<TableColumn>, viewModel: QuoteHistoryViewModel, navigation: HistoryNavigation) {
     if (state.rows.isEmpty()) {
-        item(key = "no-match") { EmptyState(stringResource(Res.string.orders_empty_filter)) }
+        item(key = "no-match") {
+            EmptyState(
+                stringResource(Res.string.orders_empty_filter),
+                actionLabel = stringResource(Res.string.common_clear_filters),
+                onAction = viewModel::clearFilters,
+                actionKind = ButtonKind.Secondary,
+            )
+        }
         return
     }
     item(key = "table-header") { OrdersTableHeader(columns, selectable = state.selectionMode) }

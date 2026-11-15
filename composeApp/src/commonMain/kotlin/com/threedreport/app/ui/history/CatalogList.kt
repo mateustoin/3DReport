@@ -6,7 +6,6 @@ import _3dreport.composeapp.generated.resources.catalog_col_category
 import _3dreport.composeapp.generated.resources.catalog_col_price
 import _3dreport.composeapp.generated.resources.catalog_col_product
 import _3dreport.composeapp.generated.resources.catalog_col_profit
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.TableColumn
 import com.threedreport.app.ui.components.TableRow
-import com.threedreport.app.ui.components.revealActionsWidth
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.AppDimens
@@ -26,20 +24,23 @@ import com.threedreport.core.model.SavedQuote
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * As colunas do Catálogo em lista, no molde dos cadastros: miniatura, produto, categoria, lucro, preço à direita e o
- * "Vender". A última coluna reserva o espaço do menu que aparece no hover, pra ele não cobrir o botão.
+ * As colunas do Catálogo em lista, no molde dos cadastros: miniatura, produto (que absorve a sobra), categoria, lucro e
+ * preço, os dois últimos à direita e de largura fixa. Sem coluna reservada no fim: o "Vender" e o menu aparecem no hover
+ * ou no foco por cima do fim da linha, como em Pedidos.
  */
 @Composable
 fun catalogColumns(): List<TableColumn> = listOf(
     TableColumn("", width = AppDimens.printThumbnailSize),
-    TableColumn(stringResource(Res.string.catalog_col_product), weight = 2.2f),
-    TableColumn(stringResource(Res.string.catalog_col_category), weight = 1f),
-    TableColumn(stringResource(Res.string.catalog_col_profit), weight = 1f),
+    TableColumn(stringResource(Res.string.catalog_col_product), weight = 1f),
+    TableColumn(stringResource(Res.string.catalog_col_category), width = AppDimens.tableCategoryColumn),
+    TableColumn(stringResource(Res.string.catalog_col_profit), width = AppDimens.tableMoneyColumn, end = true),
     TableColumn(stringResource(Res.string.catalog_col_price), width = AppDimens.tableMoneyColumn, end = true),
-    TableColumn("", width = AppDimens.tableActionColumn + revealActionsWidth(1)),
 )
 
-/** Uma linha do Catálogo em lista: clicar abre os detalhes (ou, no modo de seleção, marca); o menu das demais ações vem no hover ou no foco. */
+/**
+ * Uma linha do Catálogo em lista: clicar abre os detalhes (ou, no modo de seleção, marca). "Vender" e o menu das demais
+ * ações vêm no hover ou no foco; no modo de seleção não aparecem.
+ */
 @Composable
 fun CatalogListRow(
     row: HistoryRow,
@@ -59,7 +60,10 @@ fun CatalogListRow(
         actions = emptyList(),
         selected = state.selectionMode && selected,
         selectionMark = if (state.selectionMode) selected else null,
-        extra = { QuoteActionsMenu(quote, actions) },
+        extra = {
+            actions.onSell?.let { sell -> AppButton(stringResource(Res.string.catalog_action_sell), sell, height = AppDimens.smallControlHeight) }
+            QuoteActionsMenu(quote, actions)
+        },
         revealActions = !state.selectionMode,
     ) {
         Cell(0) { PhotoThumbnail(quote, loadThumbnail, Modifier.size(AppDimens.printThumbnailSize), placeholder = true, shape = MaterialTheme.shapes.small) }
@@ -70,14 +74,9 @@ fun CatalogListRow(
             }
         }
         Cell(2) { Muted(quote.category.orEmpty()) }
-        Cell(3) { Muted(quote.quote.profit.toCurrencyText(quote.currency)) }
+        Cell(3) { NumericText(quote.quote.profit.toCurrencyText(quote.currency), style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         Cell(4) {
             NumericText(quote.totalWithServices.toCurrencyText(quote.currency), style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
-        }
-        Cell(5) {
-            Box {
-                actions.onSell?.takeUnless { state.selectionMode }?.let { sell -> AppButton(stringResource(Res.string.catalog_action_sell), sell, height = AppDimens.smallControlHeight) }
-            }
         }
     }
 }

@@ -5,11 +5,6 @@ import _3dreport.composeapp.generated.resources.catalog_action_sell
 import _3dreport.composeapp.generated.resources.catalog_reprice_changed
 import _3dreport.composeapp.generated.resources.catalog_reprice_unavailable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,23 +17,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.CheckboxMark
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.cardFrame
 import com.threedreport.app.ui.components.clickableAction
+import com.threedreport.app.ui.components.clickableCard
+import com.threedreport.app.ui.components.rememberCardState
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.icons.AppIcons
@@ -51,7 +42,7 @@ import com.threedreport.core.model.SavedQuote
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Cartão de produto do Catálogo em grade (decisão 132): foto em destaque (ou o fundo `column` com o ícone, sem
+ * Cartão de produto do Catálogo em grade (decisão 132): foto em destaque (ou o fundo `cardBlock` com o ícone, sem
  * ilustração), nome, categoria, preço e "Vender" como botão secundário. O menu das demais ações aparece no hover ou no
  * foco. No modo de seleção, o cartão ganha a caixa de marcar e clicar nele marca.
  */
@@ -68,31 +59,19 @@ fun ProductCard(
     val quote = row.quote
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
-    val interaction = remember { MutableInteractionSource() }
-    val hovered by interaction.collectIsHoveredAsState()
-    var focused by remember { mutableStateOf(false) }
-    var focusWithin by remember { mutableStateOf(false) }
-    val active = hovered || focusWithin
+    val card = rememberCardState()
+    val active = card.active
     val selected = state.selectionMode && quote.id in state.selectedIds
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(if (selected) colors.tint else colors.card)
-            .border(
-                if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth,
-                if (focused || active || selected) MaterialTheme.colorScheme.primary else colors.line,
-                MaterialTheme.shapes.medium,
-            )
-            .onFocusChanged { focusWithin = it.hasFocus }
-            .hoverable(interaction),
+            .cardFrame(card, selected = selected),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .onFocusChanged { focused = it.isFocused }
-                .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = if (state.selectionMode) onToggleSelected else onOpen),
+                .clickableCard(card, onClick = if (state.selectionMode) onToggleSelected else onOpen),
         ) {
             PhotoThumbnail(
                 quote,

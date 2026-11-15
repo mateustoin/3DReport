@@ -16,6 +16,7 @@ import _3dreport.composeapp.generated.resources.catalog_title
 import _3dreport.composeapp.generated.resources.catalog_view_grid
 import _3dreport.composeapp.generated.resources.catalog_view_list
 import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_clear_filters
 import _3dreport.composeapp.generated.resources.history_filter_period
 import _3dreport.composeapp.generated.resources.history_selection_count
 import _3dreport.composeapp.generated.resources.history_selection_none
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -44,6 +46,7 @@ import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.BusyBar
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.ScreenHeader
@@ -84,7 +87,12 @@ fun CatalogScreen(
                     if (!state.hasItems) {
                         EmptyState(stringResource(Res.string.catalog_empty_first), actionLabel = stringResource(Res.string.catalog_action_new), onAction = onNewProduct)
                     } else {
-                        EmptyState(stringResource(Res.string.catalog_empty_filter))
+                        EmptyState(
+                            stringResource(Res.string.catalog_empty_filter),
+                            actionLabel = stringResource(Res.string.common_clear_filters),
+                            onAction = viewModel::clearFilters,
+                            actionKind = ButtonKind.Secondary,
+                        )
                     }
                 }
             }
@@ -179,7 +187,7 @@ private fun CatalogFilters(state: HistoryUiState, viewModel: QuoteHistoryViewMod
             value = filter.query,
             onValueChange = viewModel::setSearchQuery,
             placeholder = stringResource(Res.string.catalog_search_hint),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f, fill = false).widthIn(max = AppDimens.searchMaxWidth).fillMaxWidth(),
         )
         if (state.categories.isNotEmpty()) {
             AppDropdownField(

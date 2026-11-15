@@ -8,6 +8,7 @@
     <!-- Comum -->
     <string name="common_save">Salvar</string>
     <string name="common_cancel">Cancelar</string>
+    <string name="common_clear_filters">Limpar filtros</string>
     <string name="common_edit">Editar</string>
     <string name="common_archive">Arquivar</string>
     <string name="common_restore">Restaurar</string>
@@ -657,7 +658,9 @@
     <string name="history_reprice_suffix">Abra em Editar cálculo pra escolher de novo e conferir o preço.</string>
 
     <!-- Pedidos e Catálogo: editar detalhes -->
-    <string name="history_details_title">Detalhes de "%1$s"</string>
+    <string name="history_details_title_order">Detalhes do pedido</string>
+    <string name="history_details_title_product">Detalhes do produto</string>
+    <string name="history_details_field_photo">Foto</string>
     <string name="history_details_help">O preço não muda aqui.</string>
     <string name="history_details_help_detail">Pra mudar peso, tempo, filamento ou preço, use Editar cálculo.</string>
     <string name="history_details_field_name">Nome da peça</string>

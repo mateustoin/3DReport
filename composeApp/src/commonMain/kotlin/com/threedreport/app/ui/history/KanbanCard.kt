@@ -3,12 +3,7 @@ package com.threedreport.app.ui.history
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.orders_card_prints
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,18 +23,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
+import com.threedreport.app.ui.components.cardFrame
+import com.threedreport.app.ui.components.clickableCard
+import com.threedreport.app.ui.components.rememberCardState
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.AppDimens
@@ -72,11 +67,10 @@ fun KanbanCard(
     var dragOffset by remember(quote.id) { mutableStateOf(Offset.Zero) }
     var isDragging by remember(quote.id) { mutableStateOf(false) }
     var liveBounds by remember(quote.id) { mutableStateOf<Rect?>(null) }
-    val interaction = remember { MutableInteractionSource() }
-    val hovered by interaction.collectIsHoveredAsState()
-    var focused by remember { mutableStateOf(false) }
-    var focusWithin by remember { mutableStateOf(false) }
-    val active = hovered || focusWithin
+    val card = rememberCardState()
+    val active = card.active
+    // Na coluna estreita (modo compacto) o cartão é mais apertado: sem foto ao lado do nome, e o respiro cai pra 8.
+    val padding = if (compact) space.xs else space.sm
 
     fun targetStatusUnderPointer(): OrderStatus? {
         val point = liveBounds?.center ?: return null
@@ -89,15 +83,7 @@ fun KanbanCard(
             .zIndex(if (isDragging) 1f else 0f)
             .offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
             .onGloballyPositioned { liveBounds = Rect(it.positionInWindow(), it.size.toSize()) }
-            .clip(MaterialTheme.shapes.medium)
-            .background(colors.card)
-            .border(
-                if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth,
-                if (focused || active || isDragging) MaterialTheme.colorScheme.primary else colors.line,
-                MaterialTheme.shapes.medium,
-            )
-            .onFocusChanged { focusWithin = it.hasFocus }
-            .hoverable(interaction)
+            .cardFrame(card, highlighted = isDragging)
             .pointerInput(quote.id) {
                 detectDragGestures(
                     onDragStart = {
@@ -130,13 +116,12 @@ fun KanbanCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .onFocusChanged { focused = it.isFocused }
-                .clickable(interactionSource = interaction, indication = null, role = Role.Button) { callbacks.onOpen(row) }
-                .padding(space.sm),
+                .clickableCard(card, onClick = { callbacks.onOpen(row) })
+                .padding(padding),
             verticalArrangement = Arrangement.spacedBy(space.xs),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(space.xs)) {
-                if (quote.photoFileName != null) PhotoThumbnail(quote, loadThumbnail, Modifier.size(AppDimens.kanbanPhotoSize))
+                if (!compact && quote.photoFileName != null) PhotoThumbnail(quote, loadThumbnail, Modifier.size(AppDimens.kanbanPhotoSize))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(space.xxs)) {
                     Text(
                         quote.name,
@@ -146,13 +131,13 @@ fun KanbanCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     val prints = row.printCount?.let { pluralStringResource(Res.plurals.orders_card_prints, it, it) }
-                    Text(
-                        listOfNotNull(quote.displayNumber, quote.client?.name, prints).joinToString(" · "),
-                        style = MaterialTheme.appType.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    if (compact) {
+                        // Coluna estreita: o cliente ganha a própria linha (e até duas), em vez de ser cortado depois do número.
+                        Caption(listOfNotNull(quote.displayNumber, prints).joinToString(" · "), maxLines = 1)
+                        Caption(quote.client?.name.orEmpty(), maxLines = 2)
+                    } else {
+                        Caption(listOfNotNull(quote.displayNumber, quote.client?.name, prints).joinToString(" · "), maxLines = 1)
+                    }
                 }
             }
             // O mesmo valor da tabela: o que o cliente paga. Na coluna estreita o selo e o valor se empilham; um FlowRow
@@ -160,7 +145,7 @@ fun KanbanCard(
             val value: @Composable () -> Unit = {
                 NumericText(
                     quote.totalWithServices.toCurrencyText(quote.currency),
-                    style = MaterialTheme.appType.sectionTitle,
+                    style = MaterialTheme.appType.bodyStrong,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -183,4 +168,10 @@ fun KanbanCard(
             modifier = Modifier.align(Alignment.TopEnd).alpha(if (active) 1f else 0f).background(colors.card, MaterialTheme.shapes.small),
         )
     }
+}
+
+@Composable
+private fun Caption(text: String, maxLines: Int) {
+    if (text.isEmpty()) return
+    Text(text, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
 }

@@ -30,7 +30,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.threedreport.app.ui.components.AppMenu
+import com.threedreport.app.ui.components.AppMenuDivider
 import com.threedreport.app.ui.components.AppMenuGroup
 import com.threedreport.app.ui.components.AppMenuItem
 import com.threedreport.app.ui.components.IconAction
@@ -67,8 +67,8 @@ fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Mo
         AppMenu(expanded = expanded, onDismiss = close) {
             val onStatusChange = actions.onStatusChange
             if (choosingStatus && onStatusChange != null) {
-                AppMenuItem(stringResource(Res.string.history_menu_back), { choosingStatus = false }, AppIcons.Close)
-                HorizontalDivider()
+                AppMenuItem(stringResource(Res.string.history_menu_back), { choosingStatus = false }, AppIcons.ArrowBack)
+                AppMenuDivider()
                 OrderStatus.entries.forEach { status ->
                     val name = stringResource(status.labelRes())
                     AppMenuItem(
@@ -85,7 +85,7 @@ fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Mo
             SendGroup(actions, close)
             FilesGroup(actions, close)
             OrganizeGroup(savedQuote, actions, close, onChooseStatus = { choosingStatus = true })
-            HorizontalDivider()
+            AppMenuDivider()
             AppMenuItem(stringResource(Res.string.common_delete), { close(); actions.onDelete() }, AppIcons.Delete, danger = true)
         }
     }
@@ -103,7 +103,7 @@ private fun SendGroup(actions: QuoteActions, close: () -> Unit) {
 @Composable
 private fun FilesGroup(actions: QuoteActions, close: () -> Unit) {
     if (actions.onDownloadPhoto == null && actions.onDownloadStl == null && actions.onPrintSettings == null) return
-    HorizontalDivider()
+    AppMenuDivider()
     AppMenuGroup(stringResource(Res.string.history_menu_group_files))
     actions.onDownloadPhoto?.let { AppMenuItem(stringResource(Res.string.history_menu_download_photo), { close(); it() }, AppIcons.Image) }
     actions.onDownloadStl?.let { AppMenuItem(stringResource(Res.string.history_menu_download_stl), { close(); it() }, AppIcons.Download) }
@@ -114,7 +114,7 @@ private fun FilesGroup(actions: QuoteActions, close: () -> Unit) {
 
 @Composable
 private fun OrganizeGroup(savedQuote: SavedQuote, actions: QuoteActions, close: () -> Unit, onChooseStatus: () -> Unit) {
-    HorizontalDivider()
+    AppMenuDivider()
     AppMenuGroup(stringResource(Res.string.history_menu_group_organize))
     actions.onSell?.let { AppMenuItem(stringResource(Res.string.history_menu_sell), { close(); it() }, AppIcons.Sell) }
     AppMenuItem(stringResource(Res.string.history_menu_edit_details), { close(); actions.onEditDetails() }, AppIcons.Edit)

@@ -2,6 +2,7 @@ package com.threedreport.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,7 +37,7 @@ fun AppMenu(expanded: Boolean, onDismiss: () -> Unit, modifier: Modifier = Modif
     )
 }
 
-/** Um item de [AppMenu]: texto em `body` e, se houver, o ícone à esquerda. [danger] pinta de `error` (excluir). */
+/** Um item de [AppMenu], com 40 de altura (`AppDimens.menuItemHeight`): texto em `body` e, se houver, o ícone à esquerda. [danger] pinta de `error` (excluir). */
 @Composable
 fun AppMenuItem(text: String, onClick: () -> Unit, icon: ImageVector? = null, enabled: Boolean = true, danger: Boolean = false) {
     val tint = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
@@ -55,8 +56,13 @@ fun AppMenuItem(text: String, onClick: () -> Unit, enabled: Boolean = true, dang
         leadingIcon = leading,
         enabled = enabled,
         onClick = onClick,
+        modifier = Modifier.height(AppDimens.menuItemHeight),
     )
 }
+
+/** O divisor entre grupos de um [AppMenu]: 1 px em `line`, com um respiro de 4 em cima e embaixo. */
+@Composable
+fun AppMenuDivider() = AppDivider(Modifier.padding(vertical = MaterialTheme.spacing.xxs))
 
 /** O título de um grupo de itens do [AppMenu], em `overline`. */
 @Composable
