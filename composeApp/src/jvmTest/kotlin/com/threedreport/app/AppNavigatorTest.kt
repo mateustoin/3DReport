@@ -246,6 +246,61 @@ class AppNavigatorTest {
         assertEquals(AppDestination.QUOTE, nav.destination)
     }
 
+    // ---- novo orçamento e novo produto (cabeçalhos de Pedidos e do Catálogo)
+
+    @Test
+    fun aNewOrderOpensTheBlankQuoteTabAsAnOrder() {
+        val nav = navigator(AppDestination.ORDERS)
+        tab.setKind(QuoteKind.PRODUCT)
+
+        nav.newOrder()
+
+        assertNull(nav.pendingDiscard)
+        assertEquals(AppDestination.QUOTE, nav.destination)
+        assertEquals(QuoteKind.ORDER, tab.uiState.value.input.kind)
+        assertFalse(tab.hasDraft)
+    }
+
+    @Test
+    fun aNewProductOpensTheBlankQuoteTabAsAProduct() {
+        val nav = navigator(AppDestination.CATALOG)
+
+        nav.newProduct()
+
+        assertNull(nav.pendingDiscard)
+        assertEquals(AppDestination.QUOTE, nav.destination)
+        assertEquals(QuoteKind.PRODUCT, tab.uiState.value.input.kind)
+    }
+
+    @Test
+    fun aNewProductWithADraftAsksBeforeDiscardingItAndThenOpensTheProductMode() {
+        val nav = navigator(AppDestination.CATALOG)
+        startDraftInTab()
+
+        nav.newProduct()
+
+        assertNotNull(nav.pendingDiscard)
+        assertEquals(AppDestination.CATALOG, nav.destination, "a tela só muda depois da confirmação")
+
+        nav.confirmDiscard()
+
+        assertEquals(AppDestination.QUOTE, nav.destination)
+        assertEquals(QuoteKind.PRODUCT, tab.uiState.value.input.kind)
+        assertFalse(tab.hasDraft)
+    }
+
+    @Test
+    fun decliningANewOrderKeepsTheDraftAndTheScreen() {
+        val nav = navigator(AppDestination.ORDERS)
+        startDraftInTab()
+
+        nav.newOrder()
+        nav.dismissDiscard()
+
+        assertEquals(AppDestination.ORDERS, nav.destination)
+        assertTrue(tab.hasDraft)
+    }
+
     @Test
     fun sellingWithoutADraftOpensTheSaleDirectly() {
         val product = saveQuote("Produto", QuoteKind.PRODUCT)

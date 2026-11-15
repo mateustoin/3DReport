@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
@@ -119,7 +120,7 @@ fun ListRow(
 /**
  * Faixa com ações de ícone que só aparecem com o mouse em cima ou com o foco dentro (teclado), sem sair da ordem do
  * Tab. É o mecanismo de [ListRow], aberto pra outras listas (os componentes do diálogo de manutenção). As [actions]
- * ficam por cima do fim do [content], com o fundo da faixa; quem põe algo no fim do conteúdo deve reservar o espaço
+ * (e o [extra], um botão que abre um menu, por exemplo) ficam por cima do fim do [content], com o fundo da faixa; quem põe algo no fim do conteúdo deve reservar o espaço
  * (veja [revealActionsWidth]). [content] recebe se a faixa está ativa. [selected] usa o fundo `tint`.
  */
 @Composable
@@ -127,6 +128,7 @@ fun RevealActions(
     actions: List<RowAction>,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
+    extra: @Composable RowScope.() -> Unit = {},
     content: @Composable (active: Boolean) -> Unit,
 ) {
     val colors = MaterialTheme.appColors
@@ -166,6 +168,7 @@ fun RevealActions(
                     tint = if (action.danger) MaterialTheme.colorScheme.error else Color.Unspecified,
                 )
             }
+            extra()
         }
     }
 }

@@ -712,6 +712,17 @@ class QuoteHistoryViewModelTest {
     }
 
     @Test
+    fun switchingTheViewLeavesSelectionMode() {
+        val viewModel = viewModelOf(QuoteHistoryRepository())
+        viewModel.startSelection("a")
+
+        viewModel.setOrdersView(OrdersView.KANBAN)
+
+        assertFalse(viewModel.uiState.value.selectionMode)
+        assertTrue(viewModel.uiState.value.selectedIds.isEmpty())
+    }
+
+    @Test
     fun theCatalogOpensInGridAndTheChosenViewIsRemembered() {
         val repository = QuoteHistoryRepository()
         assertEquals(CatalogView.GRID, viewModelOf(repository, kind = QuoteKind.PRODUCT).uiState.value.catalogView)

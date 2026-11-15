@@ -221,13 +221,14 @@ class QuoteHistoryViewModel(
     /** Lembra a visualização de Pedidos pra próxima abertura (decisão 129). */
     fun setOrdersView(view: OrdersView) {
         preferencesRepository.setOrdersView(view)
-        change { it }
+        // A seleção só existe na lista: trocar de visualização a desfaz, e não deixa marcados escondidos no kanban.
+        change { it.copy(selectionMode = false, selectedIds = emptySet()) }
     }
 
     /** Lembra a visualização do Catálogo pra próxima abertura (decisão 132). */
     fun setCatalogView(view: CatalogView) {
         preferencesRepository.setCatalogView(view)
-        change { it }
+        change { it.copy(selectionMode = false, selectedIds = emptySet()) }
     }
 
     fun setShowAllDelivered(show: Boolean) = change { it.copy(showAllDelivered = show) }

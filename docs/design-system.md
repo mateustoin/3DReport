@@ -141,9 +141,12 @@ fonte. Não se usa fonte monoespaçada.
 | Diálogo | `AppDialog`: fundo `card`, raio 12, título em `panelTitle` (com dica de ajuda ao lado, se precisar), botões à direita e o último confirma |
 | Seletor de duas opções | Segmentado com borda `line`; a opção ativa tem fundo `primary` |
 | Painel de resultado | Coluna fixa à direita, fundo `navy`: rótulo em `overline`, preço em `displayPrice`, dois blocos (lucro em âmbar e mínimo sem prejuízo), barra de composição, e as ações no pé |
-| Bloco de resumo | Número em `statValue` e legenda em `caption`, fundo `card`, borda `line` |
-| Coluna do kanban | Fundo `column`, raio 12, faixa de 3 px no topo na cor da situação, título e total |
-| Cartão de pedido | Fundo `card`, borda `line`: nome em `bodyStrong`, número e cliente em `caption`, selo de prazo e valor |
+| Bloco de resumo | Número em `statValue` e legenda em `caption`, fundo `card`, borda `line`, raio 10 (`SummaryBlock`). A cor do número pode ser a de prazo; a legenda sempre diz o que ele é |
+| Selo | Texto em `label` semibold, fundo de raio 6 (`AppBadge`). O prazo usa as cores de prazo; o pedido que já saiu do fluxo mostra o prazo só como texto de apoio |
+| Situação | Ponto de 8 na cor da situação e o nome ao lado (`StatusLabel`) |
+| Tabela | Cabeçalho de 34 com os títulos em `label` e linhas de 52, divisor de 1 px, valor à direita (`TableHeader`, `TableRow`). Ações no hover ou no foco, por cima do fim da linha, como na linha de lista. No modo de seleção, a primeira coluna é a caixa de marcar e clicar na linha marca |
+| Coluna do kanban | Fundo `column`, raio 12, faixa de 3 px no topo na cor da situação, título e total. As colunas dividem a largura e, abaixo de 188 cada, a faixa rola na horizontal |
+| Cartão de pedido | Fundo `card`, borda `line` (`primary` com o mouse em cima ou o foco): nome em `bodyStrong`, número e cliente em `caption`, selo de prazo e valor, foto pequena quando houver. O menu de ações só aparece no hover ou no foco. Clicar abre os detalhes; arrastar muda a situação |
 | Linha de lista | Pra cadastros: uma linha por item, ações ao passar o mouse ou num menu. Não é cartão |
 | Estado vazio | Uma frase e a ação que resolve. Sem ilustração |
 

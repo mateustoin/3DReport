@@ -53,10 +53,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import com.threedreport.app.data.Clock
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.platform.fileDropTarget
 import com.threedreport.app.platform.openFolder
 import com.threedreport.app.platform.openUrl
+import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.AboutScreen
 import com.threedreport.app.ui.about.UpdateSection
 import com.threedreport.app.ui.about.UpdateState
@@ -70,8 +72,9 @@ import com.threedreport.app.ui.dashboard.DashboardViewModel
 import com.threedreport.app.ui.filaments.FilamentListScreen
 import com.threedreport.app.ui.filaments.FilamentListViewModel
 import com.threedreport.app.ui.format.LocalCurrency
-import com.threedreport.app.ui.history.QuoteHistoryScreen
-import com.threedreport.app.ui.history.QuoteHistoryViewModel
+import com.threedreport.app.ui.history.CatalogScreen
+import com.threedreport.app.ui.history.HistoryNavigation
+import com.threedreport.app.ui.history.OrdersScreen
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.navigation.AppDestination
 import com.threedreport.app.ui.navigation.AppSidebar
@@ -108,11 +111,13 @@ import kotlinx.coroutines.launch
 fun App(
     container: AppContainer,
     dataFolderNotice: DataFolderNotice? = null,
-    // Os dois parâmetros abaixo só existem pro gerador de screenshots do site (decisão 120): abrir
-    // direto numa aba e preencher o orçamento da aba com dados de exemplo, sem mudar o comportamento
+    // Os parâmetros abaixo só existem pro gerador de screenshots do site (decisão 120): abrir
+    // direto numa aba, preencher o orçamento da aba com dados de exemplo e fixar o "hoje" de Pedidos, sem mudar o comportamento
     // padrão do app (valores default preservam o de sempre).
     startAt: AppDestination = AppDestination.QUOTE,
     prepareQuote: (QuoteViewModel) -> Unit = {},
+    today: () -> Long = ::todayEpochDay,
+    clock: Clock = Clock.System,
 ) {
     val settingsRepository = container.settings
     val printerRepository = container.printers
@@ -124,7 +129,7 @@ fun App(
     // pedidos"): o `nav` é preenchido logo abaixo, antes de qualquer toque na tela.
     val (viewModels, navigator) = remember {
         lateinit var nav: AppNavigator
-        val models = AppViewModels(container, appScope, showOrders = { nav.goTo(AppDestination.ORDERS) }, prepareQuote = prepareQuote)
+        val models = AppViewModels(container, appScope, showOrders = { nav.goTo(AppDestination.ORDERS) }, prepareQuote = prepareQuote, today = today, clock = clock)
         nav = AppNavigator(
             startAt,
             models.quoteViewModel,
@@ -247,13 +252,26 @@ fun App(
                                         }
                                     }
 
-                                    AppDestination.ORDERS, AppDestination.CATALOG -> QuoteHistoryScreen(
-                                        if (destination == AppDestination.ORDERS) viewModels.ordersViewModel else viewModels.catalogViewModel,
-                                        onEditQuote = navigator::editQuote,
-                                        // As três começam um orçamento na aba: com um rascunho lá, pergunta antes.
-                                        onDuplicateQuote = navigator::duplicateQuote,
-                                        onSellProduct = navigator::sellProduct,
-                                        onCopyToCatalog = navigator::copyToCatalog,
+                                    // Duplicar, Vender, Guardar no catálogo e os "Novo" começam um orçamento na aba: com um
+                                    // rascunho lá, pergunta antes.
+                                    AppDestination.ORDERS -> OrdersScreen(
+                                        viewModels.ordersViewModel,
+                                        navigation = HistoryNavigation(
+                                            onEdit = navigator::editQuote,
+                                            onDuplicate = navigator::duplicateQuote,
+                                            onCopyToCatalog = navigator::copyToCatalog,
+                                        ),
+                                        onNewQuote = navigator::newOrder,
+                                    )
+
+                                    AppDestination.CATALOG -> CatalogScreen(
+                                        viewModels.catalogViewModel,
+                                        navigation = HistoryNavigation(
+                                            onEdit = navigator::editQuote,
+                                            onDuplicate = navigator::duplicateQuote,
+                                            onSell = navigator::sellProduct,
+                                        ),
+                                        onNewProduct = navigator::newProduct,
                                     )
 
                                     AppDestination.DASHBOARD -> DashboardScreen(viewModels.dashboardViewModel)

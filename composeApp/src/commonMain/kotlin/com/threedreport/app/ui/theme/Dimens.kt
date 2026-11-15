@@ -82,6 +82,29 @@ object AppDimens {
     val printThumbnailSize = 40.dp
     val smallControlHeight = 32.dp
 
+    /** Tabela (Pedidos em lista, Catálogo em lista): linha, cabeçalho e as colunas de largura fixa. */
+    val tableRowHeight = 52.dp
+    val tableHeaderHeight = 34.dp
+    val tableNumberColumn = 64.dp
+    val tableStatusColumn = 130.dp
+    val tableDeadlineColumn = 150.dp
+    val tableMoneyColumn = 110.dp
+    val tableActionColumn = 96.dp
+
+    /** Faixa de cor da situação no topo da coluna do kanban, e a largura mínima da coluna antes de rolar. */
+    val statusBandHeight = 3.dp
+    val kanbanColumnMinWidth = 188.dp
+
+    /** A foto pequena do cartão de pedido do kanban. */
+    val kanbanPhotoSize = 32.dp
+
+    /** Foto em destaque do cartão do Catálogo, e a largura mínima do cartão na grade. */
+    val productPhotoHeight = 132.dp
+    val productCardMinWidth = 200.dp
+
+    /** Campo de filtro de lista (situação, período, categoria) ao lado da busca. */
+    val filterFieldWidth = 200.dp
+
     /** Amostra de cor (filamento): a do formulário e a pequena, dentro do selo da lista. */
     val swatchSize = 24.dp
     val swatchSmallSize = 16.dp

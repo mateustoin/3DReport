@@ -1,5 +1,7 @@
 package com.threedreport.app
 
+import com.threedreport.app.data.Clock
+import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.consumables.ConsumableListViewModel
 import com.threedreport.app.ui.dashboard.DashboardViewModel
@@ -31,6 +33,9 @@ class AppViewModels(
     /** Pra onde "ver pedidos" leva (o Catálogo usa depois de vender): abre Pedidos. */
     private val showOrders: () -> Unit,
     private val prepareQuote: (QuoteViewModel) -> Unit = {},
+    /** Hoje e agora de Pedidos e do Catálogo; só o gerador de capturas troca, pra os prazos de exemplo não envelhecerem. */
+    private val today: () -> Long = ::todayEpochDay,
+    private val clock: Clock = Clock.System,
 ) {
     private fun newQuoteViewModel() = QuoteViewModel(
         container.filaments, container.printers, container.settings, container.services,
@@ -59,7 +64,9 @@ class AppViewModels(
     private fun newHistoryViewModel(kind: QuoteKind) = QuoteHistoryViewModel(
         container.quoteHistory, container.branding,
         container.filaments, container.printers, container.settings, container.salesChannels, container.preferences,
+        today = today,
         clientRepository = container.clients,
+        clock = clock,
         scope = scope,
         background = Dispatchers.Default,
         main = Dispatchers.Main,

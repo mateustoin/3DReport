@@ -101,6 +101,18 @@ class AppNavigator(
     /** Ctrl/Cmd+N no Orçamento. */
     fun newQuote() = unlessDraft(quote::resetForm)
 
+    /** "Novo orçamento" de Pedidos: abre o Orçamento em branco, pra um pedido de cliente. Com um rascunho na aba, pergunta antes. */
+    fun newOrder() = startBlank(QuoteKind.ORDER)
+
+    /** "Novo produto" do Catálogo: abre o Orçamento em branco, no modo produto. Com um rascunho na aba, pergunta antes. */
+    fun newProduct() = startBlank(QuoteKind.PRODUCT)
+
+    private fun startBlank(kind: QuoteKind) = unlessDraft {
+        quote.resetForm()
+        quote.setKind(kind)
+        destination = AppDestination.QUOTE
+    }
+
     /**
      * Ctrl/Cmd+S no Orçamento: com uma edição aberta, salva e encerra a edição; sem ela, salva o rascunho
      * da aba (o orçamento novo, que volta ao começo depois de salvo). Devolve se salvou.

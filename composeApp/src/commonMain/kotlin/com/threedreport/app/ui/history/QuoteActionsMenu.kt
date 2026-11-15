@@ -1,58 +1,58 @@
 package com.threedreport.app.ui.history
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_delete
+import _3dreport.composeapp.generated.resources.history_menu_back
+import _3dreport.composeapp.generated.resources.history_menu_convert
+import _3dreport.composeapp.generated.resources.history_menu_copy_text
+import _3dreport.composeapp.generated.resources.history_menu_copy_to_catalog
+import _3dreport.composeapp.generated.resources.history_menu_deadline_change
+import _3dreport.composeapp.generated.resources.history_menu_deadline_set
+import _3dreport.composeapp.generated.resources.history_menu_download_photo
+import _3dreport.composeapp.generated.resources.history_menu_download_stl
+import _3dreport.composeapp.generated.resources.history_menu_duplicate
+import _3dreport.composeapp.generated.resources.history_menu_edit_calculation
+import _3dreport.composeapp.generated.resources.history_menu_edit_details
+import _3dreport.composeapp.generated.resources.history_menu_export_pdf
+import _3dreport.composeapp.generated.resources.history_menu_group_files
+import _3dreport.composeapp.generated.resources.history_menu_group_organize
+import _3dreport.composeapp.generated.resources.history_menu_group_send
+import _3dreport.composeapp.generated.resources.history_menu_more
+import _3dreport.composeapp.generated.resources.history_menu_move_to
+import _3dreport.composeapp.generated.resources.history_menu_print_settings
+import _3dreport.composeapp.generated.resources.history_menu_print_settings_add
+import _3dreport.composeapp.generated.resources.history_menu_reprice
+import _3dreport.composeapp.generated.resources.history_menu_save_image
+import _3dreport.composeapp.generated.resources.history_menu_select
+import _3dreport.composeapp.generated.resources.history_menu_sell
+import _3dreport.composeapp.generated.resources.history_menu_status_current
+import _3dreport.composeapp.generated.resources.history_menu_whatsapp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.AppMenu
 import com.threedreport.app.ui.components.AppMenuGroup
 import com.threedreport.app.ui.components.AppMenuItem
-import com.threedreport.app.ui.components.IconLabel
+import com.threedreport.app.ui.components.IconAction
 import com.threedreport.app.ui.icons.AppIcons
-import com.threedreport.app.ui.theme.progressColor
+import com.threedreport.app.ui.theme.AppDimens
+import com.threedreport.app.ui.theme.statusColor
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
+import org.jetbrains.compose.resources.stringResource
 
 /**
- * Tudo o que dá pra fazer com um orçamento salvo. Um objeto só, montado pela tela, pra lista e Kanban
- * oferecerem exatamente as mesmas ações (antes cada um tinha a sua lista, e o Kanban não tinha metade).
- * Ação `null` não se aplica a este orçamento e some do menu.
- */
-class QuoteActions(
-    val onEdit: () -> Unit,
-    val onEditDetails: () -> Unit,
-    val onDuplicate: () -> Unit,
-    val onSell: (() -> Unit)?,
-    val onCopyToCatalog: (() -> Unit)?,
-    val onConvertToOrder: (() -> Unit)?,
-    val onReprice: (() -> Unit)?,
-    val onStatusChange: ((OrderStatus) -> Unit)?,
-    val onEditDeliveryDate: (() -> Unit)?,
-    /** `null` com várias impressões: cada uma tem as suas, e elas se editam no Orçamento (decisão 114). */
-    val onPrintSettings: (() -> Unit)?,
-    val onDownloadPhoto: (() -> Unit)?,
-    val onDownloadStl: (() -> Unit)?,
-    val onExportPdf: () -> Unit,
-    val onCopy: () -> Unit,
-    val onOpenWhatsApp: () -> Unit,
-    val onSaveImage: () -> Unit,
-    val onDelete: () -> Unit,
-)
-
-/**
- * O botão "Ações" e o menu, agrupado em Enviar / Arquivos / Organizar / Excluir (decisão 108). "Mover
- * para" troca o conteúdo do menu pela lista de status, em vez de abrir um segundo menu por cima: o
- * submenu de verdade some quando o mouse escorrega meio centímetro.
+ * O botão de ícone "Mais ações" e o menu dele, agrupado em Enviar, Arquivos, Organizar e Excluir (decisão 108). "Mover
+ * para" troca o conteúdo do menu pela lista de situações, em vez de abrir um segundo menu por cima: o submenu de verdade
+ * some quando o mouse escorrega meio centímetro. As ações que não se aplicam ([QuoteActions] `null`) não aparecem.
  */
 @Composable
 fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Modifier = Modifier) {
@@ -64,60 +64,71 @@ fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Mo
     }
 
     Box(modifier) {
-        TextButton(onClick = { expanded = true }) { IconLabel(AppIcons.MoreVert, "Ações") }
+        IconAction(AppIcons.MoreVert, stringResource(Res.string.history_menu_more), onClick = { expanded = true })
         AppMenu(expanded = expanded, onDismiss = close) {
             val onStatusChange = actions.onStatusChange
             if (choosingStatus && onStatusChange != null) {
-                AppMenuItem("Voltar", { choosingStatus = false }, AppIcons.Close)
+                AppMenuItem(stringResource(Res.string.history_menu_back), { choosingStatus = false }, AppIcons.Close)
                 HorizontalDivider()
                 OrderStatus.entries.forEach { status ->
+                    val name = stringResource(status.labelRes())
                     AppMenuItem(
-                        text = if (status == savedQuote.status) "${status.label} (atual)" else status.label,
+                        text = if (status == savedQuote.status) stringResource(Res.string.history_menu_status_current, name) else name,
                         onClick = {
                             close()
                             onStatusChange(status)
                         },
                         enabled = status != savedQuote.status,
-                    ) { Box(Modifier.size(10.dp).background(status.progressColor(), CircleShape)) }
+                    ) { Box(Modifier.size(AppDimens.legendSwatchSize).background(status.statusColor(), CircleShape)) }
                 }
                 return@AppMenu
             }
-
-            AppMenuGroup("Enviar pro cliente")
-            AppMenuItem("Exportar PDF", { close(); actions.onExportPdf() }, AppIcons.PictureAsPdf)
-            AppMenuItem("Enviar texto no WhatsApp", { close(); actions.onOpenWhatsApp() }, AppIcons.Chat)
-            AppMenuItem("Salvar imagem pro WhatsApp", { close(); actions.onSaveImage() }, AppIcons.AddPhotoAlternate)
-            AppMenuItem("Copiar texto", { close(); actions.onCopy() }, AppIcons.ContentCopy)
-
+            SendGroup(actions, close)
+            FilesGroup(savedQuote, actions, close)
+            OrganizeGroup(savedQuote, actions, close, onChooseStatus = { choosingStatus = true })
             HorizontalDivider()
-            AppMenuGroup("Arquivos")
-            actions.onDownloadPhoto?.let { AppMenuItem("Baixar foto", { close(); it() }, AppIcons.Image) }
-            actions.onDownloadStl?.let { AppMenuItem("Baixar STL", { close(); it() }, AppIcons.Download) }
-            actions.onPrintSettings?.let { onPrintSettings ->
-                AppMenuItem(
-                    if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão",
-                    { close(); onPrintSettings() },
-                    AppIcons.Tune,
-                )
-            }
-
-            HorizontalDivider()
-            AppMenuGroup("Organizar")
-            AppMenuItem("Editar detalhes (nome, cliente, foto)", { close(); actions.onEditDetails() }, AppIcons.Edit)
-            AppMenuItem("Editar cálculo", { close(); actions.onEdit() }, AppIcons.Calculate)
-            AppMenuItem("Duplicar", { close(); actions.onDuplicate() }, AppIcons.FileCopy)
-            if (onStatusChange != null) {
-                AppMenuItem("Mover para…", { choosingStatus = true }, AppIcons.ViewKanban)
-            }
-            actions.onEditDeliveryDate?.let {
-                AppMenuItem(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega", { close(); it() }, AppIcons.Event)
-            }
-            actions.onCopyToCatalog?.let { AppMenuItem("Guardar no catálogo", { close(); it() }, AppIcons.Storefront) }
-            actions.onReprice?.let { AppMenuItem("Atualizar preço", { close(); it() }, AppIcons.Sync) }
-            actions.onConvertToOrder?.let { AppMenuItem("Transformar em pedido", { close(); it() }, AppIcons.RequestQuote) }
-
-            HorizontalDivider()
-            AppMenuItem("Excluir", { close(); actions.onDelete() }, AppIcons.Delete, danger = true)
+            AppMenuItem(stringResource(Res.string.common_delete), { close(); actions.onDelete() }, AppIcons.Delete, danger = true)
         }
     }
+}
+
+@Composable
+private fun SendGroup(actions: QuoteActions, close: () -> Unit) {
+    AppMenuGroup(stringResource(Res.string.history_menu_group_send))
+    AppMenuItem(stringResource(Res.string.history_menu_export_pdf), { close(); actions.onExportPdf() }, AppIcons.PictureAsPdf)
+    AppMenuItem(stringResource(Res.string.history_menu_whatsapp), { close(); actions.onOpenWhatsApp() }, AppIcons.Chat)
+    AppMenuItem(stringResource(Res.string.history_menu_save_image), { close(); actions.onSaveImage() }, AppIcons.AddPhotoAlternate)
+    AppMenuItem(stringResource(Res.string.history_menu_copy_text), { close(); actions.onCopy() }, AppIcons.ContentCopy)
+}
+
+@Composable
+private fun FilesGroup(savedQuote: SavedQuote, actions: QuoteActions, close: () -> Unit) {
+    if (actions.onDownloadPhoto == null && actions.onDownloadStl == null && actions.onPrintSettings == null) return
+    HorizontalDivider()
+    AppMenuGroup(stringResource(Res.string.history_menu_group_files))
+    actions.onDownloadPhoto?.let { AppMenuItem(stringResource(Res.string.history_menu_download_photo), { close(); it() }, AppIcons.Image) }
+    actions.onDownloadStl?.let { AppMenuItem(stringResource(Res.string.history_menu_download_stl), { close(); it() }, AppIcons.Download) }
+    actions.onPrintSettings?.let { onPrintSettings ->
+        val label = if (savedQuote.printSettings == null) Res.string.history_menu_print_settings_add else Res.string.history_menu_print_settings
+        AppMenuItem(stringResource(label), { close(); onPrintSettings() }, AppIcons.Tune)
+    }
+}
+
+@Composable
+private fun OrganizeGroup(savedQuote: SavedQuote, actions: QuoteActions, close: () -> Unit, onChooseStatus: () -> Unit) {
+    HorizontalDivider()
+    AppMenuGroup(stringResource(Res.string.history_menu_group_organize))
+    actions.onSell?.let { AppMenuItem(stringResource(Res.string.history_menu_sell), { close(); it() }, AppIcons.Sell) }
+    AppMenuItem(stringResource(Res.string.history_menu_edit_details), { close(); actions.onEditDetails() }, AppIcons.Edit)
+    AppMenuItem(stringResource(Res.string.history_menu_edit_calculation), { close(); actions.onEdit() }, AppIcons.Calculate)
+    AppMenuItem(stringResource(Res.string.history_menu_duplicate), { close(); actions.onDuplicate() }, AppIcons.FileCopy)
+    if (actions.onStatusChange != null) AppMenuItem(stringResource(Res.string.history_menu_move_to), onChooseStatus, AppIcons.ViewKanban)
+    actions.onEditDeliveryDate?.let {
+        val label = if (savedQuote.deliveryDateEpochDay == null) Res.string.history_menu_deadline_set else Res.string.history_menu_deadline_change
+        AppMenuItem(stringResource(label), { close(); it() }, AppIcons.Event)
+    }
+    actions.onCopyToCatalog?.let { AppMenuItem(stringResource(Res.string.history_menu_copy_to_catalog), { close(); it() }, AppIcons.Storefront) }
+    actions.onReprice?.let { AppMenuItem(stringResource(Res.string.history_menu_reprice), { close(); it() }, AppIcons.Sync) }
+    actions.onConvertToOrder?.let { AppMenuItem(stringResource(Res.string.history_menu_convert), { close(); it() }, AppIcons.RequestQuote) }
+    actions.onSelect?.let { AppMenuItem(stringResource(Res.string.history_menu_select), { close(); it() }, AppIcons.Check) }
 }

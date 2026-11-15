@@ -670,4 +670,94 @@
     <string name="history_details_photo_change">Trocar foto</string>
     <string name="history_details_photo_remove">Remover foto</string>
     <string name="history_details_photo_alt">Foto da peça</string>
+
+    <!-- Pedidos -->
+    <string name="orders_title">Pedidos</string>
+    <string name="orders_action_new">Novo orçamento</string>
+    <string name="orders_view_list">Lista</string>
+    <string name="orders_view_kanban">Kanban</string>
+    <string name="orders_summary_in_progress">em andamento</string>
+    <string name="orders_summary_receivable">a receber</string>
+    <string name="orders_summary_due_today">pra entregar hoje</string>
+    <plurals name="orders_summary_overdue">
+        <item quantity="one">atrasado</item>
+        <item quantity="other">atrasados</item>
+    </plurals>
+    <string name="orders_search">Buscar</string>
+    <string name="orders_search_hint">Nome, cliente ou número</string>
+    <string name="orders_filter_status">Situação</string>
+    <string name="orders_filter_status_all">Todas as situações</string>
+    <string name="history_filter_period">Período</string>
+    <string name="orders_col_number">Nº</string>
+    <string name="orders_col_piece">Peça</string>
+    <string name="orders_col_client">Cliente</string>
+    <string name="orders_col_status">Situação</string>
+    <string name="orders_col_deadline">Prazo</string>
+    <string name="orders_col_value">Valor</string>
+    <plurals name="orders_card_prints">
+        <item quantity="one">%1$d impressão</item>
+        <item quantity="other">%1$d impressões</item>
+    </plurals>
+    <string name="orders_kanban_empty">Nenhum pedido aqui</string>
+    <plurals name="orders_kanban_see_more">
+        <item quantity="one">Ver mais %1$d entregue</item>
+        <item quantity="other">Ver mais %1$d entregues</item>
+    </plurals>
+    <string name="orders_kanban_recent_only">Mostrar só os últimos %1$d dias</string>
+    <plurals name="orders_kanban_cancelled">
+        <item quantity="one">%1$d cancelado fica fora do quadro</item>
+        <item quantity="other">%1$d cancelados ficam fora do quadro</item>
+    </plurals>
+    <string name="orders_kanban_cancelled_help">Na lista, filtre pela situação Cancelado pra ver.</string>
+    <string name="orders_empty_first">Nenhum pedido ainda.</string>
+    <string name="orders_empty_filter">Nenhum pedido encontrado com esse filtro.</string>
+
+    <!-- Pedidos e Catálogo: ações da linha, menu, seleção e atualizar preço -->
+    <string name="history_photo_alt">Foto de %1$s</string>
+    <string name="history_action_export_pdf">Exportar PDF</string>
+    <string name="history_action_copy">Copiar texto</string>
+    <string name="history_action_copied">Copiado</string>
+    <string name="history_menu_more">Mais ações</string>
+    <string name="history_menu_group_send">Enviar pro cliente</string>
+    <string name="history_menu_group_files">Arquivos</string>
+    <string name="history_menu_group_organize">Organizar</string>
+    <string name="history_menu_export_pdf">Exportar PDF</string>
+    <string name="history_menu_whatsapp">Enviar texto no WhatsApp</string>
+    <string name="history_menu_save_image">Salvar imagem pro WhatsApp</string>
+    <string name="history_menu_copy_text">Copiar texto</string>
+    <string name="history_menu_download_photo">Baixar foto</string>
+    <string name="history_menu_download_stl">Baixar STL</string>
+    <string name="history_menu_print_settings">Configurações de impressão</string>
+    <string name="history_menu_print_settings_add">Adicionar configurações de impressão</string>
+    <string name="history_menu_sell">Vender</string>
+    <string name="history_menu_edit_details">Editar detalhes</string>
+    <string name="history_menu_edit_calculation">Editar cálculo</string>
+    <string name="history_menu_duplicate">Duplicar</string>
+    <string name="history_menu_move_to">Mover para</string>
+    <string name="history_menu_back">Voltar</string>
+    <string name="history_menu_status_current">%1$s (atual)</string>
+    <string name="history_menu_deadline_set">Definir prazo de entrega</string>
+    <string name="history_menu_deadline_change">Alterar prazo de entrega</string>
+    <string name="history_menu_copy_to_catalog">Guardar no catálogo</string>
+    <string name="history_menu_reprice">Atualizar preço</string>
+    <string name="history_menu_convert">Transformar em pedido</string>
+    <string name="history_menu_select">Selecionar pra exportar</string>
+    <plurals name="history_selection_count">
+        <item quantity="one">%1$d selecionado</item>
+        <item quantity="other">%1$d selecionados</item>
+    </plurals>
+    <string name="history_selection_none">Nenhum marcado</string>
+    <string name="history_selection_export_pdf">Exportar PDF</string>
+    <string name="history_reprice_title">Atualizar o preço de "%1$s"</string>
+    <string name="history_reprice_help">Recalculado com os cadastros de hoje.</string>
+    <string name="history_reprice_help_detail">Usa os filamentos, a impressora e as configurações de hoje, com as mesmas medidas da peça.</string>
+    <string name="history_reprice_before">Antes</string>
+    <string name="history_reprice_after">Depois</string>
+    <string name="history_reprice_price">Preço calculado</string>
+    <string name="history_reprice_cost">Custo de produção</string>
+    <string name="history_reprice_profit">Lucro</string>
+    <string name="history_reprice_announced">O preço anunciado continua em %1$s. Pra mudar, abra o produto em Editar cálculo.</string>
+    <string name="history_reprice_loss">Com os custos de hoje, o preço anunciado dá prejuízo de %1$s. O mínimo pra não sair no negativo é %2$s.</string>
+    <string name="history_reprice_confirm">Atualizar</string>
+
 </resources>

@@ -36,11 +36,9 @@ import com.threedreport.app.ui.theme.spacing
  */
 @Composable
 fun AppCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
-    val colors = MaterialTheme.appColors
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     var focused by remember { mutableStateOf(false) }
-    val shape = MaterialTheme.shapes.extraSmall
     val primary = MaterialTheme.colorScheme.primary
     Row(
         modifier = modifier
@@ -52,17 +50,29 @@ fun AppCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit, mo
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm),
     ) {
-        Box(
-            modifier = Modifier
-                .size(AppDimens.checkboxSize)
-                .background(if (checked) primary else colors.card, shape)
-                .border(AppDimens.borderWidth, if (checked || hovered) primary else colors.line, shape),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (checked) {
-                Icon(AppIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(AppDimens.checkmarkSize))
-            }
-        }
+        CheckboxMark(checked, hovered)
         Text(label, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+/**
+ * Só o quadrado da caixa de marcar, sem rótulo nem clique (o de [AppCheckbox], e o da coluna de seleção de uma tabela,
+ * onde a linha inteira é o alvo). Marcada: fundo `primary` com o visto; desmarcada: borda `line`, `primary` com [hovered].
+ */
+@Composable
+fun CheckboxMark(checked: Boolean, hovered: Boolean = false, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.appColors
+    val primary = MaterialTheme.colorScheme.primary
+    val shape = MaterialTheme.shapes.extraSmall
+    Box(
+        modifier = modifier
+            .size(AppDimens.checkboxSize)
+            .background(if (checked) primary else colors.card, shape)
+            .border(AppDimens.borderWidth, if (checked || hovered) primary else colors.line, shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (checked) {
+            Icon(AppIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(AppDimens.checkmarkSize))
+        }
     }
 }

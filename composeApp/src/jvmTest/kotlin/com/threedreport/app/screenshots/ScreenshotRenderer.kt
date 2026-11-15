@@ -35,8 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.threedreport.app.App
 import com.threedreport.app.AppContainer
+import com.threedreport.app.data.CatalogView
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.LocalStorage
+import com.threedreport.app.data.OrdersView
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.decodeImageBitmap
@@ -192,10 +194,27 @@ class ScreenshotRenderer {
         }
         container.theme.update(ThemeMode.LIGHT)
 
-        // Kanban, não a lista: é o que mostra o pipeline de pedidos vivo (decisão 120).
-        renderAppPng(File(outDir, "pedidos.png"), afterSettle = { it.clickByText("Kanban") }) {
-            App(container, startAt = AppDestination.ORDERS)
+        // Pedidos e Catálogo (Leva 10B-4), nos dois temas e nas duas visualizações. O "hoje" e o "agora" são os dos dados de
+        // exemplo (ver [App]), pra o prazo e os entregues recentes não envelhecerem. A visualização é a preferência
+        // lembrada: cada captura a grava antes de abrir, em vez de clicar no seletor.
+        for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+            container.theme.update(theme)
+            container.preferences.setOrdersView(OrdersView.KANBAN)
+            renderAppPng(File(outDir, "pedidos$suffix.png")) { historyApp(container, AppDestination.ORDERS) }
+            renderAppPng(File(outDir, "pedidos-detalhes$suffix.png"), afterSettle = { it.clickByText("Suporte de headset") }) {
+                historyApp(container, AppDestination.ORDERS)
+            }
+            container.preferences.setOrdersView(OrdersView.LIST)
+            renderAppPng(File(outDir, "pedidos-lista$suffix.png")) { historyApp(container, AppDestination.ORDERS) }
+            container.preferences.setOrdersView(OrdersView.KANBAN)
+
+            container.preferences.setCatalogView(CatalogView.GRID)
+            renderAppPng(File(outDir, "catalogo$suffix.png")) { historyApp(container, AppDestination.CATALOG) }
+            container.preferences.setCatalogView(CatalogView.LIST)
+            renderAppPng(File(outDir, "catalogo-lista$suffix.png")) { historyApp(container, AppDestination.CATALOG) }
+            container.preferences.setCatalogView(CatalogView.GRID)
         }
+        container.theme.update(ThemeMode.LIGHT)
 
         // Os cadastros (Leva 10B-2), nos dois temas: Insumos com a lista (no escuro, com os arquivados abertos) e
         // Serviços com o painel de edição aberto.
@@ -259,10 +278,6 @@ class ScreenshotRenderer {
             App(container, startAt = AppDestination.DASHBOARD)
         }
 
-        renderAppPng(File(outDir, "catalogo.png")) {
-            App(container, startAt = AppDestination.CATALOG)
-        }
-
         val portaCelular = container.quoteHistory.savedQuotes.value.first { it.name == "Porta-celular" }
         val photoBytes = container.quoteHistory.photoBytes(portaCelular)
         val branding = container.branding.branding.value
@@ -276,6 +291,12 @@ class ScreenshotRenderer {
         // O conjunto novo troca o histórico (agora "pedidos.png", com o Kanban da barra lateral).
         File(outDir, "historico.png").delete()
     }
+}
+
+/** Pedidos ou Catálogo com o "hoje" e o "agora" dos dados de exemplo. */
+@Composable
+private fun historyApp(container: AppContainer, startAt: AppDestination) {
+    App(container, startAt = startAt, today = { TODAY.toEpochDay() }, clock = { atDaysAgo(0, 12) })
 }
 
 /**
@@ -361,8 +382,10 @@ private data class ProductSeed(
     val filamentId: String,
     val colorId: String,
     val printerId: String,
-    val lengthMeters: String,
-    val printTimeText: String,
+    val lengthMeters: String = "",
+    val printTimeText: String = "",
+    /** G-code de onde vêm as medidas e a miniatura (a foto do produto); sem ele, o produto fica sem foto. */
+    val gcodeFile: String? = null,
 )
 
 private val ORDER_SEEDS = listOf(
@@ -426,7 +449,7 @@ private val ORDER_SEEDS = listOf(
         channelId = Catalog.SHOPEE_ID, clientName = "Patrícia G.", clientContact = "patricia.g@example.com",
         createdDaysAgo = 18,
         statusSteps = listOf(OrderStatus.APROVADO to 1, OrderStatus.EM_IMPRESSAO to 4, OrderStatus.PRONTO to 15),
-        deliveryDaysFromToday = 1,
+        deliveryDaysFromToday = -2,
     ),
     OrderSeed(
         name = "Barquinho decorativo",
@@ -456,9 +479,18 @@ private val PRODUCT_SEEDS = listOf(
     ProductSeed("Vaso geométrico", "Decoração", Catalog.PETG_ID, Catalog.COR_NATURAL, Catalog.BAMBU_ID, "60", "5h30"),
     ProductSeed("Organizador de mesa", "Casa", Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.K1_ID, "45", "4h"),
     ProductSeed("Luminária lua", "Decoração", Catalog.PETG_ID, Catalog.COR_NATURAL, Catalog.K1_ID, "70", "7h"),
-    ProductSeed("Chaveiro geométrico", "Chaveiros", Catalog.PLA_ID, Catalog.COR_PRETO, Catalog.BAMBU_ID, "8", "40min"),
-    ProductSeed("Suporte de fone (over-ear)", "Acessórios", Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.BAMBU_ID, "50", "4h30"),
-    ProductSeed("Dragão articulado", "Colecionáveis", Catalog.PLA_ID, Catalog.COR_CINZA, Catalog.K1_ID, "90", "9h"),
+    ProductSeed(
+        "Chaveiro geométrico", "Chaveiros", Catalog.PLA_ID, Catalog.COR_PRETO, Catalog.BAMBU_ID,
+        gcodeFile = "Articulated_Keychains_PLA_4h57m.gcode",
+    ),
+    ProductSeed(
+        "Suporte de fone (over-ear)", "Acessórios", Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.BAMBU_ID,
+        gcodeFile = "smartphone_holder_PLA_1h15m.gcode",
+    ),
+    ProductSeed(
+        "Dragão articulado", "Colecionáveis", Catalog.PLA_ID, Catalog.COR_CINZA, Catalog.K1_ID,
+        gcodeFile = "articulated_axolotl_2_PLA_2h16m.gcode",
+    ),
 )
 
 /** Monta o catálogo e o histórico de exemplo, com dados fictícios brasileiros, na pasta [dataDir]. */
@@ -629,11 +661,16 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
         clock.millis = atDaysAgo(15)
         val vm = newViewModel()
         vm.setKind(QuoteKind.PRODUCT)
+        val gcode = spec.gcodeFile?.let { fileName -> gcodesDir?.let { File(it, fileName) } }?.takeIf { it.exists() }
+        if (gcode != null) vm.importGCode(PickedFile(gcode.name, gcode.readBytes()))
         vm.selectFilament(spec.filamentId)
         vm.selectFilamentColor(spec.colorId)
         vm.selectPrinter(spec.printerId)
-        vm.setLengthMeters(spec.lengthMeters)
-        vm.setPrintTimeMinutes(spec.printTimeText)
+        // Sem o G-code (a pasta de exemplo é opcional), as medidas vêm do texto, e o produto fica sem foto.
+        if (gcode == null) {
+            vm.setLengthMeters(spec.lengthMeters.ifEmpty { "30" })
+            vm.setPrintTimeMinutes(spec.printTimeText.ifEmpty { "3h" })
+        }
         vm.setSaveName(spec.name)
         vm.setCategory(spec.category)
         val ok = vm.saveCurrentQuote()
