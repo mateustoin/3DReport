@@ -5,6 +5,7 @@ import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -32,6 +33,11 @@ data class QuoteCatalog(
  * @property input o que a pessoa digitou.
  * @property form o que é de salvar: nome, cliente, foto, STL, prazo e a operação em curso.
  * @property result a conta, feita pelo `core` a partir de [input] e [catalog]; é a mesma da tela e do Ctrl+S.
+ * @property comparison o mesmo orçamento em cada impressora cadastrada (ver `QuoteViewModel.comparePrinters`); vazio
+ *   com uma impressora só ou sem conta.
+ * @property queueHints a fila de cada impressora que o pedido usa, pra dica ao escolher o prazo; vazia sem fila.
+ * @property negotiating o campo "Preço combinado" do painel está aberto. Fica aqui, e não na tela, pra fechar quando o
+ *   formulário recomeça (salvar, orçamento novo).
  * @property exporting o PDF ou a imagem do "Enviar pro cliente" está sendo gerado.
  * @property importing um G-code está sendo lido.
  * @property collapsedPrintIds cartões de impressão recolhidos, pelo id. Ficam no estado, e não na tela, pra
@@ -46,4 +52,13 @@ data class QuoteUiState(
     val stlPreview: StlPreview? = null,
     val collapsedPrintIds: Set<Int> = emptySet(),
     val exporting: Boolean = false,
+    val comparison: List<Pair<PrinterProfile, Quote>> = emptyList(),
+    val queueHints: List<QueueHint> = emptyList(),
+    val negotiating: Boolean = false,
 )
+
+/**
+ * O que já está na frente de uma peça nova numa impressora: [queuedQuoteCount] pedidos aprovados ou em impressão,
+ * somando [queuedMinutes] de máquina; [thisMinutes] é o tempo que este pedido pede nela.
+ */
+data class QueueHint(val printerName: String, val queuedMinutes: Double, val queuedQuoteCount: Int, val thisMinutes: Double)

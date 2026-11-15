@@ -57,7 +57,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.threedreport.app.ui.components.AppTextField
@@ -74,7 +73,6 @@ import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Currency
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteKind
 import org.jetbrains.compose.resources.stringResource
 
@@ -96,9 +94,6 @@ fun QuoteScreen(
     val saveForm = state.form
     // A conta é do ViewModel: a mesma que o Ctrl+S salva.
     val result = state.result
-    val comparison = remember(catalog, input) {
-        viewModel.comparePrinters(catalog.filaments, catalog.printers, catalog.settings, catalog.services, input, catalog.salesChannels, catalog.consumables)
-    }
     val currency = LocalCurrency.current
     val space = MaterialTheme.spacing
 
@@ -121,7 +116,7 @@ fun QuoteScreen(
     val cancelLabel = operationTexts(saveForm, input.isProduct)?.cancelLabel
 
     @Composable
-    fun Form() = QuoteForm(viewModel, state, comparison, currency)
+    fun Form() = QuoteForm(viewModel, state, currency)
 
     @Composable
     fun Panel(fixed: Boolean, panelModifier: Modifier) = QuoteResultPanel(
@@ -131,7 +126,9 @@ fun QuoteScreen(
         settings = catalog.settings,
         allFilaments = catalog.filaments,
         printers = catalog.printers,
-        comparison = comparison,
+        comparison = state.comparison,
+        negotiating = state.negotiating,
+        onNegotiatingChange = viewModel::setNegotiating,
         canSave = canSave,
         cannotSaveReason = cannotSaveReason,
         saveLabel = saveLabel,
@@ -227,7 +224,6 @@ private fun operationTexts(form: SaveQuoteFormState, isProduct: Boolean): Operat
 private fun QuoteForm(
     viewModel: QuoteViewModel,
     state: QuoteUiState,
-    comparison: List<Pair<PrinterProfile, com.threedreport.core.model.Quote>>,
     currency: Currency,
 ) {
     val space = MaterialTheme.spacing
@@ -279,7 +275,7 @@ private fun QuoteForm(
             ++number,
             stringResource(Res.string.quote_section_details),
             help = HelpText(stringResource(Res.string.quote_help_details)),
-        ) { DetailsFields(viewModel, catalog, state.stlPreview, input, form, result) }
+        ) { DetailsFields(viewModel, catalog, state.stlPreview, input, form, state.queueHints) }
     }
 }
 

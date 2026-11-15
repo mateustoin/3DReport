@@ -159,4 +159,113 @@ class QuoteNegotiateAndSendTest {
         // Nada disso grava outro pedido.
         assertEquals(1, history.savedQuotes.value.size)
     }
+
+    @Test
+    fun switchingToProductAfterSendingLeavesTheSentOrderAlone() {
+        val viewModel = viewModel()
+        viewModel.sendToClient()
+        val sent = history.savedQuotes.value.single()
+
+        viewModel.setKind(QuoteKind.PRODUCT)
+        assertNull(viewModel.uiState.value.form.sent)
+        assertTrue(viewModel.saveCurrentQuote())
+
+        val all = history.savedQuotes.value
+        assertEquals(2, all.size)
+        assertEquals(sent, all.single { it.id == sent.id }, "o pedido enviado fica como está")
+        assertEquals(QuoteKind.PRODUCT, all.single { it.id != sent.id }.kind)
+    }
+
+    @Test
+    fun anOrderDeletedAfterSendingIsSavedAgainInsteadOfBroughtBackOrTrusted() {
+        val viewModel = viewModel()
+        viewModel.sendToClient()
+        val first = history.savedQuotes.value.single()
+
+        history.delete(first.id)
+        assertTrue(viewModel.sendToClient())
+
+        val again = history.savedQuotes.value.single()
+        assertTrue(again.id != first.id, "grava de novo, sem ressuscitar o excluído nem confiar nele")
+        assertEquals(again, viewModel.uiState.value.form.sent?.savedQuote)
+
+        // Salvar depois de excluir também grava de novo.
+        history.delete(again.id)
+        assertTrue(viewModel.saveCurrentQuote())
+        assertEquals(1, history.savedQuotes.value.size)
+    }
+
+    @Test
+    fun sendingWhileEditingKeepsTheEditInSyncWithWhatIsOnDisk() {
+        val viewModel = viewModel()
+        viewModel.saveCurrentQuote()
+        viewModel.loadForEditing(history.savedQuotes.value.single())
+        assertFalse(viewModel.hasUnsavedEdits)
+
+        viewModel.setTargetTotal("200")
+        assertTrue(viewModel.hasUnsavedEdits)
+        assertTrue(viewModel.sendToClient())
+
+        val saved = history.savedQuotes.value.single()
+        assertEquals(200.0, saved.totalWithServices, 1e-9)
+        val editing = viewModel.uiState.value.form.operation as QuoteOperation.Editing
+        assertEquals(saved, editing.savedQuote)
+        assertFalse(viewModel.hasUnsavedEdits, "o que está na tela é o que está em disco")
+        assertEquals(200.0, viewModel.uiState.value.result.quote!!.salePrice, 1e-9)
+
+        viewModel.setTargetTotal("210")
+        assertTrue(viewModel.hasUnsavedEdits)
+    }
+
+    @Test
+    fun anOrderSentAndNotChangedSinceIsNotADraft() {
+        val viewModel = viewModel()
+        assertTrue(viewModel.hasDraft)
+
+        viewModel.sendToClient()
+        assertFalse(viewModel.hasDraft)
+
+        viewModel.setTargetTotal("200")
+        assertTrue(viewModel.hasDraft)
+    }
+
+    @Test
+    fun negotiatingClosesWhenTheFormStartsOver() {
+        val viewModel = viewModel()
+        viewModel.setNegotiating(true)
+        assertTrue(viewModel.uiState.value.negotiating)
+
+        viewModel.saveCurrentQuote()
+        assertFalse(viewModel.uiState.value.negotiating, "depois de salvar o formulário recomeça")
+
+        viewModel.setNegotiating(true)
+        viewModel.resetForm()
+        assertFalse(viewModel.uiState.value.negotiating)
+
+        viewModel.setNegotiating(true)
+        viewModel.setKind(QuoteKind.PRODUCT)
+        assertFalse(viewModel.uiState.value.negotiating, "produto não negocia")
+    }
+
+    @Test
+    fun anInvalidNegotiatedPriceStillLeavesTheFieldReachableThroughTheState() {
+        val viewModel = viewModel()
+        viewModel.setNegotiating(true)
+        viewModel.setTargetTotal("abc")
+
+        val state = viewModel.uiState.value
+        assertNull(state.result.quote, "o preço combinado inválido tira a conta")
+        assertTrue(state.input.targetTotalText.isNotBlank() && state.negotiating, "o campo segue aberto e com o texto pra corrigir")
+    }
+
+    @Test
+    fun aNegotiatedPriceKeepsTheCalculatedTotalForThePanel() {
+        val viewModel = viewModel()
+        val calculated = viewModel.uiState.value.result.grandTotal!!
+        assertNull(viewModel.uiState.value.result.calculatedTotal)
+
+        viewModel.setTargetTotal("150")
+
+        assertEquals(calculated, viewModel.uiState.value.result.calculatedTotal!!, 1e-9)
+    }
 }

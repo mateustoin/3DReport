@@ -39,7 +39,7 @@ fun ObserveUiNotices(notices: Flow<UiNotice>) {
     LaunchedEffect(notices) {
         notices.collectLatest { notice ->
             val label = notice.actionLabel?.resolve()
-            val lingers = label != null
+            val lingers = label != null || notice.isError
             val result = hostState.showSnackbar(
                 message = notice.message.resolve(),
                 actionLabel = label,

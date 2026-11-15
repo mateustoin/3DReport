@@ -62,6 +62,7 @@ import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.quote.DeliveryDateDialog
 import com.threedreport.app.ui.quote.PrintSettingsDialog
+import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.progressColor
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintSettings
@@ -168,9 +169,9 @@ fun QuoteHistoryScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        busy?.let { message ->
+        busy?.let { busyText ->
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            Text(message, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
+            Text(busyText.asString(), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
         }
         Box(modifier = Modifier.weight(1f)) {
             if (effectiveViewMode == HistoryViewMode.LIST) {

@@ -9,6 +9,7 @@ import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.FakePlatform
 import com.threedreport.app.platform.PeriodPreset
+import com.threedreport.app.ui.components.UserNotice
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
@@ -18,6 +19,10 @@ import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuotedPrint
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -362,7 +367,7 @@ class QuoteHistoryViewModelTest {
         viewModel.exportSelectedPdf()
         assertTrue(platform.written.getValue("/tmp/orcamentos.pdf").isNotEmpty())
         assertTrue(viewModel.selectedIds.value.isEmpty())
-        assertEquals("Abrir pasta", viewModel.notice.value?.actionLabel)
+        assertEquals("Abrir pasta", viewModel.awaitNotice().actionLabel)
     }
 
     @Test
@@ -375,8 +380,12 @@ class QuoteHistoryViewModelTest {
         viewModel.openInWhatsApp(saved)
 
         assertTrue(platform.copied.single().startsWith("Peça"))
-        assertTrue(viewModel.notice.value!!.isError)
+        assertTrue(viewModel.awaitNotice().isError)
     }
+
+    /** Os avisos do exportador chegam como recurso e são resolvidos fora do thread: espera o primeiro. */
+    private fun QuoteHistoryViewModel.awaitNotice(): UserNotice =
+        runBlocking { withTimeout(AWAIT_MILLIS) { notice.filterNotNull().first() } }
 
     @Test
     fun theKanbanShowsOrdersInProgressFromAnyDateButOnlyRecentDeliveries() {
@@ -432,6 +441,8 @@ class QuoteHistoryViewModelTest {
         assertEquals("Ver pedidos", viewModel.notice.value?.actionLabel)
     }
 }
+
+private const val AWAIT_MILLIS = 5_000L
 
 private object SavedQuoteFixture {
     fun of(

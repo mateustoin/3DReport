@@ -143,6 +143,8 @@ internal fun QuoteResultPanel(
     allFilaments: List<Filament>,
     printers: List<PrinterProfile>,
     comparison: List<Pair<PrinterProfile, Quote>>,
+    negotiating: Boolean,
+    onNegotiatingChange: (Boolean) -> Unit,
     canSave: Boolean,
     cannotSaveReason: String,
     saveLabel: String,
@@ -200,6 +202,8 @@ internal fun QuoteResultPanel(
             onSave = onSave,
             onCancel = onCancel,
             onTargetTotalChange = onTargetTotalChange,
+            negotiating = negotiating,
+            onNegotiatingChange = onNegotiatingChange,
             send = send,
         )
     }

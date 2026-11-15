@@ -69,11 +69,12 @@ internal fun ResultFooter(
     onSave: () -> Unit,
     onCancel: () -> Unit,
     onTargetTotalChange: (String) -> Unit,
+    negotiating: Boolean,
+    onNegotiatingChange: (Boolean) -> Unit,
     send: ClientSendActions,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
-    var negotiating by rememberSaveable { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
         if (!canSave) Text(cannotSaveReason, style = MaterialTheme.appType.caption, color = colors.onNavyMuted)
         if (negotiating && !input.isProduct) {
@@ -81,7 +82,7 @@ internal fun ResultFooter(
                 value = input.targetTotalText,
                 error = result.errorText(QuoteFields.TARGET),
                 onChange = onTargetTotalChange,
-                onClose = { negotiating = false },
+                onClose = { onNegotiatingChange(false) },
             )
         }
         AppButton(
@@ -96,9 +97,10 @@ internal fun ResultFooter(
             Row(horizontalArrangement = Arrangement.spacedBy(space.sm)) {
                 AppButton(
                     stringResource(Res.string.quote_negotiate),
-                    onClick = { negotiating = !negotiating },
+                    onClick = { onNegotiatingChange(!negotiating) },
                     kind = ButtonKind.OnNavy,
-                    enabled = result.quote != null,
+                    // Com um preço combinado digitado, a conta pode estar sem preço por causa dele: o campo precisa continuar abrindo.
+                    enabled = result.quote != null || input.targetTotalText.isNotBlank(),
                     modifier = Modifier.weight(1f),
                 )
                 SendButton(send, Modifier.weight(1f))

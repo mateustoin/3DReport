@@ -27,7 +27,6 @@ import _3dreport.composeapp.generated.resources.quote_error_target_below_extras
 import _3dreport.composeapp.generated.resources.quote_error_target_invalid
 import _3dreport.composeapp.generated.resources.quote_error_target_negative
 import _3dreport.composeapp.generated.resources.quote_error_weight
-import _3dreport.composeapp.generated.resources.quote_export_notice
 import _3dreport.composeapp.generated.resources.quote_notice_print_removed
 import _3dreport.composeapp.generated.resources.quote_photo_unreadable
 import _3dreport.composeapp.generated.resources.quote_pick_failed
@@ -48,7 +47,6 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
-import com.threedreport.app.ui.components.NoticeIds
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.components.matchingClients
 import com.threedreport.app.ui.format.NumberKind
@@ -92,16 +90,16 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -158,22 +156,16 @@ class QuoteViewModel(
     /** Tudo o que a tela mostra. */
     val uiState: StateFlow<QuoteUiState> = state.asStateFlow()
 
-    private val noticeFlow = MutableSharedFlow<UiNotice>(extraBufferCapacity = NOTICE_BUFFER)
+    // Aviso emitido com a tela fora de composição (a pessoa foi pra Pedidos) fica guardado e chega quando ela
+    // voltar, uma vez só: um canal com o último aviso, e não um fluxo que perde o que ninguém estava ouvindo.
+    private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
 
-    /** O retorno de uma ação com "Desfazer" (remover uma impressão), pra barra de avisos. */
-    val notices: SharedFlow<UiNotice> = noticeFlow.asSharedFlow()
+    /** O retorno de uma ação (remover uma impressão com "Desfazer", PDF salvo), pra barra de avisos. */
+    val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
 
     // A geração do PDF, da imagem e do link do WhatsApp é a mesma de Pedidos (decisão 131).
     private val exporter: QuoteExporter? = brandingRepository?.let { branding ->
-        QuoteExporter(platform, branding, historyRepository, scope, background, main, NoticeIds()) { notice ->
-            noticeFlow.tryEmit(
-                UiNotice(
-                    message = uiText(Res.string.quote_export_notice, notice.message),
-                    actionLabel = notice.actionLabel?.let { uiText(Res.string.quote_export_notice, it) },
-                    action = notice.action,
-                ),
-            )
-        }
+        QuoteExporter(platform, branding, historyRepository, scope, background, main) { notice -> noticeChannel.trySend(notice) }
     }
 
     init {
@@ -183,17 +175,20 @@ class QuoteViewModel(
     private var pendingImports = 0
 
     init {
-        // Um cadastro mexido em outra tela muda a conta desta: o estado acompanha os repositórios.
-        merge(
-            filamentRepository.filaments.map { },
-            printerRepository.printers.map { },
-            settingsRepository.settings.map { },
-            serviceRepository.services.map { },
-            salesChannelRepository.channels.map { },
-            historyRepository.savedQuotes.map { },
-            (consumableRepository?.consumables ?: MutableStateFlow(emptyList<Consumable>())).map { },
-            (clientRepository?.clients ?: MutableStateFlow(emptyList<Client>())).map { },
-        ).onEach { change { it } }.launchIn(scope)
+        // Um cadastro mexido em outra tela muda a conta desta: o estado acompanha os repositórios. Um `combine`
+        // só: com um fluxo por cadastro, cada valor inicial refazia a conta (oito vezes ao abrir a tela).
+        combine(
+            listOf(
+                filamentRepository.filaments.map { },
+                printerRepository.printers.map { },
+                settingsRepository.settings.map { },
+                serviceRepository.services.map { },
+                salesChannelRepository.channels.map { },
+                historyRepository.savedQuotes.map { },
+                (consumableRepository?.consumables ?: MutableStateFlow(emptyList<Consumable>())).map { },
+                (clientRepository?.clients ?: MutableStateFlow(emptyList<Client>())).map { },
+            ),
+        ) { }.onEach { change { it } }.launchIn(scope)
     }
 
     private fun readCatalog() = QuoteCatalog(
@@ -210,7 +205,25 @@ class QuoteViewModel(
     /** Relê os cadastros e refaz a conta: o resultado do estado nunca fica atrás de quem o gerou. */
     private fun QuoteUiState.withResult(): QuoteUiState {
         val fresh = copy(catalog = readCatalog())
-        return fresh.copy(result = resultFor(fresh))
+        val result = resultFor(fresh)
+        return fresh.copy(result = result, comparison = comparisonFor(fresh), queueHints = queueHintsFor(fresh, result))
+    }
+
+    /** "Em qual impressora sai mais barato" (ver [comparePrinters]), pro painel: feito aqui, e não na tela. */
+    private fun comparisonFor(state: QuoteUiState): List<Pair<PrinterProfile, Quote>> = with(state.catalog) {
+        comparePrinters(filaments, printers, settings, services, state.input, salesChannels, consumables)
+    }
+
+    /** Uma dica de fila por impressora que o pedido usa: cada uma tem a sua. Nada em produto nem sem conta. */
+    private fun queueHintsFor(state: QuoteUiState, result: QuoteResult): List<QueueHint> {
+        val quote = result.quote
+        if (quote == null || state.input.isProduct) return emptyList()
+        return quote.printerIds.mapNotNull { printerId ->
+            val printer = state.catalog.printers.firstOrNull { it.id == printerId } ?: return@mapNotNull null
+            queueAheadOf(printer, state.catalog.savedQuotes, state.form.editingQuoteId)?.let { queue ->
+                QueueHint(printer.name, queue.queuedMinutes, queue.queuedQuoteCount, quote.printMinutesOn(printerId))
+            }
+        }
     }
 
     /** Muda o estado e refaz a conta. */
@@ -270,7 +283,8 @@ class QuoteViewModel(
     fun setWeightGrams(text: String, printId: Int? = null, rowId: Int? = null) {
         val printIndex = printIndexOf(printId) ?: return
         val rowIndex = rowIndexOf(state.value.input.prints[printIndex], rowId) ?: return
-        val filament = freshResult().prints.getOrNull(printIndex)?.filaments?.getOrNull(rowIndex)?.filament
+        // O estado já tem a conta de agora (cada mudança refaz): calcular de novo dobraria o trabalho a cada tecla.
+        val filament = state.value.result.prints.getOrNull(printIndex)?.filaments?.getOrNull(rowIndex)?.filament
         updateFilament(printId, rowId) { it.withWeight(text, filament) }
     }
 
@@ -409,9 +423,21 @@ class QuoteViewModel(
      * Trocar entre pedido e produto limpa o preço fechado: com cliente ele é o total combinado,
      * frete incluso, e em produto é o preço anunciado. Levar um pro outro mudaria o preço em silêncio.
      */
-    fun setKind(kind: QuoteKind) = updateInput {
-        if (it.kind == kind) it else it.copy(kind = kind, targetTotalText = "", announcedUnitPrice = null)
+    fun setKind(kind: QuoteKind) = change { current ->
+        if (current.input.kind == kind) {
+            current
+        } else {
+            current.copy(
+                input = current.input.copy(kind = kind, targetTotalText = "", announcedUnitPrice = null),
+                // O pedido que "Enviar pro cliente" gravou fica como está: o produto é outra coisa e, salvando, nasce um novo.
+                form = current.form.copy(sent = null),
+                negotiating = false,
+            )
+        }
     }
+
+    /** Abre ou fecha o campo "Preço combinado" do painel (ver [QuoteUiState.negotiating]). */
+    fun setNegotiating(open: Boolean) = state.update { it.copy(negotiating = open) }
 
     /** Abre o seletor de arquivo e importa o G-code escolhido na impressão [printId] (ver [importGCode]). */
     fun pickAndImportGCode(printId: Int? = null) = importDropped(platform.pickFile(FileKind.GCODE), printId)
@@ -568,7 +594,7 @@ class QuoteViewModel(
     fun setPrintSettings(printSettings: PrintSettings, printId: Int? = null) = updatePrint(printId) { it.copy(settings = printSettings) }
 
     private fun notify(message: UiText, actionLabel: UiText? = null, action: (() -> Unit)? = null) {
-        noticeFlow.tryEmit(UiNotice(message, actionLabel, action))
+        noticeChannel.trySend(UiNotice(message, actionLabel, action))
     }
 
     /**
@@ -771,6 +797,7 @@ class QuoteViewModel(
                 form = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = saved.displayNumber),
                 stlPreview = null,
                 collapsedPrintIds = emptySet(),
+                negotiating = false,
             )
         }
         return true
@@ -779,8 +806,14 @@ class QuoteViewModel(
     /** O pedido que "Enviar pro cliente" já gravou, se a tela ainda é exatamente o que foi gravado. */
     private fun alreadySent(): SentQuote? {
         val current = state.value
-        val sent = current.form.sent ?: return null
+        val sent = liveSent() ?: return null
         return sent.takeIf { current.input == it.input && current.form.forComparison() == it.form }
+    }
+
+    /** O pedido do "Enviar pro cliente", se ele ainda existe: excluído (lixeira ou de vez), é como se nunca tivesse sido enviado. */
+    private fun liveSent(): SentQuote? {
+        val sent = state.value.form.sent ?: return null
+        return sent.takeIf { kept -> historyRepository.savedQuotes.value.any { it.id == kept.savedQuote.id } }
     }
 
     private fun SaveQuoteFormState.forComparison() =
@@ -824,7 +857,7 @@ class QuoteViewModel(
             OrderTerms(shippingCost = shippingCost, shippingAbsorbed = input.shippingAbsorbed, catalogProduct = isProduct).absorbsShipping
 
         val editing = form.operation as? QuoteOperation.Editing
-        val existing = editing?.savedQuote ?: form.sent?.savedQuote
+        val existing = editing?.savedQuote ?: liveSent()?.savedQuote
         if (existing != null) {
             val update = {
                 historyRepository.update(
@@ -852,7 +885,6 @@ class QuoteViewModel(
                 updateForm { it.copy(blockedMessage = uiText(Res.string.quote_blocked_deleted, existing.name)) }
                 return null
             }
-            // O pedido que o envio criou sumiu de vez: cai no caso de um orçamento novo.
         }
 
         val saved = historyRepository.save(
@@ -893,20 +925,22 @@ class QuoteViewModel(
             return false
         }
         val saved = persist(quote, result.selectedServices) ?: return false
-        val current = state.value
-        updateForm {
-            it.copy(
-                sent = SentQuote(saved, current.input, current.form.forComparison()),
-                savedConfirmation = true,
-                savedAsProduct = false,
-                savedNumber = saved.displayNumber,
-            )
+        val sentInput = state.value.input
+        updateForm { form ->
+            // Editando, o que está em disco agora é o que o cancelar e o "tem alteração" comparam: a operação acompanha.
+            val operation = (form.operation as? QuoteOperation.Editing)?.copy(
+                savedQuote = saved,
+                originalInput = sentInput,
+                originalForm = form.forComparison().copy(operation = null),
+            ) ?: form.operation
+            val next = form.copy(operation = operation, savedConfirmation = true, savedAsProduct = false, savedNumber = saved.displayNumber)
+            next.copy(sent = SentQuote(saved, sentInput, next.forComparison()))
         }
         return true
     }
 
     /** O pedido que o último "Enviar pro cliente" gravou, pra os três jeitos de enviar. */
-    private fun sentQuote(): SavedQuote? = state.value.form.sent?.savedQuote
+    private fun sentQuote(): SavedQuote? = liveSent()?.savedQuote
 
     fun sendPdf() {
         sentQuote()?.let { exporter?.exportPdf(it) }
@@ -1017,7 +1051,7 @@ class QuoteViewModel(
     /** Troca o pedido e o formulário de uma vez, pra conta nunca ver um sem o outro. */
     private fun setInputAndForm(input: QuoteInputState, form: SaveQuoteFormState) {
         forgetUndo()
-        change { it.copy(input = input, form = form, collapsedPrintIds = emptySet()) }
+        change { it.copy(input = input, form = form, collapsedPrintIds = emptySet(), negotiating = false) }
         loadStlPreview(form.stlFile)
     }
 
@@ -1057,13 +1091,15 @@ class QuoteViewModel(
     val hasUnsavedEdits: Boolean
         get() {
             val editing = state.value.form.operation as? QuoteOperation.Editing ?: return false
-            val form = state.value.form.copy(operation = null, savedConfirmation = false, blockedMessage = null, photoError = null, sent = null)
+            val form = state.value.form.copy(operation = null).forComparison()
             return state.value.input != editing.originalInput || form != editing.originalForm
         }
 
     /** Se há algo digitado ou uma operação em andamento, que "Limpar" ou outra operação jogaria fora. */
     val hasDraft: Boolean
         get() {
+            // Enviado pro cliente e sem mudança desde então: já está gravado, não há trabalho por salvar.
+            if (alreadySent() != null) return false
             val input = state.value.input
             val form = state.value.form.copy(savedConfirmation = false, savedAsProduct = false, savedNumber = null, blockedMessage = null)
             return input != QuoteInputState(kind = input.kind) || form != SaveQuoteFormState()
@@ -1072,7 +1108,7 @@ class QuoteViewModel(
     /** Limpa a peça e o formulário de salvar, pra começar um orçamento novo (Ctrl/Cmd+N, cancelar). */
     fun resetForm() {
         forgetUndo()
-        change { it.copy(input = QuoteInputState(), form = SaveQuoteFormState(), stlPreview = null, collapsedPrintIds = emptySet()) }
+        change { it.copy(input = QuoteInputState(), form = SaveQuoteFormState(), stlPreview = null, collapsedPrintIds = emptySet(), negotiating = false) }
     }
 
     /**

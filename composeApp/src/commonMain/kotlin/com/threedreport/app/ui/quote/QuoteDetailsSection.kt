@@ -91,29 +91,21 @@ internal fun DetailsFields(
     stlPreview: StlPreview?,
     input: QuoteInputState,
     form: SaveQuoteFormState,
-    result: QuoteResult,
+    queueHints: List<QueueHint>,
 ) {
     val space = MaterialTheme.spacing
     val savedQuotes = catalog.savedQuotes
-    val quote = result.quote
-    // Uma linha por impressora que o pedido usa: cada uma tem a própria fila.
-    val queueHint = if (quote != null && !input.isProduct) {
-        quote.printerIds.mapNotNull { printerId ->
-            val printer = catalog.printers.firstOrNull { it.id == printerId } ?: return@mapNotNull null
-            viewModel.queueAheadOf(printer, savedQuotes, form.editingQuoteId)?.let { queue ->
-                pluralStringResource(
-                    Res.plurals.quote_details_queue,
-                    queue.queuedQuoteCount,
-                    printer.name,
-                    queue.queuedMinutes.minutesToDurationText(),
-                    queue.queuedQuoteCount,
-                    quote.printMinutesOn(printerId).minutesToDurationText(),
-                )
-            }
-        }.joinToString("\n").ifEmpty { null }
-    } else {
-        null
-    }
+    // Uma linha por impressora que o pedido usa: cada uma tem a própria fila (a conta é do ViewModel).
+    val queueHint = queueHints.map { queue ->
+        pluralStringResource(
+            Res.plurals.quote_details_queue,
+            queue.queuedQuoteCount,
+            queue.printerName,
+            queue.queuedMinutes.minutesToDurationText(),
+            queue.queuedQuoteCount,
+            queue.thisMinutes.minutesToDurationText(),
+        )
+    }.joinToString("\n").ifEmpty { null }
 
     Column(verticalArrangement = Arrangement.spacedBy(space.md)) {
         if (!input.isProduct) {

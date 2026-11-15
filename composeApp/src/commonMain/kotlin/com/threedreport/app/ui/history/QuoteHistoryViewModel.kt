@@ -1,5 +1,10 @@
 package com.threedreport.app.ui.history
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.export_busy_catalog
+import _3dreport.composeapp.generated.resources.export_busy_pdf
+import _3dreport.composeapp.generated.resources.export_saved_catalog
+import _3dreport.composeapp.generated.resources.export_saved_pdf
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.ClientRepository
@@ -24,6 +29,7 @@ import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
 import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.imageBrandLine
+import com.threedreport.app.platform.openFolder
 import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.renderSavedQuotesPdf
@@ -31,8 +37,10 @@ import com.threedreport.app.platform.resolvePdfBranding
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.NoticeIds
 import com.threedreport.app.ui.components.UserNotice
-import com.threedreport.app.ui.components.toNotice
 import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.resolve
+import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
@@ -108,13 +116,21 @@ class QuoteHistoryViewModel(
     }
 
     // A geração dos arquivos pro cliente é a mesma do "Enviar pro cliente" do Orçamento (ver [QuoteExporter]).
-    private val exporter = QuoteExporter(
-        platform, brandingRepository, repository, scope, background, main, noticeIds,
-        notify = { noticeState.value = it },
-    )
+    // Os textos do exportador vêm como recurso; Pedidos ainda mostra `String`, então eles são resolvidos aqui.
+    private val exporter = QuoteExporter(platform, brandingRepository, repository, scope, background, main) { notice ->
+        scope.launch(main) {
+            noticeState.value = UserNotice(
+                message = notice.message.resolve(),
+                actionLabel = notice.actionLabel?.resolve(),
+                action = notice.action,
+                isError = notice.isError,
+                id = noticeIds.next(),
+            )
+        }
+    }
 
     /** O que está sendo gerado agora ("Gerando PDF…"), ou `null`. */
-    val busy: StateFlow<String?> = exporter.busy
+    val busy: StateFlow<UiText?> = exporter.busy
 
     private val pendingExportState = MutableStateFlow<PendingExport?>(null)
 
@@ -504,8 +520,8 @@ class QuoteHistoryViewModel(
         val clearsSelection = selectedIdsState.value.isNotEmpty()
         exporter.saveGenerated(
             "${sanitizeFileName("Catálogo (${selected.size} itens)")}.pdf",
-            "Gerando catálogo…",
-            "Catálogo salvo.",
+            uiText(Res.string.export_busy_catalog),
+            uiText(Res.string.export_saved_catalog),
             onSaved = { if (clearsSelection) clearSelection() },
         ) {
             val branding = exporter.resolvePdfBranding()
@@ -525,8 +541,8 @@ class QuoteHistoryViewModel(
     private fun performExportSelectedPdf(selected: List<SavedQuote>) {
         exporter.saveGenerated(
             "${sanitizeFileName("Orçamentos (${selected.size} itens)")}.pdf",
-            "Gerando PDF…",
-            "PDF salvo.",
+            uiText(Res.string.export_busy_pdf),
+            uiText(Res.string.export_saved_pdf),
             onSaved = ::clearSelection,
         ) {
             val branding = exporter.resolvePdfBranding()
@@ -534,7 +550,18 @@ class QuoteHistoryViewModel(
         }
     }
 
-    private fun report(result: SaveResult, savedMessage: String) = exporter.report(result, savedMessage)
+    /** O aviso das fotos e STL que Pedidos grava por conta própria: "Abrir pasta" ao salvar, ou o motivo. */
+    private fun report(result: SaveResult, savedMessage: String) {
+        when (result) {
+            is SaveResult.Saved ->
+                noticeState.value =
+                    UserNotice(savedMessage, actionLabel = "Abrir pasta", action = { openFolder(result.path) }, id = noticeIds.next())
+
+            is SaveResult.Failed -> noticeState.value = UserNotice(result.message, isError = true, id = noticeIds.next())
+
+            SaveResult.Cancelled -> Unit
+        }
+    }
 
     private fun fileNameFor(savedQuote: SavedQuote): String = exporter.fileNameFor(savedQuote)
 

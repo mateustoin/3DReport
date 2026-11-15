@@ -65,6 +65,13 @@ data class QuoteResult(
     /** Valor de venda + serviços + frete cobrado: o que de fato será cobrado do cliente. */
     val grandTotal: Double?
         get() = quote?.let { it.salePrice + servicesTotal + chargedShipping }
+
+    /**
+     * O total que a conta daria sem o preço combinado (a venda de tabela mais serviços e frete), só quando há preço
+     * combinado ou anunciado; `null` nos demais. É o "Calculado" que o painel mostra ao lado do preço negociado.
+     */
+    val calculatedTotal: Double?
+        get() = quote?.tableSalePrice?.let { it + servicesTotal + chargedShipping }
 }
 
 /** Chaves de [QuoteResult.fieldErrors]: um nome por campo, com a impressão e a linha quando é de uma delas. */
