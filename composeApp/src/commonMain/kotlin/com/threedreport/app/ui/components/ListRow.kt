@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
@@ -122,7 +124,8 @@ fun ListRow(
  * Tab. É o mecanismo de [ListRow], aberto pra outras listas (os componentes do diálogo de manutenção). As [actions]
  * (e o [extra], um botão que abre um menu, por exemplo) ficam por cima do fim do [content], com o fundo da faixa; quem põe algo no fim do conteúdo deve reservar o espaço
  * (veja [revealActionsWidth]). [content] recebe se a faixa está ativa. [selected] usa o fundo `tint`. Com [enabled] falso, a faixa não existe
- * (o modo de seleção da tabela: clicar só marca) e a linha também não muda de fundo no hover.
+ * (o modo de seleção da tabela: clicar só marca) e a linha também não muda de fundo no hover. [endInset] afasta a faixa
+ * da borda direita, pra deixar à mostra um botão fixo no fim da linha.
  */
 @Composable
 fun RevealActions(
@@ -131,6 +134,7 @@ fun RevealActions(
     selected: Boolean = false,
     extra: @Composable RowScope.() -> Unit = {},
     enabled: Boolean = true,
+    endInset: Dp = 0.dp,
     content: @Composable (active: Boolean) -> Unit,
 ) {
     val colors = MaterialTheme.appColors
@@ -158,6 +162,7 @@ fun RevealActions(
         if (enabled) {
             Row(
                 modifier = Modifier
+                    .padding(end = endInset)
                     .alpha(actionsAlpha)
                     .background(if (selected) colors.tint else colors.column, MaterialTheme.shapes.small)
                     .padding(horizontal = space.xxs),

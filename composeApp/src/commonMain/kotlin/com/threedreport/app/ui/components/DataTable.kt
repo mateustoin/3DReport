@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -98,12 +99,13 @@ fun TableRow(
     selectionMark: Boolean? = null,
     extra: @Composable RowScope.() -> Unit = {},
     revealActions: Boolean = true,
+    revealInset: Dp = 0.dp,
     cells: @Composable TableRowScope.() -> Unit,
 ) {
     val space = MaterialTheme.spacing
     var focused by remember { mutableStateOf(false) }
     Column(modifier.fillMaxWidth()) {
-        RevealActions(actions = actions, selected = selected, extra = extra, enabled = revealActions) {
+        RevealActions(actions = actions, selected = selected, extra = extra, enabled = revealActions, endInset = revealInset) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
