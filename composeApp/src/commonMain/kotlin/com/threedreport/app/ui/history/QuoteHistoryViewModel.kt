@@ -38,6 +38,7 @@ import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.NoticeIds
 import com.threedreport.app.ui.components.UserNotice
 import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.app.ui.quote.deliveryDaysLate
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.resolve
 import com.threedreport.app.ui.text.uiText
@@ -149,6 +150,9 @@ class QuoteHistoryViewModel(
 
     /** Hoje, em dias desde 01/01/1970, pra tela pintar os prazos vencidos com a mesma régua do aviso. */
     fun currentEpochDay(): Long = today()
+
+    /** Dias que [deadlineEpochDay] já passou hoje, pro seletor de prazo (ver [deliveryDaysLate]). */
+    fun deliveryDaysLate(deadlineEpochDay: Long?): Int = deliveryDaysLate(deadlineEpochDay, today())
 
     /** Agora, pro recorte de "entregues recentes" do Kanban. */
     fun nowMillis(): Long = clock.nowMillis()

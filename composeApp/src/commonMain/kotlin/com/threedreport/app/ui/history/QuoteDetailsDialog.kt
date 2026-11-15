@@ -97,7 +97,7 @@ fun QuoteDetailsDialog(savedQuote: SavedQuote, viewModel: QuoteHistoryViewModel,
                         singleLine = true,
                     )
                     Text("Prazo de entrega", style = MaterialTheme.typography.labelLarge)
-                    DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, onChange = { form = form.copy(deliveryDateEpochDay = it) })
+                    DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, daysLate = viewModel.deliveryDaysLate(form.deliveryDateEpochDay), onChange = { form = form.copy(deliveryDateEpochDay = it) })
                 } else {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth().tabToNavigate(),

@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.ui.history.ClientExport
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
@@ -38,6 +39,10 @@ data class QuoteCatalog(
  * @property queueHints a fila de cada impressora que o pedido usa, pra dica ao escolher o prazo; vazia sem fila.
  * @property negotiating o campo "Preço combinado" do painel está aberto. Fica aqui, e não na tela, pra fechar quando o
  *   formulário recomeça (salvar, orçamento novo).
+ * @property deliveryDaysLate quantos dias o prazo do formulário já passou (0 sem prazo ou em dia), pro painel e pro
+ *   seletor de prazo dizerem o mesmo.
+ * @property pendingSend o envio ("Enviar pro cliente") segurado porque o prazo já venceu, até a pessoa confirmar ou
+ *   desistir; o mesmo aviso de Pedidos.
  * @property exporting o PDF ou a imagem do "Enviar pro cliente" está sendo gerado.
  * @property importing um G-code está sendo lido.
  * @property collapsedPrintIds cartões de impressão recolhidos, pelo id. Ficam no estado, e não na tela, pra
@@ -55,6 +60,8 @@ data class QuoteUiState(
     val comparison: List<Pair<PrinterProfile, Quote>> = emptyList(),
     val queueHints: List<QueueHint> = emptyList(),
     val negotiating: Boolean = false,
+    val deliveryDaysLate: Int = 0,
+    val pendingSend: ClientExport? = null,
 )
 
 /**

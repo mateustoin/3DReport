@@ -511,7 +511,11 @@
     <string name="quote_deadline_none">Sem prazo</string>
     <string name="quote_deadline_unset">Sem prazo definido.</string>
     <string name="quote_deadline_until">Entrega até %1$s (%2$s)</string>
-    <string name="quote_deadline_overdue">Entrega até %1$s (%2$s). Essa data já passou.</string>
+    <string name="overdue_send_title">O prazo de entrega já passou</string>
+    <string name="overdue_send_single">"%1$s" promete entrega até %2$s, e essa data já passou. Se enviar assim, o cliente recebe um prazo vencido.</string>
+    <string name="overdue_send_batch">%1$d dos orçamentos selecionados têm prazo vencido: %2$s. Se exportar assim, o cliente recebe esses prazos vencidos.</string>
+    <string name="overdue_send_change_date">Alterar prazo</string>
+    <string name="overdue_send_anyway">Enviar assim mesmo</string>
     <string name="quote_deadline_use">Usar esta data</string>
     <string name="quote_deadline_title">Prazo de entrega</string>
     <string name="quote_settings_help">Guardado só pra você consultar e replicar. Não entra no cálculo do preço nem em nenhum export.</string>

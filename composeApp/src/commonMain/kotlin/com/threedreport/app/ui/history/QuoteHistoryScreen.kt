@@ -53,6 +53,8 @@ import com.threedreport.app.platform.formatDateTime
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.components.OverdueExportDialog
+import com.threedreport.app.ui.components.OverdueItem
 import com.threedreport.app.ui.components.ShowNotice
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.filaments.displayText
@@ -281,6 +283,7 @@ fun QuoteHistoryScreen(
         DeliveryDateDialog(
             quoteName = savedQuote.name,
             initial = savedQuote.deliveryDateEpochDay,
+            daysLate = viewModel::deliveryDaysLate,
             onDismiss = viewModel::cancelEditingDeliveryDate,
             onSave = viewModel::saveDeliveryDate,
         )
@@ -468,40 +471,16 @@ private fun BeforeAfterLine(label: String, before: String, after: String) {
     }
 }
 
-/**
- * Aviso antes de mandar pro cliente um orçamento com prazo já vencido. Com um orçamento só, o
- * caminho principal é "Alterar prazo" (abre o diálogo de prazo); na exportação em lote não dá pra
- * editar vários prazos de uma vez, então o aviso lista quais estão vencidos e oferece só enviar
- * assim mesmo ou cancelar.
- */
+/** O aviso de prazo vencido de Pedidos: o diálogo é o mesmo do Orçamento ([OverdueExportDialog]). */
 @Composable
 private fun OverdueExportDialog(pending: PendingExport, todayEpochDay: Long, viewModel: QuoteHistoryViewModel) {
-    val overdue = pending.quotes.filter { it.isDeliveryOverdue(todayEpochDay) }
-    val single = pending.quotes.singleOrNull()
-
-    AlertDialog(
-        onDismissRequest = viewModel::dismissPendingExport,
-        title = { Text("O prazo de entrega já passou") },
-        text = {
-            Text(
-                if (single != null) {
-                    "\"${single.name}\" promete entrega até ${formatDate(single.deliveryDateEpochDay!!)}, e essa data já passou. " +
-                        "Se enviar assim, o cliente recebe um prazo vencido."
-                } else {
-                    "${overdue.size} dos orçamentos selecionados têm prazo vencido: " +
-                        overdue.joinToString { "\"${it.name}\" (${formatDate(it.deliveryDateEpochDay!!)})" } +
-                        ". Se exportar assim, o cliente recebe esses prazos vencidos."
-                },
-            )
-        },
-        confirmButton = {
-            if (single != null) {
-                TextButton(onClick = viewModel::changeDateOfPendingExport) { Text("Alterar prazo") }
-            } else {
-                TextButton(onClick = viewModel::dismissPendingExport) { Text("Cancelar") }
-            }
-        },
-        dismissButton = { TextButton(onClick = viewModel::confirmPendingExport) { Text("Enviar assim mesmo") } },
+    OverdueExportDialog(
+        overdue = pending.quotes
+            .filter { it.isDeliveryOverdue(todayEpochDay) }
+            .map { OverdueItem(it.name, it.deliveryDateEpochDay!!) },
+        onChangeDate = viewModel::changeDateOfPendingExport,
+        onSendAnyway = viewModel::confirmPendingExport,
+        onCancel = viewModel::dismissPendingExport,
     )
 }
 

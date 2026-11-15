@@ -5,12 +5,12 @@ import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.common_save
 import _3dreport.composeapp.generated.resources.quote_deadline_days
 import _3dreport.composeapp.generated.resources.quote_deadline_none
-import _3dreport.composeapp.generated.resources.quote_deadline_overdue
 import _3dreport.composeapp.generated.resources.quote_deadline_pick
 import _3dreport.composeapp.generated.resources.quote_deadline_title
 import _3dreport.composeapp.generated.resources.quote_deadline_unset
 import _3dreport.composeapp.generated.resources.quote_deadline_until
 import _3dreport.composeapp.generated.resources.quote_deadline_use
+import _3dreport.composeapp.generated.resources.quote_result_deadline_overdue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.threedreport.app.platform.epochDayToUtcMillis
 import com.threedreport.app.platform.formatDate
+import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.utcMillisToEpochDay
 import com.threedreport.app.platform.weekdayName
@@ -41,6 +42,7 @@ import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -56,11 +58,12 @@ private val QUICK_DAYS = listOf(3, 7, 15)
  * Histórico, pra os dois lugares funcionarem igual.
  *
  * @param epochDay prazo atual (dias desde 01/01/1970), ou `null` sem prazo.
+ * @param daysLate quantos dias [epochDay] já passou (0 em dia), calculado pelo ViewModel ([deliveryDaysLate]).
  * @param onChange chamado com o novo prazo, ou `null` pra remover.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
+fun DeliveryDatePicker(epochDay: Long?, daysLate: Int, onChange: (Long?) -> Unit) {
     val today = todayEpochDay()
     val space = MaterialTheme.spacing
     var showCalendar by remember { mutableStateOf(false) }
@@ -89,8 +92,9 @@ fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            epochDay < today -> Text(
-                stringResource(Res.string.quote_deadline_overdue, formatDate(epochDay), weekdayName(epochDay)),
+            daysLate > 0 -> Text(
+                // A mesma frase do painel de resultado.
+                pluralStringResource(Res.plurals.quote_result_deadline_overdue, daysLate, formatShortDate(epochDay), weekdayName(epochDay), daysLate),
                 style = MaterialTheme.appType.body,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -139,7 +143,7 @@ fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
  * orçamento é o caminho natural quando o cliente demorou a responder e o prazo venceu.
  */
 @Composable
-fun DeliveryDateDialog(quoteName: String, initial: Long?, onDismiss: () -> Unit, onSave: (Long?) -> Unit) {
+fun DeliveryDateDialog(quoteName: String, initial: Long?, daysLate: (Long?) -> Int, onDismiss: () -> Unit, onSave: (Long?) -> Unit) {
     var epochDay by remember { mutableStateOf(initial) }
 
     AppDialog(
@@ -151,6 +155,6 @@ fun DeliveryDateDialog(quoteName: String, initial: Long?, onDismiss: () -> Unit,
         },
     ) {
         DialogText(quoteName)
-        DeliveryDatePicker(epochDay = epochDay, onChange = { epochDay = it })
+        DeliveryDatePicker(epochDay = epochDay, daysLate = daysLate(epochDay), onChange = { epochDay = it })
     }
 }

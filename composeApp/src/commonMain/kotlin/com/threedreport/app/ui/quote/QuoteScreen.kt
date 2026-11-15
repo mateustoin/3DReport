@@ -65,6 +65,8 @@ import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.ObserveUiNotices
+import com.threedreport.app.ui.components.OverdueExportDialog
+import com.threedreport.app.ui.components.OverdueItem
 import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.format.LocalCurrency
@@ -123,6 +125,7 @@ fun QuoteScreen(
         result = result,
         input = input,
         saveForm = saveForm,
+        deliveryDaysLate = state.deliveryDaysLate,
         settings = catalog.settings,
         allFilaments = catalog.filaments,
         printers = catalog.printers,
@@ -166,6 +169,20 @@ fun QuoteScreen(
                 Column(modifier = Modifier.padding(start = space.xl, end = space.xl, top = AppDimens.screenTopPadding, bottom = space.xl)) { Form() }
                 Panel(fixed = false, panelModifier = Modifier.fillMaxWidth())
             }
+        }
+    }
+
+    if (state.pendingSend != null) {
+        val sent = saveForm.sent?.savedQuote
+        val deadline = sent?.deliveryDateEpochDay
+        if (sent != null && deadline != null) {
+            // O prazo se muda na seção Detalhes, que está na própria tela: "Alterar prazo" só fecha o aviso.
+            OverdueExportDialog(
+                overdue = listOf(OverdueItem(sent.name, deadline)),
+                onChangeDate = viewModel::dismissPendingSend,
+                onSendAnyway = viewModel::confirmPendingSend,
+                onCancel = viewModel::dismissPendingSend,
+            )
         }
     }
 
@@ -276,7 +293,7 @@ private fun QuoteForm(
             ++number,
             stringResource(Res.string.quote_section_details),
             help = HelpText(stringResource(Res.string.quote_help_details)),
-        ) { DetailsFields(viewModel, catalog, state.stlPreview, input, form, state.queueHints) }
+        ) { DetailsFields(viewModel, catalog, state.stlPreview, input, form, state.queueHints, state.deliveryDaysLate) }
     }
 }
 

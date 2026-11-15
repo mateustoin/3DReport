@@ -67,7 +67,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.formatShortDate
-import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.ButtonKind
@@ -141,6 +140,7 @@ internal fun QuoteResultPanel(
     result: QuoteResult,
     input: QuoteInputState,
     saveForm: SaveQuoteFormState,
+    deliveryDaysLate: Int,
     settings: PricingSettings,
     allFilaments: List<Filament>,
     printers: List<PrinterProfile>,
@@ -171,7 +171,7 @@ internal fun QuoteResultPanel(
         val bodyModifier = if (fixed) Modifier.weight(1f).verticalScroll(rememberScrollState()) else Modifier
         Column(modifier = bodyModifier, verticalArrangement = Arrangement.spacedBy(space.lg)) {
             if (quote != null) {
-                PriceHeader(quote, result, input, saveForm)
+                PriceHeader(quote, result, input, saveForm, deliveryDaysLate)
                 StatBlocks(quote)
                 NegotiationNotes(quote, settings.minimumOrderPrice)
                 CompositionBar(quote.priceComposition(result.chargedShipping))
@@ -212,7 +212,7 @@ internal fun QuoteResultPanel(
 }
 
 @Composable
-private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputState, saveForm: SaveQuoteFormState) {
+private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputState, saveForm: SaveQuoteFormState, daysLate: Int) {
     val colors = MaterialTheme.appColors
     val grandTotal = result.grandTotal ?: quote.salePrice
     val caption = MaterialTheme.appType.caption
@@ -255,7 +255,6 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
         }
         // O mesmo prazo que sai no PDF, pra ver na nota o que o cliente vai ler.
         val deadlineLine = saveForm.deliveryDateEpochDay.takeUnless { input.isProduct }?.let {
-            val daysLate = (todayEpochDay() - it).toInt()
             val text = if (daysLate > 0) {
                 // A mesma linguagem do selo de prazo de Pedidos: a data curta e quanto já passou.
                 pluralStringResource(Res.plurals.quote_result_deadline_overdue, daysLate, formatShortDate(it), weekdayName(it), daysLate)
@@ -264,7 +263,8 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
             }
             line(text, if (daysLate > 0) colors.onNavyDanger else colors.onNavy, FontWeight.Medium)
         }
-        val minimumLine = if (quote.minimumPriceApplied) stringResource(Res.string.quote_result_minimum_applied, quote.priceBeforeMinimum!!.toMoney()) else null
+        // Com preço combinado o mínimo não está valendo: a linha seria contraditória.
+        val minimumLine = if (quote.minimumPriceApplied && !quote.isNegotiated) stringResource(Res.string.quote_result_minimum_applied, quote.priceBeforeMinimum!!.toMoney()) else null
         // Reabrindo um orçamento (decisão 108): o preço salvo fica até mexerem no que muda o preço.
         val keptLine = if (result.keepsOriginalPrice) {
             val today = result.todaysQuote

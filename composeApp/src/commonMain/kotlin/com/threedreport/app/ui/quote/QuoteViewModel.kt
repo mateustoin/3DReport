@@ -47,6 +47,7 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.components.matchingClients
 import com.threedreport.app.ui.format.NumberKind
@@ -55,6 +56,7 @@ import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.format.toDurationInputText
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.history.ClientExport
 import com.threedreport.app.ui.history.QuoteExporter
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
@@ -148,6 +150,8 @@ class QuoteViewModel(
     private val consumableRepository: ConsumableRepository? = null,
     /** Marca e opções do PDF e da imagem, pro "Enviar pro cliente" (decisão 131). Sem ele, enviar só salva. */
     brandingRepository: BrandingRepository? = null,
+    /** Hoje, em dias desde 01/01/1970: o prazo vencido é medido contra ele (os testes fixam o dia). */
+    private val today: () -> Long = ::todayEpochDay,
 ) {
     private val scope: CoroutineScope = scope
 
@@ -206,7 +210,13 @@ class QuoteViewModel(
     private fun QuoteUiState.withResult(): QuoteUiState {
         val fresh = copy(catalog = readCatalog())
         val result = resultFor(fresh)
-        return fresh.copy(result = result, comparison = comparisonFor(fresh), queueHints = queueHintsFor(fresh, result))
+        val deadline = fresh.form.deliveryDateEpochDay.takeUnless { fresh.input.isProduct }
+        return fresh.copy(
+            result = result,
+            comparison = comparisonFor(fresh),
+            queueHints = queueHintsFor(fresh, result),
+            deliveryDaysLate = deliveryDaysLate(deadline, today()),
+        )
     }
 
     /** "Em qual impressora sai mais barato" (ver [comparePrinters]), pro painel: feito aqui, e não na tela. */
@@ -942,21 +952,52 @@ class QuoteViewModel(
     /** O pedido que o último "Enviar pro cliente" gravou, pra os quatro jeitos de enviar. */
     private fun sentQuote(): SavedQuote? = liveSent()?.savedQuote
 
-    fun sendPdf() {
-        sentQuote()?.let { exporter?.exportPdf(it) }
+    fun sendPdf() = send(ClientExport.PDF)
+
+    fun sendImage() = send(ClientExport.IMAGE)
+
+    fun sendWhatsApp() = send(ClientExport.WHATSAPP)
+
+    fun sendCopy() = send(ClientExport.COPY)
+
+    /**
+     * Faz o envio escolhido, ou o segura quando o prazo do pedido já venceu: a tela mostra o mesmo aviso de Pedidos
+     * a partir de [QuoteUiState.pendingSend], e o envio só sai em [confirmPendingSend].
+     */
+    private fun send(export: ClientExport) {
+        val saved = sentQuote() ?: return
+        if (saved.isDeliveryOverdue(today())) {
+            state.update { it.copy(pendingSend = export) }
+            return
+        }
+        perform(export, saved)
     }
 
-    fun sendImage() {
-        sentQuote()?.let { exporter?.saveShareableImage(it) }
+    private fun perform(export: ClientExport, saved: SavedQuote) {
+        val exporter = exporter ?: return
+        when (export) {
+            ClientExport.PDF -> exporter.exportPdf(saved)
+
+            ClientExport.IMAGE -> exporter.saveShareableImage(saved)
+
+            ClientExport.WHATSAPP -> exporter.openInWhatsApp(saved)
+
+            ClientExport.COPY -> exporter.copyText(saved)
+
+            // O Orçamento envia um pedido só; a exportação em lote é de Pedidos.
+            ClientExport.SELECTED_PDF -> Unit
+        }
     }
 
-    fun sendWhatsApp() {
-        sentQuote()?.let { exporter?.openInWhatsApp(it) }
+    /** "Enviar assim mesmo" no aviso de prazo vencido: faz o envio que tinha sido segurado, sem perguntar de novo. */
+    fun confirmPendingSend() {
+        val export = state.value.pendingSend ?: return
+        state.update { it.copy(pendingSend = null) }
+        sentQuote()?.let { perform(export, it) }
     }
 
-    fun sendCopy() {
-        sentQuote()?.let { exporter?.copyText(it) }
-    }
+    /** Desiste do envio segurado ("Alterar prazo" e "Cancelar" no aviso): nada é enviado. O prazo se muda em Detalhes. */
+    fun dismissPendingSend() = state.update { it.copy(pendingSend = null) }
 
     /**
      * Reabre [savedQuote] pra edição: preenche as entradas com os valores salvos e o formulário de salvar
