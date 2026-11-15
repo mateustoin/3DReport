@@ -95,14 +95,6 @@ fun String.toRequiredPositive(fieldLabel: String, kind: NumberKind = NumberKind.
 fun String.toRequiredNonNegative(fieldLabel: String, kind: NumberKind = NumberKind.AMOUNT): Double =
     toRequiredDouble(fieldLabel, kind).also { if (it < 0) error("\"$fieldLabel\" não pode ser negativo.") }
 
-/** [toRequiredInt] maior que zero. */
-fun String.toRequiredPositiveInt(fieldLabel: String): Int =
-    toRequiredInt(fieldLabel).also { if (it <= 0) error("\"$fieldLabel\" precisa ser maior que zero.") }
-
-/** Converte texto digitado pelo usuário em [Int], com mensagem amigável quando inválido. */
-fun String.toRequiredInt(fieldLabel: String): Int =
-    parseWholeNumber(this) ?: error("Confira o campo \"$fieldLabel\": use um número inteiro.")
-
 /** Número inteiro digitado ("1.000" e "1000" valem mil), ou `null` se não for inteiro. */
 fun parseWholeNumber(text: String): Int? {
     val value = parseDecimal(text, NumberKind.AMOUNT) ?: return null

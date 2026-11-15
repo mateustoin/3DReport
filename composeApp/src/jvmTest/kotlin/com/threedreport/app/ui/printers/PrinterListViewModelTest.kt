@@ -4,7 +4,7 @@ import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_error_name_required
 import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_whole_number
-import _3dreport.composeapp.generated.resources.printers_error_days_max
+import _3dreport.composeapp.generated.resources.printers_error_whole_max
 import _3dreport.composeapp.generated.resources.printers_notice_archived
 import _3dreport.composeapp.generated.resources.printers_notice_deleted
 import _3dreport.composeapp.generated.resources.printers_notice_restored
@@ -262,11 +262,25 @@ class PrinterListViewModelTest {
         assertEquals(uiText(Res.string.common_error_name_required), form.nameError)
         assertEquals(uiText(Res.string.common_error_negative), form.powerError)
         assertEquals(uiText(Res.string.common_error_whole_number), form.paybackError)
-        assertEquals(uiText(Res.string.printers_error_days_max), form.daysError)
+        assertEquals(uiText(Res.string.printers_error_whole_max, 31), form.daysError)
         assertEquals(before, printers.printers.value.size)
 
         viewModel.updateForm { it.copy(name = "X") }
         assertNull(viewModel.uiState.value.form!!.nameError)
+    }
+
+    @Test
+    fun paybackMonthsHaveACeilingAndTheMessageNamesIt() {
+        val printers = PrinterRepository()
+        val before = printers.printers.value.size
+        val viewModel = viewModelOf(printers)
+
+        viewModel.startAdd()
+        viewModel.updateForm { it.copy(name = "X", paybackMonthsText = "601") }
+        viewModel.save()
+
+        assertEquals(uiText(Res.string.printers_error_whole_max, 600), viewModel.uiState.value.form!!.paybackError)
+        assertEquals(before, printers.printers.value.size)
     }
 
     @Test

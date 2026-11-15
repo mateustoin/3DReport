@@ -8,13 +8,13 @@ import _3dreport.composeapp.generated.resources.common_error_positive
 import _3dreport.composeapp.generated.resources.common_error_required
 import _3dreport.composeapp.generated.resources.common_error_whole_number
 import _3dreport.composeapp.generated.resources.printers_error_component_name
-import _3dreport.composeapp.generated.resources.printers_error_days_max
 import _3dreport.composeapp.generated.resources.printers_error_hours_max
 import _3dreport.composeapp.generated.resources.printers_error_hours_since
 import _3dreport.composeapp.generated.resources.printers_error_interval
 import _3dreport.composeapp.generated.resources.printers_error_log_description
 import _3dreport.composeapp.generated.resources.printers_error_usage_hours
 import _3dreport.composeapp.generated.resources.printers_error_usage_reason
+import _3dreport.composeapp.generated.resources.printers_error_whole_max
 import _3dreport.composeapp.generated.resources.printers_notice_archived
 import _3dreport.composeapp.generated.resources.printers_notice_deleted
 import _3dreport.composeapp.generated.resources.printers_notice_restored
@@ -50,6 +50,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -121,13 +122,9 @@ class PrinterListViewModel(
     val notices: SharedFlow<UiText> = noticeFlow.asSharedFlow()
 
     init {
-        repository.printers.onEach { refresh() }.launchIn(scope)
-        historyRepository.savedQuotes.onEach { refresh() }.launchIn(scope)
-        maintenanceRepository.maintenance.onEach { refresh() }.launchIn(scope)
-    }
-
-    private fun refresh() {
-        state.update { it.withData() }
+        combine(repository.printers, historyRepository.savedQuotes, maintenanceRepository.maintenance) { printers, quotes, maintenance ->
+            Triple(printers, quotes, maintenance)
+        }.onEach { (printers, quotes, maintenance) -> state.update { it.withData(printers, quotes, maintenance) } }.launchIn(scope)
     }
 
     fun startAdd() {
@@ -186,7 +183,7 @@ class PrinterListViewModel(
         val powerError = nonNegativeError(current.printerPowerWattsText, power)
         val maintenanceError = nonNegativeError(current.maintenanceCostPerHourText, maintenanceCost)
         val priceError = nonNegativeError(current.machinePriceText, price)
-        val paybackError = wholeError(current.paybackMonthsText, payback, max = null)
+        val paybackError = wholeError(current.paybackMonthsText, payback, max = MAX_PAYBACK_MONTHS)
         val daysError = wholeError(current.printingDaysPerMonthText, days, max = MAX_DAYS_PER_MONTH)
         val hoursError = when {
             current.printingHoursPerDayText.isBlank() -> uiText(Res.string.common_error_required)
@@ -242,7 +239,7 @@ class PrinterListViewModel(
         text.isBlank() -> uiText(Res.string.common_error_required)
         value == null -> uiText(Res.string.common_error_whole_number)
         value <= 0 -> uiText(Res.string.common_error_positive)
-        max != null && value > max -> uiText(Res.string.printers_error_days_max)
+        max != null && value > max -> uiText(Res.string.printers_error_whole_max, max)
         else -> null
     }
 
@@ -389,13 +386,16 @@ class PrinterListViewModel(
 
     // --- Montagem do estado ---
 
-    private fun PrintersUiState.withData(): PrintersUiState {
-        val printers = repository.printers.value
-        val quotes = historyRepository.savedQuotes.value
-        val allMaintenance = maintenanceRepository.maintenance.value
+    private fun PrintersUiState.withData(
+        printers: List<PrinterProfile> = repository.printers.value,
+        quotes: List<SavedQuote> = historyRepository.savedQuotes.value,
+        allMaintenance: PrinterMaintenance = maintenanceRepository.maintenance.value,
+    ): PrintersUiState {
+        // As horas de cada impressora são calculadas uma vez por atualização e servem à linha e ao diálogo.
+        val hoursByPrinter = printers.associate { it.id to MaintenanceReport.printerHours(it.id, quotes, allMaintenance.manualUsage) }
         val queueByPrinter = PrintQueueReport.summarize(printers, quotes).associateBy { it.printer.id }
         val rows = printers.map { printer ->
-            val statuses = statusesOf(printer.id, quotes, allMaintenance)
+            val statuses = statusesOf(printer.id, hoursByPrinter.getValue(printer.id), allMaintenance)
             val queue = queueByPrinter[printer.id]
             PrinterRowState(
                 printer = printer,
@@ -410,24 +410,23 @@ class PrinterListViewModel(
         return copy(
             active = active,
             archived = archived,
-            maintenance = dialogPrinter?.let { maintenanceDialogFor(it, quotes, allMaintenance) },
+            maintenance = dialogPrinter?.let { maintenanceDialogFor(it, hoursByPrinter.getValue(it.id), allMaintenance) },
         )
     }
 
     private fun maintenanceDialogFor(
         printer: PrinterProfile,
-        quotes: List<SavedQuote> = historyRepository.savedQuotes.value,
+        hours: Double = currentHours(printer.id),
         all: PrinterMaintenance = maintenanceRepository.maintenance.value,
     ) = MaintenanceDialogState(
         printer = printer,
-        hours = MaintenanceReport.printerHours(printer.id, quotes, all.manualUsage),
-        statuses = statusesOf(printer.id, quotes, all),
+        hours = hours,
+        statuses = statusesOf(printer.id, hours, all),
         data = all.forPrinter(printer.id),
     )
 
     /** Situação de cada componente de [printerId], o mais urgente primeiro. */
-    private fun statusesOf(printerId: String, quotes: List<SavedQuote>, all: PrinterMaintenance): List<ComponentStatus> {
-        val hours = MaintenanceReport.printerHours(printerId, quotes, all.manualUsage)
+    private fun statusesOf(printerId: String, hours: Double, all: PrinterMaintenance): List<ComponentStatus> {
         return all.components
             .filter { it.printerId == printerId }
             .map { MaintenanceReport.componentStatus(it, hours) }
@@ -448,6 +447,7 @@ class PrinterListViewModel(
     private companion object {
         const val NOTICE_BUFFER = 8
         const val MAX_DAYS_PER_MONTH = 31
+        const val MAX_PAYBACK_MONTHS = 600
         const val MAX_HOURS_PER_DAY = 24
     }
 }

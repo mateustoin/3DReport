@@ -165,6 +165,21 @@ class FilamentListViewModelTest {
     }
 
     @Test
+    fun toggleColorInStockWithEditPanelOpenSurvivesSave() {
+        val repository = FilamentRepository()
+        val viewModel = viewModelOf(repository)
+        val filament = repository.filaments.value.first()
+        val colorId = filament.colors.first().id
+
+        viewModel.startEdit(filament.id)
+        viewModel.toggleColorInStock(filament.id, colorId)
+        assertEquals(false, viewModel.uiState.value.form!!.colors.first { it.id == colorId }.inStock)
+
+        viewModel.save()
+        assertEquals(false, repository.filaments.value.first { it.id == filament.id }.colors.first { it.id == colorId }.inStock)
+    }
+
+    @Test
     fun savingClosesTheFormAndWarns() {
         val repository = FilamentRepository()
         val viewModel = viewModelOf(repository)

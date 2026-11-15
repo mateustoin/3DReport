@@ -212,6 +212,12 @@ class FilamentListViewModel(
         val filament = repository.filaments.value.find { it.id == filamentId } ?: return
         val updatedColors = filament.colors.map { if (it.id == colorId) it.copy(inStock = !it.inStock) else it }
         repository.update(filament.copy(colors = updatedColors))
+        // Com esse filamento aberto no painel, o rascunho acompanha: senão o Salvar desfaria a marcação.
+        val newInStock = updatedColors.find { it.id == colorId }?.inStock ?: return
+        state.update { s ->
+            val form = s.form?.takeIf { it.id == filamentId } ?: return@update s
+            s.copy(form = form.copy(colors = form.colors.map { if (it.id == colorId) it.copy(inStock = newInStock) else it }))
+        }
     }
 
     private fun FilamentsUiState.withItems(items: List<Filament>): FilamentsUiState {

@@ -17,7 +17,6 @@ import _3dreport.composeapp.generated.resources.filaments_delete_title
 import _3dreport.composeapp.generated.resources.filaments_delete_what
 import _3dreport.composeapp.generated.resources.filaments_empty
 import _3dreport.composeapp.generated.resources.filaments_field_brand
-import _3dreport.composeapp.generated.resources.filaments_field_brand_hint
 import _3dreport.composeapp.generated.resources.filaments_field_color_hex
 import _3dreport.composeapp.generated.resources.filaments_field_color_hex_hint
 import _3dreport.composeapp.generated.resources.filaments_field_color_name
@@ -176,6 +175,7 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
                                 inStock = color.inStock,
                                 outOfStockLabel = outOfStock,
                                 onToggle = { viewModel.toggleColorInStock(filament.id, color.id) },
+                                onSelectedRow = selectedId == filament.id,
                             )
                         }
                     }
@@ -225,7 +225,7 @@ private fun FilamentFormPanel(form: FilamentFormState, viewModel: FilamentListVi
                 suggestions = form.brandSuggestions,
                 suggestionLabel = { it },
                 onChoose = { brand -> viewModel.updateForm { it.copy(brand = brand) } },
-                placeholder = stringResource(Res.string.filaments_field_brand_hint),
+                placeholder = stringResource(Res.string.common_optional),
             )
         }
         PanelSection(2, stringResource(Res.string.filaments_section_price)) {
@@ -240,7 +240,10 @@ private fun FilamentFormPanel(form: FilamentFormState, viewModel: FilamentListVi
                 value = form.densityGPerCm3Text,
                 onValueChange = { text -> viewModel.updateForm { it.copy(densityGPerCm3Text = text) } },
                 error = form.densityError?.asString(),
-                help = HelpText(stringResource(if (form.densityNeedsCheck) Res.string.filaments_help_density_varies else Res.string.filaments_help_density)),
+                help = HelpText(
+                    stringResource(if (form.densityNeedsCheck) Res.string.filaments_help_density_varies else Res.string.filaments_help_density),
+                    warning = form.densityNeedsCheck,
+                ),
             )
             AppTextField(
                 label = stringResource(Res.string.filaments_field_diameter),
