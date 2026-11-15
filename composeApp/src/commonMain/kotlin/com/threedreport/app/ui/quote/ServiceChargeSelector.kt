@@ -1,12 +1,12 @@
 package com.threedreport.app.ui.quote
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Text
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_charge_per_order
+import _3dreport.composeapp.generated.resources.common_charge_per_piece
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.SegmentedChoice
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Escolha entre cobrar o serviço por peça ou uma vez pelo pedido. Usado no cadastro (padrão do
@@ -18,8 +18,10 @@ fun ServiceChargeSelector(
     onChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(selected = !chargedPerOrder, onClick = { onChange(false) }, label = { Text("Por peça") })
-        FilterChip(selected = chargedPerOrder, onClick = { onChange(true) }, label = { Text("Uma vez no pedido") })
-    }
+    SegmentedChoice(
+        options = listOf(stringResource(Res.string.common_charge_per_piece), stringResource(Res.string.common_charge_per_order)),
+        selectedIndex = if (chargedPerOrder) 1 else 0,
+        onSelect = { onChange(it == 1) },
+        modifier = modifier,
+    )
 }

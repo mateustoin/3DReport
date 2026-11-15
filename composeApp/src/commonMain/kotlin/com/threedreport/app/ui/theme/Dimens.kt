@@ -44,6 +44,12 @@ object AppDimens {
     /** Abaixo dessa largura útil, o painel do formulário ocupa a área toda. */
     val sidePanelFullWidthBelow = 960.dp
 
+    /**
+     * Abaixo disso a tela de Orçamento volta pra uma coluna só (o painel de resultado vai pro fim). Com o painel
+     * de 380 e a margem de 32 de cada lado, sobram uns 500 dp pra grade de três colunas do formulário.
+     */
+    val twoColumnMinWidth = 960.dp
+
     /** Margem de cima da tela (as laterais são [AppSpacing.xxl]). */
     val screenTopPadding = 26.dp
 

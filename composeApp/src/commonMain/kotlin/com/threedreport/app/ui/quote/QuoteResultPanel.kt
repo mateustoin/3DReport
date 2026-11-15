@@ -1,5 +1,35 @@
 package com.threedreport.app.ui.quote
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.quote_compare_title
+import _3dreport.composeapp.generated.resources.quote_result_all_out_of_stock
+import _3dreport.composeapp.generated.resources.quote_result_below_minimum
+import _3dreport.composeapp.generated.resources.quote_result_break_even
+import _3dreport.composeapp.generated.resources.quote_result_consumption
+import _3dreport.composeapp.generated.resources.quote_result_deadline
+import _3dreport.composeapp.generated.resources.quote_result_deadline_overdue
+import _3dreport.composeapp.generated.resources.quote_result_extras_both
+import _3dreport.composeapp.generated.resources.quote_result_extras_services
+import _3dreport.composeapp.generated.resources.quote_result_extras_shipping
+import _3dreport.composeapp.generated.resources.quote_result_filaments_archived
+import _3dreport.composeapp.generated.resources.quote_result_fill_many
+import _3dreport.composeapp.generated.resources.quote_result_fill_one
+import _3dreport.composeapp.generated.resources.quote_result_fix_field
+import _3dreport.composeapp.generated.resources.quote_result_full_account
+import _3dreport.composeapp.generated.resources.quote_result_kept
+import _3dreport.composeapp.generated.resources.quote_result_kept_with_today
+import _3dreport.composeapp.generated.resources.quote_result_loss
+import _3dreport.composeapp.generated.resources.quote_result_minimum_applied
+import _3dreport.composeapp.generated.resources.quote_result_no_filament
+import _3dreport.composeapp.generated.resources.quote_result_no_price
+import _3dreport.composeapp.generated.resources.quote_result_no_printer
+import _3dreport.composeapp.generated.resources.quote_result_overline
+import _3dreport.composeapp.generated.resources.quote_result_printers_archived
+import _3dreport.composeapp.generated.resources.quote_result_prints
+import _3dreport.composeapp.generated.resources.quote_result_profit
+import _3dreport.composeapp.generated.resources.quote_result_recalculated
+import _3dreport.composeapp.generated.resources.quote_result_units
+import _3dreport.composeapp.generated.resources.quote_result_units_extras
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +46,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +64,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.weekdayName
@@ -53,6 +81,7 @@ import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.displayPriceAutoSize
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PricingSettings
@@ -60,6 +89,8 @@ import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.pricing.PriceComposition
 import com.threedreport.core.pricing.priceComposition
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs
 
 /** O que o painel precisa pra um estado sem resultado: o texto e se é erro. */
@@ -75,24 +106,25 @@ internal fun noResultMessage(
 ): NoResultMessage = when {
     result.errorMessage != null -> NoResultMessage(result.errorMessage.asString(), true)
 
-    result.fieldErrors.isNotEmpty() -> NoResultMessage("Corrija o campo marcado pra calcular: ${result.fieldErrors.values.first().asString()}", true)
+    result.fieldErrors.isNotEmpty() ->
+        NoResultMessage(stringResource(Res.string.quote_result_fix_field, result.fieldErrors.values.first().asString()), true)
 
     allFilaments.none { it.hasStockAvailable } && allFilaments.isNotEmpty() ->
-        NoResultMessage("Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" em Filamentos.", false)
+        NoResultMessage(stringResource(Res.string.quote_result_all_out_of_stock), false)
 
-    allFilaments.isEmpty() -> NoResultMessage("Cadastre um filamento em Filamentos.", false)
+    allFilaments.isEmpty() -> NoResultMessage(stringResource(Res.string.quote_result_no_filament), false)
 
-    printers.isEmpty() -> NoResultMessage("Cadastre uma impressora em Impressoras.", false)
+    printers.isEmpty() -> NoResultMessage(stringResource(Res.string.quote_result_no_printer), false)
 
     // Tudo arquivado (decisão 115): não há o que escolher, e pedir peso e tempo não ajudaria.
     allFilaments.none { it.hasStockAvailable && !it.archived } ->
-        NoResultMessage("Todos os filamentos em estoque estão arquivados. Restaure um em Filamentos, na seção Arquivados.", false)
+        NoResultMessage(stringResource(Res.string.quote_result_filaments_archived), false)
 
-    printers.all { it.archived } -> NoResultMessage("Todas as impressoras estão arquivadas. Restaure uma em Impressoras, na seção Arquivados.", false)
+    printers.all { it.archived } -> NoResultMessage(stringResource(Res.string.quote_result_printers_archived), false)
 
-    input.prints.size > 1 -> NoResultMessage("Preencha peso (ou comprimento) e tempo de cada impressão pra calcular, ou arraste os G-codes.", false)
+    input.prints.size > 1 -> NoResultMessage(stringResource(Res.string.quote_result_fill_many), false)
 
-    else -> NoResultMessage("Preencha peso (ou comprimento) e tempo pra calcular, ou arraste o G-code.", false)
+    else -> NoResultMessage(stringResource(Res.string.quote_result_fill_one), false)
 }
 
 /**
@@ -137,17 +169,17 @@ internal fun QuoteResultPanel(
                 StatBlocks(quote)
                 NegotiationNotes(quote, settings.minimumOrderPrice)
                 CompositionBar(quote.priceComposition(result.chargedShipping))
-                Expander("Ver a conta completa") {
+                Expander(stringResource(Res.string.quote_result_full_account)) {
                     FullAccount(quote, result, settings, onUseShippingCoveringPrice)
                 }
                 if (comparison.size > 1) {
-                    Expander("Comparar impressoras") { PrinterComparison(comparison, allPrints = input.prints.size > 1) }
+                    Expander(stringResource(Res.string.quote_compare_title)) { PrinterComparison(comparison, allPrints = input.prints.size > 1) }
                 }
             } else {
                 val message = noResultMessage(result, allFilaments, printers, input)
                 Column(verticalArrangement = Arrangement.spacedBy(space.xxs)) {
-                    Text("VOCÊ COBRA", style = MaterialTheme.appType.overline, color = colors.onNavyMuted)
-                    Text("—", style = MaterialTheme.appType.displayPrice, color = colors.onNavyMuted)
+                    Text(stringResource(Res.string.quote_result_overline).uppercase(), style = MaterialTheme.appType.overline, color = colors.onNavyMuted)
+                    Text(stringResource(Res.string.quote_result_no_price), style = MaterialTheme.appType.displayPrice, color = colors.onNavyMuted)
                     Text(
                         message.text,
                         style = MaterialTheme.appType.caption,
@@ -179,59 +211,74 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
     val grandTotal = result.grandTotal ?: quote.salePrice
     val caption = MaterialTheme.appType.caption
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
-        Text("VOCÊ COBRA", style = MaterialTheme.appType.overline, color = colors.onNavyMuted)
+        Text(stringResource(Res.string.quote_result_overline).uppercase(), style = MaterialTheme.appType.overline, color = colors.onNavyMuted)
         BasicText(
             grandTotal.toMoney(),
             style = MaterialTheme.appType.displayPrice.copy(color = Color.White),
             maxLines = 1,
-            autoSize = TextAutoSize.StepBased(minFontSize = 28.sp, maxFontSize = 52.sp, stepSize = 2.sp),
+            autoSize = displayPriceAutoSize,
         )
         fun line(text: String, color: Color = colors.onNavyMuted, weight: FontWeight? = null) = text to (color to weight)
+        val unitsLine = if (quote.quantity > 1) {
+            // A mesma conta do PDF e da mensagem: o preço de cada peça, com serviços e frete à parte.
+            val unit = quote.unitSalePrice.toMoney()
+            when {
+                result.selectedServices.isNotEmpty() && result.chargedShipping > 0 ->
+                    pluralStringResource(Res.plurals.quote_result_units_extras, quote.quantity, quote.quantity, unit, stringResource(Res.string.quote_result_extras_both))
+
+                result.selectedServices.isNotEmpty() ->
+                    pluralStringResource(Res.plurals.quote_result_units_extras, quote.quantity, quote.quantity, unit, stringResource(Res.string.quote_result_extras_services))
+
+                result.chargedShipping > 0 ->
+                    pluralStringResource(Res.plurals.quote_result_units_extras, quote.quantity, quote.quantity, unit, stringResource(Res.string.quote_result_extras_shipping))
+
+                else -> pluralStringResource(Res.plurals.quote_result_units, quote.quantity, quote.quantity, unit)
+            }
+        } else {
+            null
+        }
+        val consumption = stringResource(Res.string.quote_result_consumption, quote.filamentTotals().joinToString(" · ") { it.displayText() })
+        val printsLine = if (quote.prints.size > 1) {
+            stringResource(Res.string.quote_result_prints, quote.prints.size, quote.totalPrintTimeMinutes.minutesToDurationText())
+        } else {
+            null
+        }
+        // O mesmo prazo que sai no PDF, pra ver na nota o que o cliente vai ler.
+        val deadlineLine = saveForm.deliveryDateEpochDay.takeUnless { input.isProduct }?.let {
+            val overdue = it < todayEpochDay()
+            line(
+                stringResource(if (overdue) Res.string.quote_result_deadline_overdue else Res.string.quote_result_deadline, formatDate(it), weekdayName(it)),
+                if (overdue) colors.onNavyDanger else colors.onNavy,
+                FontWeight.Medium,
+            )
+        }
+        val minimumLine = if (quote.minimumPriceApplied) stringResource(Res.string.quote_result_minimum_applied, quote.priceBeforeMinimum!!.toMoney()) else null
+        // Reabrindo um orçamento (decisão 108): o preço salvo fica até mexerem no que muda o preço.
+        val keptLine = if (result.keepsOriginalPrice) {
+            val today = result.todaysQuote
+            if (today != null && abs(today.customerTotal - quote.customerTotal) >= 0.005) {
+                stringResource(Res.string.quote_result_kept_with_today, today.customerTotal.toMoney())
+            } else {
+                stringResource(Res.string.quote_result_kept)
+            }
+        } else {
+            null
+        }
+        val original = result.originalQuote
+        val recalculatedLine = if (original != null && abs(original.customerTotal - quote.customerTotal) >= 0.005) {
+            stringResource(Res.string.quote_result_recalculated, original.customerTotal.toMoney())
+        } else {
+            null
+        }
         val lines = buildList {
-            if (quote.quantity > 1) {
-                // A mesma conta do PDF e da mensagem: o preço de cada peça, com serviços e frete à parte.
-                val extras = when {
-                    result.selectedServices.isNotEmpty() && result.chargedShipping > 0 -> " + serviços e frete"
-                    result.selectedServices.isNotEmpty() -> " + serviços"
-                    result.chargedShipping > 0 -> " + frete"
-                    else -> ""
-                }
-                add(line("${quote.quantity} unidades · ${quote.unitSalePrice.toMoney()} cada$extras"))
-            }
+            unitsLine?.let { add(line(it)) }
             // Quanto sai de cada carretel, que é o que se confere no estoque.
-            add(line("Consumo: " + quote.filamentTotals().joinToString(" · ") { it.displayText() }))
-            if (quote.prints.size > 1) {
-                add(line("${quote.prints.size} impressões · ${quote.totalPrintTimeMinutes.minutesToDurationText()} de máquina"))
-            }
-            // O mesmo prazo que sai no PDF, pra ver na nota o que o cliente vai ler.
-            saveForm.deliveryDateEpochDay.takeUnless { input.isProduct }?.let {
-                val overdue = it < todayEpochDay()
-                add(
-                    line(
-                        "Entrega até ${formatDate(it)} (${weekdayName(it)})" + if (overdue) ", data já passou" else "",
-                        if (overdue) colors.onNavyDanger else colors.onNavy,
-                        FontWeight.Medium,
-                    ),
-                )
-            }
-            if (quote.minimumPriceApplied) add(line("Preço mínimo do pedido aplicado (a conta dava ${quote.priceBeforeMinimum!!.toMoney()})"))
-            // Reabrindo um orçamento (decisão 108): o preço salvo fica até mexerem no que muda o preço.
-            if (result.keepsOriginalPrice) {
-                val today = result.todaysQuote
-                add(
-                    line(
-                        "Preço do orçamento salvo, mantido." + if (today != null && abs(today.customerTotal - quote.customerTotal) >= 0.005) {
-                            " Com os custos de hoje, sairia ${today.customerTotal.toMoney()}: mude qualquer valor da peça pra recalcular."
-                        } else {
-                            ""
-                        },
-                    ),
-                )
-            }
-            val original = result.originalQuote
-            if (original != null && abs(original.customerTotal - quote.customerTotal) >= 0.005) {
-                add(line("Recalculado com os custos de hoje: era ${original.customerTotal.toMoney()} quando foi salvo.", colors.onNavy))
-            }
+            add(line(consumption))
+            printsLine?.let { add(line(it)) }
+            deadlineLine?.let { add(it) }
+            minimumLine?.let { add(line(it)) }
+            keptLine?.let { add(line(it)) }
+            recalculatedLine?.let { add(line(it, colors.onNavy)) }
         }
         lines.forEach { (text, style) -> Text(text, style = caption, color = style.first, fontWeight = style.second) }
     }
@@ -243,8 +290,8 @@ private fun StatBlocks(quote: Quote) {
     val space = MaterialTheme.spacing
     val breakEven = quote.breakEvenSalePrice + quote.extrasTotal
     Row(horizontalArrangement = Arrangement.spacedBy(space.sm)) {
-        StatBlock("Seu lucro", quote.profit.toMoney(), if (quote.profit < 0) colors.onNavyDanger else colors.amber, Modifier.weight(1f))
-        StatBlock("Mínimo sem prejuízo", breakEven.toMoney(), Color.White, Modifier.weight(1f))
+        StatBlock(stringResource(Res.string.quote_result_profit), quote.profit.toMoney(), if (quote.profit < 0) colors.onNavyDanger else colors.amber, Modifier.weight(1f))
+        StatBlock(stringResource(Res.string.quote_result_break_even), breakEven.toMoney(), Color.White, Modifier.weight(1f))
     }
 }
 
@@ -266,203 +313,12 @@ private fun NegotiationNotes(quote: Quote, minimumOrderPrice: Double) {
     val colors = MaterialTheme.appColors
     if (quote.profit < 0) {
         Text(
-            "Prejuízo: nesse valor você paga ${(-quote.profit).toMoney()} pra imprimir.",
+            stringResource(Res.string.quote_result_loss, (-quote.profit).toMoney()),
             style = MaterialTheme.appType.caption,
             color = colors.onNavyDanger,
         )
     }
     if (minimumOrderPrice > 0 && quote.isNegotiated && quote.salePrice < minimumOrderPrice) {
-        Text("Abaixo do seu preço mínimo do pedido (${minimumOrderPrice.toMoney()}).", style = MaterialTheme.appType.caption, color = colors.amber)
-    }
-}
-
-/**
- * Onde o dinheiro do preço está: barra empilhada em quatro grupos mais legenda. O detalhamento item a item
- * fica na conta completa. Os grupos somam o que o cliente paga.
- */
-@Composable
-private fun CompositionBar(composition: PriceComposition) {
-    val colors = MaterialTheme.appColors
-    val space = MaterialTheme.spacing
-    val palette = colors.composition
-    val groups = listOf(
-        Triple("Material e máquina", composition.materialAndMachine, palette.materialAndMachine),
-        Triple("Trabalho e serviços", composition.laborAndServices, palette.laborAndServices),
-        Triple("Taxas e impostos", composition.feesAndTaxes, palette.feesAndTaxes),
-        Triple("Lucro", composition.profit, palette.profit),
-    )
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(AppDimens.compositionBarHeight)
-                .clip(CircleShape)
-                .semantics { contentDescription = "Composição do preço" },
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.compositionGap),
-        ) {
-            groups.filter { it.second > 0.0 }.forEach { (_, value, color) ->
-                Box(Modifier.weight(value.toFloat()).fillMaxHeight().background(color))
-            }
-        }
-        Column(modifier = Modifier.padding(top = space.sm)) {
-            groups.filter { it.second > 0.005 || it.first == "Lucro" }.forEach { (label, value, color) ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = space.xxs),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
-                        Box(Modifier.size(AppDimens.legendSwatchSize).background(color, MaterialTheme.shapes.extraSmall))
-                        Text(label, style = MaterialTheme.appType.body, color = colors.onNavyMuted)
-                    }
-                    NumericText(value.toMoney(), style = MaterialTheme.appType.body, color = colors.onNavy)
-                }
-            }
-        }
-    }
-}
-
-/** Recolhe um bloco sob um título clicável com seta: o que é detalhe fica sob demanda. */
-@Composable
-private fun Expander(title: String, content: @Composable () -> Unit) {
-    val colors = MaterialTheme.appColors
-    val space = MaterialTheme.spacing
-    var open by remember { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
-        Row(
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.small)
-                .clickable(role = Role.Button) { open = !open }
-                .padding(vertical = space.xxs),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(space.xs),
-        ) {
-            Text(title, style = MaterialTheme.appType.body, fontWeight = FontWeight.Medium, color = colors.onNavy)
-            Icon(
-                if (open) AppIcons.ExpandLess else AppIcons.ExpandMore,
-                contentDescription = null,
-                tint = colors.onNavyMuted,
-                modifier = Modifier.size(AppDimens.iconSize),
-            )
-        }
-        if (open) content()
-    }
-}
-
-@Composable
-private fun AccountLine(label: String, value: String, muted: Boolean = false) {
-    val colors = MaterialTheme.appColors
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.appType.caption, color = colors.onNavyMuted, modifier = Modifier.weight(1f))
-        NumericText(value, style = MaterialTheme.appType.caption, color = if (muted) colors.onNavyMuted else colors.onNavy)
-    }
-}
-
-/** A conta item a item: tudo o que a nota sempre mostrou, agora sob demanda. */
-@Composable
-private fun FullAccount(quote: Quote, result: QuoteResult, settings: PricingSettings, onUseShippingCoveringPrice: () -> Unit) {
-    val colors = MaterialTheme.appColors
-    val space = MaterialTheme.spacing
-    Column(verticalArrangement = Arrangement.spacedBy(space.xxs)) {
-        // O que o canal cobra aparece sempre que ele cobra algo: percentual, valor fixo por item (decisão 121) ou os dois.
-        val channelCharges = quote.channelName != null && (quote.channelFeeRate > 0.0 || quote.channelFixedFee > 0.0)
-        if (channelCharges || quote.taxRate > 0.0) {
-            val parts = buildList {
-                if (channelCharges) {
-                    val perItem = (quote.channelFixedFee / quote.quantity).toMoney()
-                    add(
-                        when {
-                            quote.channelFixedFee <= 0.0 -> "${quote.channelName} ${quote.channelFeeRate.toPercentText()}"
-                            quote.channelFeeRate <= 0.0 -> "${quote.channelName} ($perItem por item)"
-                            else -> "${quote.channelName} (${quote.channelFeeRate.toPercentText()} + $perItem por item)"
-                        },
-                    )
-                }
-                if (quote.taxRate > 0.0) add("imposto ${quote.taxRate.toPercentText()}")
-            }
-            Text(
-                "Preço já elevado pra absorver ${parts.joinToString(" e ")}: o cliente paga esse valor normalmente, " +
-                    "e o lucro já é o que sobra pra você.",
-                style = MaterialTheme.appType.caption,
-                color = colors.onNavyMuted,
-            )
-        }
-        if (channelCharges) AccountLine("${quote.channelName} leva", quote.channelFeeAmount.toMoney())
-        AccountLine("Custo de produção", quote.productionCost.toMoney())
-        if (quote.prints.size > 1) {
-            quote.prints.forEachIndexed { index, print ->
-                AccountLine("   ${printTitle(index + 1, print.job.name.orEmpty())} · ${print.printerName}", print.cost.total.toMoney(), muted = true)
-            }
-            val orderLevel = quote.productionCost - quote.prints.sumOf { it.cost.total }
-            AccountLine("   Do pedido (trabalho, falhas, administrativo)", orderLevel.toMoney(), muted = true)
-        }
-        if (quote.costs.consumables > 0.0) AccountLine("Insumos", quote.costs.consumables.toMoney())
-        AccountLine("Lucro", quote.profit.toMoney())
-        AccountLine("Margem obtida neste preço", quote.actualProfitMargin.toPercentText())
-        // Só o valor: o percentual configurado já aparece no "Pedido urgente (+X%)".
-        if (quote.rush) AccountLine("Urgência", quote.rushSurcharge.toMoney())
-        result.selectedServices.forEach { service ->
-            val multiplied = quote.quantity > 1 && !service.chargedPerOrder
-            AccountLine(if (multiplied) "${service.name} (× ${quote.quantity})" else service.name, service.total(quote.quantity).toMoney())
-            if (service.laborMinutes > 0) {
-                val totalMinutes = service.totalLaborMinutes(quote.quantity)
-                val hourly = service.total(quote.quantity) / (totalMinutes / 60.0)
-                Text("· ${totalMinutes.minutesToDurationText()} · rende ${hourly.toMoney()}/h", style = MaterialTheme.appType.caption, color = colors.onNavyMuted)
-                if (settings.laborRatePerHour > 0.0 && hourly < settings.laborRatePerHour) {
-                    Text("paga menos que a sua hora (${settings.laborRatePerHour.toMoney()}/h)", style = MaterialTheme.appType.caption, color = colors.onNavyDanger)
-                }
-            }
-        }
-        if (result.chargedShipping > 0) AccountLine("Frete", result.chargedShipping.toMoney())
-        if (result.shippingAbsorbed && result.shippingCost > 0) {
-            AccountLine("Frete grátis (você paga)", "− ${result.shippingCost.toMoney()}")
-            Text("Sai do seu lucro.", style = MaterialTheme.appType.caption, color = colors.onNavyMuted)
-            val covering = quote.shippingCoveringSalePrice
-            if (covering != null && !quote.isNegotiated) {
-                Text("Pra manter a margem, cobre ${(covering + result.servicesTotal).toMoney()}", style = MaterialTheme.appType.caption, color = colors.onNavy)
-                AppButton("Usar esse preço", onClick = onUseShippingCoveringPrice, kind = ButtonKind.OnNavy)
-            }
-        }
-    }
-}
-
-/**
- * Mesma peça calculada em cada impressora cadastrada: responde "em qual máquina sai mais barato". Com
- * preço fechado ou anunciado, a comparação usa o preço que a margem daria em cada uma.
- */
-@Composable
-private fun PrinterComparison(comparison: List<Pair<PrinterProfile, Quote>>, allPrints: Boolean) {
-    val colors = MaterialTheme.appColors
-    fun Quote.comparable() = (tableSalePrice ?: salePrice) + extrasTotal
-    val cheapest = comparison.minByOrNull { it.second.comparable() }?.first?.id
-    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
-        comparison.forEach { (printer, quote) ->
-            val name = if (allPrints) "Tudo na ${printer.name}" else printer.name
-            val best = printer.id == cheapest
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    if (best) "$name (mais barata)" else name,
-                    style = MaterialTheme.appType.caption,
-                    fontWeight = if (best) FontWeight.SemiBold else null,
-                    color = if (best) colors.onNavy else colors.onNavyMuted,
-                    modifier = Modifier.weight(1f),
-                )
-                NumericText(quote.comparable().toMoney(), style = MaterialTheme.appType.caption, color = colors.onNavy)
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                if (allPrints) "Todas as impressões na mesma máquina, pelo preço que a sua margem dá." else "Mesma peça, trocando só a máquina.",
-                style = MaterialTheme.appType.caption,
-                color = colors.onNavyMuted,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            HelpHint(
-                HelpText("A diferença vem do consumo de energia, da manutenção e do retorno do investimento de cada impressora."),
-                label = "Comparar impressoras",
-                tint = colors.onNavyMuted,
-                modifier = Modifier.padding(start = MaterialTheme.spacing.xxs),
-            )
-        }
+        Text(stringResource(Res.string.quote_result_below_minimum, minimumOrderPrice.toMoney()), style = MaterialTheme.appType.caption, color = colors.amber)
     }
 }

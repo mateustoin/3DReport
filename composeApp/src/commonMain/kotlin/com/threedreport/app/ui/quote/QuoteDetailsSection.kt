@@ -1,0 +1,296 @@
+package com.threedreport.app.ui.quote
+
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.quote_details_category
+import _3dreport.composeapp.generated.resources.quote_details_category_placeholder
+import _3dreport.composeapp.generated.resources.quote_details_deadline
+import _3dreport.composeapp.generated.resources.quote_details_link
+import _3dreport.composeapp.generated.resources.quote_details_open_link
+import _3dreport.composeapp.generated.resources.quote_details_photo_description
+import _3dreport.composeapp.generated.resources.quote_details_photo_from_gcode
+import _3dreport.composeapp.generated.resources.quote_details_photo_pick
+import _3dreport.composeapp.generated.resources.quote_details_photo_remove
+import _3dreport.composeapp.generated.resources.quote_details_photo_unavailable
+import _3dreport.composeapp.generated.resources.quote_details_queue
+import _3dreport.composeapp.generated.resources.quote_details_settings_add
+import _3dreport.composeapp.generated.resources.quote_details_settings_edit
+import _3dreport.composeapp.generated.resources.quote_help_category
+import _3dreport.composeapp.generated.resources.quote_help_stl
+import _3dreport.composeapp.generated.resources.quote_help_stl_analysis
+import _3dreport.composeapp.generated.resources.quote_help_stl_analysis_detail
+import _3dreport.composeapp.generated.resources.quote_help_stl_viewer
+import _3dreport.composeapp.generated.resources.quote_stl_analysis_label
+import _3dreport.composeapp.generated.resources.quote_stl_attach
+import _3dreport.composeapp.generated.resources.quote_stl_capture
+import _3dreport.composeapp.generated.resources.quote_stl_difficulty
+import _3dreport.composeapp.generated.resources.quote_stl_hint_label
+import _3dreport.composeapp.generated.resources.quote_stl_loading
+import _3dreport.composeapp.generated.resources.quote_stl_measures
+import _3dreport.composeapp.generated.resources.quote_stl_not_manifold
+import _3dreport.composeapp.generated.resources.quote_stl_remove
+import _3dreport.composeapp.generated.resources.quote_stl_too_complex
+import _3dreport.composeapp.generated.resources.quote_stl_unreadable
+import _3dreport.composeapp.generated.resources.quote_stl_viewer_label
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.platform.encodeImageBitmapToPng
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppSuggestField
+import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.HelpHint
+import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.format.minutesToDurationText
+import com.threedreport.app.ui.format.toPercentText
+import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.text.asString
+import com.threedreport.app.ui.theme.AppDimens
+import com.threedreport.app.ui.theme.appColors
+import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
+import com.threedreport.app.ui.viewer.Stl3DViewer
+import com.threedreport.app.ui.viewer.rememberStl3DViewerState
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+import kotlin.math.abs
+import kotlin.math.round
+
+/** Arredonda pra 1 casa decimal, separador decimal brasileiro (vírgula), mesmo estilo de `toWeightText()`. */
+private fun Double.formatOneDecimal(): String {
+    val tenths = round(this * 10).toLong()
+    val whole = tenths / 10
+    val decimal = abs(tenths % 10)
+    return if (decimal == 0L) "$whole" else "$whole,$decimal"
+}
+
+/** Prazo, categoria, link, foto, STL e configurações de impressão: o que acompanha o pedido ao salvar. */
+@Composable
+internal fun DetailsFields(
+    viewModel: QuoteViewModel,
+    catalog: QuoteCatalog,
+    stlPreview: StlPreview?,
+    input: QuoteInputState,
+    form: SaveQuoteFormState,
+    result: QuoteResult,
+) {
+    val space = MaterialTheme.spacing
+    val savedQuotes = catalog.savedQuotes
+    val quote = result.quote
+    // Uma linha por impressora que o pedido usa: cada uma tem a própria fila.
+    val queueHint = if (quote != null && !input.isProduct) {
+        quote.printerIds.mapNotNull { printerId ->
+            val printer = catalog.printers.firstOrNull { it.id == printerId } ?: return@mapNotNull null
+            viewModel.queueAheadOf(printer, savedQuotes, form.editingQuoteId)?.let { queue ->
+                pluralStringResource(
+                    Res.plurals.quote_details_queue,
+                    queue.queuedQuoteCount,
+                    printer.name,
+                    queue.queuedMinutes.minutesToDurationText(),
+                    queue.queuedQuoteCount,
+                    quote.printMinutesOn(printerId).minutesToDurationText(),
+                )
+            }
+        }.joinToString("\n").ifEmpty { null }
+    } else {
+        null
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(space.md)) {
+        if (!input.isProduct) {
+            Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+                Text(stringResource(Res.string.quote_details_deadline), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, onChange = viewModel::setDeliveryDate)
+                queueHint?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+        }
+        FormGrid {
+            if (input.isProduct) {
+                cell {
+                    CategoryField(form.category, viewModel.knownCategories(savedQuotes), viewModel::setCategory)
+                }
+            }
+            cell(2) {
+                AppTextField(
+                    label = stringResource(Res.string.quote_details_link),
+                    value = form.sourceLink,
+                    onValueChange = viewModel::setSourceLink,
+                )
+            }
+        }
+        if (form.sourceLink.isNotBlank()) LinkText(text = stringResource(Res.string.quote_details_open_link), url = form.sourceLink)
+
+        PhotoRow(viewModel, form)
+        StlAttachment(viewModel, form, stlPreview)
+
+        // Com várias impressões, cada bloco tem as configurações da própria mesa (decisão 114).
+        val singlePrint = input.prints.singleOrNull()
+        if (singlePrint != null) {
+            var showDialog by remember { mutableStateOf(false) }
+            AppButton(
+                stringResource(if (singlePrint.settings.isEmpty) Res.string.quote_details_settings_add else Res.string.quote_details_settings_edit),
+                onClick = { showDialog = true },
+            )
+            if (showDialog) {
+                PrintSettingsDialog(
+                    initial = singlePrint.settings,
+                    onDismiss = { showDialog = false },
+                    onSave = { viewModel.setPrintSettings(it, singlePrint.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhotoRow(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
+    val space = MaterialTheme.spacing
+    val photo = form.photo
+    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        if (photo != null) {
+            // Decodifica uma vez por foto, e não a cada tecla digitada em outro campo; uma imagem que não
+            // abre vira aviso, e não derruba a tela.
+            val bitmap = remember(photo) { runCatching { decodeImageBitmap(photo.bytes) }.getOrNull() }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = stringResource(Res.string.quote_details_photo_description),
+                        modifier = Modifier.size(AppDimens.thumbnailSize).clip(MaterialTheme.shapes.small),
+                    )
+                } else {
+                    Text(stringResource(Res.string.quote_details_photo_unavailable), style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.error)
+                }
+                Text(
+                    if (form.photoFromGCode) stringResource(Res.string.quote_details_photo_from_gcode) else photo.fileName,
+                    style = MaterialTheme.appType.body,
+                )
+                AppButton(stringResource(Res.string.quote_details_photo_remove), onClick = viewModel::clearPhoto)
+            }
+        } else {
+            AppButton(stringResource(Res.string.quote_details_photo_pick), onClick = viewModel::pickPhoto, icon = AppIcons.AddPhotoAlternate)
+        }
+        form.photoError?.let { Text(it.asString(), style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.error) }
+    }
+}
+
+/** O STL anexado, com a prévia 3D e a análise calculadas fora do thread da tela ([QuoteUiState.stlPreview]). */
+@Composable
+private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState, preview: StlPreview?) {
+    val space = MaterialTheme.spacing
+    val stlFile = form.stlFile
+    if (stlFile == null) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+            AppButton(stringResource(Res.string.quote_stl_attach), onClick = viewModel::pickStl)
+            HelpHint(HelpText(stringResource(Res.string.quote_help_stl)), stringResource(Res.string.quote_stl_hint_label))
+        }
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
+            Text(stlFile.fileName, style = MaterialTheme.appType.body)
+            AppButton(stringResource(Res.string.quote_stl_remove), onClick = viewModel::clearStlFile)
+        }
+        when (val current = preview) {
+            null, StlPreview.Loading -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                CircularProgressIndicator(modifier = Modifier.size(AppDimens.iconSize), strokeWidth = AppDimens.focusRingWidth)
+                Text(stringResource(Res.string.quote_stl_loading), style = MaterialTheme.appType.caption)
+            }
+
+            is StlPreview.TooComplex -> Text(
+                stringResource(Res.string.quote_stl_too_complex, current.triangleCount),
+                style = MaterialTheme.appType.caption,
+            )
+
+            StlPreview.Unreadable -> Text(
+                stringResource(Res.string.quote_stl_unreadable),
+                style = MaterialTheme.appType.caption,
+                color = MaterialTheme.colorScheme.error,
+            )
+
+            is StlPreview.Ready -> {
+                val viewerState = rememberStl3DViewerState(current.mesh)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .border(AppDimens.borderWidth, MaterialTheme.appColors.line, MaterialTheme.shapes.medium),
+                ) {
+                    Stl3DViewer(state = viewerState, mesh = current.mesh, modifier = Modifier.fillMaxWidth().height(AppDimens.stlViewerHeight))
+                }
+                val baseColor = MaterialTheme.colorScheme.primary
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                    AppButton(stringResource(Res.string.quote_stl_capture), onClick = {
+                        val snapshot = viewerState.captureSnapshot(baseColor, width = 1000, height = 1000)
+                        viewModel.setPhotoFromStlSnapshot(encodeImageBitmapToPng(snapshot))
+                    })
+                    HelpHint(HelpText(stringResource(Res.string.quote_help_stl_viewer)), stringResource(Res.string.quote_stl_viewer_label))
+                }
+
+                val analysis = current.analysis
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
+                    Text(stringResource(Res.string.quote_stl_difficulty, analysis.difficulty.label), style = MaterialTheme.appType.bodyStrong)
+                    HelpHint(
+                        HelpText(stringResource(Res.string.quote_help_stl_analysis), stringResource(Res.string.quote_help_stl_analysis_detail)),
+                        stringResource(Res.string.quote_stl_analysis_label),
+                    )
+                }
+                Text(
+                    stringResource(
+                        Res.string.quote_stl_measures,
+                        (analysis.surfaceAreaMm2 / 100).formatOneDecimal(),
+                        (analysis.volumeMm3 / 1000).formatOneDecimal(),
+                        (analysis.overhangPercentage / 100).toPercentText(),
+                        analysis.disconnectedComponents,
+                    ),
+                    style = MaterialTheme.appType.caption,
+                )
+                if (!analysis.isManifold) {
+                    Text(
+                        stringResource(Res.string.quote_stl_not_manifold),
+                        style = MaterialTheme.appType.caption,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Categoria do produto (decisão 102): texto livre com as já usadas sugeridas embaixo, filtradas pelo
+ * que se digita. Sem tela de cadastro: a lista de categorias é o que já foi digitado antes.
+ */
+@Composable
+private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit) {
+    val matches = suggestions.filter { it.contains(value.trim(), ignoreCase = true) && !it.equals(value.trim(), ignoreCase = true) }
+    AppSuggestField(
+        label = stringResource(Res.string.quote_details_category),
+        value = value,
+        onValueChange = onValueChange,
+        suggestions = matches,
+        suggestionLabel = { it },
+        onChoose = onValueChange,
+        placeholder = stringResource(Res.string.quote_details_category_placeholder),
+        help = HelpText(stringResource(Res.string.quote_help_category)),
+    )
+}

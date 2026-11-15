@@ -1,5 +1,16 @@
 package com.threedreport.app.ui.quote
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_save
+import _3dreport.composeapp.generated.resources.quote_deadline_days
+import _3dreport.composeapp.generated.resources.quote_deadline_none
+import _3dreport.composeapp.generated.resources.quote_deadline_overdue
+import _3dreport.composeapp.generated.resources.quote_deadline_pick
+import _3dreport.composeapp.generated.resources.quote_deadline_title
+import _3dreport.composeapp.generated.resources.quote_deadline_unset
+import _3dreport.composeapp.generated.resources.quote_deadline_until
+import _3dreport.composeapp.generated.resources.quote_deadline_use
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -18,12 +29,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.epochDayToUtcMillis
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.utcMillisToEpochDay
 import com.threedreport.app.platform.weekdayName
+import com.threedreport.app.ui.theme.spacing
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Atalhos de prazo, em dias a partir de hoje. O vendedor pensa em "uma semana", não em "dia 30";
@@ -46,41 +58,41 @@ fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
     val today = todayEpochDay()
     var showCalendar by remember { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
             QUICK_DAYS.forEach { days ->
                 FilterChip(
                     selected = epochDay == today + days,
                     onClick = { onChange(today + days) },
-                    label = { Text("+$days dias") },
+                    label = { Text(stringResource(Res.string.quote_deadline_days, days)) },
                 )
             }
             FilterChip(
                 // Marcado quando a data veio do calendário e não bate com nenhum atalho.
                 selected = epochDay != null && QUICK_DAYS.none { epochDay == today + it },
                 onClick = { showCalendar = true },
-                label = { Text("Escolher data…") },
+                label = { Text(stringResource(Res.string.quote_deadline_pick)) },
             )
             if (epochDay != null) {
-                FilterChip(selected = false, onClick = { onChange(null) }, label = { Text("Sem prazo") })
+                FilterChip(selected = false, onClick = { onChange(null) }, label = { Text(stringResource(Res.string.quote_deadline_none)) })
             }
         }
 
         when {
             epochDay == null -> Text(
-                "Sem prazo definido — não aparece no PDF nem na mensagem.",
+                stringResource(Res.string.quote_deadline_unset),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             epochDay < today -> Text(
-                "Entrega até ${formatDate(epochDay)} (${weekdayName(epochDay)}) — essa data já passou.",
+                stringResource(Res.string.quote_deadline_overdue, formatDate(epochDay), weekdayName(epochDay)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
 
             else -> Text(
-                "Entrega até ${formatDate(epochDay)} (${weekdayName(epochDay)})",
+                stringResource(Res.string.quote_deadline_until, formatDate(epochDay), weekdayName(epochDay)),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -103,9 +115,9 @@ fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
                         showCalendar = false
                     },
                     enabled = state.selectedDateMillis != null,
-                ) { Text("Usar esta data") }
+                ) { Text(stringResource(Res.string.quote_deadline_use)) }
             },
-            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text("Cancelar") } },
+            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text(stringResource(Res.string.common_cancel)) } },
         ) {
             DatePicker(state = state, showModeToggle = false)
         }
@@ -114,7 +126,7 @@ fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
 
 /**
  * Diálogo "Prazo de entrega" do Histórico: muda só a data, sem abrir a edição completa do
- * orçamento — é o caminho natural quando o cliente demorou a responder e o prazo venceu.
+ * orçamento é o caminho natural quando o cliente demorou a responder e o prazo venceu.
  */
 @Composable
 fun DeliveryDateDialog(quoteName: String, initial: Long?, onDismiss: () -> Unit, onSave: (Long?) -> Unit) {
@@ -122,14 +134,14 @@ fun DeliveryDateDialog(quoteName: String, initial: Long?, onDismiss: () -> Unit,
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Prazo de entrega") },
+        title = { Text(stringResource(Res.string.quote_deadline_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm)) {
                 Text(quoteName, style = MaterialTheme.typography.bodyMedium)
                 DeliveryDatePicker(epochDay = epochDay, onChange = { epochDay = it })
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(epochDay) }) { Text("Salvar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        confirmButton = { TextButton(onClick = { onSave(epochDay) }) { Text(stringResource(Res.string.common_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.common_cancel)) } },
     )
 }

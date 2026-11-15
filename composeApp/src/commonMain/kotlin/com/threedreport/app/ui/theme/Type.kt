@@ -5,6 +5,7 @@ import _3dreport.composeapp.generated.resources.inter_medium
 import _3dreport.composeapp.generated.resources.inter_regular
 import _3dreport.composeapp.generated.resources.inter_semibold
 import _3dreport.composeapp.generated.resources.space_grotesk
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -21,6 +22,9 @@ import org.jetbrains.compose.resources.Font
 
 /** Algarismos tabulares da própria fonte: números de dinheiro, peso e tempo alinham em coluna. */
 const val TABULAR_FIGURES = "tnum"
+
+/** O preço grande do painel de resultado encolhe de 52 até 28 pra caber um valor longo numa linha só. */
+val displayPriceAutoSize: TextAutoSize = TextAutoSize.StepBased(minFontSize = 28.sp, maxFontSize = 52.sp, stepSize = 2.sp)
 
 /** Os estilos nomeados do sistema de design (tabela "Tipografia" de docs/design-system.md). */
 @Immutable
