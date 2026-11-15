@@ -28,6 +28,7 @@
     <string name="common_error_positive">Precisa ser maior que zero</string>
     <string name="common_error_whole_number">Digite um número inteiro</string>
     <string name="common_close">Fechar</string>
+    <string name="common_undo">Desfazer</string>
     <string name="common_delete_in_use">%1$s está em %2$s.</string>
     <string name="common_delete_in_use_hint">Arquivar tira da lista do Orçamento e mantém o cadastro. Dá pra restaurar depois.</string>
     <plurals name="common_orders_or_products">
@@ -609,4 +610,64 @@
     <string name="quote_compare_caption_all">Todas as impressões na mesma máquina, pelo preço que a sua margem dá.</string>
     <string name="quote_compare_caption_one">Mesma peça, trocando só a máquina.</string>
     <string name="quote_help_compare">A diferença vem do consumo de energia, da manutenção e do retorno do investimento de cada impressora.</string>
+
+    <!-- Pedidos e Catálogo: situação, prazo e período (as duas telas dividem o prefixo history_) -->
+    <string name="orders_status_quoted">Orçado</string>
+    <string name="orders_status_approved">Aprovado</string>
+    <string name="orders_status_printing">Imprimindo</string>
+    <string name="orders_status_ready">Pronto</string>
+    <string name="orders_status_delivered">Entregue</string>
+    <string name="orders_status_cancelled">Cancelado</string>
+    <string name="orders_deadline_today">Hoje</string>
+    <string name="orders_deadline_until">até %1$s</string>
+    <string name="orders_deadline_was">Prazo era %1$s</string>
+    <string name="orders_deadline_expired">Prazo vencido em %1$s</string>
+    <plurals name="orders_deadline_late">
+        <item quantity="one">Atrasado %1$d dia</item>
+        <item quantity="other">Atrasado %1$d dias</item>
+    </plurals>
+    <string name="history_period_all">Qualquer período</string>
+    <string name="history_period_last_7_days">Últimos 7 dias</string>
+    <string name="history_period_last_30_days">Últimos 30 dias</string>
+    <string name="history_period_this_month">Este mês</string>
+    <string name="history_period_last_month">Mês passado</string>
+    <string name="history_period_this_year">Este ano</string>
+
+    <!-- Pedidos e Catálogo: avisos -->
+    <string name="history_notice_repriced">Preço de "%1$s" atualizado.</string>
+    <string name="history_notice_status_moved">"%1$s" foi para %2$s e saiu da lista filtrada.</string>
+    <string name="history_notice_see_all">Ver todos</string>
+    <string name="history_notice_status_cancelled">"%1$s" cancelado.</string>
+    <string name="history_notice_deleted">"%1$s" excluído.</string>
+    <string name="history_notice_converted">"%1$s" virou pedido.</string>
+    <string name="history_notice_see_orders">Ver pedidos</string>
+    <string name="history_notice_details_saved">Detalhes de "%1$s" salvos.</string>
+    <string name="history_notice_photo_saved">Foto salva.</string>
+    <string name="history_notice_stl_saved">STL salvo.</string>
+    <string name="history_error_pick_failed">%1$s</string>
+    <string name="history_error_photo_unreadable">Não consegui abrir %1$s como imagem. Use PNG ou JPG.</string>
+
+    <!-- Catálogo: o aviso do cartão quando o preço de hoje não é o guardado -->
+    <string name="history_reprice_filament_missing">O filamento %1$s não está mais cadastrado.</string>
+    <string name="history_reprice_printer_missing">A impressora %1$s não está mais cadastrada.</string>
+    <string name="history_reprice_printer_not_saved">Este produto não guardou a impressora.</string>
+    <string name="history_reprice_channel_missing">O canal %1$s não está mais cadastrado.</string>
+    <string name="history_reprice_consumable_missing">O insumo %1$s não está mais cadastrado.</string>
+    <string name="history_reprice_invalid">Não deu pra recalcular com os cadastros de hoje.</string>
+    <string name="history_reprice_suffix">Abra em Editar cálculo pra escolher de novo e conferir o preço.</string>
+
+    <!-- Pedidos e Catálogo: editar detalhes -->
+    <string name="history_details_title">Detalhes de "%1$s"</string>
+    <string name="history_details_help">O preço não muda aqui.</string>
+    <string name="history_details_help_detail">Pra mudar peso, tempo, filamento ou preço, use Editar cálculo.</string>
+    <string name="history_details_field_name">Nome da peça</string>
+    <string name="history_details_field_client">Cliente</string>
+    <string name="history_details_field_contact">Contato do cliente</string>
+    <string name="history_details_placeholder_contact">WhatsApp: (11) 99999-0000</string>
+    <string name="history_details_field_category">Categoria</string>
+    <string name="history_details_field_link">Link do modelo</string>
+    <string name="history_details_photo_pick">Escolher foto</string>
+    <string name="history_details_photo_change">Trocar foto</string>
+    <string name="history_details_photo_remove">Remover foto</string>
+    <string name="history_details_photo_alt">Foto da peça</string>
 </resources>

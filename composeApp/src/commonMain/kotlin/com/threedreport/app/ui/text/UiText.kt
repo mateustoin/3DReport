@@ -14,7 +14,8 @@ import org.jetbrains.compose.resources.stringResource
  * [resolve] (dentro de uma corrotina, pra um aviso). Por ser dado puro, o teste do ViewModel compara
  * `UiText.Res(Res.string.chave)` em vez de uma frase.
  *
- * Os argumentos são `String` ou números, nunca outro [UiText].
+ * Os argumentos são `String`, números ou outro [UiText] (o nome de uma situação dentro de um aviso): o de dentro
+ * é resolvido antes, na mesma hora do de fora.
  */
 sealed interface UiText {
     data class Res(val resource: StringResource, val args: List<Any> = emptyList()) : UiText
@@ -31,14 +32,14 @@ fun uiText(resource: StringResource, vararg args: Any): UiText = UiText.Res(reso
 /** O texto, pra desenhar numa tela. */
 @Composable
 fun UiText.asString(): String = when (this) {
-    is UiText.Res -> stringResource(resource, *args.toTypedArray())
-    is UiText.Plural -> pluralStringResource(resource, quantity, *args.toTypedArray())
+    is UiText.Res -> stringResource(resource, *args.map { if (it is UiText) it.asString() else it }.toTypedArray())
+    is UiText.Plural -> pluralStringResource(resource, quantity, *args.map { if (it is UiText) it.asString() else it }.toTypedArray())
     is UiText.Joined -> parts.map { it.asString() }.joinToString(separator)
 }
 
 /** O texto, fora de um `@Composable` (por exemplo, o aviso que vai pra barra de mensagens). */
 suspend fun UiText.resolve(): String = when (this) {
-    is UiText.Res -> getString(resource, *args.toTypedArray())
-    is UiText.Plural -> getPluralString(resource, quantity, *args.toTypedArray())
+    is UiText.Res -> getString(resource, *args.map { if (it is UiText) it.resolve() else it }.toTypedArray())
+    is UiText.Plural -> getPluralString(resource, quantity, *args.map { if (it is UiText) it.resolve() else it }.toTypedArray())
     is UiText.Joined -> parts.map { it.resolve() }.joinToString(separator)
 }

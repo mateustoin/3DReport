@@ -58,7 +58,7 @@ class AppViewModels(
     // pra busca, filtros e seleção de uma não vazarem pra outra.
     private fun newHistoryViewModel(kind: QuoteKind) = QuoteHistoryViewModel(
         container.quoteHistory, container.branding,
-        container.filaments, container.printers, container.settings, container.salesChannels,
+        container.filaments, container.printers, container.settings, container.salesChannels, container.preferences,
         clientRepository = container.clients,
         scope = scope,
         background = Dispatchers.Default,
@@ -66,6 +66,7 @@ class AppViewModels(
         kind = kind,
         showOrders = { showOrders() },
         consumableRepository = container.consumables,
+        currency = { container.currency.currency.value },
     )
 
     val ordersViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.ORDER) }

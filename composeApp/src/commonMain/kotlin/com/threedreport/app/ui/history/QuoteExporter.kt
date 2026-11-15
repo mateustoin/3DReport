@@ -1,11 +1,13 @@
 package com.threedreport.app.ui.history
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.export_busy_catalog
 import _3dreport.composeapp.generated.resources.export_busy_image
 import _3dreport.composeapp.generated.resources.export_busy_pdf
 import _3dreport.composeapp.generated.resources.export_copied
 import _3dreport.composeapp.generated.resources.export_copy_failed
 import _3dreport.composeapp.generated.resources.export_failed_generate
+import _3dreport.composeapp.generated.resources.export_saved_catalog
 import _3dreport.composeapp.generated.resources.export_saved_image
 import _3dreport.composeapp.generated.resources.export_saved_pdf
 import _3dreport.composeapp.generated.resources.export_whatsapp_copied
@@ -19,6 +21,7 @@ import com.threedreport.app.platform.ResolvedPdfBranding
 import com.threedreport.app.platform.SaveResult
 import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.imageBrandLine
+import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
@@ -146,6 +149,22 @@ class QuoteExporter(
                     report(result, savedMessage)
                 }
             }
+        }
+    }
+
+    /** Vários orçamentos num PDF só, um por página. [onSaved] só roda se o arquivo foi gravado. */
+    fun exportQuotesPdf(quotes: List<SavedQuote>, onSaved: () -> Unit = {}) {
+        saveGenerated("${sanitizeFileName("Orçamentos (${quotes.size} itens)")}.pdf", uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf), onSaved) {
+            val branding = resolvePdfBranding()
+            renderSavedQuotesPdf(quotes.map { QuoteExportItem(it, photoBytes(it)) }, branding.brandName, branding.footerText, branding.options)
+        }
+    }
+
+    /** O catálogo pra divulgação: vários produtos por página, com foto, não um orçamento formal por página. */
+    fun exportCatalogPdf(products: List<SavedQuote>, onSaved: () -> Unit = {}) {
+        saveGenerated("${sanitizeFileName("Catálogo (${products.size} itens)")}.pdf", uiText(Res.string.export_busy_catalog), uiText(Res.string.export_saved_catalog), onSaved) {
+            val branding = resolvePdfBranding()
+            renderCatalogPdf(products.map { QuoteExportItem(it, photoBytes(it)) }, branding.brandName, branding.footerText, branding.options)
         }
     }
 

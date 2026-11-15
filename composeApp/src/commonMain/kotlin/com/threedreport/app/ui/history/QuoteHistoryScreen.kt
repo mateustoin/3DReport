@@ -53,9 +53,8 @@ import com.threedreport.app.platform.formatDateTime
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.components.ObserveUiNotices
 import com.threedreport.app.ui.components.OverdueExportDialog
-import com.threedreport.app.ui.components.OverdueItem
-import com.threedreport.app.ui.components.ShowNotice
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.filaments.displayText
 import com.threedreport.app.ui.format.NumericText
@@ -88,46 +87,30 @@ fun QuoteHistoryScreen(
     onCopyToCatalog: (SavedQuote) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val savedQuotes by viewModel.savedQuotes.collectAsState()
-    val copiedId by viewModel.copiedId.collectAsState()
-    val selectedIds by viewModel.selectedIds.collectAsState()
-    val filter by viewModel.filter.collectAsState()
+    val state by viewModel.uiState.collectAsState()
+    ObserveUiNotices(viewModel.notices)
+    val filter = state.filter
+    val copiedId = state.copiedId
+    val selectedIds = state.selectedIds
     var viewMode by remember { mutableStateOf(HistoryViewMode.LIST) }
-    var showAllDelivered by remember { mutableStateOf(false) }
-    var printSettingsFor by remember { mutableStateOf<SavedQuote?>(null) }
-    val pendingExport by viewModel.pendingExport.collectAsState()
-    val deliveryDateEditing by viewModel.deliveryDateEditing.collectAsState()
-    val detailsEditing by viewModel.detailsEditing.collectAsState()
-    val repricing by viewModel.repricing.collectAsState()
-    val notice by viewModel.notice.collectAsState()
-    val busy by viewModel.busy.collectAsState()
-    val clients by viewModel.clients.collectAsState()
-    val today = viewModel.currentEpochDay()
+    val showAllDelivered = state.showAllDelivered
+    val pendingExport = state.pendingExport
+    val deliveryDateEditing = state.deliveryDateEditing
+    val detailsEditing = state.details
+    val repricing = state.repricing
+    val busy = state.busy
+    val clients = state.clients
+    val today = state.today
     val showingProducts = filter.kind == QuoteKind.PRODUCT
-    // Coletados pra o aviso "Custos mudaram" dos produtos acompanhar os cadastros na hora.
-    val filaments by viewModel.filaments.collectAsState()
-    val printers by viewModel.printers.collectAsState()
-    val settings by viewModel.settings.collectAsState()
-    val salesChannels by viewModel.salesChannels.collectAsState()
-    val consumables by viewModel.consumables.collectAsState()
     // Produto não tem andamento, então não tem Kanban: a lista de produtos é sempre lista.
     val effectiveViewMode = if (showingProducts) HistoryViewMode.LIST else viewMode
 
-    // Recalculado quando a lista ou o filtro mudam, e não a cada redesenho (decisão 108).
-    val visibleQuotes = remember(savedQuotes, filter) { viewModel.visibleQuotes(savedQuotes, filter) }
-    val categories = remember(savedQuotes) { viewModel.productCategories(savedQuotes) }
-    val soldProductIds = remember(savedQuotes) { viewModel.soldProductIds(savedQuotes) }
-    val repriced = remember(savedQuotes, filaments, printers, settings, salesChannels, consumables) {
-        savedQuotes.filterNot { it.isOrder }.associate { it.id to viewModel.repriceFor(it, filaments, printers, settings, salesChannels, consumables) }
-    }
-    val selectedVisibleCount = visibleQuotes.count { it.id in selectedIds }
+    val visibleQuotes = state.rows.map { it.quote }
+    val categories = state.categories
+    val repriced = remember(state.rows) { state.rows.filter { !it.quote.isOrder }.associate { it.quote.id to viewModel.repriceFor(it.quote) } }
+    val rowsById = state.rows.associateBy { it.quote.id }
+    val selectedVisibleCount = state.selectedVisibleCount
 
-    // A categoria escolhida sumiu (o último produto dela foi excluído ou mudou de categoria): volta pra
-    // "Todas", senão a lista ficaria vazia com um filtro que nem aparece mais nos chips.
-    LaunchedEffect(categories, filter.category) {
-        val chosen = filter.category as? CategoryFilter.Named ?: return@LaunchedEffect
-        if (categories.none { it.equals(chosen.name, ignoreCase = true) }) viewModel.setCategoryFilter(CategoryFilter.All)
-    }
     LaunchedEffect(copiedId) {
         if (copiedId == null) return@LaunchedEffect
         delay(2000)
@@ -142,11 +125,11 @@ fun QuoteHistoryScreen(
             onDuplicate = { onDuplicateQuote(savedQuote) },
             onSell = if (isProduct) ({ onSellProduct(savedQuote) }) else null,
             onCopyToCatalog = if (isProduct) null else ({ onCopyToCatalog(savedQuote) }),
-            onConvertToOrder = if (viewModel.canConvertToOrder(savedQuote, soldProductIds)) ({ viewModel.convertToOrder(savedQuote.id) }) else null,
+            onConvertToOrder = if (rowsById[savedQuote.id]?.canConvertToOrder == true) ({ viewModel.convertToOrder(savedQuote.id) }) else null,
             onReprice = (repriced[savedQuote.id] as? RepriceResult.Repriced)?.takeIf { it.changed }?.let { { viewModel.startRepricing(savedQuote) } },
             onStatusChange = if (isProduct) null else ({ status -> viewModel.updateStatus(savedQuote.id, status) }),
             onEditDeliveryDate = if (isProduct) null else ({ viewModel.startEditingDeliveryDate(savedQuote) }),
-            onPrintSettings = if (savedQuote.quote.prints.size == 1) ({ printSettingsFor = savedQuote }) else null,
+            onPrintSettings = if (savedQuote.quote.prints.size == 1) ({ viewModel.startEditingPrintSettings(savedQuote) }) else null,
             onDownloadPhoto = savedQuote.photoFileName?.let { { viewModel.downloadPhoto(savedQuote) } },
             onDownloadStl = savedQuote.stlFileName?.let { { viewModel.downloadStl(savedQuote) } },
             onExportPdf = { viewModel.exportPdf(savedQuote) },
@@ -160,7 +143,7 @@ fun QuoteHistoryScreen(
     val header: @Composable () -> Unit = {
         HistoryHeader(
             viewModel = viewModel,
-            savedQuotes = savedQuotes,
+            state = state,
             filter = filter,
             showingProducts = showingProducts,
             viewMode = viewMode,
@@ -195,7 +178,7 @@ fun QuoteHistoryScreen(
                             }
                         }
                     }
-                    if (savedQuotes.any { it.kind == filter.kind } && visibleQuotes.isEmpty()) {
+                    if (state.hasItems && visibleQuotes.isEmpty()) {
                         item(key = "empty") { EmptyHistory(showingProducts) }
                     }
                     items(visibleQuotes, key = { it.id }) { savedQuote ->
@@ -217,14 +200,8 @@ fun QuoteHistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     header()
-                    val nowMillis = remember(savedQuotes) { viewModel.nowMillis() }
-                    val kanbanQuotes = remember(savedQuotes, filter, showAllDelivered) {
-                        viewModel.kanbanQuotes(savedQuotes, filter, showAllDelivered, nowMillis)
-                    }
-                    val hiddenDelivered = remember(savedQuotes, filter, kanbanQuotes) {
-                        viewModel.kanbanQuotes(savedQuotes, filter, true, nowMillis).count { it.status == OrderStatus.ENTREGUE } -
-                            kanbanQuotes.count { it.status == OrderStatus.ENTREGUE }
-                    }
+                    val kanbanQuotes = state.columns.flatMap { column -> column.cards.map { it.quote } }
+                    val hiddenDelivered = state.hiddenDelivered
                     KanbanBoard(
                         quotes = kanbanQuotes,
                         loadThumbnail = viewModel::photoThumbnail,
@@ -233,17 +210,17 @@ fun QuoteHistoryScreen(
                         todayEpochDay = today,
                         deliveredFooter = {
                             when {
-                                hiddenDelivered > 0 -> TextButton(onClick = { showAllDelivered = true }) {
-                                    Text("Ver mais $hiddenDelivered entregues (mais de ${QuoteHistoryViewModel.RECENT_DELIVERED_DAYS} dias)")
+                                hiddenDelivered > 0 -> TextButton(onClick = { viewModel.setShowAllDelivered(true) }) {
+                                    Text("Ver mais $hiddenDelivered entregues (mais de $RECENT_DELIVERED_DAYS dias)")
                                 }
 
-                                showAllDelivered -> TextButton(onClick = { showAllDelivered = false }) {
-                                    Text("Mostrar só os últimos ${QuoteHistoryViewModel.RECENT_DELIVERED_DAYS} dias")
+                                showAllDelivered -> TextButton(onClick = { viewModel.setShowAllDelivered(false) }) {
+                                    Text("Mostrar só os últimos $RECENT_DELIVERED_DAYS dias")
                                 }
                             }
                         },
                     )
-                    val cancelled = savedQuotes.count { it.isOrder && it.status == OrderStatus.CANCELADO }
+                    val cancelled = state.cancelledCount
                     if (cancelled > 0) {
                         Text(
                             "$cancelled cancelado(s) ficam fora do quadro. Na lista, filtre pelo status Cancelado pra ver.",
@@ -289,27 +266,25 @@ fun QuoteHistoryScreen(
         )
     }
 
-    detailsEditing?.let { savedQuote -> QuoteDetailsDialog(savedQuote, viewModel, clients) }
+    detailsEditing?.let { editing -> QuoteDetailsDialog(editing, viewModel, clients) }
 
-    printSettingsFor?.let { savedQuote ->
+    state.printSettingsEditing?.let { savedQuote ->
         PrintSettingsDialog(
             initial = savedQuote.printSettings ?: PrintSettings(),
-            onDismiss = { printSettingsFor = null },
-            onSave = { settings -> viewModel.updatePrintSettings(savedQuote.id, settings.takeUnless { it.isEmpty }) },
+            onDismiss = viewModel::cancelEditingPrintSettings,
+            onSave = viewModel::savePrintSettings,
         )
     }
 
-    pendingExport?.let { pending -> OverdueExportDialog(pending, today, viewModel) }
+    pendingExport?.let { pending -> OverdueExportDialog(pending, viewModel) }
 
     repricing?.let { RepriceDialog(it, viewModel) }
-
-    ShowNotice(notice, viewModel::consumeNotice)
 }
 
 @Composable
 private fun HistoryHeader(
     viewModel: QuoteHistoryViewModel,
-    savedQuotes: List<SavedQuote>,
+    state: HistoryUiState,
     filter: HistoryFilter,
     showingProducts: Boolean,
     viewMode: HistoryViewMode,
@@ -320,7 +295,7 @@ private fun HistoryHeader(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(if (showingProducts) "Catálogo" else "Pedidos", style = MaterialTheme.typography.titleLarge)
 
-        if (savedQuotes.none { it.kind == filter.kind }) {
+        if (!state.hasItems) {
             Text(
                 if (showingProducts) {
                     "Nenhum produto no catálogo ainda. No Orçamento, escolha \"Produto do catálogo\" antes de " +
@@ -375,7 +350,7 @@ private fun HistoryHeader(
             showStatusFilter = effectiveViewMode == HistoryViewMode.LIST && !showingProducts,
             showPeriodFilter = effectiveViewMode == HistoryViewMode.LIST,
             categories = categories,
-            hasUncategorized = savedQuotes.any { !it.isOrder && it.category == null },
+            hasUncategorized = state.hasUncategorized,
         )
     }
 }
@@ -425,7 +400,6 @@ private fun RepriceNotice(result: RepriceResult, currencyText: (Double) -> Strin
 /** Antes e depois de atualizar o preço de um produto, pra confirmar antes de gravar. */
 @Composable
 private fun RepriceDialog(repricing: Repricing, viewModel: QuoteHistoryViewModel) {
-    val before = repricing.product.quote
     val after = repricing.newQuote
     val currency = repricing.product.currency
     val money: (Double) -> String = { it.toCurrencyText(currency) }
@@ -439,9 +413,9 @@ private fun RepriceDialog(repricing: Repricing, viewModel: QuoteHistoryViewModel
                         "medidas da peça.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                BeforeAfterLine("Preço calculado", money(before.tableSalePrice ?: before.salePrice), money(after.tableSalePrice ?: after.salePrice))
-                BeforeAfterLine("Custo de produção", money(before.productionCost), money(after.productionCost))
-                BeforeAfterLine("Lucro", money(before.profit), money(after.profit))
+                BeforeAfterLine("Preço calculado", money(repricing.priceBefore), money(repricing.priceAfter))
+                BeforeAfterLine("Custo de produção", money(repricing.costBefore), money(repricing.costAfter))
+                BeforeAfterLine("Lucro", money(repricing.profitBefore), money(repricing.profitAfter))
                 if (after.isNegotiated) {
                     Text(
                         "Preço anunciado: ${money(after.salePrice)} (mantido). Pra mudar, abra o produto em \"Editar cálculo\".",
@@ -473,11 +447,9 @@ private fun BeforeAfterLine(label: String, before: String, after: String) {
 
 /** O aviso de prazo vencido de Pedidos: o diálogo é o mesmo do Orçamento ([OverdueExportDialog]). */
 @Composable
-private fun OverdueExportDialog(pending: PendingExport, todayEpochDay: Long, viewModel: QuoteHistoryViewModel) {
+private fun OverdueExportDialog(pending: PendingExport, viewModel: QuoteHistoryViewModel) {
     OverdueExportDialog(
-        overdue = pending.quotes
-            .filter { it.isDeliveryOverdue(todayEpochDay) }
-            .map { OverdueItem(it.name, it.deliveryDateEpochDay!!) },
+        overdue = pending.overdue,
         onChangeDate = viewModel::changeDateOfPendingExport,
         onSendAnyway = viewModel::confirmPendingExport,
         onCancel = viewModel::dismissPendingExport,
