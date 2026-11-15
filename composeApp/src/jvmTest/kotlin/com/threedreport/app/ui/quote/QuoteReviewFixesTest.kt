@@ -1,10 +1,13 @@
 package com.threedreport.app.ui.quote
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.export_copied
+import _3dreport.composeapp.generated.resources.export_copy_failed
 import _3dreport.composeapp.generated.resources.export_open_folder
 import _3dreport.composeapp.generated.resources.export_saved_pdf
 import _3dreport.composeapp.generated.resources.export_whatsapp_copied
 import _3dreport.composeapp.generated.resources.quote_notice_print_removed
+import _3dreport.composeapp.generated.resources.quote_result_deadline_overdue
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
@@ -14,6 +17,8 @@ import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.FakePlatform
 import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.resolve
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.OrderStatus
 import kotlinx.coroutines.flow.first
@@ -126,6 +131,31 @@ class QuoteReviewFixesTest {
         assertEquals("50", row.weightText)
         assertTrue(row.lengthText.isNotBlank() && row.lengthText != "12")
         assertNotNull(viewModel.uiState.value.result.quote)
+    }
+
+    @Test
+    fun copyingTheSentTextTellsWhetherItWorked() {
+        val viewModel = viewModel()
+        viewModel.sendToClient()
+
+        viewModel.sendCopy()
+        assertEquals(uiText(Res.string.export_copied), viewModel.awaitNotice().message)
+        assertEquals(1, platform.copied.size)
+
+        platform.clipboardWorks = false
+        viewModel.sendCopy()
+        val failed = viewModel.awaitNotice()
+        assertEquals(uiText(Res.string.export_copy_failed), failed.message)
+        assertTrue(failed.isError)
+    }
+
+    @Test
+    fun theOverdueDeadlineLineHasARealPlural() = runBlocking {
+        val one = UiText.Plural(Res.plurals.quote_result_deadline_overdue, 1, listOf("01/10", "quinta", 1)).resolve()
+        val many = UiText.Plural(Res.plurals.quote_result_deadline_overdue, 45, listOf("01/10", "quinta", 45)).resolve()
+
+        assertEquals("Entrega 01/10 (quinta) · atrasado 1 dia", one)
+        assertEquals("Entrega 01/10 (quinta) · atrasado 45 dias", many)
     }
 
     private companion object {

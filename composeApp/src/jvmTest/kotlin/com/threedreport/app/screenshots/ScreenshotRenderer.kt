@@ -137,6 +137,39 @@ class ScreenshotRenderer {
             )
         }
 
+        // Preço combinado abaixo do mínimo do pedido: o aviso do painel (aviso, não bloqueio).
+        val settingsBefore = container.settings.settings.value
+        container.settings.update(settingsBefore.copy(minimumOrderPrice = 250.0))
+        renderAppPng(File(outDir, "orcamento-abaixo-minimo.png"), afterSettle = { it.clickByText("Negociar") }) {
+            App(
+                container,
+                startAt = AppDestination.QUOTE,
+                prepareQuote = { vm ->
+                    fillDraftQuote(vm)
+                    vm.setTargetTotal("160")
+                },
+            )
+        }
+        container.settings.update(settingsBefore)
+
+        // O formulário rolado até o fim: as seções Venda e Detalhes.
+        renderAppPng(File(outDir, "orcamento-venda.png"), afterSettle = { it.scrollAllToEnd() }) {
+            App(
+                container,
+                startAt = AppDestination.QUOTE,
+                prepareQuote = { vm -> fillDraftQuote(vm) },
+            )
+        }
+
+        // O diálogo de configurações de impressão de uma impressão.
+        renderAppPng(File(outDir, "orcamento-configuracoes.png"), afterSettle = { it.clickByText("Configurações de impressão") }) {
+            App(
+                container,
+                startAt = AppDestination.QUOTE,
+                prepareQuote = { vm -> fillDraftQuote(vm) },
+            )
+        }
+
         // O mesmo Orçamento no tema escuro, pra conferir o tema novo nos dois.
         container.theme.update(ThemeMode.DARK)
         renderAppPng(File(outDir, "orcamento-escuro.png")) {
@@ -144,6 +177,17 @@ class ScreenshotRenderer {
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm -> fillDraftQuote(vm) },
+            )
+        }
+        // E o painel de negociação no escuro, onde o azul-marinho e o campo se confundem mais fácil.
+        renderAppPng(File(outDir, "orcamento-negociar-escuro.png"), afterSettle = { it.clickByText("Negociar") }) {
+            App(
+                container,
+                startAt = AppDestination.QUOTE,
+                prepareQuote = { vm ->
+                    fillDraftQuote(vm)
+                    vm.setTargetTotal("160")
+                },
             )
         }
         container.theme.update(ThemeMode.LIGHT)

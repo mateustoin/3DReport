@@ -5,6 +5,7 @@ import _3dreport.composeapp.generated.resources.quote_compare_title
 import _3dreport.composeapp.generated.resources.quote_result_all_out_of_stock
 import _3dreport.composeapp.generated.resources.quote_result_below_minimum
 import _3dreport.composeapp.generated.resources.quote_result_break_even
+import _3dreport.composeapp.generated.resources.quote_result_calculated
 import _3dreport.composeapp.generated.resources.quote_result_consumption
 import _3dreport.composeapp.generated.resources.quote_result_deadline
 import _3dreport.composeapp.generated.resources.quote_result_deadline_overdue
@@ -65,6 +66,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import com.threedreport.app.platform.formatDate
+import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.AppButton
@@ -218,7 +220,7 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
         Text(stringResource(Res.string.quote_result_overline).uppercase(), style = MaterialTheme.appType.overline, color = colors.onNavyMuted)
         BasicText(
             grandTotal.toMoney(),
-            style = MaterialTheme.appType.displayPrice.copy(color = Color.White),
+            style = MaterialTheme.appType.displayPrice.copy(color = colors.onNavy),
             maxLines = 1,
             autoSize = displayPriceAutoSize,
         )
@@ -241,7 +243,11 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
         } else {
             null
         }
-        val consumption = stringResource(Res.string.quote_result_consumption, quote.filamentTotals().joinToString(" · ") { it.displayText() })
+        // Um carretel por linha: numa linha só, um "· Preto 44,7 g" podia cair sozinho no começo da seguinte.
+        val consumptionLines = quote.filamentTotals().map { stringResource(Res.string.quote_result_consumption, it.displayText()) }
+        // Preço combinado sem sinal nenhum no painel parecia o preço de sempre: o calculado fica logo abaixo do número.
+        val calculatedLine = result.calculatedTotal?.takeIf { quote.isNegotiated }
+            ?.let { stringResource(Res.string.quote_result_calculated, it.toMoney()) }
         val printsLine = if (quote.prints.size > 1) {
             stringResource(Res.string.quote_result_prints, quote.prints.size, quote.totalPrintTimeMinutes.minutesToDurationText())
         } else {
@@ -249,12 +255,14 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
         }
         // O mesmo prazo que sai no PDF, pra ver na nota o que o cliente vai ler.
         val deadlineLine = saveForm.deliveryDateEpochDay.takeUnless { input.isProduct }?.let {
-            val overdue = it < todayEpochDay()
-            line(
-                stringResource(if (overdue) Res.string.quote_result_deadline_overdue else Res.string.quote_result_deadline, formatDate(it), weekdayName(it)),
-                if (overdue) colors.onNavyDanger else colors.onNavy,
-                FontWeight.Medium,
-            )
+            val daysLate = (todayEpochDay() - it).toInt()
+            val text = if (daysLate > 0) {
+                // A mesma linguagem do selo de prazo de Pedidos: a data curta e quanto já passou.
+                pluralStringResource(Res.plurals.quote_result_deadline_overdue, daysLate, formatShortDate(it), weekdayName(it), daysLate)
+            } else {
+                stringResource(Res.string.quote_result_deadline, formatDate(it), weekdayName(it))
+            }
+            line(text, if (daysLate > 0) colors.onNavyDanger else colors.onNavy, FontWeight.Medium)
         }
         val minimumLine = if (quote.minimumPriceApplied) stringResource(Res.string.quote_result_minimum_applied, quote.priceBeforeMinimum!!.toMoney()) else null
         // Reabrindo um orçamento (decisão 108): o preço salvo fica até mexerem no que muda o preço.
@@ -275,9 +283,10 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
             null
         }
         val lines = buildList {
+            calculatedLine?.let { add(line(it)) }
             unitsLine?.let { add(line(it)) }
             // Quanto sai de cada carretel, que é o que se confere no estoque.
-            add(line(consumption))
+            consumptionLines.forEach { add(line(it)) }
             printsLine?.let { add(line(it)) }
             deadlineLine?.let { add(it) }
             minimumLine?.let { add(line(it)) }
@@ -295,7 +304,7 @@ private fun StatBlocks(quote: Quote) {
     val breakEven = quote.breakEvenSalePrice + quote.extrasTotal
     Row(horizontalArrangement = Arrangement.spacedBy(space.sm)) {
         StatBlock(stringResource(Res.string.quote_result_profit), quote.profit.toMoney(), if (quote.profit < 0) colors.onNavyDanger else colors.amber, Modifier.weight(1f))
-        StatBlock(stringResource(Res.string.quote_result_break_even), breakEven.toMoney(), Color.White, Modifier.weight(1f))
+        StatBlock(stringResource(Res.string.quote_result_break_even), breakEven.toMoney(), colors.onNavy, Modifier.weight(1f))
     }
 }
 
@@ -323,6 +332,11 @@ private fun NegotiationNotes(quote: Quote, minimumOrderPrice: Double) {
         )
     }
     if (minimumOrderPrice > 0 && quote.isNegotiated && quote.salePrice < minimumOrderPrice) {
-        Text(stringResource(Res.string.quote_result_below_minimum, minimumOrderPrice.toMoney()), style = MaterialTheme.appType.caption, color = colors.amber)
+        Text(
+            stringResource(Res.string.quote_result_below_minimum, minimumOrderPrice.toMoney()),
+            style = MaterialTheme.appType.caption,
+            fontWeight = FontWeight.Medium,
+            color = colors.onNavy,
+        )
     }
 }

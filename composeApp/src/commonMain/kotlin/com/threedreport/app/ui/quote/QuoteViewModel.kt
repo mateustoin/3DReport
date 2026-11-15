@@ -939,7 +939,7 @@ class QuoteViewModel(
         return true
     }
 
-    /** O pedido que o último "Enviar pro cliente" gravou, pra os três jeitos de enviar. */
+    /** O pedido que o último "Enviar pro cliente" gravou, pra os quatro jeitos de enviar. */
     private fun sentQuote(): SavedQuote? = liveSent()?.savedQuote
 
     fun sendPdf() {
@@ -952,6 +952,10 @@ class QuoteViewModel(
 
     fun sendWhatsApp() {
         sentQuote()?.let { exporter?.openInWhatsApp(it) }
+    }
+
+    fun sendCopy() {
+        sentQuote()?.let { exporter?.copyText(it) }
     }
 
     /**

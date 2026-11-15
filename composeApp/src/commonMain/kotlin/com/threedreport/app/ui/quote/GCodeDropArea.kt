@@ -40,6 +40,7 @@ import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -84,7 +85,7 @@ private fun DropArea(importing: Boolean, multi: Boolean, onPick: () -> Unit) {
                 val outline = shape.createOutline(size, layoutDirection, this)
                 drawOutline(outline, colors.line, style = Stroke(width = dash.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))))
             }
-            .clickable(enabled = !importing, role = Role.Button, onClick = onPick),
+            .clickableAction(onClick = onPick, enabled = !importing, shape = shape),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(space.xs, Alignment.CenterHorizontally),
     ) {

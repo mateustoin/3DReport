@@ -66,6 +66,7 @@ import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.toMoney
@@ -138,8 +139,7 @@ internal fun Expander(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
         Row(
             modifier = Modifier
-                .clip(MaterialTheme.shapes.small)
-                .clickable(role = Role.Button) { open = !open }
+                .clickableAction(onClick = { open = !open }, onNavy = true)
                 .padding(vertical = space.xxs),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(space.xs),

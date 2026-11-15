@@ -2,14 +2,9 @@ package com.threedreport.app.ui.history
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,8 +13,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.AppMenu
+import com.threedreport.app.ui.components.AppMenuGroup
+import com.threedreport.app.ui.components.AppMenuItem
 import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.progressColor
@@ -68,82 +65,59 @@ fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Mo
 
     Box(modifier) {
         TextButton(onClick = { expanded = true }) { IconLabel(AppIcons.MoreVert, "Ações") }
-        DropdownMenu(expanded = expanded, onDismissRequest = close) {
+        AppMenu(expanded = expanded, onDismiss = close) {
             val onStatusChange = actions.onStatusChange
             if (choosingStatus && onStatusChange != null) {
-                MenuItem("Voltar", AppIcons.Close) { choosingStatus = false }
+                AppMenuItem("Voltar", { choosingStatus = false }, AppIcons.Close)
                 HorizontalDivider()
                 OrderStatus.entries.forEach { status ->
-                    DropdownMenuItem(
-                        text = { Text(if (status == savedQuote.status) "${status.label} (atual)" else status.label) },
-                        leadingIcon = { Box(Modifier.size(10.dp).background(status.progressColor(), CircleShape)) },
-                        enabled = status != savedQuote.status,
+                    AppMenuItem(
+                        text = if (status == savedQuote.status) "${status.label} (atual)" else status.label,
                         onClick = {
                             close()
                             onStatusChange(status)
                         },
-                    )
+                        enabled = status != savedQuote.status,
+                    ) { Box(Modifier.size(10.dp).background(status.progressColor(), CircleShape)) }
                 }
-                return@DropdownMenu
+                return@AppMenu
             }
 
-            MenuGroup("Enviar pro cliente")
-            MenuItem("Exportar PDF", AppIcons.PictureAsPdf) { close(); actions.onExportPdf() }
-            MenuItem("Enviar texto no WhatsApp", AppIcons.Chat) { close(); actions.onOpenWhatsApp() }
-            MenuItem("Salvar imagem pro WhatsApp", AppIcons.AddPhotoAlternate) { close(); actions.onSaveImage() }
-            MenuItem("Copiar texto", AppIcons.ContentCopy) { close(); actions.onCopy() }
+            AppMenuGroup("Enviar pro cliente")
+            AppMenuItem("Exportar PDF", { close(); actions.onExportPdf() }, AppIcons.PictureAsPdf)
+            AppMenuItem("Enviar texto no WhatsApp", { close(); actions.onOpenWhatsApp() }, AppIcons.Chat)
+            AppMenuItem("Salvar imagem pro WhatsApp", { close(); actions.onSaveImage() }, AppIcons.AddPhotoAlternate)
+            AppMenuItem("Copiar texto", { close(); actions.onCopy() }, AppIcons.ContentCopy)
 
             HorizontalDivider()
-            MenuGroup("Arquivos")
-            actions.onDownloadPhoto?.let { MenuItem("Baixar foto", AppIcons.Image) { close(); it() } }
-            actions.onDownloadStl?.let { MenuItem("Baixar STL", AppIcons.Download) { close(); it() } }
+            AppMenuGroup("Arquivos")
+            actions.onDownloadPhoto?.let { AppMenuItem("Baixar foto", { close(); it() }, AppIcons.Image) }
+            actions.onDownloadStl?.let { AppMenuItem("Baixar STL", { close(); it() }, AppIcons.Download) }
             actions.onPrintSettings?.let { onPrintSettings ->
-                MenuItem(
+                AppMenuItem(
                     if (savedQuote.printSettings == null) "Adicionar configurações de impressão" else "Configurações de impressão",
+                    { close(); onPrintSettings() },
                     AppIcons.Tune,
-                ) { close(); onPrintSettings() }
+                )
             }
 
             HorizontalDivider()
-            MenuGroup("Organizar")
-            MenuItem("Editar detalhes (nome, cliente, foto)", AppIcons.Edit) { close(); actions.onEditDetails() }
-            MenuItem("Editar cálculo", AppIcons.Calculate) { close(); actions.onEdit() }
-            MenuItem("Duplicar", AppIcons.FileCopy) { close(); actions.onDuplicate() }
+            AppMenuGroup("Organizar")
+            AppMenuItem("Editar detalhes (nome, cliente, foto)", { close(); actions.onEditDetails() }, AppIcons.Edit)
+            AppMenuItem("Editar cálculo", { close(); actions.onEdit() }, AppIcons.Calculate)
+            AppMenuItem("Duplicar", { close(); actions.onDuplicate() }, AppIcons.FileCopy)
             if (onStatusChange != null) {
-                MenuItem("Mover para…", AppIcons.ViewKanban) { choosingStatus = true }
+                AppMenuItem("Mover para…", { choosingStatus = true }, AppIcons.ViewKanban)
             }
             actions.onEditDeliveryDate?.let {
-                MenuItem(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega", AppIcons.Event) { close(); it() }
+                AppMenuItem(if (savedQuote.deliveryDateEpochDay == null) "Definir prazo de entrega" else "Alterar prazo de entrega", { close(); it() }, AppIcons.Event)
             }
-            actions.onCopyToCatalog?.let { MenuItem("Guardar no catálogo", AppIcons.Storefront) { close(); it() } }
-            actions.onReprice?.let { MenuItem("Atualizar preço", AppIcons.Sync) { close(); it() } }
-            actions.onConvertToOrder?.let { MenuItem("Transformar em pedido", AppIcons.RequestQuote) { close(); it() } }
+            actions.onCopyToCatalog?.let { AppMenuItem("Guardar no catálogo", { close(); it() }, AppIcons.Storefront) }
+            actions.onReprice?.let { AppMenuItem("Atualizar preço", { close(); it() }, AppIcons.Sync) }
+            actions.onConvertToOrder?.let { AppMenuItem("Transformar em pedido", { close(); it() }, AppIcons.RequestQuote) }
 
             HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
-                leadingIcon = { Icon(AppIcons.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                onClick = { close(); actions.onDelete() },
-            )
+            AppMenuItem("Excluir", { close(); actions.onDelete() }, AppIcons.Delete, danger = true)
         }
     }
-}
-
-@Composable
-private fun MenuGroup(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 2.dp),
-    )
-}
-
-@Composable
-private fun MenuItem(text: String, icon: ImageVector, onClick: () -> Unit) {
-    DropdownMenuItem(
-        text = { Text(text) },
-        leadingIcon = { Icon(icon, contentDescription = null) },
-        onClick = onClick,
-    )
 }

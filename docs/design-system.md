@@ -59,6 +59,7 @@ do `ColorScheme` do Material 3 a cor entra; as demais ficam num objeto próprio 
 | `onNavyMuted` | `#A9BCD0` | Texto secundário sobre o azul-marinho |
 | `amber` | `#F2A541` | Ação principal, lucro, ícone do item ativo |
 | `onAmber` | `#2A1A02` | Texto sobre o âmbar |
+| `onNavyDanger` | `#FFB4AB` | Erro, prejuízo e prazo vencido sobre o azul-marinho (o `error` normal não tem contraste ali) |
 
 O âmbar como **texto sobre fundo claro** não tem contraste: nesse caso use `#C97A12`.
 
@@ -132,7 +133,12 @@ fonte. Não se usa fonte monoespaçada.
 | Cabeçalho de tela | Título em `headline` à esquerda; à direita, o seletor da tela e a ação principal. Sem subtítulo |
 | Seção de formulário | Marcador redondo numerado (24, fundo `tint`, número em `primary`) e título em `sectionTitle`. Sem ícone decorativo |
 | Campo | Rótulo em `label` acima, caixa de 40 com borda `line` e fundo `card`. Borda `primary` ao passar o mouse, anel de 2 px no foco. Erro: borda `error` e mensagem curta abaixo |
-| Botão | Principal: fundo `amber`, texto `onAmber` em 600, um por tela. Secundário: fundo `card`, borda `line`. Sobre o azul-marinho: transparente com borda `navyRaised` |
+| Botão | Principal: fundo `amber`, texto `onAmber` em 600, um por tela. Secundário: fundo `card`, borda `line`. Sobre o azul-marinho: transparente com borda `navyRaised`; ativo (o campo que ele abre está aberto), fundo `navyRaised` |
+| Menu | Fundo `card`, raio 8, borda `line` e a sombra de menu (`AppMenu`). Item em `body` com ícone à esquerda (`AppMenuItem`); o que exclui vai em `error`. Grupo em `overline` (`AppMenuGroup`). O de ações do pedido e o de envio pro cliente usam o mesmo |
+| Caixa de marcar | Quadrado de 20, raio 6: marcada, fundo `primary` com o visto; desmarcada, borda `line`. A linha toda clica e recebe o anel de foco. O que fica sob ela recua 32 (`AppDimens.checkboxIndent`) (`AppCheckbox`) |
+| Ação clicável | `Modifier.clickableAction`: área clicável de texto ou de linha (recolher um bloco, "Ver a conta completa", a área de soltar um arquivo) com anel de foco de 2, em `onNavy` quando fica sobre o azul-marinho. Nunca `clickable` solto |
+| Botão só de ícone | `IconAction`: descrição e dica, anel de foco; versão `onNavy` pro painel de resultado |
+| Diálogo | `AppDialog`: fundo `card`, raio 12, título em `panelTitle` (com dica de ajuda ao lado, se precisar), botões à direita e o último confirma |
 | Seletor de duas opções | Segmentado com borda `line`; a opção ativa tem fundo `primary` |
 | Painel de resultado | Coluna fixa à direita, fundo `navy`: rótulo em `overline`, preço em `displayPrice`, dois blocos (lucro em âmbar e mínimo sem prejuízo), barra de composição, e as ações no pé |
 | Bloco de resumo | Número em `statValue` e legenda em `caption`, fundo `card`, borda `line` |

@@ -61,6 +61,16 @@ object AppDimens {
     val dashedBorderWidth = 1.5.dp
 
     val iconSize = 18.dp
+
+    /** Caixa de marcar e o visto dentro dela. */
+    val checkboxSize = 20.dp
+    val checkmarkSize = 14.dp
+
+    /** O recuo do que fica sob uma caixa de marcar: a caixa (20) e o espaço até o texto (12), pra alinhar com o rótulo. */
+    val checkboxIndent = 32.dp
+
+    /** A sombra do menu: o sistema de design só a usa em menu, dica e diálogo. */
+    val menuElevation = 8.dp
     val navIconSize = 18.dp
     val sectionMarkerSize = 24.dp
     val dropZoneHeight = 56.dp

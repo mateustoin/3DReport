@@ -8,27 +8,23 @@ import _3dreport.composeapp.generated.resources.quote_settings_help
 import _3dreport.composeapp.generated.resources.quote_settings_infill
 import _3dreport.composeapp.generated.resources.quote_settings_layer
 import _3dreport.composeapp.generated.resources.quote_settings_pattern
+import _3dreport.composeapp.generated.resources.quote_settings_pattern_placeholder
 import _3dreport.composeapp.generated.resources.quote_settings_supports
 import _3dreport.composeapp.generated.resources.quote_settings_supports_no
 import _3dreport.composeapp.generated.resources.quote_settings_supports_unknown
 import _3dreport.composeapp.generated.resources.quote_settings_supports_yes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import com.threedreport.app.ui.components.SegmentedChoice
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppChoiceField
+import com.threedreport.app.ui.components.AppDialog
+import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.ButtonKind
+import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.format.parseDecimal
-import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.PrintSettings
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.round
@@ -52,61 +48,49 @@ fun PrintSettingsDialog(initial: PrintSettings, onDismiss: () -> Unit, onSave: (
     var infillText by remember { mutableStateOf(initial.infillPercentage?.toSettingText().orEmpty()) }
     var infillPattern by remember { mutableStateOf(initial.infillPattern.orEmpty()) }
     var supportsEnabled by remember { mutableStateOf(initial.supportsEnabled) }
-    val space = MaterialTheme.spacing
     // A ordem das opções: Sim, Não, Não informado.
     val supportOptions = listOf(true, false, null)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.quote_print_settings)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
-                Text(stringResource(Res.string.quote_settings_help), style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = layerHeightText,
-                    onValueChange = { layerHeightText = it },
-                    label = { Text(stringResource(Res.string.quote_settings_layer)) },
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = infillText,
-                    onValueChange = { infillText = it },
-                    label = { Text(stringResource(Res.string.quote_settings_infill)) },
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = infillPattern,
-                    onValueChange = { infillPattern = it },
-                    label = { Text(stringResource(Res.string.quote_settings_pattern)) },
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(space.xxs)) {
-                    Text(stringResource(Res.string.quote_settings_supports), style = MaterialTheme.typography.labelLarge)
-                    SegmentedChoice(
-                        options = listOf(
-                            stringResource(Res.string.quote_settings_supports_yes),
-                            stringResource(Res.string.quote_settings_supports_no),
-                            stringResource(Res.string.quote_settings_supports_unknown),
+    AppDialog(
+        title = stringResource(Res.string.quote_print_settings),
+        onDismiss = onDismiss,
+        help = HelpText(stringResource(Res.string.quote_settings_help)),
+        buttons = {
+            AppButton(stringResource(Res.string.common_cancel), onDismiss)
+            AppButton(
+                stringResource(Res.string.common_save),
+                onClick = {
+                    onSave(
+                        PrintSettings(
+                            layerHeightMm = parseDecimal(layerHeightText),
+                            infillPercentage = parseDecimal(infillText),
+                            infillPattern = infillPattern.trim().ifEmpty { null },
+                            supportsEnabled = supportsEnabled,
                         ),
-                        selectedIndex = supportOptions.indexOf(supportsEnabled),
-                        onSelect = { supportsEnabled = supportOptions[it] },
                     )
-                }
-            }
+                    onDismiss()
+                },
+                kind = ButtonKind.Primary,
+            )
         },
-        confirmButton = {
-            TextButton(onClick = {
-                onSave(
-                    PrintSettings(
-                        layerHeightMm = parseDecimal(layerHeightText),
-                        infillPercentage = parseDecimal(infillText),
-                        infillPattern = infillPattern.trim().ifEmpty { null },
-                        supportsEnabled = supportsEnabled,
-                    ),
-                )
-                onDismiss()
-            }) { Text(stringResource(Res.string.common_save)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.common_cancel)) } },
-    )
+    ) {
+        AppTextField(label = stringResource(Res.string.quote_settings_layer), value = layerHeightText, onValueChange = { layerHeightText = it })
+        AppTextField(label = stringResource(Res.string.quote_settings_infill), value = infillText, onValueChange = { infillText = it })
+        AppTextField(
+            label = stringResource(Res.string.quote_settings_pattern),
+            value = infillPattern,
+            onValueChange = { infillPattern = it },
+            placeholder = stringResource(Res.string.quote_settings_pattern_placeholder),
+        )
+        AppChoiceField(
+            label = stringResource(Res.string.quote_settings_supports),
+            options = listOf(
+                stringResource(Res.string.quote_settings_supports_yes),
+                stringResource(Res.string.quote_settings_supports_no),
+                stringResource(Res.string.quote_settings_supports_unknown),
+            ),
+            selectedIndex = supportOptions.indexOf(supportsEnabled),
+            onSelect = { supportsEnabled = supportOptions[it] },
+        )
+    }
 }

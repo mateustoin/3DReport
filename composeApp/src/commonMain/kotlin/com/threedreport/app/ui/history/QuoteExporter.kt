@@ -3,6 +3,8 @@ package com.threedreport.app.ui.history
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.export_busy_image
 import _3dreport.composeapp.generated.resources.export_busy_pdf
+import _3dreport.composeapp.generated.resources.export_copied
+import _3dreport.composeapp.generated.resources.export_copy_failed
 import _3dreport.composeapp.generated.resources.export_failed_generate
 import _3dreport.composeapp.generated.resources.export_saved_image
 import _3dreport.composeapp.generated.resources.export_saved_pdf
@@ -76,6 +78,12 @@ class QuoteExporter(
                 isError = true,
             ),
         )
+    }
+
+    /** Copia o texto do orçamento pra área de transferência e avisa se deu certo ou não. */
+    fun copyText(savedQuote: SavedQuote) {
+        val copied = platform.copyToClipboard(savedQuote.toCopyPasteText(savedQuote.currency, brandingRepository.branding.value.showPrintTime))
+        notify(UiNotice(uiText(if (copied) Res.string.export_copied else Res.string.export_copy_failed), isError = !copied))
     }
 
     /**

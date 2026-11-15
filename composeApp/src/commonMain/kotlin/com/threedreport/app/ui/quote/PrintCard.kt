@@ -14,6 +14,7 @@ import _3dreport.composeapp.generated.resources.quote_print_settings
 import _3dreport.composeapp.generated.resources.quote_print_settings_edit
 import _3dreport.composeapp.generated.resources.quote_print_summary_cost
 import _3dreport.composeapp.generated.resources.quote_print_summary_empty
+import _3dreport.composeapp.generated.resources.quote_print_time_runs
 import _3dreport.composeapp.generated.resources.quote_print_title
 import _3dreport.composeapp.generated.resources.quote_print_title_named
 import _3dreport.composeapp.generated.resources.quote_reading
@@ -45,6 +46,7 @@ import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.IconAction
+import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.parseDecimal
@@ -164,7 +166,7 @@ private fun PrintCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
             Row(
-                modifier = Modifier.weight(1f).clip(MaterialTheme.shapes.small).clickable(role = Role.Button, onClick = onToggleExpanded),
+                modifier = Modifier.weight(1f).clickableAction(onClick = onToggleExpanded),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(space.sm),
             ) {
@@ -238,10 +240,13 @@ private fun PrintCard(
 private fun printSummary(print: PrintInput, resolved: ResolvedPrint?, quoted: QuotedPrint?, currency: Currency): String {
     val cost = quoted?.cost?.total?.let { stringResource(Res.string.quote_print_summary_cost, it.toCurrencyText(currency)) }
     val empty = stringResource(Res.string.quote_print_summary_empty)
+    val time = print.printTimeMinutes?.minutesToDurationText()?.let {
+        if (print.runs > 1) stringResource(Res.string.quote_print_time_runs, it, print.runs) else it
+    }
     return buildList {
         print.name.trim().takeIf { it.isNotEmpty() }?.let(::add)
         (resolved?.printer?.name ?: print.missingPrinterName)?.let(::add)
-        print.printTimeMinutes?.let { add(it.minutesToDurationText() + if (print.runs > 1) " × ${print.runs}" else "") }
+        time?.let(::add)
         // O peso sai dos campos, e não do cálculo: aparece mesmo com outra impressão ainda por preencher.
         val grams = print.filaments.zip(resolved?.filaments.orEmpty()).sumOf { (row, chosen) ->
             val meters = parseDecimal(row.lengthText, NumberKind.MEASURE) ?: 0.0

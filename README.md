@@ -54,7 +54,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Editar um pedido ou produto salvo acontece na própria aba de Orçamento (duas colunas), sem diálogo, com uma barra "Editando #0042" e "Cancelar edição"
 - Tela de orçamento em duas colunas — entradas de um lado, o preço, a composição e a negociação do outro
 - Quantidade por orçamento, com preço unitário e o seu tempo de trabalho informado pelo pedido inteiro (lote sai mais barato por peça)
-- Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
+- Negociação: digite o preço combinado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
 - Comparação entre as suas impressoras: quanto a mesma peça custa em cada máquina
 - Salvar orçamento (nome, foto e link do modelo opcionais)
 - Serviços opcionais no orçamento (pintura, lixamento, entrega etc.), com o valor digitado em cada pedido e cobrança por peça ou uma vez pelo pedido; com o tempo do serviço informado, o valor vem sugerido pela sua hora e o lucro mostra quanto o serviço rende de verdade

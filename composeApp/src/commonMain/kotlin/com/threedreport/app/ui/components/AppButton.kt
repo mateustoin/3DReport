@@ -43,7 +43,7 @@ enum class ButtonKind { Primary, Secondary, OnNavy, Danger }
 
 /**
  * Botão do kit. [Primary][ButtonKind.Primary]: fundo âmbar, texto `onAmber` em 600. [Secondary][ButtonKind.Secondary]:
- * fundo `card` com borda `line`. [OnNavy][ButtonKind.OnNavy]: transparente com borda `navyRaised`.
+ * fundo `card` com borda `line`. [OnNavy][ButtonKind.OnNavy]: transparente com borda `navyRaised`, e com [active] fundo `navyRaised`.
  * [Danger][ButtonKind.Danger]: como o secundário, com texto `error`. Ícone opcional
  * à esquerda do texto (nunca só ícone).
  */
@@ -56,6 +56,7 @@ fun AppButton(
     icon: ImageVector? = null,
     enabled: Boolean = true,
     height: Dp = AppDimens.controlHeight,
+    active: Boolean = false,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
@@ -79,7 +80,8 @@ fun AppButton(
         }
 
         ButtonKind.OnNavy -> {
-            background = Color.Transparent
+            // Ativo (o campo que o botão abre está aberto): fundo `navyRaised`.
+            background = if (active) colors.navyRaised else Color.Transparent
             content = colors.onNavy
             border = if (hovered && enabled) colors.onNavyMuted else colors.navyRaised
         }
@@ -121,10 +123,17 @@ fun AppButton(
     }
 }
 
-/** Ação só de ícone: sempre com descrição pro leitor de tela, dica ao passar o mouse e anel de foco no teclado. */
+/** Ação só de ícone: sempre com descrição pro leitor de tela, dica ao passar o mouse e anel de foco no teclado. [onNavy] é a versão pro painel azul-marinho. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun IconAction(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier, tint: Color = Color.Unspecified) {
+fun IconAction(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tint: Color = Color.Unspecified,
+    onNavy: Boolean = false,
+) {
     androidx.compose.material3.TooltipBox(
         positionProvider = androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(),
         tooltip = { PlainTooltip { Text(description) } },
@@ -136,7 +145,7 @@ fun IconAction(icon: ImageVector, description: String, onClick: () -> Unit, modi
             modifier = Modifier
                 .size(AppDimens.smallControlHeight)
                 .clip(MaterialTheme.shapes.small)
-                .then(if (focused) Modifier.border(AppDimens.focusRingWidth, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
+                .then(if (focused) Modifier.border(AppDimens.focusRingWidth, if (onNavy) MaterialTheme.appColors.onNavy else MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
                 .onFocusChanged { focused = it.isFocused }
                 .clickable(role = Role.Button, onClick = onClick),
             contentAlignment = Alignment.Center,
@@ -144,7 +153,11 @@ fun IconAction(icon: ImageVector, description: String, onClick: () -> Unit, modi
             Icon(
                 icon,
                 contentDescription = description,
-                tint = if (tint == Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else tint,
+                tint = when {
+                    tint != Color.Unspecified -> tint
+                    onNavy -> MaterialTheme.appColors.onNavyMuted
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 modifier = Modifier.size(AppDimens.iconSize),
             )
         }

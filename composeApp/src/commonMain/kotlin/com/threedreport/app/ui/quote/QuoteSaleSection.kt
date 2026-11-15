@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppCheckbox
 import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppSuggestField
 import com.threedreport.app.ui.components.AppTextField
@@ -55,7 +56,7 @@ import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.pricing.showcasePriceSuggestion
 import org.jetbrains.compose.resources.stringResource
 
-/** Canal, frete, cliente, preço fechado (ou anunciado) e as opções de frete grátis e urgência. */
+/** Canal, frete, cliente, preço combinado (ou anunciado) e as opções de frete grátis e urgência. */
 @Composable
 internal fun SaleFields(
     viewModel: QuoteViewModel,
@@ -123,7 +124,7 @@ internal fun SaleFields(
                 }
             }
             // Produto do catálogo não tem cliente pra negociar (decisão 101), mas tem o preço que se anuncia
-            // (decisão 102): o mesmo preço fechado, com outro nome.
+            // (decisão 102): o mesmo preço combinado, com outro nome.
             cell {
                 AppTextField(
                     label = stringResource(if (input.isProduct) Res.string.quote_sale_field_target_product else Res.string.quote_sale_field_target_order),
@@ -169,13 +170,13 @@ internal fun SaleFields(
             val shippingAmount = parseDecimal(input.shippingCostText) ?: 0.0
             if (shippingAmount > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
-                    CheckRow(input.shippingAbsorbed, stringResource(Res.string.quote_sale_free_shipping), viewModel::setShippingAbsorbed)
+                    AppCheckbox(stringResource(Res.string.quote_sale_free_shipping), input.shippingAbsorbed, viewModel::setShippingAbsorbed)
                     HelpHint(HelpText(stringResource(Res.string.quote_help_free_shipping)), stringResource(Res.string.quote_sale_free_shipping_hint))
                 }
             }
             // Urgência (decisão 125): só existe com o acréscimo configurado, senão a opção não teria efeito.
             if (settings.rushSurchargeRate > 0) {
-                CheckRow(input.rush, stringResource(Res.string.quote_sale_rush, settings.rushSurchargeRate.toPercentText()), viewModel::setRush)
+                AppCheckbox(stringResource(Res.string.quote_sale_rush, settings.rushSurchargeRate.toPercentText()), input.rush, viewModel::setRush)
                 val deadline = form.deliveryDateEpochDay
                 if (!input.rush && deadline != null && deadline - todayEpochDay() in 0..2) {
                     AppButton(stringResource(Res.string.quote_sale_rush_suggest), onClick = { viewModel.setRush(true) })

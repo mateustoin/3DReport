@@ -5,18 +5,15 @@ import _3dreport.composeapp.generated.resources.quote_negotiate
 import _3dreport.composeapp.generated.resources.quote_negotiate_clear
 import _3dreport.composeapp.generated.resources.quote_negotiate_field
 import _3dreport.composeapp.generated.resources.quote_send
+import _3dreport.composeapp.generated.resources.quote_send_copy
 import _3dreport.composeapp.generated.resources.quote_send_image
 import _3dreport.composeapp.generated.resources.quote_send_pdf
 import _3dreport.composeapp.generated.resources.quote_send_whatsapp
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,10 +27,13 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.semantics.Role
 import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppMenu
+import com.threedreport.app.ui.components.AppMenuItem
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ButtonKind
+import com.threedreport.app.ui.components.IconAction
+import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
@@ -50,6 +50,7 @@ internal class ClientSendActions(
     val onPdf: () -> Unit,
     val onImage: () -> Unit,
     val onWhatsApp: () -> Unit,
+    val onCopy: () -> Unit,
     val exporting: Boolean,
 )
 
@@ -99,6 +100,7 @@ internal fun ResultFooter(
                     stringResource(Res.string.quote_negotiate),
                     onClick = { onNegotiatingChange(!negotiating) },
                     kind = ButtonKind.OnNavy,
+                    active = negotiating,
                     // Com um preço combinado digitado, a conta pode estar sem preço por causa dele: o campo precisa continuar abrindo.
                     enabled = result.quote != null || input.targetTotalText.isNotBlank(),
                     modifier = Modifier.weight(1f),
@@ -115,7 +117,6 @@ internal fun ResultFooter(
 /** O campo "Preço combinado": o preço, o lucro e o mínimo do painel mudam enquanto se digita. Esc fecha. */
 @Composable
 private fun NegotiationField(value: String, error: String?, onChange: (String) -> Unit, onClose: () -> Unit) {
-    val colors = MaterialTheme.appColors
     AppTextField(
         label = stringResource(Res.string.quote_negotiate_field),
         value = value,
@@ -123,6 +124,7 @@ private fun NegotiationField(value: String, error: String?, onChange: (String) -
         error = error,
         onNavy = true,
         autoFocus = true,
+        prefix = LocalCurrency.current.symbol,
         modifier = Modifier.onPreviewKeyEvent {
             if (it.type == KeyEventType.KeyDown && it.key == Key.Escape) {
                 onClose()
@@ -134,19 +136,15 @@ private fun NegotiationField(value: String, error: String?, onChange: (String) -
         trailing = if (value.isBlank()) {
             null
         } else {
-            {
-                Text(
-                    stringResource(Res.string.quote_negotiate_clear),
-                    style = MaterialTheme.appType.label,
-                    color = colors.onNavyMuted,
-                    modifier = Modifier.clickable(role = Role.Button) { onChange("") },
-                )
-            }
+            { IconAction(AppIcons.Close, stringResource(Res.string.quote_negotiate_clear), onClick = { onChange("") }, onNavy = true) }
         },
     )
 }
 
-/** "Enviar pro cliente": salva como pedido e abre PDF, imagem e texto no WhatsApp, os mesmos de Pedidos. */
+/**
+ * "Enviar pro cliente": salva como pedido e abre as mesmas opções de Pedidos, na mesma ordem (PDF, texto no
+ * WhatsApp, imagem, copiar texto).
+ */
 @Composable
 private fun SendButton(send: ClientSendActions, modifier: Modifier) {
     var open by rememberSaveable { mutableStateOf(false) }
@@ -159,19 +157,11 @@ private fun SendButton(send: ClientSendActions, modifier: Modifier) {
             enabled = !send.exporting,
             modifier = Modifier.fillMaxWidth(),
         )
-        DropdownMenu(expanded = open, onDismissRequest = close) {
-            SendItem(stringResource(Res.string.quote_send_whatsapp), AppIcons.Chat) { close(); send.onWhatsApp() }
-            SendItem(stringResource(Res.string.quote_send_image), AppIcons.AddPhotoAlternate) { close(); send.onImage() }
-            SendItem(stringResource(Res.string.quote_send_pdf), AppIcons.PictureAsPdf) { close(); send.onPdf() }
+        AppMenu(expanded = open, onDismiss = close) {
+            AppMenuItem(stringResource(Res.string.quote_send_pdf), { close(); send.onPdf() }, AppIcons.PictureAsPdf)
+            AppMenuItem(stringResource(Res.string.quote_send_whatsapp), { close(); send.onWhatsApp() }, AppIcons.Chat)
+            AppMenuItem(stringResource(Res.string.quote_send_image), { close(); send.onImage() }, AppIcons.AddPhotoAlternate)
+            AppMenuItem(stringResource(Res.string.quote_send_copy), { close(); send.onCopy() }, AppIcons.ContentCopy)
         }
     }
-}
-
-@Composable
-private fun SendItem(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    DropdownMenuItem(
-        text = { Text(text) },
-        leadingIcon = { Icon(icon, contentDescription = null) },
-        onClick = onClick,
-    )
 }

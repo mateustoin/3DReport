@@ -27,6 +27,7 @@ import _3dreport.composeapp.generated.resources.quote_stl_hint_label
 import _3dreport.composeapp.generated.resources.quote_stl_loading
 import _3dreport.composeapp.generated.resources.quote_stl_measures
 import _3dreport.composeapp.generated.resources.quote_stl_not_manifold
+import _3dreport.composeapp.generated.resources.quote_stl_pieces
 import _3dreport.composeapp.generated.resources.quote_stl_remove
 import _3dreport.composeapp.generated.resources.quote_stl_too_complex
 import _3dreport.composeapp.generated.resources.quote_stl_unreadable
@@ -240,7 +241,7 @@ private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState, p
 
                 val analysis = current.analysis
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
-                    Text(stringResource(Res.string.quote_stl_difficulty, analysis.difficulty.label), style = MaterialTheme.appType.bodyStrong)
+                    Text(stringResource(Res.string.quote_stl_difficulty, analysis.difficulty.label.lowercase()), style = MaterialTheme.appType.bodyStrong)
                     HelpHint(
                         HelpText(stringResource(Res.string.quote_help_stl_analysis), stringResource(Res.string.quote_help_stl_analysis_detail)),
                         stringResource(Res.string.quote_stl_analysis_label),
@@ -252,7 +253,7 @@ private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState, p
                         (analysis.surfaceAreaMm2 / 100).formatOneDecimal(),
                         (analysis.volumeMm3 / 1000).formatOneDecimal(),
                         (analysis.overhangPercentage / 100).toPercentText(),
-                        analysis.disconnectedComponents,
+                        pluralStringResource(Res.plurals.quote_stl_pieces, analysis.disconnectedComponents, analysis.disconnectedComponents),
                     ),
                     style = MaterialTheme.appType.caption,
                 )

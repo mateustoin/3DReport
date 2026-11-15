@@ -274,6 +274,8 @@
     <string name="export_open_folder">Abrir pasta</string>
     <string name="export_failed_generate">Não consegui gerar o arquivo. Os detalhes ficaram no log do app.</string>
     <string name="export_save_failed">Não consegui salvar o arquivo. Se ele estiver aberto em outro programa, feche e tente de novo, ou salve com outro nome.</string>
+    <string name="export_copied">Texto copiado.</string>
+    <string name="export_copy_failed">Não consegui copiar: outro programa está usando a área de transferência. Tente de novo.</string>
     <string name="export_whatsapp_copied">Não consegui abrir o WhatsApp. O texto do orçamento foi copiado: cole na conversa com o cliente.</string>
     <string name="export_whatsapp_failed">Não consegui abrir o WhatsApp nem copiar o texto. Use "Copiar" de novo em alguns segundos.</string>
     <string name="quote_notice_print_removed">Impressão %1$d removida.</string>
@@ -411,7 +413,8 @@
     <string name="quote_printer">Impressora</string>
     <string name="quote_printer_choose">Escolha a impressora</string>
     <string name="quote_printer_not_registered">%1$s (não cadastrada)</string>
-    <string name="quote_runs">× vezes</string>
+    <string name="quote_runs">Vezes</string>
+    <string name="quote_print_time_runs">%1$s × %2$d</string>
     <string name="quote_help_runs">Quantas vezes esta mesa roda no pedido: 4 mesas iguais de chaveiros é uma impressão × 4.</string>
     <string name="quote_help_runs_detail">É diferente da quantidade de peças, que repete o pedido inteiro. Tempo e consumo aqui são de uma rodada.</string>
 
@@ -449,14 +452,14 @@
     <string name="quote_sale_field_contact">Contato do cliente (opcional)</string>
     <string name="quote_sale_contact_placeholder">(11) 99999-0000</string>
     <string name="quote_help_client_private">Só pra você: não sai no PDF nem na mensagem.</string>
-    <string name="quote_sale_field_target_order">Preço fechado (opcional)</string>
+    <string name="quote_sale_field_target_order">Preço combinado (opcional)</string>
     <string name="quote_sale_field_target_product">Preço anunciado (opcional)</string>
     <string name="quote_help_target_order">O total que o cliente vai pagar, se for diferente do calculado.</string>
     <string name="quote_help_target_order_detail">Digite o valor que o cliente propôs e veja o que sobra. Ele passa a ser o preço de verdade do orçamento: é o que vai pro PDF, pro histórico e pro Dashboard. Deixe vazio pra usar o preço da sua margem.</string>
     <string name="quote_help_target_product">Um valor redondo pra vitrine, no lugar do que a margem deu.</string>
     <string name="quote_help_target_product_detail">É ele que sai no catálogo, no PDF e na imagem, e é o preço que o pedido recebe quando você clica em "Vender". Deixe vazio pra anunciar o preço calculado.</string>
     <string name="quote_sale_round_to">Arredondar pra %1$s</string>
-    <string name="quote_sale_announced_price">Preço anunciado do produto: %1$s. Frete e serviços somam por fora. Digite um valor em Preço fechado pra fechar outro preço.</string>
+    <string name="quote_sale_announced_price">Preço anunciado do produto: %1$s. Frete e serviços somam por fora. Digite um valor em Preço combinado pra combinar outro preço.</string>
     <string name="quote_sale_free_shipping">Frete grátis pro cliente (você paga)</string>
     <string name="quote_sale_free_shipping_hint">Frete grátis</string>
     <string name="quote_help_free_shipping">O cliente vê "Frete grátis" e o valor sai do seu lucro.</string>
@@ -491,11 +494,15 @@
     <string name="quote_stl_viewer_label">Prévia 3D</string>
     <string name="quote_help_stl_viewer">Arraste pra girar, use a roda do mouse pra zoom.</string>
     <string name="quote_stl_capture">Capturar como foto do orçamento</string>
-    <string name="quote_stl_difficulty">Nível de dificuldade sugerido: %1$s</string>
+    <string name="quote_stl_difficulty">Nível %1$s</string>
     <string name="quote_stl_analysis_label">Análise do STL</string>
     <string name="quote_help_stl_analysis">Estimativas geométricas, só pra você decidir se cobra a mais pela complexidade.</string>
     <string name="quote_help_stl_analysis_detail">Nível de dificuldade e medidas não substituem o fatiador e não entram no PDF nem no copiar/colar.</string>
-    <string name="quote_stl_measures">Área: %1$s cm² · Volume: %2$s cm³ · Overhang: %3$s · Peças no arquivo: %4$d</string>
+    <string name="quote_stl_measures">Área %1$s cm² · volume %2$s cm³ · balanço %3$s · %4$s</string>
+    <plurals name="quote_stl_pieces">
+        <item quantity="one">%1$d peça</item>
+        <item quantity="other">%1$d peças</item>
+    </plurals>
     <string name="quote_stl_not_manifold">Atenção: esse arquivo STL tem geometria com furos ou normais invertidas (não-manifold). Pode dar problema na hora de fatiar.</string>
 
     <!-- Orçamento: prazo e configurações de impressão (também usados em Pedidos) -->
@@ -510,7 +517,8 @@
     <string name="quote_settings_help">Guardado só pra você consultar e replicar. Não entra no cálculo do preço nem em nenhum export.</string>
     <string name="quote_settings_layer">Altura de camada (mm)</string>
     <string name="quote_settings_infill">Preenchimento (%)</string>
-    <string name="quote_settings_pattern">Padrão de preenchimento (ex.: grid, gyroid)</string>
+    <string name="quote_settings_pattern">Padrão de preenchimento</string>
+    <string name="quote_settings_pattern_placeholder">grid, gyroid</string>
     <string name="quote_settings_supports">Suporte</string>
     <string name="quote_settings_supports_yes">Sim</string>
     <string name="quote_settings_supports_no">Não</string>
@@ -519,11 +527,12 @@
     <!-- Orçamento: painel de resultado -->
     <string name="quote_negotiate">Negociar</string>
     <string name="quote_negotiate_field">Preço combinado</string>
-    <string name="quote_negotiate_clear">Limpar</string>
+    <string name="quote_negotiate_clear">Limpar preço combinado</string>
     <string name="quote_send">Enviar pro cliente</string>
     <string name="quote_send_whatsapp">Enviar texto no WhatsApp</string>
     <string name="quote_send_image">Salvar imagem pro WhatsApp</string>
     <string name="quote_send_pdf">Exportar PDF</string>
+    <string name="quote_send_copy">Copiar texto</string>
     <string name="quote_result_overline">Você cobra</string>
     <string name="quote_result_no_price">-</string>
     <string name="quote_result_fix_field">Corrija o campo marcado pra calcular: %1$s</string>
@@ -548,7 +557,11 @@
     <string name="quote_result_consumption">Consome %1$s</string>
     <string name="quote_result_prints">%1$d impressões · %2$s de máquina</string>
     <string name="quote_result_deadline">Entrega até %1$s (%2$s)</string>
-    <string name="quote_result_deadline_overdue">Entrega até %1$s (%2$s), data já passou</string>
+    <plurals name="quote_result_deadline_overdue">
+        <item quantity="one">Entrega %1$s (%2$s) · atrasado %3$d dia</item>
+        <item quantity="other">Entrega %1$s (%2$s) · atrasado %3$d dias</item>
+    </plurals>
+    <string name="quote_result_calculated">Calculado %1$s</string>
     <string name="quote_result_minimum_applied">Preço mínimo do pedido aplicado (a conta dava %1$s)</string>
     <string name="quote_result_kept">Preço do orçamento salvo, mantido.</string>
     <string name="quote_result_kept_with_today">Preço do orçamento salvo, mantido. Com os custos de hoje, sairia %1$s: mude qualquer valor da peça pra recalcular.</string>

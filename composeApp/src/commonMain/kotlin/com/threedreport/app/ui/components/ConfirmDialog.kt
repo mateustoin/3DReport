@@ -14,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -22,7 +23,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * Diálogo do kit: fundo `card`, raio 12, título em `panelTitle`, o [content] e os [buttons] no pé, alinhados à
- * direita (o último é o que confirma). Com [scrollable], o corpo rola (diálogo longo, como a manutenção). Base do [ConfirmDialog] e do [DeleteOrArchiveDialog].
+ * direita (o último é o que confirma). Com [scrollable], o corpo rola (diálogo longo, como a manutenção). [help] vira uma dica ao lado do título, no lugar de um parágrafo no corpo. Base do [ConfirmDialog] e do [DeleteOrArchiveDialog].
  */
 @Composable
 fun AppDialog(
@@ -30,6 +31,7 @@ fun AppDialog(
     onDismiss: () -> Unit,
     buttons: @Composable RowScope.() -> Unit,
     scrollable: Boolean = false,
+    help: HelpText? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val space = MaterialTheme.spacing
@@ -37,7 +39,12 @@ fun AppDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.appColors.card,
         shape = MaterialTheme.shapes.large,
-        title = { Text(title, style = MaterialTheme.appType.panelTitle, color = MaterialTheme.colorScheme.onSurface) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                Text(title, style = MaterialTheme.appType.panelTitle, color = MaterialTheme.colorScheme.onSurface)
+                if (help != null) HelpHint(help, title)
+            }
+        },
         text = {
             Column(
                 modifier = if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier,

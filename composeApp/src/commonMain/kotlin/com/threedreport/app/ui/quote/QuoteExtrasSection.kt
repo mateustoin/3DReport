@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import com.threedreport.app.ui.components.AppCheckbox
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.HelpHint
@@ -40,6 +41,7 @@ import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Consumable
@@ -169,21 +171,8 @@ private fun ExtrasList(label: String, help: HelpText?, content: @Composable () -
     }
 }
 
-/** Caixa de marcar com o texto ao lado; a linha toda é o alvo do clique. */
-@Composable
-internal fun CheckRow(checked: Boolean, label: String, onChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.toggleable(value = checked, role = Role.Checkbox, onValueChange = onChange),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(checked = checked, onCheckedChange = null)
-        Text(label, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
-    }
-}
-
 /** Recuo do conteúdo de uma linha marcada, alinhado com o texto depois da caixa. */
-@Composable
-private fun indentUnderCheckbox(): Modifier = Modifier.padding(start = MaterialTheme.spacing.xxl + MaterialTheme.spacing.xs)
+private fun indentUnderCheckbox(): Modifier = Modifier.padding(start = AppDimens.checkboxIndent)
 
 /**
  * Um serviço na lista do orçamento. Desmarcado, só o nome (e o valor sugerido, se houver). Marcado, ganha o
@@ -207,7 +196,7 @@ private fun ServiceRow(
         } else {
             name
         }
-        CheckRow(serviceInput != null, checkLabel) { viewModel.toggleService(id) }
+        AppCheckbox(checkLabel, serviceInput != null, { viewModel.toggleService(id) })
         if (serviceInput == null) return@Column
 
         val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 }
@@ -270,7 +259,7 @@ private fun ConsumableRow(
 ) {
     val space = MaterialTheme.spacing
     Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
-        CheckRow(consumableInput != null, name) { viewModel.toggleConsumable(id) }
+        AppCheckbox(name, consumableInput != null, { viewModel.toggleConsumable(id) })
         if (consumableInput == null) return@Column
 
         Column(modifier = indentUnderCheckbox(), verticalArrangement = Arrangement.spacedBy(space.xs)) {

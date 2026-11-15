@@ -148,7 +148,7 @@ private fun FieldError(error: String?, color: androidx.compose.ui.graphics.Color
  * Shift+Tab volta. [fieldModifier] vai na caixa (por exemplo, a âncora de um menu de sugestões). [trailing] fica
  * dentro da caixa, à direita do texto (a amostra de uma cor digitada, por exemplo). [onNavy] é a versão pra
  * dentro do painel azul-marinho (rótulo `onNavyMuted`, caixa `navyRaised`); [autoFocus] leva o foco pro campo
- * quando ele aparece.
+ * quando ele aparece. [prefix] é um texto fixo antes do valor (o símbolo da moeda), em cor de apoio.
  */
 @Composable
 fun AppTextField(
@@ -164,6 +164,7 @@ fun AppTextField(
     trailing: (@Composable () -> Unit)? = null,
     onNavy: Boolean = false,
     autoFocus: Boolean = false,
+    prefix: String? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
@@ -195,6 +196,7 @@ fun AppTextField(
                     .semantics { contentDescription = label },
                 decorationBox = { inner ->
                     Row(Modifier.padding(horizontal = space.sm), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                        if (prefix != null) Text(prefix, style = MaterialTheme.appType.body, color = mutedColor)
                         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                             if (value.isEmpty() && placeholder != null) {
                                 Text(placeholder, style = MaterialTheme.appType.body, color = mutedColor.copy(alpha = 0.7f), maxLines = 1)

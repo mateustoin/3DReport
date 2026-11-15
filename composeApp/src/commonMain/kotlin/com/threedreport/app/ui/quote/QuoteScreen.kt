@@ -143,6 +143,7 @@ fun QuoteScreen(
             onPdf = viewModel::sendPdf,
             onImage = viewModel::sendImage,
             onWhatsApp = viewModel::sendWhatsApp,
+            onCopy = viewModel::sendCopy,
             exporting = state.exporting,
         ),
         modifier = panelModifier,
