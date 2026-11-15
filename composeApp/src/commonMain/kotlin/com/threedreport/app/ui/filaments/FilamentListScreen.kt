@@ -38,9 +38,9 @@ import _3dreport.composeapp.generated.resources.filaments_help_density_varies
 import _3dreport.composeapp.generated.resources.filaments_in_stock
 import _3dreport.composeapp.generated.resources.filaments_material_custom_option
 import _3dreport.composeapp.generated.resources.filaments_out_of_stock
-import _3dreport.composeapp.generated.resources.filaments_row_density
 import _3dreport.composeapp.generated.resources.filaments_row_out_of_stock
 import _3dreport.composeapp.generated.resources.filaments_row_price
+import _3dreport.composeapp.generated.resources.filaments_row_specs
 import _3dreport.composeapp.generated.resources.filaments_section_basics
 import _3dreport.composeapp.generated.resources.filaments_section_colors
 import _3dreport.composeapp.generated.resources.filaments_section_price
@@ -143,9 +143,7 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
     ListRow(
         title = filament.name,
         details = listOfNotNull(
-            filament.materialType,
-            filament.brand,
-            stringResource(Res.string.filaments_row_density, filament.densityGPerCm3.toInputText()),
+            stringResource(Res.string.filaments_row_specs, filament.densityGPerCm3.toInputText(), filament.diameterMm.toInputText()),
             stringResource(Res.string.filaments_row_out_of_stock).takeIf { !filament.archived && !filament.hasStockAvailable },
         ),
         value = stringResource(Res.string.filaments_row_price, filament.pricePerKg.toMoney()),

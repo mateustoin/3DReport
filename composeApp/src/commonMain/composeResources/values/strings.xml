@@ -56,6 +56,7 @@
     <string name="consumables_delete_message">"%1$s" será removido do cadastro. Pedidos já salvos continuam com o custo que tinham.</string>
 
     <!-- Serviços -->
+    <string name="services_row_no_price">A combinar</string>
     <string name="services_title">Serviços</string>
     <string name="services_action_new">Novo serviço</string>
     <string name="services_empty">Nenhum serviço ainda.</string>
@@ -114,7 +115,7 @@
     <string name="filaments_help_density">O tipo de material sugere um valor. Confira a ficha técnica do rolo.</string>
     <string name="filaments_help_density_varies">Varia com o fabricante e a carga. Confira a ficha técnica do rolo.</string>
     <string name="filaments_row_price">%1$s/kg</string>
-    <string name="filaments_row_density">%1$s g/cm³</string>
+    <string name="filaments_row_specs">%1$s g/cm³ · %2$s mm</string>
     <string name="filaments_row_out_of_stock">acabou</string>
     <string name="filaments_notice_saved">Filamento salvo</string>
     <string name="filaments_notice_archived">Filamento arquivado</string>
@@ -159,19 +160,11 @@
     <string name="printers_help_power_preset">É a potência máxima da fonte, não o consumo médio.</string>
     <string name="printers_help_power_preset_detail">Na média de uma impressão a máquina gasta bem menos. Com um medidor de tomada, use o valor medido. Senão a energia sai mais cara do que é.</string>
     <string name="printers_help_maintenance">Bicos, correias, PTFE e peças que gastam, divididos pelas horas que duram.</string>
-    <string name="printers_help_price">Quanto você pagou. Entra no preço como retorno do investimento.</string>
-    <string name="printers_help_payback">Em quantos meses a máquina precisa se pagar.</string>
-    <string name="printers_help_days">Dias em que ela imprime, de 1 a 31.</string>
-    <string name="printers_help_hours">Horas imprimindo num dia de uso, de 1 a 24.</string>
     <string name="printers_summary_label">Custo por hora</string>
     <string name="printers_summary_help">Retorno do investimento mais manutenção, fora a energia.</string>
     <string name="printers_row_power">%1$d W</string>
-    <string name="printers_row_machine">máquina %1$s</string>
     <string name="printers_row_per_hour">%1$s/h</string>
-    <plurals name="printers_row_queue">
-        <item quantity="one">fila de %1$s em %2$d pedido em impressão</item>
-        <item quantity="other">fila de %1$s em %2$d pedidos em impressão</item>
-    </plurals>
+    <string name="printers_row_queue">%1$s na fila</string>
     <string name="printers_maintenance_ok">Manutenção em dia · próxima: %1$s, %2$s</string>
     <string name="printers_maintenance_attention">Manutenção: %1$s, %2$s</string>
     <plurals name="printers_maintenance_more_overdue">

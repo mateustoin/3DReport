@@ -50,7 +50,7 @@ class RowAction(
  * Linha de lista dos cadastros (não é cartão): nome em `bodyStrong`, [details] em `caption` separados por " · "
  * e o [value] alinhado à direita com algarismos tabulares. As [actions] só aparecem com o mouse em cima ou com o
  * foco na linha (teclado), e continuam na ordem do Tab. Clicar na linha chama [onClick]. Divisor de 1 px embaixo.
- * [muted] apaga o nome (item arquivado). [selected] destaca a linha com o fundo `tint` (o item aberto no painel).
+ * [valueMuted] deixa só o valor em tom discreto ("A combinar"). [muted] apaga o nome (item arquivado). [selected] destaca a linha com o fundo `tint` (o item aberto no painel).
  * [footer] é um bloco opcional sob os detalhes (o estoque de cada cor, a situação da manutenção); o que houver nele
  * que seja clicável responde por si, sem abrir a edição.
  * As ações ficam por cima do fim da linha, com o fundo dela, e cobrem o valor enquanto estão visíveis.
@@ -64,33 +64,15 @@ fun ListRow(
     details: List<String> = emptyList(),
     value: String? = null,
     muted: Boolean = false,
+    valueMuted: Boolean = false,
     selected: Boolean = false,
     footer: (@Composable () -> Unit)? = null,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
-    val interaction = remember { MutableInteractionSource() }
-    val hovered by interaction.collectIsHoveredAsState()
-    var focusWithin by remember { mutableStateOf(false) }
     var focused by remember { mutableStateOf(false) }
-    val active = hovered || focusWithin
-    val actionsAlpha by animateFloatAsState(if (active) 1f else 0f, tween(AppDimens.MOTION_MILLIS))
-
-    val rowBackground = when {
-        selected -> colors.tint
-        active -> colors.column
-        else -> Color.Transparent
-    }
     Column(modifier = modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.small)
-                .background(rowBackground)
-                .onFocusChanged { focusWithin = it.hasFocus }
-                .hoverable(interaction),
-            contentAlignment = Alignment.CenterEnd,
-        ) {
+        RevealActions(actions = actions, selected = selected) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -125,23 +107,7 @@ fun ListRow(
                     NumericText(
                         value,
                         style = MaterialTheme.appType.body,
-                        color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .alpha(actionsAlpha)
-                    .background(if (selected) colors.tint else colors.column, MaterialTheme.shapes.small)
-                    .padding(horizontal = space.xxs),
-                horizontalArrangement = Arrangement.spacedBy(space.xxs),
-            ) {
-                actions.forEach { action ->
-                    IconAction(
-                        icon = action.icon,
-                        description = action.description,
-                        onClick = action.onClick,
-                        tint = if (action.danger) MaterialTheme.colorScheme.error else Color.Unspecified,
+                        color = if (muted || valueMuted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -149,5 +115,64 @@ fun ListRow(
         HorizontalDivider(color = colors.line, thickness = AppDimens.borderWidth)
     }
 }
+
+/**
+ * Faixa com ações de ícone que só aparecem com o mouse em cima ou com o foco dentro (teclado), sem sair da ordem do
+ * Tab. É o mecanismo de [ListRow], aberto pra outras listas (os componentes do diálogo de manutenção). As [actions]
+ * ficam por cima do fim do [content], com o fundo da faixa; quem põe algo no fim do conteúdo deve reservar o espaço
+ * (veja [revealActionsWidth]). [content] recebe se a faixa está ativa. [selected] usa o fundo `tint`.
+ */
+@Composable
+fun RevealActions(
+    actions: List<RowAction>,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    content: @Composable (active: Boolean) -> Unit,
+) {
+    val colors = MaterialTheme.appColors
+    val space = MaterialTheme.spacing
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    var focusWithin by remember { mutableStateOf(false) }
+    val active = hovered || focusWithin
+    val actionsAlpha by animateFloatAsState(if (active) 1f else 0f, tween(AppDimens.MOTION_MILLIS))
+    val rowBackground = when {
+        selected -> colors.tint
+        active -> colors.column
+        else -> Color.Transparent
+    }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
+            .background(rowBackground)
+            .onFocusChanged { focusWithin = it.hasFocus }
+            .hoverable(interaction),
+        contentAlignment = Alignment.CenterEnd,
+    ) {
+        content(active)
+        Row(
+            modifier = Modifier
+                .alpha(actionsAlpha)
+                .background(if (selected) colors.tint else colors.column, MaterialTheme.shapes.small)
+                .padding(horizontal = space.xxs),
+            horizontalArrangement = Arrangement.spacedBy(space.xxs),
+        ) {
+            actions.forEach { action ->
+                IconAction(
+                    icon = action.icon,
+                    description = action.description,
+                    onClick = action.onClick,
+                    tint = if (action.danger) MaterialTheme.colorScheme.error else Color.Unspecified,
+                )
+            }
+        }
+    }
+}
+
+/** Largura que [RevealActions] ocupa com [count] ações, pra reservar no fim do conteúdo. */
+@Composable
+fun revealActionsWidth(count: Int): androidx.compose.ui.unit.Dp =
+    AppDimens.smallControlHeight * count + MaterialTheme.spacing.xxs * (count + 1)
 
 private const val DETAIL_SEPARATOR = " · "

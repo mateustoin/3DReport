@@ -22,21 +22,16 @@ import _3dreport.composeapp.generated.resources.printers_field_power
 import _3dreport.composeapp.generated.resources.printers_field_price
 import _3dreport.composeapp.generated.resources.printers_form_edit
 import _3dreport.composeapp.generated.resources.printers_form_new
-import _3dreport.composeapp.generated.resources.printers_help_days
-import _3dreport.composeapp.generated.resources.printers_help_hours
 import _3dreport.composeapp.generated.resources.printers_help_maintenance
-import _3dreport.composeapp.generated.resources.printers_help_payback
 import _3dreport.composeapp.generated.resources.printers_help_power
 import _3dreport.composeapp.generated.resources.printers_help_power_detail
 import _3dreport.composeapp.generated.resources.printers_help_power_preset
 import _3dreport.composeapp.generated.resources.printers_help_power_preset_detail
-import _3dreport.composeapp.generated.resources.printers_help_price
 import _3dreport.composeapp.generated.resources.printers_maintenance_attention
 import _3dreport.composeapp.generated.resources.printers_maintenance_more_overdue
 import _3dreport.composeapp.generated.resources.printers_maintenance_ok
 import _3dreport.composeapp.generated.resources.printers_remaining_left
 import _3dreport.composeapp.generated.resources.printers_remaining_overdue
-import _3dreport.composeapp.generated.resources.printers_row_machine
 import _3dreport.composeapp.generated.resources.printers_row_per_hour
 import _3dreport.composeapp.generated.resources.printers_row_power
 import _3dreport.composeapp.generated.resources.printers_row_queue
@@ -150,9 +145,8 @@ private fun PrinterRow(row: PrinterRowState, viewModel: PrinterListViewModel, se
         title = printer.name,
         details = listOfNotNull(
             stringResource(Res.string.printers_row_power, printer.printerPowerWatts.toInt()),
-            stringResource(Res.string.printers_row_machine, printer.machineInvestment.machinePrice.toMoney()),
             if (row.queuedQuoteCount > 0) {
-                pluralStringResource(Res.plurals.printers_row_queue, row.queuedQuoteCount, row.queuedMinutes.minutesToHoursText(), row.queuedQuoteCount)
+                stringResource(Res.string.printers_row_queue, row.queuedMinutes.minutesToHoursText())
             } else {
                 null
             },
@@ -242,28 +236,24 @@ private fun PrinterFormPanel(form: PrinterFormState, viewModel: PrinterListViewM
                 value = form.machinePriceText,
                 onValueChange = { text -> viewModel.updateForm { it.copy(machinePriceText = text) } },
                 error = form.priceError?.asString(),
-                help = HelpText(stringResource(Res.string.printers_help_price)),
             )
             AppTextField(
                 label = stringResource(Res.string.printers_field_payback),
                 value = form.paybackMonthsText,
                 onValueChange = { text -> viewModel.updateForm { it.copy(paybackMonthsText = text) } },
                 error = form.paybackError?.asString(),
-                help = HelpText(stringResource(Res.string.printers_help_payback)),
             )
             AppTextField(
                 label = stringResource(Res.string.printers_field_days),
                 value = form.printingDaysPerMonthText,
                 onValueChange = { text -> viewModel.updateForm { it.copy(printingDaysPerMonthText = text) } },
                 error = form.daysError?.asString(),
-                help = HelpText(stringResource(Res.string.printers_help_days)),
             )
             AppTextField(
                 label = stringResource(Res.string.printers_field_hours),
                 value = form.printingHoursPerDayText,
                 onValueChange = { text -> viewModel.updateForm { it.copy(printingHoursPerDayText = text) } },
                 error = form.hoursError?.asString(),
-                help = HelpText(stringResource(Res.string.printers_help_hours)),
             )
             form.machineCostPerHour?.let { perHour ->
                 FormSummary(

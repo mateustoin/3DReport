@@ -26,6 +26,7 @@ import _3dreport.composeapp.generated.resources.services_help_charge
 import _3dreport.composeapp.generated.resources.services_help_minutes
 import _3dreport.composeapp.generated.resources.services_help_price
 import _3dreport.composeapp.generated.resources.services_help_price_detail
+import _3dreport.composeapp.generated.resources.services_row_no_price
 import _3dreport.composeapp.generated.resources.services_title
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -115,7 +116,8 @@ private fun ServiceRow(service: Service, viewModel: ServiceListViewModel, select
             stringResource(if (service.chargedPerOrder) Res.string.common_charge_per_order else Res.string.common_charge_per_piece),
             service.laborMinutes?.minutesToDurationText(),
         ),
-        value = service.suggestedPrice?.toMoney(),
+        value = service.suggestedPrice?.toMoney() ?: stringResource(Res.string.services_row_no_price),
+        valueMuted = service.suggestedPrice == null,
         muted = service.archived,
         selected = selectedId == service.id,
         onClick = { viewModel.startEdit(service.id) },

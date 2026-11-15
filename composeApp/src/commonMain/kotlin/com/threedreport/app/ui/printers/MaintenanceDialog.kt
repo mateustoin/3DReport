@@ -92,12 +92,16 @@ import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.IconAction
+import com.threedreport.app.ui.components.RevealActions
+import com.threedreport.app.ui.components.RowAction
+import com.threedreport.app.ui.components.revealActionsWidth
 import com.threedreport.app.ui.components.suggestionsFor
 import com.threedreport.app.ui.format.minutesToHoursText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.asString
+import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
@@ -242,23 +246,37 @@ private fun ComponentRow(
         (if (status.state == MaintenanceState.OVERDUE) -status.remainingHours else status.remainingHours).hoursText(),
     )
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(status.component.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    stringResource(
-                        Res.string.printers_maintenance_component_progress,
-                        status.hoursSinceService.hoursText(),
-                        status.component.intervalHours.hoursText(),
-                        remaining,
-                    ),
-                    style = MaterialTheme.appType.caption,
-                    color = status.state.textColor(),
+        RevealActions(
+            actions = listOf(
+                RowAction(AppIcons.Edit, stringResource(Res.string.common_edit), { editing = true }),
+                RowAction(AppIcons.Delete, stringResource(Res.string.common_delete), onDelete, danger = true),
+            ),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = MaterialTheme.spacing.xs, end = revealActionsWidth(2)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(status.component.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        stringResource(
+                            Res.string.printers_maintenance_component_progress,
+                            status.hoursSinceService.hoursText(),
+                            status.component.intervalHours.hoursText(),
+                            remaining,
+                        ),
+                        style = MaterialTheme.appType.caption,
+                        color = status.state.textColor(),
+                    )
+                }
+                AppButton(
+                    stringResource(Res.string.printers_maintenance_component_done),
+                    onServiced,
+                    icon = AppIcons.Check,
+                    height = AppDimens.smallControlHeight,
                 )
             }
-            IconAction(AppIcons.Check, stringResource(Res.string.printers_maintenance_component_done), onServiced)
-            IconAction(AppIcons.Edit, stringResource(Res.string.common_edit), { editing = true })
-            IconAction(AppIcons.Delete, stringResource(Res.string.common_delete), onDelete, tint = MaterialTheme.colorScheme.error)
         }
         LinearProgressIndicator(
             progress = { (status.hoursSinceService / status.component.intervalHours).toFloat().coerceIn(0f, 1f) },
