@@ -4,11 +4,12 @@ import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.PrinterProfile
 
 /**
  * Rascunho do formulário de perfil de impressora. `id == null` significa que
- * é um perfil novo (ainda não salvo); caso contrário, é uma edição.
+ * é um perfil novo (ainda não salvo); caso contrário, é uma edição. Cada erro fica no campo a que se refere.
  */
 data class PrinterFormState(
     val id: String? = null,
@@ -21,7 +22,13 @@ data class PrinterFormState(
     val printingHoursPerDayText: String = "",
     /** O consumo veio de um preset, que traz a potência máxima da fonte (ver aviso no campo). */
     val powerFromPreset: Boolean = false,
-    val errorMessage: String? = null,
+    val nameError: UiText? = null,
+    val powerError: UiText? = null,
+    val maintenanceError: UiText? = null,
+    val priceError: UiText? = null,
+    val paybackError: UiText? = null,
+    val daysError: UiText? = null,
+    val hoursError: UiText? = null,
 ) {
     /**
      * Quanto a máquina custa por hora de impressão, sem a energia: retorno do investimento mais

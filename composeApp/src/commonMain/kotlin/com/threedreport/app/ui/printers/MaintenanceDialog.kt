@@ -1,31 +1,70 @@
 package com.threedreport.app.ui.printers
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_close
+import _3dreport.composeapp.generated.resources.common_delete
+import _3dreport.composeapp.generated.resources.common_edit
+import _3dreport.composeapp.generated.resources.common_optional
+import _3dreport.composeapp.generated.resources.common_save
+import _3dreport.composeapp.generated.resources.printers_maintenance_component_delete_message
+import _3dreport.composeapp.generated.resources.printers_maintenance_component_delete_title
+import _3dreport.composeapp.generated.resources.printers_maintenance_component_done
+import _3dreport.composeapp.generated.resources.printers_maintenance_component_empty
+import _3dreport.composeapp.generated.resources.printers_maintenance_component_new
+import _3dreport.composeapp.generated.resources.printers_maintenance_component_progress
+import _3dreport.composeapp.generated.resources.printers_maintenance_components
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_component
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_date
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_description
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_hours
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_hours_since
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_interval
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_reason
+import _3dreport.composeapp.generated.resources.printers_maintenance_field_reset
+import _3dreport.composeapp.generated.resources.printers_maintenance_help_hours_since
+import _3dreport.composeapp.generated.resources.printers_maintenance_help_known_hours
+import _3dreport.composeapp.generated.resources.printers_maintenance_help_known_hours_detail
+import _3dreport.composeapp.generated.resources.printers_maintenance_help_log
+import _3dreport.composeapp.generated.resources.printers_maintenance_help_reset
+import _3dreport.composeapp.generated.resources.printers_maintenance_help_usage
+import _3dreport.composeapp.generated.resources.printers_maintenance_known_hours
+import _3dreport.composeapp.generated.resources.printers_maintenance_log
+import _3dreport.composeapp.generated.resources.printers_maintenance_log_add
+import _3dreport.composeapp.generated.resources.printers_maintenance_log_entry
+import _3dreport.composeapp.generated.resources.printers_maintenance_log_entry_component
+import _3dreport.composeapp.generated.resources.printers_maintenance_log_submit
+import _3dreport.composeapp.generated.resources.printers_maintenance_other_date
+import _3dreport.composeapp.generated.resources.printers_maintenance_reset_none
+import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_bed
+import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_belts
+import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_calibration
+import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_nozzle
+import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_own_use
+import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_reprint
+import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_rods
+import _3dreport.composeapp.generated.resources.printers_maintenance_title
+import _3dreport.composeapp.generated.resources.printers_maintenance_today
+import _3dreport.composeapp.generated.resources.printers_maintenance_usage
+import _3dreport.composeapp.generated.resources.printers_maintenance_usage_entry
+import _3dreport.composeapp.generated.resources.printers_maintenance_usage_submit
+import _3dreport.composeapp.generated.resources.printers_maintenance_use_date
+import _3dreport.composeapp.generated.resources.printers_remaining_left
+import _3dreport.composeapp.generated.resources.printers_remaining_overdue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,128 +72,142 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.text.style.TextOverflow
 import com.threedreport.app.platform.epochDayToUtcMillis
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.utcMillisToEpochDay
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppChoiceField
+import com.threedreport.app.ui.components.AppDialog
+import com.threedreport.app.ui.components.AppDropdownField
+import com.threedreport.app.ui.components.AppSuggestField
+import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.ConfirmDialog
-import com.threedreport.app.ui.components.SubsectionTitle
-import com.threedreport.app.ui.focus.tabToNavigate
+import com.threedreport.app.ui.components.DialogText
+import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.FormSection
+import com.threedreport.app.ui.components.HelpHint
+import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.IconAction
+import com.threedreport.app.ui.components.suggestionsFor
 import com.threedreport.app.ui.format.minutesToHoursText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.asString
+import com.threedreport.app.ui.theme.appColors
+import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.MaintenanceComponent
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.report.ComponentStatus
 import com.threedreport.core.report.MaintenanceState
-
-/**
- * Nomes comuns pra não ter que digitar. Só nomes: o intervalo varia de máquina pra máquina, e o
- * app não inventa número (mesma disciplina das decisões 55 e 56).
- */
-private val COMPONENT_SUGGESTIONS = listOf("Bico", "Lubrificar eixos", "Correias", "Limpeza da mesa")
-
-private val USAGE_REASON_SUGGESTIONS = listOf("Calibração", "Reimpressão de falha", "Uso próprio")
+import org.jetbrains.compose.resources.stringResource
 
 /** Horas como texto curto, ex.: "12,5 h". */
 internal fun Double.hoursText(): String = (this * 60).minutesToHoursText()
 
+/** Cor do texto do estado: erro quando vencido, âmbar quando perto, discreta quando em dia. */
+@Composable
+internal fun MaintenanceState.textColor(): Color = when (this) {
+    MaintenanceState.OVERDUE -> MaterialTheme.colorScheme.error
+    MaintenanceState.DUE_SOON -> MaterialTheme.appColors.amberText
+    MaintenanceState.OK -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+/** Cor da barra de progresso: erro, âmbar ou, em dia, a cor de destaque do tema. */
+@Composable
+private fun MaintenanceState.barColor(): Color = when (this) {
+    MaintenanceState.OVERDUE -> MaterialTheme.colorScheme.error
+    MaintenanceState.DUE_SOON -> MaterialTheme.appColors.amberText
+    MaintenanceState.OK -> MaterialTheme.colorScheme.primary
+}
+
 /**
- * Manutenção de uma impressora (decisão 96): componentes com intervalo e contador, diário do que
- * foi feito e horas de uso fora de orçamento. Aberto pelo botão "Manutenção" na aba Impressoras,
- * que é onde a fila de cada máquina já mora (decisão 68), sem aba nova.
+ * Manutenção de uma impressora (decisão 96): componentes com intervalo e contador, diário do que foi feito e horas de
+ * uso fora de orçamento. Aberto pelo botão "Manutenção" na linha da impressora, que é onde a fila de cada máquina já
+ * mora (decisão 68), sem aba nova. O que está aberto vem do estado do [viewModel] ([open]).
  */
 @Composable
-fun MaintenanceDialog(printer: PrinterProfile, viewModel: PrinterListViewModel, onDismiss: () -> Unit) {
-    val savedQuotes by viewModel.savedQuotes.collectAsState()
-    val allMaintenance by viewModel.maintenance.collectAsState()
-    val maintenance = allMaintenance.forPrinter(printer.id)
-    val hours = viewModel.printerHours(printer.id, savedQuotes, allMaintenance)
-    val statuses = viewModel.componentStatuses(printer.id, savedQuotes, allMaintenance)
+fun MaintenanceDialog(open: MaintenanceDialogState, viewModel: PrinterListViewModel, onDismiss: () -> Unit) {
+    val printer = open.printer
     var pendingDelete by remember { mutableStateOf<MaintenanceComponent?>(null) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = MaterialTheme.shapes.medium) {
-            Column(
-                modifier = Modifier.width(680.dp).heightIn(max = 680.dp).padding(24.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text("Manutenção: ${printer.name}", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "${hours.hoursText()} de uso que o app conhece: pedidos Prontos ou Entregues nesta impressora, " +
-                        "mais as horas avulsas lá embaixo.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+    AppDialog(
+        title = stringResource(Res.string.printers_maintenance_title, printer.name),
+        onDismiss = onDismiss,
+        buttons = { AppButton(stringResource(Res.string.common_close), onDismiss) },
+        scrollable = true,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+            DialogText(stringResource(Res.string.printers_maintenance_known_hours, open.hours.hoursText()), muted = true)
+            HelpHint(
+                HelpText(
+                    stringResource(Res.string.printers_maintenance_help_known_hours),
+                    stringResource(Res.string.printers_maintenance_help_known_hours_detail),
+                ),
+                stringResource(Res.string.printers_maintenance_known_hours, open.hours.hoursText()),
+            )
+        }
+
+        FormSection(1, stringResource(Res.string.printers_maintenance_components)) {
+            if (open.statuses.isEmpty()) DialogText(stringResource(Res.string.printers_maintenance_component_empty), muted = true)
+            open.statuses.forEach { status ->
+                ComponentRow(
+                    status = status,
+                    onServiced = { viewModel.markServiced(status.component) },
+                    onSave = { name, interval -> viewModel.updateComponent(status.component, name, interval) },
+                    onDelete = { pendingDelete = status.component },
                 )
+            }
+            NewComponentForm(onAdd = { name, interval, since -> viewModel.addComponent(printer.id, name, interval, since) })
+        }
 
-                SubsectionTitle(AppIcons.Build, "Componentes", modifier = Modifier.padding(top = 8.dp))
-                if (statuses.isEmpty()) {
-                    Text(
-                        "Cadastre o que precisa de manutenção de tempos em tempos, cada um com o seu intervalo em horas de uso.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                statuses.forEach { status ->
-                    ComponentRow(
-                        status = status,
-                        onServiced = { viewModel.markServiced(status.component) },
-                        onSave = { name, interval -> viewModel.updateComponent(status.component, name, interval) },
-                        onDelete = { pendingDelete = status.component },
-                    )
-                }
-                NewComponentForm(onAdd = { name, interval, since -> viewModel.addComponent(printer.id, name, interval, since) })
-
-                HorizontalDivider()
-                SubsectionTitle(AppIcons.History, "Diário de manutenção")
-                LogForm(
-                    components = maintenance.components,
-                    onAdd = { date, description, componentId -> viewModel.logService(printer.id, date, description, componentId) },
+        FormSection(
+            2,
+            stringResource(Res.string.printers_maintenance_log),
+            modifier = Modifier.padding(top = MaterialTheme.spacing.sm),
+            help = HelpText(stringResource(Res.string.printers_maintenance_help_log)).takeIf { open.data.log.any { it.componentId != null } },
+        ) {
+            LogForm(
+                components = open.data.components,
+                onAdd = { date, description, componentId -> viewModel.logService(printer.id, date, description, componentId) },
+            )
+            val componentNames = open.data.components.associate { it.id to it.name }
+            open.data.log.sortedByDescending { it.dateEpochDay }.forEach { entry ->
+                val component = entry.componentId?.let(componentNames::get)?.takeIf { it != entry.description }
+                EntryRow(
+                    text = if (component != null) {
+                        stringResource(Res.string.printers_maintenance_log_entry_component, formatDate(entry.dateEpochDay), entry.description, component)
+                    } else {
+                        stringResource(Res.string.printers_maintenance_log_entry, formatDate(entry.dateEpochDay), entry.description)
+                    },
+                    onDelete = { viewModel.deleteLogEntry(entry.id) },
                 )
-                if (maintenance.log.any { it.componentId != null }) {
-                    Text(
-                        "Registrou por engano? Excluir a manutenção mais recente de um componente devolve o contador dele pra onde estava.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                val componentNames = maintenance.components.associate { it.id to it.name }
-                maintenance.log.sortedByDescending { it.dateEpochDay }.forEach { entry ->
-                    EntryRow(
-                        text = "${formatDate(entry.dateEpochDay)} · ${entry.description}" +
-                            (entry.componentId?.let(componentNames::get)?.takeIf { it != entry.description }?.let { " ($it)" } ?: ""),
-                        onDelete = { viewModel.deleteLogEntry(entry.id) },
-                    )
-                }
+            }
+        }
 
-                HorizontalDivider()
-                SubsectionTitle(AppIcons.Schedule, "Horas fora de orçamento")
-                Text(
-                    "Calibração, reimpressão de peça que falhou e uso próprio também gastam a máquina. " +
-                        "Lance aqui pra o alerta não chegar atrasado.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        FormSection(
+            3,
+            stringResource(Res.string.printers_maintenance_usage),
+            modifier = Modifier.padding(top = MaterialTheme.spacing.sm),
+            help = HelpText(stringResource(Res.string.printers_maintenance_help_usage)),
+        ) {
+            ManualUsageForm(onAdd = { hoursText, reason -> viewModel.addManualUsage(printer.id, hoursText, reason) })
+            open.data.manualUsage.sortedByDescending { it.dateEpochDay }.forEach { entry ->
+                EntryRow(
+                    text = stringResource(Res.string.printers_maintenance_usage_entry, formatDate(entry.dateEpochDay), entry.hours.hoursText(), entry.reason),
+                    onDelete = { viewModel.deleteManualUsage(entry.id) },
                 )
-                ManualUsageForm(onAdd = { hoursText, reason -> viewModel.addManualUsage(printer.id, hoursText, reason) })
-                maintenance.manualUsage.sortedByDescending { it.dateEpochDay }.forEach { entry ->
-                    EntryRow(
-                        text = "${formatDate(entry.dateEpochDay)} · ${entry.hours.hoursText()} · ${entry.reason}",
-                        onDelete = { viewModel.deleteManualUsage(entry.id) },
-                    )
-                }
-
-                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                    TextButton(onClick = onDismiss) { Text("Fechar") }
-                }
             }
         }
     }
 
     pendingDelete?.let { component ->
         ConfirmDialog(
-            title = "Excluir componente?",
-            message = "\"${component.name}\" e o contador dele serão removidos. O que já está no diário continua lá.",
+            title = stringResource(Res.string.printers_maintenance_component_delete_title),
+            message = stringResource(Res.string.printers_maintenance_component_delete_message, component.name),
             onConfirm = {
                 viewModel.deleteComponent(component.id)
                 pendingDelete = null
@@ -164,23 +217,11 @@ fun MaintenanceDialog(printer: PrinterProfile, viewModel: PrinterListViewModel, 
     }
 }
 
-/** Cor do estado: erro quando vencido, secundária (o âmbar da paleta) quando perto, primária quando em dia. */
-@Composable
-internal fun MaintenanceState.color(): Color = when (this) {
-    MaintenanceState.OVERDUE -> MaterialTheme.colorScheme.error
-    MaintenanceState.DUE_SOON -> MaterialTheme.colorScheme.secondary
-    MaintenanceState.OK -> MaterialTheme.colorScheme.primary
-}
-
-/** Frase curta da situação, ex.: "vencida há 8 h", "faltam 12 h". */
-internal fun ComponentStatus.remainingText(): String =
-    if (state == MaintenanceState.OVERDUE) "vencida há ${(-remainingHours).hoursText()}" else "faltam ${remainingHours.hoursText()}"
-
 @Composable
 private fun ComponentRow(
     status: ComponentStatus,
     onServiced: () -> Unit,
-    onSave: (name: String, interval: String) -> String?,
+    onSave: (name: String, interval: String) -> UiText?,
     onDelete: () -> Unit,
 ) {
     var editing by remember(status.component.id) { mutableStateOf(false) }
@@ -188,175 +229,187 @@ private fun ComponentRow(
         ComponentFields(
             initialName = status.component.name,
             initialInterval = status.component.intervalHours.toInputText(),
-            showHoursSince = false,
-            submitLabel = "Salvar",
+            isNew = false,
             onSubmit = { name, interval, _ -> onSave(name, interval).also { if (it == null) editing = false } },
             onCancel = { editing = false },
         )
         return
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    val remaining = stringResource(
+        if (status.state == MaintenanceState.OVERDUE) Res.string.printers_remaining_overdue else Res.string.printers_remaining_left,
+        (if (status.state == MaintenanceState.OVERDUE) -status.remainingHours else status.remainingHours).hoursText(),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(status.component.name, style = MaterialTheme.typography.titleSmall)
+                Text(status.component.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "${status.hoursSinceService.hoursText()} de ${status.component.intervalHours.hoursText()} · ${status.remainingText()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (status.state == MaintenanceState.OK) MaterialTheme.colorScheme.onSurfaceVariant else status.state.color(),
+                    stringResource(
+                        Res.string.printers_maintenance_component_progress,
+                        status.hoursSinceService.hoursText(),
+                        status.component.intervalHours.hoursText(),
+                        remaining,
+                    ),
+                    style = MaterialTheme.appType.caption,
+                    color = status.state.textColor(),
                 )
             }
-            TextButton(onClick = onServiced) { Text("Feito hoje") }
-            TextButton(onClick = { editing = true }) { Text("Editar") }
-            TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
+            IconAction(AppIcons.Check, stringResource(Res.string.printers_maintenance_component_done), onServiced)
+            IconAction(AppIcons.Edit, stringResource(Res.string.common_edit), { editing = true })
+            IconAction(AppIcons.Delete, stringResource(Res.string.common_delete), onDelete, tint = MaterialTheme.colorScheme.error)
         }
         LinearProgressIndicator(
             progress = { (status.hoursSinceService / status.component.intervalHours).toFloat().coerceIn(0f, 1f) },
             modifier = Modifier.fillMaxWidth(),
-            color = status.state.color(),
+            color = status.state.barColor(),
             // O trilho padrão é âmbar nesta paleta e, vazio, parece uma barra cheia.
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            trackColor = MaterialTheme.appColors.column,
+            drawStopIndicator = {},
         )
     }
 }
 
 @Composable
-private fun NewComponentForm(onAdd: (name: String, interval: String, hoursSince: String) -> String?) {
+private fun NewComponentForm(onAdd: (name: String, interval: String, hoursSince: String) -> UiText?) {
     var open by remember { mutableStateOf(false) }
     if (!open) {
-        TextButton(onClick = { open = true }) { Text("+ Componente") }
+        AppButton(stringResource(Res.string.printers_maintenance_component_new), { open = true }, icon = AppIcons.Add)
         return
     }
     ComponentFields(
         initialName = "",
         initialInterval = "",
-        showHoursSince = true,
-        submitLabel = "Adicionar",
+        isNew = true,
         onSubmit = { name, interval, since -> onAdd(name, interval, since).also { if (it == null) open = false } },
         onCancel = { open = false },
     )
 }
 
-/** Campos de componente, pra cadastrar ou editar. [onSubmit] devolve a mensagem de erro, ou `null`. */
+/** Mensagem de erro de um subformulário do diálogo, embaixo dos campos. */
+@Composable
+private fun FormError(error: UiText?) {
+    if (error != null) Text(error.asString(), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.error)
+}
+
+/** Campos de componente, pra cadastrar ou editar. [onSubmit] devolve o erro, ou `null`. */
 @Composable
 private fun ComponentFields(
     initialName: String,
     initialInterval: String,
-    showHoursSince: Boolean,
-    submitLabel: String,
-    onSubmit: (name: String, interval: String, hoursSince: String) -> String?,
+    isNew: Boolean,
+    onSubmit: (name: String, interval: String, hoursSince: String) -> UiText?,
     onCancel: () -> Unit,
 ) {
     var name by remember { mutableStateOf(initialName) }
     var interval by remember { mutableStateOf(initialInterval) }
     var hoursSince by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiText?>(null) }
+    val suggestions = listOf(
+        stringResource(Res.string.printers_maintenance_suggestion_nozzle),
+        stringResource(Res.string.printers_maintenance_suggestion_rods),
+        stringResource(Res.string.printers_maintenance_suggestion_belts),
+        stringResource(Res.string.printers_maintenance_suggestion_bed),
+    )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (showHoursSince) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                COMPONENT_SUGGESTIONS.forEach { suggestion ->
-                    FilterChip(selected = name == suggestion, onClick = { name = suggestion }, label = { Text(suggestion) })
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm)) {
+        if (isNew) {
+            AppSuggestField(
+                label = stringResource(Res.string.printers_maintenance_field_component),
+                value = name,
+                onValueChange = { name = it; error = null },
+                suggestions = suggestions.suggestionsFor(name),
+                suggestionLabel = { it },
+                onChoose = { name = it; error = null },
+            )
+        } else {
+            AppTextField(
+                label = stringResource(Res.string.printers_maintenance_field_component),
+                value = name,
+                onValueChange = { name = it; error = null },
+            )
+        }
+        FormGrid {
+            cell(if (isNew) 1 else 3) {
+                AppTextField(
+                    label = stringResource(Res.string.printers_maintenance_field_interval),
+                    value = interval,
+                    onValueChange = { interval = it; error = null },
+                )
+            }
+            if (isNew) {
+                cell(2) {
+                    AppTextField(
+                        label = stringResource(Res.string.printers_maintenance_field_hours_since),
+                        value = hoursSince,
+                        onValueChange = { hoursSince = it; error = null },
+                        placeholder = stringResource(Res.string.common_optional),
+                        help = HelpText(stringResource(Res.string.printers_maintenance_help_hours_since)),
+                    )
                 }
             }
         }
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = name,
-            onValueChange = { name = it; error = null },
-            label = { Text("Componente ou tarefa") },
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                modifier = Modifier.weight(1f).tabToNavigate(),
-                value = interval,
-                onValueChange = { interval = it; error = null },
-                label = { Text("A cada quantas horas de uso") },
-            )
-            if (showHoursSince) {
-                OutlinedTextField(
-                    modifier = Modifier.weight(1f).tabToNavigate(),
-                    value = hoursSince,
-                    onValueChange = { hoursSince = it; error = null },
-                    label = { Text("Horas desde a última vez") },
-                )
-            }
-        }
-        if (showHoursSince) {
-            Text(
-                "Horas desde a última vez é opcional: deixe em branco se a peça é nova ou acabou de ser trocada.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { error = onSubmit(name, interval, hoursSince) }) { Text(submitLabel) }
-            TextButton(onClick = onCancel) { Text("Cancelar") }
+        FormError(error)
+        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+            AppButton(stringResource(if (isNew) Res.string.printers_maintenance_log_add else Res.string.common_save), { error = onSubmit(name, interval, hoursSince) })
+            AppButton(stringResource(Res.string.common_cancel), onCancel)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LogForm(components: List<MaintenanceComponent>, onAdd: (date: Long, description: String, componentId: String?) -> String?) {
+private fun LogForm(components: List<MaintenanceComponent>, onAdd: (date: Long, description: String, componentId: String?) -> UiText?) {
     var open by remember { mutableStateOf(false) }
     if (!open) {
-        TextButton(onClick = { open = true }) { Text("+ Registrar manutenção") }
+        AppButton(stringResource(Res.string.printers_maintenance_log_add), { open = true }, icon = AppIcons.Add)
         return
     }
     val today = todayEpochDay()
     var description by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(today) }
-    var componentId by remember { mutableStateOf<String?>(null) }
+    var component by remember { mutableStateOf<MaintenanceComponent?>(null) }
     var showCalendar by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiText?>(null) }
+    val noneLabel = stringResource(Res.string.printers_maintenance_reset_none)
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm)) {
+        AppTextField(
+            label = stringResource(Res.string.printers_maintenance_field_description),
             value = description,
             onValueChange = { description = it; error = null },
-            label = { Text("O que foi feito (ex.: Trocado bico 0,4 mm)") },
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
-            FilterChip(selected = date == today, onClick = { date = today }, label = { Text("Hoje") })
-            FilterChip(
-                selected = date != today,
-                onClick = { showCalendar = true },
-                label = { Text(if (date == today) "Outra data…" else formatDate(date)) },
+        AppChoiceField(
+            label = stringResource(Res.string.printers_maintenance_field_date),
+            options = listOf(
+                stringResource(Res.string.printers_maintenance_today),
+                if (date == today) stringResource(Res.string.printers_maintenance_other_date) else formatDate(date),
+            ),
+            selectedIndex = if (date == today) 0 else 1,
+            onSelect = { index -> if (index == 0) date = today else showCalendar = true },
+        )
+        if (components.isNotEmpty()) {
+            AppDropdownField(
+                label = stringResource(Res.string.printers_maintenance_field_reset),
+                items = listOf<MaintenanceComponent?>(null) + components,
+                selected = component,
+                itemLabel = { it?.name ?: noneLabel },
+                displayText = { it?.name ?: noneLabel },
+                onSelect = { chosen ->
+                    component = chosen
+                    if (chosen != null && description.isBlank()) description = chosen.name
+                },
+                emptyText = noneLabel,
+                help = HelpText(stringResource(Res.string.printers_maintenance_help_reset)),
             )
         }
-        if (components.isNotEmpty()) {
-            Text("Zera o contador de:", style = MaterialTheme.typography.bodySmall)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = componentId == null, onClick = { componentId = null }, label = { Text("Nenhum") })
-                components.forEach { component ->
-                    FilterChip(
-                        selected = componentId == component.id,
-                        onClick = {
-                            componentId = component.id
-                            if (description.isBlank()) description = component.name
-                        },
-                        label = { Text(component.name) },
-                    )
-                }
-            }
-            if (componentId != null) {
-                Text(
-                    "O contador recomeça agora, mesmo com data antiga: o app não sabe quanto a máquina rodou desde então.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = {
-                error = onAdd(date, description, componentId)
+        FormError(error)
+        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+            AppButton(stringResource(Res.string.printers_maintenance_log_submit), {
+                error = onAdd(date, description, component?.id)
                 if (error == null) open = false
-            }) { Text("Registrar") }
-            TextButton(onClick = { open = false }) { Text("Cancelar") }
+            })
+            AppButton(stringResource(Res.string.common_cancel), { open = false })
         }
     }
 
@@ -371,15 +424,17 @@ private fun LogForm(components: List<MaintenanceComponent>, onAdd: (date: Long, 
         DatePickerDialog(
             onDismissRequest = { showCalendar = false },
             confirmButton = {
-                TextButton(
+                AppButton(
+                    stringResource(Res.string.printers_maintenance_use_date),
                     onClick = {
                         state.selectedDateMillis?.let { date = utcMillisToEpochDay(it) }
                         showCalendar = false
                     },
+                    kind = ButtonKind.Primary,
                     enabled = state.selectedDateMillis != null,
-                ) { Text("Usar esta data") }
+                )
             },
-            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text("Cancelar") } },
+            dismissButton = { AppButton(stringResource(Res.string.common_cancel), { showCalendar = false }) },
         ) {
             DatePicker(state = state, showModeToggle = false)
         }
@@ -387,46 +442,51 @@ private fun LogForm(components: List<MaintenanceComponent>, onAdd: (date: Long, 
 }
 
 @Composable
-private fun ManualUsageForm(onAdd: (hours: String, reason: String) -> String?) {
+private fun ManualUsageForm(onAdd: (hours: String, reason: String) -> UiText?) {
     var hours by remember { mutableStateOf("") }
     var reason by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiText?>(null) }
+    val suggestions = listOf(
+        stringResource(Res.string.printers_maintenance_suggestion_calibration),
+        stringResource(Res.string.printers_maintenance_suggestion_reprint),
+        stringResource(Res.string.printers_maintenance_suggestion_own_use),
+    )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            USAGE_REASON_SUGGESTIONS.forEach { suggestion ->
-                FilterChip(selected = reason == suggestion, onClick = { reason = suggestion }, label = { Text(suggestion) })
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm)) {
+        FormGrid {
+            cell(1) {
+                AppTextField(
+                    label = stringResource(Res.string.printers_maintenance_field_hours),
+                    value = hours,
+                    onValueChange = { hours = it; error = null },
+                )
+            }
+            cell(2) {
+                AppSuggestField(
+                    label = stringResource(Res.string.printers_maintenance_field_reason),
+                    value = reason,
+                    onValueChange = { reason = it; error = null },
+                    suggestions = suggestions.suggestionsFor(reason),
+                    suggestionLabel = { it },
+                    onChoose = { reason = it; error = null },
+                )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                modifier = Modifier.width(140.dp).tabToNavigate(),
-                value = hours,
-                onValueChange = { hours = it; error = null },
-                label = { Text("Horas") },
-            )
-            OutlinedTextField(
-                modifier = Modifier.weight(1f).tabToNavigate(),
-                value = reason,
-                onValueChange = { reason = it; error = null },
-                label = { Text("Motivo") },
-            )
-            Button(onClick = {
-                error = onAdd(hours, reason)
-                if (error == null) {
-                    hours = ""
-                    reason = ""
-                }
-            }) { Text("Lançar") }
-        }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        FormError(error)
+        AppButton(stringResource(Res.string.printers_maintenance_usage_submit), {
+            error = onAdd(hours, reason)
+            if (error == null) {
+                hours = ""
+                reason = ""
+            }
+        })
     }
 }
 
 @Composable
 private fun EntryRow(text: String, onDelete: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
+        Text(text, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+        IconAction(AppIcons.Delete, stringResource(Res.string.common_delete), onDelete, tint = MaterialTheme.colorScheme.error)
     }
 }

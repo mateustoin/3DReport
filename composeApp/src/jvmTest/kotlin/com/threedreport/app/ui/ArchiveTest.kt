@@ -84,7 +84,7 @@ class ArchiveTest {
 
         // Na lixeira o pedido ainda pode voltar, então excluir o filamento continua sugerindo arquivar.
         assertEquals(1, FilamentListViewModel(filaments, scope, history::quotesIncludingTrash).usageCount(used))
-        assertEquals(1, PrinterListViewModel(printers, history, MaintenanceRepository()).usageCount(printer))
+        assertEquals(1, PrinterListViewModel(printers, history, MaintenanceRepository(), scope).usageCount(printer))
     }
 
     @Test

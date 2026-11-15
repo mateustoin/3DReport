@@ -55,6 +55,7 @@ import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.MachineInvestment
+import com.threedreport.core.model.MaintenanceComponent
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
@@ -173,8 +174,25 @@ class ScreenshotRenderer {
             ) {
                 App(container, startAt = AppDestination.FILAMENTS)
             }
+            renderAppPng(
+                File(outDir, "impressoras$suffix.png"),
+                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
+            ) {
+                App(container, startAt = AppDestination.PRINTERS)
+            }
+            renderAppPng(File(outDir, "impressoras-painel$suffix.png"), afterSettle = { it.clickByText("Bambu Lab A1") }) {
+                App(container, startAt = AppDestination.PRINTERS)
+            }
         }
         container.theme.update(ThemeMode.LIGHT)
+
+        // Os diálogos de Impressoras: a manutenção e a lista pré-cadastrada.
+        renderAppPng(File(outDir, "impressoras-manutencao.png"), afterSettle = { it.clickByDescription("Manutenção") }) {
+            App(container, startAt = AppDestination.PRINTERS)
+        }
+        renderAppPng(File(outDir, "impressoras-lista.png"), afterSettle = { it.clickByText("Escolher da lista") }) {
+            App(container, startAt = AppDestination.PRINTERS)
+        }
 
         renderAppPng(File(outDir, "dashboard.png")) {
             App(container, startAt = AppDestination.DASHBOARD)
@@ -442,6 +460,16 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
     )
     printerRepo.add(
         PrinterProfile(
+            id = "printer-ender",
+            name = "Ender 3 V2",
+            printerPowerWatts = 350.0,
+            maintenanceCostPerHour = 0.10,
+            machineInvestment = MachineInvestment(machinePrice = 1100.0, paybackMonths = 12, printingDaysPerMonth = 20, printingHoursPerDay = 8.0),
+            archived = true,
+        ),
+    )
+    printerRepo.add(
+        PrinterProfile(
             id = Catalog.K1_ID,
             name = "Creality K1",
             printerPowerWatts = 350.0,
@@ -449,6 +477,12 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
             machineInvestment = MachineInvestment(machinePrice = 2600.0, paybackMonths = 12, printingDaysPerMonth = 24, printingHoursPerDay = 10.0),
         ),
     )
+
+    // A manutenção de cada impressora: o contador de cada componente já corre, pra lista mostrar o que está perto.
+    val maintenanceRepo = storage.maintenance()
+    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-bico", printerId = Catalog.BAMBU_ID, name = "Bico", intervalHours = 100.0, hoursAtLastService = -92.0))
+    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-correias", printerId = Catalog.BAMBU_ID, name = "Correias", intervalHours = 300.0, hoursAtLastService = -40.0))
+    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-mesa", printerId = Catalog.K1_ID, name = "Limpeza da mesa", intervalHours = 200.0, hoursAtLastService = -20.0))
 
     val serviceRepo = storage.services()
     serviceRepo.add(Service(id = Catalog.PINTURA_ID, name = "Pintura", suggestedPrice = 25.0, chargedPerOrder = false))
@@ -612,6 +646,20 @@ private fun settle(scene: ImageComposeScene, frames: Int = 10, delayMs: Long = 3
 private fun ImageComposeScene.clickByText(text: String) {
     for (owner in semanticsOwners) {
         val node = findClickableNodeWithText(owner.rootSemanticsNode, text) ?: continue
+        node.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke()
+        return
+    }
+}
+
+/** Como [clickByText], pelo texto de descrição (botão só de ícone, como as ações da linha). */
+private fun ImageComposeScene.clickByDescription(description: String) {
+    fun find(node: SemanticsNode): SemanticsNode? {
+        val descriptions = node.config.getOrNull(SemanticsProperties.ContentDescription)
+        if (node.config.getOrNull(SemanticsActions.OnClick) != null && descriptions?.any { it == description } == true) return node
+        return node.children.firstNotNullOfOrNull(::find)
+    }
+    for (owner in semanticsOwners) {
+        val node = find(owner.rootSemanticsNode) ?: continue
         node.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke()
         return
     }

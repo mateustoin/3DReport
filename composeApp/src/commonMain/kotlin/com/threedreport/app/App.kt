@@ -188,7 +188,7 @@ fun App(
                         // todas as abas, inclusive um que a pessoa nem estava vendo.
                         event.key == Key.Escape -> when (navigator.destination) {
                             AppDestination.FILAMENTS -> viewModels.filamentListViewModel.let { vm -> vm.uiState.value.form?.let { vm.cancelEdit(); true } ?: false }
-                            AppDestination.PRINTERS -> viewModels.printerListViewModel.let { vm -> vm.form.value?.let { vm.cancelEdit(); true } ?: false }
+                            AppDestination.PRINTERS -> viewModels.printerListViewModel.let { vm -> vm.uiState.value.form?.let { vm.cancelEdit(); true } ?: false }
                             AppDestination.SERVICES -> viewModels.serviceListViewModel.let { vm -> vm.uiState.value.form?.let { vm.cancelEdit(); true } ?: false }
                             AppDestination.CONSUMABLES -> viewModels.consumableListViewModel.let { vm -> vm.uiState.value.form?.let { vm.cancelEdit(); true } ?: false }
                             else -> false
