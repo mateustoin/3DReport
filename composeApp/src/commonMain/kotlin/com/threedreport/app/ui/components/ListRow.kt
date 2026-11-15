@@ -121,7 +121,8 @@ fun ListRow(
  * Faixa com ações de ícone que só aparecem com o mouse em cima ou com o foco dentro (teclado), sem sair da ordem do
  * Tab. É o mecanismo de [ListRow], aberto pra outras listas (os componentes do diálogo de manutenção). As [actions]
  * (e o [extra], um botão que abre um menu, por exemplo) ficam por cima do fim do [content], com o fundo da faixa; quem põe algo no fim do conteúdo deve reservar o espaço
- * (veja [revealActionsWidth]). [content] recebe se a faixa está ativa. [selected] usa o fundo `tint`.
+ * (veja [revealActionsWidth]). [content] recebe se a faixa está ativa. [selected] usa o fundo `tint`. Com [enabled] falso, a faixa não existe
+ * (o modo de seleção da tabela: clicar só marca) e a linha também não muda de fundo no hover.
  */
 @Composable
 fun RevealActions(
@@ -129,6 +130,7 @@ fun RevealActions(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     extra: @Composable RowScope.() -> Unit = {},
+    enabled: Boolean = true,
     content: @Composable (active: Boolean) -> Unit,
 ) {
     val colors = MaterialTheme.appColors
@@ -140,7 +142,7 @@ fun RevealActions(
     val actionsAlpha by animateFloatAsState(if (active) 1f else 0f, tween(AppDimens.MOTION_MILLIS))
     val rowBackground = when {
         selected -> colors.tint
-        active -> colors.column
+        active && enabled -> colors.column
         else -> Color.Transparent
     }
     Box(
@@ -153,22 +155,24 @@ fun RevealActions(
         contentAlignment = Alignment.CenterEnd,
     ) {
         content(active)
-        Row(
-            modifier = Modifier
-                .alpha(actionsAlpha)
-                .background(if (selected) colors.tint else colors.column, MaterialTheme.shapes.small)
-                .padding(horizontal = space.xxs),
-            horizontalArrangement = Arrangement.spacedBy(space.xxs),
-        ) {
-            actions.forEach { action ->
-                IconAction(
-                    icon = action.icon,
-                    description = action.description,
-                    onClick = action.onClick,
-                    tint = if (action.danger) MaterialTheme.colorScheme.error else Color.Unspecified,
-                )
+        if (enabled) {
+            Row(
+                modifier = Modifier
+                    .alpha(actionsAlpha)
+                    .background(if (selected) colors.tint else colors.column, MaterialTheme.shapes.small)
+                    .padding(horizontal = space.xxs),
+                horizontalArrangement = Arrangement.spacedBy(space.xxs),
+            ) {
+                actions.forEach { action ->
+                    IconAction(
+                        icon = action.icon,
+                        description = action.description,
+                        onClick = action.onClick,
+                        tint = if (action.danger) MaterialTheme.colorScheme.error else Color.Unspecified,
+                    )
+                }
+                extra()
             }
-            extra()
         }
     }
 }

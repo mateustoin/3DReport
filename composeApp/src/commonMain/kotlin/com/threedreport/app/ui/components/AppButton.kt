@@ -43,7 +43,8 @@ enum class ButtonKind { Primary, Secondary, OnNavy, Danger }
 
 /**
  * Botão do kit. [Primary][ButtonKind.Primary]: fundo âmbar, texto `onAmber` em 600. [Secondary][ButtonKind.Secondary]:
- * fundo `card` com borda `line`. [OnNavy][ButtonKind.OnNavy]: transparente com borda `navyRaised`, e com [active] fundo `navyRaised`.
+ * fundo `card` com borda `line`. [OnNavy][ButtonKind.OnNavy]: transparente com borda `navyRaised`, e com [active] fundo `navyRaised`. O secundário
+ * ativo ([active]) ganha fundo `tint` e borda `primary`.
  * [Danger][ButtonKind.Danger]: como o secundário, com texto `error`. Ícone opcional
  * à esquerda do texto (nunca só ícone).
  */
@@ -74,9 +75,10 @@ fun AppButton(
         }
 
         ButtonKind.Secondary -> {
-            background = colors.card
+            // Ativo (o modo que o botão liga está ligado): fundo `tint` e borda `primary`.
+            background = if (active) colors.tint else colors.card
             content = MaterialTheme.colorScheme.onSurface
-            border = if (hovered && enabled) MaterialTheme.colorScheme.primary else colors.line
+            border = if ((hovered && enabled) || active) MaterialTheme.colorScheme.primary else colors.line
         }
 
         ButtonKind.OnNavy -> {

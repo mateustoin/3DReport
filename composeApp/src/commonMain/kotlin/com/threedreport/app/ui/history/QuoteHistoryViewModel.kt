@@ -102,8 +102,8 @@ class QuoteHistoryViewModel(
     private val showOrders: () -> Unit = {},
     /** Cadastro de insumos (decisão 122), pro catálogo vivo recalcular com o custo de hoje de cada um. */
     consumableRepository: ConsumableRepository? = null,
-    /** A moeda do app, pra o que os blocos de resumo e as colunas somam. */
-    currency: () -> Currency = { Currency.BRL },
+    /** A moeda do app: o que os blocos de resumo e as colunas somam vem primeiro nela, e trocar de moeda refaz o estado. */
+    private val currency: StateFlow<Currency> = MutableStateFlow(Currency.BRL),
 ) {
     private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
 
@@ -112,20 +112,24 @@ class QuoteHistoryViewModel(
 
     private val builder = HistoryStateBuilder(
         repository, filamentRepository, printerRepository, settingsRepository, salesChannelRepository, preferencesRepository,
-        clientRepository, consumableRepository, today, clock, currency,
+        clientRepository, consumableRepository, today, clock, { currency.value },
     )
     private val exporter = QuoteExporter(platform, brandingRepository, repository, scope, background, main) { notice -> noticeChannel.trySend(notice) }
 
     private val state = MutableStateFlow(builder.refresh(HistoryUiState(filter = HistoryFilter(kind = kind))))
     val uiState: StateFlow<HistoryUiState> = state.asStateFlow()
 
+    /** Muda o estado e refaz tudo o que se deriva dele (filtro, seleção, preferência, repositórios): o trabalho caro. */
     private fun change(transform: (HistoryUiState) -> HistoryUiState) = state.update { builder.refresh(transform(it)) }
 
+    /** Muda só o que a tela mostra por cima (diálogo, formulário, "Copiado", "Gerando"): nada na lista depende disso. */
+    private fun patch(transform: (HistoryUiState) -> HistoryUiState) = state.update(transform)
+
     private val exports = HistoryExports(
-        exporter, platform, brandingRepository, repository, today, { state.value }, ::change, noticeChannel::trySend,
+        exporter, platform, brandingRepository, repository, today, { state.value }, ::patch, noticeChannel::trySend,
         editDeliveryDate = ::startEditingDeliveryDate, clearSelection = ::clearSelection,
     )
-    private val detailsEditor = HistoryDetailsEditor(repository, clientRepository, platform, { state.value }, ::change, noticeChannel::trySend)
+    private val detailsEditor = HistoryDetailsEditor(repository, clientRepository, platform, { state.value }, ::patch, noticeChannel::trySend)
 
     init {
         // Qualquer coisa que a tela lê e que mude em outro lugar (um filamento, o cliente, a visualização) refaz o estado.
@@ -136,11 +140,12 @@ class QuoteHistoryViewModel(
             settingsRepository.settings,
             salesChannelRepository.channels,
             preferencesRepository.preferences,
+            currency,
             consumableRepository?.consumables ?: MutableStateFlow(emptyList<Consumable>()),
             clientRepository?.clients ?: MutableStateFlow(emptyList<Client>()),
         )
         combine(sources) { }.onEach { change { it } }.launchIn(scope)
-        exporter.busy.onEach { busy -> change { it.copy(busy = busy) } }.launchIn(scope)
+        exporter.busy.onEach { busy -> patch { it.copy(busy = busy) } }.launchIn(scope)
     }
 
     // ---- filtros e visualização
@@ -149,6 +154,9 @@ class QuoteHistoryViewModel(
     fun setStatusFilter(status: OrderStatus?) = change { it.copy(filter = it.filter.copy(status = status)) }
     fun setPeriodFilter(period: PeriodPreset) = change { it.copy(filter = it.filter.copy(period = period)) }
     fun setCategoryFilter(category: CategoryFilter) = change { it.copy(filter = it.filter.copy(category = category)) }
+
+    /** Tira a busca, a situação, o período e a categoria (o "Limpar filtros" da lista vazia); o tipo da tela fica. */
+    fun clearFilters() = change { it.copy(filter = HistoryFilter(kind = it.filter.kind)) }
 
     /** Lembra a visualização de Pedidos pra próxima abertura (decisão 129). */
     fun setOrdersView(view: OrdersView) {
@@ -163,6 +171,14 @@ class QuoteHistoryViewModel(
         clearSelection()
     }
 
+    /**
+     * A tela entrou em composição (ou o relógio andou): se o dia virou, refaz o estado, porque os selos de prazo e os
+     * blocos de resumo dependem de "hoje". Sem mudança, não faz nada.
+     */
+    fun onShown() {
+        if (state.value.today != today()) change { it }
+    }
+
     fun setShowAllDelivered(show: Boolean) = change { it.copy(showAllDelivered = show) }
 
     // ---- andamento, exclusão e transformar em pedido
@@ -175,7 +191,8 @@ class QuoteHistoryViewModel(
         val before = repository.savedQuotes.value.find { it.id == id } ?: return
         if (before.status == status) return
         repository.updateStatus(id, status)
-        val statusFilter = state.value.filter.status
+        // O filtro de situação só vale na lista: no kanban as colunas são todas as situações, e mover não tira nada da vista.
+        val statusFilter = state.value.filter.status.takeIf { state.value.ordersView == OrdersView.LIST }
         when {
             statusFilter != null && statusFilter != status -> noticeChannel.trySend(
                 UiNotice(
@@ -233,7 +250,7 @@ class QuoteHistoryViewModel(
         if (!result.changed) return
         val before = product.quote
         val after = result.quote
-        change {
+        patch {
             it.copy(
                 repricing = Repricing(
                     product = product,
@@ -252,12 +269,12 @@ class QuoteHistoryViewModel(
         }
     }
 
-    fun cancelRepricing() = change { it.copy(repricing = null) }
+    fun cancelRepricing() = patch { it.copy(repricing = null) }
 
     fun confirmRepricing() {
         val pending = state.value.repricing ?: return
         repository.updateQuote(pending.product.id, pending.newQuote)
-        change { it.copy(repricing = null) }
+        patch { it.copy(repricing = null) }
         noticeChannel.trySend(UiNotice(uiText(Res.string.history_notice_repriced, pending.product.name)))
     }
 
@@ -266,20 +283,20 @@ class QuoteHistoryViewModel(
     /** Dias que [deadlineEpochDay] já passou hoje, pro seletor de prazo (ver [deliveryDaysLate]). */
     fun deliveryDaysLate(deadlineEpochDay: Long?): Int = deliveryDaysLate(deadlineEpochDay, today())
 
-    fun startEditingDeliveryDate(savedQuote: SavedQuote) = change { it.copy(deliveryDateEditing = savedQuote) }
+    fun startEditingDeliveryDate(savedQuote: SavedQuote) = patch { it.copy(deliveryDateEditing = savedQuote) }
 
-    fun cancelEditingDeliveryDate() = change { it.copy(deliveryDateEditing = null) }
+    fun cancelEditingDeliveryDate() = patch { it.copy(deliveryDateEditing = null) }
 
     /** Grava o prazo escolhido no diálogo (`null` remove) e fecha o diálogo. */
     fun saveDeliveryDate(deliveryDateEpochDay: Long?) {
         val editing = state.value.deliveryDateEditing ?: return
         repository.updateDeliveryDate(editing.id, deliveryDateEpochDay)
-        change { it.copy(deliveryDateEditing = null) }
+        patch { it.copy(deliveryDateEditing = null) }
     }
 
-    fun startEditingPrintSettings(savedQuote: SavedQuote) = change { it.copy(printSettingsEditing = savedQuote) }
+    fun startEditingPrintSettings(savedQuote: SavedQuote) = patch { it.copy(printSettingsEditing = savedQuote) }
 
-    fun cancelEditingPrintSettings() = change { it.copy(printSettingsEditing = null) }
+    fun cancelEditingPrintSettings() = patch { it.copy(printSettingsEditing = null) }
 
     /** Grava as configurações de impressão do pedido aberto; vazias, apagam. O diálogo se fecha por conta própria. */
     fun savePrintSettings(settings: PrintSettings) {
@@ -308,7 +325,7 @@ class QuoteHistoryViewModel(
     fun openInWhatsApp(savedQuote: SavedQuote) = exports.openInWhatsApp(savedQuote)
     fun saveShareableImage(savedQuote: SavedQuote) = exports.saveShareableImage(savedQuote)
     fun copyQuoteToClipboard(savedQuote: SavedQuote) = exports.copy(savedQuote)
-    fun clearCopied() = change { it.copy(copiedId = null) }
+    fun clearCopied() = patch { it.copy(copiedId = null) }
     fun confirmPendingExport() = exports.confirmPending()
     fun changeDateOfPendingExport() = exports.changeDateOfPending()
     fun dismissPendingExport() = exports.dismissPending()
@@ -319,6 +336,9 @@ class QuoteHistoryViewModel(
     fun startSelection(id: String? = null) = change { it.copy(selectionMode = true, selectedIds = if (id == null) it.selectedIds else it.selectedIds + id) }
 
     fun toggleSelection(id: String) = change { it.copy(selectedIds = if (id in it.selectedIds) it.selectedIds - id else it.selectedIds + id) }
+
+    /** Marca tudo o que a lista mostra agora (o "Marcar todos"), somando aos que já estavam marcados. */
+    fun selectAllVisible() = change { it.copy(selectedIds = it.selectedIds + it.rows.map { row -> row.quote.id }) }
 
     /** Sai do modo de seleção e desmarca tudo. */
     fun clearSelection() = change { it.copy(selectionMode = false, selectedIds = emptySet()) }

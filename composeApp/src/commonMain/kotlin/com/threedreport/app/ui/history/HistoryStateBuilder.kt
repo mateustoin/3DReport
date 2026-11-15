@@ -76,17 +76,20 @@ internal class HistoryStateBuilder(
     fun refresh(state: HistoryUiState): HistoryUiState {
         val all = repository.savedQuotes.value
         val today = today()
+        val appCurrency = currency()
         val prefs = preferencesRepository.preferences.value
         val orders = state.filter.kind == QuoteKind.ORDER
         val categories = if (orders) emptyList() else productCategories(all)
-        // A categoria escolhida sumiu (o último produto dela foi excluído ou mudou): volta pra "Todas", senão a
-        // lista ficaria vazia com um filtro que nem aparece mais.
-        val chosen = state.filter.category as? CategoryFilter.Named
-        val filter = if (chosen != null && categories.none { it.equals(chosen.name, ignoreCase = true) }) {
-            state.filter.copy(category = CategoryFilter.All)
-        } else {
-            state.filter
+        // A categoria escolhida sumiu (o último produto dela foi excluído ou mudou, ou não resta produto sem categoria):
+        // volta pra "Todas", senão a lista ficaria vazia com um filtro que nem aparece mais.
+        val hasUncategorized = all.any { !it.isOrder && it.category == null }
+        val chosen = state.filter.category
+        val orphan = when (chosen) {
+            is CategoryFilter.Named -> categories.none { it.equals(chosen.name, ignoreCase = true) }
+            CategoryFilter.None -> orders || !hasUncategorized
+            CategoryFilter.All -> false
         }
+        val filter = if (orphan) state.filter.copy(category = CategoryFilter.All) else state.filter
         val visible = visibleQuotes(all, filter)
         val sold = soldProductIds(all)
         val repricedProducts = if (orders) emptyMap() else repricedProducts(all)
@@ -115,21 +118,21 @@ internal class HistoryStateBuilder(
             columns = if (orders) {
                 OrderStatus.PIPELINE.map { status ->
                     val cards = byStatus[status].orEmpty()
-                    KanbanColumnState(status, cards.map(::rowOf), cards.sumOf { it.totalWithServices })
+                    KanbanColumnState(status, cards.map(::rowOf), cards.totalsByCurrency(appCurrency))
                 }
             } else {
                 emptyList()
             },
-            summary = if (orders) ordersSummary(all, today) else OrdersSummary(),
+            summary = if (orders) ordersSummary(all, today, appCurrency) else OrdersSummary(),
             hasItems = all.any { it.kind == filter.kind },
             hiddenDelivered = allDelivered - kanban.count { it.status == OrderStatus.ENTREGUE },
             cancelledCount = if (orders) all.count { it.isOrder && it.status == OrderStatus.CANCELADO } else 0,
             categories = categories,
-            hasUncategorized = all.any { !it.isOrder && it.category == null },
+            hasUncategorized = hasUncategorized,
             selectedVisibleCount = visible.count { it.id in state.selectedIds },
             clients = clientRepository?.clients?.value.orEmpty(),
             today = today,
-            currency = currency(),
+            currency = appCurrency,
         )
     }
 }

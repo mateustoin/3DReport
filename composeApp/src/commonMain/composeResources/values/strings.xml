@@ -746,6 +746,7 @@
         <item quantity="other">%1$d selecionados</item>
     </plurals>
     <string name="history_selection_none">Nenhum marcado</string>
+    <string name="history_selection_select_all">Marcar todos</string>
     <string name="history_selection_export_pdf">Exportar PDF</string>
     <string name="history_reprice_title">Atualizar o preço de "%1$s"</string>
     <string name="history_reprice_help">Recalculado com os cadastros de hoje.</string>

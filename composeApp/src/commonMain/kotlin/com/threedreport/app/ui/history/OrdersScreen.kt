@@ -6,6 +6,7 @@ import _3dreport.composeapp.generated.resources.common_help_for
 import _3dreport.composeapp.generated.resources.history_selection_count
 import _3dreport.composeapp.generated.resources.history_selection_export_pdf
 import _3dreport.composeapp.generated.resources.history_selection_none
+import _3dreport.composeapp.generated.resources.history_selection_select_all
 import _3dreport.composeapp.generated.resources.orders_action_new
 import _3dreport.composeapp.generated.resources.orders_empty_filter
 import _3dreport.composeapp.generated.resources.orders_empty_first
@@ -27,7 +28,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,7 +38,6 @@ import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
-import com.threedreport.app.ui.components.ObserveUiNotices
 import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.components.TableColumn
@@ -46,7 +45,6 @@ import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -63,12 +61,7 @@ fun OrdersScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
-    ObserveUiNotices(viewModel.notices)
-    LaunchedEffect(state.copiedId) {
-        if (state.copiedId == null) return@LaunchedEffect
-        delay(COPIED_MILLIS)
-        viewModel.clearCopied()
-    }
+    ObserveHistory(viewModel, state.copiedId)
     val kanban = state.ordersView == OrdersView.KANBAN
     val columns = ordersColumns()
     val space = MaterialTheme.spacing
@@ -171,6 +164,7 @@ private fun OrdersSelectionBar(state: HistoryUiState, viewModel: QuoteHistoryVie
     SelectionBar(
         summary = if (count > 0) pluralStringResource(Res.plurals.history_selection_count, count, count) else stringResource(Res.string.history_selection_none),
     ) {
+        AppButton(stringResource(Res.string.history_selection_select_all), viewModel::selectAllVisible, enabled = count < state.rows.size)
         AppButton(
             stringResource(Res.string.history_selection_export_pdf),
             viewModel::exportSelectedPdf,
@@ -180,5 +174,3 @@ private fun OrdersSelectionBar(state: HistoryUiState, viewModel: QuoteHistoryVie
         AppButton(stringResource(Res.string.common_cancel), viewModel::clearSelection)
     }
 }
-
-private const val COPIED_MILLIS = 2000L

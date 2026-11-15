@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +23,6 @@ import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.SummaryBlock
-import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.spacing
@@ -40,7 +40,7 @@ fun OrdersSummaryBlocks(state: HistoryUiState, modifier: Modifier = Modifier) {
     val summary = state.summary
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm)) {
         SummaryBlock(summary.inProgress.toString(), stringResource(Res.string.orders_summary_in_progress), Modifier.weight(1f))
-        SummaryBlock(summary.receivable.toCurrencyText(state.currency), stringResource(Res.string.orders_summary_receivable), Modifier.weight(1f))
+        SummaryBlock(summary.receivable.toMoneyText(), stringResource(Res.string.orders_summary_receivable), Modifier.weight(1f))
         SummaryBlock(
             summary.dueToday.toString(),
             stringResource(Res.string.orders_summary_due_today),
@@ -72,7 +72,7 @@ fun OrdersFilters(state: HistoryUiState, viewModel: QuoteHistoryViewModel, showA
             value = filter.query,
             onValueChange = viewModel::setSearchQuery,
             placeholder = stringResource(Res.string.orders_search_hint),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f, fill = false).widthIn(max = AppDimens.searchMaxWidth).fillMaxWidth(),
         )
         if (showAll) {
             AppDropdownField<OrderStatus?>(

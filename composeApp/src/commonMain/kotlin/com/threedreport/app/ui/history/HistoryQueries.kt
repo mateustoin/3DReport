@@ -18,6 +18,7 @@ import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.ui.quote.deliveryDaysLate
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.pricing.RepriceResult
@@ -62,12 +63,32 @@ fun kanbanQuotes(
                 (query.isEmpty() || quote.matchesQuery(query)) &&
                 (showAllDelivered || quote.status != OrderStatus.ENTREGUE || (quote.deliveredAtEpochMillis ?: 0) >= recentStart)
         }
-        .sortedByDescending { it.savedAtEpochMillis }
+        .sortedByDeadline()
 }
 
-/** Função pura: a tabela de Pedidos, pelo prazo (o mais próximo primeiro), com os sem prazo no fim. */
+/**
+ * Função pura: a ordem de Pedidos, na tabela e em cada coluna do kanban. Primeiro os abertos, pelo prazo (atrasado,
+ * hoje, próximos), depois os abertos sem prazo; por último Entregue e Cancelado, do mais recente pro mais antigo.
+ * Entre iguais, o gravado por último vem antes.
+ */
 fun List<SavedQuote>.sortedByDeadline(): List<SavedQuote> =
-    sortedWith(compareBy<SavedQuote> { it.deliveryDateEpochDay ?: Long.MAX_VALUE }.thenByDescending { it.savedAtEpochMillis })
+    sortedWith(
+        compareBy<SavedQuote> { it.status == OrderStatus.ENTREGUE || it.status == OrderStatus.CANCELADO }
+            .thenBy { quote -> if (quote.status == OrderStatus.ENTREGUE || quote.status == OrderStatus.CANCELADO) 0L else quote.deliveryDateEpochDay ?: Long.MAX_VALUE }
+            .thenByDescending { it.savedAtEpochMillis },
+    )
+
+/**
+ * Função pura: o que [this] soma em cada moeda, a do app primeiro e as outras na ordem da lista de moedas. Moedas
+ * diferentes nunca viram um número só. Sem nenhum valor, devolve zero na moeda do app.
+ */
+fun List<SavedQuote>.totalsByCurrency(appCurrency: Currency): List<CurrencyTotal> {
+    val sums = groupBy { it.currency }.mapValues { (_, quotes) -> quotes.sumOf { it.totalWithServices } }
+    if (sums.isEmpty()) return listOf(CurrencyTotal(appCurrency, 0.0))
+    return sums.entries
+        .sortedWith(compareBy<Map.Entry<Currency, Double>> { it.key != appCurrency }.thenBy { it.key.ordinal })
+        .map { CurrencyTotal(it.key, it.value) }
+}
 
 /** Categorias dos produtos, uma por grafia, em ordem alfabética. */
 fun productCategories(savedQuotes: List<SavedQuote>): List<String> =
@@ -119,16 +140,23 @@ fun SavedQuote.deadlineBadge(today: Long): DeadlineBadge? {
     }
 }
 
-/** Os pedidos de Orçado a Pronto: o que ainda está na mão de quem vende. */
-private val IN_PROGRESS = OrderStatus.PIPELINE - OrderStatus.ENTREGUE
+/** Os pedidos de Orçado a Pronto: o que ainda tem prazo pra cumprir ("pra entregar hoje" e "atrasado"). */
+private val OPEN = OrderStatus.PIPELINE - OrderStatus.ENTREGUE
 
-/** Os blocos de resumo de Pedidos, sobre todos os pedidos (a busca e os filtros não mexem no que está em andamento). */
-fun ordersSummary(savedQuotes: List<SavedQuote>, today: Long): OrdersSummary {
-    val active = savedQuotes.filter { it.isOrder && it.status in IN_PROGRESS }
-    val tones = active.map { it.deadlineBadge(today)?.tone }
+/** Os pedidos de Aprovado a Pronto: já fechados com o cliente e ainda não entregues ("em andamento" e "a receber"). */
+private val IN_PROGRESS = OPEN - OrderStatus.ORCADO
+
+/**
+ * Os blocos de resumo de Pedidos, sobre todos os pedidos (a busca e os filtros não mexem neles). "Em andamento" e "a
+ * receber" contam de Aprovado a Pronto, sem Orçado (decisão 132); o que é a receber soma por moeda.
+ */
+fun ordersSummary(savedQuotes: List<SavedQuote>, today: Long, appCurrency: Currency = Currency.BRL): OrdersSummary {
+    val orders = savedQuotes.filter { it.isOrder }
+    val inProgress = orders.filter { it.status in IN_PROGRESS }
+    val tones = orders.filter { it.status in OPEN }.map { it.deadlineBadge(today)?.tone }
     return OrdersSummary(
-        inProgress = active.size,
-        receivable = active.sumOf { it.totalWithServices },
+        inProgress = inProgress.size,
+        receivable = inProgress.totalsByCurrency(appCurrency),
         dueToday = tones.count { it == DeadlineTone.TODAY },
         overdue = tones.count { it == DeadlineTone.LATE },
     )

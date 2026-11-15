@@ -60,12 +60,13 @@ fun CatalogListRow(
         selected = state.selectionMode && selected,
         selectionMark = if (state.selectionMode) selected else null,
         extra = { QuoteActionsMenu(quote, actions) },
+        revealActions = !state.selectionMode,
     ) {
         Cell(0) { PhotoThumbnail(quote, loadThumbnail, Modifier.size(AppDimens.printThumbnailSize), placeholder = true, shape = MaterialTheme.shapes.small) }
         Cell(1) {
             Column {
                 Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                RepriceHint(row, { value -> value.toCurrencyText(quote.currency) }, onReprice)
+                if (!state.selectionMode) RepriceHint(row, { value -> value.toCurrencyText(quote.currency) }, onReprice)
             }
         }
         Cell(2) { Muted(quote.category.orEmpty()) }
@@ -75,7 +76,7 @@ fun CatalogListRow(
         }
         Cell(5) {
             Box {
-                actions.onSell?.let { sell -> AppButton(stringResource(Res.string.catalog_action_sell), sell, height = AppDimens.smallControlHeight) }
+                actions.onSell?.takeUnless { state.selectionMode }?.let { sell -> AppButton(stringResource(Res.string.catalog_action_sell), sell, height = AppDimens.smallControlHeight) }
             }
         }
     }

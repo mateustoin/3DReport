@@ -73,7 +73,7 @@ class AppViewModels(
         kind = kind,
         showOrders = { showOrders() },
         consumableRepository = container.consumables,
-        currency = { container.currency.currency.value },
+        currency = container.currency.currency,
     )
 
     val ordersViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.ORDER) }

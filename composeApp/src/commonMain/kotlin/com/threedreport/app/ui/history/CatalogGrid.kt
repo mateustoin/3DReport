@@ -110,14 +110,14 @@ fun ProductCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                RepriceHint(row, { value -> value.toCurrencyText(quote.currency) }, onReprice)
+                if (!state.selectionMode) RepriceHint(row, { value -> value.toCurrencyText(quote.currency) }, onReprice)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = space.xs),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     NumericText(quote.totalWithServices.toCurrencyText(quote.currency), style = MaterialTheme.appType.sectionTitle, color = MaterialTheme.colorScheme.onSurface)
-                    actions.onSell?.let { sell -> AppButton(stringResource(Res.string.catalog_action_sell), sell, height = AppDimens.smallControlHeight) }
+                    actions.onSell?.takeUnless { state.selectionMode }?.let { sell -> AppButton(stringResource(Res.string.catalog_action_sell), sell, height = AppDimens.smallControlHeight) }
                 }
             }
         }

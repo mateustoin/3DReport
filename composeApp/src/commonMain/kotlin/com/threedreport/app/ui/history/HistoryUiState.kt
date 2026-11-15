@@ -58,14 +58,17 @@ data class HistoryRow(
     val canEditPrintSettings: Boolean = false,
 )
 
-/** Uma coluna do kanban: a situação, os cartões e o que eles somam. */
-data class KanbanColumnState(val status: OrderStatus, val cards: List<HistoryRow>, val total: Double)
+/** Quanto uma lista de pedidos soma numa [currency]. Moedas diferentes nunca se somam num número só. */
+data class CurrencyTotal(val currency: Currency, val amount: Double)
+
+/** Uma coluna do kanban: a situação, os cartões e o que eles somam, uma soma por moeda (a do app primeiro). */
+data class KanbanColumnState(val status: OrderStatus, val cards: List<HistoryRow>, val total: List<CurrencyTotal>)
 
 /**
- * Os blocos de resumo de Pedidos. "Em andamento" são os pedidos de Orçado a Pronto; "a receber" é o que eles
- * somam; "pra hoje" e "atrasados" seguem o mesmo selo de prazo dos cartões.
+ * Os blocos de resumo de Pedidos. "Em andamento" são os pedidos de Aprovado a Pronto (sem Orçado); "a receber"
+ * é o que eles somam, por moeda; "pra hoje" e "atrasados" seguem o mesmo selo de prazo dos cartões e contam de Orçado a Pronto.
  */
-data class OrdersSummary(val inProgress: Int = 0, val receivable: Double = 0.0, val dueToday: Int = 0, val overdue: Int = 0)
+data class OrdersSummary(val inProgress: Int = 0, val receivable: List<CurrencyTotal> = emptyList(), val dueToday: Int = 0, val overdue: Int = 0)
 
 /** "Atualizar preço" aberto: o produto como está e como ficaria com os cadastros de hoje. */
 data class Repricing(

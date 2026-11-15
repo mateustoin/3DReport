@@ -85,7 +85,8 @@ class TableRowScope internal constructor(private val row: RowScope, private val 
  * Linha da tabela, no molde da [ListRow] dos cadastros (não é cartão): mínimo de 52 de altura, divisor de 1 px embaixo,
  * as [actions] e o [extra] (um botão de menu) só aparecem com o mouse em cima ou o foco na linha, por cima do fim dela,
  * cobrindo o valor. Clicar na linha chama [onClick]. Com [selectionMark], a primeira coluna é a caixa de marcar
- * (só desenhada: o clique na linha é quem marca). [selected] usa o fundo `tint`.
+ * (só desenhada: o clique na linha é quem marca). [selected] usa o fundo `tint`. [revealActions] falso esconde as ações
+ * e o menu (no modo de seleção, a linha só marca).
  */
 @Composable
 fun TableRow(
@@ -96,12 +97,13 @@ fun TableRow(
     selected: Boolean = false,
     selectionMark: Boolean? = null,
     extra: @Composable RowScope.() -> Unit = {},
+    revealActions: Boolean = true,
     cells: @Composable TableRowScope.() -> Unit,
 ) {
     val space = MaterialTheme.spacing
     var focused by remember { mutableStateOf(false) }
     Column(modifier.fillMaxWidth()) {
-        RevealActions(actions = actions, selected = selected, extra = extra) {
+        RevealActions(actions = actions, selected = selected, extra = extra, enabled = revealActions) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

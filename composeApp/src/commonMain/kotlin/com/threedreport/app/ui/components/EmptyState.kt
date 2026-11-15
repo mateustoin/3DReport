@@ -12,18 +12,24 @@ import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 
 /**
- * Lista vazia: uma frase e, se houver [onAction], o botão que resolve (em âmbar: é a ação principal da tela).
+ * Lista vazia: uma frase e, se houver [onAction], o botão que resolve (em âmbar quando é a ação principal da tela, como "Novo pedido"; [actionKind] secundário quando só desfaz um filtro).
  * Sem ilustração.
  */
 @Composable
-fun EmptyState(message: String, modifier: Modifier = Modifier, actionLabel: String? = null, onAction: (() -> Unit)? = null) {
+fun EmptyState(
+    message: String,
+    modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+    actionKind: ButtonKind = ButtonKind.Primary,
+) {
     Column(
         modifier = modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.xl),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.md),
     ) {
         Text(message, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (actionLabel != null && onAction != null) {
-            AppButton(actionLabel, onAction, kind = ButtonKind.Primary)
+            AppButton(actionLabel, onAction, kind = actionKind)
         }
     }
 }

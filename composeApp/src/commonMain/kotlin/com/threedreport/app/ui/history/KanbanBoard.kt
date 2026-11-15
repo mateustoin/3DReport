@@ -41,7 +41,6 @@ import androidx.compose.ui.zIndex
 import com.threedreport.app.platform.HorizontalScrollbarFor
 import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.format.NumericText
-import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -150,7 +149,7 @@ private fun KanbanColumn(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(column.status.labelRes()), style = MaterialTheme.appType.sectionTitle, color = MaterialTheme.colorScheme.onSurface)
                 NumericText(
-                    column.total.toCurrencyText(state.currency),
+                    column.total.toMoneyText(),
                     style = MaterialTheme.appType.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

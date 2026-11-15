@@ -28,6 +28,7 @@ import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintCost
@@ -42,9 +43,12 @@ import com.threedreport.core.pricing.RepriceResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -53,7 +57,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /**
@@ -107,13 +113,20 @@ class QuoteHistoryViewModelTest {
         kind: QuoteKind = QuoteKind.ORDER,
         filaments: FilamentRepository = FilamentRepository(),
         preferences: PreferencesRepository = PreferencesRepository(),
+        today: () -> Long = { TODAY },
+        currency: StateFlow<Currency> = MutableStateFlow(Currency.BRL),
     ) = QuoteHistoryViewModel(
         repository, BrandingRepository(), filaments, PrinterRepository(), SettingsRepository(), SalesChannelRepository(), preferences,
-        today = { TODAY }, clientRepository = clients, clock = { now }, platform = platform, scope = scope, kind = kind,
+        today = today, clientRepository = clients, clock = { now }, platform = platform, scope = scope, kind = kind, currency = currency,
     )
 
-    private fun QuoteHistoryRepository.saveOrder(name: String, deadline: Long? = null, status: OrderStatus = OrderStatus.ORCADO): SavedQuote {
-        val saved = save(name = name, quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = deadline)
+    private fun QuoteHistoryRepository.saveOrder(
+        name: String,
+        deadline: Long? = null,
+        status: OrderStatus = OrderStatus.ORCADO,
+        currency: Currency = Currency.BRL,
+    ): SavedQuote {
+        val saved = save(name = name, quote = quote, services = emptyList(), photo = null, sourceLink = null, deliveryDateEpochDay = deadline, currency = currency)
         if (status != OrderStatus.ORCADO) updateStatus(saved.id, status)
         return savedQuotes.value.first { it.id == saved.id }
     }
@@ -494,7 +507,8 @@ class QuoteHistoryViewModelTest {
     @Test
     fun aStatusChangeThatLeavesTheFilteredListSaysWhereTheOrderWent() {
         val repository = QuoteHistoryRepository()
-        val viewModel = viewModelOf(repository)
+        val preferences = PreferencesRepository().also { it.setOrdersView(OrdersView.LIST) }
+        val viewModel = viewModelOf(repository, preferences = preferences)
         val saved = repository.saveOrder("Peça")
         viewModel.setStatusFilter(OrderStatus.ORCADO)
 
@@ -622,7 +636,7 @@ class QuoteHistoryViewModelTest {
 
         assertEquals(OrderStatus.PIPELINE, state.columns.map { it.status })
         assertEquals(listOf(2, 0, 0, 1, 0), state.columns.map { it.cards.size })
-        assertEquals(2 * quote.salePrice, state.columns.first().total, 0.001)
+        assertEquals(2 * quote.salePrice, state.columns.first().total.single().amount, 0.001)
         assertEquals(1, state.cancelledCount)
         assertEquals(1, state.hiddenDelivered)
 
@@ -661,8 +675,9 @@ class QuoteHistoryViewModelTest {
 
         val summary = viewModel.uiState.value.summary
 
-        assertEquals(5, summary.inProgress)
-        assertEquals(5 * quote.salePrice, summary.receivable, 0.001)
+        assertEquals(3, summary.inProgress, "Orçado não conta como em andamento")
+        assertEquals(Currency.BRL, summary.receivable.single().currency)
+        assertEquals(3 * quote.salePrice, summary.receivable.single().amount, 0.001)
         assertEquals(2, summary.dueToday)
         assertEquals(1, summary.overdue, "orçamento parado com prazo vencido não é atraso")
     }
@@ -670,8 +685,8 @@ class QuoteHistoryViewModelTest {
     @Test
     fun theSummaryIgnoresTheSearch() {
         val repository = QuoteHistoryRepository()
-        repository.saveOrder("Suporte")
-        repository.saveOrder("Vaso")
+        repository.saveOrder("Suporte", status = OrderStatus.APROVADO)
+        repository.saveOrder("Vaso", status = OrderStatus.APROVADO)
         val viewModel = viewModelOf(repository)
 
         viewModel.setSearchQuery("vaso")
@@ -814,6 +829,213 @@ class QuoteHistoryViewModelTest {
 
         assertEquals(0.2, repository.savedQuotes.value.single().printSettings?.layerHeightMm)
         assertNull(viewModel.uiState.value.printSettingsEditing)
+    }
+
+    // ---- revisão: ordem, resumo, moedas, dia, avisos e filtros
+
+    @Test
+    fun theOrdersTableListsOpenOrdersByDeadlineThenOpenWithoutDeadlineThenDeliveredAndCancelled() {
+        val repository = QuoteHistoryRepository()
+        repository.saveOrder("Entregue", deadline = TODAY - 20, status = OrderStatus.ENTREGUE)
+        repository.saveOrder("Sem prazo")
+        repository.saveOrder("Cancelado", deadline = TODAY + 1, status = OrderStatus.CANCELADO)
+        repository.saveOrder("Próximo", deadline = TODAY + 4, status = OrderStatus.APROVADO)
+        repository.saveOrder("Atrasado", deadline = TODAY - 2, status = OrderStatus.PRONTO)
+        repository.saveOrder("Hoje", deadline = TODAY)
+        val viewModel = viewModelOf(repository)
+
+        val names = viewModel.uiState.value.rows.map { it.quote.name }
+
+        assertEquals(listOf("Atrasado", "Hoje", "Próximo", "Sem prazo"), names.take(4))
+        assertEquals(setOf("Entregue", "Cancelado"), names.drop(4).toSet())
+    }
+
+    @Test
+    fun closedOrdersComeLastFromTheMostRecentToTheOldest() {
+        val old = SavedQuoteFixture.of(quote, name = "Antigo", status = OrderStatus.ENTREGUE, savedAtEpochMillis = 1_000L)
+            .copy(deliveryDateEpochDay = TODAY - 30)
+        val recent = SavedQuoteFixture.of(quote, name = "Recente", status = OrderStatus.CANCELADO, savedAtEpochMillis = 9_000L)
+            .copy(deliveryDateEpochDay = TODAY - 1)
+        val open = SavedQuoteFixture.of(quote, name = "Aberto", savedAtEpochMillis = 5_000L).copy(deliveryDateEpochDay = TODAY + 50)
+
+        assertEquals(listOf("Aberto", "Recente", "Antigo"), listOf(old, recent, open).sortedByDeadline().map { it.name })
+    }
+
+    @Test
+    fun eachKanbanColumnFollowsTheDeadlineOrder() {
+        val repository = QuoteHistoryRepository()
+        repository.saveOrder("Sem prazo", status = OrderStatus.APROVADO)
+        repository.saveOrder("Depois", deadline = TODAY + 9, status = OrderStatus.APROVADO)
+        repository.saveOrder("Antes", deadline = TODAY + 1, status = OrderStatus.APROVADO)
+        val viewModel = viewModelOf(repository)
+
+        val approved = viewModel.uiState.value.columns.first { it.status == OrderStatus.APROVADO }
+
+        assertEquals(listOf("Antes", "Depois", "Sem prazo"), approved.cards.map { it.quote.name })
+    }
+
+    @Test
+    fun theSummaryLeavesOutQuotesButStillCountsTheirDeadlines() {
+        val repository = QuoteHistoryRepository()
+        repository.saveOrder("Orçado", deadline = TODAY)
+        repository.saveOrder("Aprovado", status = OrderStatus.APROVADO)
+        val viewModel = viewModelOf(repository)
+
+        val summary = viewModel.uiState.value.summary
+
+        assertEquals(1, summary.inProgress)
+        assertEquals(quote.salePrice, summary.receivable.single().amount, 0.001)
+        assertEquals(1, summary.dueToday)
+    }
+
+    @Test
+    fun totalsAreSummedPerCurrencyWithTheAppCurrencyFirst() {
+        val repository = QuoteHistoryRepository()
+        repository.saveOrder("Real", status = OrderStatus.APROVADO)
+        repository.saveOrder("Real 2", status = OrderStatus.APROVADO)
+        repository.saveOrder("Dólar", status = OrderStatus.APROVADO, currency = Currency.USD)
+        val currency = MutableStateFlow(Currency.BRL)
+        val viewModel = viewModelOf(repository, currency = currency)
+
+        val receivable = viewModel.uiState.value.summary.receivable
+        assertEquals(listOf(Currency.BRL, Currency.USD), receivable.map { it.currency })
+        assertEquals(2 * quote.salePrice, receivable[0].amount, 0.001)
+        assertEquals(quote.salePrice, receivable[1].amount, 0.001)
+        val column = viewModel.uiState.value.columns.first { it.status == OrderStatus.APROVADO }
+        assertEquals(listOf(Currency.BRL, Currency.USD), column.total.map { it.currency })
+
+        currency.value = Currency.USD
+
+        assertEquals(listOf(Currency.USD, Currency.BRL), viewModel.uiState.value.summary.receivable.map { it.currency })
+        assertEquals(Currency.USD, viewModel.uiState.value.currency)
+    }
+
+    @Test
+    fun anEmptyColumnTotalsZeroInTheAppCurrency() {
+        val viewModel = viewModelOf(QuoteHistoryRepository(), currency = MutableStateFlow(Currency.EUR))
+
+        assertEquals(listOf(CurrencyTotal(Currency.EUR, 0.0)), viewModel.uiState.value.columns.first().total)
+    }
+
+    @Test
+    fun theDayIsRefreshedWhenTheScreenIsShownAfterMidnight() {
+        val repository = QuoteHistoryRepository()
+        repository.saveOrder("Peça", deadline = TODAY + 1, status = OrderStatus.APROVADO)
+        var day = TODAY
+        val viewModel = viewModelOf(repository, today = { day })
+        assertEquals(DeadlineTone.ON_TIME, viewModel.uiState.value.rows.single().deadline?.tone)
+        assertEquals(0, viewModel.uiState.value.summary.dueToday)
+
+        day = TODAY + 1
+        assertEquals(TODAY, viewModel.uiState.value.today, "sem a tela avisar, o estado fica no dia antigo")
+        viewModel.onShown()
+
+        assertEquals(TODAY + 1, viewModel.uiState.value.today)
+        assertEquals(DeadlineTone.TODAY, viewModel.uiState.value.rows.single().deadline?.tone)
+        assertEquals(1, viewModel.uiState.value.summary.dueToday)
+    }
+
+    @Test
+    fun showingTheScreenOnTheSameDayDoesNotRebuildTheState() {
+        val repository = QuoteHistoryRepository()
+        repository.saveOrder("Peça")
+        val viewModel = viewModelOf(repository)
+        val before = viewModel.uiState.value
+
+        viewModel.onShown()
+
+        assertSame(before, viewModel.uiState.value)
+    }
+
+    @Test
+    fun movingACardOnTheKanbanNeverSaysItLeftAFilteredList() {
+        val repository = QuoteHistoryRepository()
+        val viewModel = viewModelOf(repository)
+        val saved = repository.saveOrder("Peça")
+        viewModel.setStatusFilter(OrderStatus.ORCADO)
+
+        viewModel.updateStatus(saved.id, OrderStatus.APROVADO)
+
+        assertNull(runBlocking { withTimeoutOrNull(200) { viewModel.notices.first() } })
+    }
+
+    @Test
+    fun cancellingOnTheKanbanOffersUndoEvenWithAStatusFilterSet() {
+        val repository = QuoteHistoryRepository()
+        val viewModel = viewModelOf(repository)
+        val saved = repository.saveOrder("Peça")
+        viewModel.setStatusFilter(OrderStatus.ORCADO)
+
+        viewModel.updateStatus(saved.id, OrderStatus.CANCELADO)
+
+        val notice = viewModel.awaitNotice()
+        assertEquals(UiText.Res(Res.string.common_undo), notice.actionLabel)
+        notice.action!!.invoke()
+        assertEquals(OrderStatus.ORCADO, repository.savedQuotes.value.single().status)
+    }
+
+    @Test
+    fun theUncategorizedFilterFallsBackToAllWhenNoProductIsLeftWithoutCategory() {
+        val repository = QuoteHistoryRepository()
+        repository.saveProduct("Chaveiro", category = "Chaveiros")
+        val vase = repository.saveProduct("Vaso")
+        val viewModel = viewModelOf(repository, kind = QuoteKind.PRODUCT)
+        viewModel.setCategoryFilter(CategoryFilter.None)
+        assertEquals(listOf(vase.id), viewModel.uiState.value.rows.map { it.quote.id })
+
+        repository.delete(vase.id)
+
+        assertEquals(CategoryFilter.All, viewModel.uiState.value.filter.category)
+        assertEquals(1, viewModel.uiState.value.rows.size)
+    }
+
+    @Test
+    fun changesThatOnlyTouchADialogKeepTheRowsAsTheyWere() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.saveOrder("Peça")
+        val viewModel = viewModelOf(repository)
+        val before = viewModel.uiState.value.rows
+
+        viewModel.startEditingDeliveryDate(saved)
+        assertSame(before, viewModel.uiState.value.rows)
+        viewModel.cancelEditingDeliveryDate()
+        viewModel.startEditingDetails(saved)
+        viewModel.updateDetails { it.copy(name = "Outro") }
+        assertSame(before, viewModel.uiState.value.rows)
+
+        viewModel.setSearchQuery("pe")
+        assertNotSame(before, viewModel.uiState.value.rows)
+    }
+
+    @Test
+    fun clearFiltersKeepsTheKindAndDropsEverythingElse() {
+        val repository = QuoteHistoryRepository()
+        repository.saveProduct("Chaveiro", category = "Chaveiros")
+        val viewModel = viewModelOf(repository, kind = QuoteKind.PRODUCT)
+        viewModel.setSearchQuery("xyz")
+        viewModel.setCategoryFilter(CategoryFilter.Named("Chaveiros"))
+        viewModel.setPeriodFilter(PeriodPreset.LAST_7_DAYS)
+        assertTrue(viewModel.uiState.value.rows.isEmpty())
+
+        viewModel.clearFilters()
+
+        assertEquals(HistoryFilter(kind = QuoteKind.PRODUCT), viewModel.uiState.value.filter)
+        assertEquals(1, viewModel.uiState.value.rows.size)
+    }
+
+    @Test
+    fun selectAllVisibleMarksOnlyWhatTheFilterShows() {
+        val repository = QuoteHistoryRepository()
+        val shown = repository.saveOrder("Suporte")
+        repository.saveOrder("Vaso")
+        val viewModel = viewModelOf(repository)
+        viewModel.setSearchQuery("sup")
+        viewModel.startSelection()
+
+        viewModel.selectAllVisible()
+
+        assertEquals(setOf(shown.id), viewModel.uiState.value.selectedIds)
+        assertEquals(1, viewModel.uiState.value.selectedVisibleCount)
     }
 }
 

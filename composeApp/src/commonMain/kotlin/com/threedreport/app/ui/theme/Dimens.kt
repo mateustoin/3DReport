@@ -108,6 +108,9 @@ object AppDimens {
     /** Campo de filtro de lista (situação, período, categoria) ao lado da busca. */
     val filterFieldWidth = 200.dp
 
+    /** A busca das listas não passa disso, pra a linha de filtros não pular ao trocar de visualização. */
+    val searchMaxWidth = 400.dp
+
     /** Amostra de cor (filamento): a do formulário e a pequena, dentro do selo da lista. */
     val swatchSize = 24.dp
     val swatchSmallSize = 16.dp

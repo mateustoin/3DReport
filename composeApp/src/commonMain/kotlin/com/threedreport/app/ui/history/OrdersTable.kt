@@ -80,6 +80,7 @@ fun OrdersTableRow(
             ),
         ),
         extra = { QuoteActionsMenu(quote, actions) },
+        revealActions = !state.selectionMode,
     ) {
         Cell(0) { Muted(quote.displayNumber.orEmpty()) }
         Cell(1) {

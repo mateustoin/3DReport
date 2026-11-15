@@ -19,6 +19,7 @@ import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.history_filter_period
 import _3dreport.composeapp.generated.resources.history_selection_count
 import _3dreport.composeapp.generated.resources.history_selection_none
+import _3dreport.composeapp.generated.resources.history_selection_select_all
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,13 +30,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,14 +46,12 @@ import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.EmptyState
-import com.threedreport.app.ui.components.ObserveUiNotices
 import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.components.TableHeader
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.spacing
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -71,22 +68,18 @@ fun CatalogScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
-    ObserveUiNotices(viewModel.notices)
-    LaunchedEffect(state.copiedId) {
-        if (state.copiedId == null) return@LaunchedEffect
-        delay(COPIED_MILLIS)
-        viewModel.clearCopied()
-    }
+    ObserveHistory(viewModel, state.copiedId)
     val space = MaterialTheme.spacing
-    val padding = PaddingValues(start = space.xxl, end = space.xxl, top = AppDimens.screenTopPadding, bottom = space.xxl)
-    val top: @Composable () -> Unit = { CatalogTop(state, viewModel, onNewProduct) }
+    val sides = PaddingValues(start = space.xxl, end = space.xxl, bottom = space.xxl)
 
     Column(modifier = modifier.fillMaxSize()) {
         state.busy?.let { BusyBar(it) }
+        // O cabeçalho e os filtros ficam fora do que troca (vazio, grade, lista): se estivessem dentro, trocar de
+        // contêiner (o filtro que zera a lista, por exemplo) recriaria o campo de busca e ele perderia o foco.
+        CatalogTop(state, viewModel, onNewProduct, Modifier.padding(start = space.xxl, end = space.xxl, top = AppDimens.screenTopPadding))
         val body = Modifier.weight(1f).fillMaxWidth()
         when {
-            !state.hasItems || state.rows.isEmpty() -> LazyColumn(body, contentPadding = padding) {
-                item(key = "top") { top() }
+            !state.hasItems || state.rows.isEmpty() -> LazyColumn(body, contentPadding = sides) {
                 item(key = "empty") {
                     if (!state.hasItems) {
                         EmptyState(stringResource(Res.string.catalog_empty_first), actionLabel = stringResource(Res.string.catalog_action_new), onAction = onNewProduct)
@@ -99,11 +92,10 @@ fun CatalogScreen(
             state.catalogView == CatalogView.GRID -> LazyVerticalGrid(
                 columns = GridCells.Adaptive(AppDimens.productCardMinWidth),
                 modifier = body,
-                contentPadding = padding,
+                contentPadding = sides,
                 horizontalArrangement = Arrangement.spacedBy(space.md),
                 verticalArrangement = Arrangement.spacedBy(space.md),
             ) {
-                item(key = "top", span = { GridItemSpan(maxLineSpan) }) { top() }
                 items(state.rows, key = { it.quote.id }) { row ->
                     ProductCard(
                         row = row,
@@ -119,8 +111,7 @@ fun CatalogScreen(
 
             else -> {
                 val columns = catalogColumns()
-                LazyColumn(body, contentPadding = padding) {
-                    item(key = "top") { top() }
+                LazyColumn(body, contentPadding = sides) {
                     item(key = "table-header") { TableHeader(columns, selectable = state.selectionMode) }
                     items(state.rows, key = { it.quote.id }) { row ->
                         CatalogListRow(
@@ -143,7 +134,7 @@ fun CatalogScreen(
 }
 
 @Composable
-private fun CatalogTop(state: HistoryUiState, viewModel: QuoteHistoryViewModel, onNewProduct: () -> Unit) = Column {
+private fun CatalogTop(state: HistoryUiState, viewModel: QuoteHistoryViewModel, onNewProduct: () -> Unit, modifier: Modifier = Modifier) = Column(modifier) {
     val space = MaterialTheme.spacing
     ScreenHeader(stringResource(Res.string.catalog_title)) {
         if (!state.hasItems) return@ScreenHeader
@@ -158,8 +149,9 @@ private fun CatalogTop(state: HistoryUiState, viewModel: QuoteHistoryViewModel, 
                 { viewModel.startSelection() },
                 icon = AppIcons.PictureAsPdf,
                 enabled = state.rows.isNotEmpty() && state.busy == null,
+                active = state.selectionMode,
             )
-            AppButton(stringResource(Res.string.catalog_action_new), onNewProduct, kind = ButtonKind.Primary, icon = AppIcons.Add)
+            AppButton(stringResource(Res.string.catalog_action_new), onNewProduct, kind = ButtonKind.Primary, icon = AppIcons.Add, enabled = !state.selectionMode)
         }
     }
     if (state.hasItems) CatalogFilters(state, viewModel, Modifier.padding(bottom = space.md))
@@ -219,6 +211,7 @@ private fun CatalogSelectionBar(state: HistoryUiState, viewModel: QuoteHistoryVi
     SelectionBar(
         summary = if (count > 0) pluralStringResource(Res.plurals.history_selection_count, count, count) else stringResource(Res.string.history_selection_none),
     ) {
+        AppButton(stringResource(Res.string.history_selection_select_all), viewModel::selectAllVisible, enabled = count < state.rows.size)
         AppButton(
             if (count > 0) {
                 stringResource(Res.string.catalog_selection_export_selected)
@@ -232,5 +225,3 @@ private fun CatalogSelectionBar(state: HistoryUiState, viewModel: QuoteHistoryVi
         AppButton(stringResource(Res.string.common_cancel), viewModel::clearSelection)
     }
 }
-
-private const val COPIED_MILLIS = 2000L

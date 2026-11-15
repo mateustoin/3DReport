@@ -14,6 +14,7 @@ import _3dreport.composeapp.generated.resources.orders_status_printing
 import _3dreport.composeapp.generated.resources.orders_status_quoted
 import _3dreport.composeapp.generated.resources.orders_status_ready
 import com.threedreport.app.platform.PeriodPreset
+import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.OrderStatus
@@ -40,3 +41,6 @@ fun PeriodPreset.labelRes(): StringResource = when (this) {
     PeriodPreset.LAST_MONTH -> Res.string.history_period_last_month
     PeriodPreset.THIS_YEAR -> Res.string.history_period_this_year
 }
+
+/** As somas por moeda em um texto só, "R$ 300,00 · US$ 40,00": uma por moeda, a do app primeiro. */
+fun List<CurrencyTotal>.toMoneyText(): String = joinToString(" · ") { it.amount.toCurrencyText(it.currency) }
