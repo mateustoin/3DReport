@@ -49,6 +49,7 @@ import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -65,15 +66,16 @@ import kotlin.math.abs
 internal data class NoResultMessage(val text: String, val isError: Boolean)
 
 /** Por que não há preço ainda (campo inválido, cadastro faltando, dados por preencher). */
+@Composable
 internal fun noResultMessage(
     result: QuoteResult,
     allFilaments: List<Filament>,
     printers: List<PrinterProfile>,
     input: QuoteInputState,
 ): NoResultMessage = when {
-    result.errorMessage != null -> NoResultMessage(result.errorMessage, true)
+    result.errorMessage != null -> NoResultMessage(result.errorMessage.asString(), true)
 
-    result.fieldErrors.isNotEmpty() -> NoResultMessage("Corrija o campo marcado pra calcular: ${result.fieldErrors.values.first()}", true)
+    result.fieldErrors.isNotEmpty() -> NoResultMessage("Corrija o campo marcado pra calcular: ${result.fieldErrors.values.first().asString()}", true)
 
     allFilaments.none { it.hasStockAvailable } && allFilaments.isNotEmpty() ->
         NoResultMessage("Todos os filamentos cadastrados estão marcados como esgotados. Marque algum como \"Em estoque\" em Filamentos.", false)

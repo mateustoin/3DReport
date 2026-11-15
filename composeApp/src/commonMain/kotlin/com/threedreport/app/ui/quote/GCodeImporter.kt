@@ -17,14 +17,14 @@ import kotlin.math.round
  * Monta uma impressão a partir dos metadados de um G-code (decisão 89): comprimento, tempo e
  * configurações de impressão, e escolhe a impressora e o filamento que o fatiador gravou **quando batem
  * com os cadastrados** ([CatalogMatcher]); o que só parece ou não está cadastrado vira explicação na
- * mensagem, nunca escolha. Função pura, fora do ViewModel (decisão 108): cada impressão do pedido
+ * resultado, nunca escolha. Função pura, fora do ViewModel (decisão 108): cada impressão do pedido
  * importa o seu G-code (decisão 114).
  */
 object GCodeImporter {
 
     /**
      * @param inStock filamentos com alguma cor em estoque (os que o casamento pode escolher).
-     * @param photoApplied se a miniatura do arquivo vai virar a foto (a mensagem diz).
+     * @param photoApplied se a miniatura do arquivo vai virar a foto (o resultado diz).
      * @param newRowId gera o id de cada linha de filamento nova.
      */
     fun apply(
@@ -90,8 +90,8 @@ object GCodeImporter {
             missingPrinterName = if (chosenPrinter != null) null else current.missingPrinterName,
             filaments = rows,
             printTimeText = metadata.printTimeMinutes?.let(::formatTime) ?: current.printTimeText,
-            beforeGCode = current.beforeGCode ?: current.copy(gcodeImportMessage = null),
-            gcodeImportMessage = message(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows),
+            beforeGCode = current.beforeGCode ?: current.copy(gcodeImport = null),
+            gcodeImport = result(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows),
             settings = settings,
             // A miniatura é do G-code desta impressão: um arquivo sem miniatura não fica com a do anterior.
             thumbnail = thumbnail,
@@ -102,26 +102,16 @@ object GCodeImporter {
      * Arquivos que parecem G-code mas o app ainda não lê, com o caminho pra resolver. `null`
      * quando dá pra tentar ler.
      */
-    fun unsupportedMessage(fileName: String): String? {
+    fun unsupported(fileName: String): GCodeImportResult.Unsupported? {
         val name = fileName.lowercase()
-        return when {
-            name.endsWith(".bgcode") ->
-                "G-code binário (.bgcode) ainda não é lido. No PrusaSlicer, desligue \"G-code binário\" nas " +
-                    "configurações da impressora e exporte de novo."
-
-            name.endsWith(".gcode.3mf") ->
-                "Esse é o arquivo fatiado do Bambu Studio (.gcode.3mf), que o app ainda não lê. No Bambu Studio, " +
-                    "use \"Exportar G-code\" (em vez de \"Exportar arquivo fatiado da placa\") e arraste o .gcode."
-
-            name.endsWith(".3mf") ->
-                "Esse é um arquivo de projeto (.3mf), não um G-code. No fatiador, use \"Exportar G-code\" e " +
-                    "arraste o arquivo .gcode."
-
-            GCODE_EXTENSIONS.none { name.endsWith(it) } ->
-                "\"$fileName\" não é um G-code. Use o arquivo .gcode exportado pelo fatiador."
-
-            else -> null
+        val kind = when {
+            name.endsWith(".bgcode") -> UnsupportedGCode.BINARY_GCODE
+            name.endsWith(".gcode.3mf") -> UnsupportedGCode.SLICED_3MF
+            name.endsWith(".3mf") -> UnsupportedGCode.PROJECT_3MF
+            GCODE_EXTENSIONS.none { name.endsWith(it) } -> UnsupportedGCode.NOT_GCODE
+            else -> return null
         }
+        return GCodeImportResult.Unsupported(kind, fileName)
     }
 
     /** Metros com até 2 casas, no formato do campo ("27,53"). */
@@ -130,90 +120,61 @@ object GCodeImporter {
     /** Tempo arredondado pro minuto, no formato do campo ("3h20"): os segundos do fatiador não mudam o preço. */
     fun formatTime(minutes: Double): String = round(minutes).toDurationInputText()
 
-    private fun message(
+    private fun result(
         metadata: GCodeMetadata,
         photoApplied: Boolean,
         printerMatch: PrinterMatch,
         extruders: List<ExtruderMatch>,
         perExtruder: Boolean,
         keptManualRows: Boolean,
-    ): String {
+    ): GCodeImportResult.Read {
         val filled = buildList {
             when {
-                perExtruder -> add("consumo de cada filamento")
+                perExtruder -> add(GCodeFilled.FILAMENT_PER_EXTRUDER)
                 keptManualRows -> Unit
-                metadata.filamentLengthMeters != null -> add("comprimento de filamento")
+                metadata.filamentLengthMeters != null -> add(GCodeFilled.FILAMENT_LENGTH)
             }
-            if (metadata.printTimeMinutes != null) add("tempo de impressão")
-            if (photoApplied) add("foto do modelo")
+            if (metadata.printTimeMinutes != null) add(GCodeFilled.PRINT_TIME)
+            if (photoApplied) add(GCodeFilled.PHOTO)
             if (metadata.layerHeightMm != null || metadata.infillPercentage != null ||
                 metadata.infillPattern != null || metadata.supportsEnabled != null
             ) {
-                add("configurações de impressão")
+                add(GCodeFilled.SETTINGS)
             }
         }
-        val sentences = buildList {
-            when {
-                filled.isNotEmpty() -> add("Preenchido a partir do G-code: ${filled.joinToString(", ")}.")
+        val filaments = when {
+            perExtruder -> GCodeFilamentsNote.PerExtruder(extruders.map { note(it.match) })
 
-                // As linhas mantidas já têm os comprimentos; a frase delas explica o resto.
-                !keptManualRows -> add("Não encontrei comprimento nem tempo nesse G-code — preencha manualmente.")
-            }
-            printerSentence(printerMatch)?.let(::add)
-            when {
-                perExtruder -> add(extrudersSentence(extruders))
+            keptManualRows -> GCodeFilamentsNote.KeptRows(extruders.size, metadata.filamentLengthMeters?.let(::formatLength))
 
-                keptManualRows -> add(
-                    "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um" +
-                        (metadata.filamentLengthMeters?.let { " (${formatLength(it)} m no total)" } ?: "") +
-                        ": mantive as suas linhas de filamento como estavam.",
-                )
+            extruders.size > 1 -> GCodeFilamentsNote.MergedRows(extruders.size)
 
-                extruders.size > 1 -> add(
-                    "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um: o total ficou numa " +
-                        "linha só. Separe em \"+ Adicionar filamento\" pra cobrar cada um pelo seu preço.",
-                )
-
-                else -> extruders.singleOrNull()?.let { filamentSentence(it.match) }?.let(::add)
-            }
-            if (metadata.thumbnail != null && !photoApplied) add("Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido.")
+            else -> extruders.singleOrNull()?.let { note(it.match) }?.takeIf { it != GCodeFilamentNote.Unknown }
+                ?.let { GCodeFilamentsNote.Single(it) }
         }
-        return sentences.joinToString(" ")
+        return GCodeImportResult.Read(
+            filled = filled,
+            // As linhas mantidas já têm os comprimentos; a nota delas explica o resto.
+            nothingFound = filled.isEmpty() && !keptManualRows,
+            printer = printerNote(printerMatch),
+            filaments = filaments,
+            photoKept = metadata.thumbnail != null && !photoApplied,
+        )
     }
 
-    private fun printerSentence(match: PrinterMatch): String? = when (match) {
-        is PrinterMatch.Found -> "Impressora: ${match.printer.name}."
-
-        is PrinterMatch.Similar ->
-            "O G-code é de uma \"${match.gcodeName}\"; a mais parecida cadastrada é \"${match.printer.name}\" — escolha na lista se for ela."
-
-        is PrinterMatch.NotRegistered ->
-            "O G-code é de uma \"${match.gcodeName}\", que não está cadastrada (Impressoras → Escolher da lista)."
-
+    private fun printerNote(match: PrinterMatch): GCodePrinterNote? = when (match) {
+        is PrinterMatch.Found -> GCodePrinterNote.Found(match.printer.name)
+        is PrinterMatch.Similar -> GCodePrinterNote.Similar(match.gcodeName, match.printer.name)
+        is PrinterMatch.NotRegistered -> GCodePrinterNote.NotRegistered(match.gcodeName)
         PrinterMatch.Unknown -> null
     }
 
-    private fun filamentSentence(match: FilamentMatch): String? = when (match) {
-        is FilamentMatch.Found -> "Filamento: ${match.filament.name}" + (match.color?.let { ", cor ${it.displayLabel()}" } ?: "") + "."
-
-        is FilamentMatch.Ambiguous -> "Há ${match.count} filamentos ${match.type} em estoque — escolha qual usou."
-
-        is FilamentMatch.NotRegistered ->
-            "O G-code usa ${match.type}" + (match.vendor?.let { " da $it" } ?: "") + ", que não está cadastrado em estoque."
-
-        FilamentMatch.Unknown -> null
+    private fun note(match: FilamentMatch): GCodeFilamentNote = when (match) {
+        is FilamentMatch.Found -> GCodeFilamentNote.Found(match.filament.name, match.color?.displayLabel())
+        is FilamentMatch.Ambiguous -> GCodeFilamentNote.Ambiguous(match.type, match.count)
+        is FilamentMatch.NotRegistered -> GCodeFilamentNote.NotRegistered(match.type, match.vendor)
+        FilamentMatch.Unknown -> GCodeFilamentNote.Unknown
     }
-
-    /** "Um filamento por extrusor: 1) PLA, cor Verde; 2) PETG (não cadastrado em estoque, escolha)." */
-    private fun extrudersSentence(extruders: List<ExtruderMatch>): String =
-        "Um filamento por extrusor: " + extruders.mapIndexed { index, extruder ->
-            "${index + 1}) " + when (val match = extruder.match) {
-                is FilamentMatch.Found -> match.filament.name + (match.color?.let { ", cor ${it.displayLabel()}" } ?: "")
-                is FilamentMatch.Ambiguous -> "${match.type} (há ${match.count} em estoque, escolha qual)"
-                is FilamentMatch.NotRegistered -> match.type + (match.vendor?.let { " da $it" } ?: "") + " (não cadastrado em estoque, escolha)"
-                FilamentMatch.Unknown -> "material não informado (escolha)"
-            }
-        }.joinToString("; ") + "."
 
     /** Extensões de G-code em texto que os fatiadores exportam. */
     private val GCODE_EXTENSIONS = listOf(".gcode", ".gco", ".g")

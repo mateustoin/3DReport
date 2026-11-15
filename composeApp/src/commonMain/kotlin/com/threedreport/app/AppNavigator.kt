@@ -44,7 +44,7 @@ class AppNavigator(
      * observável pelo Compose, então o `App()` desenha a partir do `saveForm` que coleta, e não disto.
      */
     val editing: Boolean
-        get() = edit.saveForm.value.editingQuoteId != null
+        get() = edit.uiState.value.form.editingQuoteId != null
 
     fun goTo(target: AppDestination) {
         destination = target
@@ -73,7 +73,7 @@ class AppNavigator(
     }
 
     private fun endEditing() {
-        val origin = originOf(edit.saveForm.value.operation)
+        val origin = originOf(edit.uiState.value.form.operation)
         edit.resetForm()
         destination = origin
     }
@@ -101,11 +101,21 @@ class AppNavigator(
     /** Ctrl/Cmd+N no Orçamento. */
     fun newQuote() = unlessDraft(quote::resetForm)
 
-    fun saveEditing() {
-        if (edit.saveCurrentQuote()) {
+    /**
+     * Ctrl/Cmd+S no Orçamento: com uma edição aberta, salva e encerra a edição; sem ela, salva o rascunho
+     * da aba (o orçamento novo, que volta ao começo depois de salvo). Devolve se salvou.
+     */
+    fun saveCurrent(): Boolean {
+        return if (editing) saveEditing() else quote.saveCurrentQuote()
+    }
+
+    fun saveEditing(): Boolean {
+        val saved = edit.saveCurrentQuote()
+        if (saved) {
             endEditing()
             onEditSaved()
         }
+        return saved
     }
 
     fun cancelEditing() {
@@ -117,7 +127,7 @@ class AppNavigator(
      * pessoa pra lá, com o formulário limpo.
      */
     fun cancelQuoteOperation() {
-        val origin = originOf(quote.saveForm.value.operation)
+        val origin = originOf(quote.uiState.value.form.operation)
         quote.resetForm()
         destination = origin
     }

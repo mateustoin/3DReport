@@ -144,12 +144,14 @@ fun App(
     // saber em qual o arquivo foi solto (decisão 114).
     val dropZones = remember { mutableStateMapOf<DropZone, Rect>() }
     // Coletado pra recompor quando a edição abre ou fecha, e pro diálogo mostrar o nome do orçamento.
-    val editForm by viewModels.editQuoteViewModel.saveForm.collectAsState()
+    val editState by viewModels.editQuoteViewModel.uiState.collectAsState()
+    val editForm = editState.form
     val editing = editForm.editingQuoteId != null
     // O Orçamento na tela, do mesmo valor coletado que escolhe a tela: tudo o que depende dele (aviso de
     // arrastar, destino do G-code solto, Ctrl+S) concorda com o que está desenhado.
     val visibleQuoteViewModel = if (editing) viewModels.editQuoteViewModel else viewModels.quoteViewModel
-    val visibleInput by visibleQuoteViewModel.input.collectAsState()
+    val tabState by viewModels.quoteViewModel.uiState.collectAsState()
+    val visibleInput = (if (editing) editState else tabState).input
     val themeMode by viewModels.themeViewModel.mode.collectAsState()
     val currency by viewModels.currencyViewModel.currency.collectAsState()
 
@@ -175,7 +177,7 @@ fun App(
 
                     when {
                         accel && event.key == Key.S && navigator.destination == AppDestination.QUOTE -> {
-                            if (editing) navigator.saveEditing() else viewModels.quoteViewModel.saveCurrentQuote()
+                            navigator.saveCurrent()
                             true
                         }
 

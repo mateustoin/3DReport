@@ -82,7 +82,7 @@ class AppNavigatorTest {
 
         assertEquals(AppDestination.QUOTE, nav.destination)
         assertTrue(nav.editing)
-        assertEquals(saved.id, editor.saveForm.value.editingQuoteId)
+        assertEquals(saved.id, editor.uiState.value.form.editingQuoteId)
         assertNull(nav.pendingDiscard)
         assertNull(nav.pendingEndEditing)
     }
@@ -91,14 +91,14 @@ class AppNavigatorTest {
     fun editingNeverAsksAboutTheTabDraftAndLeavesItAlone() {
         val saved = saveQuote("Pedido A")
         startDraftInTab()
-        val draft = tab.input.value
+        val draft = tab.uiState.value.input
         val nav = navigator()
 
         nav.editQuote(saved)
 
         assertNull(nav.pendingDiscard)
         assertEquals(AppDestination.QUOTE, nav.destination)
-        assertEquals(draft, tab.input.value)
+        assertEquals(draft, tab.uiState.value.input)
     }
 
     @Test
@@ -112,7 +112,7 @@ class AppNavigatorTest {
         nav.editQuote(second)
 
         assertNull(nav.pendingEndEditing)
-        assertEquals(second.id, editor.saveForm.value.editingQuoteId)
+        assertEquals(second.id, editor.uiState.value.form.editingQuoteId)
         assertEquals(AppDestination.QUOTE, nav.destination)
     }
 
@@ -129,8 +129,8 @@ class AppNavigatorTest {
 
         assertNotNull(nav.pendingEndEditing)
         assertEquals(AppDestination.ORDERS, nav.destination)
-        assertEquals(first.id, editor.saveForm.value.editingQuoteId, "nada muda antes da resposta")
-        assertEquals("Pedido A alterado", editor.saveForm.value.name)
+        assertEquals(first.id, editor.uiState.value.form.editingQuoteId, "nada muda antes da resposta")
+        assertEquals("Pedido A alterado", editor.uiState.value.form.name)
     }
 
     @Test
@@ -146,7 +146,7 @@ class AppNavigatorTest {
         nav.confirmEndEditing()
 
         assertNull(nav.pendingEndEditing)
-        assertEquals(second.id, editor.saveForm.value.editingQuoteId)
+        assertEquals(second.id, editor.uiState.value.form.editingQuoteId)
         assertEquals(AppDestination.QUOTE, nav.destination)
         assertEquals("Pedido A", history.savedQuotes.value.first { it.id == first.id }.name, "nada foi salvo")
     }
@@ -165,8 +165,8 @@ class AppNavigatorTest {
 
         assertNull(nav.pendingEndEditing)
         assertEquals(AppDestination.QUOTE, nav.destination)
-        assertEquals(first.id, editor.saveForm.value.editingQuoteId)
-        assertEquals("Pedido A alterado", editor.saveForm.value.name)
+        assertEquals(first.id, editor.uiState.value.form.editingQuoteId)
+        assertEquals("Pedido A alterado", editor.uiState.value.form.name)
     }
 
     // ---- duplicar, vender, guardar no catálogo
@@ -180,7 +180,7 @@ class AppNavigatorTest {
 
         assertNull(nav.pendingDiscard)
         assertEquals(AppDestination.QUOTE, nav.destination)
-        assertTrue(tab.saveForm.value.operation is QuoteOperation.Duplicating)
+        assertTrue(tab.uiState.value.form.operation is QuoteOperation.Duplicating)
     }
 
     @Test
@@ -193,8 +193,8 @@ class AppNavigatorTest {
 
         assertNotNull(nav.pendingDiscard)
         assertEquals(AppDestination.ORDERS, nav.destination)
-        assertNull(tab.saveForm.value.operation, "o rascunho continua como estava")
-        assertEquals("30", tab.input.value.prints.first().filaments.first().lengthText)
+        assertNull(tab.uiState.value.form.operation, "o rascunho continua como estava")
+        assertEquals("30", tab.uiState.value.input.prints.first().filaments.first().lengthText)
     }
 
     @Test
@@ -208,8 +208,8 @@ class AppNavigatorTest {
 
         assertNull(nav.pendingDiscard)
         assertEquals(AppDestination.QUOTE, nav.destination)
-        assertTrue(tab.saveForm.value.operation is QuoteOperation.Duplicating)
-        assertEquals("12", tab.input.value.prints.first().filaments.first().lengthText)
+        assertTrue(tab.uiState.value.form.operation is QuoteOperation.Duplicating)
+        assertEquals("12", tab.uiState.value.input.prints.first().filaments.first().lengthText)
     }
 
     @Test
@@ -223,7 +223,7 @@ class AppNavigatorTest {
 
         assertNull(nav.pendingDiscard)
         assertEquals(AppDestination.ORDERS, nav.destination)
-        assertEquals("30", tab.input.value.prints.first().filaments.first().lengthText)
+        assertEquals("30", tab.uiState.value.input.prints.first().filaments.first().lengthText)
     }
 
     @Test
@@ -242,7 +242,7 @@ class AppNavigatorTest {
         assertEquals(AppDestination.CATALOG, nav.destination)
 
         nav.confirmDiscard()
-        assertTrue(tab.saveForm.value.operation is QuoteOperation.CopyingToCatalog)
+        assertTrue(tab.uiState.value.form.operation is QuoteOperation.CopyingToCatalog)
         assertEquals(AppDestination.QUOTE, nav.destination)
     }
 
@@ -254,7 +254,7 @@ class AppNavigatorTest {
         nav.sellProduct(product)
 
         assertNull(nav.pendingDiscard)
-        assertTrue(tab.saveForm.value.operation is QuoteOperation.Selling)
+        assertTrue(tab.uiState.value.form.operation is QuoteOperation.Selling)
         assertEquals(AppDestination.QUOTE, nav.destination)
     }
 
@@ -280,7 +280,7 @@ class AppNavigatorTest {
 
         nav.confirmDiscard()
         assertEquals(AppDestination.QUOTE, nav.destination)
-        assertTrue(tab.saveForm.value.operation is QuoteOperation.Duplicating)
+        assertTrue(tab.uiState.value.form.operation is QuoteOperation.Duplicating)
     }
 
     @Test
@@ -295,7 +295,7 @@ class AppNavigatorTest {
         assertNull(nav.pendingEndEditing)
         assertFalse(nav.editing)
         assertEquals(AppDestination.QUOTE, nav.destination)
-        assertTrue(tab.saveForm.value.operation is QuoteOperation.Duplicating)
+        assertTrue(tab.uiState.value.form.operation is QuoteOperation.Duplicating)
     }
 
     // ---- cancelar a edição
@@ -329,7 +329,7 @@ class AppNavigatorTest {
         nav.keepEditing()
         assertFalse(nav.confirmingEditDiscard)
         assertTrue(nav.editing)
-        assertEquals("Alterado", editor.saveForm.value.name)
+        assertEquals("Alterado", editor.uiState.value.form.name)
 
         nav.cancelEditing()
         nav.confirmEditDiscard()
@@ -392,7 +392,7 @@ class AppNavigatorTest {
         assertTrue(nav.editing)
         assertEquals(AppDestination.QUOTE, nav.destination)
         assertEquals(0, editSavedCalls)
-        assertNotNull(editor.saveForm.value.blockedMessage)
+        assertNotNull(editor.uiState.value.form.blockedMessage)
     }
 
     // ---- desistir de uma operação da aba, Ctrl+N
@@ -460,5 +460,49 @@ class AppNavigatorTest {
         nav.goTo(AppDestination.SETTINGS)
 
         assertEquals(AppDestination.SETTINGS, nav.destination)
+    }
+
+    // ---- Ctrl+S
+
+    @Test
+    fun ctrlSWithoutAnOpenEditionSavesTheTab() {
+        val nav = navigator(AppDestination.QUOTE)
+        tab.setLengthMeters("12")
+        tab.setPrintTimeMinutes("190")
+        tab.setSaveName("Pedido da aba")
+
+        assertTrue(nav.saveCurrent())
+
+        assertEquals("Pedido da aba", history.savedQuotes.value.single().name)
+        assertEquals(AppDestination.QUOTE, nav.destination)
+        assertEquals(0, editSavedCalls)
+        assertFalse(tab.hasDraft, "salvar um orçamento novo deixa a aba limpa")
+    }
+
+    @Test
+    fun ctrlSWithoutAnOpenEditionAndAnIncompleteTabSavesNothingAndSaysWhy() {
+        val nav = navigator(AppDestination.QUOTE)
+
+        assertFalse(nav.saveCurrent())
+
+        assertTrue(history.savedQuotes.value.isEmpty())
+        assertNotNull(tab.uiState.value.form.blockedMessage)
+    }
+
+    @Test
+    fun ctrlSWithAnOpenEditionSavesTheEditionAndLeavesTheTabAlone() {
+        val saved = saveQuote("Pedido A")
+        val nav = navigator()
+        startDraftInTab()
+        val draft = tab.uiState.value.input
+        nav.editQuote(saved)
+        editor.setSaveName("Pedido A corrigido")
+
+        assertTrue(nav.saveCurrent())
+
+        assertEquals("Pedido A corrigido", history.savedQuotes.value.single().name)
+        assertEquals(1, editSavedCalls)
+        assertFalse(nav.editing)
+        assertEquals(draft, tab.uiState.value.input)
     }
 }

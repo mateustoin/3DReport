@@ -81,7 +81,7 @@ internal fun PrintsSection(
     result: QuoteResult,
     currency: Currency,
 ) {
-    val importing by viewModel.importing.collectAsState()
+    val importing = viewModel.uiState.collectAsState().value.importing
     // Arquivado sai das escolhas (decisão 115); um já escolhido continua aparecendo, marcado.
     val inStock = allFilaments.filter { it.hasStockAvailable && !it.archived }
     val space = MaterialTheme.spacing
@@ -93,7 +93,7 @@ internal fun PrintsSection(
         return
     }
 
-    val collapsed by viewModel.collapsedPrintIds.collectAsState()
+    val collapsed = viewModel.uiState.collectAsState().value.collapsedPrintIds
     Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
         input.prints.forEachIndexed { index, print ->
             key(print.id) {
@@ -212,7 +212,7 @@ private fun PrintCard(
                 onClick = { editingSettings = true },
             )
         }
-        print.gcodeImportMessage?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        print.gcodeImport?.let { Text(it.asText(), style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (print.beforeGCode != null || print.createdByImport) {
             AppButton("Desfazer importação do G-code", onClick = { viewModel.undoGCodeImport(print.id) })
         }
@@ -267,14 +267,14 @@ private fun PrintFields(
                     number = slot + 1,
                     multicolor = multicolor,
                     currency = currency,
-                    error = result.fieldErrors[QuoteFields.length(print.id, row.id)],
+                    error = result.errorText(QuoteFields.length(print.id, row.id)),
                 )
             }
         }
         AppButton("Adicionar filamento", onClick = { viewModel.addFilament(print.id) }, icon = AppIcons.Add)
 
-        val timeError = result.fieldErrors[QuoteFields.printTime(print.id)]
-        val runsError = result.fieldErrors[QuoteFields.runs(print.id)]
+        val timeError = result.errorText(QuoteFields.printTime(print.id))
+        val runsError = result.errorText(QuoteFields.runs(print.id))
         FormGrid {
             cell {
                 AppTextField(
@@ -322,7 +322,7 @@ private fun PrintFields(
  */
 @Composable
 internal fun GCodeDropArea(viewModel: QuoteViewModel, input: QuoteInputState) {
-    val importing by viewModel.importing.collectAsState()
+    val importing = viewModel.uiState.collectAsState().value.importing
     val space = MaterialTheme.spacing
     val multi = input.prints.size > 1
     val single = input.prints.singleOrNull()
@@ -332,7 +332,7 @@ internal fun GCodeDropArea(viewModel: QuoteViewModel, input: QuoteInputState) {
             multi = multi,
             onPick = { if (multi) viewModel.pickGCodeAsNewPrint() else viewModel.pickAndImportGCode(single?.id) },
         )
-        single?.gcodeImportMessage?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        single?.gcodeImport?.let { Text(it.asText(), style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (single?.beforeGCode != null) {
             AppButton("Desfazer importação do G-code", onClick = { viewModel.undoGCodeImport(single.id) })
         }

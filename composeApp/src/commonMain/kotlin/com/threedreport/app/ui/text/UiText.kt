@@ -20,6 +20,9 @@ sealed interface UiText {
     data class Res(val resource: StringResource, val args: List<Any> = emptyList()) : UiText
 
     data class Plural(val resource: PluralStringResource, val quantity: Int, val args: List<Any> = emptyList()) : UiText
+
+    /** Vários textos em sequência ("Não salvei:" e o motivo), separados por [separator]. */
+    data class Joined(val parts: List<UiText>, val separator: String = " ") : UiText
 }
 
 /** `uiText(Res.string.consumables_notice_saved)`, ou com argumentos: `uiText(Res.string.x, nome)`. */
@@ -30,10 +33,12 @@ fun uiText(resource: StringResource, vararg args: Any): UiText = UiText.Res(reso
 fun UiText.asString(): String = when (this) {
     is UiText.Res -> stringResource(resource, *args.toTypedArray())
     is UiText.Plural -> pluralStringResource(resource, quantity, *args.toTypedArray())
+    is UiText.Joined -> parts.map { it.asString() }.joinToString(separator)
 }
 
 /** O texto, fora de um `@Composable` (por exemplo, o aviso que vai pra barra de mensagens). */
 suspend fun UiText.resolve(): String = when (this) {
     is UiText.Res -> getString(resource, *args.toTypedArray())
     is UiText.Plural -> getPluralString(resource, quantity, *args.toTypedArray())
+    is UiText.Joined -> parts.map { it.resolve() }.joinToString(separator)
 }

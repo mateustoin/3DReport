@@ -1,5 +1,8 @@
 package com.threedreport.app.ui.quote
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.quote_action_undo
+import _3dreport.composeapp.generated.resources.quote_notice_print_removed
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -8,11 +11,17 @@ import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.PickResult
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.pricing.PricingCalculator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import java.util.Base64
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -61,7 +70,14 @@ class MultiPrintQuoteTest {
         setPrintName("Base", second)
     }
 
-    private val QuoteViewModel.prints get() = input.value.prints
+    /** Os avisos que o ViewModel emitir daqui em diante (a coleta é imediata, com `Unconfined`). */
+    private fun collectNotices(viewModel: QuoteViewModel): List<UiNotice> {
+        val notices = mutableListOf<UiNotice>()
+        CoroutineScope(Dispatchers.Unconfined).launch { viewModel.notices.toList(notices) }
+        return notices
+    }
+
+    private val QuoteViewModel.prints get() = uiState.value.input.prints
 
     @Test
     fun aNewPrintComesWithThePrinterAndFilamentOfTheLastOneAndEmptyNumbers() {
@@ -94,7 +110,7 @@ class MultiPrintQuoteTest {
             settings = settings.settings.value,
         )
 
-        val quote = assertNotNull(viewModel.currentResult().quote)
+        val quote = assertNotNull(viewModel.uiState.value.result.quote)
         assertEquals(expected.salePrice, quote.salePrice, 1e-9)
         assertEquals(expected.productionCost, quote.productionCost, 1e-9)
         assertEquals(2, quote.prints.size)
@@ -108,7 +124,7 @@ class MultiPrintQuoteTest {
 
         viewModel.setRuns("dois", second)
 
-        val result = viewModel.currentResult()
+        val result = viewModel.uiState.value.result
         assertNull(result.quote)
         assertNotNull(result.fieldErrors[QuoteFields.runs(second)])
     }
@@ -144,7 +160,7 @@ class MultiPrintQuoteTest {
         viewModel.setPrintName("Cabeça", viewModel.prints[0].id)
         viewModel.setPrintSettings(PrintSettings(layerHeightMm = 0.12), viewModel.prints[0].id)
 
-        assertTrue(viewModel.currentResult().keepsOriginalPrice, "nome e configurações não mudam o preço")
+        assertTrue(viewModel.uiState.value.result.keepsOriginalPrice, "nome e configurações não mudam o preço")
         viewModel.saveCurrentQuote()
         val updated = history.savedQuotes.value.single()
         assertEquals("Cabeça", updated.quote.prints[0].job.name)
@@ -178,12 +194,14 @@ class MultiPrintQuoteTest {
         val viewModel = twoPrints()
         viewModel.addPrint()
         val middle = viewModel.prints[1]
+        val notices = collectNotices(viewModel)
 
         viewModel.removePrint(middle.id)
 
         assertEquals(2, viewModel.prints.size)
-        val notice = assertNotNull(viewModel.notice.value)
-        assertEquals("Desfazer", notice.actionLabel)
+        val notice = notices.single()
+        assertEquals(uiText(Res.string.quote_notice_print_removed, 2), notice.message)
+        assertEquals(uiText(Res.string.quote_action_undo), notice.actionLabel)
         notice.action!!.invoke()
         assertEquals(middle, viewModel.prints[1])
         assertEquals(3, viewModel.prints.size)
@@ -192,11 +210,12 @@ class MultiPrintQuoteTest {
     @Test
     fun theLastPrintCannotBeRemoved() {
         val viewModel = viewModel()
+        val notices = collectNotices(viewModel)
 
         viewModel.removePrint(viewModel.prints.single().id)
 
         assertEquals(1, viewModel.prints.size)
-        assertNull(viewModel.notice.value)
+        assertTrue(notices.isEmpty())
     }
 
     @Test
@@ -269,7 +288,7 @@ class MultiPrintQuoteTest {
         viewModel.importDroppedAsNewPrint(PickResult.Picked(PickedFile("video.mp4", ByteArray(0))))
 
         assertEquals(2, viewModel.prints.size)
-        assertNotNull(viewModel.prints.last().gcodeImportMessage)
+        assertEquals(GCodeImportResult.Unsupported(UnsupportedGCode.NOT_GCODE, "video.mp4"), viewModel.prints.last().gcodeImport)
     }
 
     @Test
@@ -282,7 +301,7 @@ class MultiPrintQuoteTest {
 
         assertContentEquals(first, viewModel.prints[0].thumbnail?.bytes)
         assertContentEquals(second, viewModel.prints[1].thumbnail?.bytes)
-        assertContentEquals(first, viewModel.saveForm.value.photo?.bytes, "a miniatura da mesa 2 não troca a foto do pedido")
+        assertContentEquals(first, viewModel.uiState.value.form.photo?.bytes, "a miniatura da mesa 2 não troca a foto do pedido")
 
         viewModel.saveCurrentQuote()
         val saved = history.savedQuotes.value.single()
@@ -322,13 +341,13 @@ class MultiPrintQuoteTest {
         val ids = viewModel.prints.map { it.id }
 
         ids.forEach(viewModel::toggleCollapsed)
-        assertEquals(ids.toSet(), viewModel.collapsedPrintIds.value)
+        assertEquals(ids.toSet(), viewModel.uiState.value.collapsedPrintIds)
         assertTrue(!viewModel.hasUnsavedEdits, "recolher não é alterar o pedido")
 
         viewModel.toggleCollapsed(ids[0])
-        assertEquals(setOf(ids[1]), viewModel.collapsedPrintIds.value)
+        assertEquals(setOf(ids[1]), viewModel.uiState.value.collapsedPrintIds)
 
         viewModel.resetForm()
-        assertTrue(viewModel.collapsedPrintIds.value.isEmpty())
+        assertTrue(viewModel.uiState.value.collapsedPrintIds.isEmpty())
     }
 }

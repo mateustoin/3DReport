@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.PrinterProfile
@@ -24,7 +25,7 @@ data class ResolvedPrint(val printer: PrinterProfile?, val filaments: List<Resol
 data class QuoteResult(
     val prints: List<ResolvedPrint> = emptyList(),
     val quote: Quote? = null,
-    val errorMessage: String? = null,
+    val errorMessage: UiText? = null,
     val selectedServices: List<QuoteService> = emptyList(),
     val salesChannel: SalesChannel? = null,
     val shippingCost: Double = 0.0,
@@ -39,7 +40,7 @@ data class QuoteResult(
      * Campos com valor que não dá pra usar (texto que não é número, negativo), pela chave de
      * [QuoteFields]. Com qualquer um, não há [quote]: um valor inválido não vira zero nem 1 em silêncio.
      */
-    val fieldErrors: Map<String, String> = emptyMap(),
+    val fieldErrors: Map<String, UiText> = emptyMap(),
     /**
      * Reabrindo um orçamento sem mexer em nada que muda o preço: [quote] é o cálculo congelado dele, e
      * [todaysQuote] mostra quanto sairia com os custos de hoje (decisão 108).

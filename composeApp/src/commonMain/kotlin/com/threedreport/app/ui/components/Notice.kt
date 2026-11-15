@@ -2,6 +2,7 @@ package com.threedreport.app.ui.components
 
 import com.threedreport.app.platform.SaveResult
 import com.threedreport.app.platform.openFolder
+import com.threedreport.app.ui.text.UiText
 
 /**
  * O retorno de uma ação que não muda nada na tela (decisão 108): o PDF salvo, o pedido que saiu do filtro,
@@ -16,6 +17,16 @@ data class UserNotice(
     val action: (() -> Unit)? = null,
     val isError: Boolean = false,
     val id: Long = 0,
+)
+
+/**
+ * Um aviso com o texto ainda por escolher ([UiText]) e, se houver, um botão de ação ("Desfazer"). O ViewModel
+ * emite; a tela resolve o texto e mostra (ver [ObserveUiNotices]).
+ */
+data class UiNotice(
+    val message: UiText,
+    val actionLabel: UiText? = null,
+    val action: (() -> Unit)? = null,
 )
 
 /** Fonte de ids pros avisos de um ViewModel. */

@@ -47,8 +47,8 @@ import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.LinkText
+import com.threedreport.app.ui.components.ObserveUiNotices
 import com.threedreport.app.ui.components.SegmentedChoice
-import com.threedreport.app.ui.components.ShowNotice
 import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.filaments.displayText
@@ -61,6 +61,7 @@ import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -108,18 +109,19 @@ fun QuoteScreen(
     onSave: () -> Unit = { viewModel.saveCurrentQuote() },
     onCancelOperation: () -> Unit = {},
 ) {
-    val allFilaments by viewModel.filaments.collectAsState()
-    val printers by viewModel.printers.collectAsState()
-    val settings by viewModel.settings.collectAsState()
-    val services by viewModel.services.collectAsState()
-    val consumables by viewModel.consumables.collectAsState()
-    val salesChannels by viewModel.salesChannels.collectAsState()
-    val input by viewModel.input.collectAsState()
-    val saveForm by viewModel.saveForm.collectAsState()
-
-    // Uma conta por mudança de entrada ou de cadastro, e não por redesenho: a mesma que o Ctrl+S salva.
-    val result = remember(allFilaments, printers, settings, services, consumables, salesChannels, input, saveForm.operation) { viewModel.currentResult() }
-    val comparison = remember(allFilaments, printers, settings, services, consumables, salesChannels, input) {
+    val state by viewModel.uiState.collectAsState()
+    val catalog = state.catalog
+    val allFilaments = catalog.filaments
+    val printers = catalog.printers
+    val settings = catalog.settings
+    val services = catalog.services
+    val consumables = catalog.consumables
+    val salesChannels = catalog.salesChannels
+    val input = state.input
+    val saveForm = state.form
+    // A conta é do ViewModel: a mesma que o Ctrl+S salva.
+    val result = state.result
+    val comparison = remember(catalog, input) {
         viewModel.comparePrinters(allFilaments, printers, settings, services, input, salesChannels, consumables)
     }
     val currency = LocalCurrency.current
@@ -127,10 +129,11 @@ fun QuoteScreen(
 
     val isEditing = saveForm.editingQuoteId != null
     val canSave = result.quote != null && !result.missingServicePrice && result.fieldErrors.isEmpty()
+    val errorMessage = result.errorMessage?.asString()
     val cannotSaveReason = when {
         result.fieldErrors.isNotEmpty() -> "Corrija o campo marcado em vermelho pra poder salvar."
         result.quote != null && result.missingServicePrice -> "Informe o valor de cada serviço marcado (ou desmarque) pra poder salvar."
-        result.errorMessage != null -> result.errorMessage
+        errorMessage != null -> errorMessage
         else -> "Preencha filamento, impressora, peso (ou comprimento) e tempo, ou arraste o G-code, pra poder salvar."
     }
     val saveLabel = when {
@@ -184,7 +187,7 @@ fun QuoteScreen(
     }
 
     saveForm.blockedMessage?.let { message ->
-        ShowSnackbarOnce(true, message, viewModel::consumeBlockedMessage)
+        ShowSnackbarOnce(true, message.asString(), viewModel::consumeBlockedMessage)
     }
     ShowSnackbarOnce(
         saveForm.savedConfirmation,
@@ -194,8 +197,7 @@ fun QuoteScreen(
         },
         viewModel::consumeSavedConfirmation,
     )
-    val notice by viewModel.notice.collectAsState()
-    ShowNotice(notice, viewModel::consumeNotice)
+    ObserveUiNotices(viewModel.notices)
 }
 
 /** O que a tela está fazendo além de um orçamento novo: título, o detalhe (numa dica) e o texto de desistir. */
@@ -262,7 +264,7 @@ private fun QuoteForm(
 
         FormSection(++number, if (input.prints.size > 1) "Impressões" else "Impressão") {
             Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
-                val quantityError = result.fieldErrors[QuoteFields.QUANTITY]
+                val quantityError = result.errorText(QuoteFields.QUANTITY)
                 FormGrid {
                     cell(2) {
                         AppTextField(
@@ -301,11 +303,11 @@ private fun QuoteForm(
                             offeredServices.forEach { service ->
                                 ServiceRow(
                                     viewModel, service.id, service.name, service.suggestedPrice, input.selectedServices[service.id],
-                                    input.quantity, result.fieldErrors[QuoteFields.serviceMinutes(service.id)],
+                                    input.quantity, result.errorText(QuoteFields.serviceMinutes(service.id)),
                                 )
                             }
                             orphanServices.forEach { (id, serviceInput) ->
-                                ServiceRow(viewModel, id, serviceInput.name, null, serviceInput, input.quantity, result.fieldErrors[QuoteFields.serviceMinutes(id)])
+                                ServiceRow(viewModel, id, serviceInput.name, null, serviceInput, input.quantity, result.errorText(QuoteFields.serviceMinutes(id)))
                             }
                         }
                     }
@@ -315,13 +317,13 @@ private fun QuoteForm(
                             offeredConsumables.forEach { consumable ->
                                 ConsumableRow(
                                     viewModel, consumable.id, consumable.name, consumable.unitCost, input.selectedConsumables[consumable.id],
-                                    input.quantity, result.fieldErrors[QuoteFields.consumable(consumable.id)],
+                                    input.quantity, result.errorText(QuoteFields.consumable(consumable.id)),
                                 )
                             }
                             orphanConsumables.forEach { (id, consumableInput) ->
                                 ConsumableRow(
                                     viewModel, id, "${consumableInput.name} (saiu do cadastro)", consumableInput.unitCost, consumableInput,
-                                    input.quantity, result.fieldErrors[QuoteFields.consumable(id)],
+                                    input.quantity, result.errorText(QuoteFields.consumable(id)),
                                 )
                             }
                         }
@@ -375,7 +377,7 @@ private fun Header(viewModel: QuoteViewModel, input: QuoteInputState, form: Save
 @Composable
 private fun LaborField(viewModel: QuoteViewModel, settings: PricingSettings, input: QuoteInputState, result: QuoteResult, currency: Currency) {
     val quantity = input.quantity
-    val error = result.fieldErrors[QuoteFields.LABOR]
+    val error = result.errorText(QuoteFields.LABOR)
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
         FormGrid {
             cell {
@@ -548,7 +550,7 @@ private fun SaleFields(
     // Com o canal do orçamento excluído, o seletor aparece mesmo sem canais cadastrados: é nele que se
     // escolhe "Venda direta" pra liberar o cálculo.
     val offeredChannels = salesChannels.availableOrSelected { it.id == input.salesChannelId }
-    val clients by viewModel.clients.collectAsState()
+    val clients = viewModel.uiState.collectAsState().value.catalog.clients
 
     Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
         FormGrid {
@@ -577,7 +579,7 @@ private fun SaleFields(
                         label = "Frete (${currency.symbol}, opcional)",
                         value = input.shippingCostText,
                         onValueChange = viewModel::setShippingCost,
-                        error = result.fieldErrors[QuoteFields.SHIPPING],
+                        error = result.errorText(QuoteFields.SHIPPING),
                         help = HelpText(
                             "Linha própria no total, nunca embutido no preço da peça.",
                             "Frete é repasse, não produto seu: não multiplica pela quantidade nem entra na margem. A taxa do " +
@@ -613,7 +615,7 @@ private fun SaleFields(
                     label = if (input.isProduct) "Preço anunciado (opcional)" else "Preço fechado (opcional)",
                     value = input.targetTotalText,
                     onValueChange = viewModel::setTargetTotal,
-                    error = result.fieldErrors[QuoteFields.TARGET],
+                    error = result.errorText(QuoteFields.TARGET),
                     help = if (input.isProduct) {
                         HelpText(
                             "Um valor redondo pra vitrine, no lugar do que a margem deu.",
@@ -689,7 +691,7 @@ private fun DetailsFields(
     result: QuoteResult,
 ) {
     val space = MaterialTheme.spacing
-    val savedQuotes by viewModel.savedQuotes.collectAsState()
+    val savedQuotes = viewModel.uiState.collectAsState().value.catalog.savedQuotes
     val quote = result.quote
     // Uma linha por impressora que o pedido usa: cada uma tem a própria fila.
     val queueHint = if (quote != null && !input.isProduct) {
@@ -776,11 +778,11 @@ private fun PhotoRow(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
         } else {
             AppButton("Escolher foto (opcional)", onClick = viewModel::pickPhoto, icon = AppIcons.AddPhotoAlternate)
         }
-        form.photoError?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.error) }
+        form.photoError?.let { Text(it.asString(), style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.error) }
     }
 }
 
-/** O STL anexado, com a prévia 3D e a análise calculadas fora do thread da tela ([QuoteViewModel.stlPreview]). */
+/** O STL anexado, com a prévia 3D e a análise calculadas fora do thread da tela ([QuoteUiState.stlPreview]). */
 @Composable
 private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
     val space = MaterialTheme.spacing
@@ -800,7 +802,7 @@ private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
             Text(stlFile.fileName, style = MaterialTheme.appType.body)
             AppButton("Remover STL", onClick = viewModel::clearStlFile)
         }
-        val preview by viewModel.stlPreview.collectAsState()
+        val preview = viewModel.uiState.collectAsState().value.stlPreview
         when (val current = preview) {
             null, StlPreview.Loading -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
                 CircularProgressIndicator(modifier = Modifier.size(AppDimens.iconSize), strokeWidth = AppDimens.focusRingWidth)
@@ -885,3 +887,7 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
         help = HelpText("Separa a lista de produtos e o catálogo em PDF em seções."),
     )
 }
+
+/** O texto do erro do campo [key], ou `null` se ele está válido. */
+@Composable
+internal fun QuoteResult.errorText(key: String): String? = fieldErrors[key]?.asString()

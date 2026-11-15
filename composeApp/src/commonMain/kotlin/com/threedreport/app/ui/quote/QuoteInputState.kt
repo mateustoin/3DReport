@@ -33,7 +33,7 @@ data class FilamentInput(
  * @property filaments nunca vazia. Com uma linha só, a tela é a de sempre.
  * @property printTimeText tempo de uma rodada, como digitado ("3h20", "200"; ver `parseDurationMinutes`).
  * @property runsText quantas vezes a mesma mesa roda; vazio conta como 1.
- * @property gcodeImportMessage mensagem sobre a última importação de G-code nesta impressão.
+ * @property gcodeImport o que a última importação de G-code disse sobre esta impressão (a tela escolhe o texto).
  * @property beforeGCode como a impressão estava antes da primeira importação de G-code, pra
  *   "Desfazer" devolver tudo de uma vez (inclusive as linhas de filamento).
  * @property missingPrinterName nome da impressora de um orçamento reaberto que não está mais no
@@ -51,7 +51,7 @@ data class PrintInput(
     val filaments: List<FilamentInput> = listOf(FilamentInput()),
     val printTimeText: String = "",
     val runsText: String = "",
-    val gcodeImportMessage: String? = null,
+    val gcodeImport: GCodeImportResult? = null,
     val beforeGCode: PrintInput? = null,
     val missingPrinterName: String? = null,
     val settings: PrintSettings = PrintSettings(),
@@ -63,10 +63,10 @@ data class PrintInput(
     val isBlank: Boolean
         get() = printTimeText.isBlank() && filaments.all { it.lengthText.isBlank() } && beforeGCode == null
 
-    /** O que muda o preço: sem nome, configurações, miniatura e mensagens (ver [QuoteInputState.pricingKey]). */
+    /** O que muda o preço: sem nome, configurações, miniatura e resultado da importação (ver [QuoteInputState.pricingKey]). */
     fun pricingKey(): PrintInput = copy(
         name = "",
-        gcodeImportMessage = null,
+        gcodeImport = null,
         beforeGCode = null,
         settings = PrintSettings(),
         thumbnail = null,

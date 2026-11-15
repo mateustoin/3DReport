@@ -561,7 +561,7 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
         vm.setClientContact(spec.clientContact)
         vm.setDeliveryDate(deliveryEpochDay(spec.deliveryDaysFromToday))
         val ok = vm.saveCurrentQuote()
-        check(ok) { "Não consegui salvar o pedido de exemplo \"${spec.name}\": ${vm.saveForm.value.blockedMessage}" }
+        check(ok) { "Não consegui salvar o pedido de exemplo \"${spec.name}\": ${vm.uiState.value.form.blockedMessage}" }
         val savedId = history.savedQuotes.value.last().id
         for ((status, daysAfterCreation) in spec.statusSteps) {
             clock.millis = atDaysAgo(spec.createdDaysAgo - daysAfterCreation)
@@ -581,7 +581,7 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
         vm.setSaveName(spec.name)
         vm.setCategory(spec.category)
         val ok = vm.saveCurrentQuote()
-        check(ok) { "Não consegui salvar o produto de exemplo \"${spec.name}\": ${vm.saveForm.value.blockedMessage}" }
+        check(ok) { "Não consegui salvar o produto de exemplo \"${spec.name}\": ${vm.uiState.value.form.blockedMessage}" }
     }
 }
 

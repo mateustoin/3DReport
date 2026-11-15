@@ -236,4 +236,78 @@
     <string name="printers_maintenance_suggestion_calibration">Calibração</string>
     <string name="printers_maintenance_suggestion_reprint">Reimpressão de falha</string>
     <string name="printers_maintenance_suggestion_own_use">Uso próprio</string>
+
+    <!-- Orçamento: erros de campo, bloqueios, avisos e a mensagem da importação de G-code -->
+    <string name="quote_error_quantity">Quantidade: use um número inteiro, 1 ou mais.</string>
+    <string name="quote_error_service_value">Valor de %1$s: não é um número.</string>
+    <string name="quote_error_service_minutes">Tempo de %1$s: use minutos (30) ou horas e minutos (1h30).</string>
+    <string name="quote_error_consumable_quantity">Quantidade de %1$s: use um número maior que zero.</string>
+    <string name="quote_error_shipping_invalid">Frete: não é um número. Use vírgula nos centavos (19,90).</string>
+    <string name="quote_error_shipping_negative">Frete não pode ser negativo.</string>
+    <string name="quote_error_target_invalid">Preço: não é um número. Use vírgula nos centavos (19,90).</string>
+    <string name="quote_error_target_negative">Preço não pode ser negativo.</string>
+    <string name="quote_error_target_below_extras">Esse preço não cobre serviços e frete (%1$s): digite pelo menos esse valor.</string>
+    <string name="quote_error_labor">Tempo de trabalho: use minutos (90) ou horas e minutos (1h30).</string>
+    <string name="quote_error_weight">Peso: use um número em gramas (42 ou 42,5).</string>
+    <string name="quote_error_length">Comprimento: use um número em metros (27,5).</string>
+    <string name="quote_error_runs">Vezes: use um número inteiro, 1 ou mais.</string>
+    <string name="quote_error_print_time">Tempo de impressão: use minutos (200) ou horas e minutos (3h20).</string>
+    <string name="quote_error_channel_missing">O canal "%1$s" não existe mais. Escolha outro canal, ou "Venda direta", pra calcular o preço.</string>
+    <string name="quote_error_printer_missing">A impressora "%1$s" não está mais cadastrada. Escolha outra.</string>
+    <string name="quote_error_printer_missing_unnamed">A impressora escolhida não está mais cadastrada. Escolha outra.</string>
+    <string name="quote_error_filament_missing">O filamento "%1$s" não está mais cadastrado. Escolha outro.</string>
+    <string name="quote_error_filament_missing_unnamed">O filamento escolhido não está mais cadastrado. Escolha outro.</string>
+    <string name="quote_error_deductions">A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. Revise a taxa do canal ou o imposto em Configurações.</string>
+    <string name="quote_error_check_values">Confira os valores digitados.</string>
+    <string name="quote_blocked_prefix">Não salvei:</string>
+    <string name="quote_blocked_incomplete">Não salvei: preencha filamento, impressora, comprimento e tempo.</string>
+    <string name="quote_blocked_service_price">Não salvei: informe o valor de cada serviço marcado.</string>
+    <string name="quote_blocked_deleted">Não salvei: "%1$s" foi excluído. Cancele a edição e use Duplicar num pedido parecido.</string>
+    <string name="quote_photo_unreadable">Não consegui ler essa imagem. Tente um PNG ou JPG.</string>
+    <string name="quote_pick_failed">%1$s</string>
+    <string name="quote_notice_print_removed">Impressão %1$d removida.</string>
+    <string name="quote_action_undo">Desfazer</string>
+    <string name="quote_import_unreadable">Não consegui ler esse G-code. Confira se é o arquivo exportado pelo fatiador.</string>
+    <string name="quote_import_unsupported_bgcode">G-code binário (.bgcode) ainda não é lido. No PrusaSlicer, desligue "G-code binário" nas configurações da impressora e exporte de novo.</string>
+    <string name="quote_import_unsupported_sliced_3mf">Esse é o arquivo fatiado do Bambu Studio (.gcode.3mf), que o app ainda não lê. No Bambu Studio, use "Exportar G-code" (em vez de "Exportar arquivo fatiado da placa") e arraste o .gcode.</string>
+    <string name="quote_import_unsupported_3mf">Esse é um arquivo de projeto (.3mf), não um G-code. No fatiador, use "Exportar G-code" e arraste o arquivo .gcode.</string>
+    <string name="quote_import_unsupported_other">"%1$s" não é um G-code. Use o arquivo .gcode exportado pelo fatiador.</string>
+    <string name="quote_import_filled">Preenchido a partir do G-code: %1$s.</string>
+    <string name="quote_import_filled_per_extruder">consumo de cada filamento</string>
+    <string name="quote_import_filled_length">comprimento de filamento</string>
+    <string name="quote_import_filled_time">tempo de impressão</string>
+    <string name="quote_import_filled_photo">foto do modelo</string>
+    <string name="quote_import_filled_settings">configurações de impressão</string>
+    <string name="quote_import_nothing_found">Não encontrei comprimento nem tempo nesse G-code. Preencha manualmente.</string>
+    <string name="quote_import_printer_found">Impressora: %1$s.</string>
+    <string name="quote_import_printer_similar">O G-code é de uma "%1$s"; a mais parecida cadastrada é "%2$s". Escolha na lista se for ela.</string>
+    <string name="quote_import_printer_not_registered">O G-code é de uma "%1$s", que não está cadastrada (Impressoras → Escolher da lista).</string>
+    <string name="quote_import_per_extruder">Um filamento por extrusor: %1$s.</string>
+    <string name="quote_import_extruder_item">%1$d) %2$s</string>
+    <string name="quote_import_extruder_ambiguous">%1$s (há %2$d em estoque, escolha qual)</string>
+    <string name="quote_import_extruder_not_registered">%1$s (não cadastrado em estoque, escolha)</string>
+    <string name="quote_import_extruder_not_registered_vendor">%1$s da %2$s (não cadastrado em estoque, escolha)</string>
+    <string name="quote_import_extruder_unknown">material não informado (escolha)</string>
+    <string name="quote_import_filament_color">%1$s, cor %2$s</string>
+    <plurals name="quote_import_kept_rows">
+        <item quantity="one">O G-code usa %1$d filamento, mas não informa o consumo dele: mantive as suas linhas de filamento como estavam.</item>
+        <item quantity="other">O G-code usa %1$d filamentos, mas não informa o consumo de cada um: mantive as suas linhas de filamento como estavam.</item>
+    </plurals>
+    <plurals name="quote_import_kept_rows_total">
+        <item quantity="one">O G-code usa %1$d filamento, mas não informa o consumo dele (%2$s m no total): mantive as suas linhas de filamento como estavam.</item>
+        <item quantity="other">O G-code usa %1$d filamentos, mas não informa o consumo de cada um (%2$s m no total): mantive as suas linhas de filamento como estavam.</item>
+    </plurals>
+    <plurals name="quote_import_merged_rows">
+        <item quantity="one">O G-code usa %1$d filamento, mas não informa o consumo dele: o total ficou numa linha só.</item>
+        <item quantity="other">O G-code usa %1$d filamentos, mas não informa o consumo de cada um: o total ficou numa linha só. Separe em "Adicionar filamento" pra cobrar cada um pelo seu preço.</item>
+    </plurals>
+    <string name="quote_import_filament_found">Filamento: %1$s.</string>
+    <string name="quote_import_filament_found_color">Filamento: %1$s, cor %2$s.</string>
+    <plurals name="quote_import_filament_ambiguous">
+        <item quantity="one">Há %1$d filamento %2$s em estoque. Escolha qual usou.</item>
+        <item quantity="other">Há %1$d filamentos %2$s em estoque. Escolha qual usou.</item>
+    </plurals>
+    <string name="quote_import_filament_not_registered">O G-code usa %1$s, que não está cadastrado em estoque.</string>
+    <string name="quote_import_filament_not_registered_vendor">O G-code usa %1$s da %2$s, que não está cadastrado em estoque.</string>
+    <string name="quote_import_photo_kept">Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido.</string>
 </resources>

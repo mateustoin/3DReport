@@ -127,11 +127,11 @@ class ArchiveTest {
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
 
-        val result = viewModel.currentResult()
+        val result = viewModel.uiState.value.result
         val chosen = assertNotNull(result.prints.single().filaments.single().filament)
         assertTrue(chosen.id != first.id && !chosen.archived)
         assertEquals("outra", result.prints.single().printer?.id)
-        assertTrue(viewModel.comparePrinters(filaments.filaments.value, printers.printers.value, SettingsRepository().settings.value, emptyList(), viewModel.input.value).isEmpty())
+        assertTrue(viewModel.comparePrinters(filaments.filaments.value, printers.printers.value, SettingsRepository().settings.value, emptyList(), viewModel.uiState.value.input).isEmpty())
     }
 
     @Test
@@ -145,7 +145,7 @@ class ArchiveTest {
         viewModel.loadForEditing(saved)
         viewModel.setLengthMeters("13")
 
-        val result = viewModel.currentResult()
+        val result = viewModel.uiState.value.result
         assertNull(result.errorMessage, "arquivado não é \"saiu do cadastro\"")
         assertNotNull(result.quote)
         assertEquals(used, result.prints.single().filaments.single().filament?.id)

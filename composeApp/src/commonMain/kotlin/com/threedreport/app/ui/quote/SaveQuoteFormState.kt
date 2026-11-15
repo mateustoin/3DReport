@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.app.ui.text.UiText
 
 /** Campos opcionais preenchidos ao salvar o orçamento atual no histórico. */
 data class SaveQuoteFormState(
@@ -23,7 +24,7 @@ data class SaveQuoteFormState(
     /** Número do que acabou de ser salvo ("#0042"), pra confirmação. */
     val savedNumber: String? = null,
     /** Por que o salvar (Ctrl+S) não aconteceu, pra tela avisar em vez de não fazer nada. */
-    val blockedMessage: String? = null,
+    val blockedMessage: UiText? = null,
     /** O que a tela está fazendo além de um orçamento novo (editar, duplicar, vender, copiar pro catálogo). */
     val operation: QuoteOperation? = null,
     /** Produto de onde este pedido nasceu (pelo "Vender" ou duplicando uma venda dele), gravado ao salvar. */
@@ -31,7 +32,7 @@ data class SaveQuoteFormState(
     /** Categoria do produto no catálogo (decisão 102), texto livre; ignorada em pedido. */
     val category: String = "",
     /** Mensagem sobre a foto escolhida (imagem que não abre). */
-    val photoError: String? = null,
+    val photoError: UiText? = null,
 ) {
     /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
     val editingQuoteId: String?
