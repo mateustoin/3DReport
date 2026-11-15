@@ -77,8 +77,11 @@ fun HelpHint(help: HelpText, label: String, modifier: Modifier = Modifier, tint:
         positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
         tooltip = {
             RichTooltip {
-                Text(help.short, style = MaterialTheme.appType.caption)
-                help.detail?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                // O conteúdo do RichTooltip é uma Box: sem a Column, a frase curta e o detalhe se sobrepõem.
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+                    Text(help.short, style = MaterialTheme.appType.caption)
+                    help.detail?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
             }
         },
         state = state,
