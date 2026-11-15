@@ -318,15 +318,18 @@ fun AppChoiceField(
  * `sectionTitle`, sem ícone decorativo. Entre o título e os campos, 12.
  */
 @Composable
-fun FormSection(number: Int, title: String, modifier: Modifier = Modifier, help: HelpText? = null, content: @Composable () -> Unit) {
+fun FormSection(number: Int?, title: String, modifier: Modifier = Modifier, help: HelpText? = null, content: @Composable () -> Unit) {
     val space = MaterialTheme.spacing
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(space.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
-            Box(
-                modifier = Modifier.size(AppDimens.sectionMarkerSize).background(MaterialTheme.appColors.tint, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(number.toString(), style = MaterialTheme.appType.label, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+            // Sem número quando as seções não são passos em sequência (ex.: diálogo de manutenção).
+            if (number != null) {
+                Box(
+                    modifier = Modifier.size(AppDimens.sectionMarkerSize).background(MaterialTheme.appColors.tint, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(number.toString(), style = MaterialTheme.appType.label, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                }
             }
             Text(title, style = MaterialTheme.appType.sectionTitle, color = MaterialTheme.colorScheme.onSurface)
             if (help != null) HelpHint(help, title)

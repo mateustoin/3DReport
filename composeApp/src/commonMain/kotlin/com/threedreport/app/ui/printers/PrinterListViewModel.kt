@@ -399,7 +399,7 @@ class PrinterListViewModel(
             val queue = queueByPrinter[printer.id]
             PrinterRowState(
                 printer = printer,
-                machineCostPerHour = printer.machineInvestment.costPerHour + printer.maintenanceCostPerHour,
+                machineCostPerHour = printer.machineCostPerHour,
                 queuedMinutes = queue?.queuedMinutes ?: 0.0,
                 queuedQuoteCount = queue?.queuedQuoteCount ?: 0,
                 maintenance = summaryOf(statuses),

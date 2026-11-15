@@ -102,6 +102,7 @@
     <string name="filaments_field_color_name">Nome da cor</string>
     <string name="filaments_field_color_name_hint">Vermelho fosco</string>
     <string name="filaments_field_color_hex">Código da cor</string>
+    <string name="filaments_field_color_hex_hint">Opcional (ex.: #FF8800)</string>
     <string name="filaments_field_color_presets">Cores prontas</string>
     <string name="filaments_field_color_stock">Estoque</string>
     <string name="filaments_color_block">Cor %1$d</string>

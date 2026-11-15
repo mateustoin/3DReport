@@ -5,6 +5,7 @@ import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.text.UiText
+import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
 
 /**
@@ -37,12 +38,13 @@ data class PrinterFormState(
      */
     val machineCostPerHour: Double?
         get() {
-            val price = parseDecimal(machinePriceText) ?: return null
+            val price = parseDecimal(machinePriceText)?.takeIf { it >= 0 } ?: return null
             val months = parseWholeNumber(paybackMonthsText)?.takeIf { it > 0 } ?: return null
             val days = parseWholeNumber(printingDaysPerMonthText)?.takeIf { it > 0 } ?: return null
             val hours = parseDecimal(printingHoursPerDayText, NumberKind.MEASURE)?.takeIf { it > 0 } ?: return null
             val maintenance = parseDecimal(maintenanceCostPerHourText) ?: 0.0
-            return price / (months * days * hours) + maintenance
+            // A conta é do core: a mesma que a lista mostra depois de salvar.
+            return MachineInvestment(price, months, days, hours).costPerHour + maintenance
         }
 
     companion object {

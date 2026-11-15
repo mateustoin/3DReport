@@ -19,6 +19,7 @@ import _3dreport.composeapp.generated.resources.filaments_empty
 import _3dreport.composeapp.generated.resources.filaments_field_brand
 import _3dreport.composeapp.generated.resources.filaments_field_brand_hint
 import _3dreport.composeapp.generated.resources.filaments_field_color_hex
+import _3dreport.composeapp.generated.resources.filaments_field_color_hex_hint
 import _3dreport.composeapp.generated.resources.filaments_field_color_name
 import _3dreport.composeapp.generated.resources.filaments_field_color_name_hint
 import _3dreport.composeapp.generated.resources.filaments_field_color_presets
@@ -157,21 +158,26 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
             archiveOrRestore,
             RowAction(AppIcons.Delete, stringResource(Res.string.common_delete), { viewModel.requestDelete(filament.id) }, danger = true),
         ),
-        footer = {
-            FlowRow(
-                modifier = Modifier.padding(top = MaterialTheme.spacing.xs),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
-            ) {
-                filament.colors.forEach { color ->
-                    key(color.id) {
-                        ColorChip(
-                            label = color.labelOrNull() ?: unnamed,
-                            color = parseHexColor(color.hex),
-                            inStock = color.inStock,
-                            outOfStockLabel = outOfStock,
-                            onToggle = { viewModel.toggleColorInStock(filament.id, color.id) },
-                        )
+        // Uma cor só, sem nome e em estoque não diz nada: o selo some e a linha fica mais baixa.
+        footer = if (filament.colors.size == 1 && filament.colors[0].let { it.labelOrNull() == null && it.inStock }) {
+            null
+        } else {
+            {
+                FlowRow(
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.xs),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
+                ) {
+                    filament.colors.forEach { color ->
+                        key(color.id) {
+                            ColorChip(
+                                label = color.labelOrNull() ?: unnamed,
+                                color = parseHexColor(color.hex),
+                                inStock = color.inStock,
+                                outOfStockLabel = outOfStock,
+                                onToggle = { viewModel.toggleColorInStock(filament.id, color.id) },
+                            )
+                        }
                     }
                 }
             }
@@ -276,7 +282,7 @@ private fun ColorBlock(number: Int, colorForm: FilamentColorFormState, canRemove
             label = stringResource(Res.string.filaments_field_color_hex),
             value = colorForm.hex.orEmpty(),
             onValueChange = { text -> viewModel.updateColorRow(colorForm.id) { it.copy(hex = text.ifBlank { null }) } },
-            placeholder = stringResource(Res.string.common_optional),
+            placeholder = stringResource(Res.string.filaments_field_color_hex_hint),
             trailing = { ColorSwatch(parseHexColor(colorForm.hex)) },
         )
         AppSwatchField(

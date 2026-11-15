@@ -151,7 +151,7 @@ fun MaintenanceDialog(open: MaintenanceDialogState, viewModel: PrinterListViewMo
             )
         }
 
-        FormSection(1, stringResource(Res.string.printers_maintenance_components)) {
+        FormSection(null, stringResource(Res.string.printers_maintenance_components)) {
             if (open.statuses.isEmpty()) DialogText(stringResource(Res.string.printers_maintenance_component_empty), muted = true)
             open.statuses.forEach { status ->
                 ComponentRow(
@@ -165,7 +165,7 @@ fun MaintenanceDialog(open: MaintenanceDialogState, viewModel: PrinterListViewMo
         }
 
         FormSection(
-            2,
+            null,
             stringResource(Res.string.printers_maintenance_log),
             modifier = Modifier.padding(top = MaterialTheme.spacing.sm),
             help = HelpText(stringResource(Res.string.printers_maintenance_help_log)).takeIf { open.data.log.any { it.componentId != null } },
@@ -189,7 +189,7 @@ fun MaintenanceDialog(open: MaintenanceDialogState, viewModel: PrinterListViewMo
         }
 
         FormSection(
-            3,
+            null,
             stringResource(Res.string.printers_maintenance_usage),
             modifier = Modifier.padding(top = MaterialTheme.spacing.sm),
             help = HelpText(stringResource(Res.string.printers_maintenance_help_usage)),
