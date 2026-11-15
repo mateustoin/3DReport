@@ -119,3 +119,18 @@ fun FormPanel(title: String, onSave: () -> Unit, onCancel: () -> Unit, modifier:
         }
     }
 }
+
+/**
+ * [FormSection] pro painel dos cadastros: numerada, com 24 de espaço da seção de cima (12 do painel mais 12 daqui).
+ * A primeira cola no título do painel.
+ */
+@Composable
+fun PanelSection(number: Int, title: String, help: HelpText? = null, content: @Composable () -> Unit) {
+    FormSection(
+        number = number,
+        title = title,
+        modifier = if (number > 1) Modifier.padding(top = MaterialTheme.spacing.sm) else Modifier,
+        help = help,
+        content = content,
+    )
+}

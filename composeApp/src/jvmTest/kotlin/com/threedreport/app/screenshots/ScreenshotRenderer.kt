@@ -153,6 +153,26 @@ class ScreenshotRenderer {
             renderAppPng(File(outDir, "servicos$suffix.png"), afterSettle = { it.clickByText("Montagem") }) {
                 App(container, startAt = AppDestination.SERVICES)
             }
+            // Filamentos e Impressoras: a lista (no escuro, com os arquivados abertos) e o painel de edição aberto.
+            renderAppPng(
+                File(outDir, "filamentos$suffix.png"),
+                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
+            ) {
+                App(container, startAt = AppDestination.FILAMENTS)
+            }
+            renderAppPng(File(outDir, "filamentos-painel$suffix.png"), afterSettle = { it.clickByText("PLA Voolt3D") }) {
+                App(container, startAt = AppDestination.FILAMENTS)
+            }
+            renderAppPng(
+                File(outDir, "filamentos-cores$suffix.png"),
+                afterSettle = {
+                    it.clickByText("PLA Voolt3D")
+                    settle(it, frames = 4)
+                    it.scrollAllToEnd()
+                },
+            ) {
+                App(container, startAt = AppDestination.FILAMENTS)
+            }
         }
         container.theme.update(ThemeMode.LIGHT)
 
@@ -396,6 +416,19 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
         ),
     )
 
+    filamentRepo.add(
+        Filament(
+            id = "filamento-abs",
+            name = "ABS Voolt3D",
+            pricePerKg = 99.0,
+            densityGPerCm3 = 1.04,
+            materialType = "ABS",
+            brand = "Voolt3D",
+            colors = listOf(FilamentColor(id = "abs-preto", name = "Preto", hex = "#161616")),
+            archived = true,
+        ),
+    )
+
     val printerRepo = storage.printers()
     printerRepo.items.value.forEach { printerRepo.delete(it.id) } // tira a "Minha impressora" de fábrica
     printerRepo.add(
@@ -583,6 +616,17 @@ private fun ImageComposeScene.clickByText(text: String) {
         return
     }
 }
+
+/** Rola até o fim tudo o que rola na tela (o painel do formulário), pra capturar o que fica embaixo. */
+private fun ImageComposeScene.scrollAllToEnd() {
+    fun walk(node: SemanticsNode) {
+        node.config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(0f, SCROLL_TO_END)
+        node.children.forEach(::walk)
+    }
+    for (owner in semanticsOwners) walk(owner.rootSemanticsNode)
+}
+
+private const val SCROLL_TO_END = 5000f
 
 private fun findClickableNodeWithText(node: SemanticsNode, text: String): SemanticsNode? {
     val texts = node.config.getOrNull(SemanticsProperties.Text)

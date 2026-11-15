@@ -65,5 +65,12 @@ object AppDimens {
     val thumbnailSize = 64.dp
     val printThumbnailSize = 40.dp
     val smallControlHeight = 32.dp
+
+    /** Amostra de cor (filamento): a do formulário e a pequena, dentro do selo da lista. */
+    val swatchSize = 24.dp
+    val swatchSmallSize = 16.dp
+
+    /** Lista com rolagem própria dentro de um diálogo (as impressoras pré-cadastradas). */
+    val dialogListMaxHeight = 360.dp
     val stlViewerHeight = 280.dp
 }

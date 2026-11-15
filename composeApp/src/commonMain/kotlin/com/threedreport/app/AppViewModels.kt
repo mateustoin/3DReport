@@ -71,7 +71,7 @@ class AppViewModels(
     val catalogViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.PRODUCT) }
     val dashboardViewModel: DashboardViewModel by lazy { DashboardViewModel(container.quoteHistory, container.settings) }
     val filamentListViewModel: FilamentListViewModel by lazy {
-        FilamentListViewModel(container.filaments, container.quoteHistory::quotesIncludingTrash)
+        FilamentListViewModel(container.filaments, scope, container.quoteHistory::quotesIncludingTrash)
     }
     val printerListViewModel: PrinterListViewModel by lazy {
         PrinterListViewModel(container.printers, container.quoteHistory, container.maintenance)

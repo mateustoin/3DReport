@@ -51,6 +51,8 @@ class RowAction(
  * e o [value] alinhado à direita com algarismos tabulares. As [actions] só aparecem com o mouse em cima ou com o
  * foco na linha (teclado), e continuam na ordem do Tab. Clicar na linha chama [onClick]. Divisor de 1 px embaixo.
  * [muted] apaga o nome (item arquivado). [selected] destaca a linha com o fundo `tint` (o item aberto no painel).
+ * [footer] é um bloco opcional sob os detalhes (o estoque de cada cor, a situação da manutenção); o que houver nele
+ * que seja clicável responde por si, sem abrir a edição.
  * As ações ficam por cima do fim da linha, com o fundo dela, e cobrem o valor enquanto estão visíveis.
  */
 @Composable
@@ -63,6 +65,7 @@ fun ListRow(
     value: String? = null,
     muted: Boolean = false,
     selected: Boolean = false,
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
@@ -116,6 +119,7 @@ fun ListRow(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    footer?.invoke()
                 }
                 if (value != null) {
                     NumericText(

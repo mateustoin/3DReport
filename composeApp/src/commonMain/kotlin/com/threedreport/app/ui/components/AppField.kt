@@ -61,8 +61,11 @@ import com.threedreport.app.ui.theme.spacing
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
-/** Ajuda sob demanda: uma frase curta e, opcionalmente, o detalhe. Aparece numa dica, nunca como parágrafo fixo. */
-data class HelpText(val short: String, val detail: String? = null)
+/**
+ * Ajuda sob demanda: uma frase curta e, opcionalmente, o detalhe. Aparece numa dica, nunca como parágrafo fixo.
+ * Com [warning], o ícone de ajuda sai em âmbar: é um aviso que vale ler (o consumo que veio de um preset).
+ */
+data class HelpText(val short: String, val detail: String? = null, val warning: Boolean = false)
 
 /**
  * Botão de ajuda ao lado de um rótulo: abre (ao passar o mouse ou ao clicar) a dica com o texto. Substitui
@@ -99,7 +102,7 @@ fun HelpHint(help: HelpText, label: String, modifier: Modifier = Modifier, tint:
 }
 
 @Composable
-private fun FieldLabel(label: String, help: HelpText?) {
+internal fun FieldLabel(label: String, help: HelpText?) {
     // Altura fixa (a do ícone de ajuda): campos com e sem ajuda ficam alinhados na mesma linha da grade.
     Row(
         modifier = Modifier.height(AppDimens.iconSize),
@@ -107,7 +110,7 @@ private fun FieldLabel(label: String, help: HelpText?) {
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
     ) {
         Text(label, style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-        if (help != null) HelpHint(help, label)
+        if (help != null) HelpHint(help, label, tint = if (help.warning) MaterialTheme.appColors.amberText else androidx.compose.ui.graphics.Color.Unspecified)
     }
 }
 
@@ -134,7 +137,8 @@ private fun FieldError(error: String?) {
 /**
  * Campo de texto do kit: rótulo em `label` acima, caixa de 40 com borda `line` e fundo `card`; borda `primary`
  * ao passar o mouse e anel de 2 no foco; erro com borda `error` e mensagem curta abaixo. Tab avança e
- * Shift+Tab volta. [fieldModifier] vai na caixa (por exemplo, a âncora de um menu de sugestões).
+ * Shift+Tab volta. [fieldModifier] vai na caixa (por exemplo, a âncora de um menu de sugestões). [trailing] fica
+ * dentro da caixa, à direita do texto (a amostra de uma cor digitada, por exemplo).
  */
 @Composable
 fun AppTextField(
@@ -147,6 +151,7 @@ fun AppTextField(
     error: String? = null,
     help: HelpText? = null,
     enabled: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
@@ -171,11 +176,14 @@ fun AppTextField(
                     .tabToNavigate()
                     .semantics { contentDescription = label },
                 decorationBox = { inner ->
-                    Box(Modifier.padding(horizontal = space.sm), contentAlignment = Alignment.CenterStart) {
-                        if (value.isEmpty() && placeholder != null) {
-                            Text(placeholder, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), maxLines = 1)
+                    Row(Modifier.padding(horizontal = space.sm), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                            if (value.isEmpty() && placeholder != null) {
+                                Text(placeholder, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), maxLines = 1)
+                            }
+                            inner()
                         }
-                        inner()
+                        trailing?.invoke()
                     }
                 },
             )
