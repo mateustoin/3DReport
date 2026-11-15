@@ -728,7 +728,6 @@
     <string name="history_menu_download_photo">Baixar foto</string>
     <string name="history_menu_download_stl">Baixar STL</string>
     <string name="history_menu_print_settings">Configurações de impressão</string>
-    <string name="history_menu_print_settings_add">Adicionar configurações de impressão</string>
     <string name="history_menu_sell">Vender</string>
     <string name="history_menu_edit_details">Editar detalhes</string>
     <string name="history_menu_edit_calculation">Editar cálculo</string>
@@ -760,4 +759,29 @@
     <string name="history_reprice_loss">Com os custos de hoje, o preço anunciado dá prejuízo de %1$s. O mínimo pra não sair no negativo é %2$s.</string>
     <string name="history_reprice_confirm">Atualizar</string>
 
+    <!-- Catálogo -->
+    <string name="catalog_title">Catálogo</string>
+    <string name="catalog_action_new">Novo produto</string>
+    <string name="catalog_action_export">Exportar catálogo</string>
+    <string name="catalog_action_sell">Vender</string>
+    <string name="catalog_view_grid">Grade</string>
+    <string name="catalog_view_list">Lista</string>
+    <string name="catalog_search">Buscar</string>
+    <string name="catalog_search_hint">Nome do produto</string>
+    <string name="catalog_filter_category">Categoria</string>
+    <string name="catalog_filter_category_all">Todas as categorias</string>
+    <string name="catalog_filter_category_none">Sem categoria</string>
+    <string name="catalog_col_product">Produto</string>
+    <string name="catalog_col_category">Categoria</string>
+    <string name="catalog_col_profit">Lucro</string>
+    <string name="catalog_col_price">Preço</string>
+    <string name="catalog_reprice_changed">Custos mudaram: hoje seria %1$s</string>
+    <string name="catalog_reprice_unavailable">Preço sem recalcular</string>
+    <string name="catalog_selection_export_selected">Exportar selecionados</string>
+    <plurals name="catalog_selection_all">
+        <item quantity="one">Exportar o produto</item>
+        <item quantity="other">Exportar os %1$d produtos</item>
+    </plurals>
+    <string name="catalog_empty_first">Nenhum produto ainda.</string>
+    <string name="catalog_empty_filter">Nenhum produto encontrado com esse filtro.</string>
 </resources>

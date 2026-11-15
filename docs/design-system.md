@@ -147,6 +147,7 @@ fonte. Não se usa fonte monoespaçada.
 | Tabela | Cabeçalho de 34 com os títulos em `label` e linhas de 52, divisor de 1 px, valor à direita (`TableHeader`, `TableRow`). Ações no hover ou no foco, por cima do fim da linha, como na linha de lista. No modo de seleção, a primeira coluna é a caixa de marcar e clicar na linha marca |
 | Coluna do kanban | Fundo `column`, raio 12, faixa de 3 px no topo na cor da situação, título e total. As colunas dividem a largura e, abaixo de 188 cada, a faixa rola na horizontal |
 | Cartão de pedido | Fundo `card`, borda `line` (`primary` com o mouse em cima ou o foco): nome em `bodyStrong`, número e cliente em `caption`, selo de prazo e valor, foto pequena quando houver. O menu de ações só aparece no hover ou no foco. Clicar abre os detalhes; arrastar muda a situação |
+| Cartão de produto | Grade do Catálogo (decisão 132). Fundo `card`, borda `line` e raio 10: foto de 132 em destaque (sem foto, o fundo `column` com o ícone de imagem, sem ilustração), nome em `bodyStrong`, categoria em `caption`, preço em `sectionTitle` e "Vender" como botão secundário de 32. O menu das demais ações aparece no hover ou no foco; no modo de seleção, o cartão ganha a caixa de marcar |
 | Linha de lista | Pra cadastros: uma linha por item, ações ao passar o mouse ou num menu. Não é cartão |
 | Estado vazio | Uma frase e a ação que resolve. Sem ilustração |
 

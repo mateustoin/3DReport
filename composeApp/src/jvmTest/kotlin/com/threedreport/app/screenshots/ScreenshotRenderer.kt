@@ -210,6 +210,15 @@ class ScreenshotRenderer {
 
             container.preferences.setCatalogView(CatalogView.GRID)
             renderAppPng(File(outDir, "catalogo$suffix.png")) { historyApp(container, AppDestination.CATALOG) }
+            if (theme == ThemeMode.LIGHT) {
+                // O menu de ações de um cartão aberto, e o modo de seleção que o "Exportar catálogo" liga.
+                renderAppPng(File(outDir, "pedidos-menu.png"), afterSettle = { it.clickByDescription("Mais ações") }) {
+                    historyApp(container, AppDestination.ORDERS)
+                }
+                renderAppPng(File(outDir, "catalogo-selecao.png"), afterSettle = { it.clickByText("Exportar catálogo") }) {
+                    historyApp(container, AppDestination.CATALOG)
+                }
+            }
             container.preferences.setCatalogView(CatalogView.LIST)
             renderAppPng(File(outDir, "catalogo-lista$suffix.png")) { historyApp(container, AppDestination.CATALOG) }
             container.preferences.setCatalogView(CatalogView.GRID)
