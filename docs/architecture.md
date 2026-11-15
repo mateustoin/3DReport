@@ -359,6 +359,12 @@ Formato e migrações:
   migração e teste** (decisão 106).
 - O arquivo grava todos os campos (`encodeDefaults`), e os enums têm nome fixo
   em inglês no arquivo (`@SerialName`), separado do nome da constante.
+- Preferências deste computador ficam em `preferences.json` (`AppPreferences`):
+  backup automático, aviso de versão nova, posição da janela e a visualização
+  lembrada de Pedidos (`OrdersView`, kanban por padrão, decisão 129) e do
+  Catálogo (`CatalogView`, grade por padrão, decisão 132). Esses dois enums são
+  gravados pelo nome da constante e, se o arquivo trouxer um valor que a versão
+  não conhece, abrem no padrão em vez de pôr o arquivo de lado como ilegível.
 
 Outros:
 
