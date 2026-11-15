@@ -107,10 +107,14 @@ class QuoteHistoryViewModel(
         noticeState.value = UserNotice(message, actionLabel, action, isError, noticeIds.next())
     }
 
-    private val busyState = MutableStateFlow<String?>(null)
+    // A geração dos arquivos pro cliente é a mesma do "Enviar pro cliente" do Orçamento (ver [QuoteExporter]).
+    private val exporter = QuoteExporter(
+        platform, brandingRepository, repository, scope, background, main, noticeIds,
+        notify = { noticeState.value = it },
+    )
 
     /** O que está sendo gerado agora ("Gerando PDF…"), ou `null`. */
-    val busy: StateFlow<String?> = busyState.asStateFlow()
+    val busy: StateFlow<String?> = exporter.busy
 
     private val pendingExportState = MutableStateFlow<PendingExport?>(null)
 
@@ -375,9 +379,9 @@ class QuoteHistoryViewModel(
         val pending = pendingExportState.value ?: return
         pendingExportState.value = null
         when (pending.export) {
-            ClientExport.PDF -> performExportPdf(pending.quotes.single())
-            ClientExport.IMAGE -> performSaveShareableImage(pending.quotes.single())
-            ClientExport.WHATSAPP -> performOpenInWhatsApp(pending.quotes.single())
+            ClientExport.PDF -> exporter.exportPdf(pending.quotes.single())
+            ClientExport.IMAGE -> exporter.saveShareableImage(pending.quotes.single())
+            ClientExport.WHATSAPP -> exporter.openInWhatsApp(pending.quotes.single())
             ClientExport.COPY -> performCopyQuoteToClipboard(pending.quotes.single())
             ClientExport.SELECTED_PDF -> performExportSelectedPdf(pending.quotes)
         }
@@ -440,13 +444,13 @@ class QuoteHistoryViewModel(
 
     fun exportPdf(savedQuote: SavedQuote) {
         if (holdIfOverdue(ClientExport.PDF, listOf(savedQuote))) return
-        performExportPdf(savedQuote)
+        exporter.exportPdf(savedQuote)
     }
 
     /** Abre a conversa do cliente no WhatsApp com o orçamento já escrito (ver [toWhatsAppLink]). */
     fun openInWhatsApp(savedQuote: SavedQuote) {
         if (holdIfOverdue(ClientExport.WHATSAPP, listOf(savedQuote))) return
-        performOpenInWhatsApp(savedQuote)
+        exporter.openInWhatsApp(savedQuote)
     }
 
     /**
@@ -455,7 +459,7 @@ class QuoteHistoryViewModel(
      */
     fun saveShareableImage(savedQuote: SavedQuote) {
         if (holdIfOverdue(ClientExport.IMAGE, listOf(savedQuote))) return
-        performSaveShareableImage(savedQuote)
+        exporter.saveShareableImage(savedQuote)
     }
 
     fun copyQuoteToClipboard(savedQuote: SavedQuote) {
@@ -498,56 +502,14 @@ class QuoteHistoryViewModel(
         }
         if (selected.isEmpty()) return
         val clearsSelection = selectedIdsState.value.isNotEmpty()
-        saveGenerated("${sanitizeFileName("Catálogo (${selected.size} itens)")}.pdf", "Gerando catálogo…", "Catálogo salvo.", clearsSelection) {
-            val branding = resolvePdfBranding()
+        exporter.saveGenerated(
+            "${sanitizeFileName("Catálogo (${selected.size} itens)")}.pdf",
+            "Gerando catálogo…",
+            "Catálogo salvo.",
+            onSaved = { if (clearsSelection) clearSelection() },
+        ) {
+            val branding = exporter.resolvePdfBranding()
             renderCatalogPdf(selected.map { QuoteExportItem(it, photoBytes(it)) }, branding.brandName, branding.footerText, branding.options)
-        }
-    }
-
-    private fun performExportPdf(savedQuote: SavedQuote) {
-        saveGenerated("${fileNameFor(savedQuote)}.pdf", "Gerando PDF…", "PDF salvo.") {
-            val branding = resolvePdfBranding()
-            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes(savedQuote))), branding.brandName, branding.footerText, branding.options)
-        }
-    }
-
-    private fun performOpenInWhatsApp(savedQuote: SavedQuote) {
-        val showPrintTime = brandingRepository.branding.value.showPrintTime
-        if (platform.openUrl(savedQuote.toWhatsAppLink(savedQuote.currency, showPrintTime))) return
-        // Sem navegador configurado, o texto ainda chega no cliente: vai pra área de transferência.
-        val copied = platform.copyToClipboard(savedQuote.toCopyPasteText(savedQuote.currency, showPrintTime))
-        notify(
-            if (copied) {
-                "Não consegui abrir o WhatsApp. O texto do orçamento foi copiado: cole na conversa com o cliente."
-            } else {
-                "Não consegui abrir o WhatsApp nem copiar o texto. Use \"Copiar\" de novo em alguns segundos."
-            },
-            isError = true,
-        )
-    }
-
-    private fun performSaveShareableImage(savedQuote: SavedQuote) {
-        saveGenerated("${fileNameFor(savedQuote)}.png", "Gerando imagem…", "Imagem salva.") {
-            val currency = savedQuote.currency
-            val quantity = savedQuote.quote.quantity
-            val piecesTotal = savedQuote.totalWithServices - savedQuote.chargedShipping
-            // Curta ("30/09", sem o ano) porque a imagem é pra conversa do dia, não documento. Entrega
-            // expressa (decisão 125) junto do prazo; sem prazo, vira o próprio texto de entrega.
-            val deliveryDate = savedQuote.deliveryDateEpochDay?.let { "Entrega até ${formatShortDate(it)}" }
-            val deliveryText = when {
-                deliveryDate != null && savedQuote.quote.rush -> "$deliveryDate · entrega expressa"
-                deliveryDate != null -> deliveryDate
-                savedQuote.quote.rush -> "Entrega expressa"
-                else -> null
-            }
-            renderQuoteImage(
-                title = savedQuote.name.takeUnless { savedQuote.hasAutoName } ?: "Orçamento",
-                priceText = savedQuote.totalWithServices.toCurrencyText(currency),
-                unitPriceText = if (quantity > 1) "$quantity peças · ${(piecesTotal / quantity).toCurrencyText(currency)} cada" else null,
-                photoBytes = photoBytes(savedQuote),
-                brandText = brandingRepository.branding.value.imageBrandLine(),
-                deliveryText = deliveryText,
-            )
         }
     }
 
@@ -561,56 +523,22 @@ class QuoteHistoryViewModel(
     }
 
     private fun performExportSelectedPdf(selected: List<SavedQuote>) {
-        saveGenerated("${sanitizeFileName("Orçamentos (${selected.size} itens)")}.pdf", "Gerando PDF…", "PDF salvo.", clearsSelection = true) {
-            val branding = resolvePdfBranding()
+        exporter.saveGenerated(
+            "${sanitizeFileName("Orçamentos (${selected.size} itens)")}.pdf",
+            "Gerando PDF…",
+            "PDF salvo.",
+            onSaved = ::clearSelection,
+        ) {
+            val branding = exporter.resolvePdfBranding()
             renderSavedQuotesPdf(selected.map { QuoteExportItem(it, photoBytes(it)) }, branding.brandName, branding.footerText, branding.options)
         }
     }
 
-    /**
-     * Pergunta onde salvar, gera o arquivo fora do thread da tela e grava. A seleção só é esvaziada
-     * quando o arquivo foi salvo: cancelar o "Salvar como" não pode jogar fora o que a pessoa marcou.
-     */
-    private fun saveGenerated(
-        suggestedFileName: String,
-        busyMessage: String,
-        savedMessage: String,
-        clearsSelection: Boolean = false,
-        generate: () -> ByteArray,
-    ) {
-        if (busyState.value != null) return
-        val path = platform.chooseSaveLocation(suggestedFileName) ?: return
-        busyState.value = busyMessage
-        scope.launch(background) {
-            val result = try {
-                platform.writeFile(path, generate())
-            } catch (e: Exception) {
-                AppLog.warn("Falha ao gerar $suggestedFileName", e)
-                SaveResult.Failed("Não consegui gerar o arquivo. Os detalhes ficaram no log do app.")
-            }
-            withContext(main) {
-                busyState.value = null
-                if (clearsSelection && result is SaveResult.Saved) clearSelection()
-                report(result, savedMessage)
-            }
-        }
-    }
+    private fun report(result: SaveResult, savedMessage: String) = exporter.report(result, savedMessage)
 
-    private fun report(result: SaveResult, savedMessage: String) {
-        result.toNotice(savedMessage, noticeIds.next())?.let { noticeState.value = it }
-    }
+    private fun fileNameFor(savedQuote: SavedQuote): String = exporter.fileNameFor(savedQuote)
 
-    /** Marca, logo, contato e opções do PDF, resolvidos do jeito que a prévia de Configurações também usa. */
-    private fun resolvePdfBranding(): ResolvedPdfBranding =
-        brandingRepository.branding.value.resolvePdfBranding(brandingRepository.logoBytes())
-
-    /** Nome do arquivo pro cliente: o nome da peça, e o número quando o nome foi o automático. */
-    private fun fileNameFor(savedQuote: SavedQuote): String = sanitizeFileName(
-        if (savedQuote.hasAutoName) "Orçamento ${savedQuote.displayNumber?.removePrefix("#") ?: ""}".trim() else savedQuote.name,
-    )
-
-    private fun sanitizeFileName(name: String): String =
-        name.map { if (it.isLetterOrDigit() || it == ' ' || it == '-') it else '_' }.joinToString("").trim().ifEmpty { "orcamento" }
+    private fun sanitizeFileName(name: String): String = exporter.sanitizeFileName(name)
 
     companion object {
         const val THUMBNAIL_PX = 256

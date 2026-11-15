@@ -125,6 +125,18 @@ class ScreenshotRenderer {
             )
         }
 
+        // "Negociar" (decisão 131): o painel com o preço combinado aberto, e o preço, o lucro e o mínimo já mudados por ele.
+        renderAppPng(File(outDir, "orcamento-negociar.png"), afterSettle = { it.clickByText("Negociar") }) {
+            App(
+                container,
+                startAt = AppDestination.QUOTE,
+                prepareQuote = { vm ->
+                    fillDraftQuote(vm)
+                    vm.setTargetTotal("160")
+                },
+            )
+        }
+
         // O mesmo Orçamento no tema escuro, pra conferir o tema novo nos dois.
         container.theme.update(ThemeMode.DARK)
         renderAppPng(File(outDir, "orcamento-escuro.png")) {

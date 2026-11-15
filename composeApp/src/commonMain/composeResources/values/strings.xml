@@ -265,6 +265,7 @@
     <string name="quote_blocked_deleted">Não salvei: "%1$s" foi excluído. Cancele a edição e use Duplicar num pedido parecido.</string>
     <string name="quote_photo_unreadable">Não consegui ler essa imagem. Tente um PNG ou JPG.</string>
     <string name="quote_pick_failed">%1$s</string>
+    <string name="quote_export_notice">%1$s</string>
     <string name="quote_notice_print_removed">Impressão %1$d removida.</string>
     <string name="quote_action_undo">Desfazer</string>
     <string name="quote_import_unreadable">Não consegui ler esse G-code. Confira se é o arquivo exportado pelo fatiador.</string>
@@ -506,6 +507,13 @@
     <string name="quote_settings_supports_unknown">Não informado</string>
 
     <!-- Orçamento: painel de resultado -->
+    <string name="quote_negotiate">Negociar</string>
+    <string name="quote_negotiate_field">Preço combinado</string>
+    <string name="quote_negotiate_clear">Limpar</string>
+    <string name="quote_send">Enviar pro cliente</string>
+    <string name="quote_send_whatsapp">Enviar texto no WhatsApp</string>
+    <string name="quote_send_image">Salvar imagem pro WhatsApp</string>
+    <string name="quote_send_pdf">Exportar PDF</string>
     <string name="quote_result_overline">Você cobra</string>
     <string name="quote_result_no_price">-</string>
     <string name="quote_result_fix_field">Corrija o campo marcado pra calcular: %1$s</string>

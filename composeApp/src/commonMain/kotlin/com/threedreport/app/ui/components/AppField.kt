@@ -31,6 +31,7 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
@@ -102,43 +105,50 @@ fun HelpHint(help: HelpText, label: String, modifier: Modifier = Modifier, tint:
 }
 
 @Composable
-internal fun FieldLabel(label: String, help: HelpText?) {
+internal fun FieldLabel(label: String, help: HelpText?, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant) {
     // Altura fixa (a do ícone de ajuda): campos com e sem ajuda ficam alinhados na mesma linha da grade.
     Row(
         modifier = Modifier.height(AppDimens.iconSize),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
     ) {
-        Text(label, style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+        Text(label, style = MaterialTheme.appType.label, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
         if (help != null) HelpHint(help, label, tint = if (help.warning) MaterialTheme.appColors.amberText else androidx.compose.ui.graphics.Color.Unspecified)
     }
 }
 
 /** Borda do campo: erro, foco (anel de 2), mouse em cima (cor `primary`) ou repouso (`line`). */
 @Composable
-private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean, enabled: Boolean): Modifier {
+private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean, enabled: Boolean, onNavy: Boolean): Modifier {
     val colors = MaterialTheme.appColors
     val borderColor = when {
-        error -> MaterialTheme.colorScheme.error
-        focused || hovered -> MaterialTheme.colorScheme.primary
-        else -> colors.line
+        error -> if (onNavy) colors.onNavyDanger else MaterialTheme.colorScheme.error
+        focused || hovered -> if (onNavy) colors.onNavyMuted else MaterialTheme.colorScheme.primary
+        else -> if (onNavy) colors.navyRaised else colors.line
+    }
+    val fill = when {
+        onNavy -> colors.navyRaised
+        enabled -> colors.card
+        else -> colors.column
     }
     return this
         .height(AppDimens.controlHeight)
-        .background(if (enabled) colors.card else colors.column, MaterialTheme.shapes.small)
+        .background(fill, MaterialTheme.shapes.small)
         .border(if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth, borderColor, MaterialTheme.shapes.small)
 }
 
 @Composable
-private fun FieldError(error: String?) {
-    if (error != null) Text(error, style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.error)
+private fun FieldError(error: String?, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.error) {
+    if (error != null) Text(error, style = MaterialTheme.appType.label, color = color)
 }
 
 /**
  * Campo de texto do kit: rótulo em `label` acima, caixa de 40 com borda `line` e fundo `card`; borda `primary`
  * ao passar o mouse e anel de 2 no foco; erro com borda `error` e mensagem curta abaixo. Tab avança e
  * Shift+Tab volta. [fieldModifier] vai na caixa (por exemplo, a âncora de um menu de sugestões). [trailing] fica
- * dentro da caixa, à direita do texto (a amostra de uma cor digitada, por exemplo).
+ * dentro da caixa, à direita do texto (a amostra de uma cor digitada, por exemplo). [onNavy] é a versão pra
+ * dentro do painel azul-marinho (rótulo `onNavyMuted`, caixa `navyRaised`); [autoFocus] leva o foco pro campo
+ * quando ele aparece.
  */
 @Composable
 fun AppTextField(
@@ -152,15 +162,22 @@ fun AppTextField(
     help: HelpText? = null,
     enabled: Boolean = true,
     trailing: (@Composable () -> Unit)? = null,
+    onNavy: Boolean = false,
+    autoFocus: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     var focused by remember { mutableStateOf(false) }
     val space = MaterialTheme.spacing
+    val colors = MaterialTheme.appColors
+    val textColor = if (onNavy) colors.onNavy else MaterialTheme.colorScheme.onSurface
+    val mutedColor = if (onNavy) colors.onNavyMuted else MaterialTheme.colorScheme.onSurfaceVariant
+    val focusRequester = remember { FocusRequester() }
+    if (autoFocus) LaunchedEffect(Unit) { focusRequester.requestFocus() }
     Column(modifier = modifier.alpha(if (enabled) 1f else 0.6f), verticalArrangement = Arrangement.spacedBy(space.xxs)) {
-        FieldLabel(label, help)
+        FieldLabel(label, help, color = if (onNavy) colors.onNavyMuted else MaterialTheme.colorScheme.onSurfaceVariant)
         Box(
-            modifier = fieldModifier.fillMaxWidth().fieldBox(hovered, focused, error != null, enabled).hoverable(interaction),
+            modifier = fieldModifier.fillMaxWidth().fieldBox(hovered, focused, error != null, enabled, onNavy).hoverable(interaction),
             contentAlignment = Alignment.CenterStart,
         ) {
             BasicTextField(
@@ -168,10 +185,11 @@ fun AppTextField(
                 onValueChange = onValueChange,
                 enabled = enabled,
                 singleLine = true,
-                textStyle = MaterialTheme.appType.body.copy(color = MaterialTheme.colorScheme.onSurface, fontFeatureSettings = TABULAR_FIGURES),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                textStyle = MaterialTheme.appType.body.copy(color = textColor, fontFeatureSettings = TABULAR_FIGURES),
+                cursorBrush = SolidColor(if (onNavy) colors.amber else MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .focusRequester(focusRequester)
                     .onFocusChanged { focused = it.isFocused }
                     .tabToNavigate()
                     .semantics { contentDescription = label },
@@ -179,7 +197,7 @@ fun AppTextField(
                     Row(Modifier.padding(horizontal = space.sm), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
                         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                             if (value.isEmpty() && placeholder != null) {
-                                Text(placeholder, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), maxLines = 1)
+                                Text(placeholder, style = MaterialTheme.appType.body, color = mutedColor.copy(alpha = 0.7f), maxLines = 1)
                             }
                             inner()
                         }
@@ -188,7 +206,7 @@ fun AppTextField(
                 },
             )
         }
-        FieldError(error)
+        FieldError(error, color = if (onNavy) colors.onNavyDanger else MaterialTheme.colorScheme.error)
     }
 }
 
@@ -224,7 +242,7 @@ fun <T> AppDropdownField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .onSizeChanged { boxWidth = with(density) { it.width.toDp() } }
-                    .fieldBox(hovered, focused || expanded, error != null, true)
+                    .fieldBox(hovered, focused || expanded, error != null, true, onNavy = false)
                     .onFocusChanged { focused = it.isFocused }
                     .hoverable(interaction)
                     .clickable(interactionSource = interaction, indication = null, role = Role.DropdownList) { expanded = true }

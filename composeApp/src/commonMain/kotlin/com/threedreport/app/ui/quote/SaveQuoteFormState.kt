@@ -2,6 +2,7 @@ package com.threedreport.app.ui.quote
 
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.ui.text.UiText
+import com.threedreport.core.model.SavedQuote
 
 /** Campos opcionais preenchidos ao salvar o orçamento atual no histórico. */
 data class SaveQuoteFormState(
@@ -33,6 +34,8 @@ data class SaveQuoteFormState(
     val category: String = "",
     /** Mensagem sobre a foto escolhida (imagem que não abre). */
     val photoError: UiText? = null,
+    /** O pedido que "Enviar pro cliente" gravou a partir do que está na tela (decisão 131), ou `null`. */
+    val sent: SentQuote? = null,
 ) {
     /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
     val editingQuoteId: String?
@@ -50,3 +53,9 @@ data class SaveQuoteFormState(
     val copiedFromOrderName: String?
         get() = (operation as? QuoteOperation.CopyingToCatalog)?.fromName
 }
+
+/**
+ * O que "Enviar pro cliente" gravou: o pedido e como a tela estava ([input] e [form], sem os avisos), pra saber se
+ * mudou algo desde então. Mora no formulário, e por isso some junto com ele quando a tela recomeça.
+ */
+data class SentQuote(val savedQuote: SavedQuote, val input: QuoteInputState, val form: SaveQuoteFormState)

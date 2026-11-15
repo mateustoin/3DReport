@@ -151,6 +151,8 @@ internal fun QuoteResultPanel(
     onSave: () -> Unit,
     onCancel: () -> Unit,
     onUseShippingCoveringPrice: () -> Unit,
+    onTargetTotalChange: (String) -> Unit,
+    send: ClientSendActions,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.appColors
@@ -188,20 +190,18 @@ internal fun QuoteResultPanel(
                 }
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
-            if (!canSave) Text(cannotSaveReason, style = MaterialTheme.appType.caption, color = colors.onNavyMuted)
-            AppButton(
-                saveLabel,
-                onClick = onSave,
-                kind = ButtonKind.Primary,
-                enabled = canSave,
-                height = AppDimens.primaryActionHeight,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (cancelLabel != null) {
-                AppButton(cancelLabel, onClick = onCancel, kind = ButtonKind.OnNavy, icon = AppIcons.Close, modifier = Modifier.fillMaxWidth())
-            }
-        }
+        ResultFooter(
+            result = result,
+            input = input,
+            canSave = canSave,
+            cannotSaveReason = cannotSaveReason,
+            saveLabel = saveLabel,
+            cancelLabel = cancelLabel,
+            onSave = onSave,
+            onCancel = onCancel,
+            onTargetTotalChange = onTargetTotalChange,
+            send = send,
+        )
     }
 }
 

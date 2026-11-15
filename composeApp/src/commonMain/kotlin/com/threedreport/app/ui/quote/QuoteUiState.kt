@@ -32,6 +32,7 @@ data class QuoteCatalog(
  * @property input o que a pessoa digitou.
  * @property form o que é de salvar: nome, cliente, foto, STL, prazo e a operação em curso.
  * @property result a conta, feita pelo `core` a partir de [input] e [catalog]; é a mesma da tela e do Ctrl+S.
+ * @property exporting o PDF ou a imagem do "Enviar pro cliente" está sendo gerado.
  * @property importing um G-code está sendo lido.
  * @property collapsedPrintIds cartões de impressão recolhidos, pelo id. Ficam no estado, e não na tela, pra
  *   continuar recolhido ao sair do Orçamento e voltar, e fora de [input] porque recolher não altera o pedido.
@@ -44,4 +45,5 @@ data class QuoteUiState(
     val importing: Boolean = false,
     val stlPreview: StlPreview? = null,
     val collapsedPrintIds: Set<Int> = emptySet(),
+    val exporting: Boolean = false,
 )

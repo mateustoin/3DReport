@@ -41,6 +41,7 @@ class AppViewModels(
         background = Dispatchers.Default,
         main = Dispatchers.Main,
         consumableRepository = container.consumables,
+        brandingRepository = container.branding,
     )
 
     /** O da aba. Cedo: é a tela de abertura, e o gerador de capturas ([prepareQuote]) o preenche antes de desenhar. */

@@ -27,10 +27,12 @@ import _3dreport.composeapp.generated.resources.quote_error_target_below_extras
 import _3dreport.composeapp.generated.resources.quote_error_target_invalid
 import _3dreport.composeapp.generated.resources.quote_error_target_negative
 import _3dreport.composeapp.generated.resources.quote_error_weight
+import _3dreport.composeapp.generated.resources.quote_export_notice
 import _3dreport.composeapp.generated.resources.quote_notice_print_removed
 import _3dreport.composeapp.generated.resources.quote_photo_unreadable
 import _3dreport.composeapp.generated.resources.quote_pick_failed
 import com.threedreport.app.AppLog
+import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.ClientRepository
 import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.FilamentRepository
@@ -46,6 +48,7 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.ui.components.NoticeIds
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.components.matchingClients
 import com.threedreport.app.ui.format.NumberKind
@@ -54,6 +57,7 @@ import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.format.toDurationInputText
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.history.QuoteExporter
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Client
@@ -144,6 +148,8 @@ class QuoteViewModel(
     private val main: CoroutineDispatcher = Dispatchers.Unconfined,
     /** Cadastro de insumos (decisão 122). Sem ele, a seção de insumos não aparece. */
     private val consumableRepository: ConsumableRepository? = null,
+    /** Marca e opções do PDF e da imagem, pro "Enviar pro cliente" (decisão 131). Sem ele, enviar só salva. */
+    brandingRepository: BrandingRepository? = null,
 ) {
     private val scope: CoroutineScope = scope
 
@@ -156,6 +162,23 @@ class QuoteViewModel(
 
     /** O retorno de uma ação com "Desfazer" (remover uma impressão), pra barra de avisos. */
     val notices: SharedFlow<UiNotice> = noticeFlow.asSharedFlow()
+
+    // A geração do PDF, da imagem e do link do WhatsApp é a mesma de Pedidos (decisão 131).
+    private val exporter: QuoteExporter? = brandingRepository?.let { branding ->
+        QuoteExporter(platform, branding, historyRepository, scope, background, main, NoticeIds()) { notice ->
+            noticeFlow.tryEmit(
+                UiNotice(
+                    message = uiText(Res.string.quote_export_notice, notice.message),
+                    actionLabel = notice.actionLabel?.let { uiText(Res.string.quote_export_notice, it) },
+                    action = notice.action,
+                ),
+            )
+        }
+    }
+
+    init {
+        exporter?.busy?.onEach { busy -> state.update { it.copy(exporting = busy != null) } }?.launchIn(scope)
+    }
 
     private var pendingImports = 0
 
@@ -732,6 +755,45 @@ class QuoteViewModel(
     fun saveQuote(calculated: Quote, services: List<QuoteService>): Boolean {
         val form = state.value.form
         val input = state.value.input
+        val isProduct = input.isProduct
+        // Já enviado pro cliente e nada mudou desde então: o pedido existe, não grava de novo.
+        val saved = alreadySent()?.savedQuote ?: persist(calculated, services) ?: return false
+
+        val editing = form.operation as? QuoteOperation.Editing
+        if (editing != null) {
+            updateForm { it.copy(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = editing.savedQuote.displayNumber) }
+            return true
+        }
+        forgetUndo()
+        change {
+            it.copy(
+                input = QuoteInputState(kind = input.kind),
+                form = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = saved.displayNumber),
+                stlPreview = null,
+                collapsedPrintIds = emptySet(),
+            )
+        }
+        return true
+    }
+
+    /** O pedido que "Enviar pro cliente" já gravou, se a tela ainda é exatamente o que foi gravado. */
+    private fun alreadySent(): SentQuote? {
+        val current = state.value
+        val sent = current.form.sent ?: return null
+        return sent.takeIf { current.input == it.input && current.form.forComparison() == it.form }
+    }
+
+    private fun SaveQuoteFormState.forComparison() =
+        copy(savedConfirmation = false, savedAsProduct = false, savedNumber = null, blockedMessage = null, photoError = null, sent = null)
+
+    /**
+     * Grava o que a tela mostra no histórico, sem mexer no formulário: reabrindo, atualiza o mesmo orçamento; depois
+     * de "Enviar pro cliente", atualiza o pedido que o envio criou (e não cria outro); senão, cria um novo.
+     * Devolve o orçamento gravado, ou `null` (e diz por quê em [SaveQuoteFormState.blockedMessage]).
+     */
+    private fun persist(calculated: Quote, services: List<QuoteService>): SavedQuote? {
+        val form = state.value.form
+        val input = state.value.input
         // Nome e configurações de cada impressão não mudam o preço, então vêm da tela mesmo quando o cálculo
         // é o congelado de um pedido reaberto (decisão 108): senão, corrigir só isso se perderia ao salvar.
         val quote = if (calculated.prints.size != input.prints.size) {
@@ -762,10 +824,11 @@ class QuoteViewModel(
             OrderTerms(shippingCost = shippingCost, shippingAbsorbed = input.shippingAbsorbed, catalogProduct = isProduct).absorbsShipping
 
         val editing = form.operation as? QuoteOperation.Editing
-        if (editing != null) {
+        val existing = editing?.savedQuote ?: form.sent?.savedQuote
+        if (existing != null) {
             val update = {
                 historyRepository.update(
-                    id = editing.savedQuote.id,
+                    id = existing.id,
                     name = form.name,
                     quote = quote,
                     services = services,
@@ -783,15 +846,13 @@ class QuoteViewModel(
             }
             // A edição não é mais modal (decisão 113): o pedido pode ter ido pra lixeira enquanto era editado.
             // Salvar tira ele de lá com as alterações; sem ele nem na lixeira, avisa em vez de dizer que salvou.
-            val updated = update() ?: historyRepository.restore(editing.savedQuote.id)?.let { update() }
-            if (updated == null) {
-                updateForm {
-                    it.copy(blockedMessage = uiText(Res.string.quote_blocked_deleted, editing.savedQuote.name))
-                }
-                return false
+            val updated = update() ?: historyRepository.restore(existing.id)?.let { update() }
+            if (updated != null) return updated
+            if (editing != null) {
+                updateForm { it.copy(blockedMessage = uiText(Res.string.quote_blocked_deleted, existing.name)) }
+                return null
             }
-            updateForm { it.copy(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = editing.savedQuote.displayNumber) }
-            return true
+            // O pedido que o envio criou sumiu de vez: cai no caso de um orçamento novo.
         }
 
         val saved = historyRepository.save(
@@ -812,16 +873,51 @@ class QuoteViewModel(
             currency = currency(),
             shippingAbsorbed = shippingAbsorbed,
         )
-        forgetUndo()
-        change {
+        return saved
+    }
+
+    /**
+     * "Enviar pro cliente" (decisão 131): grava o orçamento como pedido (o mesmo caminho do salvar, com os mesmos
+     * bloqueios) e deixa a tela como está, pra negociar mais se precisar. Depois disso, enviar de novo sem mudar
+     * nada usa o mesmo pedido, e mudando algo atualiza esse pedido, sem criar outro. Devolve se o menu de envio
+     * pode abrir. Não vale pro produto do catálogo, que não tem cliente.
+     */
+    fun sendToClient(): Boolean {
+        if (state.value.input.isProduct) return false
+        if (alreadySent() != null) return true
+        val result = freshResult()
+        val quote = result.quote
+        val blocked = blockedReason(result)
+        if (blocked != null || quote == null) {
+            updateForm { it.copy(blockedMessage = blocked) }
+            return false
+        }
+        val saved = persist(quote, result.selectedServices) ?: return false
+        val current = state.value
+        updateForm {
             it.copy(
-                input = QuoteInputState(kind = input.kind),
-                form = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = saved.displayNumber),
-                stlPreview = null,
-                collapsedPrintIds = emptySet(),
+                sent = SentQuote(saved, current.input, current.form.forComparison()),
+                savedConfirmation = true,
+                savedAsProduct = false,
+                savedNumber = saved.displayNumber,
             )
         }
         return true
+    }
+
+    /** O pedido que o último "Enviar pro cliente" gravou, pra os três jeitos de enviar. */
+    private fun sentQuote(): SavedQuote? = state.value.form.sent?.savedQuote
+
+    fun sendPdf() {
+        sentQuote()?.let { exporter?.exportPdf(it) }
+    }
+
+    fun sendImage() {
+        sentQuote()?.let { exporter?.saveShareableImage(it) }
+    }
+
+    fun sendWhatsApp() {
+        sentQuote()?.let { exporter?.openInWhatsApp(it) }
     }
 
     /**
@@ -939,17 +1035,20 @@ class QuoteViewModel(
     fun saveCurrentQuote(): Boolean {
         val result = freshResult()
         val quote = result.quote
-        val blocked = when {
-            result.fieldErrors.isNotEmpty() -> notSavedBecause(result.fieldErrors.values.first())
-            quote == null -> result.errorMessage?.let(::notSavedBecause) ?: uiText(Res.string.quote_blocked_incomplete)
-            result.missingServicePrice -> uiText(Res.string.quote_blocked_service_price)
-            else -> null
-        }
+        val blocked = blockedReason(result)
         if (blocked != null || quote == null) {
             updateForm { it.copy(blockedMessage = blocked) }
             return false
         }
         return saveQuote(quote, result.selectedServices)
+    }
+
+    /** Por que [result] não dá pra salvar, ou `null` se dá. Quem salva e quem envia pro cliente dizem a mesma coisa. */
+    private fun blockedReason(result: QuoteResult): UiText? = when {
+        result.fieldErrors.isNotEmpty() -> notSavedBecause(result.fieldErrors.values.first())
+        result.quote == null -> result.errorMessage?.let(::notSavedBecause) ?: uiText(Res.string.quote_blocked_incomplete)
+        result.missingServicePrice -> uiText(Res.string.quote_blocked_service_price)
+        else -> null
     }
 
     private fun notSavedBecause(reason: UiText): UiText = UiText.Joined(listOf(uiText(Res.string.quote_blocked_prefix), reason))
@@ -958,7 +1057,7 @@ class QuoteViewModel(
     val hasUnsavedEdits: Boolean
         get() {
             val editing = state.value.form.operation as? QuoteOperation.Editing ?: return false
-            val form = state.value.form.copy(operation = null, savedConfirmation = false, blockedMessage = null, photoError = null)
+            val form = state.value.form.copy(operation = null, savedConfirmation = false, blockedMessage = null, photoError = null, sent = null)
             return state.value.input != editing.originalInput || form != editing.originalForm
         }
 

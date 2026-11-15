@@ -140,6 +140,14 @@ fun QuoteScreen(
         onSave = onSave,
         onCancel = onCancelOperation,
         onUseShippingCoveringPrice = viewModel::useShippingCoveringPrice,
+        onTargetTotalChange = viewModel::setTargetTotal,
+        send = ClientSendActions(
+            onSend = viewModel::sendToClient,
+            onPdf = viewModel::sendPdf,
+            onImage = viewModel::sendImage,
+            onWhatsApp = viewModel::sendWhatsApp,
+            exporting = state.exporting,
+        ),
         modifier = panelModifier,
     )
 
