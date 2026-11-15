@@ -141,6 +141,7 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [128](decisions/128.md) | 2026-11-14 | Ícone novo do app, três camadas com a última em âmbar | Aprovada |
 | [129](decisions/129.md) | 2026-11-14 | Pedidos abre na última visualização usada (kanban ou lista) | Aprovada |
 | [130](decisions/130.md) | 2026-11-14 | Fundação de arquitetura antes da nova interface | Aprovada |
+| [131](decisions/131.md) | 2026-11-15 | "Negociar" e "Enviar pro cliente" no painel de resultado do Orçamento | Aprovada |
 
 ## Pendentes de aprovação
 

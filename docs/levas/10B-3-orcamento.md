@@ -14,9 +14,6 @@ notar diferença de comportamento nem de preço.
 ## Fora de escopo
 
 - Qualquer mudança de fórmula, de `core/` ou do formato dos dados.
-- Os botões "Negociar" e "Enviar pro cliente" do mockup: são funcionalidade nova
-  (hoje a negociação é o campo de preço combinado, e o envio é a exportação em
-  Pedidos). Ficam pra uma leva própria, com decisão.
 - Pedidos, Catálogo, Dashboard, Configurações, Sobre e o documento exportado.
 - Os rótulos em português que ainda moram no `core` e o prefixo
   `SavedQuote.AUTO_NAME_PREFIX`: item separado da 10B.
@@ -83,12 +80,32 @@ arquivos por assunto, cada um abaixo de ~300 linhas:
 - O exemplo de referência de R$ 17,02 continua passando.
 - Volta o teste perdido na fundação: "Ctrl+S sem edição aberta salva a aba".
 
+## 6. "Negociar" e "Enviar pro cliente" (decisão 131)
+
+Dois botões no pé do painel de resultado, lado a lado, no estilo "sobre o
+azul-marinho" do kit, abaixo do botão principal (como no mockup de referência).
+
+- **Negociar:** abre no próprio painel um campo "Preço combinado" (mesmo valor de
+  `targetTotalText`, sincronizado com o campo do formulário). Enquanto a pessoa
+  digita, preço, lucro e mínimo sem prejuízo do painel mudam. Tem "Limpar" pra
+  voltar ao preço calculado e fecha com Esc ou clicando de novo. Nenhuma conta nova
+  e nenhum atalho de desconto. Não aparece no modo produto do catálogo.
+- **Enviar pro cliente:** salva como pedido "Orçado" (o mesmo caminho do "Salvar
+  pedido") e abre um menu com as opções que Pedidos já tem: texto no WhatsApp,
+  imagem e PDF, reaproveitando o código de `ui/history/` (extraia o que for
+  preciso pra um lugar comum; não copie). Se o salvar for bloqueado, mostra o
+  mesmo bloqueio e não envia. Se o orçamento em tela já foi salvo e não mudou, não
+  salva de novo. Não aparece no modo produto do catálogo.
+- Testes de ViewModel: negociar sincroniza com o campo; enviar salva uma vez só e
+  não salva quando bloqueado.
+
 ## Ordem de trabalho
 
 1. **Estado e erros** (seções 1, 2 e 5): ViewModel, importador e testes. A tela é
    ajustada só o necessário pra compilar. Um commit.
 2. **Tela e textos** (seções 3 e 4). Um commit.
-3. Capturas de Orçamento em claro e escuro, comparadas com as aprovadas: devem ser
+3. **Botões novos** (seção 6). Um commit.
+4. Capturas de Orçamento em claro e escuro, comparadas com as aprovadas: devem ser
    iguais, salvo os ajustes de texto listados.
 
 ## Critérios de aceite
@@ -97,7 +114,8 @@ arquivos por assunto, cada um abaixo de ~300 linhas:
 - `grep` por `Text("` com literal e por aspas com letras acentuadas em `ui/quote/`
   não acha nada.
 - `QuoteViewModel` tem um único `StateFlow` público.
-- Capturas de Orçamento sem diferença visual em relação às aprovadas.
+- Capturas de Orçamento sem diferença visual em relação às aprovadas, salvo os
+  dois botões novos no pé do painel.
 - `ls -la ~/.3dreport` igual antes e depois.
 
 ## Só dá pra conferir com o app aberto
