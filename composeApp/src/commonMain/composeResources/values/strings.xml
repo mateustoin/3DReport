@@ -47,8 +47,8 @@
     <string name="consumables_notice_restored">Insumo restaurado</string>
     <string name="consumables_notice_deleted">Insumo excluído</string>
     <string name="consumables_delete_title">Excluir insumo?</string>
-    <string name="consumables_delete_what">o insumo \"%1$s\"</string>
-    <string name="consumables_delete_message">\"%1$s\" será removido do catálogo. Pedidos já salvos continuam com o custo que tinham.</string>
+    <string name="consumables_delete_what">o insumo "%1$s"</string>
+    <string name="consumables_delete_message">"%1$s" será removido do catálogo. Pedidos já salvos continuam com o custo que tinham.</string>
 
     <!-- Serviços -->
     <string name="services_title">Serviços</string>
@@ -71,6 +71,6 @@
     <string name="services_notice_restored">Serviço restaurado</string>
     <string name="services_notice_deleted">Serviço excluído</string>
     <string name="services_delete_title">Excluir serviço?</string>
-    <string name="services_delete_what">o serviço \"%1$s\"</string>
-    <string name="services_delete_message">\"%1$s\" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.</string>
+    <string name="services_delete_what">o serviço "%1$s"</string>
+    <string name="services_delete_message">"%1$s" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.</string>
 </resources>
