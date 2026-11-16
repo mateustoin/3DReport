@@ -419,6 +419,11 @@
     <string name="quote_drop_one">Arraste um G-code aqui ou</string>
     <string name="quote_drop_many">Arraste os G-codes aqui ou</string>
     <string name="quote_drop_pick">escolha o arquivo</string>
+    <string name="app_drop_title_empty">Solte o G-code pra montar o orçamento</string>
+    <string name="app_drop_help_empty">Comprimento, tempo, foto, impressora e filamento vêm do arquivo, quando batem com o que está cadastrado. Vários arquivos de uma vez viram uma impressão cada.</string>
+    <string name="app_drop_title_filled">Solte o G-code em cima do que ele vai fazer</string>
+    <string name="app_drop_replace">Substituir a %1$s</string>
+    <string name="app_drop_add">Adicionar como nova impressão</string>
     <string name="quote_help_gcode">Peso, tempo, foto, impressora e filamento vêm do arquivo do fatiador.</string>
     <string name="quote_help_gcode_multi">Cada arquivo vira uma impressão. Ao soltar, dá pra escolher qual impressão ele substitui.</string>
     <string name="quote_filament">Filamento</string>

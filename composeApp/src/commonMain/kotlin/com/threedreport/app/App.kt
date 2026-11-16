@@ -32,9 +32,6 @@ import _3dreport.composeapp.generated.resources.storage_unreadable_title
 import _3dreport.composeapp.generated.resources.storage_write_failed_file
 import _3dreport.composeapp.generated.resources.storage_write_failed_message
 import _3dreport.composeapp.generated.resources.storage_write_failed_title
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -42,24 +39,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -80,11 +69,6 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.platform.fileDropTarget
@@ -92,8 +76,6 @@ import com.threedreport.app.platform.openFolder
 import com.threedreport.app.platform.openUrl
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.AboutScreen
-import com.threedreport.app.ui.about.UpdateState
-import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.ButtonKind
@@ -101,16 +83,12 @@ import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.consumables.ConsumableListScreen
-import com.threedreport.app.ui.consumables.ConsumableListViewModel
 import com.threedreport.app.ui.dashboard.DashboardScreen
-import com.threedreport.app.ui.dashboard.DashboardViewModel
 import com.threedreport.app.ui.filaments.FilamentListScreen
-import com.threedreport.app.ui.filaments.FilamentListViewModel
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.history.CatalogScreen
 import com.threedreport.app.ui.history.HistoryNavigation
 import com.threedreport.app.ui.history.OrdersScreen
-import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.navigation.AppDestination
 import com.threedreport.app.ui.navigation.AppSidebar
 import com.threedreport.app.ui.navigation.SIDEBAR_LABELS_MIN_WINDOW_WIDTH
@@ -118,27 +96,15 @@ import com.threedreport.app.ui.navigation.destinationForShortcut
 import com.threedreport.app.ui.onboarding.OnboardingDialog
 import com.threedreport.app.ui.onboarding.OnboardingPrinter
 import com.threedreport.app.ui.printers.PrinterListScreen
-import com.threedreport.app.ui.printers.PrinterListViewModel
-import com.threedreport.app.ui.quote.PrintInput
-import com.threedreport.app.ui.quote.QuoteOperation
+import com.threedreport.app.ui.quote.GCodeDropOverlay
+import com.threedreport.app.ui.quote.GCodeDropTarget
 import com.threedreport.app.ui.quote.QuoteScreen
 import com.threedreport.app.ui.quote.QuoteViewModel
-import com.threedreport.app.ui.quote.printTitle
 import com.threedreport.app.ui.services.ServiceListScreen
-import com.threedreport.app.ui.services.ServiceListViewModel
-import com.threedreport.app.ui.settings.BackupViewModel
-import com.threedreport.app.ui.settings.BrandingViewModel
-import com.threedreport.app.ui.settings.CurrencyViewModel
-import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsSection
-import com.threedreport.app.ui.settings.SettingsViewModel
-import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
-import com.threedreport.app.ui.theme.ThemeViewModel
-import com.threedreport.core.model.QuoteKind
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
+import com.threedreport.app.ui.theme.spacing
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -183,7 +149,7 @@ fun App(
     var dragPosition by remember { mutableStateOf<Offset?>(null) }
     // Onde está cada área do aviso de arrastar ("Substituir a impressão 2", "Adicionar como nova"), pra
     // saber em qual o arquivo foi solto (decisão 114).
-    val dropZones = remember { mutableStateMapOf<DropZone, Rect>() }
+    val dropZones = remember { mutableStateMapOf<GCodeDropTarget, Rect>() }
     // Coletado pra recompor quando a edição abre ou fecha, e pro diálogo mostrar o nome do orçamento.
     val editState by viewModels.editQuoteViewModel.uiState.collectAsState()
     val editForm = editState.form
@@ -252,8 +218,8 @@ fun App(
                             navigator.goTo(AppDestination.QUOTE)
                             val zone = position?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key }
                             when (zone) {
-                                is DropZone.Replace -> visibleQuoteViewModel.importDroppedInto(zone.printId, dropped)
-                                DropZone.AddNew -> dropped.forEach(visibleQuoteViewModel::importDroppedAsNewPrint)
+                                is GCodeDropTarget.Replace -> visibleQuoteViewModel.importDroppedInto(zone.printId, dropped)
+                                GCodeDropTarget.AddNew -> dropped.forEach(visibleQuoteViewModel::importDroppedAsNewPrint)
                                 null -> visibleQuoteViewModel.importDroppedFiles(dropped)
                             }
                         },
@@ -343,7 +309,7 @@ fun App(
 
                     SnackbarHost(
                         hostState = snackbarHostState,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = MaterialTheme.spacing.md),
                     )
 
                     if (draggingFile) {
@@ -522,83 +488,4 @@ private fun shortcutNumberOf(key: Key): Int? = when (key) {
     Key.Eight -> 8
     Key.Nine -> 9
     else -> null
-}
-
-/** Onde um G-code pode ser solto quando o pedido já tem impressão preenchida (decisão 114). */
-private sealed interface DropZone {
-    data class Replace(val printId: Int) : DropZone
-
-    data object AddNew : DropZone
-}
-
-/**
- * Aviso por cima da janela enquanto um arquivo é arrastado: diz onde soltar e o que vai acontecer.
- * Sem ele, arrastar um G-code pra janela não dá nenhum sinal de que funciona até soltar.
- *
- * Com o pedido ainda em branco, a janela inteira é um lugar só. Com alguma impressão preenchida, o aviso se
- * divide: uma área pra substituir cada impressão e outra pra adicionar o arquivo como impressão nova. Vários
- * arquivos soltos fora das áreas viram uma impressão cada.
- */
-@Composable
-private fun GCodeDropOverlay(
-    prints: List<PrintInput>,
-    hovered: () -> DropZone?,
-    onZonePlaced: (DropZone, Rect) -> Unit,
-    onDispose: () -> Unit,
-) {
-    DisposableEffect(Unit) { onDispose { onDispose() } }
-    val filled = prints.any { !it.isBlank }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
-            .padding(32.dp)
-            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-            .padding(24.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(AppIcons.RequestQuote, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-            if (!filled) {
-                Text("Solte o G-code pra montar o orçamento", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "Comprimento, tempo, foto, impressora e filamento vêm do arquivo, quando batem com o que está cadastrado. " +
-                        "Vários arquivos de uma vez viram uma impressão cada.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                return@Column
-            }
-            Text("Solte o G-code em cima do que ele vai fazer", style = MaterialTheme.typography.titleLarge)
-            prints.forEachIndexed { index, print ->
-                val zone = DropZone.Replace(print.id)
-                DropZoneBox(
-                    text = "Substituir a ${printTitle(index + 1, print.name).replaceFirstChar { it.lowercase() }}",
-                    highlighted = hovered() == zone,
-                    onPlaced = { onZonePlaced(zone, it) },
-                )
-            }
-            DropZoneBox(
-                text = "Adicionar como nova impressão",
-                highlighted = hovered() == DropZone.AddNew,
-                onPlaced = { onZonePlaced(DropZone.AddNew, it) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun DropZoneBox(text: String, highlighted: Boolean, onPlaced: (Rect) -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-        modifier = Modifier
-            .widthIn(min = 360.dp)
-            .onGloballyPositioned { onPlaced(it.boundsInRoot()) }
-            .background(if (highlighted) colors.primaryContainer else colors.surfaceContainer, RoundedCornerShape(12.dp))
-            .border(if (highlighted) 2.dp else 1.dp, if (highlighted) colors.primary else colors.outlineVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = MaterialTheme.typography.titleMedium, color = if (highlighted) colors.onPrimaryContainer else colors.onSurface)
-    }
 }

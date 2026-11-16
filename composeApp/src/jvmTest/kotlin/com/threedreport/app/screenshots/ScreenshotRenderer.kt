@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -52,7 +53,11 @@ import com.threedreport.app.ui.about.LatestRelease
 import com.threedreport.app.ui.about.ReleaseSource
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.navigation.AppDestination
+import com.threedreport.app.ui.quote.GCodeDropOverlay
+import com.threedreport.app.ui.quote.GCodeDropTarget
+import com.threedreport.app.ui.quote.PrintInput
 import com.threedreport.app.ui.quote.QuoteViewModel
+import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.ChannelFeeTier
 import com.threedreport.core.model.Consumable
@@ -298,6 +303,8 @@ class ScreenshotRenderer {
         // O Dashboard (Leva 10B-6): com dados nos dois temas ("dashboard.png" é a captura pública), numa janela estreita,
         // e os dois estados vazios (sem vendas e nada salvo) nos dois temas.
         renderDashboardScreenshots(container, outDir, gcodesDir)
+        renderDropOverlayScreenshots(outDir)
+        renderNarrowSettingsScreenshots(container, outDir)
 
         val portaCelular = container.quoteHistory.savedQuotes.value.first { it.name == "Porta-celular" }
         val photoBytes = container.quoteHistory.photoBytes(portaCelular)
@@ -534,6 +541,53 @@ private fun renderDashboardScreenshots(container: AppContainer, outDir: File, gc
     val sold = loss.quoteHistory.save(name = "Pedido com prejuízo", quote = sample.quote.copy(salePrice = 1.0), services = emptyList(), photo = null, sourceLink = null)
     loss.quoteHistory.updateStatus(sold.id, OrderStatus.APROVADO)
     renderAppPng(File(outDir, "dashboard-prejuizo.png")) { App(loss, startAt = AppDestination.DASHBOARD) }
+}
+
+/**
+ * O aviso de arrastar G-code, nas duas formas (uma zona só; uma zona por impressão mais "Adicionar"), nos dois temas.
+ * O estado de arrasto é do `App` (não há como forçá-lo de fora), então o aviso é renderizado sozinho, sobre o fundo do
+ * tema, com uma das zonas "em cima" pra mostrar o destaque.
+ */
+private fun renderDropOverlayScreenshots(outDir: File) {
+    val filled = PrintInput(name = "Suporte de monitor", printTimeText = "190", id = 1)
+    val another = PrintInput(name = "", printTimeText = "45", id = 2)
+    for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+        renderAppPng(File(outDir, "arrastar-gcode-vazio$suffix.png")) {
+            AppTheme(theme) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    GCodeDropOverlay(prints = listOf(PrintInput(id = 1)), hovered = { null }, onZonePlaced = { _, _ -> }, onDispose = {})
+                }
+            }
+        }
+        renderAppPng(File(outDir, "arrastar-gcode-zonas$suffix.png")) {
+            AppTheme(theme) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    GCodeDropOverlay(
+                        prints = listOf(filled, another),
+                        hovered = { GCodeDropTarget.Replace(2) },
+                        onZonePlaced = { _, _ -> },
+                        onDispose = {},
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Configurações numa janela estreita (900x700): a lista de seções de 264 ao lado do conteúdo. */
+private fun renderNarrowSettingsScreenshots(container: AppContainer, outDir: File) {
+    container.theme.update(ThemeMode.LIGHT)
+    renderAppPng(File(outDir, "configuracoes-negocio-janela-estreita.png"), width = 900, height = 700) {
+        App(container, startAt = AppDestination.SETTINGS)
+    }
+    renderAppPng(
+        File(outDir, "configuracoes-documentos-janela-estreita.png"),
+        afterSettle = { it.clickByText("Documentos pro cliente") },
+        width = 900,
+        height = 700,
+    ) {
+        App(container, startAt = AppDestination.SETTINGS)
+    }
 }
 
 /** Pedidos ou Catálogo com o "hoje" e o "agora" dos dados de exemplo. */

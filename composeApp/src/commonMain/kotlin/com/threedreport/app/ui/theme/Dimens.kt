@@ -74,6 +74,10 @@ object AppDimens {
     val navIconSize = 18.dp
     val sectionMarkerSize = 24.dp
     val dropZoneHeight = 56.dp
+
+    /** As zonas de soltar do aviso de arrastar um arquivo ([com.threedreport.app.ui.components.DropZone]): largura mínima e ícone do aviso. */
+    val dropZoneMinWidth = 360.dp
+    val dropOverlayIconSize = 48.dp
     val compositionBarHeight = 10.dp
     val compositionGap = 2.dp
     val legendSwatchSize = 10.dp
