@@ -264,7 +264,7 @@ implementação.
     abaixo. Feito: `core/model/SavedQuote.stlFileName`,
     `data/QuoteHistoryRepository.stlBytes`.
     - **Evolução futura (fora de escopo por ora, só registrando a ideia,
-      2026-09-21):** *Agendado na Leva 20 do Plano 2.*
+      2026-09-21):** *Agendado na Leva 10C do Plano 2 (antes, Leva 20).*
       Permitir guardar também o arquivo `.3mf` do projeto do
       fatiador junto com o orçamento (opcional) — o `.3mf` carrega as
       configurações de fatiamento usadas (perfil de impressora/filamento,
@@ -305,7 +305,8 @@ implementação.
       redesenho). Ainda pode ficar perceptível em malhas muito densas
       (centenas de milhares de triângulos, mais comuns em scans 3D do que
       em produtos de venda) — otimização adicional (ex.: nível de detalhe)
-      fica pra se um caso real precisar.
+      fica pra se um caso real precisar. *Caso real apareceu: agendado na
+      Leva 10C do Plano 2 (prévia de STL pesado).*
     - **STL muito pesado trava o app ao tentar pré-visualizar (decisão 63,
       2026-09-21):** um STL com centenas de milhares/milhões de triângulos
       travava a interface (parse + render de tudo isso na thread principal,

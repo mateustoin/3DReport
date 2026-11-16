@@ -208,6 +208,35 @@ mecânico, bom pra subagentes com revisão.
 
 Esforço G (somando as duas fases), impacto A no alcance (ver Leva 11B).
 
+### Leva 10C: Arquivo do modelo (3MF e STL pesado)
+
+**Incluída em 2026-11-16, a pedido do responsável do projeto.** Quem vende a mesma
+peça de novo não quer perder o arquivo que usou. Hoje o app guarda o STL, mas não o
+`.3mf` do fatiador, que traz a mesa inteira já configurada. E um STL acima de 500 mil
+triângulos fica sem prévia (decisão 63). Tudo aqui roda local. A posição (logo depois
+da 10B, na mesma tela de Orçamento que ela reescreve) e o escopo são confirmados na
+especificação da leva.
+
+- [ ] **Guardar o `.3mf` do projeto do fatiador** *(já no roadmap: seção
+  Visualização e análise de STL, "Evolução futura")*. O campo "arquivo do modelo" do
+  orçamento e do produto aceita STL ou 3MF, guarda o arquivo como veio e deixa
+  baixar de volta em Pedidos e no Catálogo. Uso só interno, como o STL. O que já
+  está gravado continua abrindo (teste de compatibilidade). Esforço P, impacto M.
+- [ ] **Foto a partir do 3MF.** O `.3mf` do Bambu Studio, do OrcaSlicer e do
+  PrusaSlicer já traz a miniatura da mesa. Ela vira uma das origens da foto do
+  produto, junto com a miniatura do G-code, a imagem enviada e a captura do 3D.
+  Pede leitura de ZIP no `core`, a mesma do item "Ler o `.gcode.3mf`" da Leva 17.
+  Esforço P/M, impacto M.
+- [ ] **Prévia de STL pesado.** Em vez de recusar acima de 500 mil triângulos, o
+  app monta uma versão simplificada só pra desenhar (agrupando vértices próximos
+  numa grade, lendo o arquivo aos poucos e fora da thread da tela, com indicação de
+  progresso). O arquivo guardado continua o original, e as medidas e o nível de
+  dificuldade continuam saindo da malha completa. Com a prévia, a captura do 3D
+  como foto passa a valer pra qualquer STL. Esforço M, impacto M.
+- [ ] **Ver o 3MF em 3D** (opcional, decidir na especificação). Ler a malha do
+  `.3mf` pra mostrar no visualizador, com a mesma simplificação. Sem isso, o 3MF
+  fica só com a miniatura. Esforço M, impacto B.
+
 ### Leva 11: Receber e conversar com o cliente
 
 O que o vendedor faz o dia inteiro depois de mandar o orçamento: cobrar, receber e
@@ -556,8 +585,6 @@ servidor do projeto. A credencial de publicação fica no cofre da Leva 18.
   calculadora do site, decisão 98), com a tabela de preço do vendedor publicada
   pela Leva 19. Virar pedido a partir dali exige servidor (Leva 22). Visto em:
   Layers, DigiFabster, PrintQuote (Shopify), Craftcloud. Esforço G, impacto M.
-- [ ] **Guardar o `.3mf` do projeto do fatiador** *(já no roadmap: seção
-  Visualização e análise de STL, "Evolução futura")*.
 - [ ] **Imagens das impressoras** e **marcas brasileiras nos presets** *(já no
   roadmap: seção Presets de cadastro)*.
 
