@@ -20,7 +20,7 @@ import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.OrderStatus
 import org.jetbrains.compose.resources.StringResource
 
-/** O nome da situação do pedido, em recurso traduzível (o `label` do `core` é texto fixo em português). */
+/** O nome da situação do pedido, em recurso traduzível (o `core` só guarda o nome gravado em disco). */
 fun OrderStatus.labelRes(): StringResource = when (this) {
     OrderStatus.ORCADO -> Res.string.orders_status_quoted
     OrderStatus.APROVADO -> Res.string.orders_status_approved

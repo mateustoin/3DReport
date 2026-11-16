@@ -8,30 +8,32 @@ import kotlinx.serialization.Serializable
  *
  * O nome gravado no arquivo ([SerialName]) é fixo e em inglês, separado do nome da constante: renomear
  * uma constante no código não pode mudar o significado dos dados já salvos (decisão 106).
+ *
+ * O nome que a pessoa lê não mora aqui: vem dos recursos traduzíveis do app (`OrderStatus.labelRes()`).
  */
 @Serializable
-enum class OrderStatus(val label: String) {
+enum class OrderStatus {
     @SerialName("quoted")
-    ORCADO("Orçado"),
+    ORCADO,
 
     @SerialName("approved")
-    APROVADO("Aprovado"),
+    APROVADO,
 
     @SerialName("printing")
-    EM_IMPRESSAO("Em impressão"),
+    EM_IMPRESSAO,
 
     @SerialName("ready")
-    PRONTO("Pronto"),
+    PRONTO,
 
     @SerialName("delivered")
-    ENTREGUE("Entregue"),
+    ENTREGUE,
 
     /**
      * O cliente recusou ou desistiu. Fica fora das vendas e dos orçamentos em aberto, mas continua no
      * histórico (excluir apagaria a informação de que o orçamento existiu).
      */
     @SerialName("cancelled")
-    CANCELADO("Cancelado"),
+    CANCELADO,
     ;
 
     /**

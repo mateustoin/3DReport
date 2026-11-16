@@ -7,9 +7,11 @@ import kotlinx.serialization.Serializable
  * **produto** do catálogo (peça que o vendedor oferece, com preço mas sem cliente nem andamento).
  * Um produto vira pedido pelo "Vender" do Histórico, que cria um pedido novo e deixa o produto
  * intacto.
+ *
+ * Sem rótulo: o nome que a pessoa lê vem dos recursos traduzíveis do app.
  */
 @Serializable
-enum class QuoteKind(val label: String) {
-    ORDER("Pedido"),
-    PRODUCT("Produto"),
+enum class QuoteKind {
+    ORDER,
+    PRODUCT,
 }
