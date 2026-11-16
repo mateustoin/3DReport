@@ -531,6 +531,9 @@
     <string name="quote_help_stl_viewer">Arraste pra girar, use a roda do mouse pra zoom.</string>
     <string name="quote_stl_capture">Capturar como foto do orçamento</string>
     <string name="quote_stl_difficulty">Nível %1$s</string>
+    <string name="quote_stl_difficulty_easy">fácil</string>
+    <string name="quote_stl_difficulty_medium">médio</string>
+    <string name="quote_stl_difficulty_hard">difícil</string>
     <string name="quote_stl_analysis_label">Análise do STL</string>
     <string name="quote_help_stl_analysis">Estimativas geométricas, só pra você decidir se cobra a mais pela complexidade.</string>
     <string name="quote_help_stl_analysis_detail">Nível de dificuldade e medidas não substituem o fatiador e não entram no PDF nem no copiar/colar.</string>

@@ -242,7 +242,7 @@ private fun StlAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState, p
 
                 val analysis = current.analysis
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
-                    Text(stringResource(Res.string.quote_stl_difficulty, analysis.difficulty.label.lowercase()), style = MaterialTheme.appType.bodyStrong)
+                    Text(stringResource(Res.string.quote_stl_difficulty, stringResource(analysis.difficulty.labelRes())), style = MaterialTheme.appType.bodyStrong)
                     HelpHint(
                         HelpText(stringResource(Res.string.quote_help_stl_analysis), stringResource(Res.string.quote_help_stl_analysis_detail)),
                         stringResource(Res.string.quote_stl_analysis_label),
