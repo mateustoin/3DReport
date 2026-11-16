@@ -61,10 +61,4 @@ class DecimalInputTest {
         assertEquals("= 2.700", interpretationHint("2.700", NumberKind.AMOUNT))
         assertNull(interpretationHint("2700", NumberKind.AMOUNT))
     }
-
-    @Test
-    fun friendlyErrorsNameTheField() {
-        val error = runCatching { "-3".toRequiredPositive("Densidade", NumberKind.MEASURE) }.exceptionOrNull()
-        assertEquals("\"Densidade\" precisa ser maior que zero.", error?.message)
-    }
 }

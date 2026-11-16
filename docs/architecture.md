@@ -416,6 +416,12 @@ Outros:
   `loadClientDocumentTexts(orçamentos)`, que lê os recursos e já resolve o
   plural de "peças" pras quantidades usadas, e passa o `ClientDocumentTexts`
   pros exportadores e pro `toCopyPasteText`.
+- Idioma dos formatos num ponto só: `platform/AppLocale.kt` tem a tag do
+  idioma (hoje `pt-BR`, fixa), os padrões de data e o separador decimal das
+  horas. `formatDate`, `formatShortDate`, `formatDateTime` e `weekdayName` leem
+  dele. As palavras de duração ("h", "min") vêm de `strings.xml`
+  (`duration_`), pelo `DurationTexts` (`durationTexts()` na tela,
+  `loadDurationTexts()` ou `ClientDocumentTexts.duration` fora dela).
 
 ### Workaround: janela em monitores com DPI diferentes
 `Main.kt` contorna um bug conhecido do Compose Desktop/Skiko (decisão 23):

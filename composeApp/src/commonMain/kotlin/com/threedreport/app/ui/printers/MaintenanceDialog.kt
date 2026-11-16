@@ -112,6 +112,7 @@ import com.threedreport.core.report.MaintenanceState
 import org.jetbrains.compose.resources.stringResource
 
 /** Horas como texto curto, ex.: "12,5 h". */
+@Composable
 internal fun Double.hoursText(): String = (this * 60).minutesToHoursText()
 
 /** Cor do texto do estado: erro quando vencido, o par de prazo "Hoje" quando perto, discreta quando em dia. */

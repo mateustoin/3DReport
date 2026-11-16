@@ -1180,6 +1180,12 @@
     <string name="client_doc_image_delivery_rush">%1$s · entrega expressa</string>
     <string name="client_doc_image_unit_price">%1$s · %2$s cada</string>
 
+    <!-- Duração: horas e minutos inteiros, e horas com uma casa (ver DurationTexts). -->
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_hours">%1$d h</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_decimal_hours">%1$s h</string>
+
     <!-- Nome que o app dá ao pedido salvo com o nome em branco; %1$s é a data e a hora (ver LocalStorage). -->
     <string name="quote_auto_name">Orçamento - %1$s</string>
 </resources>

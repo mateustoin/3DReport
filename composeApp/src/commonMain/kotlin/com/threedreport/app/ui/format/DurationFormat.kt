@@ -1,28 +1,89 @@
 package com.threedreport.app.ui.format
 
-/** Converte minutos em horas e formata com 1 casa decimal, separador decimal brasileiro (vírgula). */
-fun Double.minutesToHoursText(): String {
-    val tenths = kotlin.math.round(this / 60.0 * 10).toLong()
-    val whole = tenths / 10
-    val decimal = kotlin.math.abs(tenths % 10)
-    return if (decimal == 0L) "$whole h" else "$whole,$decimal h"
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.duration_decimal_hours
+import _3dreport.composeapp.generated.resources.duration_hours
+import _3dreport.composeapp.generated.resources.duration_hours_minutes
+import _3dreport.composeapp.generated.resources.duration_minutes
+import androidx.compose.runtime.Composable
+import com.threedreport.app.platform.AppLocale
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+
+/** Uma duração em horas e minutos inteiros, sem texto: quem mostra escolhe as palavras ([DurationTexts]). */
+data class DurationParts(val hours: Long, val minutes: Long)
+
+/** Minutos em horas e minutos inteiros, arredondando pro minuto mais próximo; negativo vira zero. */
+fun Double.toDurationParts(): DurationParts {
+    val totalMinutes = kotlin.math.round(this).toLong().coerceAtLeast(0)
+    return DurationParts(hours = totalMinutes / 60, minutes = totalMinutes % 60)
 }
 
 /**
- * Minutos por extenso em horas e minutos, ex.: "6 h 30 min", "45 min", "3 h". É o formato pro
- * cliente (PDF, copiar/colar): "6,5 h" é conta de planilha, "6 h 30 min" é como se fala. Arredonda
- * pro minuto mais próximo.
+ * Os textos de duração, com os modelos de `strings.xml` ("%1$d h %2$d min"). A tela pega com [durationTexts]; quem
+ * está fora da composição (PDF, mensagem, testes), com [loadDurationTexts].
  */
-fun Double.minutesToDurationText(): String {
-    val totalMinutes = kotlin.math.round(this).toLong().coerceAtLeast(0)
-    val hours = totalMinutes / 60
-    val minutes = totalMinutes % 60
-    return when {
-        hours == 0L -> "$minutes min"
-        minutes == 0L -> "$hours h"
-        else -> "$hours h $minutes min"
+class DurationTexts(
+    private val hoursAndMinutes: String,
+    private val hoursOnly: String,
+    private val minutesOnly: String,
+    private val decimalHoursTemplate: String,
+) {
+    /**
+     * Minutos por extenso em horas e minutos, ex.: "6 h 30 min", "45 min", "3 h". É o formato pro cliente (PDF,
+     * copiar/colar): "6,5 h" é conta de planilha, "6 h 30 min" é como se fala. Arredonda pro minuto mais próximo.
+     */
+    fun duration(minutes: Double): String {
+        val parts = minutes.toDurationParts()
+        return when {
+            parts.hours == 0L -> minutesOnly.fill(parts.minutes)
+            parts.minutes == 0L -> hoursOnly.fill(parts.hours)
+            else -> hoursAndMinutes.fill(parts.hours, parts.minutes)
+        }
+    }
+
+    /** Minutos em horas com uma casa decimal e o separador do idioma ([AppLocale]), ex.: "12,5 h". */
+    fun decimalHours(minutes: Double): String {
+        val tenths = kotlin.math.round(minutes / 60.0 * 10).toLong()
+        val whole = tenths / 10
+        val decimal = kotlin.math.abs(tenths % 10)
+        val number = if (decimal == 0L) "$whole" else "$whole${AppLocale.decimalSeparator}$decimal"
+        return decimalHoursTemplate.fill(number)
+    }
+
+    private fun String.fill(vararg args: Any): String =
+        replace(PLACEHOLDER) { match -> args[match.groupValues[1].toInt() - 1].toString() }
+
+    private companion object {
+        /** O mesmo marcador que o `getString` do Compose preenche: `%1$s`, `%2$d`. */
+        val PLACEHOLDER = Regex("""%(\d+)\$[ds]""")
     }
 }
+
+/** Os modelos de duração em [DurationTexts], na tela. */
+@Composable
+fun durationTexts(): DurationTexts = DurationTexts(
+    hoursAndMinutes = stringResource(Res.string.duration_hours_minutes),
+    hoursOnly = stringResource(Res.string.duration_hours),
+    minutesOnly = stringResource(Res.string.duration_minutes),
+    decimalHoursTemplate = stringResource(Res.string.duration_decimal_hours),
+)
+
+/** Os mesmos modelos, fora da composição. */
+suspend fun loadDurationTexts(): DurationTexts = DurationTexts(
+    hoursAndMinutes = getString(Res.string.duration_hours_minutes),
+    hoursOnly = getString(Res.string.duration_hours),
+    minutesOnly = getString(Res.string.duration_minutes),
+    decimalHoursTemplate = getString(Res.string.duration_decimal_hours),
+)
+
+/** "6 h 30 min" na tela (ver [DurationTexts.duration]). */
+@Composable
+fun Double.minutesToDurationText(): String = durationTexts().duration(this)
+
+/** "12,5 h" na tela (ver [DurationTexts.decimalHours]). */
+@Composable
+fun Double.minutesToHoursText(): String = durationTexts().decimalHours(this)
 
 /**
  * Lê um tempo digitado, em minutos (decisão 107): "200" (minutos), "3h20", "3h 20min", "3:20", "3h",

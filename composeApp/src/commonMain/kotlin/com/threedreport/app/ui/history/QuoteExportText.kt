@@ -2,7 +2,6 @@ package com.threedreport.app.ui.history
 
 import com.threedreport.app.platform.ClientDocumentTexts
 import com.threedreport.app.platform.formatDate
-import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.QuoteService
@@ -108,6 +107,6 @@ internal fun SavedQuote.deliveryDateText(texts: ClientDocumentTexts): String? =
  * sugeriria um prazo que ele não é.
  */
 internal fun SavedQuote.printTimeText(texts: ClientDocumentTexts): String {
-    val line = texts.printTime(totalPrintTimeMinutes.minutesToDurationText())
+    val line = texts.printTime(texts.duration(totalPrintTimeMinutes))
     return if (quote.quantity > 1) texts.printTimeForPieces(line, quote.quantity) else line
 }

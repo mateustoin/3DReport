@@ -29,6 +29,11 @@ import _3dreport.composeapp.generated.resources.client_doc_total
 import _3dreport.composeapp.generated.resources.client_doc_valid_until
 import _3dreport.composeapp.generated.resources.client_doc_value
 import _3dreport.composeapp.generated.resources.client_doc_value_quantity
+import _3dreport.composeapp.generated.resources.duration_decimal_hours
+import _3dreport.composeapp.generated.resources.duration_hours
+import _3dreport.composeapp.generated.resources.duration_hours_minutes
+import _3dreport.composeapp.generated.resources.duration_minutes
+import com.threedreport.app.ui.format.DurationTexts
 import com.threedreport.core.model.SavedQuote
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getPluralString
@@ -83,6 +88,14 @@ class ClientDocumentTexts internal constructor(
 
     /** "Entrega expressa", sem prazo. */
     val rush: String get() = fill(Res.string.client_doc_rush)
+
+    /** "6 h 30 min", pro tempo de impressão (ver [DurationTexts.duration]). */
+    fun duration(minutes: Double): String = DurationTexts(
+        hoursAndMinutes = templates.getValue(Res.string.duration_hours_minutes),
+        hoursOnly = templates.getValue(Res.string.duration_hours),
+        minutesOnly = templates.getValue(Res.string.duration_minutes),
+        decimalHoursTemplate = templates.getValue(Res.string.duration_decimal_hours),
+    ).duration(minutes)
 
     /** "Tempo de impressão: 6 h 30 min". */
     fun printTime(duration: String) = fill(Res.string.client_doc_print_time, duration)
@@ -179,6 +192,10 @@ private val CLIENT_DOCUMENT_TEMPLATES: List<StringResource> = listOf(
     Res.string.client_doc_image_delivery,
     Res.string.client_doc_image_delivery_rush,
     Res.string.client_doc_image_unit_price,
+    Res.string.duration_hours_minutes,
+    Res.string.duration_hours,
+    Res.string.duration_minutes,
+    Res.string.duration_decimal_hours,
 )
 
 /**
