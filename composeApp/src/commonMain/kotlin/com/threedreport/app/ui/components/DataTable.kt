@@ -147,3 +147,25 @@ fun TableFieldRow(columns: List<TableColumn>, modifier: Modifier = Modifier, cel
         HorizontalDivider(color = MaterialTheme.appColors.line, thickness = AppDimens.borderWidth)
     }
 }
+
+/**
+ * Linha da tabela só de leitura (o ranking do Dashboard): mesmas medidas e divisor do [TableRow], mas sem clique, ação
+ * nem foco, pra o Tab não parar numa linha que não faz nada. As células usam [TableRowScope.Cell] como no [TableRow].
+ */
+@Composable
+fun TableStaticRow(columns: List<TableColumn>, modifier: Modifier = Modifier, cells: @Composable TableRowScope.() -> Unit) {
+    val space = MaterialTheme.spacing
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = AppDimens.tableRowHeight)
+                .padding(start = space.sm, end = space.xs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(space.md),
+        ) {
+            TableRowScope(this, columns).cells()
+        }
+        HorizontalDivider(color = MaterialTheme.appColors.line, thickness = AppDimens.borderWidth)
+    }
+}

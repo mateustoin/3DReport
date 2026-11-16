@@ -1046,4 +1046,65 @@
     <string name="onboarding_action_back">Voltar</string>
     <string name="onboarding_action_next">Continuar</string>
     <string name="onboarding_action_start">Começar</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_period">Período</string>
+    <string name="dashboard_period_all">Tudo</string>
+    <string name="dashboard_period_last_7_days">7 dias</string>
+    <string name="dashboard_period_last_30_days">30 dias</string>
+    <string name="dashboard_period_this_month">Este mês</string>
+    <string name="dashboard_period_last_month">Mês passado</string>
+    <string name="dashboard_period_this_year">Este ano</string>
+    <string name="dashboard_no_data">-</string>
+    <string name="dashboard_per_hour">%1$s/h</string>
+    <string name="dashboard_times">%1$dx</string>
+    <string name="dashboard_block_sales">Vendas</string>
+    <string name="dashboard_block_total">Total vendido</string>
+    <string name="dashboard_block_profit">Lucro</string>
+    <string name="dashboard_block_profit_per_machine_hour">Lucro por hora de máquina</string>
+    <string name="dashboard_empty_none">Nenhum orçamento salvo neste período.</string>
+    <string name="dashboard_empty_no_sales">Nenhuma venda neste período.</string>
+    <string name="dashboard_action_see_orders">Ver pedidos</string>
+    <string name="dashboard_ranking_title">Peças que mais deram lucro</string>
+    <string name="dashboard_ranking_help">Pedidos com o mesmo nome, ou vendidos a partir do mesmo produto do catálogo, contam como a mesma peça. Orçamentos salvos sem nome ficam de fora.</string>
+    <string name="dashboard_col_piece">Peça</string>
+    <string name="dashboard_col_sales">Vendas</string>
+    <string name="dashboard_col_profit">Lucro</string>
+    <string name="dashboard_col_per_hour">Por hora</string>
+    <string name="dashboard_open_title">Em aberto</string>
+    <string name="dashboard_open_help">Orçamentos que o cliente ainda não aprovou. Ficam fora das somas de vendas.</string>
+    <plurals name="dashboard_open_quotes">
+        <item quantity="one">%1$d orçamento esperando resposta</item>
+        <item quantity="other">%1$d orçamentos esperando resposta</item>
+    </plurals>
+    <string name="dashboard_open_conversion">Viraram venda</string>
+    <string name="dashboard_open_conversion_help">Parcela dos orçamentos do período que virou venda.</string>
+    <string name="dashboard_hours_title">Quanto cada hora rendeu</string>
+    <string name="dashboard_hours_help_machine">Hora de máquina: lucro dividido pelas horas de impressão das vendas.</string>
+    <string name="dashboard_hours_help_labor">Hora de trabalho: lucro mais a sua mão de obra, dividido pelo seu tempo, só nas vendas com tempo de trabalho informado.</string>
+    <string name="dashboard_hours_machine">Hora de máquina</string>
+    <string name="dashboard_hours_labor">Hora de trabalho</string>
+    <string name="dashboard_hours_configured">Sua hora configurada</string>
+    <string name="dashboard_most_used_title">Mais usados</string>
+    <string name="dashboard_most_used_filament">Filamento mais usado</string>
+    <string name="dashboard_filament_value">%1$s (%2$dx)</string>
+    <plurals name="dashboard_discounts_given">
+        <item quantity="one">Descontos dados (%1$d negociado)</item>
+        <item quantity="other">Descontos dados (%1$d negociados)</item>
+    </plurals>
+    <string name="dashboard_discount_title">Quem mais recebeu desconto</string>
+    <string name="dashboard_discount_help">Soma do desconto dos pedidos com preço negociado, por cliente.</string>
+    <plurals name="dashboard_discount_client">
+        <item quantity="one">%1$s (%2$d negociado)</item>
+        <item quantity="other">%1$s (%2$d negociados)</item>
+    </plurals>
+    <string name="dashboard_catalog_title">Catálogo</string>
+    <string name="dashboard_catalog_products">Produtos</string>
+    <string name="dashboard_catalog_price_range">Faixa de preço</string>
+    <string name="dashboard_price_range">%1$s a %2$s</string>
+    <string name="dashboard_catalog_ranking_title">Qual vale a pena oferecer primeiro</string>
+    <string name="dashboard_catalog_ranking_help">O lucro e o lucro por hora de máquina de cada produto do catálogo.</string>
+    <string name="dashboard_col_product">Produto</string>
+    <string name="dashboard_col_price">Preço</string>
 </resources>

@@ -88,6 +88,10 @@ import org.jetbrains.skia.Image as SkiaImage
 private const val WIDTH = 1280
 private const val HEIGHT = 800
 
+// Janela estreita, abaixo do ponto em que as telas viram uma coluna (a barra lateral já só com ícones).
+private const val NARROW_WIDTH = 820
+private const val NARROW_HEIGHT = 1000
+
 // "Hoje" fixo pros dados de exemplo terem datas plausíveis (prazos, histórico) sem depender de quando o
 // gerador roda.
 private val TODAY: LocalDate = LocalDate.of(2026, 9, 26)
@@ -290,9 +294,9 @@ class ScreenshotRenderer {
         // escuro. As duas seções longas saem de novo rolada até o fim.
         renderSettingsScreenshots(container, outDir)
 
-        renderAppPng(File(outDir, "dashboard.png")) {
-            App(container, startAt = AppDestination.DASHBOARD)
-        }
+        // O Dashboard (Leva 10B-6): com dados nos dois temas ("dashboard.png" é a captura pública), numa janela estreita,
+        // e os dois estados vazios (sem vendas e nada salvo) nos dois temas.
+        renderDashboardScreenshots(container, outDir, gcodesDir)
 
         val portaCelular = container.quoteHistory.savedQuotes.value.first { it.name == "Porta-celular" }
         val photoBytes = container.quoteHistory.photoBytes(portaCelular)
@@ -456,6 +460,35 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
         renderAppPng(File(outDir, "primeiro-uso-custos$suffix.png"), afterSettle = { it.clickByText("Continuar") }) {
             App(emptyContainer, startAt = AppDestination.QUOTE)
         }
+    }
+}
+
+/**
+ * O Dashboard e os estados que ele tem: com dados (claro e escuro, e numa janela estreita, onde as colunas viram uma),
+ * "nenhuma venda" (só orçamentos em aberto e o catálogo) e "nada salvo". Os dois últimos usam pastas de dados à parte,
+ * pra não mexer nos dados de exemplo das outras capturas.
+ */
+private fun renderDashboardScreenshots(container: AppContainer, outDir: File, gcodesDir: File?) {
+    // Sem venda: os dados de exemplo sem os pedidos que já foram aprovados; ficam os orçamentos em aberto e o catálogo.
+    val noSalesDir = createTempDirectory("3dreport-screenshots-dashboard").toFile()
+    seedSampleData(noSalesDir, gcodesDir)
+    val noSales = buildContainer(noSalesDir)
+    noSales.quoteHistory.savedQuotes.value.filter { it.isOrder && !it.status.isOpen }.forEach { noSales.quoteHistory.delete(it.id) }
+
+    // Nada salvo: uma pasta sem nada, com o primeiro uso já feito (senão o app abriria o onboarding).
+    val emptyDir = createTempDirectory("3dreport-screenshots-dashboard-empty").toFile()
+    LocalStorage(emptyDir, Clock.System).onboarding().markCompleted()
+    val empty = buildContainer(emptyDir)
+
+    for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+        for (target in listOf(container, noSales, empty)) target.theme.update(theme)
+        renderAppPng(File(outDir, "dashboard$suffix.png")) { App(container, startAt = AppDestination.DASHBOARD) }
+        renderAppPng(File(outDir, "dashboard-sem-vendas$suffix.png")) { App(noSales, startAt = AppDestination.DASHBOARD) }
+        renderAppPng(File(outDir, "dashboard-vazio$suffix.png")) { App(empty, startAt = AppDestination.DASHBOARD) }
+    }
+    container.theme.update(ThemeMode.LIGHT)
+    renderAppPng(File(outDir, "dashboard-estreito.png"), width = NARROW_WIDTH, height = NARROW_HEIGHT) {
+        App(container, startAt = AppDestination.DASHBOARD)
     }
 }
 
@@ -881,8 +914,14 @@ private fun buildContainer(dataDir: File): AppContainer {
  * usado pra simular um clique (ver [clickByText]).
  */
 @OptIn(ExperimentalComposeUiApi::class)
-private fun renderAppPng(outFile: File, afterSettle: (ImageComposeScene) -> Unit = {}, content: @Composable () -> Unit) {
-    val scene = ImageComposeScene(width = WIDTH, height = HEIGHT, density = Density(1f), content = content)
+private fun renderAppPng(
+    outFile: File,
+    afterSettle: (ImageComposeScene) -> Unit = {},
+    width: Int = WIDTH,
+    height: Int = HEIGHT,
+    content: @Composable () -> Unit,
+) {
+    val scene = ImageComposeScene(width = width, height = height, density = Density(1f), content = content)
     try {
         settle(scene)
         afterSettle(scene)

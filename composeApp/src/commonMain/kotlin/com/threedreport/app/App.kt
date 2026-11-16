@@ -277,7 +277,11 @@ fun App(
                                         onNewProduct = navigator::newProduct,
                                     )
 
-                                    AppDestination.DASHBOARD -> DashboardScreen(viewModels.dashboardViewModel)
+                                    AppDestination.DASHBOARD -> DashboardScreen(
+                                        viewModels.dashboardViewModel,
+                                        onNewQuote = navigator::newOrder,
+                                        onShowOrders = { navigator.goTo(AppDestination.ORDERS) },
+                                    )
 
                                     AppDestination.FILAMENTS -> FilamentListScreen(viewModels.filamentListViewModel)
 
