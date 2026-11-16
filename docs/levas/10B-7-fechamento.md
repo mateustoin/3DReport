@@ -35,7 +35,7 @@ Terminar a preparação pra tradução (nenhum texto pro público escrito no có
    dos campos truncam numa janela de 900 de largura. A lista volta pra 200 e a nota
    "Não salvo" vai pra baixo do nome da seção.
 
-### B. Precisa de aprovação antes de implementar
+### B. Aprovados em 2026-11-16 (escolhas na tabela de decisões)
 
 5. **Nome automático do pedido sem depender do idioma** (muda o formato gravado).
    Hoje o pedido sem nome ganha o prefixo "Orçamento - " e é reconhecido por esse
@@ -52,6 +52,38 @@ Terminar a preparação pra tradução (nenhum texto pro público escrito no có
 9. **Site:** capturas novas do app, ícone e marca novos, textos atualizados. O layout
    das páginas não muda (redesenho fica pra depois).
 
+## Escolhas de aparência (aprovadas em 2026-11-16)
+
+Esboços em https://claude.ai/artifact/UCQwjvAfNf9H6BrpmD1g6W (página privada do
+responsável do projeto).
+
+- **PDF, opção A.** Cabeçalho com a marca do vendedor à esquerda e o contato à
+  direita, separados do corpo por uma linha. Linha de pedido e emissão, e o nome da
+  peça em Space Grotesk. Foto na largura útil da página, sobre um fundo cinza claro,
+  com a marca d'água por cima quando ligada. Abaixo, um bloco cinza claro com o valor
+  em número grande à esquerda e, à direita, "Entrega até" e "Válido até". Rodapé com
+  a marca e "Gerado com 3DReport". Texto em Inter. Sem cor de marca do app: o
+  documento é do vendedor. Todas as opções de hoje continuam valendo (marca d'água,
+  rodapé, borda, tempo de impressão, nome do cliente, validade), e o PDF com vários
+  itens e a página de detalhes seguem o mesmo estilo.
+- **Imagem, opção A.** Fundo `navy`, peça no alto, faixa inferior mais escura
+  (`#081526`) com o nome e o preço à esquerda (só o preço em `amber`, Space Grotesk)
+  e, à direita, a entrega, a marca com o contato e "Gerado com 3DReport".
+- **Peça escura.** Campo novo `BrandingSettings.imageBackground` (`AUTO`, `DARK`,
+  `LIGHT`), que nasce `AUTO`. Em `AUTO`, o app mede o brilho médio dos pixels não
+  transparentes da foto: peça escura sai no fundo claro (a opção B dos esboços:
+  fundo `#F6F8FB`, peça num cartão branco, preço em texto escuro, entrega em âmbar de
+  texto), as demais no azul-marinho. Foto sem transparência (enviada pela pessoa)
+  conta pelo brilho da imagem inteira. O limiar é uma constante testada, com teste
+  pra peça preta, branca e cinza. Seletor "Fundo da imagem" em Documentos pro
+  cliente, com `HelpHint`. Dado gravado sem o campo abre como `AUTO` (teste de
+  compatibilidade). O modelo de orçamento não guarda esse campo.
+- **Ícone, refinamento 1.** `docs/design/icone-camadas.svg` passa a ser o desenho
+  refinado (camadas de 16 de altura, bico com corpo terminando sobre a ponta da
+  camada âmbar). Os arquivos de 16 a 32 px levam um contorno claro fino no quadro.
+  Gera `composeApp/packaging/icons/` (png, ico, icns), o ícone da janela e os do
+  site (favicon e imagens de compartilhamento).
+
 ## Fora de escopo
 
 - Tradução pra inglês (Leva 11B).
@@ -66,8 +98,12 @@ Terminar a preparação pra tradução (nenhum texto pro público escrito no có
 | | PDF e imagem: opções de layout antes de implementar | aprovada em 2026-11-16 |
 | | Ícone: ver refinamentos antes de gerar os arquivos | aprovada em 2026-11-16 |
 | | Site na 2.2: capturas, ícone, marca e textos, sem redesenho | aprovada em 2026-11-16 |
-| | Nome automático com campo `autoNamed` e migração | proposta |
-| | Formato de data e número num ponto só | proposta |
+| | PDF: opção A (foto na largura da página e bloco de preço com entrega e validade) | aprovada em 2026-11-16 |
+| | Imagem: opção A (azul-marinho, só o preço em âmbar) | aprovada em 2026-11-16 |
+| | Imagem com peça escura: fundo automático pelo brilho da peça, com seletor em Documentos pro cliente | aprovada em 2026-11-16 |
+| | Ícone: refinamento 1 (camadas mais grossas, bico depositando), com contorno claro nos tamanhos de 16 a 32 px | aprovada em 2026-11-16 |
+| | Nome automático com campo `autoNamed` e migração | aprovada em 2026-11-16 |
+| | Formato de data e número num ponto só | aprovada em 2026-11-16 |
 
 ## Modelo e cálculo (core e dados)
 
