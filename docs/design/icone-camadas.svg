@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="3DReport">
   <rect width="120" height="120" rx="27" fill="#0C2742"/>
-  <rect x="26" y="74" width="68" height="13" rx="6.5" fill="#4C8FD0"/>
-  <rect x="26" y="55" width="68" height="13" rx="6.5" fill="#7DB8F5"/>
-  <rect x="26" y="36" width="42" height="13" rx="6.5" fill="#F2A541"/>
-  <path d="M74 24h16l-8 12z" fill="#EAF1F8"/>
+  <rect x="22" y="78" width="76" height="16" rx="8" fill="#4C8FD0"/>
+  <rect x="22" y="57" width="76" height="16" rx="8" fill="#7DB8F5"/>
+  <rect x="22" y="36" width="46" height="16" rx="8" fill="#F2A541"/>
+  <path d="M62 18h22v8l-11 10-11-10z" fill="#EAF1F8"/>
 </svg>
