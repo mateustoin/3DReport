@@ -1197,6 +1197,15 @@
     <string name="client_doc_image_delivery_rush">%1$s · entrega expressa</string>
     <string name="client_doc_image_unit_price">%1$s · %2$s cada</string>
 
+    <!-- Rótulos soltos do PDF (o valor vai ao lado, em outra fonte). -->
+    <string name="client_doc_label_value">Valor</string>
+    <string name="client_doc_label_total">Total</string>
+    <string name="client_doc_label_shipping">Frete</string>
+    <string name="client_doc_label_shipping_free">grátis</string>
+    <string name="client_doc_label_delivery">Entrega até</string>
+    <string name="client_doc_label_valid_until">Válido até</string>
+    <string name="client_doc_label_print_time">Tempo de impressão</string>
+
     <!-- Duração: horas e minutos inteiros, e horas com uma casa (ver DurationTexts). -->
     <string name="duration_hours_minutes">%1$d h %2$d min</string>
     <string name="duration_hours">%1$d h</string>

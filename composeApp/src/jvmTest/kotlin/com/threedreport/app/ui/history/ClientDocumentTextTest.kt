@@ -30,6 +30,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Caracterização do que o cliente recebe (Leva 10B, parte 7): o texto do PDF, do catálogo, da mensagem e da
@@ -113,39 +114,61 @@ class ClientDocumentTextTest {
         CoroutineScope(Dispatchers.Unconfined), Dispatchers.Unconfined, Dispatchers.Unconfined,
     ) {}
 
+    /**
+     * O desenho do PDF mudou (Leva 10B, parte 7): rótulo e valor viraram texto separado, em fontes e lugares diferentes
+     * (o preço no bloco, a entrega e a validade ao lado). O que o cliente lê continua o mesmo, então a conferência é
+     * por conjunto de linhas, página a página: cada linha esperada tem de estar na página. Os rótulos soltos do bloco
+     * saem em maiúsculas, sem os dois-pontos que a linha única tinha ("Valor: R$ 16,19" virou "Valor" e "R$ 16,19").
+     */
     @Test
-    fun theQuotePdfSaysExactlyWhatItSaidBefore() {
+    fun theQuotePdfStillSaysEverythingItSaidBefore() {
         val items = listOf(QuoteExportItem(fullOrder, null), QuoteExportItem(autoProduct, null))
 
-        val text = textOf(renderSavedQuotesPdf(items, testClientTexts, "Minha Loja", "Minha Loja", options))
+        val pdf = renderSavedQuotesPdf(items, testClientTexts, "Minha Loja", "Minha Loja", options)
 
-        val page = listOf(
+        val first = listOf(
             "Minha Loja (11) 99999-0000",
+            "Pedido #0042 · Emitido em 25/09/2025",
             "Suporte de celular",
-            "Pedido #0042 · Emitido em 25/09/2025 · Válido até 02/10/2025",
             "Para: Maria Cliente",
             "Kit com 2 peças",
-            "Valor: 3 × R$ 16,19 = R$ 48,57",
-            "Pintura (× 3): R$ 15,00",
-            "Embalagem: R$ 3,00",
-            "Frete: R$ 12,00",
-            "Total: R$ 78,57",
-            "Prazo de entrega: até 30/09/2025 (entrega expressa)",
-            "Tempo de impressão: 11 h 45 min (3 peças)",
-            "Min", "ha L", "oja",
+            "Valor 3 × R$ 16,19 = R$ 48,57",
+            "Pintura (× 3) R$ 15,00",
+            "Embalagem R$ 3,00",
+            "Frete R$ 12,00",
+            "Tempo de impressão 11 h 45 min (3 peças)",
+            "R$ 78,57",
+            "TOTAL",
+            "ENTREGA ATÉ",
+            "30/09/2025",
+            "Entrega expressa",
+            "VÁLIDO ATÉ",
+            "02/10/2025",
             "Minha Loja Gerado com 3DReport",
+        )
+        val second = listOf(
             "Minha Loja (11) 99999-0000",
             "Produto",
             "Emitido em 25/09/2025",
-            "Valor: R$ 16,19",
-            "Frete: grátis",
-            "Total: R$ 16,19",
+            "Valor R$ 16,19",
+            "Frete grátis",
+            "Tempo de impressão 1 h",
+            "R$ 16,19",
+            "TOTAL",
             "Entrega expressa",
-            "Tempo de impressão: 1 h",
-            "Min", "ha L", "oja",
             "Minha Loja Gerado com 3DReport",
         )
-        assertEquals(page.joinToString("\n", postfix = "\n"), text)
+        assertPageHas(pdf, 1, first)
+        assertPageHas(pdf, 2, second)
+        // O que saiu do PDF: o aviso de prazo e a validade na linha do pedido.
+        assertTrue("Prazo de entrega" !in textOf(pdf))
+        assertTrue("Pedido #0042 · Emitido em 25/09/2025 · Válido" !in textOf(pdf))
+    }
+
+    private fun assertPageHas(pdf: ByteArray, page: Int, expected: List<String>) {
+        val text = Loader.loadPDF(pdf).use { PDFTextStripper().apply { startPage = page; endPage = page }.getText(it) }
+        val missing = expected.filter { it !in text }
+        assertTrue(missing.isEmpty(), "faltou na página $page: $missing\n$text")
     }
 
     @Test

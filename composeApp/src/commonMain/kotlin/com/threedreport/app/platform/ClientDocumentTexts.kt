@@ -10,6 +10,13 @@ import _3dreport.composeapp.generated.resources.client_doc_image_delivery_rush
 import _3dreport.composeapp.generated.resources.client_doc_image_unit_price
 import _3dreport.composeapp.generated.resources.client_doc_issued
 import _3dreport.composeapp.generated.resources.client_doc_kit
+import _3dreport.composeapp.generated.resources.client_doc_label_delivery
+import _3dreport.composeapp.generated.resources.client_doc_label_print_time
+import _3dreport.composeapp.generated.resources.client_doc_label_shipping
+import _3dreport.composeapp.generated.resources.client_doc_label_shipping_free
+import _3dreport.composeapp.generated.resources.client_doc_label_total
+import _3dreport.composeapp.generated.resources.client_doc_label_valid_until
+import _3dreport.composeapp.generated.resources.client_doc_label_value
 import _3dreport.composeapp.generated.resources.client_doc_line_amount
 import _3dreport.composeapp.generated.resources.client_doc_order_number
 import _3dreport.composeapp.generated.resources.client_doc_pieces
@@ -157,6 +164,27 @@ class ClientDocumentTexts internal constructor(
     /** "3 peças · R$ 22,19 cada". */
     fun imageUnitPrice(quantity: Int, unitPrice: String) = fill(Res.string.client_doc_image_unit_price, pieces(quantity), unitPrice)
 
+    /** "Valor", rótulo solto do PDF (o preço vai ao lado). */
+    val labelValue: String get() = fill(Res.string.client_doc_label_value)
+
+    /** "Total", rótulo solto do PDF quando há serviços, frete ou várias peças. */
+    val labelTotal: String get() = fill(Res.string.client_doc_label_total)
+
+    /** "Frete", rótulo solto do PDF. */
+    val labelShipping: String get() = fill(Res.string.client_doc_label_shipping)
+
+    /** "grátis", o valor do frete absorvido. */
+    val labelShippingFree: String get() = fill(Res.string.client_doc_label_shipping_free)
+
+    /** "Entrega até", rótulo solto do PDF (a data vai ao lado). */
+    val labelDelivery: String get() = fill(Res.string.client_doc_label_delivery)
+
+    /** "Válido até", rótulo solto do PDF (a data vai ao lado). */
+    val labelValidUntil: String get() = fill(Res.string.client_doc_label_valid_until)
+
+    /** "Tempo de impressão", rótulo solto do PDF (a duração vai ao lado). */
+    val labelPrintTime: String get() = fill(Res.string.client_doc_label_print_time)
+
     private companion object {
         /** O mesmo marcador que o `getString` do Compose preenche: `%1$s`, `%2$d`. */
         val PLACEHOLDER = Regex("""%(\d+)\$[ds]""")
@@ -192,6 +220,13 @@ private val CLIENT_DOCUMENT_TEMPLATES: List<StringResource> = listOf(
     Res.string.client_doc_image_delivery,
     Res.string.client_doc_image_delivery_rush,
     Res.string.client_doc_image_unit_price,
+    Res.string.client_doc_label_value,
+    Res.string.client_doc_label_total,
+    Res.string.client_doc_label_shipping,
+    Res.string.client_doc_label_shipping_free,
+    Res.string.client_doc_label_delivery,
+    Res.string.client_doc_label_valid_until,
+    Res.string.client_doc_label_print_time,
     Res.string.duration_hours_minutes,
     Res.string.duration_hours,
     Res.string.duration_minutes,

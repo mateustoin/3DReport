@@ -40,5 +40,16 @@ internal fun BufferedImage.scaledToFit(maxPixels: Int, keepAlpha: Boolean = true
     }
 }
 
+/** Se algum pixel da imagem é transparente ou translúcido (miniatura do G-code, captura do 3D, logo recortada). */
+internal fun BufferedImage.hasTransparency(): Boolean {
+    if (!colorModel.hasAlpha()) return false
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            if ((getRGB(x, y) ushr 24) != 0xFF) return true
+        }
+    }
+    return false
+}
+
 internal fun BufferedImage.encodePng(): ByteArray =
     ByteArrayOutputStream().also { ImageIO.write(this, "png", it) }.toByteArray()

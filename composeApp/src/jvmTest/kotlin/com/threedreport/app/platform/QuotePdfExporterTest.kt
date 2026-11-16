@@ -189,12 +189,12 @@ class QuotePdfExporterTest {
         val onlyFooter = textFor(brandName = null, footerText = "Marca")
         val neither = textFor(brandName = null, footerText = null)
 
-        // O rodapé sozinho contém "Marca" como string contígua; a marca d'água
-        // sozinha quebra em fragmentos (é diagonal) mas ainda contém as letras.
-        assertTrue(onlyFooter.contains("Marca"))
-        assertFalse(neither.contains("Marca"))
-        assertTrue(onlyWatermark.replace(Regex("\\s+"), "").contains("Marca"))
-        assertFalse(onlyWatermark.contains("Marca")) // sem rodapé, não aparece como string contígua
+        // Cada um aparece uma vez sozinho, e juntos aparecem duas (o texto é o mesmo, então conta-se as ocorrências).
+        fun occurrences(text: String) = Regex("Marca").findAll(text).count()
+        assertEquals(1, occurrences(onlyFooter))
+        assertEquals(1, occurrences(onlyWatermark))
+        assertEquals(0, occurrences(neither))
+        assertEquals(2, occurrences(textFor(brandName = "Marca", footerText = "Marca")))
     }
 
     @Test
@@ -301,7 +301,7 @@ class QuotePdfExporterTest {
 
         assertTrue(text.contains("Pintura"))
         assertTrue(text.contains("20,00"))
-        assertTrue(text.contains("Total"))
+        assertTrue(text.contains("TOTAL"))
         assertTrue(text.contains("36,19")) // 16,19 (venda) + 20,00 (pintura)
     }
 
@@ -321,7 +321,7 @@ class QuotePdfExporterTest {
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
-        assertTrue(text.contains("Entrega: R$ 15,00"))
+        assertTrue(text.contains("Entrega R$ 15,00"))
         assertFalse(text.contains("Entrega (×"))
         assertTrue(text.contains("75,20")) // total: 60,20 (venda) + 15,00 (entrega, uma vez)
     }
@@ -364,7 +364,7 @@ class QuotePdfExporterTest {
 
         assertTrue(text.contains("Frete"))
         assertTrue(text.contains("12,00"))
-        assertTrue(text.contains("Total"))
+        assertTrue(text.contains("TOTAL"))
         assertTrue(text.contains("28,19")) // 16,19 (venda) + 12,00 (frete)
     }
 
@@ -379,7 +379,7 @@ class QuotePdfExporterTest {
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
-        assertFalse(text.contains("Total"))
+        assertFalse(text.contains("TOTAL"))
     }
 
     @Test
@@ -395,7 +395,7 @@ class QuotePdfExporterTest {
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
-        assertTrue(text.contains("Frete: grátis"))
+        assertTrue(text.contains("Frete grátis"))
         assertFalse(text.contains("18,00"))
     }
 
@@ -512,7 +512,9 @@ class QuotePdfExporterTest {
 
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withDeadline, null)), testClientTexts, null, null))
 
-        assertTrue(text.contains("Prazo de entrega: até 30/09/2026"))
+        assertTrue(text.contains("ENTREGA ATÉ"))
+        assertTrue(text.contains("30/09/2026"))
+        assertFalse(text.contains("Prazo de entrega")) // o aviso amarelo saiu: o prazo mora no bloco do valor
     }
 
     @Test
@@ -524,7 +526,8 @@ class QuotePdfExporterTest {
 
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(rushWithDeadline, null)), testClientTexts, null, null))
 
-        assertTrue(text.contains("Prazo de entrega: até 30/09/2026 (entrega expressa)"))
+        assertTrue(text.contains("30/09/2026"))
+        assertTrue(text.contains("Entrega expressa"))
     }
 
     @Test
@@ -540,7 +543,7 @@ class QuotePdfExporterTest {
     fun withoutDeadlineAndPrintTimeThePdfHasNeitherLine() {
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null))
 
-        assertFalse(text.contains("Prazo"))
+        assertFalse(text.contains("ENTREGA"))
         assertFalse(text.contains("Tempo de impressão"))
     }
 
@@ -551,7 +554,7 @@ class QuotePdfExporterTest {
         val withTime = textOf(renderSavedQuotesPdf(items, testClientTexts, null, null, options = PdfLayoutOptions(showPrintTime = true)))
         val withoutTime = textOf(renderSavedQuotesPdf(items, testClientTexts, null, null))
 
-        assertTrue(withTime.contains("Tempo de impressão: 3 h 10 min"))
+        assertTrue(withTime.contains("Tempo de impressão 3 h 10 min"))
         assertFalse(withoutTime.contains("Tempo de impressão"))
     }
 
@@ -563,6 +566,7 @@ class QuotePdfExporterTest {
         val text = textOf(renderCatalogPdf(listOf(QuoteExportItem(withDeadline, null)), testClientTexts, null, null))
 
         assertFalse(text.contains("Prazo"))
+        assertFalse(text.contains("ENTREGA"))
     }
 
     /** Logo "de verdade" (PNG com ruído, pra não comprimir a quase nada), no tamanho que um vendedor usaria. */
@@ -647,9 +651,11 @@ class QuotePdfExporterTest {
 
         Loader.loadPDF(pdf).use { document ->
             assertTrue(PDFTextStripper().getText(document).contains("Gerado com 3DReport"))
-            val font = org.apache.pdfbox.pdmodel.font.PDType1Font(org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA)
-            val nameWidth = font.getStringWidth("3DReport") / 1000f * 7f
-            val rightEdge = document.pages.first().mediaBox.width - 50f
+            // O rodapé é do tamanho de 1,9% da largura da página, em Inter, e termina na margem de 8%.
+            val pageWidth = document.pages.first().mediaBox.width
+            val font = org.apache.pdfbox.pdmodel.font.PDType0Font.load(document, java.io.ByteArrayInputStream(ClientDocumentFonts.interRegular))
+            val nameWidth = font.getStringWidth("3DReport") / 1000f * (pageWidth * 1.9f / 100f)
+            val rightEdge = pageWidth - pageWidth * 8f / 100f
             document.pages.forEach { page ->
                 val links = page.annotations.filterIsInstance<org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink>()
                 val link = links.single()
