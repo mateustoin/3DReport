@@ -1,5 +1,11 @@
 package com.threedreport.app.data
 
+import com.threedreport.core.model.Filament
+import com.threedreport.core.model.MachineInvestment
+import com.threedreport.core.model.PricingSettings
+import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.pricing.PricingCalculator
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipEntry
@@ -14,9 +20,10 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
- * Nome automático pelo campo `autoNamed` (Leva 10B, parte 7). A pasta de dados e o backup da 2.1 (formato 2) não
- * têm o campo: ao abrir, o pedido cujo nome é o automático da 2.1 ("Orçamento - 24/09/2026 14:30") é marcado uma vez,
- * e o nome continua o mesmo.
+ * Nome automático pelo campo `autoNamed` (Leva 10B, parte 7), sem mudar o formato da pasta de dados. A 2.1 não grava
+ * o campo: ao ler o `quotes.json`, o registro que vem sem a chave e cujo nome é o automático da 2.1
+ * ("Orçamento - 24/09/2026 14:30") é marcado; o que já tem a chave fica como está. O nome continua o mesmo, nada vai
+ * pra uma pasta à parte e a 2.1 continua abrindo os dados.
  */
 class AutoNamedMigrationTest {
 
@@ -36,16 +43,18 @@ class AutoNamedMigrationTest {
         parent.deleteRecursively()
     }
 
-    @Test
-    fun aDataFolderFromVersionTwoOneIsMarkedOnceAndKeepsTheNames() {
+    private fun dataFrom21(quotes: String = QUOTES_FROM_2_1) {
         dataDir.mkdirs()
         File(dataDir, "format.json").writeText("""{"version": 2}""")
-        File(dataDir, "quotes.json").writeText(QUOTES_FROM_2_1)
+        File(dataDir, "quotes.json").writeText(quotes)
+    }
 
-        val result = assertIs<DataDirResult.Ready>(prepareDataDir())
+    @Test
+    fun aDataFolderFromVersionTwoOneIsMarkedOnReadAndKeepsTheNames() {
+        dataFrom21()
 
-        assertEquals(2, result.migrated?.fromVersion)
-        assertEquals(QUOTES_FROM_2_1, File(result.migrated!!.originalCopy, "quotes.json").readText(), "a cópia de antes fica intacta")
+        assertEquals(DataDirResult.Ready(), prepareDataDir(), "sem aviso de migração e sem pasta à parte")
+
         val quotes = QuoteHistoryRepository().quotesIncludingTrash().associateBy { it.id }
         assertEquals("Orçamento - 24/09/2026 14:30", quotes.getValue("auto").name)
         assertTrue(quotes.getValue("auto").autoNamed)
@@ -54,33 +63,53 @@ class AutoNamedMigrationTest {
         // Começa igual, mas não é o padrão do app: a 2.1 também não tratava como automático.
         assertFalse(quotes.getValue("prefix-only").autoNamed)
         assertTrue(quotes.getValue("trashed").autoNamed, "o da lixeira também, pra voltar certo")
+        assertEquals(listOf(".3dreport"), parent.list()!!.toList(), "nenhuma cópia ~/.3dreport-v2")
     }
 
     @Test
-    fun aFolderAlreadyInTheNewFormatIsNotMarkedAgain() {
-        // Quem renomeou à mão pra algo igual ao padrão antigo, já na 2.2, continua com o nome dele.
+    fun theFormatStaysTwoAfterOpeningAndSaving() {
+        dataFrom21()
         prepareDataDir()
-        File(dataDir, "quotes.json").writeText(QUOTES_FROM_2_1.replace("\"name\": \"Orçamento - 24", "\"autoNamed\": false, \"name\": \"Orçamento - 24"))
 
+        val repository = QuoteHistoryRepository()
+        repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        assertEquals(2, DATA_FORMAT_VERSION)
+        assertEquals(2, readDataFormatVersion(File(dataDir, "format.json")))
         assertEquals(DataDirResult.Ready(), prepareDataDir())
+        // Gravado pela 2.2, cada registro leva a chave (encodeDefaults): na próxima leitura, ninguém é remarcado.
+        val written = File(dataDir, "quotes.json").readText()
+        assertEquals(5, Regex("\"autoNamed\"").findAll(written).count(), "os quatro com dado e o novo")
+    }
+
+    @Test
+    fun aRecordThatAlreadyHasTheKeyIsNotMarkedAgain() {
+        // Quem renomeou à mão, já na 2.2, pra algo igual ao padrão antigo, continua com o nome dele.
+        dataFrom21(QUOTES_FROM_2_1.replace("\"name\": \"Orçamento - 24", "\"autoNamed\": false, \"name\": \"Orçamento - 24"))
 
         assertFalse(QuoteHistoryRepository().quotesIncludingTrash().single { it.id == "auto" }.autoNamed)
     }
 
     @Test
-    fun aDamagedQuotesFileDoesNotStopTheMigration() {
-        // O arquivo que não abre é tratado na leitura (guardado como ilegível); a pasta não vai pra outro lugar por causa dele.
-        dataDir.mkdirs()
-        File(dataDir, "format.json").writeText("""{"version": 2}""")
-        File(dataDir, "quotes.json").writeText("""[{"id": "pela metade"""")
+    fun aTypedNameThatLooksAutomaticStaysTypedAfterReopening() {
+        prepareDataDir()
+        val typed = QuoteHistoryRepository().save(name = "Orçamento - 24/09/2026 14:30", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        assertFalse(typed.autoNamed)
+
+        assertFalse(QuoteHistoryRepository().quotesIncludingTrash().single { it.id == typed.id }.autoNamed)
+    }
+
+    @Test
+    fun theBackupCopyIsMarkedWhenTheMainFileDoesNotOpen() {
+        // O arquivo que não abre é guardado como ilegível, como sempre; a cópia anterior entra no lugar, já marcada.
+        dataFrom21("""[{"id": "pela metade""")
         File(dataDir, "quotes.json.bak").writeText(QUOTES_FROM_2_1)
 
-        val result = assertIs<DataDirResult.Ready>(prepareDataDir())
+        assertEquals(DataDirResult.Ready(), prepareDataDir())
 
-        assertEquals(null, result.moved)
-        assertEquals(2, result.migrated?.fromVersion)
-        val recovered = QuoteHistoryRepository().quotesIncludingTrash().single { it.id == "auto" }
-        assertTrue(recovered.autoNamed, "a cópia anterior também foi convertida")
+        val recovered = QuoteHistoryRepository().quotesIncludingTrash().associateBy { it.id }
+        assertTrue(recovered.getValue("auto").autoNamed)
+        assertFalse(recovered.getValue("named").autoNamed)
     }
 
     @Test
@@ -96,8 +125,14 @@ class AutoNamedMigrationTest {
         val quotes = QuoteHistoryRepository().quotesIncludingTrash().associateBy { it.id }
         assertTrue(quotes.getValue("auto").autoNamed)
         assertFalse(quotes.getValue("named").autoNamed)
-        assertEquals(DATA_FORMAT_VERSION, readDataFormatVersion(File(dataDir, "format.json")))
+        assertEquals(2, readDataFormatVersion(File(dataDir, "format.json")))
     }
+
+    private val quote = PricingCalculator.calculate(
+        job = PrintJob(filament = Filament(id = "pla", name = "PLA", pricePerKg = 100.0, densityGPerCm3 = 1.24), filamentLengthMeters = 12.0, printTimeMinutes = 190.0),
+        printer = PrinterProfile(id = "p", name = "Impressora", printerPowerWatts = 380.0, maintenanceCostPerHour = 0.17, machineInvestment = MachineInvestment(2700.0, 12, 25, 16.0)),
+        settings = PricingSettings(energyPricePerKwh = 1.23, failureRate = 0.10, finishingRate = 0.10, profitMargin = 1.0),
+    )
 
     private fun zipOf(vararg entries: Pair<String, String>): ByteArray {
         val output = ByteArrayOutputStream()

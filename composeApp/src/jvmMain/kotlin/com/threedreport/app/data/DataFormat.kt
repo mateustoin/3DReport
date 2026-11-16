@@ -12,16 +12,14 @@ import java.io.File
 
 /**
  * Versão do formato dos arquivos da pasta de dados (decisão 104). A 1 vale até a 1.44; a 2 veio com
- * a leva 9 (pedido com várias impressões e vários filamentos, e sem os campos de compatibilidade); a 3 veio
- * com a 2.2 (`SavedQuote.autoNamed`, ver [MARK_AUTO_NAMED_QUOTES]).
- * Só muda quando o formato quebra: campo novo com valor padrão não muda a versão. O `autoNamed` foi exceção:
- * o padrão `false` estaria errado pros nomes automáticos já gravados, que precisam ser marcados uma vez.
+ * a leva 9 (pedido com várias impressões e vários filamentos, e sem os campos de compatibilidade).
+ * Só muda quando o formato quebra: campo novo com valor padrão não muda a versão.
  *
  * **A partir da 2.0.0 publicada, toda mudança que quebra o formato sobe esta versão e vem com uma
  * [DataMigration] em [DATA_MIGRATIONS], com teste** (decisão 106). Recomeçar do zero só foi aceitável
  * enquanto o app não tinha sido divulgado.
  */
-internal const val DATA_FORMAT_VERSION = 3
+internal const val DATA_FORMAT_VERSION = 2
 
 private const val FORMAT_FILE_NAME = "format.json"
 
@@ -44,12 +42,10 @@ fun interface DataMigration {
 }
 
 /**
- * Migrações conhecidas: a chave é a versão de origem, e a migração leva pra versão seguinte. A 2.0.0 é a base
- * (formato 2).
+ * Migrações conhecidas: a chave é a versão de origem, e a migração leva pra versão seguinte. Vazio na
+ * 2.0.0, que é a base; a primeira quebra depois dela entra aqui como `2 to DataMigration { ... }`.
  */
-internal val DATA_MIGRATIONS: Map<Int, DataMigration> = mapOf(
-    2 to MARK_AUTO_NAMED_QUOTES,
-)
+internal val DATA_MIGRATIONS: Map<Int, DataMigration> = emptyMap()
 
 /** As migrações, em ordem, de [from] até a versão atual, ou `null` se falta alguma no caminho. */
 internal fun migrationPath(from: Int, migrations: Map<Int, DataMigration>): List<DataMigration>? =

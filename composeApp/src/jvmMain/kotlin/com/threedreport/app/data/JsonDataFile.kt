@@ -6,6 +6,7 @@ import com.threedreport.app.data.store.StorageHealth
 import com.threedreport.app.data.store.UnreadableFile
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -36,11 +37,16 @@ internal val dataJson = Json {
  * lado como `<nome>.ilegivel-<millis>.json`, a cópia anterior é usada se abrir, e [StorageHealth] avisa a
  * tela. Uma falha de leitura do disco (arquivo travado por outro programa) é tentada de novo e, se
  * continuar, vira [DataReadException]: abrir com os dados vazios e gravar por cima seria pior.
+ *
+ * [upgrade] completa, na leitura, o JSON gravado por uma versão anterior antes de decodificar (o principal, o `.tmp`
+ * e o `.bak`), pra campo novo cujo padrão estaria errado no dado antigo. Não muda o formato da pasta: a versão
+ * anterior continua abrindo o arquivo (`ignoreUnknownKeys`). Ver [markLegacyAutoNamedQuotes].
  */
 class JsonDataFile<T>(
     private val file: File,
     private val serializer: KSerializer<T>,
     private val health: StorageHealth? = null,
+    private val upgrade: ((JsonElement) -> JsonElement)? = null,
 ) : DataFile<T> {
 
     override val name: String
@@ -85,7 +91,11 @@ class JsonDataFile<T>(
     private fun decodeOrNull(source: File): T? {
         val text = readWithRetry(source)
         return try {
-            dataJson.decodeFromString(serializer, text)
+            if (upgrade == null) {
+                dataJson.decodeFromString(serializer, text)
+            } else {
+                dataJson.decodeFromJsonElement(serializer, upgrade(dataJson.parseToJsonElement(text)))
+            }
         } catch (_: IllegalArgumentException) {
             // Só erro de conteúdo: a SerializationException e um `require` de modelo são os dois
             // IllegalArgumentException.

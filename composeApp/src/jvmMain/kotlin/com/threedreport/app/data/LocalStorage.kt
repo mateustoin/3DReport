@@ -28,6 +28,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.JsonElement
 import org.jetbrains.compose.resources.getString
 import java.io.File
 
@@ -57,11 +58,20 @@ class LocalStorage(
 ) {
     val attachments: AttachmentStore by lazy { FileAttachmentStore(File(dataDir, ATTACHMENTS_DIR)) }
 
-    private fun <T> recordFile(name: String, serializer: KSerializer<T>): DataFile<List<StoredRecord<T>>> =
-        wrapper.wrap(JsonDataFile(File(dataDir, name), ListSerializer(StoredRecord.serializer(serializer)), health))
+    private fun <T> recordFile(
+        name: String,
+        serializer: KSerializer<T>,
+        upgrade: ((JsonElement) -> JsonElement)? = null,
+    ): DataFile<List<StoredRecord<T>>> =
+        wrapper.wrap(JsonDataFile(File(dataDir, name), ListSerializer(StoredRecord.serializer(serializer)), health, upgrade))
 
-    private fun <T> records(name: String, serializer: KSerializer<T>, idOf: (T) -> String, seed: () -> List<T> = { emptyList() }) =
-        RecordCollection(recordFile(name, serializer), idOf, clock, seed)
+    private fun <T> records(
+        name: String,
+        serializer: KSerializer<T>,
+        idOf: (T) -> String,
+        seed: () -> List<T> = { emptyList() },
+        upgrade: ((JsonElement) -> JsonElement)? = null,
+    ) = RecordCollection(recordFile(name, serializer, upgrade), idOf, clock, seed)
 
     private fun <T> document(name: String, serializer: KSerializer<T>, default: () -> T) =
         DocumentValue(wrapper.wrap(JsonDataFile(File(dataDir, name), StoredDocument.serializer(serializer), health)), clock, default)
@@ -86,7 +96,7 @@ class LocalStorage(
     )
 
     fun quoteHistory(): QuoteHistoryRepository = StoredQuoteHistoryRepository(
-        collection = records("quotes.json", SavedQuote.serializer(), { it.id }),
+        collection = records("quotes.json", SavedQuote.serializer(), { it.id }, upgrade = ::markLegacyAutoNamedQuotes),
         lastNumber = document("quote-number.json", Int.serializer()) { 0 },
         attachments = attachments,
         clock = clock,

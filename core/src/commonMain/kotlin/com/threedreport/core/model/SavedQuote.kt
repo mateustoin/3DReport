@@ -75,7 +75,8 @@ import kotlinx.serialization.Serializable
  * @property autoNamed se [name] foi gerado pelo app porque o campo ficou em branco (Leva 10B, parte 7). O nome
  *   automático muda com o idioma, então quem precisa saber disso (o ranking do Dashboard, o título no PDF e na
  *   mensagem) lê este campo, e não o texto. Nasce `false`; editar o nome à mão desmarca. Dado gravado antes da 2.2
- *   é marcado uma vez pela migração da pasta de dados (`DataFormat.kt` no `composeApp`).
+ *   (sem a chave no arquivo) é marcado na leitura pelo `composeApp` (`markLegacyAutoNamedQuotes`), sem mudar o
+ *   formato da pasta.
  */
 @Serializable
 data class SavedQuote(
