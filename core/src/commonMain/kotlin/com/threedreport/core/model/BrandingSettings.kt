@@ -29,6 +29,8 @@ import kotlinx.serialization.Serializable
  *   meses depois com o preço antigo, depois de o filamento subir.
  * @property showClientName "Para: nome do cliente" no PDF. Desligado por padrão: o cliente é dado interno
  *   (decisão 19), e só vai pro documento quando o vendedor escolhe.
+ * @property imageBackground fundo da imagem quadrada pro cliente ([ImageBackground]). Nasce [ImageBackground.AUTO].
+ *   É do vendedor, como a logo: um [QuoteTemplate] não guarda nem muda este campo.
  */
 @Serializable
 data class BrandingSettings(
@@ -43,6 +45,7 @@ data class BrandingSettings(
     val showBorder: Boolean = false,
     val quoteValidityDays: Int = DEFAULT_VALIDITY_DAYS,
     val showClientName: Boolean = false,
+    val imageBackground: ImageBackground = ImageBackground.AUTO,
 ) {
     init {
         require(quoteValidityDays in 0..MAX_VALIDITY_DAYS) { "quoteValidityDays fora de 0..$MAX_VALIDITY_DAYS: $quoteValidityDays" }

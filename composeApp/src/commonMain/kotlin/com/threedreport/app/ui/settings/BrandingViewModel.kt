@@ -31,6 +31,7 @@ import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.ImageBackground
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
@@ -132,6 +133,9 @@ class BrandingViewModel(
     fun setShowBorder(show: Boolean) = edit { it.copy(showBorder = show) }
     fun setValidityDays(text: String) = edit { it.copy(validityDaysText = text) }
     fun setShowClientName(show: Boolean) = edit { it.copy(showClientName = show) }
+
+    /** Fundo da imagem pro cliente (automático, escuro ou claro). Fica no rascunho até [save]; modelo não mexe nele. */
+    fun setImageBackground(background: ImageBackground) = edit { it.copy(imageBackground = background) }
     fun setContactWhatsApp(text: String) = edit { it.copy(contactWhatsAppInput = text) }
     fun setContactEmail(text: String) = edit { it.copy(contactEmailInput = text) }
     fun setContactInstagram(text: String) = edit { it.copy(contactInstagramInput = text) }
@@ -292,6 +296,7 @@ private fun BrandingUiState.toSettings() = BrandingSettings(
     showBorder = showBorder,
     quoteValidityDays = validityDays(),
     showClientName = showClientName,
+    imageBackground = imageBackground,
 )
 
 private fun BrandingUiState.validityDays(): Int {
@@ -324,6 +329,7 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
     showBorder = showBorder,
     validityDaysText = quoteValidityDays.toString(),
     showClientName = showClientName,
+    imageBackground = imageBackground,
     contactWhatsAppInput = contactWhatsApp.orEmpty(),
     contactEmailInput = contactEmail.orEmpty(),
     contactInstagramInput = contactInstagram.orEmpty(),

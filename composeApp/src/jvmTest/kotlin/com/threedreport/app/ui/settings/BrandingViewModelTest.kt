@@ -10,10 +10,13 @@ import _3dreport.composeapp.generated.resources.settings_notice_saved
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
+import com.threedreport.app.data.dataJson
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.ImageBackground
+import com.threedreport.core.model.QuoteTemplate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -337,6 +340,68 @@ class BrandingViewModelTest {
         assertTrue(branding.showBorder)
         assertEquals("@loja", branding.instagramHandle)
         assertNotNull(branding.logoFileName)
+    }
+
+    @Test
+    fun theImageBackgroundIsADraftUntilSaved() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+        assertEquals(ImageBackground.AUTO, viewModel.uiState.value.imageBackground)
+
+        viewModel.setImageBackground(ImageBackground.LIGHT)
+
+        assertEquals(ImageBackground.LIGHT, viewModel.uiState.value.imageBackground)
+        assertTrue(viewModel.hasUnsavedChanges)
+        assertEquals(ImageBackground.AUTO, brandingRepository.branding.value.imageBackground, "escolher não grava")
+
+        viewModel.save()
+
+        assertEquals(ImageBackground.LIGHT, brandingRepository.branding.value.imageBackground)
+        assertFalse(viewModel.hasUnsavedChanges)
+        assertEquals(ImageBackground.LIGHT, newViewModel(brandingRepository = BrandingRepository()).uiState.value.imageBackground)
+    }
+
+    @Test
+    fun discardBringsBackTheSavedImageBackground() {
+        val brandingRepository = BrandingRepository()
+        brandingRepository.update(BrandingSettings(imageBackground = ImageBackground.DARK))
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.setImageBackground(ImageBackground.AUTO)
+        viewModel.discard()
+
+        assertEquals(ImageBackground.DARK, viewModel.uiState.value.imageBackground)
+        assertFalse(viewModel.hasUnsavedChanges)
+    }
+
+    @Test
+    fun choosingTheSavedBackgroundAgainLeavesNothingToSave() {
+        val viewModel = newViewModel()
+
+        viewModel.setImageBackground(ImageBackground.DARK)
+        viewModel.setImageBackground(ImageBackground.AUTO)
+
+        assertFalse(viewModel.hasUnsavedChanges)
+    }
+
+    @Test
+    fun aTemplateNeitherKeepsNorChangesTheImageBackground() {
+        val brandingRepository = BrandingRepository()
+        brandingRepository.update(BrandingSettings(imageBackground = ImageBackground.LIGHT))
+        val templateRepository = TemplateRepository()
+        val viewModel = newViewModel(brandingRepository, templateRepository)
+
+        viewModel.applyTemplate(loja)
+        assertEquals(ImageBackground.LIGHT, viewModel.uiState.value.imageBackground)
+        viewModel.save()
+        assertEquals(ImageBackground.LIGHT, brandingRepository.branding.value.imageBackground)
+
+        viewModel.setImageBackground(ImageBackground.DARK)
+        viewModel.startSaveAsTemplate()
+        viewModel.updateTemplateName("Escuro")
+        viewModel.confirmSaveAsTemplate()
+        val template = templateRepository.templates.value.first { it.name == "Escuro" }
+        assertFalse(dataJson.encodeToString(QuoteTemplate.serializer(), template).contains("imageBackground"), "o modelo não guarda o fundo")
     }
 
     @Test

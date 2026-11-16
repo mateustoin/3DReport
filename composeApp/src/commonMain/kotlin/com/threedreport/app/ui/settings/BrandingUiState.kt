@@ -3,6 +3,7 @@ package com.threedreport.app.ui.settings
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.ImageBackground
 
 /**
  * Estado da seção "Documentos pro cliente" em Configurações: marca, logo, contato e opções de
@@ -16,6 +17,7 @@ import com.threedreport.core.model.BrandingSettings
  * @property validityError o que corrigir na validade; [optionsError] o que corrigir nas opções do PDF (o nome
  *   precisa aparecer em algum lugar); [logoError] a imagem escolhida que não abre.
  * @property savingTemplate o diálogo "Salvar como modelo" aberto, com o nome digitado e o erro dele.
+ * @property imageBackground fundo da imagem pro cliente escolhido no formulário (ver [BrandingSettings.imageBackground]).
  * @property hasUnsavedChanges se o formulário difere do que está gravado (a logo incluída).
  */
 data class BrandingUiState(
@@ -26,6 +28,7 @@ data class BrandingUiState(
     val showBorder: Boolean = false,
     val validityDaysText: String = BrandingSettings.DEFAULT_VALIDITY_DAYS.toString(),
     val showClientName: Boolean = false,
+    val imageBackground: ImageBackground = ImageBackground.AUTO,
     val contactWhatsAppInput: String = "",
     val contactEmailInput: String = "",
     val contactInstagramInput: String = "",
