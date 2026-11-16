@@ -163,16 +163,6 @@ fundação, sistema de design, e depois as telas em grupos.
   PDF e a imagem exportados, e o site.
 - [ ] **Ícone novo** (decisão 128) no instalador, na janela e no site.
 - [ ] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`.
-- [ ] **Atualizar o app por dentro.** *Ideia do responsável do projeto, 2026-11-14;
-  precisa de decisão própria antes de implementar.* Hoje o app só avisa que saiu
-  versão nova e abre a página (decisão 116). A proposta é um botão "Atualizar agora"
-  que baixa o instalador do sistema, confere a integridade, abre a instalação e
-  fecha o app. Sobra uma confirmação de administrador no Windows e um pedido de
-  senha no Linux; no macOS depende de teste, porque o app não é assinado.
-  Atualização silenciosa em segundo plano fica de fora: exige assinatura de código,
-  que é paga (decisão 15). **Conectado:** só baixa quando a pessoa clica, e continua
-  desligado por padrão. Só vale a partir da versão seguinte à que trouxer o
-  mecanismo. Esforço M, impacto M.
 
 O que segue é o texto original da leva, que continua valendo pros textos.
 
@@ -208,7 +198,7 @@ mecânico, bom pra subagentes com revisão.
 
 Esforço G (somando as duas fases), impacto A no alcance (ver Leva 11B).
 
-### Leva 10C: Arquivo do modelo (3MF e STL pesado)
+### Leva 10C: Arquivo do modelo (3MF e STL pesado) e atualização por dentro
 
 **Incluída em 2026-11-16, a pedido do responsável do projeto.** Quem vende a mesma
 peça de novo não quer perder o arquivo que usou. Hoje o app guarda o STL, mas não o
@@ -236,6 +226,17 @@ confirmado na especificação da leva.
 - [ ] **Ver o 3MF em 3D** (opcional, decidir na especificação). Ler a malha do
   `.3mf` pra mostrar no visualizador, com a mesma simplificação. Sem isso, o 3MF
   fica só com a miniatura. Esforço M, impacto B.
+- [ ] **Atualizar o app por dentro.** *Ideia do responsável do projeto, 2026-11-14;
+  precisa de decisão própria antes de implementar. Saiu da Leva 10B em 2026-11-16: fica
+  pra versão seguinte à 2.2, junto com esta leva.* Hoje o app só avisa que saiu
+  versão nova e abre a página (decisão 116). A proposta é um botão "Atualizar agora"
+  que baixa o instalador do sistema, confere a integridade, abre a instalação e
+  fecha o app. Sobra uma confirmação de administrador no Windows e um pedido de
+  senha no Linux; no macOS depende de teste, porque o app não é assinado.
+  Atualização silenciosa em segundo plano fica de fora: exige assinatura de código,
+  que é paga (decisão 15). **Conectado:** só baixa quando a pessoa clica, e continua
+  desligado por padrão. Só vale a partir da versão seguinte à que trouxer o
+  mecanismo. Esforço M, impacto M.
 
 ### Leva 11: Receber e conversar com o cliente
 
