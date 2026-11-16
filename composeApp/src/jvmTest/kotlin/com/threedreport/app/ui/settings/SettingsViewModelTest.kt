@@ -1,13 +1,26 @@
 package com.threedreport.app.ui.settings
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_error_negative
+import _3dreport.composeapp.generated.resources.common_error_number_invalid
+import _3dreport.composeapp.generated.resources.settings_error_percent_max
+import _3dreport.composeapp.generated.resources.settings_notice_saved
+import _3dreport.composeapp.generated.resources.settings_warning_fixed_cost
+import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.data.TemplateRepository
+import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.text.uiText
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SettingsViewModelTest {
@@ -77,6 +90,9 @@ class SettingsViewModelTest {
         assertEquals("0,95", viewModel.uiState.value.energyPricePerKwhText)
     }
 
+    /** O aviso emitido depois da última ação, ou `null` se não houve nenhum. */
+    private fun SettingsViewModel.pendingNotice(): UiNotice? = runBlocking { withTimeoutOrNull(200) { notices.first() } }
+
     @Test
     fun anInvalidFieldNamesTheFieldAndSavesNothing() {
         val repository = SettingsRepository()
@@ -86,8 +102,73 @@ class SettingsViewModelTest {
 
         viewModel.save()
 
-        assertTrue(viewModel.uiState.value.errorMessage!!.contains("Valor da sua hora de trabalho"))
+        assertEquals(uiText(Res.string.common_error_negative), viewModel.uiState.value.errors[SettingsField.LABOR])
+        assertEquals(setOf(SettingsField.LABOR), viewModel.uiState.value.errors.keys)
         assertEquals(before, repository.settings.value)
+        assertNull(viewModel.pendingNotice(), "com erro, nada foi salvo e nada é avisado")
+    }
+
+    @Test
+    fun aTextThatIsNotANumberAndATaxOf100PercentAreErrorsOfTheirOwnFields() {
+        val repository = SettingsRepository()
+        val viewModel = SettingsViewModel(repository)
+        viewModel.update { it.copy(energyPricePerKwhText = "abc", taxRatePercentText = "100") }
+
+        viewModel.save()
+
+        val errors = viewModel.uiState.value.errors
+        assertEquals(uiText(Res.string.common_error_number_invalid), errors[SettingsField.ENERGY])
+        assertEquals(uiText(Res.string.settings_error_percent_max), errors[SettingsField.TAX])
+    }
+
+    @Test
+    fun editingAfterAnErrorClearsTheErrors() {
+        val viewModel = SettingsViewModel(SettingsRepository())
+        viewModel.update { it.copy(laborRatePerHourText = "-10") }
+        viewModel.save()
+
+        viewModel.update { it.copy(laborRatePerHourText = "10") }
+
+        assertTrue(viewModel.uiState.value.errors.isEmpty())
+    }
+
+    @Test
+    fun savingAnnouncesOnceAndTheFormIsCleanAgain() {
+        val viewModel = SettingsViewModel(SettingsRepository())
+        viewModel.update { it.copy(profitMarginPercentText = "150") }
+        assertTrue(viewModel.uiState.value.hasUnsavedChanges)
+
+        viewModel.save()
+
+        assertEquals(UiNotice(uiText(Res.string.settings_notice_saved)), viewModel.pendingNotice())
+        assertFalse(viewModel.uiState.value.hasUnsavedChanges)
+    }
+
+    @Test
+    fun savingCostsAndDocumentsTogetherAnnouncesOnlyOnce() {
+        val settingsViewModel = SettingsViewModel(SettingsRepository())
+        val brandingViewModel = BrandingViewModel(BrandingRepository(), TemplateRepository())
+        settingsViewModel.update { it.copy(profitMarginPercentText = "150") }
+        brandingViewModel.update("Minha Marca")
+
+        val failedSection = saveAllSettings(settingsViewModel, brandingViewModel)
+
+        assertNull(failedSection)
+        assertFalse(hasUnsavedSettings(settingsViewModel, brandingViewModel))
+        assertEquals(UiNotice(uiText(Res.string.settings_notice_saved)), settingsViewModel.pendingNotice())
+        assertNull(runBlocking { withTimeoutOrNull(200) { brandingViewModel.notices.first() } })
+    }
+
+    @Test
+    fun savingAllTakesTheFirstErrorToItsSection() {
+        val settingsViewModel = SettingsViewModel(SettingsRepository())
+        val brandingViewModel = BrandingViewModel(BrandingRepository(), TemplateRepository())
+        brandingViewModel.setValidityDays("dez")
+
+        assertEquals(SettingsSection.DOCUMENTS, saveAllSettings(settingsViewModel, brandingViewModel))
+
+        settingsViewModel.update { it.copy(laborRatePerHourText = "-1") }
+        assertEquals(SettingsSection.BUSINESS, saveAllSettings(settingsViewModel, brandingViewModel))
     }
 
     @Test
@@ -124,6 +205,7 @@ class SettingsViewModelTest {
 
         viewModel.save()
 
-        assertNotNull(viewModel.uiState.value.warningMessage)
+        assertTrue(viewModel.uiState.value.fixedCostWithoutHours)
+        assertEquals(UiNotice(uiText(Res.string.settings_warning_fixed_cost), isError = true), viewModel.pendingNotice())
     }
 }

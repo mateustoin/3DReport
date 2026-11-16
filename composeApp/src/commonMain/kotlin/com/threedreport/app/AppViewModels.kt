@@ -93,13 +93,13 @@ class AppViewModels(
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */
-    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings) }
+    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope) }
     val brandingViewModel: BrandingViewModel by lazy {
-        BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value })
+        BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value }, scope = scope)
     }
-    val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding) }
+    val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding, scope) }
     val salesChannelViewModel: SalesChannelViewModel by lazy {
-        SalesChannelViewModel(container.salesChannels, container.quoteHistory::quotesIncludingTrash)
+        SalesChannelViewModel(container.salesChannels, scope, container.quoteHistory::quotesIncludingTrash)
     }
     val backupViewModel: BackupViewModel by lazy {
         BackupViewModel(container.backup, container.preferences, container.pendingWrites, scope = scope)

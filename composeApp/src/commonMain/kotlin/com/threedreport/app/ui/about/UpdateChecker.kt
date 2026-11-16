@@ -29,6 +29,9 @@ sealed interface UpdateState {
     data object Failed : UpdateState
 }
 
+/** O que a seção Atualizações do Sobre mostra: se a verificação está ligada e o que ela achou. */
+data class UpdateUiState(val enabled: Boolean = false, val status: UpdateState = UpdateState.Idle)
+
 /**
  * Se [candidate] ("v2.2.0", "2.1.10") é mais nova que [current], comparando MAJOR.MINOR.PATCH como números.
  * Um sufixo ("-beta") é ignorado; um texto que não é versão nunca é "mais nova".
@@ -61,24 +64,23 @@ class UpdateViewModel(
     private val background: CoroutineDispatcher = Dispatchers.Unconfined,
     private val main: CoroutineDispatcher = Dispatchers.Unconfined,
 ) {
-    private val enabledState = MutableStateFlow(preferences.preferences.value.checkForUpdates)
-    val enabled: StateFlow<Boolean> = enabledState.asStateFlow()
+    private val state = MutableStateFlow(UpdateUiState(enabled = preferences.preferences.value.checkForUpdates))
 
-    private val stateFlow = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    /** Um estado só: a opção ligada e o resultado da verificação. */
+    val uiState: StateFlow<UpdateUiState> = state.asStateFlow()
 
     /** Sobe a cada desligar: uma verificação que termina depois disso não mostra mais nada. */
     private var generation = 0
-    val state: StateFlow<UpdateState> = stateFlow.asStateFlow()
 
     /** Liga ou desliga; ao ligar, já verifica. */
     fun setEnabled(enabled: Boolean) {
         preferences.update(preferences.preferences.value.copy(checkForUpdates = enabled))
-        enabledState.value = enabled
         if (enabled) {
+            state.value = state.value.copy(enabled = true)
             checkNow()
         } else {
             generation++
-            stateFlow.value = UpdateState.Idle
+            state.value = UpdateUiState(enabled = false, status = UpdateState.Idle)
         }
     }
 
@@ -101,8 +103,8 @@ class UpdateViewModel(
 
     /** "Verificar agora". */
     fun checkNow() {
-        if (stateFlow.value == UpdateState.Checking) return
-        stateFlow.value = UpdateState.Checking
+        if (state.value.status == UpdateState.Checking) return
+        state.value = state.value.copy(status = UpdateState.Checking)
         val started = generation
         scope.launch(background) {
             val latest = runCatching { source.latest() }
@@ -110,11 +112,13 @@ class UpdateViewModel(
                 .getOrNull()
             withContext(main) {
                 if (started != generation) return@withContext
-                stateFlow.value = when {
-                    latest == null -> UpdateState.Failed
-                    isNewerVersion(latest.version, currentVersion) -> UpdateState.Available(latest)
-                    else -> UpdateState.UpToDate
-                }
+                state.value = state.value.copy(
+                    status = when {
+                        latest == null -> UpdateState.Failed
+                        isNewerVersion(latest.version, currentVersion) -> UpdateState.Available(latest)
+                        else -> UpdateState.UpToDate
+                    },
+                )
             }
         }
     }

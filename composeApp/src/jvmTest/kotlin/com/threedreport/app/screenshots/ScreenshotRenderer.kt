@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.navigation.AppDestination
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.ChannelFeeTier
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
@@ -62,6 +64,7 @@ import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteKind
+import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
@@ -283,6 +286,10 @@ class ScreenshotRenderer {
             App(container, startAt = AppDestination.PRINTERS)
         }
 
+        // Configurações, Sobre e os diálogos (Leva 10B-5). Cada seção de Configurações no claro, e Negócio e Canais também no
+        // escuro. As duas seções longas saem de novo rolada até o fim.
+        renderSettingsScreenshots(container, outDir)
+
         renderAppPng(File(outDir, "dashboard.png")) {
             App(container, startAt = AppDestination.DASHBOARD)
         }
@@ -299,6 +306,156 @@ class ScreenshotRenderer {
 
         // O conjunto novo troca o histórico (agora "pedidos.png", com o Kanban da barra lateral).
         File(outDir, "historico.png").delete()
+    }
+}
+
+/**
+ * Configurações, Sobre, o primeiro uso e os diálogos da leva 10B-5. Os cliques e as digitações vão pela árvore de
+ * semântica ([clickByText], [setTextByLabel]), sem coordenadas; nada disso grava nos dados de exemplo, a não ser os canais e
+ * os templates que as capturas precisam ter e que ficam só nesta pasta temporária.
+ */
+private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
+    val sections = listOf("Negócio" to "negocio", "Canais de venda" to "canais", "Documentos pro cliente" to "documentos", "Aparência" to "aparencia", "Backup" to "backup")
+    // Um canal com faixas de preço e dois templates, pra o diálogo do canal e a lista de templates terem o que mostrar.
+    val shopee = container.salesChannels.channels.value.first { it.id == Catalog.SHOPEE_ID }
+    container.templates.add(QuoteTemplate(id = "tpl-formal", name = "Formal", brandName = "Sua Loja 3D", showWatermark = true, showFooter = true))
+    container.templates.add(QuoteTemplate(id = "tpl-simples", name = "Simples", brandName = null, showWatermark = false, showFooter = true, showBorder = true))
+
+    for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+        container.theme.update(theme)
+        for ((title, slug) in sections) {
+            // Só Negócio e Canais saem nos dois temas.
+            if (theme == ThemeMode.DARK && slug != "negocio" && slug != "canais") continue
+            renderAppPng(File(outDir, "configuracoes-$slug$suffix.png"), afterSettle = { if (slug != "negocio") it.clickByText(title) }) {
+                App(container, startAt = AppDestination.SETTINGS)
+            }
+        }
+        // Uma alteração por salvar: a barra embaixo e o "Não salvo" na lista.
+        renderAppPng(
+            File(outDir, "configuracoes-negocio-alterado$suffix.png"),
+            afterSettle = { it.setTextByLabel("Margem de lucro (%)", "150") },
+        ) {
+            App(container, startAt = AppDestination.SETTINGS)
+        }
+        if (theme == ThemeMode.LIGHT) {
+            // O erro de cada campo, depois de "Salvar".
+            renderAppPng(
+                File(outDir, "configuracoes-negocio-erro.png"),
+                afterSettle = {
+                    it.setTextByLabel("Valor da sua hora de trabalho", "-5")
+                    it.setTextByLabel("Taxa de falhas (%)", "abc")
+                    settle(it, frames = 3)
+                    it.clickByText("Salvar")
+                },
+            ) {
+                App(container, startAt = AppDestination.SETTINGS)
+            }
+            renderAppPng(File(outDir, "configuracoes-negocio-fim.png"), afterSettle = { it.scrollAllToEnd() }) {
+                App(container, startAt = AppDestination.SETTINGS)
+            }
+            renderAppPng(
+                File(outDir, "configuracoes-documentos-fim.png"),
+                afterSettle = {
+                    it.clickByText("Documentos pro cliente")
+                    settle(it, frames = 3)
+                    it.scrollAllToEnd()
+                },
+            ) {
+                App(container, startAt = AppDestination.SETTINGS)
+            }
+        }
+
+        // O formulário de um canal com faixas de preço (a tabela do kit) e a tarifa de energia.
+        container.salesChannels.update(
+            shopee.copy(
+                feeRate = 0.0,
+                tiers = listOf(
+                    ChannelFeeTier(upToUnitPrice = 8.0, feeRate = 0.20, fixedFeePerItem = 4.0),
+                    ChannelFeeTier(upToUnitPrice = 80.0, feeRate = 0.14, fixedFeePerItem = 16.0),
+                    ChannelFeeTier(upToUnitPrice = null, feeRate = 0.14, fixedFeePerItem = 26.0),
+                ),
+            ),
+        )
+        renderAppPng(
+            File(outDir, "configuracoes-canal$suffix.png"),
+            afterSettle = {
+                it.clickByText("Canais de venda")
+                settle(it, frames = 3)
+                it.clickByText("Shopee")
+            },
+        ) {
+            App(container, startAt = AppDestination.SETTINGS)
+        }
+        container.salesChannels.update(shopee)
+        renderAppPng(File(outDir, "configuracoes-tarifa$suffix.png"), afterSettle = { it.clickByText("Calcular o kWh") }) {
+            App(container, startAt = AppDestination.SETTINGS)
+        }
+        renderAppPng(
+            File(outDir, "configuracoes-tarifa-branca$suffix.png"),
+            afterSettle = {
+                it.clickByText("Calcular o kWh")
+                settle(it, frames = 3)
+                it.clickByText("Tarifa branca")
+            },
+        ) {
+            App(container, startAt = AppDestination.SETTINGS)
+        }
+        renderAppPng(
+            File(outDir, "configuracoes-tarifa-resultado$suffix.png"),
+            afterSettle = {
+                it.clickByText("Calcular o kWh")
+                settle(it, frames = 3)
+                it.setTextByLabel("Valor total da conta", "230")
+                it.setTextByLabel("Consumo do mês (kWh)", "250")
+            },
+        ) {
+            App(container, startAt = AppDestination.SETTINGS)
+        }
+        renderAppPng(
+            File(outDir, "configuracoes-templates$suffix.png"),
+            afterSettle = {
+                it.clickByText("Documentos pro cliente")
+                settle(it, frames = 3)
+                it.clickByText("Ver templates salvos")
+            },
+        ) {
+            App(container, startAt = AppDestination.SETTINGS)
+        }
+        if (theme == ThemeMode.LIGHT) {
+            renderAppPng(
+                File(outDir, "configuracoes-template-salvar.png"),
+                afterSettle = {
+                    it.clickByText("Documentos pro cliente")
+                    settle(it, frames = 3)
+                    it.clickByText("Salvar como template")
+                },
+            ) {
+                App(container, startAt = AppDestination.SETTINGS)
+            }
+            renderAppPng(
+                File(outDir, "configuracoes-documentos-previa.png"),
+                afterSettle = {
+                    it.clickByText("Documentos pro cliente")
+                    settle(it, frames = 3)
+                    it.clickByText("Ver como fica")
+                },
+            ) {
+                App(container, startAt = AppDestination.SETTINGS)
+            }
+        }
+
+        renderAppPng(File(outDir, "sobre$suffix.png")) { App(container, startAt = AppDestination.ABOUT) }
+    }
+    container.theme.update(ThemeMode.LIGHT)
+
+    // O primeiro uso, numa pasta de dados vazia (onde o onboarding ainda não foi feito): os dois passos, no claro e no escuro.
+    val emptyContainer = buildContainer(createTempDirectory("3dreport-screenshots-onboarding").toFile())
+    for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+        emptyContainer.theme.update(theme)
+        renderAppPng(File(outDir, "primeiro-uso$suffix.png")) { App(emptyContainer, startAt = AppDestination.QUOTE) }
+        renderAppPng(File(outDir, "primeiro-uso-custos$suffix.png"), afterSettle = { it.clickByText("Continuar") }) {
+            App(emptyContainer, startAt = AppDestination.QUOTE)
+        }
     }
 }
 
@@ -768,6 +925,23 @@ private fun ImageComposeScene.clickByDescription(description: String) {
     for (owner in semanticsOwners) {
         val node = find(owner.rootSemanticsNode) ?: continue
         node.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke()
+        return
+    }
+}
+
+/**
+ * Digita [text] no campo cuja descrição é [label] (o que um teste de UI faria com `performTextInput`), sem foco nem
+ * teclado: usa a ação de semântica do próprio campo.
+ */
+private fun ImageComposeScene.setTextByLabel(label: String, text: String) {
+    fun find(node: SemanticsNode): SemanticsNode? {
+        val descriptions = node.config.getOrNull(SemanticsProperties.ContentDescription)
+        if (node.config.getOrNull(SemanticsActions.SetText) != null && descriptions?.any { it == label } == true) return node
+        return node.children.firstNotNullOfOrNull(::find)
+    }
+    for (owner in semanticsOwners) {
+        val node = find(owner.rootSemanticsNode) ?: continue
+        node.config.getOrNull(SemanticsActions.SetText)?.action?.invoke(AnnotatedString(text))
         return
     }
 }

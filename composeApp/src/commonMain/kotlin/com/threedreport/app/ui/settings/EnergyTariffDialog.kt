@@ -1,35 +1,59 @@
 package com.threedreport.app.ui.settings
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.settings_action_energy_calc
+import _3dreport.composeapp.generated.resources.settings_energy_action_use
+import _3dreport.composeapp.generated.resources.settings_energy_field_bill_kwh
+import _3dreport.composeapp.generated.resources.settings_energy_field_bill_total
+import _3dreport.composeapp.generated.resources.settings_energy_field_flag_surcharge
+import _3dreport.composeapp.generated.resources.settings_energy_field_flag_tariff
+import _3dreport.composeapp.generated.resources.settings_energy_field_period_price
+import _3dreport.composeapp.generated.resources.settings_energy_field_period_share
+import _3dreport.composeapp.generated.resources.settings_energy_help_bill
+import _3dreport.composeapp.generated.resources.settings_energy_help_flag
+import _3dreport.composeapp.generated.resources.settings_energy_help_white
+import _3dreport.composeapp.generated.resources.settings_energy_mode_bill
+import _3dreport.composeapp.generated.resources.settings_energy_mode_flag
+import _3dreport.composeapp.generated.resources.settings_energy_mode_white
+import _3dreport.composeapp.generated.resources.settings_energy_period_mid_peak
+import _3dreport.composeapp.generated.resources.settings_energy_period_off_peak
+import _3dreport.composeapp.generated.resources.settings_energy_period_peak
+import _3dreport.composeapp.generated.resources.settings_energy_result
+import _3dreport.composeapp.generated.resources.settings_energy_result_empty
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
-import com.threedreport.app.ui.components.SubsectionTitle
+import androidx.compose.ui.Modifier
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppDialog
+import com.threedreport.app.ui.components.AppNumberField
+import com.threedreport.app.ui.components.ButtonKind
+import com.threedreport.app.ui.components.DialogText
+import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.FormSection
+import com.threedreport.app.ui.components.FormSummary
+import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toMoney
-import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.pricing.EnergyTariff
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** Os três jeitos de chegar no preço do kWh (decisão 126), ver [EnergyTariffDialog]. */
-enum class EnergyTariffMode(val label: String) {
-    BILL("Pela conta de luz"),
-    FLAG("Bandeira do mês"),
-    WHITE("Tarifa branca"),
+enum class EnergyTariffMode(val label: StringResource) {
+    BILL(Res.string.settings_energy_mode_bill),
+    FLAG(Res.string.settings_energy_mode_flag),
+    WHITE(Res.string.settings_energy_mode_white),
 }
 
 /**
@@ -94,95 +118,104 @@ private fun EnergyTariffFormState.whiteResult(separator: Char): Double? {
  * exato), pela bandeira do mês, ou pela tarifa branca (média pesada pelas horas de impressão em cada
  * horário). O resultado só preenche o rascunho do preço do kWh; quem salva é o "Salvar" de sempre.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EnergyTariffDialog(onDismiss: () -> Unit, onUse: (Double) -> Unit) {
     var state by remember { mutableStateOf(EnergyTariffFormState()) }
     val separator = LocalCurrency.current.decimalSeparator
+    val symbol = LocalCurrency.current.symbol
     val result = remember(state, separator) { state.result(separator) }
+    val modes = EnergyTariffMode.entries
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Calcular o kWh") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SingleChoiceSegmentedButtonRow {
-                    EnergyTariffMode.entries.forEachIndexed { index, mode ->
-                        SegmentedButton(
-                            selected = state.mode == mode,
-                            onClick = { state = state.copy(mode = mode) },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = EnergyTariffMode.entries.size),
-                        ) { Text(mode.label) }
-                    }
+    AppDialog(
+        title = stringResource(Res.string.settings_action_energy_calc),
+        onDismiss = onDismiss,
+        scrollable = true,
+        dismissOnClickOutside = false,
+        buttons = {
+            AppButton(stringResource(Res.string.common_cancel), onDismiss)
+            AppButton(stringResource(Res.string.settings_energy_action_use), onClick = { result?.let(onUse) }, kind = ButtonKind.Primary, enabled = result != null)
+        },
+    ) {
+        SegmentedChoice(
+            options = modes.map { stringResource(it.label) },
+            selectedIndex = modes.indexOf(state.mode),
+            onSelect = { state = state.copy(mode = modes[it]) },
+        )
+        Spacer(Modifier.height(MaterialTheme.spacing.xxs))
+
+        when (state.mode) {
+            EnergyTariffMode.BILL -> FormGrid {
+                cell(1) {
+                    AppNumberField(stringResource(Res.string.settings_energy_field_bill_total), state.billTotalText, { state = state.copy(billTotalText = it) }, NumberKind.AMOUNT, prefix = symbol)
                 }
-
-                when (state.mode) {
-                    EnergyTariffMode.BILL -> {
-                        NumberField("Valor total da conta (${LocalCurrency.current.symbol})", state.billTotalText, NumberKind.AMOUNT) {
-                            state = state.copy(billTotalText = it)
-                        }
-                        NumberField("Consumo do mês (kWh)", state.billConsumedKwhText, NumberKind.AMOUNT) {
-                            state = state.copy(billConsumedKwhText = it)
-                        }
-                        Text(
-                            "O jeito mais exato: a conta já inclui impostos e bandeira.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-
-                    EnergyTariffMode.FLAG -> {
-                        NumberField("Tarifa (${LocalCurrency.current.symbol} por kWh)", state.flagTariffText, NumberKind.MEASURE) {
-                            state = state.copy(flagTariffText = it)
-                        }
-                        NumberField(
-                            "Acréscimo da bandeira (${LocalCurrency.current.symbol} por kWh)",
-                            state.flagSurchargeText,
-                            NumberKind.MEASURE,
-                        ) { state = state.copy(flagSurchargeText = it) }
-                        Text(
-                            "O acréscimo aparece na conta de luz ou no site da sua distribuidora.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-
-                    EnergyTariffMode.WHITE -> {
-                        SubsectionTitle(AppIcons.Bolt, "Fora de ponta")
-                        NumberField("${LocalCurrency.current.symbol} por kWh", state.offPeakPriceText, NumberKind.MEASURE) {
-                            state = state.copy(offPeakPriceText = it)
-                        }
-                        NumberField("% das horas de impressão", state.offPeakShareText, NumberKind.MEASURE) {
-                            state = state.copy(offPeakShareText = it)
-                        }
-                        SubsectionTitle(AppIcons.Bolt, "Intermediário")
-                        NumberField("${LocalCurrency.current.symbol} por kWh", state.midPeakPriceText, NumberKind.MEASURE) {
-                            state = state.copy(midPeakPriceText = it)
-                        }
-                        NumberField("% das horas de impressão", state.midPeakShareText, NumberKind.MEASURE) {
-                            state = state.copy(midPeakShareText = it)
-                        }
-                        SubsectionTitle(AppIcons.Bolt, "Ponta")
-                        NumberField("${LocalCurrency.current.symbol} por kWh", state.peakPriceText, NumberKind.MEASURE) {
-                            state = state.copy(peakPriceText = it)
-                        }
-                        NumberField("% das horas de impressão", state.peakShareText, NumberKind.MEASURE) {
-                            state = state.copy(peakShareText = it)
-                        }
-                        Text(
-                            "Informe quanto das horas de impressão cai em cada horário; o app faz a média.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
+                cell(1) {
+                    AppNumberField(
+                        stringResource(Res.string.settings_energy_field_bill_kwh),
+                        state.billConsumedKwhText,
+                        { state = state.copy(billConsumedKwhText = it) },
+                        NumberKind.AMOUNT,
+                        help = HelpText(stringResource(Res.string.settings_energy_help_bill)),
+                    )
                 }
+            }
 
-                Text(
-                    result?.let { "= ${it.toMoney()} por kWh" } ?: "Preencha os campos pra calcular.",
-                    style = MaterialTheme.typography.titleMedium,
+            EnergyTariffMode.FLAG -> FormGrid {
+                cell(1) {
+                    AppNumberField(stringResource(Res.string.settings_energy_field_flag_tariff), state.flagTariffText, { state = state.copy(flagTariffText = it) }, NumberKind.MEASURE, prefix = symbol)
+                }
+                cell(2) {
+                    AppNumberField(
+                        stringResource(Res.string.settings_energy_field_flag_surcharge),
+                        state.flagSurchargeText,
+                        { state = state.copy(flagSurchargeText = it) },
+                        NumberKind.MEASURE,
+                        prefix = symbol,
+                        help = HelpText(stringResource(Res.string.settings_energy_help_flag)),
+                    )
+                }
+            }
+
+            EnergyTariffMode.WHITE -> {
+                PeriodFields(
+                    title = stringResource(Res.string.settings_energy_period_off_peak),
+                    price = state.offPeakPriceText,
+                    share = state.offPeakShareText,
+                    onPrice = { state = state.copy(offPeakPriceText = it) },
+                    onShare = { state = state.copy(offPeakShareText = it) },
+                    help = HelpText(stringResource(Res.string.settings_energy_help_white)),
+                )
+                PeriodFields(
+                    title = stringResource(Res.string.settings_energy_period_mid_peak),
+                    price = state.midPeakPriceText,
+                    share = state.midPeakShareText,
+                    onPrice = { state = state.copy(midPeakPriceText = it) },
+                    onShare = { state = state.copy(midPeakShareText = it) },
+                )
+                PeriodFields(
+                    title = stringResource(Res.string.settings_energy_period_peak),
+                    price = state.peakPriceText,
+                    share = state.peakShareText,
+                    onPrice = { state = state.copy(peakPriceText = it) },
+                    onShare = { state = state.copy(peakShareText = it) },
                 )
             }
-        },
-        confirmButton = {
-            Button(onClick = { result?.let(onUse) }, enabled = result != null) { Text("Usar este valor") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
-    )
+        }
+
+        if (result != null) {
+            FormSummary(stringResource(Res.string.settings_energy_result), result.toMoney())
+        } else {
+            DialogText(stringResource(Res.string.settings_energy_result_empty), muted = true)
+        }
+    }
+}
+
+/** Os dois campos de um horário da tarifa branca: o preço do kWh e a parte das horas de impressão que cai nele. */
+@Composable
+private fun PeriodFields(title: String, price: String, share: String, onPrice: (String) -> Unit, onShare: (String) -> Unit, help: HelpText? = null) {
+    FormSection(null, title, help = help) {
+        FormGrid {
+            cell(2) { AppNumberField(stringResource(Res.string.settings_energy_field_period_price), price, onPrice, NumberKind.MEASURE, prefix = LocalCurrency.current.symbol) }
+            cell(1) { AppNumberField(stringResource(Res.string.settings_energy_field_period_share), share, onShare, NumberKind.MEASURE) }
+        }
+    }
 }

@@ -1,5 +1,12 @@
 package com.threedreport.app.ui.settings
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_error_name_required
+import _3dreport.composeapp.generated.resources.settings_docs_error_options
+import _3dreport.composeapp.generated.resources.settings_docs_error_validity
+import _3dreport.composeapp.generated.resources.settings_docs_logo_unreadable
+import _3dreport.composeapp.generated.resources.settings_docs_notice_template_saved
+import _3dreport.composeapp.generated.resources.settings_notice_saved
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
@@ -13,7 +20,10 @@ import com.threedreport.app.platform.renderPdfFirstPagePng
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
 import com.threedreport.app.platform.todayEpochDay
+import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.parseWholeNumber
+import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
@@ -25,29 +35,35 @@ import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
  * ViewModel da seção "Documentos pro cliente" (parte da tela de Configurações, mas separado de
- * [SettingsViewModel] porque não é um parâmetro de custo — ver [BrandingRepository]). Também
- * cobre "Salvar como template" ([confirmSaveAsTemplate]), que tira uma foto dos campos de
+ * [SettingsViewModel] porque não é um parâmetro de custo, ver [BrandingRepository]). Um [uiState] só e os [notices].
+ * Também cobre "Salvar como template" ([confirmSaveAsTemplate]), que tira uma foto dos campos de
  * apresentação do formulário (mesmo que ainda não tenham sido persistidos com [save]) e guarda
  * como um novo [QuoteTemplate]; logo e contato ficam de fora, porque são identidade, não
  * apresentação (decisão 86).
  *
  * [currency] e [pickImage] são injetáveis pros testes não dependerem do repositório de moeda nem
- * de diálogo nativo.
+ * de diálogo nativo. Com [scope], o formulário acompanha o que for gravado por outro caminho (carregar um template).
  */
 class BrandingViewModel(
     private val repository: BrandingRepository,
     private val templateRepository: TemplateRepository,
     private val currency: () -> Currency = { Currency.BRL },
     private val pickImage: () -> PickedFile? = { (defaultPlatform.pickFile(FileKind.IMAGE) as? PickResult.Picked)?.file },
+    scope: CoroutineScope? = null,
 ) {
 
     /** O que está gravado e de onde o formulário saiu; serve pra saber se há edição por salvar. */
@@ -56,13 +72,16 @@ class BrandingViewModel(
     private val state = MutableStateFlow(baseline.toUiState(repository.logoBytes()))
     val uiState: StateFlow<BrandingUiState> = state.asStateFlow()
 
-    /** O que está gravado agora, pra tela acompanhar mudanças feitas de fora (carregar um template). */
-    val savedBranding: StateFlow<BrandingSettings> = repository.branding
+    private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
+    val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
+
+    init {
+        scope?.let { repository.branding.onEach(::syncWith).launchIn(it) }
+    }
 
     /** Se o formulário tem alguma mudança ainda não salva. */
     val hasUnsavedChanges: Boolean
-        get() = state.value.logoChange != LogoChange.Keep ||
-            runCatching { state.value.toSettings() }.getOrNull() != baseline.copy(logoFileName = null)
+        get() = state.value.hasUnsavedChanges
 
     /**
      * Acompanha o que foi gravado por outro caminho. Com o formulário sem edição, ele passa a mostrar o
@@ -73,7 +92,7 @@ class BrandingViewModel(
         if (saved == baseline) return
         val wasClean = !hasUnsavedChanges
         baseline = saved
-        if (wasClean) state.value = saved.toUiState(repository.logoBytes())
+        publish(if (wasClean) saved.toUiState(repository.logoBytes()) else state.value)
     }
 
     /**
@@ -94,9 +113,16 @@ class BrandingViewModel(
         save()
     }
 
-    /** Toda edição de campo apaga erro e confirmação anteriores, que já não valem pro formulário novo. */
+    /** Publica [next] com a marca de "há o que salvar" recalculada contra o que está gravado. */
+    private fun publish(next: BrandingUiState) {
+        val dirty = next.logoChange != LogoChange.Keep ||
+            runCatching { next.toSettings() }.getOrNull() != baseline.copy(logoFileName = null)
+        state.value = next.copy(hasUnsavedChanges = dirty)
+    }
+
+    /** Toda edição de campo apaga os erros anteriores, que já não valem pro formulário novo. */
     private fun edit(transform: (BrandingUiState) -> BrandingUiState) =
-        state.update { transform(it).copy(errorMessage = null, savedConfirmation = false) }
+        publish(transform(state.value).copy(validityError = null, optionsError = null))
 
     fun update(text: String) = edit { it.copy(brandNameInput = text) }
     fun setShowWatermark(show: Boolean) = edit { it.copy(showWatermark = show) }
@@ -118,7 +144,7 @@ class BrandingViewModel(
         val picked = pickImage() ?: return
         val readable = runCatching { decodeImageBitmap(picked.bytes) }.isSuccess
         if (!readable) {
-            state.update { it.copy(logoError = "Não consegui ler essa imagem. Tente um PNG ou JPG.") }
+            publish(state.value.copy(logoError = uiText(Res.string.settings_docs_logo_unreadable)))
             return
         }
         edit { it.copy(logoBytes = picked.bytes, logoChange = LogoChange.Replace(picked), logoError = null, logoMissing = false) }
@@ -128,78 +154,67 @@ class BrandingViewModel(
 
     /** Volta o formulário pro que está gravado, logo incluída ("Descartar" da barra de alterações, decisão 112). */
     fun discard() {
-        state.value = baseline.toUiState(repository.logoBytes())
+        publish(baseline.toUiState(repository.logoBytes()))
     }
 
-    /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
-    fun consumeSavedConfirmation() {
-        state.value = state.value.copy(savedConfirmation = false)
-    }
-
-    fun consumeTemplateSavedConfirmation() {
-        state.value = state.value.copy(templateSavedConfirmation = false)
-    }
-
-    fun save() {
+    /** Valida e grava. Com [announce] falso o aviso de salvo fica com quem salva mais de uma seção de uma vez. */
+    fun save(announce: Boolean = true) {
         val current = state.value
         current.toSettingsOrError().fold(
             onSuccess = { settings ->
                 repository.update(settings, current.logoChange)
                 baseline = repository.branding.value
-                state.value = current.copy(logoChange = LogoChange.Keep, errorMessage = null, savedConfirmation = true)
+                publish(current.copy(logoChange = LogoChange.Keep, validityError = null, optionsError = null))
+                if (announce) noticeChannel.trySend(UiNotice(uiText(Res.string.settings_notice_saved)))
             },
-            onFailure = { state.value = current.copy(errorMessage = it.message, savedConfirmation = false) },
+            onFailure = { publish(current.withError(it)) },
         )
     }
 
     /**
-     * "Ver como fica": gera o PDF de verdade de um orçamento de exemplo com o que está no formulário
-     * agora (mesmo sem salvar) e guarda a primeira página como imagem. É o mesmo desenho que vai
+     * "Ver como fica": gera o PDF de verdade de um orçamento de exemplo (chamado [sampleName]) com o que está no
+     * formulário agora (mesmo sem salvar) e guarda a primeira página como imagem. É o mesmo desenho que vai
      * pro cliente, então a prévia não tem como divergir do documento.
      */
-    fun showPreview() {
+    fun showPreview(sampleName: String) {
         val current = state.value
         val settings = runCatching { current.toSettings() }.getOrElse {
-            state.value = current.copy(errorMessage = it.message)
+            publish(current.withError(it))
             return
         }
         val branding = settings.resolvePdfBranding(current.logoBytes)
         val pdf = renderSavedQuotesPdf(
-            items = listOf(QuoteExportItem(sampleQuote(currency()), photoBytes = null)),
+            items = listOf(QuoteExportItem(sampleQuote(sampleName, currency()), photoBytes = null)),
             brandName = branding.brandName,
             footerText = branding.footerText,
             options = branding.options,
         )
-        state.value = current.copy(previewPng = renderPdfFirstPagePng(pdf))
+        publish(current.copy(previewPng = renderPdfFirstPagePng(pdf)))
     }
 
     fun closePreview() {
-        state.value = state.value.copy(previewPng = null)
+        publish(state.value.copy(previewPng = null))
     }
 
     fun startSaveAsTemplate() {
-        state.value = state.value.copy(
-            isSavingAsTemplate = true,
-            templateNameInput = "",
-            templateSaveError = null,
-            templateSavedConfirmation = false,
-        )
+        publish(state.value.copy(savingTemplate = TemplateNameState()))
     }
 
     fun updateTemplateName(text: String) {
-        state.value = state.value.copy(templateNameInput = text, templateSaveError = null)
+        publish(state.value.copy(savingTemplate = TemplateNameState(name = text)))
     }
 
     fun cancelSaveAsTemplate() {
-        state.value = state.value.copy(isSavingAsTemplate = false, templateNameInput = "", templateSaveError = null)
+        publish(state.value.copy(savingTemplate = null))
     }
 
     @OptIn(ExperimentalUuidApi::class)
     fun confirmSaveAsTemplate() {
         val current = state.value
-        val name = current.templateNameInput.trim()
+        val form = current.savingTemplate ?: return
+        val name = form.name.trim()
         if (name.isBlank()) {
-            state.value = current.copy(templateSaveError = "Nome não pode ser vazio")
+            publish(current.copy(savingTemplate = form.copy(error = uiText(Res.string.common_error_name_required))))
             return
         }
 
@@ -216,16 +231,20 @@ class BrandingViewModel(
                         showBorder = settings.showBorder,
                     ),
                 )
-                state.value = current.copy(
-                    isSavingAsTemplate = false,
-                    templateNameInput = "",
-                    templateSaveError = null,
-                    templateSavedConfirmation = true,
-                )
+                publish(current.copy(savingTemplate = null))
+                noticeChannel.trySend(UiNotice(uiText(Res.string.settings_docs_notice_template_saved)))
             },
-            onFailure = { state.value = current.copy(templateSaveError = it.message) },
+            onFailure = { publish(current.copy(savingTemplate = form.copy(error = (it as? FormError)?.text))) },
         )
     }
+}
+
+/** Um erro de validação do formulário: o texto que a tela mostra e em qual campo. */
+private class FormError(val text: UiText, val onValidity: Boolean) : IllegalStateException()
+
+private fun BrandingUiState.withError(error: Throwable): BrandingUiState {
+    val formError = error as? FormError ?: return this
+    return if (formError.onValidity) copy(validityError = formError.text) else copy(optionsError = formError.text)
 }
 
 /**
@@ -249,7 +268,7 @@ private fun BrandingUiState.validityDays(): Int {
     if (validityDaysText.isBlank()) return 0
     val days = parseWholeNumber(validityDaysText)
     if (days == null || days !in 0..BrandingSettings.MAX_VALIDITY_DAYS) {
-        error("Validade do orçamento: use um número de dias de 0 a ${BrandingSettings.MAX_VALIDITY_DAYS} (0 tira a linha).")
+        throw FormError(uiText(Res.string.settings_docs_error_validity, BrandingSettings.MAX_VALIDITY_DAYS), onValidity = true)
     }
     return days
 }
@@ -262,7 +281,7 @@ private fun BrandingUiState.toSettingsOrError(): Result<BrandingSettings> {
     val settings = runCatching { toSettings() }.getOrElse { return Result.failure(it) }
     val hasHeader = logoBytes != null || settings.contactLines.isNotEmpty()
     if (settings.brandName != null && !showWatermark && !showFooter && !hasHeader) {
-        return Result.failure(IllegalStateException("Selecione ao menos uma opção: marca d'água ou rodapé."))
+        return Result.failure(FormError(uiText(Res.string.settings_docs_error_options), onValidity = false))
     }
     return Result.success(settings)
 }
@@ -285,9 +304,9 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
 )
 
 /** Orçamento fictício da prévia: com prazo, número e cliente, pra todas as opções terem onde aparecer. */
-private fun sampleQuote(currency: Currency) = SavedQuote(
+private fun sampleQuote(name: String, currency: Currency) = SavedQuote(
     id = "preview",
-    name = "Exemplo: suporte de celular",
+    name = name,
     number = 42,
     client = Client(name = "Maria"),
     currency = currency,

@@ -1,5 +1,8 @@
 package com.threedreport.app
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.about_updates_announce
+import _3dreport.composeapp.generated.resources.about_updates_see_news
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -60,7 +63,6 @@ import com.threedreport.app.platform.openFolder
 import com.threedreport.app.platform.openUrl
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.AboutScreen
-import com.threedreport.app.ui.about.UpdateSection
 import com.threedreport.app.ui.about.UpdateState
 import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.components.ConfirmDialog
@@ -106,6 +108,7 @@ import com.threedreport.core.model.QuoteKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 @Composable
 fun App(
@@ -296,7 +299,7 @@ fun App(
                                         onSectionChange = { settingsSection = it },
                                     )
 
-                                    AppDestination.ABOUT -> AboutScreen(version = APP_VERSION) { UpdateSection(viewModels.updateViewModel) }
+                                    AppDestination.ABOUT -> AboutScreen(version = APP_VERSION, updateViewModel = viewModels.updateViewModel)
                                 }
                             }
                         }
@@ -329,14 +332,14 @@ fun App(
             // Com a opção ligada, uma verificação ao abrir, e o aviso uma vez por versão nova (decisão 116).
             val updateViewModel = viewModels.updateViewModel
             LaunchedEffect(Unit) { updateViewModel.checkOnStart() }
-            val updateState by updateViewModel.state.collectAsState()
-            val available = updateViewModel.unannounced(updateState)
+            val updateState by updateViewModel.uiState.collectAsState()
+            val available = updateViewModel.unannounced(updateState.status)
             LaunchedEffect(available?.version) {
                 if (available == null || navigator.destination == AppDestination.ABOUT) return@LaunchedEffect
                 updateViewModel.markAnnounced(available)
                 val result = snackbarHostState.showSnackbar(
-                    "Versão ${available.version} do 3DReport disponível.",
-                    actionLabel = "Ver novidades",
+                    getString(Res.string.about_updates_announce, available.version),
+                    actionLabel = getString(Res.string.about_updates_see_news),
                     duration = SnackbarDuration.Long,
                 )
                 if (result == SnackbarResult.ActionPerformed) openUrl(available.url)

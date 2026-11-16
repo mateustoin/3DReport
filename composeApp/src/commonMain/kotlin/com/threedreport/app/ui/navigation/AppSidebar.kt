@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.BrandMark
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -116,24 +117,11 @@ fun AppSidebar(
     }
 }
 
-/** "3D" em branco e "Report" em âmbar; no trilho estreito, só o "3D". */
+/** A marca do kit, com o respiro da barra; no trilho estreito, só o "3D". */
 @Composable
 private fun Brand(compact: Boolean) {
-    val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
-    Text(
-        buildAnnotatedString {
-            withStyle(SpanStyle(color = Color.White)) { append("3D") }
-            if (!compact) withStyle(SpanStyle(color = colors.amber)) { append("Report") }
-        },
-        style = MaterialTheme.appType.brand,
-        maxLines = 1,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = space.sm, vertical = space.xxs)
-            .semantics { contentDescription = "3DReport" },
-        textAlign = if (compact) TextAlign.Center else TextAlign.Start,
-    )
+    BrandMark(compact = compact, modifier = Modifier.fillMaxWidth().padding(horizontal = space.sm, vertical = space.xxs))
 }
 
 @Composable

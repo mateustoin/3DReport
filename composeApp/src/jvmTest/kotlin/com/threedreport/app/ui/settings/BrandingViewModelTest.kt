@@ -1,9 +1,22 @@
 package com.threedreport.app.ui.settings
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_error_name_required
+import _3dreport.composeapp.generated.resources.settings_docs_error_options
+import _3dreport.composeapp.generated.resources.settings_docs_error_validity
+import _3dreport.composeapp.generated.resources.settings_docs_logo_unreadable
+import _3dreport.composeapp.generated.resources.settings_docs_notice_template_saved
+import _3dreport.composeapp.generated.resources.settings_notice_saved
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.BrandingSettings
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -32,6 +45,9 @@ class BrandingViewModelTest {
         templateRepository: TemplateRepository = TemplateRepository(),
     ) = BrandingViewModel(brandingRepository, templateRepository)
 
+    /** O aviso emitido depois da última ação, ou `null` se não houve nenhum. */
+    private fun BrandingViewModel.pendingNotice(): UiNotice? = runBlocking { withTimeoutOrNull(200) { notices.first() } }
+
     @Test
     fun savingWithNameAndBothOptionsUncheckedFails() {
         val repository = BrandingRepository()
@@ -42,8 +58,9 @@ class BrandingViewModelTest {
         viewModel.setShowFooter(false)
         viewModel.save()
 
-        assertNotNull(viewModel.uiState.value.errorMessage)
+        assertEquals(uiText(Res.string.settings_docs_error_options), viewModel.uiState.value.optionsError)
         assertNull(repository.branding.value.brandName) // nada foi persistido
+        assertNull(viewModel.pendingNotice())
     }
 
     @Test
@@ -56,7 +73,8 @@ class BrandingViewModelTest {
         viewModel.setShowFooter(true)
         viewModel.save()
 
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.optionsError)
+        assertEquals(UiNotice(uiText(Res.string.settings_notice_saved)), viewModel.pendingNotice())
         assertEquals("Minha Marca", repository.branding.value.brandName)
         assertEquals(false, repository.branding.value.showWatermark)
         assertEquals(true, repository.branding.value.showFooter)
@@ -71,7 +89,7 @@ class BrandingViewModelTest {
         viewModel.setShowFooter(false)
         viewModel.save()
 
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.optionsError)
         assertNull(repository.branding.value.brandName)
     }
 
@@ -91,8 +109,8 @@ class BrandingViewModelTest {
         assertEquals("Minha Marca", saved.brandName)
         assertTrue(saved.showWatermark)
         assertEquals(false, saved.showFooter)
-        assertTrue(viewModel.uiState.value.templateSavedConfirmation)
-        assertEquals(false, viewModel.uiState.value.isSavingAsTemplate)
+        assertEquals(UiNotice(uiText(Res.string.settings_docs_notice_template_saved)), viewModel.pendingNotice())
+        assertNull(viewModel.uiState.value.savingTemplate)
     }
 
     @Test
@@ -103,7 +121,7 @@ class BrandingViewModelTest {
         viewModel.updateTemplateName("   ")
         viewModel.confirmSaveAsTemplate()
 
-        assertNotNull(viewModel.uiState.value.templateSaveError)
+        assertEquals(uiText(Res.string.common_error_name_required), viewModel.uiState.value.savingTemplate?.error)
     }
 
     @Test
@@ -118,7 +136,7 @@ class BrandingViewModelTest {
         viewModel.updateTemplateName("Formal")
         viewModel.confirmSaveAsTemplate()
 
-        assertNotNull(viewModel.uiState.value.templateSaveError)
+        assertEquals(uiText(Res.string.settings_docs_error_options), viewModel.uiState.value.savingTemplate?.error)
         assertTrue(templateRepository.templates.value.isEmpty())
     }
 
@@ -148,7 +166,7 @@ class BrandingViewModelTest {
 
         viewModel.pickLogo()
 
-        assertNotNull(viewModel.uiState.value.logoError)
+        assertEquals(uiText(Res.string.settings_docs_logo_unreadable), viewModel.uiState.value.logoError)
         assertNull(viewModel.uiState.value.logoBytes)
     }
 
@@ -194,7 +212,7 @@ class BrandingViewModelTest {
         viewModel.setContactInstagram("minhamarca")
         viewModel.save()
 
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.optionsError)
         assertEquals("@minhamarca", repository.branding.value.instagramHandle)
     }
 
@@ -222,7 +240,7 @@ class BrandingViewModelTest {
         viewModel.update("Minha Marca")
         viewModel.setShowBorder(true)
 
-        viewModel.showPreview()
+        viewModel.showPreview("Exemplo")
 
         val png = assertNotNull(viewModel.uiState.value.previewPng)
         assertNotNull(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(png)))
@@ -257,7 +275,10 @@ class BrandingViewModelTest {
         viewModel.setValidityDays("dez")
         viewModel.save()
 
-        assertTrue(viewModel.uiState.value.errorMessage!!.contains("Validade"))
-        assertEquals(com.threedreport.core.model.BrandingSettings.DEFAULT_VALIDITY_DAYS, brandingRepository.branding.value.quoteValidityDays)
+        assertEquals(
+            uiText(Res.string.settings_docs_error_validity, BrandingSettings.MAX_VALIDITY_DAYS),
+            viewModel.uiState.value.validityError,
+        )
+        assertEquals(BrandingSettings.DEFAULT_VALIDITY_DAYS, brandingRepository.branding.value.quoteValidityDays)
     }
 }

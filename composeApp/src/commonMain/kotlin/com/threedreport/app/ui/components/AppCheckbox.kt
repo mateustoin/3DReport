@@ -32,10 +32,10 @@ import com.threedreport.app.ui.theme.spacing
 /**
  * Caixa de marcar do kit, com o [label] ao lado; a linha toda é o alvo do clique e do Tab. Marcada: fundo `primary`
  * com o visto em `onPrimary`. Desmarcada: borda `line` (`primary` ao passar o mouse). No foco, anel de 2.
- * O conteúdo que fica sob a caixa (campos de um serviço marcado) recua [AppDimens.checkboxIndent].
+ * Com [help], uma dica de ajuda ao lado do rótulo. O conteúdo que fica sob a caixa (campos de um serviço marcado) recua [AppDimens.checkboxIndent].
  */
 @Composable
-fun AppCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+fun AppCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier, help: HelpText? = null) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     var focused by remember { mutableStateOf(false) }
@@ -52,6 +52,7 @@ fun AppCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit, mo
     ) {
         CheckboxMark(checked, hovered)
         Text(label, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
+        if (help != null) HelpHint(help, label)
     }
 }
 

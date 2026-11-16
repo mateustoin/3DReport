@@ -82,6 +82,9 @@ object AppDimens {
     val printThumbnailSize = 40.dp
     val smallControlHeight = 32.dp
 
+    /** A lista de seções de Configurações, ao lado do conteúdo. */
+    val sectionListWidth = 200.dp
+
     /** Item de menu (o de ações do pedido tem 12 itens: com 48 não cabe numa janela baixa). */
     val menuItemHeight = 40.dp
 

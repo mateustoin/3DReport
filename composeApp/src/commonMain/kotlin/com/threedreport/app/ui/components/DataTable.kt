@@ -125,3 +125,25 @@ fun TableRow(
         HorizontalDivider(color = MaterialTheme.appColors.line, thickness = AppDimens.borderWidth)
     }
 }
+
+/**
+ * Linha da tabela cujas células são campos (as faixas de taxa de um canal): mesma altura e divisor do [TableRow], mas sem
+ * clique nem ações no hover, pra o Tab passar só pelos campos. As células usam [TableRowScope.Cell] como no [TableRow].
+ */
+@Composable
+fun TableFieldRow(columns: List<TableColumn>, modifier: Modifier = Modifier, cells: @Composable TableRowScope.() -> Unit) {
+    val space = MaterialTheme.spacing
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = AppDimens.tableRowHeight)
+                .padding(start = space.sm, end = space.xs, top = space.xxs, bottom = space.xxs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(space.xs),
+        ) {
+            TableRowScope(this, columns).cells()
+        }
+        HorizontalDivider(color = MaterialTheme.appColors.line, thickness = AppDimens.borderWidth)
+    }
+}

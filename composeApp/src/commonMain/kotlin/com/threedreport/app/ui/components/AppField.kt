@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.components
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_error_number_invalid
 import _3dreport.composeapp.generated.resources.common_help_for
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,6 +56,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.focus.tabToNavigate
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.NumberKind
+import com.threedreport.app.ui.format.interpretationHint
+import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.TABULAR_FIGURES
@@ -138,7 +143,7 @@ private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean
 }
 
 @Composable
-private fun FieldError(error: String?, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.error) {
+internal fun FieldError(error: String?, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.error) {
     if (error != null) Text(error, style = MaterialTheme.appType.label, color = color)
 }
 
@@ -165,6 +170,8 @@ fun AppTextField(
     onNavy: Boolean = false,
     autoFocus: Boolean = false,
     prefix: String? = null,
+    note: String? = null,
+    labelHidden: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
@@ -176,7 +183,7 @@ fun AppTextField(
     val focusRequester = remember { FocusRequester() }
     if (autoFocus) LaunchedEffect(Unit) { focusRequester.requestFocus() }
     Column(modifier = modifier.alpha(if (enabled) 1f else 0.6f), verticalArrangement = Arrangement.spacedBy(space.xxs)) {
-        FieldLabel(label, help, color = if (onNavy) colors.onNavyMuted else MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!labelHidden) FieldLabel(label, help, color = if (onNavy) colors.onNavyMuted else MaterialTheme.colorScheme.onSurfaceVariant)
         Box(
             modifier = fieldModifier.fillMaxWidth().fieldBox(hovered, focused, error != null, enabled, onNavy).hoverable(interaction),
             contentAlignment = Alignment.CenterStart,
@@ -209,7 +216,44 @@ fun AppTextField(
             )
         }
         FieldError(error, color = if (onNavy) colors.onNavyDanger else MaterialTheme.colorScheme.error)
+        if (error == null && note != null) Text(note, style = MaterialTheme.appType.label, color = mutedColor)
     }
+}
+
+/**
+ * [AppTextField] pra número (decisão 107). Embaixo dele aparece como o app entendeu o que foi digitado quando há como
+ * ler de dois jeitos ("2.700" vira "= 2.700"), e um erro quando não é número, em vez de o valor virar zero ou outro
+ * número em silêncio. Um [error] vindo de fora (a validação do ViewModel) tem prioridade.
+ */
+@Composable
+fun AppNumberField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    kind: NumberKind,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    error: String? = null,
+    help: HelpText? = null,
+    enabled: Boolean = true,
+    prefix: String? = null,
+    labelHidden: Boolean = false,
+) {
+    val separator = LocalCurrency.current.decimalSeparator
+    val invalid = value.isNotBlank() && parseDecimal(value, kind, separator) == null
+    AppTextField(
+        label = label,
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        placeholder = placeholder,
+        error = error ?: stringResource(Res.string.common_error_number_invalid).takeIf { invalid },
+        help = help,
+        enabled = enabled,
+        prefix = prefix,
+        note = interpretationHint(value, kind, separator),
+        labelHidden = labelHidden,
+    )
 }
 
 /**

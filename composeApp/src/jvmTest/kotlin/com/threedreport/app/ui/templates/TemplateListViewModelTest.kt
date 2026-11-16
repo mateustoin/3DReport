@@ -3,11 +3,14 @@ package com.threedreport.app.ui.templates
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.core.model.QuoteTemplate
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -23,6 +26,8 @@ class TemplateListViewModelTest {
         System.clearProperty("threedreport.dataDir")
     }
 
+    private val scope = CoroutineScope(Dispatchers.Unconfined)
+
     private fun sampleTemplate(name: String = "Formal") = QuoteTemplate(
         id = name,
         name = name,
@@ -35,7 +40,7 @@ class TemplateListViewModelTest {
     fun deletingRemovesFromCatalog() {
         val repository = TemplateRepository()
         repository.add(sampleTemplate())
-        val viewModel = TemplateListViewModel(repository, BrandingRepository())
+        val viewModel = TemplateListViewModel(repository, BrandingRepository(), scope)
         val template = repository.templates.value.first()
 
         viewModel.delete(template.id)
@@ -48,7 +53,7 @@ class TemplateListViewModelTest {
         val templateRepository = TemplateRepository()
         templateRepository.add(sampleTemplate())
         val brandingRepository = BrandingRepository()
-        val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
         val template = templateRepository.templates.value.first()
 
         viewModel.load(template.id)
@@ -62,7 +67,7 @@ class TemplateListViewModelTest {
     @Test
     fun loadDoesNothingForUnknownId() {
         val brandingRepository = BrandingRepository()
-        val viewModel = TemplateListViewModel(TemplateRepository(), brandingRepository)
+        val viewModel = TemplateListViewModel(TemplateRepository(), brandingRepository, scope)
 
         viewModel.load("does-not-exist")
 
@@ -73,7 +78,7 @@ class TemplateListViewModelTest {
     fun activeTemplateIdMatchesTemplateWithSameFieldsAsBranding() {
         val templateRepository = TemplateRepository()
         val brandingRepository = BrandingRepository()
-        val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
         val formal = sampleTemplate("Formal")
         templateRepository.add(formal)
 
@@ -89,7 +94,7 @@ class TemplateListViewModelTest {
         val templateRepository = TemplateRepository()
         templateRepository.add(sampleTemplate().copy(showPrintTime = true))
         val brandingRepository = BrandingRepository()
-        val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
         val template = templateRepository.templates.value.first()
 
         viewModel.load(template.id)
@@ -111,7 +116,7 @@ class TemplateListViewModelTest {
             com.threedreport.core.model.BrandingSettings(contactInstagram = "loja"),
             com.threedreport.app.data.LogoChange.Replace(com.threedreport.app.platform.PickedFile("logo.png", byteArrayOf(1))),
         )
-        val viewModel = TemplateListViewModel(templateRepository, brandingRepository)
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
 
         viewModel.load(templateRepository.templates.value.first().id)
 
@@ -120,5 +125,38 @@ class TemplateListViewModelTest {
         assertEquals("@loja", branding.instagramHandle)
         assertTrue(branding.logoFileName != null)
         assertEquals(templateRepository.templates.value.first().id, viewModel.activeTemplateId(templateRepository.templates.value, branding))
+    }
+
+    @Test
+    fun theListMarksOnlyTheTemplateThatIsActive() {
+        val templateRepository = TemplateRepository()
+        templateRepository.add(sampleTemplate("Formal"))
+        templateRepository.add(sampleTemplate("Simples").copy(brandName = "Outra", showFooter = true))
+        val viewModel = TemplateListViewModel(templateRepository, BrandingRepository(), scope)
+
+        assertEquals(listOf(false, false), viewModel.uiState.value.rows.map { it.isActive })
+
+        viewModel.load("Formal")
+
+        assertEquals(listOf("Formal" to true, "Simples" to false), viewModel.uiState.value.rows.map { it.template.name to it.isActive })
+    }
+
+    @Test
+    fun deletingAsksFirstAndCancellingKeepsTheTemplate() {
+        val templateRepository = TemplateRepository()
+        templateRepository.add(sampleTemplate())
+        val viewModel = TemplateListViewModel(templateRepository, BrandingRepository(), scope)
+
+        viewModel.requestDelete("Formal")
+        assertEquals("Formal", assertNotNull(viewModel.uiState.value.pendingDelete).id)
+        viewModel.dismissDelete()
+        assertNull(viewModel.uiState.value.pendingDelete)
+        assertEquals(1, viewModel.uiState.value.rows.size)
+
+        viewModel.requestDelete("Formal")
+        viewModel.delete("Formal")
+
+        assertNull(viewModel.uiState.value.pendingDelete)
+        assertTrue(viewModel.uiState.value.rows.isEmpty())
     }
 }
