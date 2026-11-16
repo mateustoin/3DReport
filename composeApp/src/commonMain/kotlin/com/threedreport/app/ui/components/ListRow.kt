@@ -52,7 +52,7 @@ class RowAction(
 /**
  * Linha de lista dos cadastros (não é cartão): nome em `bodyStrong`, [details] em `caption` separados por " · "
  * e o [value] alinhado à direita com algarismos tabulares. As [actions] só aparecem com o mouse em cima ou com o
- * foco na linha (teclado), e continuam na ordem do Tab. Clicar na linha chama [onClick]. Divisor de 1 px embaixo.
+ * foco na linha (teclado), e continuam na ordem do Tab. Clicar na linha chama [onClick]; sem ele a linha não é clicável nem entra no Tab (só as ações). Divisor de 1 px embaixo.
  * [valueMuted] deixa só o valor em tom discreto ("A combinar"). [muted] apaga o nome (item arquivado). [selected] destaca a linha com o fundo `tint` (o item aberto no painel).
  * [footer] é um bloco opcional sob os detalhes (o estoque de cada cor, a situação da manutenção); o que houver nele
  * que seja clicável responde por si, sem abrir a edição.
@@ -61,9 +61,9 @@ class RowAction(
 @Composable
 fun ListRow(
     title: String,
-    onClick: () -> Unit,
     actions: List<RowAction>,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     details: List<String> = emptyList(),
     value: String? = null,
     muted: Boolean = false,
@@ -80,9 +80,16 @@ fun ListRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.small)
-                    .then(if (focused) Modifier.border(AppDimens.focusRingWidth, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
-                    .onFocusChanged { focused = it.isFocused }
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
+                    .then(
+                        if (onClick == null) {
+                            Modifier
+                        } else {
+                            Modifier
+                                .then(if (focused) Modifier.border(AppDimens.focusRingWidth, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
+                                .onFocusChanged { focused = it.isFocused }
+                                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
+                        },
+                    )
                     .padding(start = space.sm, end = space.xs, top = space.sm, bottom = space.sm),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(space.md),

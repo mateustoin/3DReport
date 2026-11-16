@@ -1,18 +1,20 @@
 package com.threedreport.app.ui.dashboard
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.dashboard_action_new_quote
 import _3dreport.composeapp.generated.resources.dashboard_action_see_orders
 import _3dreport.composeapp.generated.resources.dashboard_block_profit
 import _3dreport.composeapp.generated.resources.dashboard_block_profit_per_machine_hour
 import _3dreport.composeapp.generated.resources.dashboard_block_sales
 import _3dreport.composeapp.generated.resources.dashboard_block_total
 import _3dreport.composeapp.generated.resources.dashboard_empty_no_sales
+import _3dreport.composeapp.generated.resources.dashboard_empty_no_sales_all
 import _3dreport.composeapp.generated.resources.dashboard_empty_none
-import _3dreport.composeapp.generated.resources.dashboard_no_data
+import _3dreport.composeapp.generated.resources.dashboard_empty_none_all
 import _3dreport.composeapp.generated.resources.dashboard_per_hour
 import _3dreport.composeapp.generated.resources.dashboard_period
+import _3dreport.composeapp.generated.resources.dashboard_summary_no_data
 import _3dreport.composeapp.generated.resources.dashboard_title
-import _3dreport.composeapp.generated.resources.orders_action_new
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.threedreport.app.ui.components.AdaptiveChoice
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.EmptyState
@@ -45,8 +48,8 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * Dashboard em blocos (decisão 133): o período no cabeçalho, quatro números em destaque, o ranking de peças à esquerda
  * e, à direita, os blocos de pares rótulo e valor. Só desenha o [DashboardUiState] e envia eventos; "Novo orçamento" e
- * "Ver pedidos" (os estados vazios) saem pelos callbacks. A tela não tem ação principal, então não há botão âmbar.
- * Abaixo de [AppDimens.twoColumnMinWidth] as duas colunas viram uma e o período vira lista suspensa.
+ * "Ver pedidos" (os estados vazios) saem pelos callbacks. O cabeçalho não tem ação; "Novo orçamento" só é âmbar na
+ * primeira vez ([DashboardUiState.newQuoteIsPrimary]). Abaixo de [AppDimens.twoColumnMinWidth] as duas colunas viram uma e o período vira lista suspensa.
  */
 @Composable
 fun DashboardScreen(
@@ -93,33 +96,41 @@ private fun DashboardBody(state: DashboardUiState, wide: Boolean, onNewQuote: ()
             Columns(wide = wide, left = ranking, right = { SalesBlocks(state) })
         }
 
-        DashboardMode.NO_SALES -> Empty(
-            state = state,
-            wide = wide,
-            message = stringResource(Res.string.dashboard_empty_no_sales),
-            actionLabel = stringResource(Res.string.dashboard_action_see_orders),
-            onAction = onShowOrders,
-        )
+        // Os blocos de resumo continuam (zerados) pra tela não pular ao trocar de período; a frase e a ação ficam no
+        // lugar do ranking, acima do catálogo quando houver.
+        DashboardMode.NO_SALES -> {
+            SummaryBlocks(state, wide)
+            val message = stringResource(if (state.isAllPeriod) Res.string.dashboard_empty_no_sales_all else Res.string.dashboard_empty_no_sales)
+            val actionLabel = stringResource(Res.string.dashboard_action_see_orders)
+            val catalog = state.catalog
+            Columns(
+                wide = wide,
+                left = {
+                    // O EmptyState já traz o respiro de baixo, então ele e o catálogo ficam num conjunto sem o espaço entre seções.
+                    Column {
+                        EmptyState(message, actionLabel = actionLabel, onAction = onShowOrders, actionKind = ButtonKind.Secondary, topPadding = false)
+                        catalog?.let { CatalogRanking(it) }
+                    }
+                },
+                right = { EmptyBlocks(state) },
+            )
+        }
 
-        DashboardMode.NOTHING_SAVED -> Empty(
-            state = state,
-            wide = wide,
-            message = stringResource(Res.string.dashboard_empty_none),
-            actionLabel = stringResource(Res.string.orders_action_new),
-            onAction = onNewQuote,
-        )
-    }
-}
-
-/** O estado vazio (uma frase e a ação) e, abaixo dele, o que ainda há pra mostrar: o que está em aberto e o catálogo. */
-@Composable
-private fun Empty(state: DashboardUiState, wide: Boolean, message: String, actionLabel: String, onAction: () -> Unit) {
-    // O próprio EmptyState já traz o respiro de baixo, então este conjunto não leva o espaço entre seções.
-    Column {
-        EmptyState(message, actionLabel = actionLabel, onAction = onAction, actionKind = ButtonKind.Secondary)
-        val catalog = state.catalog
-        val ranking: (@Composable ColumnScope.() -> Unit)? = if (catalog == null) null else { { CatalogRanking(catalog) } }
-        Columns(wide = wide, left = ranking, right = { EmptyBlocks(state) })
+        DashboardMode.NOTHING_SAVED -> {
+            // O próprio EmptyState já traz o respiro de baixo, então este conjunto não leva o espaço entre seções.
+            Column {
+                EmptyState(
+                    message = stringResource(if (state.isAllPeriod) Res.string.dashboard_empty_none_all else Res.string.dashboard_empty_none),
+                    actionLabel = stringResource(Res.string.dashboard_action_new_quote),
+                    onAction = onNewQuote,
+                    actionKind = if (state.newQuoteIsPrimary) ButtonKind.Primary else ButtonKind.Secondary,
+                    topPadding = false,
+                )
+                val catalog = state.catalog
+                val ranking: (@Composable ColumnScope.() -> Unit)? = if (catalog == null) null else { { CatalogRanking(catalog) } }
+                Columns(wide = wide, left = ranking, right = { EmptyBlocks(state) })
+            }
+        }
     }
 }
 
@@ -127,7 +138,8 @@ private fun Empty(state: DashboardUiState, wide: Boolean, message: String, actio
 @Composable
 private fun SummaryBlocks(state: DashboardUiState, wide: Boolean) {
     val summary = state.summary
-    val noData = stringResource(Res.string.dashboard_no_data)
+    val noData = stringResource(Res.string.dashboard_summary_no_data)
+    val profitColor = if (state.profitIsNegative) MaterialTheme.colorScheme.error else MaterialTheme.appColors.amberText
     val blocks: List<@Composable (Modifier) -> Unit> = listOf(
         { m -> SummaryBlock(summary.quoteCount.toString(), stringResource(Res.string.dashboard_block_sales), m) },
         { m -> SummaryBlock(summary.totalSalePrice.toMoney(), stringResource(Res.string.dashboard_block_total), m) },
@@ -136,14 +148,16 @@ private fun SummaryBlocks(state: DashboardUiState, wide: Boolean) {
                 summary.totalProfit.toMoney(),
                 stringResource(Res.string.dashboard_block_profit),
                 m,
-                valueColor = MaterialTheme.appColors.amberText,
+                valueColor = profitColor,
             )
         },
         { m ->
+            val perHour = summary.profitPerPrintHour
             SummaryBlock(
-                summary.profitPerPrintHour?.let { stringResource(Res.string.dashboard_per_hour, it.toMoney()) } ?: noData,
+                if (perHour == null) noData else stringResource(Res.string.dashboard_per_hour, perHour.toMoney()),
                 stringResource(Res.string.dashboard_block_profit_per_machine_hour),
                 m,
+                valueColor = if (perHour == null) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
             )
         },
     )

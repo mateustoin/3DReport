@@ -83,7 +83,6 @@ private fun TemplateRow(row: TemplateRowState, onLoad: () -> Unit, onDelete: () 
             template.brandName?.let { stringResource(Res.string.templates_row_brand, it) } ?: stringResource(Res.string.templates_row_no_brand),
         ),
         selected = row.isActive,
-        onClick = {},
         actions = listOf(
             RowAction(AppIcons.Download, stringResource(Res.string.templates_action_load), onLoad),
             RowAction(AppIcons.Delete, stringResource(Res.string.common_delete), onDelete, danger = true),

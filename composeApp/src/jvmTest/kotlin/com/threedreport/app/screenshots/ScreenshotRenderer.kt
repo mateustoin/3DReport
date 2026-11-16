@@ -524,6 +524,16 @@ private fun renderDashboardScreenshots(container: AppContainer, outDir: File, gc
     renderAppPng(File(outDir, "dashboard-estreito.png"), width = NARROW_WIDTH, height = NARROW_HEIGHT) {
         App(container, startAt = AppDestination.DASHBOARD)
     }
+
+    // Prejuízo: uma única venda fechada por menos do que custou, pra o lucro sair em vermelho.
+    val lossDir = createTempDirectory("3dreport-screenshots-dashboard-loss").toFile()
+    seedSampleData(lossDir, gcodesDir)
+    val loss = buildContainer(lossDir)
+    val sample = loss.quoteHistory.savedQuotes.value.first { it.isOrder && it.status.isSold }
+    loss.quoteHistory.savedQuotes.value.filter { it.isOrder && !it.status.isOpen }.forEach { loss.quoteHistory.delete(it.id) }
+    val sold = loss.quoteHistory.save(name = "Pedido com prejuízo", quote = sample.quote.copy(salePrice = 1.0), services = emptyList(), photo = null, sourceLink = null)
+    loss.quoteHistory.updateStatus(sold.id, OrderStatus.APROVADO)
+    renderAppPng(File(outDir, "dashboard-prejuizo.png")) { App(loss, startAt = AppDestination.DASHBOARD) }
 }
 
 /** Pedidos ou Catálogo com o "hoje" e o "agora" dos dados de exemplo. */

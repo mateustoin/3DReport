@@ -141,7 +141,7 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         help = HelpText(stringResource(Res.string.settings_docs_pdf_help), stringResource(Res.string.settings_docs_pdf_help_detail)),
     ) {
         FormGrid {
-            cell(3) {
+            cell(2) {
                 AppTextField(
                     label = stringResource(Res.string.settings_docs_field_brand),
                     value = branding.brandNameInput,

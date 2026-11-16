@@ -83,10 +83,13 @@ object AppDimens {
     val smallControlHeight = 32.dp
 
     /** A lista de seções de Configurações, ao lado do conteúdo. */
-    val sectionListWidth = 200.dp
+    val sectionListWidth = 264.dp
 
     /** Item de menu (o de ações do pedido tem 12 itens: com 48 não cabe numa janela baixa). */
     val menuItemHeight = 40.dp
+
+    /** Altura mínima da linha de par rótulo e valor ([com.threedreport.app.ui.components.InfoRow]). */
+    val infoRowHeight = 40.dp
 
     /** Tabela (Pedidos em lista, Catálogo em lista): linha, cabeçalho e as colunas de largura fixa. */
     val tableRowHeight = 52.dp

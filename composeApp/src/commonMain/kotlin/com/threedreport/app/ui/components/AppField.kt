@@ -258,7 +258,8 @@ fun AppNumberField(
 
 /**
  * Lista de escolha do kit (uma opção por vez), com a mesma caixa do [AppTextField] e a seta à direita. O menu
- * abre ao clicar ou com Enter, e acompanha a largura do campo.
+ * abre ao clicar ou com Enter, e acompanha a largura do campo. Com [labelHidden] o rótulo não aparece (a altura é a do
+ * campo, alinhada com os botões do cabeçalho), mas continua na descrição pra leitor de tela.
  */
 @Composable
 fun <T> AppDropdownField(
@@ -272,6 +273,7 @@ fun <T> AppDropdownField(
     emptyText: String = "",
     help: HelpText? = null,
     error: String? = null,
+    labelHidden: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
@@ -282,7 +284,7 @@ fun <T> AppDropdownField(
     val space = MaterialTheme.spacing
     val text = selected?.let(displayText) ?: emptyText
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(space.xxs)) {
-        FieldLabel(label, help)
+        if (!labelHidden) FieldLabel(label, help)
         Box {
             Row(
                 modifier = Modifier
@@ -345,7 +347,7 @@ fun SegmentedChoice(options: List<String>, selectedIndex: Int, onSelect: (Int) -
                 modifier = Modifier
                     .height(AppDimens.controlHeight - AppDimens.borderWidth * 2)
                     .background(if (active) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent, MaterialTheme.shapes.extraSmall)
-                    .clickable(role = Role.RadioButton) { onSelect(index) }
+                    .clickableAction(onClick = { onSelect(index) }, shape = MaterialTheme.shapes.extraSmall, role = Role.RadioButton)
                     .padding(horizontal = space.md),
                 contentAlignment = Alignment.Center,
             ) {

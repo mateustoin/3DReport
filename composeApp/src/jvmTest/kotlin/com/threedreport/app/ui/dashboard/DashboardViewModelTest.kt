@@ -25,6 +25,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -81,8 +82,8 @@ class DashboardViewModelTest {
 
     private fun viewModel() = DashboardViewModel(history, settings, scope)
 
-    private fun saveOrder(name: String, status: OrderStatus = OrderStatus.ORCADO) {
-        val saved = history.save(name = name, quote = quote, services = emptyList(), photo = null, sourceLink = null)
+    private fun saveOrder(name: String, status: OrderStatus = OrderStatus.ORCADO, withQuote: Quote = quote) {
+        val saved = history.save(name = name, quote = withQuote, services = emptyList(), photo = null, sourceLink = null)
         if (status != OrderStatus.ORCADO) history.updateStatus(saved.id, status)
     }
 
@@ -218,6 +219,94 @@ class DashboardViewModelTest {
         viewModel.setPeriod(PeriodPreset.LAST_MONTH)
 
         assertEquals(1, viewModel.uiState.value.catalog?.productCount)
+    }
+
+    // ---- resumo, ação principal, hora de trabalho, conversão e prejuízo
+
+    @Test
+    fun theSummaryBlocksStayWithoutSalesButNotWhenNothingIsSaved() {
+        val empty = viewModel().uiState.value
+        assertEquals(DashboardMode.NOTHING_SAVED, empty.mode)
+        assertFalse(empty.showSummary, "nada salvo: sem os blocos de resumo")
+
+        saveOrder("Chaveiro")
+        val noSales = viewModel().uiState.value
+        assertEquals(DashboardMode.NO_SALES, noSales.mode)
+        assertTrue(noSales.showSummary, "sem venda mas com orçamento em aberto: os blocos ficam, zerados")
+        assertEquals(0, noSales.summary.quoteCount)
+        assertEquals(0.0, noSales.summary.totalSalePrice)
+        assertEquals(0.0, noSales.summary.totalProfit)
+        assertNull(noSales.summary.profitPerPrintHour, "sem dado no lucro por hora de máquina")
+
+        saveOrder("Vaso", OrderStatus.APROVADO)
+        assertTrue(viewModel().uiState.value.showSummary)
+    }
+
+    @Test
+    fun newQuoteIsThePrimaryActionOnlyOnTheFirstUse() {
+        val viewModel = viewModel()
+        assertTrue(viewModel.uiState.value.newQuoteIsPrimary, "nada salvo e Tudo")
+
+        viewModel.setPeriod(PeriodPreset.LAST_30_DAYS)
+        assertEquals(DashboardMode.NOTHING_SAVED, viewModel.uiState.value.mode)
+        assertFalse(viewModel.uiState.value.newQuoteIsPrimary, "período recortado: secundário")
+
+        viewModel.setPeriod(PeriodPreset.ALL)
+        saveOrder("Chaveiro")
+        assertFalse(viewModel.uiState.value.newQuoteIsPrimary, "já há orçamento: não é a primeira vez")
+    }
+
+    @Test
+    fun theEmptyTextsOnlyMentionThePeriodWhenItIsNarrowed() {
+        val viewModel = viewModel()
+        assertTrue(viewModel.uiState.value.isAllPeriod)
+
+        viewModel.setPeriod(PeriodPreset.THIS_MONTH)
+        assertFalse(viewModel.uiState.value.isAllPeriod)
+    }
+
+    @Test
+    fun theLaborHourOnlyExistsWhenSomeSaleHasWorkTime() {
+        saveOrder("Chaveiro", OrderStatus.APROVADO)
+        assertNull(viewModel().uiState.value.summary.earningsPerLaborHour, "sem hora de trabalho o bloco não aparece")
+
+        saveOrder("Vaso", OrderStatus.APROVADO, withQuote = quote.copy(laborMinutes = 30.0))
+        val state = viewModel().uiState.value
+        assertNotNull(state.summary.earningsPerLaborHour)
+        assertEquals(QuoteReport.summarize(history.savedQuotes.value).earningsPerLaborHour, state.summary.earningsPerLaborHour)
+    }
+
+    @Test
+    fun theConversionRateIsMissingWhenNoQuoteWasCreatedInThePeriod() {
+        assertNull(viewModel().uiState.value.summary.conversionRate)
+
+        saveOrder("Chaveiro")
+        assertEquals(0.0, viewModel().uiState.value.summary.conversionRate, "um orçamento em aberto e nenhum vendido: 0%")
+
+        saveOrder("Vaso", OrderStatus.APROVADO)
+        assertEquals(0.5, viewModel().uiState.value.summary.conversionRate)
+
+        val viewModel = viewModel()
+        viewModel.setPeriod(PeriodPreset.LAST_MONTH)
+        assertNull(viewModel.uiState.value.summary.conversionRate, "nada criado no mês passado")
+    }
+
+    @Test
+    fun aPositiveProfitIsNotFlaggedAsNegative() {
+        saveOrder("Chaveiro", OrderStatus.APROVADO)
+
+        assertFalse(viewModel().uiState.value.profitIsNegative)
+        assertFalse(viewModel().uiState.value.copy(summary = QuoteSummary.EMPTY).profitIsNegative, "zero não é prejuízo")
+    }
+
+    @Test
+    fun aSaleBelowCostIsFlaggedAsNegativeProfit() {
+        saveOrder("Prejuízo", OrderStatus.APROVADO, withQuote = quote.copy(salePrice = 1.0))
+
+        val state = viewModel().uiState.value
+
+        assertTrue(state.summary.totalProfit < 0, "preço de 1 real não cobre o custo")
+        assertTrue(state.profitIsNegative)
     }
 
     // ---- acompanha os repositórios

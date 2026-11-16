@@ -3,7 +3,35 @@ package com.threedreport.app
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.about_updates_announce
 import _3dreport.composeapp.generated.resources.about_updates_see_news
+import _3dreport.composeapp.generated.resources.app_discard_edit_message
+import _3dreport.composeapp.generated.resources.app_discard_edit_title
+import _3dreport.composeapp.generated.resources.app_discard_quote_message
+import _3dreport.composeapp.generated.resources.app_discard_quote_title
+import _3dreport.composeapp.generated.resources.app_end_editing_back
+import _3dreport.composeapp.generated.resources.app_end_editing_confirm
+import _3dreport.composeapp.generated.resources.app_end_editing_message
+import _3dreport.composeapp.generated.resources.app_end_editing_title
+import _3dreport.composeapp.generated.resources.app_saved_changes
+import _3dreport.composeapp.generated.resources.app_status_editing
+import _3dreport.composeapp.generated.resources.common_discard
+import _3dreport.composeapp.generated.resources.common_got_it
+import _3dreport.composeapp.generated.resources.common_open_folder
 import _3dreport.composeapp.generated.resources.common_retry
+import _3dreport.composeapp.generated.resources.storage_notice_migrated_cleanup
+import _3dreport.composeapp.generated.resources.storage_notice_migrated_kept
+import _3dreport.composeapp.generated.resources.storage_notice_migrated_message
+import _3dreport.composeapp.generated.resources.storage_notice_migrated_title
+import _3dreport.composeapp.generated.resources.storage_notice_newer_kept
+import _3dreport.composeapp.generated.resources.storage_notice_newer_message
+import _3dreport.composeapp.generated.resources.storage_notice_newer_recover
+import _3dreport.composeapp.generated.resources.storage_notice_newer_title
+import _3dreport.composeapp.generated.resources.storage_unreadable_empty
+import _3dreport.composeapp.generated.resources.storage_unreadable_kept
+import _3dreport.composeapp.generated.resources.storage_unreadable_recovered
+import _3dreport.composeapp.generated.resources.storage_unreadable_title
+import _3dreport.composeapp.generated.resources.storage_write_failed_file
+import _3dreport.composeapp.generated.resources.storage_write_failed_message
+import _3dreport.composeapp.generated.resources.storage_write_failed_title
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -67,8 +95,10 @@ import com.threedreport.app.ui.about.AboutScreen
 import com.threedreport.app.ui.about.UpdateState
 import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.consumables.ConsumableListScreen
 import com.threedreport.app.ui.consumables.ConsumableListViewModel
@@ -141,7 +171,7 @@ fun App(
             startAt,
             models.quoteViewModel,
             models.editQuoteViewModel,
-            onEditSaved = { appScope.launch { snackbarHostState.showSnackbar("Alterações salvas.") } },
+            onEditSaved = { appScope.launch { snackbarHostState.showSnackbar(getString(Res.string.app_saved_changes)) } },
         )
         models to nav
     }
@@ -159,6 +189,7 @@ fun App(
     val editState by viewModels.editQuoteViewModel.uiState.collectAsState()
     val editForm = editState.form
     val editing = editForm.editingQuoteId != null
+    val editingLabel = stringResource(Res.string.app_status_editing)
     // O Orçamento na tela, do mesmo valor coletado que escolhe a tela: tudo o que depende dele (aviso de
     // arrastar, destino do G-code solto, Ctrl+S) concorda com o que está desenhado.
     val visibleQuoteViewModel = if (editing) viewModels.editQuoteViewModel else viewModels.quoteViewModel
@@ -239,7 +270,7 @@ fun App(
                                 onSelect = navigator::goTo,
                                 compact = compactSidebar,
                                 version = APP_VERSION,
-                                status = { if (it == AppDestination.QUOTE && editing) "Editando" else null },
+                                status = { if (it == AppDestination.QUOTE && editing) editingLabel else null },
                                 hasPendingChanges = { it == AppDestination.SETTINGS && settingsDirty },
                             )
                             VerticalDivider()
@@ -368,9 +399,9 @@ fun App(
 
             if (navigator.confirmingEditDiscard) {
                 ConfirmDialog(
-                    title = "Descartar as alterações?",
-                    message = "O que você mudou neste orçamento não foi salvo e vai se perder.",
-                    confirmLabel = "Descartar",
+                    title = stringResource(Res.string.app_discard_edit_title),
+                    message = stringResource(Res.string.app_discard_edit_message),
+                    confirmLabel = stringResource(Res.string.common_discard),
                     onConfirm = navigator::confirmEditDiscard,
                     onDismiss = navigator::keepEditing,
                 )
@@ -378,11 +409,10 @@ fun App(
 
             if (navigator.pendingEndEditing != null) {
                 ConfirmDialog(
-                    title = "Descartar a edição em andamento?",
-                    message = "Você está editando \"${editForm.name}\" no Orçamento e ainda não salvou. Pra continuar, " +
-                        "as alterações dessa edição se perdem.",
-                    confirmLabel = "Descartar e continuar",
-                    dismissLabel = "Voltar pra edição",
+                    title = stringResource(Res.string.app_end_editing_title),
+                    message = stringResource(Res.string.app_end_editing_message, editForm.name),
+                    confirmLabel = stringResource(Res.string.app_end_editing_confirm),
+                    dismissLabel = stringResource(Res.string.app_end_editing_back),
                     onConfirm = navigator::confirmEndEditing,
                     onDismiss = navigator::dismissEndEditing,
                 )
@@ -390,9 +420,9 @@ fun App(
 
             if (navigator.pendingDiscard != null) {
                 ConfirmDialog(
-                    title = "Descartar o orçamento em andamento?",
-                    message = "O que está preenchido no Orçamento ainda não foi salvo e vai ser substituído.",
-                    confirmLabel = "Descartar",
+                    title = stringResource(Res.string.app_discard_quote_title),
+                    message = stringResource(Res.string.app_discard_quote_message),
+                    confirmLabel = stringResource(Res.string.common_discard),
                     onConfirm = navigator::confirmDiscard,
                     onDismiss = navigator::dismissDiscard,
                 )
@@ -424,51 +454,21 @@ private fun applyOnboardingPrinter(repository: PrinterRepository, choice: Onboar
  */
 @Composable
 private fun DataFolderNoticeDialog(notice: DataFolderNotice, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = {},
-        properties = DialogProperties(dismissOnClickOutside = false),
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Entendi") } },
-        dismissButton = { TextButton(onClick = { openFolder(notice.path) }) { Text("Abrir pasta") } },
-        title = {
-            Text(
-                when (notice.kind) {
-                    DataFolderNotice.Kind.MOVED_FROM_NEWER -> "Dados de uma versão mais nova"
-                    DataFolderNotice.Kind.MIGRATED -> "Seus dados foram atualizados"
-                },
-            )
+    val migrated = notice.kind == DataFolderNotice.Kind.MIGRATED
+    AppDialog(
+        title = stringResource(if (migrated) Res.string.storage_notice_migrated_title else Res.string.storage_notice_newer_title),
+        onDismiss = {},
+        dismissOnClickOutside = false,
+        buttons = {
+            AppButton(stringResource(Res.string.common_open_folder), { openFolder(notice.path) })
+            AppButton(stringResource(Res.string.common_got_it), onDismiss, kind = ButtonKind.Primary)
         },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    when (notice.kind) {
-                        DataFolderNotice.Kind.MOVED_FROM_NEWER ->
-                            "Os dados eram de uma versão mais nova do 3DReport, que esta não consegue ler. Pra não " +
-                                "estragar nada, esta versão começa com os dados em branco."
-
-                        DataFolderNotice.Kind.MIGRATED ->
-                            "Esta versão guarda os dados de um jeito novo, e os seus foram convertidos. Está tudo aqui."
-                    },
-                )
-                Text(
-                    if (notice.kind == DataFolderNotice.Kind.MIGRATED) {
-                        "Uma cópia de como estava antes ficou guardada, sem mudar nada, em:"
-                    } else {
-                        "O que você tinha foi guardado, sem apagar nada, em:"
-                    },
-                )
-                SelectionContainer {
-                    Text(notice.path, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                }
-                Text(
-                    when (notice.kind) {
-                        DataFolderNotice.Kind.MOVED_FROM_NEWER -> "Pra recuperar, atualize o 3DReport e renomeie essa pasta de volta pra .3dreport."
-                        DataFolderNotice.Kind.MIGRATED -> "Depois de conferir que está tudo certo, dá pra apagar essa cópia."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        },
-    )
+    ) {
+        DialogText(stringResource(if (migrated) Res.string.storage_notice_migrated_message else Res.string.storage_notice_newer_message))
+        DialogText(stringResource(if (migrated) Res.string.storage_notice_migrated_kept else Res.string.storage_notice_newer_kept))
+        SelectionContainer { DialogText(notice.path) }
+        DialogText(stringResource(if (migrated) Res.string.storage_notice_migrated_cleanup else Res.string.storage_notice_newer_recover), muted = true)
+    }
 }
 
 /**
@@ -482,48 +482,34 @@ private fun StorageHealthDialogs(container: AppContainer) {
     val writeFailures by container.storageHealth.writeFailures.collectAsState()
 
     if (unreadable.isNotEmpty()) {
-        AlertDialog(
-            onDismissRequest = {},
-            properties = DialogProperties(dismissOnClickOutside = false),
-            confirmButton = { TextButton(onClick = container.storageHealth::dismissUnreadable) { Text("Entendi") } },
-            title = { Text("Um arquivo de dados não abriu") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    unreadable.forEach { file ->
-                        Text(
-                            if (file.recoveredFromBackup) {
-                                "${file.name}: recuperado da cópia anterior. Só a última mudança antes de fechar pode ter se perdido."
-                            } else {
-                                "${file.name}: não havia cópia anterior que abrisse, e ele começou vazio. Restaure um backup em " +
-                                    "Configurações → Dados pra recuperar."
-                            },
-                        )
-                    }
-                    Text("Nada foi apagado. O arquivo com problema ficou guardado em:", style = MaterialTheme.typography.bodySmall)
-                    SelectionContainer {
-                        Column { unreadable.forEach { Text(it.keptAs, style = MaterialTheme.typography.bodySmall) } }
-                    }
-                }
-            },
-        )
+        AppDialog(
+            title = stringResource(Res.string.storage_unreadable_title),
+            onDismiss = {},
+            dismissOnClickOutside = false,
+            buttons = { AppButton(stringResource(Res.string.common_got_it), container.storageHealth::dismissUnreadable, kind = ButtonKind.Primary) },
+        ) {
+            unreadable.forEach { file ->
+                DialogText(
+                    stringResource(if (file.recoveredFromBackup) Res.string.storage_unreadable_recovered else Res.string.storage_unreadable_empty, file.name),
+                )
+            }
+            DialogText(stringResource(Res.string.storage_unreadable_kept), muted = true)
+            SelectionContainer {
+                Column { unreadable.forEach { DialogText(it.keptAs, muted = true) } }
+            }
+        }
     }
 
     if (writeFailures.isNotEmpty()) {
-        AlertDialog(
-            onDismissRequest = {},
-            properties = DialogProperties(dismissOnClickOutside = false),
-            confirmButton = { AppButton(stringResource(Res.string.common_retry), container.pendingWrites::retry, kind = ButtonKind.Primary) },
-            title = { Text("Não consegui gravar suas mudanças") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "O que você mudou está só na memória por enquanto. Feche programas que possam estar usando a " +
-                            "pasta de dados (antivírus, OneDrive, backup), confira se o disco tem espaço e tente de novo.",
-                    )
-                    writeFailures.forEach { (file, reason) -> Text("• $file: $reason", style = MaterialTheme.typography.bodySmall) }
-                }
-            },
-        )
+        AppDialog(
+            title = stringResource(Res.string.storage_write_failed_title),
+            onDismiss = {},
+            dismissOnClickOutside = false,
+            buttons = { AppButton(stringResource(Res.string.common_retry), container.pendingWrites::retry, kind = ButtonKind.Primary) },
+        ) {
+            DialogText(stringResource(Res.string.storage_write_failed_message))
+            writeFailures.forEach { (file, reason) -> DialogText(stringResource(Res.string.storage_write_failed_file, file, reason), muted = true) }
+        }
     }
 }
 

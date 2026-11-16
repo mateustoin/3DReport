@@ -19,20 +19,20 @@ import _3dreport.composeapp.generated.resources.dashboard_discounts_given
 import _3dreport.composeapp.generated.resources.dashboard_filament_value
 import _3dreport.composeapp.generated.resources.dashboard_hours_configured
 import _3dreport.composeapp.generated.resources.dashboard_hours_help_labor
-import _3dreport.composeapp.generated.resources.dashboard_hours_help_machine
 import _3dreport.composeapp.generated.resources.dashboard_hours_labor
-import _3dreport.composeapp.generated.resources.dashboard_hours_machine
 import _3dreport.composeapp.generated.resources.dashboard_hours_title
 import _3dreport.composeapp.generated.resources.dashboard_most_used_filament
 import _3dreport.composeapp.generated.resources.dashboard_most_used_title
 import _3dreport.composeapp.generated.resources.dashboard_no_data
 import _3dreport.composeapp.generated.resources.dashboard_open_conversion
+import _3dreport.composeapp.generated.resources.dashboard_open_conversion_help
 import _3dreport.composeapp.generated.resources.dashboard_open_help
 import _3dreport.composeapp.generated.resources.dashboard_open_quotes
 import _3dreport.composeapp.generated.resources.dashboard_open_title
 import _3dreport.composeapp.generated.resources.dashboard_per_hour
 import _3dreport.composeapp.generated.resources.dashboard_price_range
 import _3dreport.composeapp.generated.resources.dashboard_ranking_help
+import _3dreport.composeapp.generated.resources.dashboard_ranking_help_machine_hour
 import _3dreport.composeapp.generated.resources.dashboard_ranking_title
 import _3dreport.composeapp.generated.resources.dashboard_times
 import androidx.compose.foundation.layout.Column
@@ -55,8 +55,8 @@ import com.threedreport.core.report.CatalogSummary
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Uma linha de ranking já formatada: o nome e as três colunas de valor. */
-private class RankingRow(val name: String, val first: String, val profit: String, val perHour: String)
+/** Uma linha de ranking já formatada: o nome e as três colunas de valor, na ordem da tabela. */
+private class RankingRow(val name: String, val first: String, val second: String, val perHour: String)
 
 /** "Peças que mais deram lucro": a tabela do kit, com o valor à direita e a ajuda sob demanda. */
 @Composable
@@ -66,14 +66,21 @@ internal fun SalesRanking(state: DashboardUiState) {
         RankingRow(
             name = product.name,
             first = stringResource(Res.string.dashboard_times, product.orderCount),
-            profit = product.totalProfit.toMoney(),
+            second = product.totalProfit.toMoney(),
             perHour = product.profitPerPrintHour?.let { stringResource(Res.string.dashboard_per_hour, it.toMoney()) } ?: noData,
         )
     }
     RankingTable(
         title = stringResource(Res.string.dashboard_ranking_title),
-        help = HelpText(stringResource(Res.string.dashboard_ranking_help)),
-        columns = rankingColumns(stringResource(Res.string.dashboard_col_piece), stringResource(Res.string.dashboard_col_sales)),
+        help = HelpText(
+            short = stringResource(Res.string.dashboard_ranking_help),
+            detail = stringResource(Res.string.dashboard_ranking_help_machine_hour),
+        ),
+        columns = rankingColumns(
+            nameTitle = stringResource(Res.string.dashboard_col_piece),
+            firstTitle = stringResource(Res.string.dashboard_col_sales),
+            secondTitle = stringResource(Res.string.dashboard_col_profit),
+        ),
         rows = rows,
     )
 }
@@ -85,24 +92,29 @@ internal fun CatalogRanking(catalog: CatalogSummary) {
     val rows = catalog.products.map { product ->
         RankingRow(
             name = product.name,
-            first = product.price.toMoney(),
-            profit = product.profit.toMoney(),
+            first = product.profit.toMoney(),
+            second = product.price.toMoney(),
             perHour = product.profitPerPrintHour?.let { stringResource(Res.string.dashboard_per_hour, it.toMoney()) } ?: noData,
         )
     }
     RankingTable(
         title = stringResource(Res.string.dashboard_catalog_ranking_title),
         help = HelpText(stringResource(Res.string.dashboard_catalog_ranking_help)),
-        columns = rankingColumns(stringResource(Res.string.dashboard_col_product), stringResource(Res.string.dashboard_col_price), firstIsMoney = true),
+        columns = rankingColumns(
+            nameTitle = stringResource(Res.string.dashboard_col_product),
+            firstTitle = stringResource(Res.string.dashboard_col_profit),
+            secondTitle = stringResource(Res.string.dashboard_col_price),
+            firstIsMoney = true,
+        ),
         rows = rows,
     )
 }
 
 @Composable
-private fun rankingColumns(nameTitle: String, firstTitle: String, firstIsMoney: Boolean = false) = listOf(
+private fun rankingColumns(nameTitle: String, firstTitle: String, secondTitle: String, firstIsMoney: Boolean = false) = listOf(
     TableColumn(nameTitle),
     TableColumn(firstTitle, width = if (firstIsMoney) AppDimens.tableMoneyColumn else AppDimens.tableNumberColumn, end = true),
-    TableColumn(stringResource(Res.string.dashboard_col_profit), width = AppDimens.tableMoneyColumn, end = true),
+    TableColumn(secondTitle, width = AppDimens.tableMoneyColumn, end = true),
     TableColumn(stringResource(Res.string.dashboard_col_per_hour), width = AppDimens.tableMoneyColumn, end = true),
 )
 
@@ -115,7 +127,7 @@ private fun RankingTable(title: String, help: HelpText, columns: List<TableColum
                 TableStaticRow(columns) {
                     Cell(0) { Text(row.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     Cell(1) { Value(row.first) }
-                    Cell(2) { Value(row.profit) }
+                    Cell(2) { Value(row.second) }
                     Cell(3) { Value(row.perHour) }
                 }
             }
@@ -150,7 +162,11 @@ internal fun EmptyBlocks(state: DashboardUiState) {
 private fun OpenBlock(state: DashboardUiState) {
     val summary = state.summary
     if (summary.openQuoteCount == 0) return
-    FormSection(number = null, title = stringResource(Res.string.dashboard_open_title), help = HelpText(stringResource(Res.string.dashboard_open_help))) {
+    val help = HelpText(
+        short = stringResource(Res.string.dashboard_open_help),
+        detail = stringResource(Res.string.dashboard_open_conversion_help),
+    )
+    FormSection(number = null, title = stringResource(Res.string.dashboard_open_title), help = help) {
         Column {
             InfoRow(pluralStringResource(Res.plurals.dashboard_open_quotes, summary.openQuoteCount, summary.openQuoteCount), summary.openQuoteTotal.toMoney())
             summary.conversionRate?.let { InfoRow(stringResource(Res.string.dashboard_open_conversion), it.toPercentText()) }
@@ -158,24 +174,22 @@ private fun OpenBlock(state: DashboardUiState) {
     }
 }
 
-/** Hora de máquina e hora de trabalho, com a hora configurada como referência quando houver. */
+/**
+ * Hora de trabalho e, quando configurada, a sua hora de referência. A hora de máquina já está no resumo e no ranking, então
+ * sem hora de trabalho o bloco não aparece.
+ */
 @Composable
 private fun HoursBlock(state: DashboardUiState) {
-    val perPrintHour = state.summary.profitPerPrintHour
-    val perLaborHour = state.summary.earningsPerLaborHour
-    if (perPrintHour == null && perLaborHour == null) return
-    val help = HelpText(
-        short = stringResource(Res.string.dashboard_hours_help_machine),
-        detail = stringResource(Res.string.dashboard_hours_help_labor),
-    )
-    FormSection(number = null, title = stringResource(Res.string.dashboard_hours_title), help = help) {
+    val perLaborHour = state.summary.earningsPerLaborHour ?: return
+    FormSection(
+        number = null,
+        title = stringResource(Res.string.dashboard_hours_title),
+        help = HelpText(stringResource(Res.string.dashboard_hours_help_labor)),
+    ) {
         Column {
-            perPrintHour?.let { InfoRow(stringResource(Res.string.dashboard_hours_machine), stringResource(Res.string.dashboard_per_hour, it.toMoney())) }
-            perLaborHour?.let {
-                InfoRow(stringResource(Res.string.dashboard_hours_labor), stringResource(Res.string.dashboard_per_hour, it.toMoney()))
-                if (state.laborRatePerHour > 0) {
-                    InfoRow(stringResource(Res.string.dashboard_hours_configured), stringResource(Res.string.dashboard_per_hour, state.laborRatePerHour.toMoney()))
-                }
+            InfoRow(stringResource(Res.string.dashboard_hours_labor), stringResource(Res.string.dashboard_per_hour, perLaborHour.toMoney()))
+            if (state.laborRatePerHour > 0) {
+                InfoRow(stringResource(Res.string.dashboard_hours_configured), stringResource(Res.string.dashboard_per_hour, state.laborRatePerHour.toMoney()))
             }
         }
     }
