@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -45,6 +46,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.HorizontalAlignmentLine
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -109,18 +112,35 @@ fun HelpHint(help: HelpText, label: String, modifier: Modifier = Modifier, tint:
     }
 }
 
+/**
+ * A linha do alto da caixa de um campo. Os campos de uma mesma linha da grade ([FormGrid]) se alinham por ela: um rótulo
+ * que quebra em duas linhas empurra a caixa pra baixo, e a dos vizinhos desce junto, em vez de cada caixa ficar numa altura.
+ */
+internal val FieldBoxTop = HorizontalAlignmentLine(merger = { old, new -> minOf(old, new) })
+
+/** Publica a caixa de um campo como [FieldBoxTop], a linha em que a grade alinha os campos. */
+private fun Modifier.fieldBoxLine(): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    layout(placeable.width, placeable.height, mapOf(FieldBoxTop to 0)) { placeable.place(0, 0) }
+}
+
+/** Rótulo de campo em `label`, em até [LABEL_MAX_LINES] linhas: o que não cabe numa quebra, em vez de truncar com reticências. */
 @Composable
 internal fun FieldLabel(label: String, help: HelpText?, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    // Altura fixa (a do ícone de ajuda): campos com e sem ajuda ficam alinhados na mesma linha da grade.
+    // Altura mínima a do ícone de ajuda: campos com e sem ajuda, de uma linha, ficam alinhados na mesma linha da grade.
+    // O ícone fica na primeira linha quando o rótulo quebra.
     Row(
-        modifier = Modifier.height(AppDimens.iconSize),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
     ) {
-        Text(label, style = MaterialTheme.appType.label, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+        Box(Modifier.weight(1f, fill = false).heightIn(min = AppDimens.iconSize), contentAlignment = Alignment.CenterStart) {
+            Text(label, style = MaterialTheme.appType.label, color = color, maxLines = LABEL_MAX_LINES, overflow = TextOverflow.Ellipsis)
+        }
         if (help != null) HelpHint(help, label, tint = if (help.warning) MaterialTheme.appColors.amberText else androidx.compose.ui.graphics.Color.Unspecified)
     }
 }
+
+private const val LABEL_MAX_LINES = 2
 
 /** Borda do campo: erro, foco (anel de 2), mouse em cima (cor `primary`) ou repouso (`line`). */
 @Composable
@@ -137,6 +157,7 @@ private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean
         else -> colors.fieldDisabled
     }
     return this
+        .fieldBoxLine()
         .height(AppDimens.controlHeight)
         .background(fill, MaterialTheme.shapes.small)
         .border(if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth, borderColor, MaterialTheme.shapes.small)
@@ -337,6 +358,7 @@ fun SegmentedChoice(options: List<String>, selectedIndex: Int, onSelect: (Int) -
     val space = MaterialTheme.spacing
     Row(
         modifier = modifier
+            .fieldBoxLine()
             .background(colors.card, MaterialTheme.shapes.small)
             .border(AppDimens.borderWidth, colors.line, MaterialTheme.shapes.small)
             .padding(AppDimens.borderWidth),
@@ -415,7 +437,10 @@ class FormGridScope {
 
 private const val FORM_COLUMNS = 3
 
-/** Grade de três colunas do formulário, com 12 entre campos. As células entram em ordem e quebram a linha quando não cabem. */
+/**
+ * Grade de três colunas do formulário, com 12 entre campos. As células entram em ordem e quebram a linha quando não cabem.
+ * Numa mesma linha, as caixas dos campos se alinham pela borda de cima ([FieldBoxTop]), mesmo se um rótulo ocupar duas linhas.
+ */
 @Composable
 fun FormGrid(modifier: Modifier = Modifier, content: FormGridScope.() -> Unit) {
     val gap = MaterialTheme.spacing.sm
@@ -436,7 +461,7 @@ fun FormGrid(modifier: Modifier = Modifier, content: FormGridScope.() -> Unit) {
             rows.forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                     row.forEach { (span, cell) ->
-                        Box(Modifier.width(column * span + gap * (span - 1))) { cell() }
+                        Box(Modifier.width(column * span + gap * (span - 1)).alignBy(FieldBoxTop)) { cell() }
                     }
                 }
             }
