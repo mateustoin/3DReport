@@ -213,9 +213,9 @@ Esforço G (somando as duas fases), impacto A no alcance (ver Leva 11B).
 **Incluída em 2026-11-16, a pedido do responsável do projeto.** Quem vende a mesma
 peça de novo não quer perder o arquivo que usou. Hoje o app guarda o STL, mas não o
 `.3mf` do fatiador, que traz a mesa inteira já configurada. E um STL acima de 500 mil
-triângulos fica sem prévia (decisão 63). Tudo aqui roda local. A posição (logo depois
-da 10B, na mesma tela de Orçamento que ela reescreve) e o escopo são confirmados na
-especificação da leva.
+triângulos fica sem prévia (decisão 63). Tudo aqui roda local. **Fica pra versão
+seguinte à 2.2:** a 2.2 fecha com a Leva 10B, e esta leva abre a próxima. O escopo é
+confirmado na especificação da leva.
 
 - [ ] **Guardar o `.3mf` do projeto do fatiador** *(já no roadmap: seção
   Visualização e análise de STL, "Evolução futura")*. O campo "arquivo do modelo" do
