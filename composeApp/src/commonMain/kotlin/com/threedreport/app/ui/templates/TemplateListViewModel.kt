@@ -13,21 +13,23 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 
-/** Um template na lista, e se ele é o que está valendo agora ([isActive]). */
+/** Um modelo na lista, e se ele é o que está valendo agora ([isActive]). */
 data class TemplateRowState(val template: QuoteTemplate, val isActive: Boolean)
 
-/** Tudo o que o diálogo de templates mostra: a lista e a pergunta de exclusão pendente (nula quando nenhuma). */
+/** Tudo o que o diálogo de modelos mostra: a lista e a pergunta de exclusão pendente (nula quando nenhuma). */
 data class TemplatesUiState(
     val rows: List<TemplateRowState> = emptyList(),
     val pendingDelete: QuoteTemplate? = null,
 )
 
 /**
- * ViewModel do diálogo de Templates: biblioteca de "fotos" nomeadas do
+ * ViewModel do diálogo de Modelos: biblioteca de "fotos" nomeadas do
  * [BrandingSettings] ativo. Não tem formulário próprio de edição (esse
  * fica em Configurações, Documentos pro cliente, ver [com.threedreport.app.ui.settings.BrandingViewModel]).
  * Um [uiState] só; a lista acompanha os repositórios dentro de [scope].
- * [load] copia um preset de volta pra dentro do [BrandingRepository] ativo.
+ * Carregar um modelo não é aqui: quem carrega é o rascunho de Documentos
+ * ([com.threedreport.app.ui.settings.BrandingViewModel.applyTemplate]), pra a pessoa salvar ou descartar.
+ * O [brandingRepository] só serve pra marcar qual modelo está valendo.
  */
 class TemplateListViewModel(
     private val repository: TemplateRepository,
@@ -75,22 +77,5 @@ class TemplateListViewModel(
     fun delete(id: String) {
         repository.delete(id)
         state.update { it.copy(pendingDelete = null) }
-    }
-
-    /**
-     * "Carregar": copia o preset [id] pra dentro do [BrandingRepository] ativo. Parte da
-     * configuração atual, e não de uma em branco, pra logo e contato continuarem onde estão.
-     */
-    fun load(id: String) {
-        val template = repository.templates.value.find { it.id == id } ?: return
-        brandingRepository.update(
-            brandingRepository.branding.value.copy(
-                brandName = template.brandName,
-                showWatermark = template.showWatermark,
-                showFooter = template.showFooter,
-                showPrintTime = template.showPrintTime,
-                showBorder = template.showBorder,
-            ),
-        )
     }
 }

@@ -26,6 +26,7 @@ import _3dreport.composeapp.generated.resources.settings_help_labor
 import _3dreport.composeapp.generated.resources.settings_help_labor_detail
 import _3dreport.composeapp.generated.resources.settings_help_minimum
 import _3dreport.composeapp.generated.resources.settings_help_minimum_detail
+import _3dreport.composeapp.generated.resources.settings_help_productive_hours
 import _3dreport.composeapp.generated.resources.settings_help_rush
 import _3dreport.composeapp.generated.resources.settings_help_rush_detail
 import _3dreport.composeapp.generated.resources.settings_help_tax
@@ -76,7 +77,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
 
     FormSection(2, stringResource(Res.string.settings_labor_title)) {
         FormGrid {
-            cell(2) {
+            cell(1) {
                 AppNumberField(
                     label = stringResource(Res.string.settings_field_labor_rate),
                     value = state.laborRatePerHourText,
@@ -103,7 +104,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     help = HelpText(stringResource(Res.string.settings_help_fixed), stringResource(Res.string.settings_help_fixed_detail)),
                 )
             }
-            cell(2) {
+            cell(1) {
                 AppNumberField(
                     label = stringResource(Res.string.settings_field_productive_hours),
                     value = state.productiveHoursPerMonthText,
@@ -111,7 +112,11 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     kind = NumberKind.AMOUNT,
                     error = state.errors[SettingsField.PRODUCTIVE_HOURS]?.asString(),
                     // Custo fixo sem horas pra dividir não entra no preço: o ícone de ajuda fica âmbar e explica.
-                    help = HelpText(stringResource(Res.string.settings_warning_fixed_cost), warning = true).takeIf { state.fixedCostWithoutHours },
+                    help = if (state.fixedCostWithoutHours) {
+                        HelpText(stringResource(Res.string.settings_warning_fixed_cost), warning = true)
+                    } else {
+                        HelpText(stringResource(Res.string.settings_help_productive_hours))
+                    },
                 )
             }
         }
@@ -168,7 +173,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
 
     FormSection(6, stringResource(Res.string.settings_order_title)) {
         FormGrid {
-            cell(2) {
+            cell(1) {
                 AppNumberField(
                     label = stringResource(Res.string.settings_field_admin_cost),
                     value = state.administrativeCostText,

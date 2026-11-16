@@ -107,4 +107,19 @@ class OnboardingViewModelTest {
         assertEquals(0.0, result.settings.laborRatePerHour)
         assertEquals(0.8, result.settings.energyPricePerKwh, 1e-9)
     }
+
+    @Test
+    fun energyAndMarginAreMeasuresSoADotIsAlwaysDecimalButTheMachinePriceKeepsThousands() {
+        val viewModel = OnboardingViewModel(settings)
+        viewModel.setMachinePrice("2.700")
+        viewModel.next()
+        viewModel.setEnergy("1.250")
+        viewModel.setMargin("1.250")
+
+        val result = assertNotNull(viewModel.finish())
+
+        assertEquals(1.25, result.settings.energyPricePerKwh, 1e-9, "kWh com ponto é decimal, como em Configurações")
+        assertEquals(0.0125, result.settings.profitMargin, 1e-9, "1.250 na margem é 1,25%, e não 1250%")
+        assertEquals(2700.0, result.printer?.machinePrice)
+    }
 }

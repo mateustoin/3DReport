@@ -170,7 +170,6 @@ private fun UnsavedChangesBar(onDiscard: () -> Unit, onSave: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(space.xs),
     ) {
-        Box(Modifier.size(AppDimens.pendingDotSize).clip(CircleShape).background(MaterialTheme.appColors.amber))
         Text(
             stringResource(Res.string.settings_unsaved),
             style = MaterialTheme.appType.body,

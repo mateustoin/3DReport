@@ -134,7 +134,7 @@ private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean
     val fill = when {
         onNavy -> colors.navyRaised
         enabled -> colors.card
-        else -> colors.column
+        else -> colors.fieldDisabled
     }
     return this
         .height(AppDimens.controlHeight)

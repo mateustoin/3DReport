@@ -15,7 +15,7 @@ import com.threedreport.core.model.BrandingSettings
  * @property previewPng primeira página do PDF de exemplo, quando "Ver como fica" está aberto.
  * @property validityError o que corrigir na validade; [optionsError] o que corrigir nas opções do PDF (o nome
  *   precisa aparecer em algum lugar); [logoError] a imagem escolhida que não abre.
- * @property savingTemplate o diálogo "Salvar como template" aberto, com o nome digitado e o erro dele.
+ * @property savingTemplate o diálogo "Salvar como modelo" aberto, com o nome digitado e o erro dele.
  * @property hasUnsavedChanges se o formulário difere do que está gravado (a logo incluída).
  */
 data class BrandingUiState(
@@ -40,5 +40,5 @@ data class BrandingUiState(
     val hasUnsavedChanges: Boolean = false,
 )
 
-/** O nome do template sendo digitado e o erro dele. */
+/** O nome do modelo sendo digitado e o erro dele. */
 data class TemplateNameState(val name: String = "", val error: UiText? = null)

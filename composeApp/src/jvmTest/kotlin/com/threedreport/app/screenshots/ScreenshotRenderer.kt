@@ -48,6 +48,7 @@ import com.threedreport.app.platform.imageBrandLine
 import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
+import com.threedreport.app.ui.about.LatestRelease
 import com.threedreport.app.ui.about.ReleaseSource
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.navigation.AppDestination
@@ -316,20 +317,30 @@ class ScreenshotRenderer {
 /**
  * Configurações, Sobre, o primeiro uso e os diálogos da leva 10B-5. Os cliques e as digitações vão pela árvore de
  * semântica ([clickByText], [setTextByLabel]), sem coordenadas; nada disso grava nos dados de exemplo, a não ser os canais e
- * os templates que as capturas precisam ter e que ficam só nesta pasta temporária.
+ * os modelos que as capturas precisam ter e que ficam só nesta pasta temporária.
  */
 private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
     val sections = listOf("Negócio" to "negocio", "Canais de venda" to "canais", "Documentos pro cliente" to "documentos", "Aparência" to "aparencia", "Backup" to "backup")
-    // Um canal com faixas de preço e dois templates, pra o diálogo do canal e a lista de templates terem o que mostrar.
+    // A lista de modelos ainda vazia (o EmptyState do diálogo), antes de os modelos de exemplo entrarem.
+    renderAppPng(
+        File(outDir, "configuracoes-modelos-vazio.png"),
+        afterSettle = {
+            it.clickByText("Documentos pro cliente")
+            settle(it, frames = 3)
+            it.clickByText("Ver modelos salvos")
+        },
+    ) {
+        App(container, startAt = AppDestination.SETTINGS)
+    }
+    // Um canal com faixas de preço e dois modelos, pra o diálogo do canal e a lista de modelos terem o que mostrar.
     val shopee = container.salesChannels.channels.value.first { it.id == Catalog.SHOPEE_ID }
-    container.templates.add(QuoteTemplate(id = "tpl-formal", name = "Formal", brandName = "Sua Loja 3D", showWatermark = true, showFooter = true))
+    // "Simples" primeiro: é diferente do que está gravado, então o "Carregar" da primeira linha muda o rascunho.
     container.templates.add(QuoteTemplate(id = "tpl-simples", name = "Simples", brandName = null, showWatermark = false, showFooter = true, showBorder = true))
+    container.templates.add(QuoteTemplate(id = "tpl-formal", name = "Formal", brandName = "Sua Loja 3D", showWatermark = true, showFooter = true))
 
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
         container.theme.update(theme)
         for ((title, slug) in sections) {
-            // Só Negócio e Canais saem nos dois temas.
-            if (theme == ThemeMode.DARK && slug != "negocio" && slug != "canais") continue
             renderAppPng(File(outDir, "configuracoes-$slug$suffix.png"), afterSettle = { if (slug != "negocio") it.clickByText(title) }) {
                 App(container, startAt = AppDestination.SETTINGS)
             }
@@ -420,7 +431,20 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             afterSettle = {
                 it.clickByText("Documentos pro cliente")
                 settle(it, frames = 3)
-                it.clickByText("Ver templates salvos")
+                it.clickByText("Ver modelos salvos")
+            },
+        ) {
+            App(container, startAt = AppDestination.SETTINGS)
+        }
+        // "Carregar" põe o modelo no rascunho: a barra de alterações aparece e nada foi gravado.
+        renderAppPng(
+            File(outDir, "configuracoes-modelo-carregado$suffix.png"),
+            afterSettle = {
+                it.clickByText("Documentos pro cliente")
+                settle(it, frames = 3)
+                it.clickByText("Ver modelos salvos")
+                settle(it, frames = 3)
+                it.clickByDescription("Carregar")
             },
         ) {
             App(container, startAt = AppDestination.SETTINGS)
@@ -431,7 +455,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                 afterSettle = {
                     it.clickByText("Documentos pro cliente")
                     settle(it, frames = 3)
-                    it.clickByText("Salvar como template")
+                    it.clickByText("Salvar como modelo")
                 },
             ) {
                 App(container, startAt = AppDestination.SETTINGS)
@@ -451,6 +475,16 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
         renderAppPng(File(outDir, "sobre$suffix.png")) { App(container, startAt = AppDestination.ABOUT) }
     }
     container.theme.update(ThemeMode.LIGHT)
+
+    // O Sobre com uma versão nova disponível (a verificação ligada e uma fonte que responde com uma versão à frente).
+    val updatedDir = createTempDirectory("3dreport-screenshots-update").toFile()
+    LocalStorage(updatedDir, Clock.System).onboarding().markCompleted()
+    val updatedContainer = buildContainer(updatedDir, ReleaseSource { LatestRelease("9.9.9", "https://example.com/novidades") })
+    updatedContainer.preferences.update(updatedContainer.preferences.preferences.value.copy(checkForUpdates = true))
+    for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+        updatedContainer.theme.update(theme)
+        renderAppPng(File(outDir, "sobre-atualizacao$suffix.png")) { App(updatedContainer, startAt = AppDestination.ABOUT) }
+    }
 
     // O primeiro uso, numa pasta de dados vazia (onde o onboarding ainda não foi feito): os dois passos, no claro e no escuro.
     val emptyContainer = buildContainer(createTempDirectory("3dreport-screenshots-onboarding").toFile())
@@ -879,7 +913,7 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
 
 /** Monta o [AppContainer] pra renderizar, como [com.threedreport.app.DesktopContainer.createDesktopContainer], mas
  * sobre a pasta temporária e sem gravação em segundo plano nem verificação de atualização de verdade. */
-private fun buildContainer(dataDir: File): AppContainer {
+private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }): AppContainer {
     val storage = LocalStorage(dataDir, Clock.System)
     return AppContainer(
         filaments = storage.filaments(),
@@ -899,7 +933,7 @@ private fun buildContainer(dataDir: File): AppContainer {
         preferences = storage.preferences(),
         backup = storage.backup(),
         storageHealth = storage.health,
-        releases = ReleaseSource { null },
+        releases = releases,
     )
 }
 

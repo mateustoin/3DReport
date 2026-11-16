@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import com.threedreport.app.platform.openUrl
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppCheckbox
+import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.icons.AppIcons
@@ -48,8 +49,12 @@ fun UpdateSection(viewModel: UpdateViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
             when (val status = state.status) {
                 is UpdateState.Available -> {
-                    AppButton(stringResource(Res.string.about_updates_see_news), { openUrl(status.release.url) }, icon = AppIcons.OpenInNew)
-                    StatusText(stringResource(Res.string.about_updates_available, status.release.version))
+                    AppButton(stringResource(Res.string.about_updates_see_news), { openUrl(status.release.url) }, kind = ButtonKind.Primary, icon = AppIcons.OpenInNew)
+                    Text(
+                        stringResource(Res.string.about_updates_available, status.release.version),
+                        style = MaterialTheme.appType.bodyStrong,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
 
                 else -> {

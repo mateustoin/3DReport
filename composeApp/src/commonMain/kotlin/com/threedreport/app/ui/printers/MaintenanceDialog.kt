@@ -143,7 +143,6 @@ fun MaintenanceDialog(open: MaintenanceDialogState, viewModel: PrinterListViewMo
         title = stringResource(Res.string.printers_maintenance_title, printer.name),
         onDismiss = onDismiss,
         buttons = { AppButton(stringResource(Res.string.common_close), onDismiss) },
-        scrollable = true,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
             DialogText(stringResource(Res.string.printers_maintenance_known_hours, open.hours.hoursText()), muted = true)

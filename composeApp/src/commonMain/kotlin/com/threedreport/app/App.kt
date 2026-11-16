@@ -3,6 +3,7 @@ package com.threedreport.app
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.about_updates_announce
 import _3dreport.composeapp.generated.resources.about_updates_see_news
+import _3dreport.composeapp.generated.resources.common_retry
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +66,8 @@ import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.AboutScreen
 import com.threedreport.app.ui.about.UpdateState
 import com.threedreport.app.ui.about.UpdateViewModel
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.LocalSnackbarHostState
 import com.threedreport.app.ui.consumables.ConsumableListScreen
@@ -109,6 +112,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun App(
@@ -508,7 +512,7 @@ private fun StorageHealthDialogs(container: AppContainer) {
         AlertDialog(
             onDismissRequest = {},
             properties = DialogProperties(dismissOnClickOutside = false),
-            confirmButton = { TextButton(onClick = container.pendingWrites::retry) { Text("Tentar de novo") } },
+            confirmButton = { AppButton(stringResource(Res.string.common_retry), container.pendingWrites::retry, kind = ButtonKind.Primary) },
             title = { Text("Não consegui gravar suas mudanças") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -49,32 +49,6 @@ class TemplateListViewModelTest {
     }
 
     @Test
-    fun loadCopiesTemplateIntoBrandingSettings() {
-        val templateRepository = TemplateRepository()
-        templateRepository.add(sampleTemplate())
-        val brandingRepository = BrandingRepository()
-        val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
-        val template = templateRepository.templates.value.first()
-
-        viewModel.load(template.id)
-
-        val branding = brandingRepository.branding.value
-        assertEquals("Minha Loja", branding.brandName)
-        assertTrue(branding.showWatermark)
-        assertEquals(false, branding.showFooter)
-    }
-
-    @Test
-    fun loadDoesNothingForUnknownId() {
-        val brandingRepository = BrandingRepository()
-        val viewModel = TemplateListViewModel(TemplateRepository(), brandingRepository, scope)
-
-        viewModel.load("does-not-exist")
-
-        assertNull(brandingRepository.branding.value.brandName)
-    }
-
-    @Test
     fun activeTemplateIdMatchesTemplateWithSameFieldsAsBranding() {
         val templateRepository = TemplateRepository()
         val brandingRepository = BrandingRepository()
@@ -84,7 +58,7 @@ class TemplateListViewModelTest {
 
         assertNull(viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value))
 
-        viewModel.load(formal.id)
+        brandingRepository.update(brandingRepository.branding.value.copy(brandName = "Minha Loja", showWatermark = true, showFooter = false))
 
         assertEquals(formal.id, viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value))
     }
@@ -96,8 +70,7 @@ class TemplateListViewModelTest {
         val brandingRepository = BrandingRepository()
         val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
         val template = templateRepository.templates.value.first()
-
-        viewModel.load(template.id)
+        brandingRepository.update(brandingRepository.branding.value.copy(brandName = "Minha Loja", showWatermark = true, showFooter = false, showPrintTime = true))
 
         assertTrue(brandingRepository.branding.value.showPrintTime)
         assertEquals(template.id, viewModel.activeTemplateId(templateRepository.templates.value, brandingRepository.branding.value))
@@ -108,35 +81,16 @@ class TemplateListViewModelTest {
     }
 
     @Test
-    fun loadingATemplateKeepsTheSellerLogoAndContact() {
-        val templateRepository = TemplateRepository()
-        templateRepository.add(sampleTemplate().copy(showBorder = true))
-        val brandingRepository = BrandingRepository()
-        brandingRepository.update(
-            com.threedreport.core.model.BrandingSettings(contactInstagram = "loja"),
-            com.threedreport.app.data.LogoChange.Replace(com.threedreport.app.platform.PickedFile("logo.png", byteArrayOf(1))),
-        )
-        val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
-
-        viewModel.load(templateRepository.templates.value.first().id)
-
-        val branding = brandingRepository.branding.value
-        assertTrue(branding.showBorder)
-        assertEquals("@loja", branding.instagramHandle)
-        assertTrue(branding.logoFileName != null)
-        assertEquals(templateRepository.templates.value.first().id, viewModel.activeTemplateId(templateRepository.templates.value, branding))
-    }
-
-    @Test
     fun theListMarksOnlyTheTemplateThatIsActive() {
         val templateRepository = TemplateRepository()
         templateRepository.add(sampleTemplate("Formal"))
         templateRepository.add(sampleTemplate("Simples").copy(brandName = "Outra", showFooter = true))
-        val viewModel = TemplateListViewModel(templateRepository, BrandingRepository(), scope)
+        val brandingRepository = BrandingRepository()
+        val viewModel = TemplateListViewModel(templateRepository, brandingRepository, scope)
 
         assertEquals(listOf(false, false), viewModel.uiState.value.rows.map { it.isActive })
 
-        viewModel.load("Formal")
+        brandingRepository.update(brandingRepository.branding.value.copy(brandName = "Minha Loja", showWatermark = true, showFooter = false))
 
         assertEquals(listOf("Formal" to true, "Simples" to false), viewModel.uiState.value.rows.map { it.template.name to it.isActive })
     }

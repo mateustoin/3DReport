@@ -21,6 +21,8 @@ import _3dreport.composeapp.generated.resources.settings_energy_period_off_peak
 import _3dreport.composeapp.generated.resources.settings_energy_period_peak
 import _3dreport.composeapp.generated.resources.settings_energy_result
 import _3dreport.composeapp.generated.resources.settings_energy_result_empty
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -129,7 +131,6 @@ fun EnergyTariffDialog(onDismiss: () -> Unit, onUse: (Double) -> Unit) {
     AppDialog(
         title = stringResource(Res.string.settings_action_energy_calc),
         onDismiss = onDismiss,
-        scrollable = true,
         dismissOnClickOutside = false,
         buttons = {
             AppButton(stringResource(Res.string.common_cancel), onDismiss)
@@ -176,28 +177,30 @@ fun EnergyTariffDialog(onDismiss: () -> Unit, onUse: (Double) -> Unit) {
             }
 
             EnergyTariffMode.WHITE -> {
-                PeriodFields(
-                    title = stringResource(Res.string.settings_energy_period_off_peak),
-                    price = state.offPeakPriceText,
-                    share = state.offPeakShareText,
-                    onPrice = { state = state.copy(offPeakPriceText = it) },
-                    onShare = { state = state.copy(offPeakShareText = it) },
-                    help = HelpText(stringResource(Res.string.settings_energy_help_white)),
-                )
-                PeriodFields(
-                    title = stringResource(Res.string.settings_energy_period_mid_peak),
-                    price = state.midPeakPriceText,
-                    share = state.midPeakShareText,
-                    onPrice = { state = state.copy(midPeakPriceText = it) },
-                    onShare = { state = state.copy(midPeakShareText = it) },
-                )
-                PeriodFields(
-                    title = stringResource(Res.string.settings_energy_period_peak),
-                    price = state.peakPriceText,
-                    share = state.peakShareText,
-                    onPrice = { state = state.copy(peakPriceText = it) },
-                    onShare = { state = state.copy(peakShareText = it) },
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xl)) {
+                    PeriodFields(
+                        title = stringResource(Res.string.settings_energy_period_off_peak),
+                        price = state.offPeakPriceText,
+                        share = state.offPeakShareText,
+                        onPrice = { state = state.copy(offPeakPriceText = it) },
+                        onShare = { state = state.copy(offPeakShareText = it) },
+                        help = HelpText(stringResource(Res.string.settings_energy_help_white)),
+                    )
+                    PeriodFields(
+                        title = stringResource(Res.string.settings_energy_period_mid_peak),
+                        price = state.midPeakPriceText,
+                        share = state.midPeakShareText,
+                        onPrice = { state = state.copy(midPeakPriceText = it) },
+                        onShare = { state = state.copy(midPeakShareText = it) },
+                    )
+                    PeriodFields(
+                        title = stringResource(Res.string.settings_energy_period_peak),
+                        price = state.peakPriceText,
+                        share = state.peakShareText,
+                        onPrice = { state = state.copy(peakPriceText = it) },
+                        onShare = { state = state.copy(peakShareText = it) },
+                    )
+                }
             }
         }
 

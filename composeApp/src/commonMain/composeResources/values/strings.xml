@@ -29,6 +29,7 @@
     <string name="common_error_positive">Precisa ser maior que zero</string>
     <string name="common_error_whole_number">Digite um número inteiro</string>
     <string name="common_close">Fechar</string>
+    <string name="common_retry">Tentar de novo</string>
     <string name="common_undo">Desfazer</string>
     <string name="common_delete_in_use">%1$s está em %2$s.</string>
     <string name="common_delete_in_use_hint">Arquivar tira da lista do Orçamento e mantém o cadastro. Dá pra restaurar depois.</string>
@@ -812,7 +813,8 @@
     <string name="settings_help_labor_detail">Tirar da mesa, remover suporte, lixar, pintar, embalar. Soma ao preço pelo valor da hora, sem a margem por cima. Deixe zero pra não cobrar mão de obra.</string>
     <string name="settings_fixed_title">Custos fixos do negócio</string>
     <string name="settings_field_fixed_cost">Custo fixo mensal</string>
-    <string name="settings_field_productive_hours">Horas de impressão por mês (todas as impressoras)</string>
+    <string name="settings_field_productive_hours">Horas de impressão por mês</string>
+    <string name="settings_help_productive_hours">Some as horas de todas as impressoras.</string>
     <string name="settings_help_fixed">Aluguel do espaço, internet, assinaturas e embalagem não aparecem em nenhuma peça específica, mas você paga todo mês.</string>
     <string name="settings_help_fixed_detail">O valor é dividido pelas horas de impressão do mês e cada peça paga a parte dela. Deixe zero pra não usar.</string>
     <string name="settings_failures_title">Falhas e acabamento</string>
@@ -849,13 +851,12 @@
     <string name="settings_energy_period_mid_peak">Intermediário</string>
     <string name="settings_energy_period_peak">Ponta</string>
     <string name="settings_energy_field_period_price">Preço por kWh</string>
-    <string name="settings_energy_field_period_share">% das horas de impressão</string>
+    <string name="settings_energy_field_period_share">Parte das horas (%)</string>
     <string name="settings_energy_help_white">Informe quanto das horas de impressão cai em cada horário; o app faz a média.</string>
     <string name="settings_energy_result">Preço do kWh</string>
     <string name="settings_energy_result_empty">Preencha os campos pra calcular.</string>
     <string name="settings_energy_action_use">Usar este valor</string>
 
-    <string name="settings_channels_title">Canais de venda</string>
     <string name="settings_channels_help">Onde a venda acontece e quanto isso desconta do que você recebe: Shopee, Mercado Livre, cartão, Pix.</string>
     <string name="settings_channels_help_detail">Em cada orçamento você escolhe o canal, e o preço sobe o suficiente pra sua margem não mudar. Marketplace e forma de pagamento entram aqui juntos de propósito: somar a taxa da Shopee com a do cartão cobraria em dobro, porque o marketplace já embute o processamento do pagamento.</string>
     <string name="settings_channels_empty">Nenhum canal cadastrado: todo orçamento sai como venda direta, sem taxa.</string>
@@ -876,7 +877,7 @@
         <item quantity="one">%1$d faixa de preço ativa: ela substitui a taxa e o valor fixo acima.</item>
         <item quantity="other">%1$d faixas de preço ativas: elas substituem a taxa e o valor fixo acima.</item>
     </plurals>
-    <string name="settings_channels_tier_up_to">Até %1$s (por peça)</string>
+    <string name="settings_channels_tier_up_to">Até (por peça)</string>
     <string name="settings_channels_tier_fee">Taxa (%)</string>
     <string name="settings_channels_tier_fixed">Fixo por item</string>
     <string name="settings_channels_tier_last">Acima disso</string>
@@ -934,13 +935,13 @@
     <string name="settings_docs_preview_help">Orçamento de exemplo, com o que está no formulário agora (mesmo sem salvar).</string>
     <string name="settings_docs_preview_description">Prévia do PDF</string>
     <string name="settings_docs_preview_sample">Exemplo: suporte de celular</string>
-    <string name="settings_docs_templates_title">Templates</string>
-    <string name="settings_docs_templates_help">Um template guarda o nome e a aparência do PDF. Sua logo e seu contato ficam sempre os mesmos.</string>
-    <string name="settings_docs_template_save">Salvar como template</string>
-    <string name="settings_docs_template_list">Ver templates salvos</string>
-    <string name="settings_docs_template_name">Nome do template</string>
+    <string name="settings_docs_templates_title">Modelos</string>
+    <string name="settings_docs_templates_help">Um modelo guarda o nome e a aparência do PDF. Sua logo e seu contato ficam sempre os mesmos.</string>
+    <string name="settings_docs_template_save">Salvar como modelo</string>
+    <string name="settings_docs_template_list">Ver modelos salvos</string>
+    <string name="settings_docs_template_name">Nome do modelo</string>
     <string name="settings_docs_template_name_hint">Ex.: Formal, Simples</string>
-    <string name="settings_docs_notice_template_saved">Template salvo.</string>
+    <string name="settings_docs_notice_template_saved">Modelo salvo.</string>
 
     <string name="settings_appearance_theme">Tema</string>
     <string name="settings_appearance_theme_help">Claro, escuro ou o mesmo do sistema. Vale na hora.</string>
@@ -978,14 +979,14 @@
     <string name="settings_backup_restored_close">Fechar o app</string>
 
     <!-- Modelos de orçamento -->
-    <string name="templates_title">Templates salvos</string>
-    <string name="templates_help">Fotos nomeadas da marca d'água e do rodapé do PDF, criadas com "Salvar como template".</string>
-    <string name="templates_empty">Nenhum template salvo ainda. Use "Salvar como template" em Documentos pro cliente.</string>
+    <string name="templates_title">Modelos de orçamento</string>
+    <string name="templates_help">Um modelo guarda a aparência do PDF com um nome.</string>
+    <string name="templates_empty">Nenhum modelo salvo ainda.</string>
     <string name="templates_active">Ativo</string>
     <string name="templates_row_brand">Marca d'água: "%1$s"</string>
     <string name="templates_row_no_brand">Sem marca d'água configurada</string>
     <string name="templates_action_load">Carregar</string>
-    <string name="templates_delete_title">Excluir template?</string>
+    <string name="templates_delete_title">Excluir modelo?</string>
     <string name="templates_delete_message">"%1$s" será removido. Essa ação não pode ser desfeita.</string>
 
     <!-- Sobre -->
@@ -1021,7 +1022,7 @@
     <string name="about_updates_announce">Versão %1$s do 3DReport disponível.</string>
 
     <!-- Primeiro uso -->
-    <string name="onboarding_title">Bem-vindo ao 3DReport</string>
+    <string name="onboarding_title">Boas-vindas ao 3DReport</string>
     <string name="onboarding_help">Perguntas rápidas pra o app sair do jeito do seu negócio. Dá pra mudar tudo depois em Configurações e Impressoras.</string>
     <string name="onboarding_step">Passo %1$d de %2$d</string>
     <string name="onboarding_printer_title">Qual a sua impressora?</string>

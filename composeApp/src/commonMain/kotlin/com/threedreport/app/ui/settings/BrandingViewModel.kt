@@ -50,13 +50,13 @@ import kotlin.uuid.Uuid
 /**
  * ViewModel da seção "Documentos pro cliente" (parte da tela de Configurações, mas separado de
  * [SettingsViewModel] porque não é um parâmetro de custo, ver [BrandingRepository]). Um [uiState] só e os [notices].
- * Também cobre "Salvar como template" ([confirmSaveAsTemplate]), que tira uma foto dos campos de
+ * Também cobre "Salvar como modelo" ([confirmSaveAsTemplate]), que tira uma foto dos campos de
  * apresentação do formulário (mesmo que ainda não tenham sido persistidos com [save]) e guarda
  * como um novo [QuoteTemplate]; logo e contato ficam de fora, porque são identidade, não
  * apresentação (decisão 86).
  *
  * [currency] e [pickImage] são injetáveis pros testes não dependerem do repositório de moeda nem
- * de diálogo nativo. Com [scope], o formulário acompanha o que for gravado por outro caminho (carregar um template).
+ * de diálogo nativo. Com [scope], o formulário acompanha o que for gravado por outro caminho.
  */
 class BrandingViewModel(
     private val repository: BrandingRepository,
@@ -84,9 +84,8 @@ class BrandingViewModel(
         get() = state.value.hasUnsavedChanges
 
     /**
-     * Acompanha o que foi gravado por outro caminho. Com o formulário sem edição, ele passa a mostrar o
-     * que está gravado; antes, carregar um template não aparecia no formulário, e o próximo "Salvar"
-     * desfazia o template. Com edição em andamento, o rascunho fica.
+     * Acompanha o que foi gravado por outro caminho (a restauração de um backup, por exemplo). Com o formulário sem
+     * edição, ele passa a mostrar o que está gravado; com edição em andamento, o rascunho fica.
      */
     fun syncWith(saved: BrandingSettings) {
         if (saved == baseline) return
@@ -96,9 +95,9 @@ class BrandingViewModel(
     }
 
     /**
-     * "Carregar" um template: põe os campos de apresentação dele no formulário (logo e contato ficam, são
-     * identidade, decisão 86) e grava. Passar pelo formulário, e não direto pelo repositório, é o que faz
-     * o template aparecer na tela e não ser desfeito pelo próximo "Salvar".
+     * "Carregar" um modelo: põe os campos de apresentação dele no rascunho do formulário (logo e contato ficam, são
+     * identidade, decisão 86) e não grava. Quem decide é a barra de alterações: "Salvar" adota, "Descartar" volta
+     * pro que estava gravado.
      */
     fun applyTemplate(template: QuoteTemplate) {
         edit {
@@ -110,7 +109,6 @@ class BrandingViewModel(
                 showBorder = template.showBorder,
             )
         }
-        save()
     }
 
     /** Publica [next] com a marca de "há o que salvar" recalculada contra o que está gravado. */

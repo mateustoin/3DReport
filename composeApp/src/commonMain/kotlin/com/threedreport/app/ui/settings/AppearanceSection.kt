@@ -6,7 +6,6 @@ import _3dreport.composeapp.generated.resources.settings_appearance_currency_hel
 import _3dreport.composeapp.generated.resources.settings_appearance_currency_help_detail
 import _3dreport.composeapp.generated.resources.settings_appearance_theme
 import _3dreport.composeapp.generated.resources.settings_appearance_theme_help
-import _3dreport.composeapp.generated.resources.settings_section_appearance
 import _3dreport.composeapp.generated.resources.settings_theme_dark
 import _3dreport.composeapp.generated.resources.settings_theme_light
 import _3dreport.composeapp.generated.resources.settings_theme_system
@@ -16,7 +15,6 @@ import androidx.compose.runtime.getValue
 import com.threedreport.app.ui.components.AppChoiceField
 import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.FormGrid
-import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.theme.ThemeViewModel
 import com.threedreport.core.model.Currency
@@ -31,31 +29,29 @@ internal fun AppearanceSection(themeViewModel: ThemeViewModel, currencyViewModel
     val currency by currencyViewModel.currency.collectAsState()
     val modes = ThemeMode.entries
 
-    FormSection(1, stringResource(Res.string.settings_section_appearance)) {
-        FormGrid {
-            cell(2) {
-                AppChoiceField(
-                    label = stringResource(Res.string.settings_appearance_theme),
-                    options = modes.map { stringResource(it.labelRes()) },
-                    selectedIndex = modes.indexOf(themeMode),
-                    onSelect = { themeViewModel.setMode(modes[it]) },
-                    help = HelpText(stringResource(Res.string.settings_appearance_theme_help)),
-                )
-            }
-            cell(1) {
-                AppDropdownField(
-                    label = stringResource(Res.string.settings_appearance_currency),
-                    items = Currency.entries,
-                    selected = currency,
-                    itemLabel = { "${it.code} (${it.symbol})" },
-                    displayText = { "${it.code} (${it.symbol})" },
-                    onSelect = currencyViewModel::setCurrency,
-                    help = HelpText(
-                        stringResource(Res.string.settings_appearance_currency_help),
-                        stringResource(Res.string.settings_appearance_currency_help_detail),
-                    ),
-                )
-            }
+    FormGrid {
+        cell(1) {
+            AppChoiceField(
+                label = stringResource(Res.string.settings_appearance_theme),
+                options = modes.map { stringResource(it.labelRes()) },
+                selectedIndex = modes.indexOf(themeMode),
+                onSelect = { themeViewModel.setMode(modes[it]) },
+                help = HelpText(stringResource(Res.string.settings_appearance_theme_help)),
+            )
+        }
+        cell(1) {
+            AppDropdownField(
+                label = stringResource(Res.string.settings_appearance_currency),
+                items = Currency.entries,
+                selected = currency,
+                itemLabel = { "${it.code} (${it.symbol})" },
+                displayText = { "${it.code} (${it.symbol})" },
+                onSelect = currencyViewModel::setCurrency,
+                help = HelpText(
+                    stringResource(Res.string.settings_appearance_currency_help),
+                    stringResource(Res.string.settings_appearance_currency_help_detail),
+                ),
+            )
         }
     }
 }

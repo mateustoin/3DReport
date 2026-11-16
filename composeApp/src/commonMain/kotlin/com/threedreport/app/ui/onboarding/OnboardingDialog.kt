@@ -73,7 +73,6 @@ fun OnboardingDialog(
         title = stringResource(Res.string.onboarding_title),
         onDismiss = onSkip,
         dismissOnClickOutside = false,
-        scrollable = true,
         help = HelpText(stringResource(Res.string.onboarding_help)),
         buttons = {
             AppButton(stringResource(Res.string.onboarding_action_skip), onSkip)
@@ -133,7 +132,7 @@ fun OnboardingDialog(
                             label = stringResource(Res.string.onboarding_field_energy),
                             value = state.energyText,
                             onValueChange = viewModel::setEnergy,
-                            kind = NumberKind.AMOUNT,
+                            kind = NumberKind.MEASURE,
                             prefix = symbol,
                             error = state.energyError?.asString(),
                             help = HelpText(stringResource(Res.string.onboarding_help_energy)),

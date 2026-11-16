@@ -32,7 +32,7 @@ import com.threedreport.app.ui.theme.spacing
 /**
  * Caixa de marcar do kit, com o [label] ao lado; a linha toda é o alvo do clique e do Tab. Marcada: fundo `primary`
  * com o visto em `onPrimary`. Desmarcada: borda `line` (`primary` ao passar o mouse). No foco, anel de 2.
- * Com [help], uma dica de ajuda ao lado do rótulo. O conteúdo que fica sob a caixa (campos de um serviço marcado) recua [AppDimens.checkboxIndent].
+ * Com [help], uma dica de ajuda colada ao rótulo (4 entre eles). O conteúdo que fica sob a caixa (campos de um serviço marcado) recua [AppDimens.checkboxIndent].
  */
 @Composable
 fun AppCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier, help: HelpText? = null) {
@@ -51,8 +51,11 @@ fun AppCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit, mo
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm),
     ) {
         CheckboxMark(checked, hovered)
-        Text(label, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
-        if (help != null) HelpHint(help, label)
+        // O rótulo e a dica andam juntos (4); a caixa fica a 12 deles.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+            Text(label, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
+            if (help != null) HelpHint(help, label)
+        }
     }
 }
 

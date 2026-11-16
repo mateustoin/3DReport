@@ -20,7 +20,6 @@ import _3dreport.composeapp.generated.resources.about_shortcuts_title
 import _3dreport.composeapp.generated.resources.about_summary
 import _3dreport.composeapp.generated.resources.about_title
 import _3dreport.composeapp.generated.resources.about_version
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +34,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.threedreport.app.platform.openUrl
 import com.threedreport.app.ui.components.AppButton
@@ -45,7 +46,6 @@ import com.threedreport.app.ui.components.InfoRow
 import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
-import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import org.jetbrains.compose.resources.stringResource
@@ -64,46 +64,52 @@ private const val AUTHOR_NAME = "Mateus Antonio da Silva"
 @Composable
 fun AboutScreen(version: String, updateViewModel: UpdateViewModel) {
     val space = MaterialTheme.spacing
+    val updateState by updateViewModel.uiState.collectAsState()
+    val updateAvailable = updateState.status is UpdateState.Available
     Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Column(
             modifier = Modifier
                 .padding(start = space.xxl, end = space.xxl, top = AppDimens.screenTopPadding, bottom = space.xxl)
                 .widthIn(max = AppDimens.listMaxWidth)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(space.xl),
         ) {
+            // O espaço depois do cabeçalho é o do próprio ScreenHeader, o mesmo dos cadastros.
             ScreenHeader(stringResource(Res.string.about_title))
-
-            Column(
-                modifier = Modifier.fillMaxWidth().background(MaterialTheme.appColors.navy, MaterialTheme.shapes.medium).padding(space.xl),
-                verticalArrangement = Arrangement.spacedBy(space.xxs),
-            ) {
-                BrandMark()
-                Text(stringResource(Res.string.about_version, version), style = MaterialTheme.appType.caption, color = MaterialTheme.appColors.onNavyMuted)
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
-                Text(stringResource(Res.string.about_summary, AUTHOR_NAME), style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
-                listOf(Res.string.about_does_quote, Res.string.about_does_orders, Res.string.about_does_settings).forEach {
-                    Text(stringResource(it), style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(verticalArrangement = Arrangement.spacedBy(space.xl)) {
+                Column(verticalArrangement = Arrangement.spacedBy(space.xxs)) {
+                    BrandMark(onNavy = false)
+                    Text(stringResource(Res.string.about_version, version), style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
 
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
-                AppButton(stringResource(Res.string.about_link_support), { openUrl(BUY_ME_A_COFFEE_URL) }, kind = ButtonKind.Primary, icon = AppIcons.OpenInNew)
-                AppButton(stringResource(Res.string.about_link_site), { openUrl(SITE_URL) }, icon = AppIcons.OpenInNew)
-                AppButton(stringResource(Res.string.about_link_code), { openUrl(GITHUB_URL) }, icon = AppIcons.OpenInNew)
-                AppButton(stringResource(Res.string.about_link_licenses), { openUrl(LICENSES_URL) }, icon = AppIcons.OpenInNew)
-            }
+                Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+                    Text(stringResource(Res.string.about_summary, AUTHOR_NAME), style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface)
+                    listOf(Res.string.about_does_quote, Res.string.about_does_orders, Res.string.about_does_settings).forEach {
+                        Text(stringResource(it), style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
 
-            UpdateSection(updateViewModel)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
+                    // Um só âmbar por contexto: com versão nova, o âmbar é de "Ver novidades" (UpdateSection).
+                    AppButton(
+                        stringResource(Res.string.about_link_support),
+                        { openUrl(BUY_ME_A_COFFEE_URL) },
+                        kind = if (updateAvailable) ButtonKind.Secondary else ButtonKind.Primary,
+                        icon = AppIcons.OpenInNew,
+                    )
+                    AppButton(stringResource(Res.string.about_link_site), { openUrl(SITE_URL) }, icon = AppIcons.OpenInNew)
+                    AppButton(stringResource(Res.string.about_link_code), { openUrl(GITHUB_URL) }, icon = AppIcons.OpenInNew)
+                    AppButton(stringResource(Res.string.about_link_licenses), { openUrl(LICENSES_URL) }, icon = AppIcons.OpenInNew)
+                }
 
-            FormSection(null, stringResource(Res.string.about_shortcuts_title)) {
-                Column {
-                    InfoRow(stringResource(Res.string.about_shortcut_screens), stringResource(Res.string.about_shortcut_screens_keys))
-                    InfoRow(stringResource(Res.string.about_shortcut_save), stringResource(Res.string.about_shortcut_save_keys))
-                    InfoRow(stringResource(Res.string.about_shortcut_new), stringResource(Res.string.about_shortcut_new_keys))
-                    InfoRow(stringResource(Res.string.about_shortcut_close), stringResource(Res.string.about_shortcut_close_keys))
+                UpdateSection(updateViewModel)
+
+                FormSection(null, stringResource(Res.string.about_shortcuts_title)) {
+                    Column {
+                        InfoRow(stringResource(Res.string.about_shortcut_screens), stringResource(Res.string.about_shortcut_screens_keys))
+                        InfoRow(stringResource(Res.string.about_shortcut_save), stringResource(Res.string.about_shortcut_save_keys))
+                        InfoRow(stringResource(Res.string.about_shortcut_new), stringResource(Res.string.about_shortcut_new_keys))
+                        InfoRow(stringResource(Res.string.about_shortcut_close), stringResource(Res.string.about_shortcut_close_keys))
+                    }
                 }
             }
         }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -189,7 +190,7 @@ private fun SidebarItem(
                     modifier = Modifier.size(AppDimens.navIconSize),
                 )
                 if (hasPendingChanges) {
-                    Box(Modifier.align(Alignment.TopEnd).size(AppDimens.pendingDotSize).clip(CircleShape).background(colors.amber))
+                    Box(Modifier.align(Alignment.TopEnd).offset(x = space.xxs, y = -space.xxs).size(AppDimens.pendingDotSize).clip(CircleShape).background(colors.onNavy))
                 }
             }
             if (!compact) {

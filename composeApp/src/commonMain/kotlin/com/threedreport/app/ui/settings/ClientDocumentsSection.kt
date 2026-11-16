@@ -90,9 +90,10 @@ import com.threedreport.app.ui.theme.spacing
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A seção "Documentos pro cliente" de Configurações, em três blocos: **sua marca** (nome, logo e contato, a identidade
- * de quem vende), **aparência do PDF** (o que um template guarda) e os templates. Separar identidade de aparência na
- * tela é o mesmo corte do modelo: aplicar um template muda o segundo bloco e nunca o primeiro (decisão 86).
+ * A seção "Documentos pro cliente" de Configurações, em quatro blocos: **sua marca** (a logo), **seu contato** (a
+ * identidade de quem vende), **aparência do PDF** (o nome da marca, que é o texto da marca d'água e do rodapé, mais as
+ * opções do PDF: o que um modelo guarda) e os modelos. Separar identidade de aparência na tela é o mesmo corte do
+ * modelo: carregar um modelo muda só o terceiro bloco, no rascunho, e nunca os dois primeiros (decisão 86).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -102,16 +103,6 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
     val space = MaterialTheme.spacing
 
     FormSection(1, stringResource(Res.string.settings_docs_brand_title)) {
-        FormGrid {
-            cell(3) {
-                AppTextField(
-                    label = stringResource(Res.string.settings_docs_field_brand),
-                    value = branding.brandNameInput,
-                    onValueChange = viewModel::update,
-                    placeholder = stringResource(Res.string.common_optional),
-                )
-            }
-        }
         LogoPicker(branding, viewModel)
     }
 
@@ -149,6 +140,16 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         stringResource(Res.string.settings_docs_pdf_title),
         help = HelpText(stringResource(Res.string.settings_docs_pdf_help), stringResource(Res.string.settings_docs_pdf_help_detail)),
     ) {
+        FormGrid {
+            cell(3) {
+                AppTextField(
+                    label = stringResource(Res.string.settings_docs_field_brand),
+                    value = branding.brandNameInput,
+                    onValueChange = viewModel::update,
+                    placeholder = stringResource(Res.string.common_optional),
+                )
+            }
+        }
         Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
             AppCheckbox(stringResource(Res.string.settings_docs_watermark), branding.showWatermark, viewModel::setShowWatermark)
             AppCheckbox(stringResource(Res.string.settings_docs_footer), branding.showFooter, viewModel::setShowFooter)
@@ -206,7 +207,15 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         }
     }
     if (showTemplates) {
-        TemplateListDialog(templateListViewModel, onLoad = viewModel::applyTemplate, onDismiss = { showTemplates = false })
+        TemplateListDialog(
+            templateListViewModel,
+            onLoad = viewModel::applyTemplate,
+            onSaveAsTemplate = {
+                showTemplates = false
+                viewModel.startSaveAsTemplate()
+            },
+            onDismiss = { showTemplates = false },
+        )
     }
     branding.previewPng?.let { png -> PdfPreviewDialog(png, onDismiss = viewModel::closePreview) }
 }
@@ -251,7 +260,6 @@ private fun PdfPreviewDialog(png: ByteArray, onDismiss: () -> Unit) {
     AppDialog(
         title = stringResource(Res.string.settings_docs_preview_title),
         onDismiss = onDismiss,
-        scrollable = true,
         help = HelpText(stringResource(Res.string.settings_docs_preview_help)),
         buttons = { AppButton(stringResource(Res.string.common_close), onDismiss) },
     ) {

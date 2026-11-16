@@ -69,7 +69,7 @@ internal fun BackupSection(viewModel: BackupViewModel) {
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
             AppButton(stringResource(Res.string.settings_backup_action_create), viewModel::createBackup, enabled = !state.busy, icon = AppIcons.Save)
-            AppButton(stringResource(Res.string.settings_backup_action_restore), viewModel::pickBackupToRestore, enabled = !state.busy, icon = AppIcons.Download)
+            AppButton(stringResource(Res.string.settings_backup_action_restore), viewModel::pickBackupToRestore, enabled = !state.busy, icon = AppIcons.Restore)
         }
     }
 
@@ -88,8 +88,8 @@ internal fun BackupSection(viewModel: BackupViewModel) {
                 }
                 val pickerTitle = stringResource(Res.string.settings_backup_folder)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
-                    AppButton(stringResource(Res.string.settings_backup_folder_change), onClick = { viewModel.chooseAutomaticBackupDirectory(pickerTitle) })
-                    AppButton(stringResource(Res.string.settings_backup_folder_open), viewModel::openAutomaticBackupDirectory)
+                    AppButton(stringResource(Res.string.settings_backup_folder_change), onClick = { viewModel.chooseAutomaticBackupDirectory(pickerTitle) }, icon = AppIcons.Folder)
+                    AppButton(stringResource(Res.string.settings_backup_folder_open), viewModel::openAutomaticBackupDirectory, icon = AppIcons.FolderOpen)
                 }
             }
         }

@@ -3,6 +3,7 @@ package com.threedreport.app.ui.onboarding
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_number_invalid
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.printers.PrinterPreset
@@ -91,9 +92,9 @@ class OnboardingViewModel(private val currentSettings: PricingSettings) {
     fun finish(): OnboardingResult? {
         val current = state.value
         if (!current.canContinue || current.machinePriceError != null) return null
-        val energy = parseDecimal(current.energyText)
+        val energy = parseDecimal(current.energyText, NumberKind.MEASURE)
         val labor = if (current.laborText.isBlank()) 0.0 else parseDecimal(current.laborText)
-        val margin = parseDecimal(current.marginText)
+        val margin = parseDecimal(current.marginText, NumberKind.MEASURE)
         val machinePrice = if (current.machinePriceText.isBlank()) null else parseDecimal(current.machinePriceText)
         return OnboardingResult(
             settings = currentSettings.copy(
@@ -110,17 +111,20 @@ class OnboardingViewModel(private val currentSettings: PricingSettings) {
     }
 }
 
-/** Recalcula o erro de cada resposta: branco só vale onde a pergunta é opcional. */
+/**
+ * Recalcula o erro de cada resposta: branco só vale onde a pergunta é opcional. Energia (kWh) e margem são medidas
+ * ([NumberKind.MEASURE]), como em Configurações: "1.250" é 1,25, e não mil duzentos e cinquenta.
+ */
 private fun OnboardingUiState.validated(): OnboardingUiState {
-    fun error(text: String, optional: Boolean): UiText? {
+    fun error(text: String, optional: Boolean, kind: NumberKind = NumberKind.AMOUNT): UiText? {
         if (optional && text.isBlank()) return null
-        val value = parseDecimal(text) ?: return uiText(Res.string.common_error_number_invalid)
+        val value = parseDecimal(text, kind) ?: return uiText(Res.string.common_error_number_invalid)
         return uiText(Res.string.common_error_negative).takeIf { value < 0 }
     }
     return copy(
         machinePriceError = error(machinePriceText, optional = true),
-        energyError = error(energyText, optional = false),
+        energyError = error(energyText, optional = false, kind = NumberKind.MEASURE),
         laborError = error(laborText, optional = true),
-        marginError = error(marginText, optional = false),
+        marginError = error(marginText, optional = false, kind = NumberKind.MEASURE),
     )
 }

@@ -34,7 +34,7 @@ import com.threedreport.app.ui.theme.spacing
 /**
  * Item de uma lista de opções ao lado do conteúdo (as seções de Configurações): 36 de altura, raio 8, texto em `body`.
  * Selecionado: fundo `tint` e texto `primary` em 600; com o mouse em cima, fundo `column`. [note] é um texto curto à
- * direita ("Não salvo"), em `label` e na cor de âmbar de texto, pra o aviso não depender só da cor. Foco no teclado:
+ * direita ("Não salvo"), em `label` e em `textMuted` (o âmbar fica pra ação), pra o aviso não depender só da cor. Foco no teclado:
  * anel de 2.
  */
 @Composable
@@ -74,7 +74,7 @@ fun SelectableItem(label: String, selected: Boolean, onClick: () -> Unit, modifi
             modifier = Modifier.weight(1f, fill = false),
         )
         if (note != null) {
-            Text(note, style = MaterialTheme.appType.label, color = colors.amberText, maxLines = 1)
+            Text(note, style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
 }

@@ -33,7 +33,6 @@ import _3dreport.composeapp.generated.resources.settings_channels_tiers_active
 import _3dreport.composeapp.generated.resources.settings_channels_tiers_help
 import _3dreport.composeapp.generated.resources.settings_channels_tiers_help_detail
 import _3dreport.composeapp.generated.resources.settings_channels_tiers_toggle
-import _3dreport.composeapp.generated.resources.settings_channels_title
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,7 +59,6 @@ import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.FieldError
 import com.threedreport.app.ui.components.FormGrid
-import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.IconAction
@@ -87,11 +85,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun SalesChannelSection(viewModel: SalesChannelViewModel) {
     val state by viewModel.uiState.collectAsState()
 
-    FormSection(
-        1,
-        stringResource(Res.string.settings_channels_title),
-        help = HelpText(stringResource(Res.string.settings_channels_help), stringResource(Res.string.settings_channels_help_detail)),
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm)) {
         Column {
             if (state.active.isEmpty()) {
                 EmptyState(stringResource(Res.string.settings_channels_empty), modifier = Modifier.padding(top = MaterialTheme.spacing.xxs))
@@ -99,7 +93,12 @@ internal fun SalesChannelSection(viewModel: SalesChannelViewModel) {
             state.active.forEach { key(it.id) { ChannelRow(it, viewModel) } }
             ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ChannelRow(it, viewModel) } } }
         }
-        AppButton(stringResource(Res.string.settings_channels_action_new), viewModel::startAdd, icon = AppIcons.Add)
+        // A ajuda que ficava no título da seção vai junto do botão, o primeiro elemento que age sobre a lista.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+            val newLabel = stringResource(Res.string.settings_channels_action_new)
+            AppButton(newLabel, viewModel::startAdd, icon = AppIcons.Add)
+            HelpHint(HelpText(stringResource(Res.string.settings_channels_help), stringResource(Res.string.settings_channels_help_detail)), newLabel)
+        }
     }
 
     state.form?.let { ChannelFormDialog(it, viewModel) }
@@ -146,7 +145,6 @@ private fun ChannelFormDialog(form: SalesChannelFormState, viewModel: SalesChann
     AppDialog(
         title = stringResource(if (form.editingId == null) Res.string.settings_channels_form_new else Res.string.settings_channels_form_edit),
         onDismiss = viewModel::cancelEdit,
-        scrollable = true,
         dismissOnClickOutside = false,
         buttons = {
             AppButton(stringResource(Res.string.common_cancel), viewModel::cancelEdit)
@@ -232,7 +230,7 @@ private fun ChannelTiersEditor(form: SalesChannelFormState, viewModel: SalesChan
         return
     }
 
-    val upToTitle = stringResource(Res.string.settings_channels_tier_up_to, symbol)
+    val upToTitle = stringResource(Res.string.settings_channels_tier_up_to)
     val feeTitle = stringResource(Res.string.settings_channels_tier_fee)
     val fixedTitle = stringResource(Res.string.settings_channels_tier_fixed)
     val removeTitle = stringResource(Res.string.settings_channels_tier_remove)
@@ -252,6 +250,7 @@ private fun ChannelTiersEditor(form: SalesChannelFormState, viewModel: SalesChan
                                     value = tier.upToUnitPriceText,
                                     onValueChange = { text -> viewModel.updateTierRow(tier.id) { it.copy(upToUnitPriceText = text) } },
                                     kind = NumberKind.AMOUNT,
+                                    prefix = symbol,
                                     labelHidden = true,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
@@ -273,6 +272,7 @@ private fun ChannelTiersEditor(form: SalesChannelFormState, viewModel: SalesChan
                                 value = tier.fixedFeePerItemText,
                                 onValueChange = { text -> viewModel.updateTierRow(tier.id) { it.copy(fixedFeePerItemText = text) } },
                                 kind = NumberKind.AMOUNT,
+                                prefix = symbol,
                                 labelHidden = true,
                                 modifier = Modifier.fillMaxWidth(),
                             )

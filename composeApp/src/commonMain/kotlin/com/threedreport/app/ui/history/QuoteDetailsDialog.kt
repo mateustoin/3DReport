@@ -63,7 +63,6 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
         title = stringResource(if (quote.isOrder) Res.string.history_details_title_order else Res.string.history_details_title_product),
         onDismiss = viewModel::cancelEditingDetails,
         dismissOnClickOutside = false,
-        scrollable = true,
         help = HelpText(stringResource(Res.string.history_details_help), stringResource(Res.string.history_details_help_detail)),
         buttons = {
             AppButton(stringResource(Res.string.common_cancel), viewModel::cancelEditingDetails)

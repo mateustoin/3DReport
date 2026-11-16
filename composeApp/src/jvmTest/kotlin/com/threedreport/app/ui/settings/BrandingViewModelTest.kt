@@ -250,21 +250,69 @@ class BrandingViewModelTest {
         assertNull(viewModel.uiState.value.previewPng)
     }
 
+    private val loja = com.threedreport.core.model.QuoteTemplate(
+        id = "t", name = "Loja", brandName = "Minha Loja", showWatermark = false, showFooter = true, showPrintTime = true, showBorder = true,
+    )
+
     @Test
-    fun loadingATemplateShowsItInTheFormAndTheNextSaveKeepsIt() {
+    fun loadingATemplateOnlyFillsTheDraftAndDoesNotSave() {
         val brandingRepository = BrandingRepository()
         val viewModel = newViewModel(brandingRepository = brandingRepository)
-        val template = com.threedreport.core.model.QuoteTemplate(
-            id = "t", name = "Loja", brandName = "Minha Loja", showWatermark = false, showFooter = true, showPrintTime = true, showBorder = true,
-        )
+        assertFalse(viewModel.hasUnsavedChanges)
 
-        viewModel.applyTemplate(template)
+        viewModel.applyTemplate(loja)
+
         assertEquals("Minha Loja", viewModel.uiState.value.brandNameInput)
         assertTrue(viewModel.uiState.value.showBorder)
+        assertTrue(viewModel.hasUnsavedChanges, "a barra de alterações não salvas aparece")
+        assertNull(brandingRepository.branding.value.brandName, "carregar não grava")
+        assertFalse(brandingRepository.branding.value.showBorder)
+        assertNull(viewModel.pendingNotice(), "e não avisa de salvo")
+    }
 
+    @Test
+    fun savingAfterLoadingATemplateAdoptsIt() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.applyTemplate(loja)
         viewModel.save()
+
         assertEquals("Minha Loja", brandingRepository.branding.value.brandName)
         assertTrue(brandingRepository.branding.value.showPrintTime)
+        assertFalse(viewModel.hasUnsavedChanges)
+    }
+
+    @Test
+    fun discardingAfterLoadingATemplateBringsBackWhatWasSaved() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.applyTemplate(loja)
+        viewModel.discard()
+
+        assertEquals("", viewModel.uiState.value.brandNameInput)
+        assertFalse(viewModel.uiState.value.showBorder)
+        assertFalse(viewModel.hasUnsavedChanges)
+        assertNull(brandingRepository.branding.value.brandName)
+    }
+
+    @Test
+    fun loadingATemplateKeepsTheSellerLogoAndContact() {
+        val brandingRepository = BrandingRepository()
+        brandingRepository.update(
+            BrandingSettings(contactInstagram = "loja"),
+            LogoChange.Replace(PickedFile("logo.png", byteArrayOf(1))),
+        )
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.applyTemplate(loja)
+        viewModel.save()
+
+        val branding = brandingRepository.branding.value
+        assertTrue(branding.showBorder)
+        assertEquals("@loja", branding.instagramHandle)
+        assertNotNull(branding.logoFileName)
     }
 
     @Test
