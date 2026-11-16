@@ -14,10 +14,12 @@ import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.components.PendingDelete
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +61,8 @@ class ServiceListViewModel(
      * (decisão 115).
      */
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
+    /** A moeda em uso: os números são lidos e mostrados com o separador decimal dela, o mesmo que o campo usa pra validar. */
+    private val currency: () -> Currency = { Currency.BRL },
 ) {
 
     private val state = MutableStateFlow(ServicesUiState().withItems(repository.services.value))
@@ -77,7 +81,7 @@ class ServiceListViewModel(
 
     fun startEdit(id: String) {
         val service = repository.services.value.find { it.id == id } ?: return
-        state.update { it.copy(form = service.toFormState()) }
+        state.update { it.copy(form = service.toFormState(currency().decimalSeparator)) }
     }
 
     fun cancelEdit() {
@@ -96,7 +100,7 @@ class ServiceListViewModel(
         val name = current.name.trim()
         val priceText = current.priceText.trim()
         val minutesText = current.minutesText.trim()
-        val price = parseDecimal(priceText)
+        val price = parseDecimal(priceText, NumberKind.AMOUNT, currency().decimalSeparator)
         val minutes = parseDurationMinutes(minutesText)
 
         val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isEmpty() }

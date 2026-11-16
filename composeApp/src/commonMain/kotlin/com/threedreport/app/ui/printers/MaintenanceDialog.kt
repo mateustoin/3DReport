@@ -96,6 +96,7 @@ import com.threedreport.app.ui.components.RevealActions
 import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.revealActionsWidth
 import com.threedreport.app.ui.components.suggestionsFor
+import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.minutesToHoursText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.icons.AppIcons
@@ -232,7 +233,7 @@ private fun ComponentRow(
     if (editing) {
         ComponentFields(
             initialName = status.component.name,
-            initialInterval = status.component.intervalHours.toInputText(),
+            initialInterval = status.component.intervalHours.toInputText(LocalCurrency.current.decimalSeparator),
             isNew = false,
             onSubmit = { name, interval, _ -> onSave(name, interval).also { if (it == null) editing = false } },
             onCancel = { editing = false },

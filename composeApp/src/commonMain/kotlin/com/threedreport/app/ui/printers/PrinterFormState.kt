@@ -23,6 +23,8 @@ data class PrinterFormState(
     val printingHoursPerDayText: String = "",
     /** O consumo veio de um preset, que traz a potência máxima da fonte (ver aviso no campo). */
     val powerFromPreset: Boolean = false,
+    /** Separador decimal da moeda em uso, o mesmo do campo: a prévia lê os números com ele. */
+    val decimalSeparator: Char = ',',
     val nameError: UiText? = null,
     val powerError: UiText? = null,
     val maintenanceError: UiText? = null,
@@ -38,11 +40,11 @@ data class PrinterFormState(
      */
     val machineCostPerHour: Double?
         get() {
-            val price = parseDecimal(machinePriceText)?.takeIf { it >= 0 } ?: return null
+            val price = parseDecimal(machinePriceText, NumberKind.AMOUNT, decimalSeparator)?.takeIf { it >= 0 } ?: return null
             val months = parseWholeNumber(paybackMonthsText)?.takeIf { it > 0 } ?: return null
             val days = parseWholeNumber(printingDaysPerMonthText)?.takeIf { it > 0 } ?: return null
-            val hours = parseDecimal(printingHoursPerDayText, NumberKind.MEASURE)?.takeIf { it > 0 } ?: return null
-            val maintenance = parseDecimal(maintenanceCostPerHourText) ?: 0.0
+            val hours = parseDecimal(printingHoursPerDayText, NumberKind.MEASURE, decimalSeparator)?.takeIf { it > 0 } ?: return null
+            val maintenance = parseDecimal(maintenanceCostPerHourText, NumberKind.AMOUNT, decimalSeparator) ?: 0.0
             // A conta é do core: a mesma que a lista mostra depois de salvar.
             return MachineInvestment(price, months, days, hours).costPerHour + maintenance
         }
@@ -52,25 +54,27 @@ data class PrinterFormState(
          * Formulário de uma impressora nova, com o uso típico já preenchido (os mesmos valores da impressora
          * de exemplo): campo vazio era um erro de "não é um número" na cara de quem só quer cadastrar.
          */
-        fun new(name: String = "", powerWatts: Double? = null, fromPreset: Boolean = false) = PrinterFormState(
+        fun new(name: String = "", powerWatts: Double? = null, fromPreset: Boolean = false, decimalSeparator: Char = ',') = PrinterFormState(
             name = name,
-            printerPowerWattsText = powerWatts?.toInputText().orEmpty(),
-            maintenanceCostPerHourText = 0.17.toInputText(),
+            printerPowerWattsText = powerWatts?.toInputText(decimalSeparator).orEmpty(),
+            maintenanceCostPerHourText = 0.17.toInputText(decimalSeparator),
             paybackMonthsText = "12",
             printingDaysPerMonthText = "25",
             printingHoursPerDayText = "16",
             powerFromPreset = fromPreset,
+            decimalSeparator = decimalSeparator,
         )
     }
 }
 
-internal fun PrinterProfile.toFormState() = PrinterFormState(
+internal fun PrinterProfile.toFormState(decimalSeparator: Char = ',') = PrinterFormState(
     id = id,
     name = name,
-    printerPowerWattsText = printerPowerWatts.toInputText(),
-    maintenanceCostPerHourText = maintenanceCostPerHour.toInputText(),
-    machinePriceText = machineInvestment.machinePrice.toInputText(),
+    printerPowerWattsText = printerPowerWatts.toInputText(decimalSeparator),
+    maintenanceCostPerHourText = maintenanceCostPerHour.toInputText(decimalSeparator),
+    machinePriceText = machineInvestment.machinePrice.toInputText(decimalSeparator),
     paybackMonthsText = machineInvestment.paybackMonths.toString(),
     printingDaysPerMonthText = machineInvestment.printingDaysPerMonth.toString(),
-    printingHoursPerDayText = machineInvestment.printingHoursPerDay.toInputText(),
+    printingHoursPerDayText = machineInvestment.printingHoursPerDay.toInputText(decimalSeparator),
+    decimalSeparator = decimalSeparator,
 )

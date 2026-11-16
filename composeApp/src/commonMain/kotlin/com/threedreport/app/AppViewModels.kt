@@ -80,16 +80,16 @@ class AppViewModels(
     val catalogViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.PRODUCT) }
     val dashboardViewModel: DashboardViewModel by lazy { DashboardViewModel(container.quoteHistory, container.settings, scope) }
     val filamentListViewModel: FilamentListViewModel by lazy {
-        FilamentListViewModel(container.filaments, scope, container.quoteHistory::quotesIncludingTrash)
+        FilamentListViewModel(container.filaments, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
     }
     val printerListViewModel: PrinterListViewModel by lazy {
-        PrinterListViewModel(container.printers, container.quoteHistory, container.maintenance, scope)
+        PrinterListViewModel(container.printers, container.quoteHistory, container.maintenance, scope, currency = { container.currency.currency.value })
     }
     val serviceListViewModel: ServiceListViewModel by lazy {
-        ServiceListViewModel(container.services, scope, container.quoteHistory::quotesIncludingTrash)
+        ServiceListViewModel(container.services, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
     }
     val consumableListViewModel: ConsumableListViewModel by lazy {
-        ConsumableListViewModel(container.consumables, scope, container.quoteHistory::quotesIncludingTrash)
+        ConsumableListViewModel(container.consumables, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */

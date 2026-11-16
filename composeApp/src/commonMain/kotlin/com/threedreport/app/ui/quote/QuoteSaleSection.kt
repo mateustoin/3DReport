@@ -44,6 +44,8 @@ import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.availableOrSelected
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.channelFeeSummary
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toMoney
@@ -167,7 +169,7 @@ internal fun SaleFields(
 
         if (!input.isProduct) {
             // Só aparece com um frete digitado (decisão 124): marcado sem valor não faria nada.
-            val shippingAmount = parseDecimal(input.shippingCostText) ?: 0.0
+            val shippingAmount = parseDecimal(input.shippingCostText, NumberKind.AMOUNT, LocalCurrency.current.decimalSeparator) ?: 0.0
             if (shippingAmount > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xxs)) {
                     AppCheckbox(stringResource(Res.string.quote_sale_free_shipping), input.shippingAbsorbed, viewModel::setShippingAbsorbed)

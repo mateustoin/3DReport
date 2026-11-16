@@ -17,9 +17,9 @@ data class ConsumableFormState(
     val unitCostError: UiText? = null,
 )
 
-internal fun Consumable.toFormState() = ConsumableFormState(
+internal fun Consumable.toFormState(decimalSeparator: Char = ',') = ConsumableFormState(
     id = id,
     name = name,
-    unitCostText = unitCost.toInputText(),
+    unitCostText = unitCost.toInputText(decimalSeparator),
     chargedPerOrder = chargedPerOrder,
 )

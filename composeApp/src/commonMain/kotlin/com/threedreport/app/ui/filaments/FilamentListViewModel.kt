@@ -20,6 +20,7 @@ import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.SavedQuote
@@ -62,7 +63,10 @@ class FilamentListViewModel(
      * (decisão 115).
      */
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
+    /** A moeda em uso: os números são lidos e mostrados com o separador decimal dela, o mesmo que o campo usa pra validar. */
+    private val currency: () -> Currency = { Currency.BRL },
 ) {
+    private val separator: Char get() = currency().decimalSeparator
 
     private val state = MutableStateFlow(FilamentsUiState().withItems(repository.filaments.value))
     val uiState: StateFlow<FilamentsUiState> = state.asStateFlow()
@@ -75,12 +79,19 @@ class FilamentListViewModel(
     }
 
     fun startAdd() {
-        state.update { it.copy(form = FilamentFormState(colors = listOf(FilamentColorFormState(id = newColorId())))) }
+        state.update {
+            it.copy(
+                form = FilamentFormState(
+                    diameterMmText = Filament.DEFAULT_DIAMETER_MM.toInputText(separator),
+                    colors = listOf(FilamentColorFormState(id = newColorId())),
+                ),
+            )
+        }
     }
 
     fun startEdit(id: String) {
         val filament = repository.filaments.value.find { it.id == id } ?: return
-        state.update { it.copy(form = filament.toFormState()) }
+        state.update { it.copy(form = filament.toFormState(separator)) }
     }
 
     fun cancelEdit() {
@@ -109,7 +120,7 @@ class FilamentListViewModel(
                 form.copy(
                     materialType = preset.label,
                     isCustomMaterialType = false,
-                    densityGPerCm3Text = preset.defaultDensityGPerCm3?.toInputText() ?: form.densityGPerCm3Text,
+                    densityGPerCm3Text = preset.defaultDensityGPerCm3?.toInputText(separator) ?: form.densityGPerCm3Text,
                 )
             }
         }
@@ -137,9 +148,10 @@ class FilamentListViewModel(
     fun save() {
         val current = state.value.form ?: return
         val name = current.name.trim()
-        val price = parseDecimal(current.pricePerKgText.trim())
-        val density = parseDecimal(current.densityGPerCm3Text.trim(), NumberKind.MEASURE)
-        val diameter = parseDecimal(current.diameterMmText.trim(), NumberKind.MEASURE)
+        val separator = separator
+        val price = parseDecimal(current.pricePerKgText.trim(), NumberKind.AMOUNT, separator)
+        val density = parseDecimal(current.densityGPerCm3Text.trim(), NumberKind.MEASURE, separator)
+        val diameter = parseDecimal(current.diameterMmText.trim(), NumberKind.MEASURE, separator)
 
         val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isEmpty() }
         val priceError = when {

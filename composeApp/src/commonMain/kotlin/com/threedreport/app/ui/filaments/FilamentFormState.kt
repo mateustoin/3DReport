@@ -50,12 +50,12 @@ data class FilamentFormState(
         get() = (FILAMENT_BRAND_PRESETS_INTERNATIONAL + FILAMENT_BRAND_PRESETS_BRAZIL).suggestionsFor(brand)
 }
 
-internal fun Filament.toFormState() = FilamentFormState(
+internal fun Filament.toFormState(decimalSeparator: Char = ',') = FilamentFormState(
     id = id,
     name = name,
-    pricePerKgText = pricePerKg.toInputText(),
-    densityGPerCm3Text = densityGPerCm3.toInputText(),
-    diameterMmText = diameterMm.toInputText(),
+    pricePerKgText = pricePerKg.toInputText(decimalSeparator),
+    densityGPerCm3Text = densityGPerCm3.toInputText(decimalSeparator),
+    diameterMmText = diameterMm.toInputText(decimalSeparator),
     brand = brand.orEmpty(),
     materialType = materialType.orEmpty(),
     isCustomMaterialType = materialType != null && FILAMENT_MATERIAL_TYPE_PRESETS.none { it.label == materialType },

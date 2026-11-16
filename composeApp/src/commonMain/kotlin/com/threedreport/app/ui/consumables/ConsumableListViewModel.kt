@@ -14,10 +14,12 @@ import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.components.PendingDelete
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Consumable
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -58,6 +60,8 @@ class ConsumableListViewModel(
      * (decisão 115).
      */
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
+    /** A moeda em uso: os números são lidos e mostrados com o separador decimal dela, o mesmo que o campo usa pra validar. */
+    private val currency: () -> Currency = { Currency.BRL },
 ) {
 
     private val state = MutableStateFlow(ConsumablesUiState().withItems(repository.consumables.value))
@@ -76,7 +80,7 @@ class ConsumableListViewModel(
 
     fun startEdit(id: String) {
         val consumable = repository.consumables.value.find { it.id == id } ?: return
-        state.update { it.copy(form = consumable.toFormState()) }
+        state.update { it.copy(form = consumable.toFormState(currency().decimalSeparator)) }
     }
 
     fun cancelEdit() {
@@ -93,7 +97,7 @@ class ConsumableListViewModel(
     fun save() {
         val current = state.value.form ?: return
         val name = current.name.trim()
-        val cost = current.unitCostText.trim().takeIf { it.isNotEmpty() }?.let { parseDecimal(it) }
+        val cost = current.unitCostText.trim().takeIf { it.isNotEmpty() }?.let { parseDecimal(it, NumberKind.AMOUNT, currency().decimalSeparator) }
 
         val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isEmpty() }
         val costError = when {

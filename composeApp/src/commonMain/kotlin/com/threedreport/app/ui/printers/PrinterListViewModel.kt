@@ -32,6 +32,7 @@ import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.MaintenanceComponent
 import com.threedreport.core.model.MaintenanceLogEntry
@@ -113,7 +114,10 @@ class PrinterListViewModel(
     private val historyRepository: QuoteHistoryRepository,
     private val maintenanceRepository: MaintenanceRepository,
     scope: CoroutineScope,
+    /** A moeda em uso: os números são lidos e mostrados com o separador decimal dela, o mesmo que o campo usa pra validar. */
+    private val currency: () -> Currency = { Currency.BRL },
 ) {
+    private val separator: Char get() = currency().decimalSeparator
 
     private val state = MutableStateFlow(PrintersUiState().withData())
     val uiState: StateFlow<PrintersUiState> = state.asStateFlow()
@@ -128,14 +132,19 @@ class PrinterListViewModel(
     }
 
     fun startAdd() {
-        state.update { it.copy(form = PrinterFormState.new()) }
+        state.update { it.copy(form = PrinterFormState.new(decimalSeparator = separator)) }
     }
 
     /** Abre o formulário de nova impressora já preenchido com um preset, ver [PrinterPreset]. */
     fun startAddFromPreset(preset: PrinterPreset) {
         state.update {
             it.copy(
-                form = PrinterFormState.new(name = "${preset.brand} ${preset.model}", powerWatts = preset.ratedPowerWatts, fromPreset = true),
+                form = PrinterFormState.new(
+                    name = "${preset.brand} ${preset.model}",
+                    powerWatts = preset.ratedPowerWatts,
+                    fromPreset = true,
+                    decimalSeparator = separator,
+                ),
                 presetPickerOpen = false,
             )
         }
@@ -143,7 +152,7 @@ class PrinterListViewModel(
 
     fun startEdit(id: String) {
         val printer = repository.printers.value.find { it.id == id } ?: return
-        state.update { it.copy(form = printer.toFormState()) }
+        state.update { it.copy(form = printer.toFormState(separator)) }
     }
 
     fun cancelEdit() {
@@ -172,12 +181,13 @@ class PrinterListViewModel(
     fun save() {
         val current = state.value.form ?: return
         val name = current.name.trim()
-        val power = parseDecimal(current.printerPowerWattsText.trim(), NumberKind.MEASURE)
-        val maintenanceCost = parseDecimal(current.maintenanceCostPerHourText.trim())
-        val price = parseDecimal(current.machinePriceText.trim())
+        val separator = separator
+        val power = parseDecimal(current.printerPowerWattsText.trim(), NumberKind.MEASURE, separator)
+        val maintenanceCost = parseDecimal(current.maintenanceCostPerHourText.trim(), NumberKind.AMOUNT, separator)
+        val price = parseDecimal(current.machinePriceText.trim(), NumberKind.AMOUNT, separator)
         val payback = parseWholeNumber(current.paybackMonthsText.trim())
         val days = parseWholeNumber(current.printingDaysPerMonthText.trim())
-        val hours = parseDecimal(current.printingHoursPerDayText.trim(), NumberKind.MEASURE)
+        val hours = parseDecimal(current.printingHoursPerDayText.trim(), NumberKind.MEASURE, separator)
 
         val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isEmpty() }
         val powerError = nonNegativeError(current.printerPowerWattsText, power)
@@ -306,11 +316,11 @@ class PrinterListViewModel(
     fun addComponent(printerId: String, name: String, intervalText: String, hoursSinceText: String): UiText? {
         val trimmedName = name.trim()
         if (trimmedName.isEmpty()) return uiText(Res.string.printers_error_component_name)
-        val interval = parseDecimal(intervalText.trim(), NumberKind.MEASURE)?.takeIf { it > 0 } ?: return uiText(Res.string.printers_error_interval)
+        val interval = parseDecimal(intervalText.trim(), NumberKind.MEASURE, separator)?.takeIf { it > 0 } ?: return uiText(Res.string.printers_error_interval)
         val hoursSince = if (hoursSinceText.isBlank()) {
             0.0
         } else {
-            parseDecimal(hoursSinceText.trim(), NumberKind.MEASURE)?.takeIf { it >= 0 } ?: return uiText(Res.string.printers_error_hours_since)
+            parseDecimal(hoursSinceText.trim(), NumberKind.MEASURE, separator)?.takeIf { it >= 0 } ?: return uiText(Res.string.printers_error_hours_since)
         }
         maintenanceRepository.addComponent(
             MaintenanceComponent(
@@ -328,7 +338,7 @@ class PrinterListViewModel(
     fun updateComponent(component: MaintenanceComponent, name: String, intervalText: String): UiText? {
         val trimmedName = name.trim()
         if (trimmedName.isEmpty()) return uiText(Res.string.printers_error_component_name)
-        val interval = parseDecimal(intervalText.trim(), NumberKind.MEASURE)?.takeIf { it > 0 } ?: return uiText(Res.string.printers_error_interval)
+        val interval = parseDecimal(intervalText.trim(), NumberKind.MEASURE, separator)?.takeIf { it > 0 } ?: return uiText(Res.string.printers_error_interval)
         maintenanceRepository.updateComponent(component.copy(name = trimmedName, intervalHours = interval))
         return null
     }
@@ -367,7 +377,7 @@ class PrinterListViewModel(
     /** Lança horas de uso fora de orçamento, com a data de hoje. Devolve o erro, ou `null`. */
     @OptIn(ExperimentalUuidApi::class)
     fun addManualUsage(printerId: String, hoursText: String, reason: String): UiText? {
-        val hours = parseDecimal(hoursText.trim(), NumberKind.MEASURE)?.takeIf { it > 0 } ?: return uiText(Res.string.printers_error_usage_hours)
+        val hours = parseDecimal(hoursText.trim(), NumberKind.MEASURE, separator)?.takeIf { it > 0 } ?: return uiText(Res.string.printers_error_usage_hours)
         val trimmed = reason.trim()
         if (trimmed.isEmpty()) return uiText(Res.string.printers_error_usage_reason)
         maintenanceRepository.addManualUsage(

@@ -155,6 +155,9 @@ class QuoteViewModel(
 ) {
     private val scope: CoroutineScope = scope
 
+    /** Separador decimal da moeda em uso: os campos de número são lidos e preenchidos com ele, como na tela. */
+    private val separator: Char get() = currency().decimalSeparator
+
     private val state = MutableStateFlow(QuoteUiState(catalog = readCatalog()).withResult())
 
     /** Tudo o que a tela mostra. */
@@ -299,14 +302,14 @@ class QuoteViewModel(
     }
 
     private fun FilamentInput.withWeight(text: String, filament: Filament?): FilamentInput {
-        val grams = parseDecimal(text, NumberKind.AMOUNT)
+        val grams = parseDecimal(text, NumberKind.AMOUNT, separator)
         val meters = when {
             text.isBlank() -> ""
 
             grams == null || grams < 0 || filament == null -> lengthText
 
             // Duas casas, como o G-code: com mais, o campo mostrava "16,764181" pra 50 g.
-            else -> GCodeImporter.formatLength(filament.lengthMeters(grams))
+            else -> GCodeImporter.formatLength(filament.lengthMeters(grams), separator)
         }
         return copy(weightText = text, lengthText = meters)
     }
@@ -558,7 +561,7 @@ class QuoteViewModel(
             (form.photo == null || (form.photoFromGCode && (photoGCodePrintId == printId || index == 0)))
         // O G-code só escolhe entre o que não está arquivado (decisão 115).
         val imported = GCodeImporter.apply(
-            current, metadata, filaments.filterNot { it.archived }, printers.filterNot { it.archived }, photoApplied, ::newId,
+            current, metadata, filaments.filterNot { it.archived }, printers.filterNot { it.archived }, photoApplied, ::newId, separator,
         )
 
         if (photoApplied) {
@@ -617,7 +620,7 @@ class QuoteViewModel(
         val service = services.find { it.id == id } ?: return@updateInput input
         val serviceInput = ServiceInput(
             name = service.name,
-            priceText = service.suggestedPriceFor(settings.laborRatePerHour)?.toInputText().orEmpty(),
+            priceText = service.suggestedPriceFor(settings.laborRatePerHour)?.toInputText(separator).orEmpty(),
             chargedPerOrder = service.chargedPerOrder,
             laborMinutesText = service.laborMinutes?.takeIf { it > 0 }?.toDurationInputText().orEmpty(),
         )
@@ -663,7 +666,7 @@ class QuoteViewModel(
     fun useShippingCoveringPrice() {
         val result = freshResult()
         val covering = result.quote?.shippingCoveringSalePrice ?: return
-        setTargetTotal((covering + result.servicesTotal).toInputText())
+        setTargetTotal((covering + result.servicesTotal).toInputText(separator))
     }
 
     fun setServiceChargedPerOrder(id: String, chargedPerOrder: Boolean) =
@@ -678,7 +681,7 @@ class QuoteViewModel(
     fun setShippingCost(text: String) = updateInput { it.copy(shippingCostText = text) }
     fun setTargetTotal(text: String) = updateInput { it.copy(targetTotalText = text) }
 
-    fun applyShowcasePrice(value: Double) = updateInput { it.copy(targetTotalText = value.toInputText()) }
+    fun applyShowcasePrice(value: Double) = updateInput { it.copy(targetTotalText = value.toInputText(separator)) }
 
     fun setSaveName(text: String) = updateForm { it.copy(name = text, savedConfirmation = false) }
     fun setSourceLink(text: String) = updateForm { it.copy(sourceLink = text, savedConfirmation = false) }
@@ -861,7 +864,7 @@ class QuoteViewModel(
                 clientRepository?.resolve(typed) ?: typed
             }
         }
-        val shippingCost = if (isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
+        val shippingCost = if (isProduct) 0.0 else parseDecimal(input.shippingCostText, NumberKind.AMOUNT, separator) ?: 0.0
         // Se o frete grátis vale de fato é a mesma regra da conta (decisão 124), que é do `core`.
         val shippingAbsorbed =
             OrderTerms(shippingCost = shippingCost, shippingAbsorbed = input.shippingAbsorbed, catalogProduct = isProduct).absorbsShipping
@@ -1079,9 +1082,11 @@ class QuoteViewModel(
     }
 
     private fun inputFrom(savedQuote: SavedQuote): QuoteInputState =
-        SavedQuoteMapper.inputStateFrom(savedQuote, filaments, printers, salesChannels, ::newId) { key ->
-            historyRepository.attachmentBytes(key)?.let { PickedFile("miniatura_do_gcode.${attachmentExtension(key)}", it) }
-        }
+        SavedQuoteMapper.inputStateFrom(
+            savedQuote, filaments, printers, salesChannels, ::newId,
+            thumbnail = { key -> historyRepository.attachmentBytes(key)?.let { PickedFile("miniatura_do_gcode.${attachmentExtension(key)}", it) } },
+            decimalSeparator = separator,
+        )
 
     private fun formFrom(savedQuote: SavedQuote): SaveQuoteFormState {
         val photo = savedQuote.photoFileName?.let { fileName ->
@@ -1210,7 +1215,7 @@ class QuoteViewModel(
         val errors = LinkedHashMap<String, UiText>()
         val quantity = input.quantityOrNull ?: 1.also { errors[QuoteFields.QUANTITY] = uiText(Res.string.quote_error_quantity) }
         val selectedServices = input.selectedServices.mapNotNull { (id, serviceInput) ->
-            val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 }
+            val price = parseDecimal(serviceInput.priceText, NumberKind.AMOUNT, separator)?.takeIf { it >= 0 }
             if (price == null) {
                 if (serviceInput.priceText.isNotBlank()) errors[QuoteFields.service(id)] = uiText(Res.string.quote_error_service_value, serviceInput.name)
                 return@mapNotNull null
@@ -1232,7 +1237,7 @@ class QuoteViewModel(
         }
         // Com o insumo no cadastro, vale o custo de hoje, como o filamento; saído do cadastro, o do pedido.
         val usedConsumables = input.selectedConsumables.mapNotNull { (id, consumableInput) ->
-            val quantity = parseDecimal(consumableInput.quantityText)?.takeIf { it > 0 }
+            val quantity = parseDecimal(consumableInput.quantityText, NumberKind.AMOUNT, separator)?.takeIf { it > 0 }
             if (quantity == null) {
                 errors[QuoteFields.consumable(id)] = uiText(Res.string.quote_error_consumable_quantity, consumableInput.name)
                 return@mapNotNull null
@@ -1287,7 +1292,7 @@ class QuoteViewModel(
         // Um total que nem cobre os extras é erro no campo: zerar a peça salvaria um total diferente do
         // digitado, sem ninguém ver.
         if (!typedTerms.coversExtras) {
-            errors[QuoteFields.TARGET] = uiText(Res.string.quote_error_target_below_extras, typedTerms.extrasTotal.toInputText())
+            errors[QuoteFields.TARGET] = uiText(Res.string.quote_error_target_below_extras, typedTerms.extrasTotal.toInputText(separator))
         }
         val laborMinutes = if (input.laborMinutesText.isBlank()) {
             0.0
@@ -1333,7 +1338,7 @@ class QuoteViewModel(
         errors: MutableMap<String, UiText>,
     ): Double? {
         if (text.isBlank()) return null
-        val value = parseDecimal(text, NumberKind.AMOUNT)
+        val value = parseDecimal(text, NumberKind.AMOUNT, separator)
         return when {
             value == null -> null.also { errors[field] = uiText(invalid) }
             value < 0 -> null.also { errors[field] = uiText(negative) }
@@ -1375,9 +1380,9 @@ class QuoteViewModel(
         var complete = true
         val jobs = input.prints.zip(resolved).map { (print, resolvedPrint) ->
             val usages = print.filaments.zip(resolvedPrint.filaments).map { (row, resolvedFilament) ->
-                val length = parseDecimal(row.lengthText, NumberKind.MEASURE)
+                val length = parseDecimal(row.lengthText, NumberKind.MEASURE, separator)
                 when {
-                    row.weightText != null && row.weightText.isNotBlank() && (parseDecimal(row.weightText, NumberKind.AMOUNT) ?: -1.0) < 0 ->
+                    row.weightText != null && row.weightText.isNotBlank() && (parseDecimal(row.weightText, NumberKind.AMOUNT, separator) ?: -1.0) < 0 ->
                         errors[QuoteFields.length(print.id, row.id)] = uiText(Res.string.quote_error_weight)
 
                     row.lengthText.isNotBlank() && (length == null || length < 0) ->

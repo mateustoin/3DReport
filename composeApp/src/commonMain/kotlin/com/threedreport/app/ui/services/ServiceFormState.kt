@@ -22,10 +22,10 @@ data class ServiceFormState(
     val minutesError: UiText? = null,
 )
 
-internal fun Service.toFormState() = ServiceFormState(
+internal fun Service.toFormState(decimalSeparator: Char = ',') = ServiceFormState(
     id = id,
     name = name,
-    priceText = suggestedPrice?.toInputText().orEmpty(),
+    priceText = suggestedPrice?.toInputText(decimalSeparator).orEmpty(),
     chargedPerOrder = chargedPerOrder,
     minutesText = laborMinutes?.toDurationInputText().orEmpty(),
 )

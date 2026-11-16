@@ -34,6 +34,7 @@ object GCodeImporter {
         printers: List<PrinterProfile>,
         photoApplied: Boolean,
         newRowId: () -> Int,
+        decimalSeparator: Char = ',',
     ): PrintInput {
         val inStock = allFilaments.filter { it.hasStockAvailable }
         val preferredFilamentIds = current.filaments.mapNotNull { it.filamentId }.ifEmpty { listOfNotNull(inStock.firstOrNull()?.id) }
@@ -50,7 +51,7 @@ object GCodeImporter {
                 FilamentInput(
                     filamentId = found?.filament?.id,
                     colorId = found?.color?.id,
-                    lengthText = formatLength(extruder.lengthMeters!!),
+                    lengthText = formatLength(extruder.lengthMeters!!, decimalSeparator),
                     id = newRowId(),
                 )
             }
@@ -69,7 +70,7 @@ object GCodeImporter {
                 first.copy(
                     filamentId = filament?.id ?: first.filamentId,
                     colorId = if (filament != null) single?.color?.id else first.colorId,
-                    lengthText = metadata.filamentLengthMeters?.let(::formatLength) ?: first.lengthText,
+                    lengthText = metadata.filamentLengthMeters?.let { formatLength(it, decimalSeparator) } ?: first.lengthText,
                     weightText = null,
                     missingFilamentName = if (filament != null) null else first.missingFilamentName,
                 ),
@@ -91,7 +92,7 @@ object GCodeImporter {
             filaments = rows,
             printTimeText = metadata.printTimeMinutes?.let(::formatTime) ?: current.printTimeText,
             beforeGCode = current.beforeGCode ?: current.copy(gcodeImport = null),
-            gcodeImport = result(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows),
+            gcodeImport = result(metadata, photoApplied, printerMatch, extruders, perExtruder, keptManualRows, decimalSeparator),
             settings = settings,
             // A miniatura é do G-code desta impressão: um arquivo sem miniatura não fica com a do anterior.
             thumbnail = thumbnail,
@@ -114,8 +115,8 @@ object GCodeImporter {
         return GCodeImportResult.Unsupported(kind, fileName)
     }
 
-    /** Metros com até 2 casas, no formato do campo ("27,53"). */
-    fun formatLength(meters: Double): String = (round(meters * 100) / 100).toInputText()
+    /** Metros com até 2 casas, no formato do campo ("27,53"), com o separador decimal da moeda em uso. */
+    fun formatLength(meters: Double, decimalSeparator: Char = ','): String = (round(meters * 100) / 100).toInputText(decimalSeparator)
 
     /** Tempo arredondado pro minuto, no formato do campo ("3h20"): os segundos do fatiador não mudam o preço. */
     fun formatTime(minutes: Double): String = round(minutes).toDurationInputText()
@@ -127,6 +128,7 @@ object GCodeImporter {
         extruders: List<ExtruderMatch>,
         perExtruder: Boolean,
         keptManualRows: Boolean,
+        decimalSeparator: Char,
     ): GCodeImportResult.Read {
         val filled = buildList {
             when {
@@ -145,7 +147,7 @@ object GCodeImporter {
         val filaments = when {
             perExtruder -> GCodeFilamentsNote.PerExtruder(extruders.map { note(it.match) })
 
-            keptManualRows -> GCodeFilamentsNote.KeptRows(extruders.size, metadata.filamentLengthMeters?.let(::formatLength))
+            keptManualRows -> GCodeFilamentsNote.KeptRows(extruders.size, metadata.filamentLengthMeters?.let { formatLength(it, decimalSeparator) })
 
             extruders.size > 1 -> GCodeFilamentsNote.MergedRows(extruders.size)
 

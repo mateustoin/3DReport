@@ -37,6 +37,8 @@ import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.availableOrSelected
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toCurrencyText
@@ -199,7 +201,7 @@ private fun ServiceRow(
         AppCheckbox(checkLabel, serviceInput != null, { viewModel.toggleService(id) })
         if (serviceInput == null) return@Column
 
-        val price = parseDecimal(serviceInput.priceText)?.takeIf { it >= 0 }
+        val price = parseDecimal(serviceInput.priceText, NumberKind.AMOUNT, LocalCurrency.current.decimalSeparator)?.takeIf { it >= 0 }
         Column(modifier = indentUnderCheckbox(), verticalArrangement = Arrangement.spacedBy(space.xs)) {
             FormGrid {
                 cell {
