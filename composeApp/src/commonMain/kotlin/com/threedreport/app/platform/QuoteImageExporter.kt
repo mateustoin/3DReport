@@ -16,6 +16,7 @@ import com.threedreport.core.model.BrandingSettings
  * Leva sempre, no canto inferior direito e bem apagada, a linha "Gerado com 3DReport" (decisão 91),
  * a mesma dos PDFs, só que sem link, porque PNG não tem link.
  *
+ * @param texts de onde sai a assinatura "Gerado com 3DReport" (os outros textos já chegam escritos).
  * @param photoBytes foto do produto, se houver. Sem foto, a imagem sai só com o texto sobre a cor
  *   da marca, que continua servindo pra mandar o preço.
  * @param unitPriceText linha secundária com o preço por unidade, quando o pedido tem mais de uma
@@ -26,6 +27,7 @@ import com.threedreport.core.model.BrandingSettings
  *   no rodapé quando configurado.
  */
 expect fun renderQuoteImage(
+    texts: ClientDocumentTexts,
     title: String,
     priceText: String,
     unitPriceText: String?,

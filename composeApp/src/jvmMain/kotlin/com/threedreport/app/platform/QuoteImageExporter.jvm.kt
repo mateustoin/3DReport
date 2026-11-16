@@ -11,6 +11,9 @@ import javax.imageio.ImageIO
 private const val SIZE = 1080
 private const val MARGIN = 64
 
+/** Nome do app na assinatura; a frase em volta vem dos recursos ([ClientDocumentTexts.signatureLine]). */
+private const val APP_NAME = "3DReport"
+
 /**
  * Altura mínima da faixa inferior com nome e preço; o resto da imagem é a foto. Cresce quando há
  * linhas a mais (preço unitário e prazo juntos), pra o texto nunca encostar na borda de baixo.
@@ -34,6 +37,7 @@ private val TEXT = Color.WHITE
 private val TEXT_MUTED = Color(0xB5, 0xC4, 0xC9)
 
 actual fun renderQuoteImage(
+    texts: ClientDocumentTexts,
     title: String,
     priceText: String,
     unitPriceText: String?,
@@ -118,7 +122,7 @@ actual fun renderQuoteImage(
         graphics.drawString(text, SIZE - MARGIN - width, brandY)
     }
 
-    drawAppSignature(graphics)
+    drawAppSignature(graphics, texts.signatureLine(APP_NAME))
 
     graphics.dispose()
 
@@ -155,10 +159,9 @@ private fun fitToWidth(graphics: java.awt.Graphics2D, text: String, maxWidth: In
  * e do prazo, que ficam à esquerda (decisão 91). Na imagem não há link, então o texto é o próprio
  * caminho: "3DReport" é o que alguém pesquisa depois de ver a imagem no status de um vendedor.
  */
-private fun drawAppSignature(graphics: java.awt.Graphics2D) {
+private fun drawAppSignature(graphics: java.awt.Graphics2D, text: String) {
     graphics.color = Color(TEXT_MUTED.red, TEXT_MUTED.green, TEXT_MUTED.blue, 150)
     graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 22)
-    val text = "Gerado com 3DReport"
     val width = graphics.fontMetrics.stringWidth(text)
     graphics.drawString(text, SIZE - MARGIN - width, SIZE - 28)
 }

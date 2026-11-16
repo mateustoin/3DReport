@@ -54,6 +54,7 @@ data class PdfLayoutOptions(
  * resolvidos pelo chamador antes de invocar esta função) — e aparecem em
  * todas as páginas quando presentes.
  *
+ * @param texts os textos do documento, lidos dos recursos ([loadClientDocumentTexts] com estes orçamentos).
  * @param brandName texto da marca d'água diagonal e translúcida, desenhada
  *   por cima de todo o conteúdo (inclusive a foto, pra continuar visível ali).
  * @param footerText texto do rodapé (linha fina + texto centralizado no fim da página).
@@ -62,6 +63,7 @@ data class PdfLayoutOptions(
  */
 expect fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
+    texts: ClientDocumentTexts,
     brandName: String?,
     footerText: String?,
     options: PdfLayoutOptions = PdfLayoutOptions(),
@@ -81,6 +83,7 @@ expect fun renderSavedQuotesPdf(
  */
 expect fun renderCatalogPdf(
     items: List<QuoteExportItem>,
+    texts: ClientDocumentTexts,
     brandName: String?,
     footerText: String?,
     options: PdfLayoutOptions = PdfLayoutOptions(),

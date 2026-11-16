@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.app.platform.ClientDocumentTexts
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
 
@@ -14,9 +15,9 @@ import com.threedreport.core.model.SavedQuote
  * já preenchido. É melhor do que esconder o botão, porque o trabalho de escrever a mensagem já foi
  * feito de qualquer jeito.
  */
-internal fun SavedQuote.toWhatsAppLink(currency: Currency = this.currency, showPrintTime: Boolean = false): String {
+internal fun SavedQuote.toWhatsAppLink(texts: ClientDocumentTexts, currency: Currency = this.currency, showPrintTime: Boolean = false): String {
     val phone = client?.contact?.let(::toInternationalPhone)
-    val text = percentEncode(toCopyPasteText(currency, showPrintTime))
+    val text = percentEncode(toCopyPasteText(texts, currency, showPrintTime))
     return "https://wa.me/${phone.orEmpty()}?text=$text"
 }
 

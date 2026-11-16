@@ -1146,4 +1146,37 @@
     <string name="dashboard_catalog_ranking_help">O lucro e o lucro por hora de máquina de cada produto do catálogo.</string>
     <string name="dashboard_col_product">Produto</string>
     <string name="dashboard_col_price">Preço</string>
+
+    <!-- O que vai pro cliente: PDF, catálogo, imagem e mensagem (ver ClientDocumentTexts). -->
+    <string name="client_doc_value">Valor: %1$s</string>
+    <string name="client_doc_value_quantity">%1$d × %2$s = %3$s</string>
+    <string name="client_doc_service_per_piece">%1$s (× %2$d)</string>
+    <string name="client_doc_line_amount">%1$s: %2$s</string>
+    <string name="client_doc_shipping">Frete: %1$s</string>
+    <string name="client_doc_shipping_free">Frete: grátis</string>
+    <string name="client_doc_total">Total: %1$s</string>
+    <string name="client_doc_delivery">Prazo de entrega: até %1$s</string>
+    <string name="client_doc_delivery_rush">%1$s (entrega expressa)</string>
+    <string name="client_doc_rush">Entrega expressa</string>
+    <string name="client_doc_print_time">Tempo de impressão: %1$s</string>
+    <string name="client_doc_print_time_pieces">%1$s (%2$s)</string>
+    <plurals name="client_doc_pieces">
+        <item quantity="one">%1$d peça</item>
+        <item quantity="other">%1$d peças</item>
+    </plurals>
+    <string name="client_doc_title_numbered">%1$s · %2$s</string>
+    <string name="client_doc_title_auto_order">Orçamento</string>
+    <string name="client_doc_title_auto_order_numbered">Orçamento %1$s</string>
+    <string name="client_doc_title_auto_product">Produto</string>
+    <string name="client_doc_to">Para: %1$s</string>
+    <string name="client_doc_kit">Kit com %1$s</string>
+    <string name="client_doc_order_number">Pedido %1$s</string>
+    <string name="client_doc_issued">Emitido em %1$s</string>
+    <string name="client_doc_valid_until">Válido até %1$s</string>
+    <string name="client_doc_signature">Gerado com %1$s</string>
+    <string name="client_doc_catalog_title">Catálogo de produtos</string>
+    <string name="client_doc_catalog_other">Outros</string>
+    <string name="client_doc_image_delivery">Entrega até %1$s</string>
+    <string name="client_doc_image_delivery_rush">%1$s · entrega expressa</string>
+    <string name="client_doc_image_unit_price">%1$s · %2$s cada</string>
 </resources>

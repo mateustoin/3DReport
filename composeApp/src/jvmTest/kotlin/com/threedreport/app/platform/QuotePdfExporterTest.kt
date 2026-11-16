@@ -65,6 +65,7 @@ class QuotePdfExporterTest {
     fun pdfContainsNameAndSalePriceButNotInternalData() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -87,6 +88,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -109,6 +111,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, webpBytes)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -124,6 +127,7 @@ class QuotePdfExporterTest {
     fun pdfContainsWatermarkTextWhenProvided() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = "Marcenaria 3D do João",
             footerText = null,
         )
@@ -141,11 +145,13 @@ class QuotePdfExporterTest {
     fun blankWatermarkAndFooterAreNotDrawn() {
         val withBlank = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = "   ",
             footerText = "   ",
         )
         val withNull = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -160,6 +166,7 @@ class QuotePdfExporterTest {
     fun footerShowsBrandNameAsCleanContiguousText() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = "Marcenaria 3D do João",
         )
@@ -175,7 +182,7 @@ class QuotePdfExporterTest {
     @Test
     fun watermarkAndFooterAreIndependent() {
         fun textFor(brandName: String?, footerText: String?) = Loader.loadPDF(
-            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes = null)), brandName, footerText),
+            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes = null)), testClientTexts, brandName, footerText),
         ).use { PDFTextStripper().getText(it) }
 
         val onlyWatermark = textFor(brandName = "Marca", footerText = null)
@@ -205,6 +212,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes)),
+            testClientTexts,
             brandName = "Marcenaria 3D do João",
             footerText = null,
         )
@@ -240,6 +248,7 @@ class QuotePdfExporterTest {
     fun multipleItemsProduceOnePagePerItemInOrder() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, null), QuoteExportItem(otherSavedQuote, null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -261,6 +270,7 @@ class QuotePdfExporterTest {
     fun multipleItemsAllGetTheSameWatermarkAndFooter() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, null), QuoteExportItem(otherSavedQuote, null)),
+            testClientTexts,
             brandName = null,
             footerText = "Marcenaria 3D do João",
         )
@@ -282,6 +292,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithServices, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -303,6 +314,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithQuantity, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -323,6 +335,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithQuantity, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -342,6 +355,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithShipping, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -358,6 +372,7 @@ class QuotePdfExporterTest {
     fun noTotalLineInPdfWhenThereAreNoServices() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -373,6 +388,7 @@ class QuotePdfExporterTest {
 
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(quoteWithFreeShipping, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -387,6 +403,7 @@ class QuotePdfExporterTest {
     fun catalogPdfContainsNameAndPriceOfEachItemButNotInternalData() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null), QuoteExportItem(otherSavedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -406,6 +423,7 @@ class QuotePdfExporterTest {
     fun catalogPdfFitsFewItemsOnOnePage() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null), QuoteExportItem(otherSavedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -419,7 +437,7 @@ class QuotePdfExporterTest {
     fun catalogPdfPaginatesWhenThereAreMoreItemsThanFitOnOnePage() {
         val items = (1..10).map { QuoteExportItem(savedQuote.copy(id = "item-$it", name = "Peça $it"), photoBytes = null) }
 
-        val pdfBytes = renderCatalogPdf(items, brandName = null, footerText = null)
+        val pdfBytes = renderCatalogPdf(items, testClientTexts, brandName = null, footerText = null)
 
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.numberOfPages > 1)
@@ -430,7 +448,7 @@ class QuotePdfExporterTest {
     fun catalogPdfIncludesWatermarkAndFooterOnEveryPage() {
         val items = (1..10).map { QuoteExportItem(savedQuote.copy(id = "item-$it", name = "Peça $it"), photoBytes = null) }
 
-        val pdfBytes = renderCatalogPdf(items, brandName = "Marca", footerText = "Marcenaria 3D do João")
+        val pdfBytes = renderCatalogPdf(items, testClientTexts, brandName = "Marca", footerText = "Marcenaria 3D do João")
 
         val document = Loader.loadPDF(pdfBytes)
         assertTrue(document.numberOfPages > 1)
@@ -445,6 +463,7 @@ class QuotePdfExporterTest {
     fun catalogPdfWithNoPhotoStillShowsNameAndPrice() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote, photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -459,6 +478,7 @@ class QuotePdfExporterTest {
     fun pdfUsesTheCurrencyTheQuoteWasSavedIn() {
         val pdfBytes = renderSavedQuotesPdf(
             listOf(QuoteExportItem(savedQuote.copy(currency = Currency.USD), photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -473,6 +493,7 @@ class QuotePdfExporterTest {
     fun catalogPdfUsesTheCurrencyTheProductWasSavedIn() {
         val pdfBytes = renderCatalogPdf(
             listOf(QuoteExportItem(savedQuote.copy(currency = Currency.USD), photoBytes = null)),
+            testClientTexts,
             brandName = null,
             footerText = null,
         )
@@ -489,7 +510,7 @@ class QuotePdfExporterTest {
     fun deliveryDateIsPrintedWhenPresent() {
         val withDeadline = savedQuote.copy(deliveryDateEpochDay = java.time.LocalDate.of(2026, 9, 30).toEpochDay())
 
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withDeadline, null)), null, null))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withDeadline, null)), testClientTexts, null, null))
 
         assertTrue(text.contains("Prazo de entrega: até 30/09/2026"))
     }
@@ -501,7 +522,7 @@ class QuotePdfExporterTest {
             deliveryDateEpochDay = java.time.LocalDate.of(2026, 9, 30).toEpochDay(),
         )
 
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(rushWithDeadline, null)), null, null))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(rushWithDeadline, null)), testClientTexts, null, null))
 
         assertTrue(text.contains("Prazo de entrega: até 30/09/2026 (entrega expressa)"))
     }
@@ -510,14 +531,14 @@ class QuotePdfExporterTest {
     fun rushWithoutADeadlineGetsItsOwnHighlightedLine() {
         val rushWithoutDeadline = savedQuote.copy(quote = savedQuote.quote.copy(rush = true))
 
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(rushWithoutDeadline, null)), null, null))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(rushWithoutDeadline, null)), testClientTexts, null, null))
 
         assertTrue(text.contains("Entrega expressa"))
     }
 
     @Test
     fun withoutDeadlineAndPrintTimeThePdfHasNeitherLine() {
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null))
 
         assertFalse(text.contains("Prazo"))
         assertFalse(text.contains("Tempo de impressão"))
@@ -527,8 +548,8 @@ class QuotePdfExporterTest {
     fun printTimeAppearsOnlyWhenTurnedOn() {
         val items = listOf(QuoteExportItem(savedQuote, null))
 
-        val withTime = textOf(renderSavedQuotesPdf(items, null, null, options = PdfLayoutOptions(showPrintTime = true)))
-        val withoutTime = textOf(renderSavedQuotesPdf(items, null, null))
+        val withTime = textOf(renderSavedQuotesPdf(items, testClientTexts, null, null, options = PdfLayoutOptions(showPrintTime = true)))
+        val withoutTime = textOf(renderSavedQuotesPdf(items, testClientTexts, null, null))
 
         assertTrue(withTime.contains("Tempo de impressão: 3 h 10 min"))
         assertFalse(withoutTime.contains("Tempo de impressão"))
@@ -539,7 +560,7 @@ class QuotePdfExporterTest {
         // O catálogo é vitrine: prazo é do pedido, não do produto.
         val withDeadline = savedQuote.copy(deliveryDateEpochDay = java.time.LocalDate.of(2026, 9, 30).toEpochDay())
 
-        val text = textOf(renderCatalogPdf(listOf(QuoteExportItem(withDeadline, null)), null, null))
+        val text = textOf(renderCatalogPdf(listOf(QuoteExportItem(withDeadline, null)), testClientTexts, null, null))
 
         assertFalse(text.contains("Prazo"))
     }
@@ -556,7 +577,7 @@ class QuotePdfExporterTest {
     fun headerShowsBrandNameAndContactWhenThereIsIdentity() {
         val options = PdfLayoutOptions(brandName = "Minha Loja 3D", contactLines = listOf("WhatsApp (11) 99999-0000", "@minhaloja"))
 
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = options))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null, options = options))
 
         assertTrue(text.contains("Minha Loja 3D"))
         assertTrue(text.contains("WhatsApp (11) 99999-0000"))
@@ -568,8 +589,8 @@ class QuotePdfExporterTest {
         // Só o nome, sem logo nem contato: continua saindo só na marca d'água/rodapé, como antes.
         val items = listOf(QuoteExportItem(savedQuote, null))
 
-        val withName = textOf(renderSavedQuotesPdf(items, null, null, options = PdfLayoutOptions(brandName = "Minha Loja 3D")))
-        val plain = textOf(renderSavedQuotesPdf(items, null, null))
+        val withName = textOf(renderSavedQuotesPdf(items, testClientTexts, null, null, options = PdfLayoutOptions(brandName = "Minha Loja 3D")))
+        val plain = textOf(renderSavedQuotesPdf(items, testClientTexts, null, null))
 
         assertEquals(plain, withName)
     }
@@ -579,7 +600,7 @@ class QuotePdfExporterTest {
         val withEmoji = savedQuote.copy(name = "Vaso 🌵 decorativo")
         val options = PdfLayoutOptions(contactLines = listOf("WhatsApp 📱 (11) 99999-0000"))
 
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withEmoji, null)), "Loja ✨", "Loja ✨", options = options))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withEmoji, null)), testClientTexts, "Loja ✨", "Loja ✨", options = options))
 
         assertTrue(text.contains("Vaso decorativo"))
         assertTrue(text.contains("WhatsApp (11) 99999-0000"))
@@ -590,8 +611,8 @@ class QuotePdfExporterTest {
         val logo = noisyLogoPng()
         val options = PdfLayoutOptions(logoBytes = logo)
 
-        val onePage = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = options)
-        val tenPages = renderSavedQuotesPdf(List(10) { QuoteExportItem(savedQuote, null) }, null, null, options = options)
+        val onePage = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null, options = options)
+        val tenPages = renderSavedQuotesPdf(List(10) { QuoteExportItem(savedQuote, null) }, testClientTexts, null, null, options = options)
 
         assertEquals(10, Loader.loadPDF(tenPages).use { it.numberOfPages })
         assertTrue(tenPages.size < onePage.size * 2, "10 páginas com a mesma logo não podem pesar 10 logos: ${tenPages.size} vs ${onePage.size}")
@@ -601,7 +622,7 @@ class QuotePdfExporterTest {
     fun anUnreadableLogoIsIgnored() {
         val options = PdfLayoutOptions(logoBytes = byteArrayOf(1, 2, 3), contactLines = listOf("@loja"))
 
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null, options = options))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null, options = options))
 
         assertTrue(text.contains("@loja"))
     }
@@ -611,7 +632,7 @@ class QuotePdfExporterTest {
         val options = PdfLayoutOptions(logoBytes = noisyLogoPng(64), brandName = "Loja", contactLines = listOf("@loja", "loja@example.com"), showBorder = true)
         val items = List(7) { index -> QuoteExportItem(savedQuote.copy(id = "$index", name = "Peça $index"), null) }
 
-        val text = textOf(renderCatalogPdf(items, null, "Loja", options = options))
+        val text = textOf(renderCatalogPdf(items, testClientTexts, null, "Loja", options = options))
 
         (0 until 7).forEach { assertTrue(text.contains("Peça $it")) }
     }
@@ -622,7 +643,7 @@ class QuotePdfExporterTest {
         val options = com.threedreport.core.model.BrandingSettings(showWatermark = false, showFooter = false).resolvePdfBranding(null).options
         check(options.showAppSignature) { "a assinatura é sempre ligada nos exports do app" }
 
-        val pdf = renderSavedQuotesPdf(List(2) { QuoteExportItem(savedQuote, null) }, null, null, options = options)
+        val pdf = renderSavedQuotesPdf(List(2) { QuoteExportItem(savedQuote, null) }, testClientTexts, null, null, options = options)
 
         Loader.loadPDF(pdf).use { document ->
             assertTrue(PDFTextStripper().getText(document).contains("Gerado com 3DReport"))
@@ -643,20 +664,20 @@ class QuotePdfExporterTest {
     @Test
     fun renderingWithoutOptionsHasNoSignature() {
         // Só quem chama sem opções (testes, uso interno) recebe o PDF sem assinatura; o app sempre resolve com ela.
-        assertFalse(textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), null, null)).contains("3DReport"))
+        assertFalse(textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null)).contains("3DReport"))
     }
 
     @Test
     fun catalogAlsoCarriesTheSignature() {
         val options = PdfLayoutOptions(showAppSignature = true, showBorder = true)
 
-        assertTrue(textOf(renderCatalogPdf(listOf(QuoteExportItem(savedQuote, null)), null, "Loja", options = options)).contains("Gerado com 3DReport"))
+        assertTrue(textOf(renderCatalogPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, "Loja", options = options)).contains("Gerado com 3DReport"))
     }
 
     @Test
     fun catalogWithoutCategoriesKeepsTheSameGridAndPaging() {
         fun pages(count: Int) = Loader.loadPDF(
-            renderCatalogPdf((1..count).map { QuoteExportItem(savedQuote.copy(id = "$it", name = "Peça $it"), null) }, null, null),
+            renderCatalogPdf((1..count).map { QuoteExportItem(savedQuote.copy(id = "$it", name = "Peça $it"), null) }, testClientTexts, null, null),
         ).use { it.numberOfPages }
 
         // Duas linhas de duas peças por página, como antes das categorias.
@@ -673,11 +694,11 @@ class QuotePdfExporterTest {
             savedQuote.copy(id = "4", name = "Cachepô", category = "decoração"),
         ).map { QuoteExportItem(it, null) }
 
-        val text = Loader.loadPDF(renderCatalogPdf(items, null, null)).use { PDFTextStripper().getText(it) }
+        val text = Loader.loadPDF(renderCatalogPdf(items, testClientTexts, null, null)).use { PDFTextStripper().getText(it) }
 
         val order = listOf("Chaveiros", "Chaveiro", "Decoração", "Vaso", "Cachepô", "Outros", "Dado").map { text.indexOf(it) }
         assertTrue(order.none { it < 0 }, text)
         assertEquals(order.sorted(), order, text)
-        assertEquals(listOf("Chaveiros", "Decoração", "Outros"), catalogSections(items).map { it.first })
+        assertEquals(listOf("Chaveiros", "Decoração", "Outros"), catalogSections(items, testClientTexts.catalogOther).map { it.first })
     }
 }

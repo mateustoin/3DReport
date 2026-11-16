@@ -3,7 +3,8 @@ package com.threedreport.app.platform
 import androidx.compose.ui.graphics.toAwtImage
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.history.clientTitle
-import com.threedreport.app.ui.history.deliveryDateText
+import com.threedreport.app.ui.history.deliveryHighlightText
+import com.threedreport.app.ui.history.label
 import com.threedreport.app.ui.history.printTimeText
 import com.threedreport.core.model.SavedQuote
 import org.apache.pdfbox.Loader
@@ -72,6 +73,7 @@ private fun decodePhotoAsBufferedImage(bytes: ByteArray?): BufferedImage? =
 private class PdfContext(
     val document: PDDocument,
     val options: PdfLayoutOptions,
+    val texts: ClientDocumentTexts,
 ) {
     val titleFont = PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
     val bodyFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
@@ -170,12 +172,13 @@ private fun PDFont.widthOf(text: String, size: Float): Float = getStringWidth(pd
 
 actual fun renderSavedQuotesPdf(
     items: List<QuoteExportItem>,
+    texts: ClientDocumentTexts,
     brandName: String?,
     footerText: String?,
     options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
-        val context = PdfContext(document, options)
+        val context = PdfContext(document, options, texts)
 
         items.forEach { item ->
             val page = PDPage(PDRectangle.A4)
@@ -206,6 +209,7 @@ private fun drawQuotePage(
     val footerReserve = 50f
     val savedQuote = item.savedQuote
     val currency = savedQuote.currency
+    val texts = context.texts
     val titleFont = context.titleFont
     val bodyFont = context.bodyFont
     val contentWidth = page.mediaBox.width - margin * 2
@@ -218,13 +222,13 @@ private fun drawQuotePage(
             cursorY = drawIdentityHeader(context, content, page, margin, cursorY) - 28f
         }
 
-        wrapText(titleFont, 20f, savedQuote.clientTitle(withNumber = false), contentWidth, maxLines = 2).forEach { line ->
+        wrapText(titleFont, 20f, savedQuote.clientTitle(texts, withNumber = false), contentWidth, maxLines = 2).forEach { line ->
             content.text(titleFont, 20f, margin, cursorY, line)
             cursorY -= 24f
         }
         cursorY -= 2f
 
-        documentInfoLine(savedQuote, context.options)?.let { info ->
+        documentInfoLine(savedQuote, context.options, texts)?.let { info ->
             content.saveGraphicsState()
             content.setNonStrokingColor(Color(90, 90, 90))
             content.text(bodyFont, 10f, margin, cursorY, info)
@@ -233,49 +237,45 @@ private fun drawQuotePage(
         }
         if (context.options.showClientName) {
             savedQuote.client?.name?.let { name ->
-                content.text(bodyFont, 11f, margin, cursorY, "Para: $name")
+                content.text(bodyFont, 11f, margin, cursorY, texts.to(name))
                 cursorY -= 16f
             }
         }
         val printCount = savedQuote.quote.prints.size
         if (printCount > 1) {
-            content.text(bodyFont, 11f, margin, cursorY, "Kit com $printCount peças")
+            content.text(bodyFont, 11f, margin, cursorY, texts.kit(printCount))
             cursorY -= 16f
         }
         cursorY -= 8f
 
-        content.text(bodyFont, 14f, margin, cursorY, "Valor: ${valueText(savedQuote)}")
+        content.text(bodyFont, 14f, margin, cursorY, texts.value(valueText(savedQuote, texts)))
         cursorY -= 24f
 
         val quantity = savedQuote.quote.quantity
         savedQuote.services.forEach { service ->
-            val label = if (quantity > 1 && !service.chargedPerOrder) "${service.name} (× $quantity)" else service.name
-            content.text(bodyFont, 12f, margin, cursorY, "$label: ${service.total(quantity).toCurrencyText(currency)}")
+            content.text(bodyFont, 12f, margin, cursorY, texts.lineAmount(service.label(texts, quantity), service.total(quantity).toCurrencyText(currency)))
             cursorY -= 18f
         }
 
         if (savedQuote.shippingAbsorbed) {
-            content.text(bodyFont, 12f, margin, cursorY, "Frete: grátis")
+            content.text(bodyFont, 12f, margin, cursorY, texts.shippingFree)
             cursorY -= 18f
         } else if (savedQuote.shippingCost > 0) {
-            content.text(bodyFont, 12f, margin, cursorY, "Frete: ${savedQuote.chargedShipping.toCurrencyText(currency)}")
+            content.text(bodyFont, 12f, margin, cursorY, texts.shipping(savedQuote.chargedShipping.toCurrencyText(currency)))
             cursorY -= 18f
         }
 
         // O "Total" precisa aparecer mesmo com frete e sem nenhum serviço, senão o cliente vê
         // "Valor" e "Frete" soltos, sem a soma.
         if (savedQuote.services.isNotEmpty() || savedQuote.shippingCost > 0) {
-            content.text(titleFont, 14f, margin, cursorY, "Total: ${savedQuote.totalWithServices.toCurrencyText(currency)}")
+            content.text(titleFont, 14f, margin, cursorY, texts.total(savedQuote.totalWithServices.toCurrencyText(currency)))
             cursorY -= 24f
         }
 
         // Em destaque, e não como mais uma linha da lista: é o que o cliente usa pra decidir se
         // autoriza a fabricação (pedido do teste externo, decisão 83). Entrega expressa (decisão 125)
         // junto do prazo; sem prazo, vira a própria faixa de destaque.
-        val deliveryHighlight = savedQuote.deliveryDateText()?.let { text ->
-            if (savedQuote.quote.rush) "$text (entrega expressa)" else text
-        } ?: "Entrega expressa".takeIf { savedQuote.quote.rush }
-        deliveryHighlight?.let { text ->
+        savedQuote.deliveryHighlightText(texts)?.let { text ->
             cursorY -= 4f
             cursorY = drawHighlightBand(content, titleFont, text, margin, cursorY, contentWidth)
             // O cursor é linha de base: a próxima linha precisa descer a altura dela, não só um respiro.
@@ -283,7 +283,7 @@ private fun drawQuotePage(
         }
 
         if (context.options.showPrintTime) {
-            content.text(bodyFont, 11f, margin, cursorY, savedQuote.printTimeText())
+            content.text(bodyFont, 11f, margin, cursorY, savedQuote.printTimeText(texts))
             cursorY -= 18f
         }
         cursorY -= 6f
@@ -318,21 +318,21 @@ private fun drawFitted(content: PDPageContentStream, image: PDImageXObject, x: F
  * "Pedido #0042 · Emitido em 25/09/2026 · Válido até 02/10/2026", com o que houver. O número dá como o
  * cliente se referir ao orçamento; a validade protege o preço de um cliente que volta meses depois.
  */
-internal fun documentInfoLine(savedQuote: SavedQuote, options: PdfLayoutOptions): String? {
+internal fun documentInfoLine(savedQuote: SavedQuote, options: PdfLayoutOptions, texts: ClientDocumentTexts): String? {
     val issued = options.issuedOnEpochDay ?: todayEpochDay()
     return listOfNotNull(
-        savedQuote.displayNumber?.takeIf { savedQuote.isOrder }?.let { "Pedido $it" },
-        "Emitido em ${formatDate(issued)}",
-        options.validityDays?.takeIf { it > 0 && savedQuote.isOrder }?.let { "Válido até ${formatDate(issued + it)}" },
+        savedQuote.displayNumber?.takeIf { savedQuote.isOrder }?.let(texts::orderNumber),
+        texts.issued(formatDate(issued)),
+        options.validityDays?.takeIf { it > 0 && savedQuote.isOrder }?.let { texts.validUntil(formatDate(issued + it)) },
     ).joinToString(" · ")
 }
 
 /** O valor das peças: "R$ 60,20", ou a conta "10 × R$ 6,02 = R$ 60,20" com mais de uma. */
-internal fun valueText(savedQuote: SavedQuote): String {
+internal fun valueText(savedQuote: SavedQuote, texts: ClientDocumentTexts): String {
     val quote = savedQuote.quote
     val currency = savedQuote.currency
     return if (quote.quantity > 1) {
-        "${quote.quantity} × ${quote.unitSalePrice.toCurrencyText(currency)} = ${quote.salePrice.toCurrencyText(currency)}"
+        texts.valueTimesQuantity(quote.quantity, quote.unitSalePrice.toCurrencyText(currency), quote.salePrice.toCurrencyText(currency))
     } else {
         quote.salePrice.toCurrencyText(currency)
     }
@@ -356,7 +356,7 @@ private fun drawPageDecorations(
     if (context.options.showBorder) drawBorder(content, page)
     if (!brandName.isNullOrBlank()) drawWatermark(content, page, context.titleFont, brandName)
     if (!footerText.isNullOrBlank()) drawFooter(content, page, context.bodyFont, footerText, margin, textY = footerY)
-    if (context.options.showAppSignature) drawAppSignature(content, page, context.bodyFont, margin, baselineY = footerY)
+    if (context.options.showAppSignature) drawAppSignature(context, content, page, margin, baselineY = footerY)
 }
 
 /**
@@ -366,15 +366,18 @@ private fun drawPageDecorations(
  * vendedor conhecer o app. Só "3DReport" é link pro site (decisão 91), pra o clique cair no nome
  * do app e não numa frase inteira.
  */
-private fun drawAppSignature(content: PDPageContentStream, page: PDPage, font: PDFont, margin: Float, baselineY: Float) {
+private fun drawAppSignature(context: PdfContext, content: PDPageContentStream, page: PDPage, margin: Float, baselineY: Float) {
+    val font = context.bodyFont
     val fontSize = 7f
-    val prefixWidth = font.widthOf(APP_SIGNATURE_PREFIX, fontSize)
-    val nameWidth = font.widthOf(APP_NAME, fontSize)
-    val x = page.mediaBox.width - margin - prefixWidth - nameWidth
+    val (before, name, after) = context.texts.signature(APP_NAME)
+    val prefixWidth = font.widthOf(before, fontSize)
+    val nameWidth = font.widthOf(name, fontSize)
+    val suffixWidth = if (after.isEmpty()) 0f else font.widthOf(after, fontSize)
+    val x = page.mediaBox.width - margin - prefixWidth - nameWidth - suffixWidth
 
     content.saveGraphicsState()
     content.setNonStrokingColor(Color(165, 165, 165))
-    content.text(font, fontSize, x, baselineY, APP_SIGNATURE_PREFIX + APP_NAME)
+    content.text(font, fontSize, x, baselineY, before + name + after)
     content.restoreGraphicsState()
 
     val link = PDAnnotationLink().apply {
@@ -385,7 +388,7 @@ private fun drawAppSignature(content: PDPageContentStream, page: PDPage, font: P
     page.annotations.add(link)
 }
 
-private const val APP_SIGNATURE_PREFIX = "Gerado com "
+/** Nome do app, que não se traduz; a frase em volta vem dos recursos ([ClientDocumentTexts.signature]). */
 private const val APP_NAME = "3DReport"
 private const val APP_SITE_URL = "https://mateustoin.github.io/3DReport/"
 
@@ -447,12 +450,13 @@ private fun drawIdentityHeader(
 
 actual fun renderCatalogPdf(
     items: List<QuoteExportItem>,
+    texts: ClientDocumentTexts,
     brandName: String?,
     footerText: String?,
     options: PdfLayoutOptions,
 ): ByteArray {
     PDDocument().use { document ->
-        val context = PdfContext(document, options)
+        val context = PdfContext(document, options, texts)
 
         val margin = 40f
         val columns = 2
@@ -468,7 +472,7 @@ actual fun renderCatalogPdf(
         val identityHeight = if (context.hasHeader) {
             PDDocument().use { scratch ->
                 val scratchPage = PDPage(PDRectangle.A4).also(scratch::addPage)
-                val scratchContext = PdfContext(scratch, options)
+                val scratchContext = PdfContext(scratch, options, texts)
                 PDPageContentStream(scratch, scratchPage).use { content ->
                     val top = scratchPage.mediaBox.height - margin
                     top - drawIdentityHeader(scratchContext, content, scratchPage, margin, top) + 12f
@@ -480,7 +484,7 @@ actual fun renderCatalogPdf(
         val headerHeight = titleHeight + identityHeight
 
         val sectionHeaderHeight = 26f + 14f
-        val blocks = catalogSections(items).flatMap { (title, sectionItems) ->
+        val blocks = catalogSections(items, texts.catalogOther).flatMap { (title, sectionItems) ->
             listOfNotNull(title?.let(CatalogBlock::Header)) + sectionItems.chunked(columns).map(CatalogBlock::Row)
         }
 
@@ -504,7 +508,7 @@ actual fun renderCatalogPdf(
             val top = newPage.mediaBox.height - margin
             if (context.hasHeader) drawIdentityHeader(context, newContent, newPage, margin, top)
             val titleTop = top - identityHeight
-            newContent.text(context.titleFont, 18f, margin, titleTop - 14f, "Catálogo de produtos")
+            newContent.text(context.titleFont, 18f, margin, titleTop - 14f, context.texts.catalogTitle)
             page = newPage
             content = newContent
             pageStart = top - headerHeight
@@ -549,10 +553,10 @@ private sealed interface CatalogBlock {
 
 /**
  * Seções do catálogo por categoria do produto (decisão 102): em ordem alfabética, com os sem
- * categoria em "Outros", no fim. Se nenhum item tem categoria, uma seção só e sem título, que é o
+ * categoria em [otherTitle] ("Outros"), no fim. Se nenhum item tem categoria, uma seção só e sem título, que é o
  * catálogo de antes. A ordem dos itens dentro de cada seção é a que veio.
  */
-internal fun catalogSections(items: List<QuoteExportItem>): List<Pair<String?, List<QuoteExportItem>>> {
+internal fun catalogSections(items: List<QuoteExportItem>, otherTitle: String): List<Pair<String?, List<QuoteExportItem>>> {
     if (items.none { it.savedQuote.category != null }) return listOf(null to items)
     val (categorized, uncategorized) = items.partition { it.savedQuote.category != null }
     val sections = categorized
@@ -560,7 +564,7 @@ internal fun catalogSections(items: List<QuoteExportItem>): List<Pair<String?, L
         .values
         .map { group -> group.first().savedQuote.category!! to group }
         .sortedBy { it.first.lowercase() }
-    return if (uncategorized.isEmpty()) sections else sections + ("Outros" to uncategorized)
+    return if (uncategorized.isEmpty()) sections else sections + (otherTitle to uncategorized)
 }
 
 /**
@@ -587,7 +591,7 @@ private fun drawCatalogCell(
     }
 
     var textY = cellTop - photoSize - 16f
-    wrapText(context.titleFont, 12f, savedQuote.clientTitle(withNumber = false), cellWidth, maxLines = 2).forEach { line ->
+    wrapText(context.titleFont, 12f, savedQuote.clientTitle(context.texts, withNumber = false), cellWidth, maxLines = 2).forEach { line ->
         content.text(context.titleFont, 12f, cellX, textY, line)
         textY -= 14f
     }

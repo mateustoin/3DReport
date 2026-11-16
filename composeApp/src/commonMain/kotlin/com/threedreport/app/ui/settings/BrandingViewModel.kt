@@ -17,6 +17,7 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.platform.loadClientDocumentTexts
 import com.threedreport.app.platform.renderPdfFirstPagePng
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -62,7 +64,7 @@ import kotlin.uuid.Uuid
 class BrandingViewModel(
     private val repository: BrandingRepository,
     private val templateRepository: TemplateRepository,
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val currency: () -> Currency = { Currency.BRL },
     private val pickImage: () -> PickedFile? = { (defaultPlatform.pickFile(FileKind.IMAGE) as? PickResult.Picked)?.file },
 ) {
@@ -197,13 +199,18 @@ class BrandingViewModel(
             return
         }
         val branding = settings.resolvePdfBranding(current.logoBytes)
-        val pdf = renderSavedQuotesPdf(
-            items = listOf(QuoteExportItem(sampleQuote(sampleName, currency()), photoBytes = null)),
-            brandName = branding.brandName,
-            footerText = branding.footerText,
-            options = branding.options,
-        )
-        publish(current.copy(previewPng = renderPdfFirstPagePng(pdf)))
+        val sample = sampleQuote(sampleName, currency())
+        // Os textos do documento vêm dos recursos, lidos fora da tela; com `Unconfined` (testes) a prévia sai na hora.
+        scope.launch {
+            val pdf = renderSavedQuotesPdf(
+                items = listOf(QuoteExportItem(sample, photoBytes = null)),
+                texts = loadClientDocumentTexts(listOf(sample)),
+                brandName = branding.brandName,
+                footerText = branding.footerText,
+                options = branding.options,
+            )
+            publish(state.value.copy(previewPng = renderPdfFirstPagePng(pdf)))
+        }
     }
 
     fun closePreview() {

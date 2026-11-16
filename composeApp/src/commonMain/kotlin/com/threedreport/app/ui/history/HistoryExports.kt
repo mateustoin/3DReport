@@ -54,11 +54,12 @@ internal class HistoryExports(
 
     // Copiar não gera aviso quando dá certo: o botão diz "Copiado" por um instante (ver [HistoryUiState.copiedId]).
     private fun performCopy(savedQuote: SavedQuote) {
-        val text = savedQuote.toCopyPasteText(savedQuote.currency, brandingRepository.branding.value.showPrintTime)
-        if (platform.copyToClipboard(text)) {
-            change { it.copy(copiedId = savedQuote.id) }
-        } else {
-            notify(UiNotice(uiText(Res.string.export_copy_failed), isError = true))
+        exporter.withCopyPasteText(savedQuote) { text ->
+            if (platform.copyToClipboard(text)) {
+                change { it.copy(copiedId = savedQuote.id) }
+            } else {
+                notify(UiNotice(uiText(Res.string.export_copy_failed), isError = true))
+            }
         }
     }
 

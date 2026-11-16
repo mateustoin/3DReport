@@ -58,14 +58,14 @@ class PdfLayoutTest {
     @Test
     fun theOrderNumberIssueDateAndValidityAreOnTheDocument() {
         val issued = 20_356L // 25/09/2025
-        val info = documentInfoLine(savedQuote, PdfLayoutOptions(validityDays = 7, issuedOnEpochDay = issued))
+        val info = documentInfoLine(savedQuote, PdfLayoutOptions(validityDays = 7, issuedOnEpochDay = issued), testClientTexts)
 
         assertEquals("Pedido #0042 · Emitido em ${formatDate(issued)} · Válido até ${formatDate(issued + 7)}", info)
     }
 
     @Test
     fun withoutValidityTheLineSaysOnlyNumberAndDate() {
-        val info = documentInfoLine(savedQuote, PdfLayoutOptions(issuedOnEpochDay = 20_356L))
+        val info = documentInfoLine(savedQuote, PdfLayoutOptions(issuedOnEpochDay = 20_356L), testClientTexts)
 
         assertFalse(info!!.contains("Válido"))
     }
@@ -74,15 +74,15 @@ class PdfLayoutTest {
     fun theClientNameOnlyGoesOnTheDocumentWhenTurnedOn() {
         val items = listOf(QuoteExportItem(savedQuote, null))
 
-        assertFalse(textOf(renderSavedQuotesPdf(items, null, null)).contains("Maria Cliente"))
-        assertTrue(textOf(renderSavedQuotesPdf(items, null, null, PdfLayoutOptions(showClientName = true))).contains("Para: Maria Cliente"))
+        assertFalse(textOf(renderSavedQuotesPdf(items, testClientTexts, null, null)).contains("Maria Cliente"))
+        assertTrue(textOf(renderSavedQuotesPdf(items, testClientTexts, null, null, PdfLayoutOptions(showClientName = true))).contains("Para: Maria Cliente"))
     }
 
     @Test
     fun anAutomaticNameNeverBecomesTheTitle() {
         val autoNamed = savedQuote.copy(name = SavedQuote.AUTO_NAME_PREFIX + "24/09/2026 14:30")
 
-        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(autoNamed, null)), null, null))
+        val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(autoNamed, null)), testClientTexts, null, null))
 
         assertFalse(text.contains("24/09/2026 14:30"))
         assertTrue(text.contains("Orçamento"))
@@ -103,7 +103,7 @@ class PdfLayoutTest {
         val services = List(40) { QuoteService(id = "s$it", name = "Serviço $it", price = 1.0, chargedPerOrder = true) }
         val crowded = savedQuote.copy(services = services)
 
-        val pdf = renderSavedQuotesPdf(listOf(QuoteExportItem(crowded, pngOf(400, 300))), null, null)
+        val pdf = renderSavedQuotesPdf(listOf(QuoteExportItem(crowded, pngOf(400, 300))), testClientTexts, null, null)
 
         Loader.loadPDF(pdf).use { assertEquals(2, it.numberOfPages) }
     }
@@ -112,7 +112,7 @@ class PdfLayoutTest {
     fun aPhoneSizedPhotoIsReducedBeforeGoingIntoThePdf() {
         val photo = pngOf(3000, 2000)
 
-        val pdf = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photo)), null, null)
+        val pdf = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photo)), testClientTexts, null, null)
 
         Loader.loadPDF(pdf).use { document ->
             val resources = document.getPage(0).resources

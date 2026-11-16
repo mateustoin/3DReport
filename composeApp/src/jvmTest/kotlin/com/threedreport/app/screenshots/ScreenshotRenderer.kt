@@ -49,6 +49,7 @@ import com.threedreport.app.platform.imageBrandLine
 import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
+import com.threedreport.app.platform.testClientTexts
 import com.threedreport.app.ui.about.LatestRelease
 import com.threedreport.app.ui.about.ReleaseSource
 import com.threedreport.app.ui.format.toCurrencyText
@@ -1111,7 +1112,7 @@ private fun findClickableNodeWithText(node: SemanticsNode, text: String): Semant
 /** O PDF de verdade (mesmo exportador do app), a primeira página rasterizada e composta num fundo neutro. */
 private fun renderPdfComposite(savedQuote: SavedQuote, photoBytes: ByteArray?, branding: BrandingSettings, outFile: File) {
     val resolved = branding.resolvePdfBranding(logoBytes = null)
-    val pdfBytes = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes)), resolved.brandName, resolved.footerText, resolved.options)
+    val pdfBytes = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes)), testClientTexts, resolved.brandName, resolved.footerText, resolved.options)
     val pageImage = Loader.loadPDF(pdfBytes).use { document -> PDFRenderer(document).renderImageWithDPI(0, 150f) }
 
     val canvas = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
@@ -1145,6 +1146,7 @@ private fun renderWhatsAppPng(savedQuote: SavedQuote, photoBytes: ByteArray?, br
     val quantity = savedQuote.quote.quantity
     val piecesTotal = savedQuote.totalWithServices - savedQuote.shippingCost
     val bytes = renderQuoteImage(
+        texts = testClientTexts,
         title = savedQuote.name,
         priceText = savedQuote.totalWithServices.toCurrencyText(currency),
         unitPriceText = if (quantity > 1) "$quantity peças · ${(piecesTotal / quantity).toCurrencyText(currency)} cada" else null,

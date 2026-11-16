@@ -14,7 +14,7 @@ class QuoteImageExporterTest {
 
     @Test
     fun generatesASquarePngEvenWithoutAPhoto() {
-        val bytes = renderQuoteImage("Peça sem foto", "R$ 42,00", null, null, "Minha marca")
+        val bytes = renderQuoteImage(testClientTexts, "Peça sem foto", "R$ 42,00", null, null, "Minha marca")
 
         val image = ImageIO.read(ByteArrayInputStream(bytes))
         assertEquals(1080, image.width)
@@ -23,14 +23,14 @@ class QuoteImageExporterTest {
 
     @Test
     fun aVeryLongNameDoesNotBreakTheRendering() {
-        val bytes = renderQuoteImage("Nome absurdamente comprido ".repeat(20), "R$ 1,00", null, null, null)
+        val bytes = renderQuoteImage(testClientTexts, "Nome absurdamente comprido ".repeat(20), "R$ 1,00", null, null, null)
 
         assertTrue(ImageIO.read(ByteArrayInputStream(bytes)) != null)
     }
 
     @Test
     fun anUnreadablePhotoFallsBackToTheTextOnlyArt() {
-        val bytes = renderQuoteImage("Peça", "R$ 10,00", null, byteArrayOf(1, 2, 3), null)
+        val bytes = renderQuoteImage(testClientTexts, "Peça", "R$ 10,00", null, byteArrayOf(1, 2, 3), null)
 
         assertEquals(1080, ImageIO.read(ByteArrayInputStream(bytes)).width)
     }
@@ -39,6 +39,7 @@ class QuoteImageExporterTest {
     fun deliveryDateWithUnitPriceStillRendersASquarePng() {
         // Preço unitário e prazo juntos são o caso de mais linhas: a faixa cresce em vez de estourar.
         val bytes = renderQuoteImage(
+            texts = testClientTexts,
             title = "Chaveiro",
             priceText = "R$ 80,00",
             unitPriceText = "10 peças · R$ 8,00 cada",

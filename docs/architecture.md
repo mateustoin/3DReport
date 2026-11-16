@@ -405,6 +405,12 @@ Outros:
   quantidade × unitário, nome em até duas linhas e "Para" opcional (decisão
   108). Marca d'água e rodapé são desenhados **por cima de todo o conteúdo**
   (decisão 21). Gerar roda fora do thread da tela, com aviso de "Gerando PDF…".
+- Os textos do que vai pro cliente (PDF, catálogo, imagem quadrada e mensagem
+  do WhatsApp) moram em `strings.xml` (chaves `client_doc_`). Como o PDF e a
+  imagem são desenhados fora da tela, quem gera chama antes
+  `loadClientDocumentTexts(orçamentos)`, que lê os recursos e já resolve o
+  plural de "peças" pras quantidades usadas, e passa o `ClientDocumentTexts`
+  pros exportadores e pro `toCopyPasteText`.
 
 ### Workaround: janela em monitores com DPI diferentes
 `Main.kt` contorna um bug conhecido do Compose Desktop/Skiko (decisão 23):

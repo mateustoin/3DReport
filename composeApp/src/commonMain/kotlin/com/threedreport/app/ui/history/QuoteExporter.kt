@@ -15,12 +15,14 @@ import _3dreport.composeapp.generated.resources.export_whatsapp_failed
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.QuoteHistoryRepository
+import com.threedreport.app.platform.ClientDocumentTexts
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.ResolvedPdfBranding
 import com.threedreport.app.platform.SaveResult
 import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.imageBrandLine
+import com.threedreport.app.platform.loadClientDocumentTexts
 import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.renderSavedQuotesPdf
@@ -65,28 +67,47 @@ class QuoteExporter(
     fun exportPdf(savedQuote: SavedQuote) {
         saveGenerated("${fileNameFor(savedQuote)}.pdf", uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf)) {
             val branding = resolvePdfBranding()
-            renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes(savedQuote))), branding.brandName, branding.footerText, branding.options)
+            val items = listOf(QuoteExportItem(savedQuote, photoBytes(savedQuote)))
+            renderSavedQuotesPdf(items, loadClientDocumentTexts(listOf(savedQuote)), branding.brandName, branding.footerText, branding.options)
         }
+    }
+
+    /**
+     * Lê os textos da mensagem pro cliente (recursos traduzíveis) e entrega em [main]. Com `Unconfined`, nos testes,
+     * a leitura termina na hora e [block] roda antes de a função voltar.
+     */
+    private fun withMessageTexts(savedQuote: SavedQuote, block: (ClientDocumentTexts) -> Unit) {
+        scope.launch(main) { block(loadClientDocumentTexts(listOf(savedQuote))) }
+    }
+
+    /** O texto do orçamento pra colar numa conversa (ver [toCopyPasteText]), com os textos já lidos dos recursos. */
+    fun withCopyPasteText(savedQuote: SavedQuote, block: (String) -> Unit) {
+        val showPrintTime = brandingRepository.branding.value.showPrintTime
+        withMessageTexts(savedQuote) { texts -> block(savedQuote.toCopyPasteText(texts, savedQuote.currency, showPrintTime)) }
     }
 
     /** Abre a conversa do cliente no WhatsApp com o orçamento já escrito (ver [toWhatsAppLink]). */
     fun openInWhatsApp(savedQuote: SavedQuote) {
         val showPrintTime = brandingRepository.branding.value.showPrintTime
-        if (platform.openUrl(savedQuote.toWhatsAppLink(savedQuote.currency, showPrintTime))) return
-        // Sem navegador configurado, o texto ainda chega no cliente: vai pra área de transferência.
-        val copied = platform.copyToClipboard(savedQuote.toCopyPasteText(savedQuote.currency, showPrintTime))
-        notify(
-            UiNotice(
-                uiText(if (copied) Res.string.export_whatsapp_copied else Res.string.export_whatsapp_failed),
-                isError = true,
-            ),
-        )
+        withMessageTexts(savedQuote) { texts ->
+            if (platform.openUrl(savedQuote.toWhatsAppLink(texts, savedQuote.currency, showPrintTime))) return@withMessageTexts
+            // Sem navegador configurado, o texto ainda chega no cliente: vai pra área de transferência.
+            val copied = platform.copyToClipboard(savedQuote.toCopyPasteText(texts, savedQuote.currency, showPrintTime))
+            notify(
+                UiNotice(
+                    uiText(if (copied) Res.string.export_whatsapp_copied else Res.string.export_whatsapp_failed),
+                    isError = true,
+                ),
+            )
+        }
     }
 
     /** Copia o texto do orçamento pra área de transferência e avisa se deu certo ou não. */
     fun copyText(savedQuote: SavedQuote) {
-        val copied = platform.copyToClipboard(savedQuote.toCopyPasteText(savedQuote.currency, brandingRepository.branding.value.showPrintTime))
-        notify(UiNotice(uiText(if (copied) Res.string.export_copied else Res.string.export_copy_failed), isError = !copied))
+        withCopyPasteText(savedQuote) { text ->
+            val copied = platform.copyToClipboard(text)
+            notify(UiNotice(uiText(if (copied) Res.string.export_copied else Res.string.export_copy_failed), isError = !copied))
+        }
     }
 
     /**
@@ -100,17 +121,19 @@ class QuoteExporter(
             val piecesTotal = savedQuote.totalWithServices - savedQuote.chargedShipping
             // Curta ("30/09", sem o ano) porque a imagem é pra conversa do dia, não documento. Entrega
             // expressa (decisão 125) junto do prazo; sem prazo, vira o próprio texto de entrega.
-            val deliveryDate = savedQuote.deliveryDateEpochDay?.let { "Entrega até ${formatShortDate(it)}" }
+            val texts = loadClientDocumentTexts(listOf(savedQuote))
+            val deliveryDate = savedQuote.deliveryDateEpochDay?.let { texts.imageDelivery(formatShortDate(it)) }
             val deliveryText = when {
-                deliveryDate != null && savedQuote.quote.rush -> "$deliveryDate · entrega expressa"
+                deliveryDate != null && savedQuote.quote.rush -> texts.imageDeliveryRush(deliveryDate)
                 deliveryDate != null -> deliveryDate
-                savedQuote.quote.rush -> "Entrega expressa"
+                savedQuote.quote.rush -> texts.rush
                 else -> null
             }
             renderQuoteImage(
-                title = savedQuote.name.takeUnless { savedQuote.hasAutoName } ?: "Orçamento",
+                texts = texts,
+                title = savedQuote.name.takeUnless { savedQuote.hasAutoName } ?: texts.autoOrderTitle(number = null),
                 priceText = savedQuote.totalWithServices.toCurrencyText(currency),
-                unitPriceText = if (quantity > 1) "$quantity peças · ${(piecesTotal / quantity).toCurrencyText(currency)} cada" else null,
+                unitPriceText = if (quantity > 1) texts.imageUnitPrice(quantity, (piecesTotal / quantity).toCurrencyText(currency)) else null,
                 photoBytes = photoBytes(savedQuote),
                 brandText = brandingRepository.branding.value.imageBrandLine(),
                 deliveryText = deliveryText,
@@ -127,7 +150,7 @@ class QuoteExporter(
         busyMessage: UiText,
         savedMessage: UiText,
         onSaved: () -> Unit = {},
-        generate: () -> ByteArray,
+        generate: suspend () -> ByteArray,
     ) {
         if (busyState.value != null) return
         val path = platform.chooseSaveLocation(suggestedFileName) ?: return
@@ -156,7 +179,7 @@ class QuoteExporter(
     fun exportQuotesPdf(quotes: List<SavedQuote>, onSaved: () -> Unit = {}) {
         saveGenerated("${sanitizeFileName("Orçamentos (${quotes.size} itens)")}.pdf", uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf), onSaved) {
             val branding = resolvePdfBranding()
-            renderSavedQuotesPdf(quotes.map { QuoteExportItem(it, photoBytes(it)) }, branding.brandName, branding.footerText, branding.options)
+            renderSavedQuotesPdf(quotes.map { QuoteExportItem(it, photoBytes(it)) }, loadClientDocumentTexts(quotes), branding.brandName, branding.footerText, branding.options)
         }
     }
 
@@ -164,7 +187,7 @@ class QuoteExporter(
     fun exportCatalogPdf(products: List<SavedQuote>, onSaved: () -> Unit = {}) {
         saveGenerated("${sanitizeFileName("Catálogo (${products.size} itens)")}.pdf", uiText(Res.string.export_busy_catalog), uiText(Res.string.export_saved_catalog), onSaved) {
             val branding = resolvePdfBranding()
-            renderCatalogPdf(products.map { QuoteExportItem(it, photoBytes(it)) }, branding.brandName, branding.footerText, branding.options)
+            renderCatalogPdf(products.map { QuoteExportItem(it, photoBytes(it)) }, loadClientDocumentTexts(products), branding.brandName, branding.footerText, branding.options)
         }
     }
 

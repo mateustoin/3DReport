@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.app.platform.testClientTexts
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
@@ -63,7 +64,7 @@ class WhatsAppLinkTest {
     fun linkCarriesThePhoneAndTheQuoteText() {
         val withPhone = savedQuote.copy(client = Client(name = "Maria", contact = "(11) 99999-0000"))
 
-        val link = withPhone.toWhatsAppLink()
+        val link = withPhone.toWhatsAppLink(testClientTexts)
 
         assertTrue(link.startsWith("https://wa.me/5511999990000?text="), "link gerado: $link")
         // Acento e quebra de linha precisam ir codificados, senão o link quebra no meio do texto.
@@ -74,7 +75,7 @@ class WhatsAppLinkTest {
 
     @Test
     fun withoutAPhoneTheLinkStillCarriesTheTextSoWhatsAppAsksWhoToSendTo() {
-        val link = savedQuote.copy(client = Client(name = "Maria", contact = "maria@example.com")).toWhatsAppLink()
+        val link = savedQuote.copy(client = Client(name = "Maria", contact = "maria@example.com")).toWhatsAppLink(testClientTexts)
 
         assertTrue(link.startsWith("https://wa.me/?text="), "link gerado: $link")
         assertTrue(link.contains("Suporte"))
@@ -83,7 +84,7 @@ class WhatsAppLinkTest {
     @Test
     fun accentedTextIsEncodedAsUtf8() {
         // "Orçamento" tem cedilha: em UTF-8, o "ç" vira %C3%A7.
-        val link = savedQuote.copy(name = "Orçamento").toWhatsAppLink()
+        val link = savedQuote.copy(name = "Orçamento").toWhatsAppLink(testClientTexts)
 
         assertTrue(link.contains("Or%C3%A7amento"), "link gerado: $link")
     }
