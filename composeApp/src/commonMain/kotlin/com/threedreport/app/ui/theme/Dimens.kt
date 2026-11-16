@@ -86,8 +86,11 @@ object AppDimens {
     val printThumbnailSize = 40.dp
     val smallControlHeight = 32.dp
 
-    /** A lista de seções de Configurações, ao lado do conteúdo. */
-    val sectionListWidth = 264.dp
+    /**
+     * A lista de seções de Configurações, ao lado do conteúdo. Com 264, os rótulos dos campos truncavam numa janela
+     * de 900; o "Não salvo" vai embaixo do nome da seção, então 200 cabe "Documentos pro cliente" inteiro.
+     */
+    val sectionListWidth = 200.dp
 
     /** Item de menu (o de ações do pedido tem 12 itens: com 48 não cabe numa janela baixa). */
     val menuItemHeight = 40.dp

@@ -7,9 +7,9 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
@@ -33,8 +32,9 @@ import com.threedreport.app.ui.theme.spacing
 
 /**
  * Item de uma lista de opções ao lado do conteúdo (as seções de Configurações): 36 de altura, raio 8, texto em `body`.
- * Selecionado: fundo `tint` e texto `primary` em 600; com o mouse em cima, fundo `column`. [note] é um texto curto à
- * direita ("Não salvo"), em `label` e em `textMuted` (o âmbar fica pra ação), pra o aviso não depender só da cor. Foco no teclado:
+ * Selecionado: fundo `tint` e texto `primary` em 600; com o mouse em cima, fundo `column`. [note] é um texto curto
+ * embaixo do nome ("Não salvo"), em `label` e em `textMuted` (o âmbar fica pra ação), pra o aviso não depender só da
+ * cor. Embaixo, e não ao lado, pra não cortar o nome numa lista estreita; com a nota, o item cresce. Foco no teclado:
  * anel de 2.
  */
 @Composable
@@ -44,10 +44,10 @@ fun SelectableItem(label: String, selected: Boolean, onClick: () -> Unit, modifi
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     var focused by remember { mutableStateOf(false) }
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(AppDimens.navItemHeight)
+            .heightIn(min = AppDimens.navItemHeight)
             .clip(MaterialTheme.shapes.small)
             .background(
                 when {
@@ -60,9 +60,8 @@ fun SelectableItem(label: String, selected: Boolean, onClick: () -> Unit, modifi
             .onFocusChanged { focused = it.isFocused }
             .hoverable(interaction)
             .clickable(interactionSource = interaction, indication = null, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = space.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(space.xs),
+            .padding(horizontal = space.sm, vertical = space.xs),
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             label,
@@ -71,10 +70,9 @@ fun SelectableItem(label: String, selected: Boolean, onClick: () -> Unit, modifi
             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
         )
         if (note != null) {
-            Text(note, style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Text(note, style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
