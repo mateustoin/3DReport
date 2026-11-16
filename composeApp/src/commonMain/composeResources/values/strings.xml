@@ -830,6 +830,7 @@
     <string name="settings_action_discard">Descartar</string>
     <string name="settings_notice_saved">Configurações salvas.</string>
     <string name="settings_error_percent_max">Precisa ficar abaixo de 100%</string>
+    <string name="settings_notice_saved_fixed_cost">Configurações salvas, mas o custo fixo mensal só entra no preço quando as horas de impressão por mês estão preenchidas.</string>
     <string name="settings_warning_fixed_cost">O custo fixo mensal só entra no preço quando as horas de impressão por mês estão preenchidas.</string>
 
     <string name="settings_energy_title">Energia</string>
@@ -970,6 +971,7 @@
     <string name="settings_docs_template_name">Nome do modelo</string>
     <string name="settings_docs_template_name_hint">Ex.: Formal, Simples</string>
     <string name="settings_docs_notice_template_saved">Modelo salvo.</string>
+    <string name="settings_docs_notice_template_failed">Não consegui salvar o modelo. Tente de novo.</string>
 
     <string name="settings_appearance_theme">Tema</string>
     <string name="settings_appearance_theme_help">Claro, escuro ou o mesmo do sistema. Vale na hora.</string>

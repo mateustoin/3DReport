@@ -9,6 +9,7 @@ import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.printers.PrinterPreset
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.PricingSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,13 +64,19 @@ data class OnboardingUiState(
  * própria hora (que nasce zerado e, sem preencher, faz o trabalho sumir do preço) e a margem. Filamento fica de fora:
  * o cadastro padrão já é utilizável e a tela tem catálogo pronto.
  */
-class OnboardingViewModel(private val currentSettings: PricingSettings) {
+class OnboardingViewModel(
+    private val currentSettings: PricingSettings,
+    /** A moeda em uso: os números são lidos com o separador decimal dela, o mesmo que o campo usa pra validar. */
+    currency: Currency = Currency.BRL,
+) {
+
+    private val separator = currency.decimalSeparator
 
     private val state = MutableStateFlow(
         OnboardingUiState(
-            energyText = currentSettings.energyPricePerKwh.toInputText(),
-            marginText = (currentSettings.profitMargin * 100).toInputText(),
-        ).validated(),
+            energyText = currentSettings.energyPricePerKwh.toInputText(separator),
+            marginText = (currentSettings.profitMargin * 100).toInputText(separator),
+        ).validated(separator),
     )
     val uiState: StateFlow<OnboardingUiState> = state.asStateFlow()
 
@@ -92,10 +99,10 @@ class OnboardingViewModel(private val currentSettings: PricingSettings) {
     fun finish(): OnboardingResult? {
         val current = state.value
         if (!current.canContinue || current.machinePriceError != null) return null
-        val energy = parseDecimal(current.energyText, NumberKind.MEASURE)
-        val labor = if (current.laborText.isBlank()) 0.0 else parseDecimal(current.laborText)
-        val margin = parseDecimal(current.marginText, NumberKind.MEASURE)
-        val machinePrice = if (current.machinePriceText.isBlank()) null else parseDecimal(current.machinePriceText)
+        val energy = parseDecimal(current.energyText, NumberKind.MEASURE, separator)
+        val labor = if (current.laborText.isBlank()) 0.0 else parseDecimal(current.laborText, decimalSeparator = separator)
+        val margin = parseDecimal(current.marginText, NumberKind.MEASURE, separator)
+        val machinePrice = if (current.machinePriceText.isBlank()) null else parseDecimal(current.machinePriceText, decimalSeparator = separator)
         return OnboardingResult(
             settings = currentSettings.copy(
                 energyPricePerKwh = energy ?: currentSettings.energyPricePerKwh,
@@ -107,7 +114,7 @@ class OnboardingViewModel(private val currentSettings: PricingSettings) {
     }
 
     private fun edit(transform: (OnboardingUiState) -> OnboardingUiState) {
-        state.update { transform(it).validated() }
+        state.update { transform(it).validated(separator) }
     }
 }
 
@@ -115,10 +122,10 @@ class OnboardingViewModel(private val currentSettings: PricingSettings) {
  * Recalcula o erro de cada resposta: branco só vale onde a pergunta é opcional. Energia (kWh) e margem são medidas
  * ([NumberKind.MEASURE]), como em Configurações: "1.250" é 1,25, e não mil duzentos e cinquenta.
  */
-private fun OnboardingUiState.validated(): OnboardingUiState {
+private fun OnboardingUiState.validated(separator: Char): OnboardingUiState {
     fun error(text: String, optional: Boolean, kind: NumberKind = NumberKind.AMOUNT): UiText? {
         if (optional && text.isBlank()) return null
-        val value = parseDecimal(text, kind) ?: return uiText(Res.string.common_error_number_invalid)
+        val value = parseDecimal(text, kind, separator) ?: return uiText(Res.string.common_error_number_invalid)
         return uiText(Res.string.common_error_negative).takeIf { value < 0 }
     }
     return copy(

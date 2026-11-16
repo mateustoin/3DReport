@@ -5,6 +5,7 @@ import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_number_invalid
 import com.threedreport.app.ui.printers.PRINTER_PRESETS
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.PricingSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -121,5 +122,33 @@ class OnboardingViewModelTest {
         assertEquals(1.25, result.settings.energyPricePerKwh, 1e-9, "kWh com ponto é decimal, como em Configurações")
         assertEquals(0.0125, result.settings.profitMargin, 1e-9, "1.250 na margem é 1,25%, e não 1250%")
         assertEquals(2700.0, result.printer?.machinePrice)
+    }
+
+    @Test
+    fun withADotCurrencyTheTextsAreShownAndReadWithTheDot() {
+        val viewModel = OnboardingViewModel(settings, Currency.USD)
+        assertEquals("0.8", viewModel.uiState.value.energyText)
+
+        viewModel.setLabor("1,250")
+        viewModel.setMachinePrice("2,700.50")
+        viewModel.setEnergy("0.15")
+        viewModel.next()
+        val result = assertNotNull(viewModel.finish())
+
+        assertEquals(1250.0, result.settings.laborRatePerHour, 1e-9)
+        assertEquals(0.15, result.settings.energyPricePerKwh, 1e-9)
+        assertEquals(2700.5, result.printer?.machinePrice)
+    }
+
+    @Test
+    fun withACommaCurrencyAThousandsDotIsStillThousands() {
+        val viewModel = OnboardingViewModel(settings, Currency.BRL)
+        viewModel.setLabor("1.250")
+        viewModel.setMachinePrice("2.700,50")
+
+        val result = assertNotNull(viewModel.finish())
+
+        assertEquals(1250.0, result.settings.laborRatePerHour, 1e-9)
+        assertEquals(2700.5, result.printer?.machinePrice)
     }
 }

@@ -45,7 +45,7 @@ import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.InfoRow
 import com.threedreport.app.ui.components.TableColumn
 import com.threedreport.app.ui.components.TableHeader
-import com.threedreport.app.ui.components.TableStaticRow
+import com.threedreport.app.ui.components.TablePlainRow
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
@@ -124,7 +124,7 @@ private fun RankingTable(title: String, help: HelpText, columns: List<TableColum
         Column {
             TableHeader(columns)
             rows.forEach { row ->
-                TableStaticRow(columns) {
+                TablePlainRow(columns) {
                     Cell(0) { Text(row.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     Cell(1) { Value(row.first) }
                     Cell(2) { Value(row.second) }

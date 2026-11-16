@@ -9,9 +9,11 @@ import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.ChannelFeeTier
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SalesChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -27,6 +29,8 @@ import kotlin.test.assertTrue
 
 class SalesChannelViewModelTest {
 
+    private val scope = CoroutineScope(Dispatchers.Unconfined)
+
     @BeforeTest
     fun setDataDir() {
         System.setProperty("threedreport.dataDir", createTempDirectory("3dreport-test").toString())
@@ -34,6 +38,7 @@ class SalesChannelViewModelTest {
 
     @AfterTest
     fun clearDataDir() {
+        scope.cancel()
         System.clearProperty("threedreport.dataDir")
     }
 
@@ -42,7 +47,7 @@ class SalesChannelViewModelTest {
 
     /** Um ViewModel com o formulário de um canal novo já aberto. */
     private fun newForm(repository: SalesChannelRepository = SalesChannelRepository()) =
-        SalesChannelViewModel(repository).also { it.startAdd() }
+        SalesChannelViewModel(repository, scope).also { it.startAdd() }
 
     private fun SalesChannelViewModel.pendingNotice(): UiNotice? = runBlocking { withTimeoutOrNull(200) { notices.first() } }
 
@@ -156,7 +161,7 @@ class SalesChannelViewModelTest {
             ChannelFeeTier(upToUnitPrice = null, feeRate = 0.20, fixedFeePerItem = 4.0),
         )
         repository.add(SalesChannel(id = "shopee", name = "Shopee", feeRate = 0.0, tiers = tiers))
-        val viewModel = SalesChannelViewModel(repository)
+        val viewModel = SalesChannelViewModel(repository, scope)
 
         viewModel.startEdit(repository.channels.value.single())
 
@@ -203,7 +208,7 @@ class SalesChannelViewModelTest {
         val repository = SalesChannelRepository()
         repository.add(SalesChannel(id = "a", name = "Shopee", feeRate = 0.2))
         repository.add(SalesChannel(id = "b", name = "Pix", feeRate = 0.0))
-        val viewModel = SalesChannelViewModel(repository)
+        val viewModel = SalesChannelViewModel(repository, scope)
 
         viewModel.requestDelete("a")
 
@@ -220,7 +225,7 @@ class SalesChannelViewModelTest {
         val repository = SalesChannelRepository()
         repository.add(SalesChannel(id = "a", name = "Shopee", feeRate = 0.2))
         repository.add(SalesChannel(id = "b", name = "Pix", feeRate = 0.0))
-        val viewModel = SalesChannelViewModel(repository, CoroutineScope(Dispatchers.Unconfined))
+        val viewModel = SalesChannelViewModel(repository, scope)
         assertEquals(listOf("a", "b"), viewModel.uiState.value.active.map { it.id })
 
         viewModel.setArchived("b", true)
@@ -228,5 +233,38 @@ class SalesChannelViewModelTest {
         assertEquals(listOf("a"), viewModel.uiState.value.active.map { it.id })
         assertEquals(listOf("b"), viewModel.uiState.value.archived.map { it.id })
         assertFalse(viewModel.uiState.value.isEmpty)
+    }
+
+    @Test
+    fun theFixedFeeAndTheTiersAreReadWithTheSeparatorOfTheCurrency() {
+        val repository = SalesChannelRepository()
+        val viewModel = SalesChannelViewModel(repository, scope, currency = { Currency.USD }).also { it.startAdd() }
+        viewModel.setName("Etsy")
+        viewModel.setFeeRate("6.5")
+        viewModel.setFixedFeePerItem("1,250")
+        viewModel.addTierRow()
+        val (first, last) = viewModel.form().tiers
+        viewModel.updateTierRow(first.id) { it.copy(upToUnitPriceText = "1,000", feeRatePercentText = "5", fixedFeePerItemText = "0.5") }
+        viewModel.updateTierRow(last.id) { it.copy(feeRatePercentText = "4") }
+
+        viewModel.save()
+
+        val saved = repository.channels.value.single()
+        assertEquals(0.065, saved.feeRate, 1e-9)
+        assertEquals(1250.0, saved.fixedFeePerItem, 1e-9)
+        assertEquals(1000.0, saved.tiers.first().upToUnitPrice)
+        assertEquals(0.5, saved.tiers.first().fixedFeePerItem, 1e-9)
+    }
+
+    @Test
+    fun theSameThousandsTextIsReadTheOtherWayWithACommaCurrency() {
+        val repository = SalesChannelRepository()
+        val viewModel = newForm(repository)
+        viewModel.setName("Loja")
+        viewModel.setFixedFeePerItem("1.250")
+
+        viewModel.save()
+
+        assertEquals(1250.0, repository.channels.value.single().fixedFeePerItem, 1e-9)
     }
 }

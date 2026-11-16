@@ -20,6 +20,7 @@ import com.threedreport.core.report.QuoteReport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -80,7 +81,11 @@ class DashboardViewModelTest {
         salePrice = 16.19,
     )
 
-    private fun viewModel() = DashboardViewModel(history, settings, scope)
+    /** Com a tela aberta: alguém observa o estado, que é quando o resumo é recalculado. */
+    private fun viewModel(): DashboardViewModel = unobserved().also { scope.launch { it.uiState.collect {} } }
+
+    /** Sem ninguém observando, como com outra tela aberta. */
+    private fun unobserved() = DashboardViewModel(history, settings, scope, io = Dispatchers.Unconfined)
 
     private fun saveOrder(name: String, status: OrderStatus = OrderStatus.ORCADO, withQuote: Quote = quote) {
         val saved = history.save(name = name, quote = withQuote, services = emptyList(), photo = null, sourceLink = null)
@@ -322,6 +327,47 @@ class DashboardViewModelTest {
 
         settings.update(settings.settings.value.copy(laborRatePerHour = 50.0))
         assertEquals(50.0, viewModel.uiState.value.laborRatePerHour)
+    }
+
+    // ---- só calcula com a tela aberta, e uma vez na criação
+
+    @Test
+    fun theSummaryIsBuiltOnceOnCreationAndNotAgainWhenTheScreenOpens() {
+        saveOrder("Chaveiro", OrderStatus.APROVADO)
+        val viewModel = unobserved()
+        assertEquals(1, viewModel.buildCount)
+
+        scope.launch { viewModel.uiState.collect {} }
+
+        assertEquals(1, viewModel.buildCount, "nada mudou: o que já estava calculado vale")
+        assertEquals(DashboardMode.SALES, viewModel.uiState.value.mode)
+    }
+
+    @Test
+    fun withTheScreenClosedChangesAreNotRecalculatedAndTheNextOpeningCatchesUp() {
+        val viewModel = unobserved()
+        assertEquals(1, viewModel.buildCount)
+
+        saveOrder("Chaveiro", OrderStatus.APROVADO)
+        saveOrder("Vaso", OrderStatus.APROVADO)
+        settings.update(settings.settings.value.copy(laborRatePerHour = 50.0))
+        assertEquals(1, viewModel.buildCount, "ninguém observa: nenhuma conta")
+
+        scope.launch { viewModel.uiState.collect {} }
+
+        assertEquals(2, viewModel.buildCount, "uma conta só pra tudo o que mudou")
+        assertEquals(2, viewModel.uiState.value.summary.quoteCount)
+        assertEquals(50.0, viewModel.uiState.value.laborRatePerHour)
+    }
+
+    @Test
+    fun editingAnUnrelatedSettingDoesNotRecalculateTheSummary() {
+        val viewModel = viewModel()
+        val builds = viewModel.buildCount
+
+        settings.update(settings.settings.value.copy(profitMargin = 2.0))
+
+        assertEquals(builds, viewModel.buildCount)
     }
 }
 

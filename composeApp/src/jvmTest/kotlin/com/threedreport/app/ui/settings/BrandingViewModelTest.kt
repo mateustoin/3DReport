@@ -14,6 +14,9 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.BrandingSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -30,6 +33,8 @@ import kotlin.test.assertTrue
 /** Valida a regra: com nome preenchido, ao menos marca d'água ou rodapé precisa estar marcado. */
 class BrandingViewModelTest {
 
+    private val scope = CoroutineScope(Dispatchers.Unconfined)
+
     @BeforeTest
     fun setDataDir() {
         System.setProperty("threedreport.dataDir", createTempDirectory("3dreport-test").toString())
@@ -37,13 +42,14 @@ class BrandingViewModelTest {
 
     @AfterTest
     fun clearDataDir() {
+        scope.cancel()
         System.clearProperty("threedreport.dataDir")
     }
 
     private fun newViewModel(
         brandingRepository: BrandingRepository = BrandingRepository(),
         templateRepository: TemplateRepository = TemplateRepository(),
-    ) = BrandingViewModel(brandingRepository, templateRepository)
+    ) = BrandingViewModel(brandingRepository, templateRepository, scope)
 
     /** O aviso emitido depois da última ação, ou `null` se não houve nenhum. */
     private fun BrandingViewModel.pendingNotice(): UiNotice? = runBlocking { withTimeoutOrNull(200) { notices.first() } }
@@ -136,7 +142,25 @@ class BrandingViewModelTest {
         viewModel.updateTemplateName("Formal")
         viewModel.confirmSaveAsTemplate()
 
-        assertEquals(uiText(Res.string.settings_docs_error_options), viewModel.uiState.value.savingTemplate?.error)
+        // O erro é das opções do formulário, não do nome do modelo: o diálogo fecha e o erro aparece no campo certo.
+        assertNull(viewModel.uiState.value.savingTemplate)
+        assertEquals(uiText(Res.string.settings_docs_error_options), viewModel.uiState.value.optionsError)
+        assertTrue(templateRepository.templates.value.isEmpty())
+    }
+
+    @Test
+    fun confirmSaveAsTemplateWithAnInvalidValidityClosesTheDialogAndShowsTheErrorOnTheValidityField() {
+        val templateRepository = TemplateRepository()
+        val viewModel = newViewModel(templateRepository = templateRepository)
+
+        viewModel.setValidityDays("dez")
+        viewModel.startSaveAsTemplate()
+        viewModel.updateTemplateName("Formal")
+        viewModel.confirmSaveAsTemplate()
+
+        assertNull(viewModel.uiState.value.savingTemplate)
+        assertEquals(uiText(Res.string.settings_docs_error_validity, BrandingSettings.MAX_VALIDITY_DAYS), viewModel.uiState.value.validityError)
+        assertNull(viewModel.uiState.value.optionsError)
         assertTrue(templateRepository.templates.value.isEmpty())
     }
 
@@ -150,7 +174,7 @@ class BrandingViewModelTest {
     fun pickedLogoIsOnlyStoredOnSave() {
         val repository = BrandingRepository()
         val png = tinyPng()
-        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", png) })
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), scope, pickImage = { PickedFile("logo.png", png) })
 
         viewModel.pickLogo()
         assertNull(repository.branding.value.logoFileName, "escolher não grava: o formulário é rascunho até Salvar")
@@ -162,7 +186,7 @@ class BrandingViewModelTest {
 
     @Test
     fun unreadableLogoShowsAnErrorAndKeepsTheFormAsItWas() {
-        val viewModel = BrandingViewModel(BrandingRepository(), TemplateRepository(), pickImage = { PickedFile("logo.png", byteArrayOf(1, 2, 3)) })
+        val viewModel = BrandingViewModel(BrandingRepository(), TemplateRepository(), scope, pickImage = { PickedFile("logo.png", byteArrayOf(1, 2, 3)) })
 
         viewModel.pickLogo()
 
@@ -173,7 +197,7 @@ class BrandingViewModelTest {
     @Test
     fun discardDropsTheEditsAndThePickedLogo() {
         val repository = BrandingRepository()
-        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", tinyPng()) })
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), scope, pickImage = { PickedFile("logo.png", tinyPng()) })
         viewModel.update("Loja Nova")
         viewModel.pickLogo()
         assertTrue(viewModel.hasUnsavedChanges)
@@ -190,7 +214,7 @@ class BrandingViewModelTest {
     fun removingTheLogoTakesEffectOnSave() {
         val repository = BrandingRepository()
         val png = tinyPng()
-        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", png) })
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), scope, pickImage = { PickedFile("logo.png", png) })
         viewModel.pickLogo()
         viewModel.save()
 

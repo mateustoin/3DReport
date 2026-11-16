@@ -65,8 +65,8 @@ import com.threedreport.app.ui.components.IconAction
 import com.threedreport.app.ui.components.ListRow
 import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.TableColumn
-import com.threedreport.app.ui.components.TableFieldRow
 import com.threedreport.app.ui.components.TableHeader
+import com.threedreport.app.ui.components.TablePlainRow
 import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
@@ -240,7 +240,7 @@ private fun ChannelTiersEditor(form: SalesChannelFormState, viewModel: SalesChan
             TableHeader(columns)
             form.tiers.forEachIndexed { index, tier ->
                 key(tier.id) {
-                    TableFieldRow(columns) {
+                    TablePlainRow(columns, spacing = MaterialTheme.spacing.xs, verticalPadding = MaterialTheme.spacing.xxs) {
                         Cell(0) {
                             if (index == form.tiers.lastIndex) {
                                 Text(stringResource(Res.string.settings_channels_tier_last), style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurfaceVariant)

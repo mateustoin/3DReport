@@ -5,7 +5,7 @@ import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_number_invalid
 import _3dreport.composeapp.generated.resources.settings_error_percent_max
 import _3dreport.composeapp.generated.resources.settings_notice_saved
-import _3dreport.composeapp.generated.resources.settings_warning_fixed_cost
+import _3dreport.composeapp.generated.resources.settings_notice_saved_fixed_cost
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.NumberKind
@@ -13,6 +13,7 @@ import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.PricingSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -29,10 +30,15 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * horas).
  *
  * Edição em rascunho: as mudanças só valem para o resto do app depois de [save], que valida os campos e grava em
- * [SettingsRepository], ou somem com [discard]. Com [scope], o rascunho acompanha o que for gravado por outro caminho
- * (o primeiro uso grava direto no repositório); sem ele, quem chama usa [syncWith].
+ * [SettingsRepository], ou somem com [discard]. O rascunho acompanha, dentro de [scope], o que for gravado por outro
+ * caminho (o primeiro uso grava direto no repositório). Os números são lidos com o separador decimal da moeda de
+ * [currency], o mesmo que o campo usa pra validar e mostrar a dica de leitura.
  */
-class SettingsViewModel(private val settingsRepository: SettingsRepository, scope: CoroutineScope? = null) {
+class SettingsViewModel(
+    private val settingsRepository: SettingsRepository,
+    scope: CoroutineScope,
+    private val currency: () -> Currency = { Currency.BRL },
+) {
 
     /** O que está gravado e de onde o rascunho saiu; serve pra saber se há edição por salvar. */
     private var baseline: PricingSettings = settingsRepository.settings.value
@@ -44,7 +50,7 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository, scop
     val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
 
     init {
-        scope?.let { settingsRepository.settings.onEach(::syncWith).launchIn(it) }
+        settingsRepository.settings.onEach(::syncWith).launchIn(scope)
     }
 
     /** Se o formulário tem alguma mudança ainda não salva. */
@@ -52,7 +58,7 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository, scop
         get() = state.value.hasUnsavedChanges
 
     fun update(transform: (SettingsUiState) -> SettingsUiState) {
-        publish(transform(state.value).copy(errors = emptyMap(), fixedCostWithoutHours = false))
+        publish(transform(state.value).copy(errors = emptyMap()))
     }
 
     /**
@@ -73,12 +79,44 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository, scop
         publish(baseline.toUiState())
     }
 
-    /** Valida e grava. Com [announce] falso o aviso de salvo fica com quem salva mais de uma seção de uma vez. */
+    /**
+     * Confere os campos sem gravar: com erro, mostra cada um no seu campo e devolve `false`. Quem salva mais de uma
+     * seção de uma vez valida todas antes de gravar qualquer uma.
+     */
+    fun validate(): Boolean = parse(state.value).let { result ->
+        if (result.settings == null) publish(state.value.copy(errors = result.errors))
+        result.settings != null
+    }
+
+    /**
+     * Valida e grava. Com [announce] falso o aviso de salvo fica com quem salva mais de uma seção de uma vez. Com custo
+     * fixo e sem horas pra dividir, o aviso de salvo já diz que o custo fixo não entra no preço.
+     */
     fun save(announce: Boolean = true) {
         val current = state.value
+        val result = parse(current)
+        val settings = result.settings
+        if (settings == null) {
+            publish(current.copy(errors = result.errors))
+            return
+        }
+        settingsRepository.update(settings)
+        baseline = settings
+        publish(settings.toUiState())
+        if (!announce) return
+        // Custo fixo sem horas pra dividir não entra no preço: melhor avisar do que deixar a pessoa achar que entrou. O
+        // aviso é um só (o kit não tem um tom de atenção, então fica no estilo que demora e ganha o "x").
+        val warn = settings.hasFixedCostWithoutHours()
+        noticeChannel.trySend(UiNotice(uiText(if (warn) Res.string.settings_notice_saved_fixed_cost else Res.string.settings_notice_saved), isError = warn))
+    }
+
+    private class ParseResult(val settings: PricingSettings?, val errors: Map<SettingsField, UiText>)
+
+    private fun parse(current: SettingsUiState): ParseResult {
+        val separator = currency().decimalSeparator
         val errors = mutableMapOf<SettingsField, UiText>()
         fun amount(field: SettingsField, text: String, kind: NumberKind = NumberKind.AMOUNT, below100: Boolean = false): Double {
-            val value = if (text.isBlank()) 0.0 else parseDecimal(text, kind)
+            val value = if (text.isBlank()) 0.0 else parseDecimal(text, kind, separator)
             when {
                 value == null -> errors[field] = uiText(Res.string.common_error_number_invalid)
                 value < 0 -> errors[field] = uiText(Res.string.common_error_negative)
@@ -97,38 +135,39 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository, scop
         val tax = amount(SettingsField.TAX, current.taxRatePercentText, NumberKind.MEASURE, below100 = true)
         val minimum = amount(SettingsField.MINIMUM_PRICE, current.minimumOrderPriceText)
         val rush = amount(SettingsField.RUSH, current.rushSurchargeRatePercentText, NumberKind.MEASURE)
-        if (errors.isNotEmpty()) {
-            publish(current.copy(errors = errors))
-            return
-        }
-
-        val settings = PricingSettings(
-            energyPricePerKwh = energy,
-            failureRate = failure / 100.0,
-            finishingRate = finishing / 100.0,
-            laborRatePerHour = labor,
-            monthlyFixedCost = fixedCost,
-            productiveHoursPerMonth = hours,
-            administrativeCost = administrative,
-            profitMargin = margin / 100.0,
-            taxRate = tax / 100.0,
-            minimumOrderPrice = minimum,
-            rushSurchargeRate = rush / 100.0,
+        if (errors.isNotEmpty()) return ParseResult(null, errors)
+        return ParseResult(
+            PricingSettings(
+                energyPricePerKwh = energy,
+                failureRate = failure / 100.0,
+                finishingRate = finishing / 100.0,
+                laborRatePerHour = labor,
+                monthlyFixedCost = fixedCost,
+                productiveHoursPerMonth = hours,
+                administrativeCost = administrative,
+                profitMargin = margin / 100.0,
+                taxRate = tax / 100.0,
+                minimumOrderPrice = minimum,
+                rushSurchargeRate = rush / 100.0,
+            ),
+            errors,
         )
-        settingsRepository.update(settings)
-        baseline = settings
-        val warn = settings.monthlyFixedCost > 0 && settings.productiveHoursPerMonth <= 0
-        publish(settings.toUiState().copy(fixedCostWithoutHours = warn))
-        if (announce) noticeChannel.trySend(UiNotice(uiText(Res.string.settings_notice_saved)))
-        // Custo fixo sem horas pra dividir não entra no preço: melhor avisar do que deixar a pessoa achar que entrou.
-        if (warn) noticeChannel.trySend(UiNotice(uiText(Res.string.settings_warning_fixed_cost), isError = true))
     }
 
-    /** Publica [next] com a marca de "há o que salvar" recalculada contra o que está gravado. */
+    /**
+     * Publica [next] com a marca de "há o que salvar" recalculada contra o que está gravado, e o aviso de custo fixo
+     * sem horas, que descreve o que está gravado e não o que está sendo digitado.
+     */
     private fun publish(next: SettingsUiState) {
-        state.value = next.copy(hasUnsavedChanges = next.fieldsOnly() != baseline.toUiState())
+        state.value = next.copy(
+            hasUnsavedChanges = next.fieldsOnly() != baseline.toUiState().fieldsOnly(),
+            fixedCostWithoutHours = baseline.hasFixedCostWithoutHours(),
+        )
     }
 }
+
+/** Custo fixo configurado sem horas de impressão por mês pra dividir: ele não entra no preço. */
+private fun PricingSettings.hasFixedCostWithoutHours() = monthlyFixedCost > 0 && productiveHoursPerMonth <= 0
 
 private fun SettingsUiState.fieldsOnly() = copy(errors = emptyMap(), fixedCostWithoutHours = false, hasUnsavedChanges = false)
 
@@ -144,4 +183,5 @@ private fun PricingSettings.toUiState() = SettingsUiState(
     taxRatePercentText = (taxRate * 100).toInputText(),
     minimumOrderPriceText = minimumOrderPrice.toInputText(),
     rushSurchargeRatePercentText = (rushSurchargeRate * 100).toInputText(),
+    fixedCostWithoutHours = hasFixedCostWithoutHours(),
 )

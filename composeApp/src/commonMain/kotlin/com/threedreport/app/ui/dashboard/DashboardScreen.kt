@@ -89,9 +89,10 @@ fun DashboardScreen(
 /** O corpo da tela, conforme o [DashboardMode]. */
 @Composable
 private fun DashboardBody(state: DashboardUiState, wide: Boolean, onNewQuote: () -> Unit, onShowOrders: () -> Unit) {
+    // Os quatro blocos de resumo abrem a tela em todo modo, menos no de nada salvo.
+    if (state.showSummary) SummaryBlocks(state, wide)
     when (state.mode) {
         DashboardMode.SALES -> {
-            SummaryBlocks(state, wide)
             val ranking: (@Composable ColumnScope.() -> Unit)? = if (state.summary.topProducts.isEmpty()) null else { { SalesRanking(state) } }
             Columns(wide = wide, left = ranking, right = { SalesBlocks(state) })
         }
@@ -99,7 +100,6 @@ private fun DashboardBody(state: DashboardUiState, wide: Boolean, onNewQuote: ()
         // Os blocos de resumo continuam (zerados) pra tela não pular ao trocar de período; a frase e a ação ficam no
         // lugar do ranking, acima do catálogo quando houver.
         DashboardMode.NO_SALES -> {
-            SummaryBlocks(state, wide)
             val message = stringResource(if (state.isAllPeriod) Res.string.dashboard_empty_no_sales_all else Res.string.dashboard_empty_no_sales)
             val actionLabel = stringResource(Res.string.dashboard_action_see_orders)
             val catalog = state.catalog

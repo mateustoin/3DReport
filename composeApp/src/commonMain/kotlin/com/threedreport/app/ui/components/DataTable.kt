@@ -127,42 +127,28 @@ fun TableRow(
 }
 
 /**
- * Linha da tabela cujas células são campos (as faixas de taxa de um canal): mesma altura e divisor do [TableRow], mas sem
- * clique nem ações no hover, pra o Tab passar só pelos campos. As células usam [TableRowScope.Cell] como no [TableRow].
+ * Linha da tabela sem clique, ação nem foco, pra o Tab passar só pelo que está dentro dela: o ranking do Dashboard (células
+ * de leitura) e as faixas de taxa de um canal (células que são campos). Mesma altura e divisor do [TableRow]; as células
+ * usam [TableRowScope.Cell] como lá. Com campos, a linha pede [spacing] menor e [verticalPadding], pra eles não encostarem
+ * no divisor.
  */
 @Composable
-fun TableFieldRow(columns: List<TableColumn>, modifier: Modifier = Modifier, cells: @Composable TableRowScope.() -> Unit) {
+fun TablePlainRow(
+    columns: List<TableColumn>,
+    modifier: Modifier = Modifier,
+    spacing: Dp = MaterialTheme.spacing.md,
+    verticalPadding: Dp = 0.dp,
+    cells: @Composable TableRowScope.() -> Unit,
+) {
     val space = MaterialTheme.spacing
     Column(modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = AppDimens.tableRowHeight)
-                .padding(start = space.sm, end = space.xs, top = space.xxs, bottom = space.xxs),
+                .padding(start = space.sm, end = space.xs, top = verticalPadding, bottom = verticalPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(space.xs),
-        ) {
-            TableRowScope(this, columns).cells()
-        }
-        HorizontalDivider(color = MaterialTheme.appColors.line, thickness = AppDimens.borderWidth)
-    }
-}
-
-/**
- * Linha da tabela só de leitura (o ranking do Dashboard): mesmas medidas e divisor do [TableRow], mas sem clique, ação
- * nem foco, pra o Tab não parar numa linha que não faz nada. As células usam [TableRowScope.Cell] como no [TableRow].
- */
-@Composable
-fun TableStaticRow(columns: List<TableColumn>, modifier: Modifier = Modifier, cells: @Composable TableRowScope.() -> Unit) {
-    val space = MaterialTheme.spacing
-    Column(modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = AppDimens.tableRowHeight)
-                .padding(start = space.sm, end = space.xs),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(space.md),
+            horizontalArrangement = Arrangement.spacedBy(spacing),
         ) {
             TableRowScope(this, columns).cells()
         }

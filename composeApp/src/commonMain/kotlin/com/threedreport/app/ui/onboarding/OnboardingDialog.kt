@@ -64,9 +64,11 @@ fun OnboardingDialog(
     onFinish: (PricingSettings, OnboardingPrinter?) -> Unit,
     onSkip: () -> Unit,
 ) {
-    val viewModel = remember(currentSettings) { OnboardingViewModel(currentSettings) }
+    val currency = LocalCurrency.current
+    // Sem chave: as configurações mudarem com o diálogo aberto não pode recriar o ViewModel e apagar o que se digitou.
+    val viewModel = remember { OnboardingViewModel(currentSettings, currency) }
     val state by viewModel.uiState.collectAsState()
-    val symbol = LocalCurrency.current.symbol
+    val symbol = currency.symbol
     val last = state.step == OnboardingStep.COSTS
 
     AppDialog(

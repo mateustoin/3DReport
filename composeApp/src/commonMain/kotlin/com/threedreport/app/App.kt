@@ -133,7 +133,6 @@ import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsSection
 import com.threedreport.app.ui.settings.SettingsViewModel
-import com.threedreport.app.ui.settings.hasUnsavedSettings
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.ThemeViewModel
@@ -201,9 +200,7 @@ fun App(
     // Coletados aqui pro pontinho de "alteração não salva" da barra lateral acompanhar o que se digita.
     val settingsDraft by viewModels.settingsViewModel.uiState.collectAsState()
     val brandingDraft by viewModels.brandingViewModel.uiState.collectAsState()
-    val settingsDirty = remember(settingsDraft, brandingDraft) {
-        hasUnsavedSettings(viewModels.settingsViewModel, viewModels.brandingViewModel)
-    }
+    val settingsDirty = settingsDraft.hasUnsavedChanges || brandingDraft.hasUnsavedChanges
 
     AppTheme(themeMode) {
         CompositionLocalProvider(LocalCurrency provides currency, LocalSnackbarHostState provides snackbarHostState) {

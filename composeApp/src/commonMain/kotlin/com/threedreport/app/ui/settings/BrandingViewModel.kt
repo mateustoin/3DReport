@@ -5,6 +5,7 @@ import _3dreport.composeapp.generated.resources.common_error_name_required
 import _3dreport.composeapp.generated.resources.settings_docs_error_options
 import _3dreport.composeapp.generated.resources.settings_docs_error_validity
 import _3dreport.composeapp.generated.resources.settings_docs_logo_unreadable
+import _3dreport.composeapp.generated.resources.settings_docs_notice_template_failed
 import _3dreport.composeapp.generated.resources.settings_docs_notice_template_saved
 import _3dreport.composeapp.generated.resources.settings_notice_saved
 import com.threedreport.app.data.BrandingRepository
@@ -56,14 +57,14 @@ import kotlin.uuid.Uuid
  * apresentação (decisão 86).
  *
  * [currency] e [pickImage] são injetáveis pros testes não dependerem do repositório de moeda nem
- * de diálogo nativo. Com [scope], o formulário acompanha o que for gravado por outro caminho.
+ * de diálogo nativo. O formulário acompanha, dentro de [scope], o que for gravado por outro caminho.
  */
 class BrandingViewModel(
     private val repository: BrandingRepository,
     private val templateRepository: TemplateRepository,
+    scope: CoroutineScope,
     private val currency: () -> Currency = { Currency.BRL },
     private val pickImage: () -> PickedFile? = { (defaultPlatform.pickFile(FileKind.IMAGE) as? PickResult.Picked)?.file },
-    scope: CoroutineScope? = null,
 ) {
 
     /** O que está gravado e de onde o formulário saiu; serve pra saber se há edição por salvar. */
@@ -76,7 +77,7 @@ class BrandingViewModel(
     val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
 
     init {
-        scope?.let { repository.branding.onEach(::syncWith).launchIn(it) }
+        repository.branding.onEach(::syncWith).launchIn(scope)
     }
 
     /** Se o formulário tem alguma mudança ainda não salva. */
@@ -153,6 +154,21 @@ class BrandingViewModel(
     /** Volta o formulário pro que está gravado, logo incluída ("Descartar" da barra de alterações, decisão 112). */
     fun discard() {
         publish(baseline.toUiState(repository.logoBytes()))
+    }
+
+    /**
+     * Confere o formulário sem gravar: com erro, mostra no campo certo e devolve `false`. Quem salva mais de uma seção
+     * de uma vez valida todas antes de gravar qualquer uma.
+     */
+    fun validate(): Boolean {
+        val current = state.value
+        return current.toSettingsOrError().fold(
+            onSuccess = { true },
+            onFailure = {
+                publish(current.withError(it))
+                false
+            },
+        )
     }
 
     /** Valida e grava. Com [announce] falso o aviso de salvo fica com quem salva mais de uma seção de uma vez. */
@@ -232,7 +248,16 @@ class BrandingViewModel(
                 publish(current.copy(savingTemplate = null))
                 noticeChannel.trySend(UiNotice(uiText(Res.string.settings_docs_notice_template_saved)))
             },
-            onFailure = { publish(current.copy(savingTemplate = form.copy(error = (it as? FormError)?.text))) },
+            // Erro do formulário (validade ou opções) não é do nome do modelo: o diálogo fecha e o erro aparece no campo
+            // dele, na seção que a pessoa já está vendo. Erro de outro tipo vira aviso, em vez de um diálogo sem mensagem.
+            onFailure = {
+                if (it is FormError) {
+                    publish(current.copy(savingTemplate = null).withError(it))
+                } else {
+                    publish(current.copy(savingTemplate = null))
+                    noticeChannel.trySend(UiNotice(uiText(Res.string.settings_docs_notice_template_failed), isError = true))
+                }
+            },
         )
     }
 }

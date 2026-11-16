@@ -29,6 +29,7 @@ import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.ChannelFeeTier
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.CoroutineScope
@@ -94,12 +95,14 @@ data class SalesChannelsUiState(
  */
 class SalesChannelViewModel(
     private val repository: SalesChannelRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope,
     /**
      * Pedidos e produtos salvos, inclusive os da lixeira, pra saber quem usa cada canal antes de excluir
      * (decisão 115).
      */
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
+    /** A moeda em uso: os números são lidos com o separador decimal dela, o mesmo que o campo usa pra validar. */
+    private val currency: () -> Currency = { Currency.BRL },
 ) {
 
     private val state = MutableStateFlow(SalesChannelsUiState().withItems(repository.channels.value))
@@ -109,7 +112,7 @@ class SalesChannelViewModel(
     val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
 
     init {
-        scope?.let { repository.channels.onEach { items -> state.update { it.withItems(items) } }.launchIn(it) }
+        repository.channels.onEach { items -> state.update { it.withItems(items) } }.launchIn(scope)
     }
 
     fun startAdd() {
@@ -196,11 +199,12 @@ class SalesChannelViewModel(
     fun save() {
         val current = state.value.form ?: return
         val name = current.nameText.trim()
+        val separator = currency().decimalSeparator
 
         // Em branco é taxa zero (Pix, dinheiro); texto que não é número é erro, e não zero: um "20 por
         // cento" que virasse 0% tiraria a taxa do marketplace do preço sem ninguém ver.
-        val feeRate = blankAsZero(current.feeRatePercentText, NumberKind.MEASURE)
-        val fixedFee = blankAsZero(current.fixedFeePerItemText, NumberKind.AMOUNT)
+        val feeRate = blankAsZero(current.feeRatePercentText, NumberKind.MEASURE, separator)
+        val fixedFee = blankAsZero(current.fixedFeePerItemText, NumberKind.AMOUNT, separator)
         val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isBlank() }
         val feeError = when {
             feeRate == null -> uiText(Res.string.common_error_number_invalid)
@@ -212,7 +216,7 @@ class SalesChannelViewModel(
             fixedFee < 0 -> uiText(Res.string.common_error_negative)
             else -> null
         }
-        val tiers = runCatching { current.tiers.toChannelFeeTiers() }
+        val tiers = runCatching { current.tiers.toChannelFeeTiers(separator) }
         val tiersError = (tiers.exceptionOrNull() as? TierError)?.text
         if (nameError != null || feeError != null || fixedFeeError != null || tiersError != null || feeRate == null || fixedFee == null) {
             state.update {
@@ -285,13 +289,14 @@ class SalesChannelViewModel(
 private class TierError(val text: UiText) : IllegalStateException()
 
 /** O número digitado, em branco vale 0; `null` quando o texto não é um número. */
-private fun blankAsZero(text: String, kind: NumberKind): Double? = if (text.isBlank()) 0.0 else parseDecimal(text, kind)
+private fun blankAsZero(text: String, kind: NumberKind, separator: Char): Double? =
+    if (text.isBlank()) 0.0 else parseDecimal(text, kind, separator)
 
 /**
  * As linhas do rascunho como [ChannelFeeTier] (decisão 121): limite obrigatório e crescente em toda
  * faixa menos a última, que fica sem limite ("Acima disso").
  */
-private fun List<ChannelTierFormRow>.toChannelFeeTiers(): List<ChannelFeeTier> {
+private fun List<ChannelTierFormRow>.toChannelFeeTiers(separator: Char): List<ChannelFeeTier> {
     if (isEmpty()) return emptyList()
     var previousLimit: Double? = null
     return mapIndexed { index, row ->
@@ -299,15 +304,15 @@ private fun List<ChannelTierFormRow>.toChannelFeeTiers(): List<ChannelFeeTier> {
         val limit = if (isLast) {
             null
         } else {
-            val value = parseDecimal(row.upToUnitPriceText, NumberKind.AMOUNT) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_limit_missing))
+            val value = parseDecimal(row.upToUnitPriceText, NumberKind.AMOUNT, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_limit_missing))
             if (value <= 0) throw TierError(uiText(Res.string.settings_channels_error_tier_limit_zero))
             if (previousLimit != null && value <= previousLimit) throw TierError(uiText(Res.string.settings_channels_error_tier_limit_order))
             previousLimit = value
             value
         }
-        val feeRate = blankAsZero(row.feeRatePercentText, NumberKind.MEASURE) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fee_number))
+        val feeRate = blankAsZero(row.feeRatePercentText, NumberKind.MEASURE, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fee_number))
         if (feeRate < 0 || feeRate >= 100) throw TierError(uiText(Res.string.settings_channels_error_tier_fee_range))
-        val fixedFee = blankAsZero(row.fixedFeePerItemText, NumberKind.AMOUNT) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fixed_number))
+        val fixedFee = blankAsZero(row.fixedFeePerItemText, NumberKind.AMOUNT, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fixed_number))
         if (fixedFee < 0) throw TierError(uiText(Res.string.settings_channels_error_tier_fixed_negative))
         ChannelFeeTier(upToUnitPrice = limit, feeRate = feeRate / 100.0, fixedFeePerItem = fixedFee)
     }
