@@ -80,7 +80,7 @@ class PdfLayoutTest {
 
     @Test
     fun anAutomaticNameNeverBecomesTheTitle() {
-        val autoNamed = savedQuote.copy(name = SavedQuote.AUTO_NAME_PREFIX + "24/09/2026 14:30")
+        val autoNamed = savedQuote.copy(name = "Orçamento - 24/09/2026 14:30", autoNamed = true)
 
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(autoNamed, null)), testClientTexts, null, null))
 

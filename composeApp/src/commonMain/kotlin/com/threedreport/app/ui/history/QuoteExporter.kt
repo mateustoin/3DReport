@@ -131,7 +131,7 @@ class QuoteExporter(
             }
             renderQuoteImage(
                 texts = texts,
-                title = savedQuote.name.takeUnless { savedQuote.hasAutoName } ?: texts.autoOrderTitle(number = null),
+                title = savedQuote.name.takeUnless { savedQuote.autoNamed } ?: texts.autoOrderTitle(number = null),
                 priceText = savedQuote.totalWithServices.toCurrencyText(currency),
                 unitPriceText = if (quantity > 1) texts.imageUnitPrice(quantity, (piecesTotal / quantity).toCurrencyText(currency)) else null,
                 photoBytes = photoBytes(savedQuote),
@@ -202,7 +202,7 @@ class QuoteExporter(
 
     /** Nome do arquivo pro cliente: o nome da peça, e o número quando o nome foi o automático. */
     fun fileNameFor(savedQuote: SavedQuote): String = sanitizeFileName(
-        if (savedQuote.hasAutoName) "Orçamento ${savedQuote.displayNumber?.removePrefix("#") ?: ""}".trim() else savedQuote.name,
+        if (savedQuote.autoNamed) "Orçamento ${savedQuote.displayNumber?.removePrefix("#") ?: ""}".trim() else savedQuote.name,
     )
 
     fun sanitizeFileName(name: String): String =

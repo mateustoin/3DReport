@@ -348,13 +348,18 @@ Camadas, de baixo pra cima:
 Formato e migrações:
 
 - `~/.3dreport/format.json` guarda a versão do formato (`DATA_FORMAT_VERSION`,
-  hoje 2). `prepareDataDir()` (`data/DataFormat.kt`) roda no `Main.kt` antes de
+  hoje 3). `prepareDataDir()` (`data/DataFormat.kt`) roda no `Main.kt` antes de
   qualquer repositório. Versão anterior **com migração conhecida**
   (`DATA_MIGRATIONS`, uma `DataMigration` por versão, sobre o JSON): converte
   numa cópia e só então troca de lugar, guardando o original em
   `~/.3dreport-v<versão>`. Sem migração, ou de uma versão mais nova: a pasta é
   guardada inteira à parte e o app começa numa nova. O backup restaurado passa
-  pelas mesmas migrações.
+  pelas mesmas migrações. A única até agora é a do 2 pro 3 (2.2): marca
+  `SavedQuote.autoNamed` nos pedidos cujo nome é o automático da 2.1
+  ("Orçamento - 24/09/2026 14:30"). Daí em diante o nome automático vem de
+  `strings.xml` e é reconhecido pelo campo, não pelo texto. Efeito colateral
+  da versão nova: a 2.1 aberta sobre uma pasta da 2.2 a guarda à parte (dados
+  de versão mais nova), e um backup da 2.2 não restaura na 2.1.
 - **Depois da tag 2.0.0, toda mudança incompatível no formato vem com
   migração e teste** (decisão 106).
 - O arquivo grava todos os campos (`encodeDefaults`), e os enums têm nome fixo

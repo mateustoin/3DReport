@@ -786,7 +786,7 @@ class QuoteHistoryViewModelTest {
     fun theDetailsFormStartsFromTheQuoteAndLeavesAnAutoNameBlank() {
         val repository = QuoteHistoryRepository()
         val viewModel = viewModelOf(repository)
-        val saved = repository.save(name = "Orçamento - 30/09/2026 10:15", quote = quote, services = emptyList(), photo = null, sourceLink = "https://x.test/modelo")
+        val saved = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = "https://x.test/modelo")
 
         viewModel.startEditingDetails(saved)
 

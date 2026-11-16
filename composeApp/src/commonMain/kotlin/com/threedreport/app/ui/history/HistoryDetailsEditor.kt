@@ -32,7 +32,7 @@ internal class HistoryDetailsEditor(
 ) {
     fun start(savedQuote: SavedQuote) {
         val form = DetailsForm(
-            name = savedQuote.name.takeUnless { savedQuote.hasAutoName }.orEmpty(),
+            name = savedQuote.name.takeUnless { savedQuote.autoNamed }.orEmpty(),
             clientName = savedQuote.client?.name.orEmpty(),
             clientContact = savedQuote.client?.contact.orEmpty(),
             clientId = savedQuote.client?.id,

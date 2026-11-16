@@ -178,16 +178,16 @@ class DataFormatTest {
     @Test
     fun aKnownMigrationConvertsTheDataAndKeepsTheOriginalUntouched() {
         dataDir.mkdirs()
-        File(dataDir, "format.json").writeText("""{"version": 1}""")
+        File(dataDir, "format.json").writeText("""{"version": ${DATA_FORMAT_VERSION - 1}}""")
         File(dataDir, "settings.json").writeText("""{"old": true}""")
         val renameField = DataMigration { dir ->
             File(dir, "settings.json").updateJson { kotlinx.serialization.json.buildJsonObject { put("new", kotlinx.serialization.json.JsonPrimitive(true)) } }
         }
 
-        val result = assertIs<DataDirResult.Ready>(prepareDataDir(mapOf(1 to renameField)))
+        val result = assertIs<DataDirResult.Ready>(prepareDataDir(mapOf(DATA_FORMAT_VERSION - 1 to renameField)))
 
         val migrated = result.migrated!!
-        assertEquals(1, migrated.fromVersion)
+        assertEquals(DATA_FORMAT_VERSION - 1, migrated.fromVersion)
         assertTrue(File(dataDir, "settings.json").readText().contains("\"new\""))
         assertEquals(DATA_FORMAT_VERSION, readDataFormatVersion(File(dataDir, "format.json")))
         assertEquals("""{"old": true}""", File(migrated.originalCopy, "settings.json").readText())
@@ -196,11 +196,11 @@ class DataFormatTest {
     @Test
     fun aMigrationThatFailsLeavesTheDataWhereItWasAndMovesItAsideInstead() {
         dataDir.mkdirs()
-        File(dataDir, "format.json").writeText("""{"version": 1}""")
+        File(dataDir, "format.json").writeText("""{"version": ${DATA_FORMAT_VERSION - 1}}""")
         File(dataDir, "settings.json").writeText("""{"old": true}""")
         val broken = DataMigration { error("falhou no meio") }
 
-        val result = assertIs<DataDirResult.Ready>(prepareDataDir(mapOf(1 to broken)))
+        val result = assertIs<DataDirResult.Ready>(prepareDataDir(mapOf(DATA_FORMAT_VERSION - 1 to broken)))
 
         assertEquals(null, result.migrated)
         assertEquals("""{"old": true}""", File(result.moved!!.path, "settings.json").readText())

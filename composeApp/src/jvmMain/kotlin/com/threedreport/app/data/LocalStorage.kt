@@ -1,11 +1,14 @@
 package com.threedreport.app.data
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.quote_auto_name
 import com.threedreport.app.data.store.DataFile
 import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.app.data.store.RecordCollection
 import com.threedreport.app.data.store.StorageHealth
 import com.threedreport.app.data.store.StoredDocument
 import com.threedreport.app.data.store.StoredRecord
+import com.threedreport.app.platform.formatDateTime
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Consumable
@@ -21,12 +24,12 @@ import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.model.ThemeMode
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import org.jetbrains.compose.resources.getString
 import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 /** Como cada arquivo é gravado: direto (testes) ou em segundo plano ([com.threedreport.app.data.store.WriteBehindFile]). */
 interface DataFileWrapper {
@@ -107,8 +110,13 @@ class LocalStorage(
     companion object {
         const val ATTACHMENTS_DIR = "attachments"
 
-        /** Nome que o app dá quando o campo fica em branco ("Orçamento - 24/09/2026 14:30"). */
-        fun defaultQuoteName(): String =
-            SavedQuote.AUTO_NAME_PREFIX + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+        /**
+         * Nome que o app dá quando o campo fica em branco ("Orçamento - 24/09/2026 14:30"), no momento [epochMillis].
+         * O texto vem de `strings.xml` (`quote_auto_name`); quem pergunta se o nome é automático lê
+         * [SavedQuote.autoNamed], e não o texto. Roda no thread da tela ao salvar: o `getString` só lê o arquivo de
+         * textos na primeira vez, depois usa o que já leu.
+         */
+        fun defaultQuoteName(epochMillis: Long): String =
+            runBlocking { getString(Res.string.quote_auto_name, formatDateTime(epochMillis)) }
     }
 }

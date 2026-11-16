@@ -888,6 +888,7 @@ class QuoteViewModel(
                     category = form.category,
                     soldAtCatalogPrice = soldAtCatalogPrice,
                     shippingAbsorbed = shippingAbsorbed,
+                    autoNamed = form.keepsAutoName,
                 )
             }
             // A edição não é mais modal (decisão 113): o pedido pode ter ido pra lixeira enquanto era editado.
@@ -917,6 +918,7 @@ class QuoteViewModel(
             soldAtCatalogPrice = soldAtCatalogPrice,
             currency = currency(),
             shippingAbsorbed = shippingAbsorbed,
+            autoNamed = form.keepsAutoName,
         )
         return saved
     }

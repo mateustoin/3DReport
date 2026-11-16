@@ -72,6 +72,10 @@ import kotlinx.serialization.Serializable
  * @property shippingAbsorbed frete grátis pro cliente (decisão 124): [shippingCost] é pago por você, não
  *   entra no total do cliente e sai do lucro ([Quote.absorbedShippingCost]). Quem lê o frete cobrado usa
  *   [chargedShipping].
+ * @property autoNamed se [name] foi gerado pelo app porque o campo ficou em branco (Leva 10B, parte 7). O nome
+ *   automático muda com o idioma, então quem precisa saber disso (o ranking do Dashboard, o título no PDF e na
+ *   mensagem) lê este campo, e não o texto. Nasce `false`; editar o nome à mão desmarca. Dado gravado antes da 2.2
+ *   é marcado uma vez pela migração da pasta de dados (`DataFormat.kt` no `composeApp`).
  */
 @Serializable
 data class SavedQuote(
@@ -96,6 +100,7 @@ data class SavedQuote(
     val statusHistory: List<StatusChange> = emptyList(),
     val currency: Currency = Currency.BRL,
     val shippingAbsorbed: Boolean = false,
+    val autoNamed: Boolean = false,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
@@ -214,24 +219,11 @@ data class SavedQuote(
         return deadline < todayEpochDay && status != OrderStatus.ENTREGUE && status != OrderStatus.CANCELADO
     }
 
-    /** Se [name] foi gerado pelo app porque o campo ficou em branco (ver [AUTO_NAME_PREFIX]). */
-    val hasAutoName: Boolean
-        get() = AUTO_NAME_PATTERN.matches(name)
-
     companion object {
         /**
          * Frete cobrado do cliente, a regra única (decisão 124): o valor digitado, ou zero quando o frete é
          * grátis pra ele. Usada aqui e pela tela de Orçamento, que ainda não tem um pedido salvo.
          */
         fun chargedShipping(shippingCost: Double, shippingAbsorbed: Boolean): Double = if (shippingAbsorbed) 0.0 else shippingCost
-
-        /**
-         * Começo do nome que o app dá quando o campo fica em branco, seguido de data e hora
-         * ("Orçamento - 24/09/2026 14:30"). Fica aqui, e não só em quem salva, porque o ranking do
-         * Dashboard precisa reconhecer esses nomes pra não tratar cada um como uma peça diferente.
-         */
-        const val AUTO_NAME_PREFIX = "Orçamento - "
-
-        private val AUTO_NAME_PATTERN = Regex("""^Orçamento - \d{2}/\d{2}/\d{4} \d{2}:\d{2}$""")
     }
 }

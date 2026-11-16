@@ -18,6 +18,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -61,6 +62,80 @@ class QuoteHistoryRepositoryTest {
         val saved = repository.save(name = "  ", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         assertTrue(saved.name.isNotBlank())
+    }
+
+    @Test
+    fun aBlankNameIsMarkedAsAutomaticAndSurvivesReload() {
+        val repository = QuoteHistoryRepository()
+        val auto = repository.save(name = "  ", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val named = repository.save(name = "Suporte", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        // O nome continua o mesmo da 2.1, agora vindo de strings.xml.
+        assertTrue(Regex("""^Orçamento - \d{2}/\d{2}/\d{4} \d{2}:\d{2}$""").matches(auto.name), auto.name)
+        assertTrue(auto.autoNamed)
+        assertFalse(named.autoNamed)
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.associateBy { it.id }
+        assertTrue(reloaded.getValue(auto.id).autoNamed)
+        assertFalse(reloaded.getValue(named.id).autoNamed)
+    }
+
+    @Test
+    fun aTypedNameThatLooksAutomaticIsNotAutomatic() {
+        val saved = QuoteHistoryRepository().save(name = "Orçamento - 24/09/2026 14:30", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        assertFalse(saved.autoNamed)
+    }
+
+    @Test
+    fun anAutomaticNameCarriedOverByDuplicatingStaysAutomatic() {
+        val repository = QuoteHistoryRepository()
+        val original = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        val copy = repository.save(name = original.name, quote = quote, services = emptyList(), photo = null, sourceLink = null, autoNamed = true)
+
+        assertEquals(original.name, copy.name)
+        assertTrue(copy.autoNamed)
+    }
+
+    @Test
+    fun renamingAnAutomaticQuoteUnmarksIt() {
+        val repository = QuoteHistoryRepository()
+        val first = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val second = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        val renamed = repository.updateDetails(first.id, QuoteDetails("Vaso", null, null, null, null, null))
+        val edited = repository.update(id = second.id, name = "Luminária", quote = quote, services = emptyList(), photo = null, stlFile = null, sourceLink = null, client = null)
+
+        assertFalse(renamed!!.autoNamed)
+        assertFalse(edited!!.autoNamed)
+        val reloaded = QuoteHistoryRepository().savedQuotes.value
+        assertTrue(reloaded.none { it.autoNamed })
+    }
+
+    @Test
+    fun editingAnAutomaticQuoteWithoutTouchingTheNameKeepsItAutomatic() {
+        val repository = QuoteHistoryRepository()
+        val first = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+        val second = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
+
+        // "Editar detalhes" deixa o campo em branco pro nome automático; reabrir no Orçamento devolve o nome no campo.
+        val details = repository.updateDetails(first.id, QuoteDetails("", null, "https://x.test", null, null, null))
+        val edited = repository.update(
+            id = second.id,
+            name = second.name,
+            quote = quote,
+            services = emptyList(),
+            photo = null,
+            stlFile = null,
+            sourceLink = null,
+            client = null,
+            autoNamed = true,
+        )
+
+        assertEquals(first.name, details!!.name)
+        assertTrue(details.autoNamed)
+        assertEquals(second.name, edited!!.name)
+        assertTrue(edited.autoNamed)
     }
 
     @Test

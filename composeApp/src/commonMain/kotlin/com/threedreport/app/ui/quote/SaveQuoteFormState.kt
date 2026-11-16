@@ -7,6 +7,11 @@ import com.threedreport.core.model.SavedQuote
 /** Campos opcionais preenchidos ao salvar o orçamento atual no histórico. */
 data class SaveQuoteFormState(
     val name: String = "",
+    /**
+     * O nome automático do pedido de onde este formulário veio (editar, duplicar, vender, guardar no catálogo), ou
+     * `null`. Enquanto [name] for ele, salvar mantém o nome como automático ([SavedQuote.autoNamed]).
+     */
+    val autoName: String? = null,
     val photo: PickedFile? = null,
     /** `true` quando [photo] veio da miniatura embutida num G-code importado, não de escolha manual. */
     val photoFromGCode: Boolean = false,
@@ -37,6 +42,10 @@ data class SaveQuoteFormState(
     /** O pedido que "Enviar pro cliente" gravou a partir do que está na tela (decisão 131), ou `null`. */
     val sent: SentQuote? = null,
 ) {
+    /** Se [name] é o nome automático trazido de outro pedido, sem ninguém mexer (ver [autoName]). */
+    val keepsAutoName: Boolean
+        get() = autoName != null && name.trim() == autoName
+
     /** `id` do orçamento salvo sendo editado, ou `null` se este for um orçamento novo. */
     val editingQuoteId: String?
         get() = (operation as? QuoteOperation.Editing)?.savedQuote?.id

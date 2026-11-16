@@ -1179,4 +1179,7 @@
     <string name="client_doc_image_delivery">Entrega até %1$s</string>
     <string name="client_doc_image_delivery_rush">%1$s · entrega expressa</string>
     <string name="client_doc_image_unit_price">%1$s · %2$s cada</string>
+
+    <!-- Nome que o app dá ao pedido salvo com o nome em branco; %1$s é a data e a hora (ver LocalStorage). -->
+    <string name="quote_auto_name">Orçamento - %1$s</string>
 </resources>

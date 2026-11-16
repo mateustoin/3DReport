@@ -91,8 +91,8 @@ internal fun SavedQuote.deliveryHighlightText(texts: ClientDocumentTexts): Strin
 internal fun SavedQuote.clientTitle(texts: ClientDocumentTexts, withNumber: Boolean = true): String {
     val number = displayNumber?.takeIf { isOrder && withNumber }
     return when {
-        hasAutoName && !isOrder -> texts.autoProductTitle
-        hasAutoName -> texts.autoOrderTitle(number)
+        autoNamed && !isOrder -> texts.autoProductTitle
+        autoNamed -> texts.autoOrderTitle(number)
         number != null -> texts.titleNumbered(name, number)
         else -> name
     }

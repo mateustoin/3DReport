@@ -602,6 +602,40 @@ class QuoteViewModelTest {
     }
 
     @Test
+    fun anAutomaticNameStaysAutomaticWhenEditedOrDuplicatedUntilSomeoneTypesANewOne() {
+        val historyRepository = QuoteHistoryRepository()
+        val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)
+        viewModel.setLengthMeters("12")
+        viewModel.setPrintTimeMinutes("190")
+        viewModel.saveCurrentQuote()
+        val original = historyRepository.savedQuotes.value.single()
+        assertTrue(original.autoNamed)
+
+        // Reabrir e salvar sem mexer no nome: continua automático (o título pro cliente segue "Orçamento #0001").
+        viewModel.resetForm()
+        viewModel.loadForEditing(original)
+        assertEquals(original.name, viewModel.uiState.value.form.name)
+        viewModel.setLengthMeters("13")
+        viewModel.saveCurrentQuote()
+        assertTrue(historyRepository.savedQuotes.value.single().autoNamed)
+
+        // Duplicar sem mexer no nome também.
+        viewModel.resetForm()
+        viewModel.duplicateForNewQuote(original)
+        viewModel.saveCurrentQuote()
+        val duplicate = historyRepository.savedQuotes.value.first { it.id != original.id }
+        assertEquals(original.name, duplicate.name)
+        assertTrue(duplicate.autoNamed)
+
+        // Com um nome digitado, deixa de ser.
+        viewModel.resetForm()
+        viewModel.loadForEditing(duplicate)
+        viewModel.setSaveName("Vaso")
+        viewModel.saveCurrentQuote()
+        assertFalse(historyRepository.savedQuotes.value.first { it.id == duplicate.id }.autoNamed)
+    }
+
+    @Test
     fun setPrintSettingsIsPersistedOnSaveAndRestoredOnEdit() {
         val historyRepository = QuoteHistoryRepository()
         val viewModel = QuoteViewModel(FilamentRepository(), PrinterRepository(), SettingsRepository(), ServiceRepository(), SalesChannelRepository(), historyRepository)

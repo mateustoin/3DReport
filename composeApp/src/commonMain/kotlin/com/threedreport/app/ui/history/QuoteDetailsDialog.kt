@@ -73,7 +73,7 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
             label = stringResource(Res.string.history_details_field_name),
             value = form.name,
             onValueChange = { text -> viewModel.updateDetails { it.copy(name = text) } },
-            placeholder = quote.name.takeIf { quote.hasAutoName },
+            placeholder = quote.name.takeIf { quote.autoNamed },
         )
         if (quote.isOrder) {
             AppSuggestField(

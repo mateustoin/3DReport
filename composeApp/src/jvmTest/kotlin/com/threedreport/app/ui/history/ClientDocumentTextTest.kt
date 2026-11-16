@@ -87,6 +87,7 @@ class ClientDocumentTextTest {
     private val autoProduct = SavedQuote(
         id = "2",
         name = "Orçamento - 24/09/2026 14:30",
+        autoNamed = true,
         quote = Quote(prints = listOf(print("", 60.0)), costs = costs, salePrice = 16.19, rush = true),
         savedAtEpochMillis = 0L,
         kind = QuoteKind.PRODUCT,

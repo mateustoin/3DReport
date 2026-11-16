@@ -217,7 +217,7 @@ class QuoteExportTextTest {
         val numbered = savedQuote.copy(number = 42)
         assertEquals("Suporte de celular · #0042", numbered.clientTitle(testClientTexts))
 
-        val autoNamed = numbered.copy(name = SavedQuote.AUTO_NAME_PREFIX + "24/09/2026 14:30")
+        val autoNamed = numbered.copy(name = "Orçamento - 24/09/2026 14:30", autoNamed = true)
         assertEquals("Orçamento #0042", autoNamed.clientTitle(testClientTexts))
         assertTrue(autoNamed.toCopyPasteText(testClientTexts).startsWith("Orçamento #0042\n"))
     }
