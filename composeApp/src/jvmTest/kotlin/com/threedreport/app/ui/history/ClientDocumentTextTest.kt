@@ -210,7 +210,9 @@ class ClientDocumentTextTest {
         val exporter = exporter(platform)
 
         exporter.saveShareableImage(fullOrder)
+        platform.awaitWritten(1)
         exporter.saveShareableImage(autoProduct)
+        platform.awaitWritten(2)
 
         val full = renderQuoteImage(
             texts = testClientTexts,

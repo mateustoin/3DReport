@@ -7,6 +7,8 @@ import _3dreport.composeapp.generated.resources.settings_docs_error_validity
 import _3dreport.composeapp.generated.resources.settings_docs_logo_unreadable
 import _3dreport.composeapp.generated.resources.settings_docs_notice_template_failed
 import _3dreport.composeapp.generated.resources.settings_docs_notice_template_saved
+import _3dreport.composeapp.generated.resources.settings_docs_preview_client
+import _3dreport.composeapp.generated.resources.settings_docs_preview_printer
 import _3dreport.composeapp.generated.resources.settings_notice_saved
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
@@ -48,6 +50,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -203,9 +206,10 @@ class BrandingViewModel(
             return
         }
         val branding = settings.resolvePdfBranding(current.logoBytes)
-        val sample = sampleQuote(sampleName, currency())
+        val currency = currency()
         // Os textos do documento vêm dos recursos, lidos fora da tela; com `Unconfined` (testes) a prévia sai na hora.
         scope.launch {
+            val sample = previewSampleQuote(sampleName, currency)
             val pdf = renderSavedQuotesPdf(
                 items = listOf(QuoteExportItem(sample, photoBytes = null)),
                 texts = loadClientDocumentTexts(listOf(sample)),
@@ -339,12 +343,15 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
     logoMissing = logoFileName != null && logoBytes == null,
 )
 
-/** Orçamento fictício da prévia: com prazo, número e cliente, pra todas as opções terem onde aparecer. */
-private fun sampleQuote(name: String, currency: Currency) = SavedQuote(
+/**
+ * Orçamento fictício da prévia: com prazo, número e cliente, pra todas as opções terem onde aparecer. O nome do cliente
+ * e o da impressora vêm dos recursos traduzíveis.
+ */
+internal suspend fun previewSampleQuote(name: String, currency: Currency) = SavedQuote(
     id = "preview",
     name = name,
     number = 42,
-    client = Client(name = "Maria"),
+    client = Client(name = getString(Res.string.settings_docs_preview_client)),
     currency = currency,
     quote = Quote(
         prints = listOf(
@@ -355,7 +362,7 @@ private fun sampleQuote(name: String, currency: Currency) = SavedQuote(
                     printTimeMinutes = 190.0,
                 ),
                 printerId = "preview",
-                printerName = "Impressora",
+                printerName = getString(Res.string.settings_docs_preview_printer),
                 cost = PrintCost(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
             ),
         ),

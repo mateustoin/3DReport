@@ -302,6 +302,18 @@
     <string name="export_saved_image">Imagem salva.</string>
     <string name="export_busy_catalog">Gerando catálogo…</string>
     <string name="export_saved_catalog">Catálogo salvo.</string>
+    <!-- Nomes de arquivo sugeridos ao salvar (sem a extensão). -->
+    <plurals name="export_file_quotes">
+        <item quantity="one">Orçamentos (%1$d item)</item>
+        <item quantity="other">Orçamentos (%1$d itens)</item>
+    </plurals>
+    <plurals name="export_file_catalog">
+        <item quantity="one">Catálogo (%1$d item)</item>
+        <item quantity="other">Catálogo (%1$d itens)</item>
+    </plurals>
+    <string name="export_file_auto_numbered">Orçamento %1$s</string>
+    <string name="export_file_auto">Orçamento</string>
+    <string name="export_file_fallback">orcamento</string>
     <string name="export_open_folder">Abrir pasta</string>
     <string name="export_failed_generate">Não consegui gerar o arquivo. Os detalhes ficaram no log do app.</string>
     <string name="export_save_failed">Não consegui salvar o arquivo. Se ele estiver aberto em outro programa, feche e tente de novo, ou salve com outro nome.</string>
@@ -972,6 +984,8 @@
     <string name="settings_docs_preview_help">Orçamento de exemplo, com o que está no formulário agora (mesmo sem salvar).</string>
     <string name="settings_docs_preview_description">Prévia do PDF</string>
     <string name="settings_docs_preview_sample">Exemplo: suporte de celular</string>
+    <string name="settings_docs_preview_client">Maria</string>
+    <string name="settings_docs_preview_printer">Impressora</string>
     <string name="settings_docs_templates_title">Modelos</string>
     <string name="settings_docs_templates_help">Um modelo guarda o nome e a aparência do PDF. Sua logo e seu contato ficam sempre os mesmos.</string>
     <string name="settings_docs_template_save">Salvar como modelo</string>

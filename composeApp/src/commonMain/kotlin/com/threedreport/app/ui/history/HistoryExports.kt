@@ -66,12 +66,12 @@ internal class HistoryExports(
     fun downloadPhoto(savedQuote: SavedQuote) {
         val bytes = repository.photoBytes(savedQuote) ?: return
         val extension = savedQuote.photoFileName?.substringAfterLast('.', "png") ?: "png"
-        exporter.report(platform.saveFile(bytes, "${exporter.fileNameFor(savedQuote)}.$extension"), uiText(Res.string.history_notice_photo_saved))
+        exporter.saveAttachment(savedQuote, bytes, extension, uiText(Res.string.history_notice_photo_saved))
     }
 
     fun downloadStl(savedQuote: SavedQuote) {
         val bytes = repository.stlBytes(savedQuote) ?: return
-        exporter.report(platform.saveFile(bytes, "${exporter.fileNameFor(savedQuote)}.stl"), uiText(Res.string.history_notice_stl_saved))
+        exporter.saveAttachment(savedQuote, bytes, "stl", uiText(Res.string.history_notice_stl_saved))
     }
 
     /** "Enviar assim mesmo" no aviso de prazo vencido: faz o envio que tinha sido segurado, sem perguntar de novo. */

@@ -155,7 +155,7 @@ class QuoteNegotiateAndSendTest {
         assertTrue(platform.opened.single().startsWith("https://wa.me/"))
 
         viewModel.sendPdf()
-        assertTrue(platform.written.keys.single().endsWith(".pdf"))
+        assertTrue(platform.awaitWritten().keys.single().endsWith(".pdf"))
         // Nada disso grava outro pedido.
         assertEquals(1, history.savedQuotes.value.size)
     }

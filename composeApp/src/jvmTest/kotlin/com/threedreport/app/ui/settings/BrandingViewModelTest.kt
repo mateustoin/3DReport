@@ -269,12 +269,22 @@ class BrandingViewModelTest {
 
         viewModel.showPreview("Exemplo")
 
-        val png = assertNotNull(viewModel.uiState.value.previewPng)
+        // Na primeira leitura, os recursos chegam de outro thread: espera a prévia em vez de olhar na hora.
+        val png = assertNotNull(runBlocking { withTimeoutOrNull(10_000) { viewModel.uiState.first { it.previewPng != null } } }?.previewPng)
         assertNotNull(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(png)))
         assertNull(repository.branding.value.brandName, "a prévia não salva nada")
 
         viewModel.closePreview()
         assertNull(viewModel.uiState.value.previewPng)
+    }
+
+    @Test
+    fun thePreviewSampleIsTheSameAsBefore() = runBlocking {
+        val sample = previewSampleQuote("Exemplo", com.threedreport.core.model.Currency.BRL)
+
+        assertEquals("Maria", sample.client?.name)
+        assertEquals("Impressora", sample.quote.prints.single().printerName)
+        assertEquals("#0042", sample.displayNumber)
     }
 
     private val loja = com.threedreport.core.model.QuoteTemplate(

@@ -7,6 +7,11 @@ import _3dreport.composeapp.generated.resources.export_busy_pdf
 import _3dreport.composeapp.generated.resources.export_copied
 import _3dreport.composeapp.generated.resources.export_copy_failed
 import _3dreport.composeapp.generated.resources.export_failed_generate
+import _3dreport.composeapp.generated.resources.export_file_auto
+import _3dreport.composeapp.generated.resources.export_file_auto_numbered
+import _3dreport.composeapp.generated.resources.export_file_catalog
+import _3dreport.composeapp.generated.resources.export_file_fallback
+import _3dreport.composeapp.generated.resources.export_file_quotes
 import _3dreport.composeapp.generated.resources.export_saved_catalog
 import _3dreport.composeapp.generated.resources.export_saved_image
 import _3dreport.composeapp.generated.resources.export_saved_pdf
@@ -40,6 +45,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.getPluralString
+import org.jetbrains.compose.resources.getString
 
 /**
  * Entrega um orçamento salvo pro cliente: PDF, imagem pro WhatsApp e o texto no WhatsApp. É o que Pedidos e o
@@ -65,7 +72,7 @@ class QuoteExporter(
     fun photoBytes(savedQuote: SavedQuote): ByteArray? = historyRepository.photoBytes(savedQuote)
 
     fun exportPdf(savedQuote: SavedQuote) {
-        saveGenerated("${fileNameFor(savedQuote)}.pdf", uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf)) {
+        saveGenerated({ "${fileNameFor(savedQuote)}.pdf" }, uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf)) {
             val branding = resolvePdfBranding()
             val items = listOf(QuoteExportItem(savedQuote, photoBytes(savedQuote)))
             renderSavedQuotesPdf(items, loadClientDocumentTexts(listOf(savedQuote)), branding.brandName, branding.footerText, branding.options)
@@ -115,7 +122,7 @@ class QuoteExporter(
      * texto de marca da marca d'água do PDF, pra o material do vendedor sair coerente entre os dois.
      */
     fun saveShareableImage(savedQuote: SavedQuote) {
-        saveGenerated("${fileNameFor(savedQuote)}.png", uiText(Res.string.export_busy_image), uiText(Res.string.export_saved_image)) {
+        saveGenerated({ "${fileNameFor(savedQuote)}.png" }, uiText(Res.string.export_busy_image), uiText(Res.string.export_saved_image)) {
             val currency = savedQuote.currency
             val quantity = savedQuote.quote.quantity
             val piecesTotal = savedQuote.totalWithServices - savedQuote.chargedShipping
@@ -143,41 +150,44 @@ class QuoteExporter(
 
     /**
      * Pergunta onde salvar, gera o arquivo fora do thread da tela e grava. [onSaved] só roda quando o arquivo foi
-     * salvo: cancelar o "Salvar como" não pode jogar fora o que a pessoa marcou.
+     * salvo: cancelar o "Salvar como" não pode jogar fora o que a pessoa marcou. O nome sugerido vem dos recursos
+     * traduzíveis, lidos em [main] antes de abrir o "Salvar como".
      */
     fun saveGenerated(
-        suggestedFileName: String,
+        suggestedFileName: suspend () -> String,
         busyMessage: UiText,
         savedMessage: UiText,
         onSaved: () -> Unit = {},
         generate: suspend () -> ByteArray,
     ) {
         if (busyState.value != null) return
-        val path = platform.chooseSaveLocation(suggestedFileName) ?: return
-        busyState.value = busyMessage
-        scope.launch(background) {
+        scope.launch(main) {
+            val fileName = suggestedFileName()
+            val path = platform.chooseSaveLocation(fileName) ?: return@launch
+            if (busyState.value != null) return@launch
+            busyState.value = busyMessage
             // `null`: não deu pra gerar o arquivo (o motivo vai pro log).
-            val result = try {
-                platform.writeFile(path, generate())
-            } catch (e: Exception) {
-                AppLog.warn("Falha ao gerar $suggestedFileName", e)
-                null
-            }
-            withContext(main) {
-                busyState.value = null
-                if (result is SaveResult.Saved) onSaved()
-                if (result == null) {
-                    notify(UiNotice(uiText(Res.string.export_failed_generate), isError = true))
-                } else {
-                    report(result, savedMessage)
+            val result = withContext(background) {
+                try {
+                    platform.writeFile(path, generate())
+                } catch (e: Exception) {
+                    AppLog.warn("Falha ao gerar $fileName", e)
+                    null
                 }
+            }
+            busyState.value = null
+            if (result is SaveResult.Saved) onSaved()
+            if (result == null) {
+                notify(UiNotice(uiText(Res.string.export_failed_generate), isError = true))
+            } else {
+                report(result, savedMessage)
             }
         }
     }
 
     /** Vários orçamentos num PDF só, um por página. [onSaved] só roda se o arquivo foi gravado. */
     fun exportQuotesPdf(quotes: List<SavedQuote>, onSaved: () -> Unit = {}) {
-        saveGenerated("${sanitizeFileName("Orçamentos (${quotes.size} itens)")}.pdf", uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf), onSaved) {
+        saveGenerated({ "${sanitizeFileName(getPluralString(Res.plurals.export_file_quotes, quotes.size, quotes.size))}.pdf" }, uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf), onSaved) {
             val branding = resolvePdfBranding()
             renderSavedQuotesPdf(quotes.map { QuoteExportItem(it, photoBytes(it)) }, loadClientDocumentTexts(quotes), branding.brandName, branding.footerText, branding.options)
         }
@@ -185,7 +195,7 @@ class QuoteExporter(
 
     /** O catálogo pra divulgação: vários produtos por página, com foto, não um orçamento formal por página. */
     fun exportCatalogPdf(products: List<SavedQuote>, onSaved: () -> Unit = {}) {
-        saveGenerated("${sanitizeFileName("Catálogo (${products.size} itens)")}.pdf", uiText(Res.string.export_busy_catalog), uiText(Res.string.export_saved_catalog), onSaved) {
+        saveGenerated({ "${sanitizeFileName(getPluralString(Res.plurals.export_file_catalog, products.size, products.size))}.pdf" }, uiText(Res.string.export_busy_catalog), uiText(Res.string.export_saved_catalog), onSaved) {
             val branding = resolvePdfBranding()
             renderCatalogPdf(products.map { QuoteExportItem(it, photoBytes(it)) }, loadClientDocumentTexts(products), branding.brandName, branding.footerText, branding.options)
         }
@@ -200,11 +210,28 @@ class QuoteExporter(
     fun resolvePdfBranding(): ResolvedPdfBranding =
         brandingRepository.branding.value.resolvePdfBranding(brandingRepository.logoBytes())
 
-    /** Nome do arquivo pro cliente: o nome da peça, e o número quando o nome foi o automático. */
-    fun fileNameFor(savedQuote: SavedQuote): String = sanitizeFileName(
-        if (savedQuote.autoNamed) "Orçamento ${savedQuote.displayNumber?.removePrefix("#") ?: ""}".trim() else savedQuote.name,
-    )
+    /** Nome do arquivo pro cliente, sem a extensão: o nome da peça, e o número quando o nome foi o automático. */
+    suspend fun fileNameFor(savedQuote: SavedQuote): String {
+        val number = savedQuote.displayNumber?.removePrefix("#")
+        return sanitizeFileName(
+            when {
+                !savedQuote.autoNamed -> savedQuote.name
+                number != null -> getString(Res.string.export_file_auto_numbered, number)
+                else -> getString(Res.string.export_file_auto)
+            },
+        )
+    }
 
-    fun sanitizeFileName(name: String): String =
-        name.map { if (it.isLetterOrDigit() || it == ' ' || it == '-') it else '_' }.joinToString("").trim().ifEmpty { "orcamento" }
+    /**
+     * Grava [bytes] (a foto ou o STL de [savedQuote]) com o nome dele e a [extension], perguntando onde, e avisa com
+     * [savedMessage]. O nome sugerido vem dos recursos, lidos em [main].
+     */
+    fun saveAttachment(savedQuote: SavedQuote, bytes: ByteArray, extension: String, savedMessage: UiText) {
+        scope.launch(main) { report(platform.saveFile(bytes, "${fileNameFor(savedQuote)}.$extension"), savedMessage) }
+    }
+
+    /** [name] sem o que não pode ir num nome de arquivo; sem nada que sirva, um nome genérico. */
+    suspend fun sanitizeFileName(name: String): String =
+        name.map { if (it.isLetterOrDigit() || it == ' ' || it == '-') it else '_' }.joinToString("").trim()
+            .ifEmpty { getString(Res.string.export_file_fallback) }
 }

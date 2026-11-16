@@ -546,10 +546,11 @@ class QuoteHistoryViewModelTest {
 
         platform.nextSaveLocation = "/tmp/orcamentos.pdf"
         viewModel.exportSelectedPdf()
+        // O aviso de salvo vem por último: depois dele, o arquivo foi gravado e a seleção, limpa.
+        assertEquals(UiText.Res(Res.string.export_open_folder), viewModel.awaitNotice().actionLabel)
         assertTrue(platform.written.getValue("/tmp/orcamentos.pdf").isNotEmpty())
         assertTrue(viewModel.uiState.value.selectedIds.isEmpty())
         assertFalse(viewModel.uiState.value.selectionMode)
-        assertEquals(UiText.Res(Res.string.export_open_folder), viewModel.awaitNotice().actionLabel)
     }
 
     @Test
@@ -563,7 +564,8 @@ class QuoteHistoryViewModelTest {
 
         viewModel.exportCatalogPdf()
 
-        assertEquals(listOf("/tmp/Catálogo _1 itens_.pdf"), platform.written.keys.toList())
+        // Uma peça, no singular (Leva 10B, parte 7).
+        assertEquals(listOf("/tmp/Catálogo _1 item_.pdf"), platform.awaitWritten().keys.toList())
     }
 
     @Test
