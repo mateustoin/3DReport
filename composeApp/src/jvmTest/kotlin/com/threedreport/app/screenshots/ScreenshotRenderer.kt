@@ -46,6 +46,7 @@ import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.imageBrandLine
+import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
@@ -71,6 +72,7 @@ import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteKind
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
@@ -312,6 +314,25 @@ class ScreenshotRenderer {
         val branding = container.branding.branding.value
         renderPdfComposite(portaCelular, photoBytes, branding, File(outDir, "pdf.png"))
         renderWhatsAppPng(portaCelular, photoBytes, branding, File(outDir, "whatsapp.png"))
+
+        // Peça preta no fundo automático: a imagem escolhe o tom claro (whatsapp-claro.png). A miniatura do G-code sai cinza clara
+        // qualquer que seja o filamento, então a peça é a mesma foto escurecida.
+        renderWhatsAppPng(portaCelular, darkened(photoBytes), branding, File(outDir, "whatsapp-claro.png"))
+
+        // O PDF com tudo ligado: várias peças, serviços por peça e por pedido, frete, entrega expressa, cliente, tempo de impressão,
+        // validade e borda. O catálogo segue o mesmo estilo.
+        val completo = portaCelular.copy(
+            quote = portaCelular.quote.copy(quantity = 3, rush = true, salePrice = portaCelular.quote.salePrice * 3),
+            services = listOf(
+                QuoteService(id = "pintura", name = "Pintura", price = 5.0, chargedPerOrder = false),
+                QuoteService(id = "embalagem", name = "Embalagem", price = 3.0, chargedPerOrder = true),
+            ),
+            shippingCost = 12.0,
+        )
+        val brandingCompleto = branding.copy(showBorder = true, showPrintTime = true, showClientName = true, quoteValidityDays = 7)
+        renderPdfComposite(completo, photoBytes, brandingCompleto, File(outDir, "pdf-completo.png"))
+        val produtos = container.quoteHistory.savedQuotes.value.filter { it.kind == QuoteKind.PRODUCT }
+        renderCatalogComposite(produtos.map { QuoteExportItem(it, container.quoteHistory.photoBytes(it)) }, branding, File(outDir, "pdf-catalogo.png"))
 
         if (iconFile != null && iconFile.exists()) {
             renderOgBanner(iconFile, File(outDir, "orcamento.png"), ogBannerFile)
@@ -1113,6 +1134,16 @@ private fun findClickableNodeWithText(node: SemanticsNode, text: String): Semant
 private fun renderPdfComposite(savedQuote: SavedQuote, photoBytes: ByteArray?, branding: BrandingSettings, outFile: File) {
     val resolved = branding.resolvePdfBranding(logoBytes = null)
     val pdfBytes = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes)), testClientTexts, resolved.brandName, resolved.footerText, resolved.options)
+    composePdfPage(pdfBytes, outFile)
+}
+
+/** O catálogo de verdade (mesmo exportador do app), a primeira página composta num fundo neutro. */
+private fun renderCatalogComposite(items: List<QuoteExportItem>, branding: BrandingSettings, outFile: File) {
+    val resolved = branding.resolvePdfBranding(logoBytes = null)
+    composePdfPage(renderCatalogPdf(items, testClientTexts, resolved.brandName, resolved.footerText, resolved.options), outFile)
+}
+
+private fun composePdfPage(pdfBytes: ByteArray, outFile: File) {
     val pageImage = Loader.loadPDF(pdfBytes).use { document -> PDFRenderer(document).renderImageWithDPI(0, 150f) }
 
     val canvas = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
@@ -1140,6 +1171,20 @@ private fun renderPdfComposite(savedQuote: SavedQuote, photoBytes: ByteArray?, b
     ImageIO.write(canvas, "png", outFile)
 }
 
+/** A mesma foto com o brilho dos pixels reduzido a 15% (alfa intacto): uma peça preta no lugar da cinza clara da miniatura. */
+private fun darkened(photoBytes: ByteArray?): ByteArray? {
+    val photo = photoBytes?.let { ImageIO.read(java.io.ByteArrayInputStream(it)) } ?: return null
+    val dark = BufferedImage(photo.width, photo.height, BufferedImage.TYPE_INT_ARGB)
+    for (y in 0 until photo.height) {
+        for (x in 0 until photo.width) {
+            val argb = photo.getRGB(x, y)
+            fun channel(shift: Int) = (((argb shr shift) and 0xFF) * 0.15).toInt()
+            dark.setRGB(x, y, (argb and 0xFF000000.toInt()) or (channel(16) shl 16) or (channel(8) shl 8) or channel(0))
+        }
+    }
+    return java.io.ByteArrayOutputStream().also { ImageIO.write(dark, "png", it) }.toByteArray()
+}
+
 /** A imagem quadrada de verdade (mesmo exportador do "Salvar imagem" do Histórico), salva como está. */
 private fun renderWhatsAppPng(savedQuote: SavedQuote, photoBytes: ByteArray?, branding: BrandingSettings, outFile: File) {
     val currency = savedQuote.currency
@@ -1149,10 +1194,11 @@ private fun renderWhatsAppPng(savedQuote: SavedQuote, photoBytes: ByteArray?, br
         texts = testClientTexts,
         title = savedQuote.name,
         priceText = savedQuote.totalWithServices.toCurrencyText(currency),
-        unitPriceText = if (quantity > 1) "$quantity peças · ${(piecesTotal / quantity).toCurrencyText(currency)} cada" else null,
+        unitPriceText = if (quantity > 1) testClientTexts.imageUnitPrice(quantity, (piecesTotal / quantity).toCurrencyText(currency)) else null,
         photoBytes = photoBytes,
         brandText = branding.imageBrandLine(),
-        deliveryText = savedQuote.deliveryDateEpochDay?.let { "Entrega até ${formatShortDate(it)}" },
+        deliveryText = savedQuote.deliveryDateEpochDay?.let { testClientTexts.imageDelivery(formatShortDate(it)) },
+        background = branding.imageBackground,
     )
     outFile.writeBytes(bytes)
 }

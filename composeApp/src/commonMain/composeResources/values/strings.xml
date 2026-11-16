@@ -964,7 +964,7 @@
     <string name="settings_docs_field_email">E-mail</string>
     <string name="settings_docs_field_instagram">Instagram</string>
     <string name="settings_docs_field_instagram_hint">Opcional, ex.: @minhaloja</string>
-    <string name="settings_docs_pdf_title">Aparência do PDF</string>
+    <string name="settings_docs_pdf_title">Aparência do PDF e da imagem</string>
     <string name="settings_docs_pdf_help">Os PDFs e a imagem do WhatsApp levam uma linha discreta "Gerado com 3DReport" no canto, longe do seu nome e do preço, com link pro site no PDF.</string>
     <string name="settings_docs_pdf_help_detail">É assim que o app, que é gratuito, chega a outros vendedores.</string>
     <string name="settings_docs_watermark">Marca d'água diagonal com o nome</string>
@@ -977,6 +977,11 @@
     <string name="settings_docs_field_validity">Validade do orçamento (dias)</string>
     <string name="settings_docs_validity_help">O PDF diz "Válido até" a data de emissão mais esses dias, pra um cliente que volta meses depois não cobrar o preço antigo.</string>
     <string name="settings_docs_validity_help_detail">Deixe 0 pra não mostrar.</string>
+    <string name="settings_docs_image_background">Fundo da imagem</string>
+    <string name="settings_docs_image_background_help">No automático, a peça escura sai em fundo claro e as demais em fundo escuro.</string>
+    <string name="settings_docs_image_background_auto">Automático</string>
+    <string name="settings_docs_image_background_dark">Escuro</string>
+    <string name="settings_docs_image_background_light">Claro</string>
     <string name="settings_docs_error_validity">Use um número de dias de 0 a %1$d (0 tira a linha)</string>
     <string name="settings_docs_error_options">Selecione ao menos uma opção: marca d'água ou rodapé.</string>
     <string name="settings_docs_action_preview">Ver como fica</string>

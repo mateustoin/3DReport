@@ -9,9 +9,11 @@ import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderQuoteImage
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.testClientTexts
+import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.ImageBackground
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
@@ -23,7 +25,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.text.PDFTextStripper
+import java.io.ByteArrayInputStream
 import java.io.File
+import javax.imageio.ImageIO
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -109,8 +113,8 @@ class ClientDocumentTextTest {
 
     private fun textOf(pdf: ByteArray) = Loader.loadPDF(pdf).use { PDFTextStripper().getText(it) }
 
-    private fun exporter(platform: FakePlatform) = QuoteExporter(
-        platform, BrandingRepository(), QuoteHistoryRepository(),
+    private fun exporter(platform: FakePlatform, branding: BrandingRepository = BrandingRepository()) = QuoteExporter(
+        platform, branding, QuoteHistoryRepository(),
         CoroutineScope(Dispatchers.Unconfined), Dispatchers.Unconfined, Dispatchers.Unconfined,
     ) {}
 
@@ -257,6 +261,22 @@ class ClientDocumentTextTest {
         )
         assertContentEquals(full, platform.written.getValue("/tmp/Suporte de celular.png"))
         assertContentEquals(auto, platform.written.getValue("/tmp/Orçamento.png"))
+    }
+
+    /** O fundo escolhido em Documentos pro cliente chega na imagem que o Histórico exporta. */
+    @Test
+    fun theExportedImageUsesTheBackgroundChosenInSettings() {
+        fun cornerOf(background: ImageBackground): Int {
+            val branding = BrandingRepository().apply { update(BrandingSettings(imageBackground = background)) }
+            val platform = FakePlatform().apply { nextSaveLocation = "/tmp/" }
+            exporter(platform, branding).saveShareableImage(autoProduct)
+            platform.awaitWritten(1)
+            return ImageIO.read(ByteArrayInputStream(platform.written.getValue("/tmp/Orçamento.png"))).getRGB(4, 4) and 0xFFFFFF
+        }
+
+        assertEquals(0xF6F8FB, cornerOf(ImageBackground.LIGHT))
+        assertEquals(0x0C2742, cornerOf(ImageBackground.DARK))
+        assertEquals(0x0C2742, cornerOf(ImageBackground.AUTO), "sem foto, o automático é escuro")
     }
 
     @Test

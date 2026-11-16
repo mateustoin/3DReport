@@ -123,6 +123,7 @@ class QuoteExporter(
      */
     fun saveShareableImage(savedQuote: SavedQuote) {
         saveGenerated({ "${fileNameFor(savedQuote)}.png" }, uiText(Res.string.export_busy_image), uiText(Res.string.export_saved_image)) {
+            val branding = brandingRepository.branding.value
             val currency = savedQuote.currency
             val quantity = savedQuote.quote.quantity
             val piecesTotal = savedQuote.totalWithServices - savedQuote.chargedShipping
@@ -142,8 +143,9 @@ class QuoteExporter(
                 priceText = savedQuote.totalWithServices.toCurrencyText(currency),
                 unitPriceText = if (quantity > 1) texts.imageUnitPrice(quantity, (piecesTotal / quantity).toCurrencyText(currency)) else null,
                 photoBytes = photoBytes(savedQuote),
-                brandText = brandingRepository.branding.value.imageBrandLine(),
+                brandText = branding.imageBrandLine(),
                 deliveryText = deliveryText,
+                background = branding.imageBackground,
             )
         }
     }

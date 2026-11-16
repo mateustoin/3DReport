@@ -18,6 +18,11 @@ import _3dreport.composeapp.generated.resources.settings_docs_field_instagram_hi
 import _3dreport.composeapp.generated.resources.settings_docs_field_validity
 import _3dreport.composeapp.generated.resources.settings_docs_field_whatsapp
 import _3dreport.composeapp.generated.resources.settings_docs_footer
+import _3dreport.composeapp.generated.resources.settings_docs_image_background
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_auto
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_dark
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_help
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_light
 import _3dreport.composeapp.generated.resources.settings_docs_logo_choose
 import _3dreport.composeapp.generated.resources.settings_docs_logo_help
 import _3dreport.composeapp.generated.resources.settings_docs_logo_label
@@ -69,6 +74,7 @@ import androidx.compose.ui.layout.ContentScale
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppCheckbox
+import com.threedreport.app.ui.components.AppChoiceField
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppNumberField
 import com.threedreport.app.ui.components.AppTextField
@@ -87,6 +93,8 @@ import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
+import com.threedreport.core.model.ImageBackground
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -175,6 +183,14 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
                 )
             }
         }
+        val backgrounds = ImageBackground.entries
+        AppChoiceField(
+            label = stringResource(Res.string.settings_docs_image_background),
+            options = backgrounds.map { stringResource(it.labelRes()) },
+            selectedIndex = backgrounds.indexOf(branding.imageBackground),
+            onSelect = { viewModel.setImageBackground(backgrounds[it]) },
+            help = HelpText(stringResource(Res.string.settings_docs_image_background_help)),
+        )
         // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
         val sampleName = stringResource(Res.string.settings_docs_preview_sample)
         AppButton(stringResource(Res.string.settings_docs_action_preview), onClick = { viewModel.showPreview(sampleName) }, icon = AppIcons.Visibility)
@@ -218,6 +234,12 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         )
     }
     branding.previewPng?.let { png -> PdfPreviewDialog(png, onDismiss = viewModel::closePreview) }
+}
+
+private fun ImageBackground.labelRes(): StringResource = when (this) {
+    ImageBackground.AUTO -> Res.string.settings_docs_image_background_auto
+    ImageBackground.DARK -> Res.string.settings_docs_image_background_dark
+    ImageBackground.LIGHT -> Res.string.settings_docs_image_background_light
 }
 
 @Composable
