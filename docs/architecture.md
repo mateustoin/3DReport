@@ -157,7 +157,7 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
 - Padrão de apresentação: **MVVM**. Cada tela tem um `ViewModel` (Kotlin puro,
   sem `Composable`, expõe `StateFlow`) e um `*Screen` (`@Composable` que observa o
   `ViewModel` e envia eventos). O formato do estado ainda varia: Configurações,
-  Marca e Backup têm um `UiState` único; os cadastros expõem a lista mais um
+  Marca, Backup e Dashboard (`DashboardUiState`) têm um `UiState` único; os cadastros expõem a lista mais um
   `FormState`; Orçamento e Pedidos expõem vários `StateFlow` separados, e o
   `QuoteScreen` dispara o cálculo durante a composição. O padrão pra telas novas
   está em [`composeApp/CLAUDE.md`](../composeApp/CLAUDE.md).
@@ -282,12 +282,12 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     vez, com ~720dp de largura de leitura. Custos (`PricingSettings`) e
     "Documentos pro cliente" (`BrandingViewModel`: nome da marca, logo,
     contato, marca d'água, rodapé, borda, tempo de impressão, prévia "Ver
-    como fica" e templates) são rascunho; no lugar dos dois botões "Salvar"
+    como fica" e modelos de orçamento, `Template` no código) são rascunho; no lugar dos dois botões "Salvar"
     separados, uma barra fixa embaixo ("Alterações não salvas" com
     "Descartar"/"Salvar") salva ou descarta os dois rascunhos juntos, e um
     erro pula pra seção dele. O rascunho sobrevive a trocar de seção ou de
     tela; a barra lateral mostra um pontinho em Configurações enquanto há
-    rascunho. Tema, moeda, canais e backup continuam aplicando na hora.
+    rascunho. Carregar um modelo só preenche o rascunho de Documentos (decisão 134). Tema, moeda, canais e backup continuam aplicando na hora.
   - **Sobre** (`ui/about/AboutScreen.kt`, decisão 111): substitui o rodapé
     fixo que ficava embaixo de toda aba (versão, autor, links pro GitHub e
     pro Buy Me a Coffee) e o diálogo de Ajuda: agora é uma tela com a

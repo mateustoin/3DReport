@@ -144,6 +144,9 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [131](decisions/131.md) | 2026-11-15 | "Negociar" e "Enviar pro cliente" no painel de resultado do Orçamento | Aprovada |
 | [132](decisions/132.md) | 2026-11-15 | Pedidos em lista vira tabela, e o Catálogo abre em grade com foto | Aprovada |
 | [133](decisions/133.md) | 2026-11-15 | Dashboard em blocos, sem gráfico por enquanto | Aprovada |
+| [134](decisions/134.md) | 2026-11-16 | Configurações, Sobre e modelos na nova interface | Aprovada |
+| [135](decisions/135.md) | 2026-11-16 | Ajustes do Dashboard depois da revisão | Aprovada |
+| [136](decisions/136.md) | 2026-11-16 | A 2.2 fecha com a Leva 10B | Aprovada |
 
 ## Pendentes de aprovação
 

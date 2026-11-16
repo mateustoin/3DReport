@@ -59,3 +59,7 @@ Nenhuma conta nova: tudo vem de `QuoteSummary` e `CatalogSummary`, do `core`.
 - Os números das capturas batem com os de antes da reescrita pro mesmo conjunto de
   dados.
 - `ls -la ~/.3dreport` igual antes e depois.
+
+## Ajustes depois da revisão
+
+Revisão de design de 2026-11-16 (decisão [135](../decisions/135.md), que complementa a 133): sem vendas no período os quatro blocos continuam zerados; "Novo orçamento" é âmbar só na primeira vez; "Quanto cada hora rendeu" só com hora de trabalho; "sem dado" em meia-risca apagada; lucro negativo em `error`; "Orçamentos que viraram venda" some sem orçamento criado no período. O texto acima não foi reescrito.

@@ -161,6 +161,10 @@ fundação, sistema de design, e depois as telas em grupos.
   cadastros; Orçamento (dividindo `QuoteScreen.kt`); Pedidos e Catálogo, com a
   visualização lembrada (decisão 129); Dashboard, Configurações e Sobre. Depois, o
   PDF e a imagem exportados, e o site.
+  **Em andamento (2026-11-16):** feitas as telas da moldura, os cadastros, Orçamento,
+  Pedidos, Catálogo, Dashboard, Configurações, Sobre e os diálogos (decisões 131 a 135).
+  Faltam o PDF, a mensagem e a imagem exportados na nova interface, o aviso de arrastar
+  G-code (em andamento) e o site.
 - [ ] **Ícone novo** (decisão 128) no instalador, na janela e no site.
 - [ ] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`.
 

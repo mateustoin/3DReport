@@ -84,3 +84,7 @@ Configurações (`ui/settings/`), Sobre (`ui/about/`), primeiro uso
 Backup e restauração de verdade (numa pasta de teste), troca de tema e de moeda
 refletindo nas outras telas, verificação de atualização com e sem internet, e o
 primeiro uso numa pasta de dados vazia.
+
+## Ajustes depois da revisão
+
+Revisão de design de 2026-11-16 (decisão [134](../decisions/134.md)): carregar um modelo só preenche o rascunho de Documentos pela ação "Carregar" da linha; o termo pro público é "modelo"; o nome da marca fica em "Aparência do PDF"; o Sobre usa a marca sem fundo e, com versão nova, "Ver novidades" é o único âmbar; seção única não tem título nem número; o primeiro uso abre com "Boas-vindas ao 3DReport"; com alteração pendente o âmbar fica só no "Salvar" e no ícone ativo. Nenhuma das seções acima foi reescrita.

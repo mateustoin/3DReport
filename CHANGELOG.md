@@ -27,6 +27,22 @@ lucro que tinham.
 - **Calcular o kWh** pela conta de luz, pela bandeira do mês ou pela tarifa branca, em Negócio e custos.
 
 ### Alterado
+- **Configurações em seções.** Negócio e custos, Canais de venda, Documentos pro cliente, Aparência e
+  Backup ficam numa lista ao lado, uma seção por vez. Uma barra única "Alterações não salvas" salva ou
+  descarta tudo de uma vez, e o botão "Salvar" é o único âmbar da tela.
+- **Modelos do PDF:** carregar um modelo agora só preenche os campos de Documentos pro cliente, e você
+  confirma em "Salvar" ou descarta. Antes, clicar no modelo aplicava e gravava na hora, junto com
+  qualquer outra alteração pendente. O que antes se chamava "template" agora é "modelo".
+- **O nome da marca fica junto da aparência do PDF**, porque é o texto da marca d'água. "Sua marca"
+  fica só com a logo.
+- **Sobre** com visual novo. Quando há versão nova, "Ver novidades" é o botão em destaque e
+  "Apoiar o projeto" fica discreto.
+- **Dashboard refeito.** O período escolhido fica no topo, com quatro números de resumo (vendas, total
+  vendido, lucro e lucro por hora de máquina), o ranking de peças ao lado e os blocos de pedidos em
+  aberto, quanto cada hora rendeu e o que mais é usado. Sem vendas no período, os números continuam
+  na tela, zerados, e a tela não pula ao trocar de período. O lucro negativo aparece em vermelho. Em
+  janela estreita, o período vira uma lista suspensa.
+- **Primeiro uso** abre com "Boas-vindas ao 3DReport".
 - **Atalhos:** com a tela Insumos, Configurações passou de Ctrl/Cmd+8 pra Ctrl/Cmd+9. Insumos é o 8.
 - **Serviço com tempo informado passa a contar no lucro** pelo que rende acima da sua hora. Serviço sem
   tempo continua como antes, fora do lucro.
