@@ -277,8 +277,8 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
       pra salvar sem perder a marca, e `availableOrSelected` (em
       `ui/components/Archive.kt`) pros seletores do Orçamento.
   - **Configurações** (`ui/settings`, decisão 112): uma lista de seções à
-    esquerda (`SettingsSection`: Negócio e custos, que inclui Moeda,
-    Canais, Documentos pro cliente, Aparência, Dados) mostra uma seção por
+    esquerda (`SettingsSection`: Negócio, Canais de venda,
+    Documentos pro cliente, Aparência, que inclui tema e moeda, e Backup) mostra uma seção por
     vez, com ~720dp de largura de leitura. Custos (`PricingSettings`) e
     "Documentos pro cliente" (`BrandingViewModel`: nome da marca, logo,
     contato, marca d'água, rodapé, borda, tempo de impressão, prévia "Ver

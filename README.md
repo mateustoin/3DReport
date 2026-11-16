@@ -92,7 +92,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 
 **Configurações & plataforma**
 - Barra lateral com as telas agrupadas (Vendas, Cadastros, Configurações e Sobre); abaixo de uma certa largura de janela vira um trilho só de ícones com dica ao passar o mouse
-- Configurações em seções (Negócio e custos, Canais, Documentos pro cliente, Aparência, Dados), com uma barra "Alterações não salvas" só, no lugar de vários botões "Salvar" espalhados
+- Configurações em seções (Negócio, Canais de venda, Documentos pro cliente, Aparência, Backup), com uma barra "Alterações não salvas" só, no lugar de vários botões "Salvar" espalhados
 - Backup e restauração dos seus dados num arquivo `.zip` (levar pro outro computador, recuperar depois de formatar)
 - Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
 - Tema claro/escuro (segue o sistema por padrão)
