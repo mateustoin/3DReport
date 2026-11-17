@@ -95,15 +95,15 @@ responsável do projeto).
 
 | Nº | Decisão | Situação |
 |---|---|---|
-| | PDF e imagem: opções de layout antes de implementar | aprovada em 2026-11-16 |
-| | Ícone: ver refinamentos antes de gerar os arquivos | aprovada em 2026-11-16 |
-| | Site na 2.2: capturas, ícone, marca e textos, sem redesenho | aprovada em 2026-11-16 |
-| | PDF: opção A (foto na largura da página e bloco de preço com entrega e validade) | aprovada em 2026-11-16 |
-| | Imagem: opção A (azul-marinho, só o preço em âmbar) | aprovada em 2026-11-16 |
-| | Imagem com peça escura: fundo automático pelo brilho da peça, com seletor em Documentos pro cliente | aprovada em 2026-11-16 |
-| | Ícone: refinamento 1 (camadas mais grossas, bico depositando), com contorno claro nos tamanhos de 16 a 32 px | aprovada em 2026-11-16 |
-| | Nome automático com campo `autoNamed` e migração | aprovada em 2026-11-16 |
-| | Formato de data e número num ponto só | aprovada em 2026-11-16 |
+| 137 | PDF e imagem: opções de layout antes de implementar | aprovada em 2026-11-16 |
+| 138 | Ícone: ver refinamentos antes de gerar os arquivos | aprovada em 2026-11-16 |
+| 140 | Site na 2.2: capturas, ícone, marca e textos, sem redesenho | aprovada em 2026-11-16 |
+| 137 | PDF: opção A (foto na largura da página e bloco de preço com entrega e validade) | aprovada em 2026-11-16 |
+| 137 | Imagem: opção A (azul-marinho, só o preço em âmbar) | aprovada em 2026-11-16 |
+| 137 | Imagem com peça escura: fundo automático pelo brilho da peça, com seletor em Documentos pro cliente | aprovada em 2026-11-16 |
+| 138 | Ícone: refinamento 1 (camadas mais grossas, bico depositando), com contorno claro nos tamanhos de 16 a 32 px | aprovada em 2026-11-16 |
+| 139 | Nome automático com campo `autoNamed` e migração | aprovada em 2026-11-16 |
+| 139 | Formato de data e número num ponto só | aprovada em 2026-11-16 |
 
 ## Modelo e cálculo (core e dados)
 

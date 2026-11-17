@@ -9,7 +9,7 @@ exportado. Direção "Oficina", escolhida pelo responsável do projeto em 2026-1
   [`design/referencia-orcamento.dc.html`](design/referencia-orcamento.dc.html) e
   [`design/referencia-pedidos.dc.html`](design/referencia-pedidos.dc.html) (não abrem
   sozinhos no navegador; servem pra consultar medidas, cores e estrutura).
-- Ícone: [`design/icone-camadas.svg`](design/icone-camadas.svg) (decisão 128).
+- Ícone: [`design/icone-camadas.svg`](design/icone-camadas.svg) (decisão 128), refinado na decisão 138: camadas de 16 de altura num quadro de 120, o bico depositando a camada âmbar e, de 16 a 32 px, um contorno claro fino. `scripts/gerar_icone.py` gera o instalador e o site.
 
 ## A ideia
 
@@ -133,14 +133,14 @@ fonte. Não se usa fonte monoespaçada.
 | Barra lateral | Fundo `navy` nos dois temas. Marca "3D" em branco e "Report" em âmbar. Grupos em `overline`. Item ativo: fundo `navyRaised`, texto branco em 600 e ícone âmbar |
 | Cabeçalho de tela | Título em `headline` à esquerda; à direita, o seletor da tela e a ação principal. Sem subtítulo |
 | Seção de formulário | Marcador redondo numerado (24, fundo `tint`, número em `primary`) e título em `sectionTitle`. Sem ícone decorativo. **Seção única** (a tela só tem uma, como Canais de venda e Aparência em Configurações, decisão 134) não leva título nem número: o conteúdo começa direto e a ajuda vai num `HelpHint` |
-| Campo | Rótulo em `label` acima, caixa de 40 com borda `line` e fundo `card`. Borda `primary` ao passar o mouse, anel de 2 px no foco. Erro: borda `error` e mensagem curta abaixo |
+| Campo | Rótulo em `label` acima (em até duas linhas, nunca truncado com reticências; numa linha da grade, as caixas ficam alinhadas pela borda de cima, `FieldBoxTop`), caixa de 40 com borda `line` e fundo `card`. Borda `primary` ao passar o mouse, anel de 2 px no foco. Erro: borda `error` e mensagem curta abaixo |
 | Botão | Principal: fundo `amber`, texto `onAmber` em 600, um por tela. Secundário: fundo `card`, borda `line`. Sobre o azul-marinho: transparente com borda `navyRaised`; ativo (o campo que ele abre está aberto), fundo `navyRaised`. O secundário também tem estado ativo (o modo que ele liga está ligado, como "Exportar catálogo" na seleção): fundo `tint` e borda `primary` |
 | Menu | Fundo `card`, raio 8, borda `line` e a sombra de menu (`AppMenu`). Item de 40 de altura (`AppDimens.menuItemHeight`) em `body` com ícone à esquerda (`AppMenuItem`); o que exclui vai em `error`. Grupo em `overline` (`AppMenuGroup`) e divisor de 1 px entre grupos (`AppMenuDivider`). O de ações do pedido e o de envio pro cliente usam o mesmo |
 | Caixa de marcar | Quadrado de 20, raio 6: marcada, fundo `primary` com o visto; desmarcada, borda `line`. A linha toda clica e recebe o anel de foco. O que fica sob ela recua 32 (`AppDimens.checkboxIndent`) (`AppCheckbox`) |
 | Ação clicável | `Modifier.clickableAction`: área clicável de texto ou de linha (recolher um bloco, "Ver a conta completa", a área de soltar um arquivo) com anel de foco de 2, em `onNavy` quando fica sobre o azul-marinho. Nunca `clickable` solto. Cartão: `Modifier.clickableCard` com `rememberCardState` e `Modifier.cardFrame` (moldura de raio 10, borda `primary` no hover e no foco), no lugar do `clickable` do cartão |
 | Botão só de ícone | `IconAction`: descrição e dica, anel de foco; versão `onNavy` pro painel de resultado |
 | Diálogo | `AppDialog`: fundo `card`, raio 12, título em `panelTitle` (com dica de ajuda ao lado, se precisar), botões à direita e o último confirma. Altura máxima de a janela menos duas margens (`space.xxl`): título e botões ficam fixos e só o corpo rola (não há parâmetro `scrollable`) |
-| Seletor de duas opções | Segmentado com borda `line`; a opção ativa tem fundo `primary`; recebe anel de foco visível (`SegmentedChoice`). `AdaptiveChoice` é o mesmo seletor que, em janela estreita (`compact`), vira a lista suspensa do kit com o rótulo só pra leitor de tela, na altura dos outros controles do cabeçalho (período do Dashboard) |
+| Seletor de duas ou três opções | Segmentado com borda `line` (`AppChoiceField` junta o rótulo e a ajuda, como o "Fundo da imagem" de Configurações, com três); a opção ativa tem fundo `primary`; recebe anel de foco visível (`SegmentedChoice`). `AdaptiveChoice` é o mesmo seletor que, em janela estreita (`compact`), vira a lista suspensa do kit com o rótulo só pra leitor de tela, na altura dos outros controles do cabeçalho (período do Dashboard) |
 | Marca | `BrandMark`: por padrão (`onNavy = true`), "3D" em branco e "Report" em âmbar, pra barra lateral. Com `onNavy = false`, a variante pra fundo claro ("3D" na cor do texto, "Report" em âmbar de texto), sem bloco de fundo, como no Sobre. O azul-marinho fica só na barra lateral e no painel de resultado |
 | Linha só de leitura | `InfoRow(title, value)`: título em `body` à esquerda, valor em `bodyStrong` com algarismos tabulares à direita, altura mínima `AppDimens.infoRowHeight` (40) e divisor de 1 px. Não clica |
 | Painel de resultado | Coluna fixa à direita, fundo `navy`: rótulo em `overline`, preço em `displayPrice`, dois blocos (lucro em âmbar e mínimo sem prejuízo), barra de composição, e as ações no pé |
@@ -154,6 +154,14 @@ fonte. Não se usa fonte monoespaçada.
 | Cartão de produto | Grade do Catálogo (decisão 132). Fundo `card`, borda `line` e raio 10: foto de 132 em destaque sobre um fundo `cardBlock` (que aparece sobre o `card` também no tema escuro) com o mesmo raio; sem foto, só o fundo com o ícone de imagem, sem ilustração; foto opaca preenche e corta, imagem com transparência aparece inteira, nome em `bodyStrong`, categoria em `caption`, preço em `sectionTitle` e "Vender" como botão secundário de 32. O menu das demais ações aparece no hover ou no foco; no modo de seleção, o cartão ganha a caixa de marcar |
 | Linha de lista | Pra cadastros: uma linha por item, ações ao passar o mouse ou num menu. Não é cartão. `ListRow` tem `onClick` opcional: sem ele a linha não clica nem entra no Tab (só as ações), como na lista de modelos |
 | Estado vazio | Uma frase e a ação que resolve (`EmptyState`). Sem ilustração. Com `topPadding = false` o respiro de cima some (logo depois de um cabeçalho que já o traz). Lista vazia de primeira vez: a ação principal em âmbar; filtro sem resultado: "Limpar filtros" como botão secundário |
+
+## Documentos pro cliente
+
+PDF, catálogo em PDF e imagem quadrada do orçamento (decisão 137) usam a mesma tipografia do app: Inter no texto e Space Grotesk na marca, no título e no preço, embutidas no arquivo. A cor segue quem é o autor:
+
+- **PDF:** o documento é do vendedor, então **não leva cor de marca do app** (nada de `navy` nem `amber`): tinta escura, cinzas e a logo dele.
+- **Imagem:** a identidade do app aparece. Fundo `navy`, faixa inferior `#081526` e só o preço em `amber`. Quando a peça é escura (`BrandingSettings.imageBackground`, por padrão automático), o fundo vira o tom claro: `#F6F8FB`, cartão branco pra peça, preço em texto escuro e entrega em âmbar de texto.
+- Os dois levam "Gerado com 3DReport" discreto, longe do nome e do preço.
 
 ## Comportamento
 

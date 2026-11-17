@@ -281,7 +281,7 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     Documentos pro cliente, Aparência, que inclui tema e moeda, e Backup) mostra uma seção por
     vez, com ~720dp de largura de leitura. Custos (`PricingSettings`) e
     "Documentos pro cliente" (`BrandingViewModel`: nome da marca, logo,
-    contato, marca d'água, rodapé, borda, tempo de impressão, prévia "Ver
+    contato, marca d'água, rodapé, borda, tempo de impressão, fundo da imagem (`ImageBackground`), prévia "Ver
     como fica" e modelos de orçamento, `Template` no código) são rascunho; no lugar dos dois botões "Salvar"
     separados, uma barra fixa embaixo ("Alterações não salvas" com
     "Descartar"/"Salvar") salva ou descarta os dois rascunhos juntos, e um
@@ -412,6 +412,15 @@ Outros:
   quantidade × unitário, nome em até duas linhas e "Para" opcional (decisão
   108). Marca d'água e rodapé são desenhados **por cima de todo o conteúdo**
   (decisão 21). Gerar roda fora do thread da tela, com aviso de "Gerando PDF…".
+- O PDF e a imagem quadrada seguem o visual da decisão 137 e usam as fontes do app
+  (`ClientDocumentFonts`: Inter e `space_grotesk_bold_tnum.ttf`, o Space Grotesk fixado no
+  peso 700 com algarismos tabulares). O PDF não usa cor do app. Na imagem, o fundo vem de
+  `BrandingSettings.imageBackground`: em `AUTO`, `ImageBrightness` mede a luminância média
+  da foto e `ImageBackground.resolve` escolhe o tom (`ImageTone`) pelo limiar
+  `DARK_PIECE_LUMINANCE`. O modelo de orçamento não guarda o campo.
+- Os rótulos de `OrderStatus`, `QuoteKind`, `ThemeMode` e `PrintDifficulty` não ficam
+  no `core` (decisão 139): cada um tem uma função de rótulo em `composeApp` que lê
+  `strings.xml`.
 - Os textos do que vai pro cliente (PDF, catálogo, imagem quadrada e mensagem
   do WhatsApp) moram em `strings.xml` (chaves `client_doc_`). Como o PDF e a
   imagem são desenhados fora da tela, quem gera chama antes

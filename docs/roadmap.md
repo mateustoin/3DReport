@@ -138,7 +138,7 @@ junto.
   bandeira escolhido nas Configurações. Visto em: 3D Prime (tarifa da ANEEL por
   estado), ha-bambu-costs (tarifa por horário). Esforço P, impacto B.
 
-### Leva 10B: Nova interface e textos prontos pra tradução (idioma, fase A)
+### Leva 10B: Nova interface e textos prontos pra tradução (idioma, fase A) (quase feita, decisões 127 a 140)
 
 **Revisão de 2026-11-14.** A leva ganhou a nova interface (decisões 127 a 129) e uma
 fundação de arquitetura, e deixou de ser "nada muda pro usuário". Os dois trabalhos
@@ -146,27 +146,24 @@ mexem nos mesmos arquivos de tela, então cada tela é reescrita uma vez só: j�
 visual novo, no padrão de estado novo e com os textos em recursos. A ordem é:
 fundação, sistema de design, e depois as telas em grupos.
 
-- [ ] **Fundação de arquitetura.** Formatação e análise automáticas (ktlint) e
+- [x] **Fundação de arquitetura.** **Feito (decisão 130, 2026-11-14).** Formatação e análise automáticas (ktlint) e
   cobertura (Kover) no CI; a release passa a rodar os testes e a conferir a tag
   contra a versão. Registro de telas no lugar dos `when` de `App.kt`, com cada
   ViewModel criado na primeira visita. Regras de preço que hoje estão em
   `QuoteViewModel.calculate` vão pro `core`, e o `core` passa a identificar erro por
   tipo, sem frase (pré-requisito da tradução). Um padrão único de estado pra tela
-  nova. Sem mudança visível.
-- [ ] **Sistema de design** ([design-system.md](design-system.md), decisão 127).
+  nova. Sem mudança visível. O registro de telas foi descartado na decisão 130 (fica o `enum` com um `when`).
+- [x] **Sistema de design** ([design-system.md](design-system.md), decisão 127). **Feito (decisão 127, 2026-11-14).**
   Tema com tipografia, formas, espaçamento e as fontes embutidas (Inter e Space
   Grotesk), e o kit de componentes em `ui/components/` no lugar das reimplementações de
   hoje (cinco wrappers de campo, quatro tratamentos de card, três barras de rodapé).
-- [ ] **Telas na nova interface**, em grupos: moldura e barra lateral; os quatro
+- [x] **Telas na nova interface** **Feito (decisões 131 a 135, 2026-11-16).** Em grupos: moldura e barra lateral; os quatro
   cadastros; Orçamento (dividindo `QuoteScreen.kt`); Pedidos e Catálogo, com a
-  visualização lembrada (decisão 129); Dashboard, Configurações e Sobre. Depois, o
-  PDF e a imagem exportados, e o site.
-  **Em andamento (2026-11-16):** feitas as telas da moldura, os cadastros, Orçamento,
-  Pedidos, Catálogo, Dashboard, Configurações, Sobre e os diálogos (decisões 131 a 135).
-  Faltam o PDF, a mensagem e a imagem exportados na nova interface, o aviso de arrastar
-  G-code (em andamento) e o site.
-- [ ] **Ícone novo** (decisão 128) no instalador, na janela e no site.
-- [ ] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`.
+  visualização lembrada (decisão 129); Dashboard, Configurações e Sobre. O PDF e a
+  imagem exportados vieram na decisão 137.
+- [x] **Ícone novo** (decisão 128) no instalador, na janela e no site. **Feito (decisão 138, 2026-11-16).**
+- [ ] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`, e o
+  site com elas (decisão 140). Falta gerar as capturas novas e trocá-las no site e no README.
 
 O que segue é o texto original da leva, que continua valendo pros textos.
 
@@ -183,20 +180,26 @@ mecânico, bom pra subagentes com revisão.
   em uns 140 arquivos (as que mais têm: Orçamento, Configurações e Pedidos), vão
   pra arquivos de texto do Compose (`composeResources`, com `stringResource`), só
   em português por enquanto. Plurais ("3 impressões") como plurais de verdade.
-- [ ] **Mensagens dos ViewModels como chave e valores.** Avisos e mensagens montados
+  **Quase feito (decisão 139):** telas, PDF, imagem e mensagem estão em recursos. Faltam
+  poucos textos no código: os nomes dos destinos da barra lateral (`AppDestination`), os
+  períodos (`Period`), "Saiba mais"/"Menos" em `FieldHelp`, os títulos dos seletores de
+  arquivo (`PlatformServices`), "Sem nome" em `FilamentLabels`, "N faixas de preço" em
+  `SalesChannelFormat`, a impressora de exemplo em `Seeds` e os diálogos fatais de `Main.kt`.
+- [x] **Mensagens dos ViewModels como chave e valores.** **Feito (decisões 131 a 139, 2026-11-16).** Avisos e mensagens montados
   fora das telas (`QuoteHistoryViewModel`, `QuoteViewModel` e outros) passam a
   levar a chave do texto e os valores, e a tela é que traduz, porque o
   `stringResource` só existe dentro da tela.
-- [ ] **Rótulos fora do `core`.** `OrderStatus`, `QuoteKind` e `ThemeMode` carregam
+- [x] **Rótulos fora do `core`.** **Feito (decisão 139, 2026-11-16).** `OrderStatus`, `QuoteKind` e `ThemeMode` carregam
   o texto em português (`OrderStatus("Orçado")`); o rótulo passa pra interface, e
   o `core` fica sem texto de tela.
-- [ ] **Nome automático do pedido sem depender do idioma.** O pedido sem nome ganha
+- [x] **Nome automático do pedido sem depender do idioma.** **Feito (decisão 139, 2026-11-16).** O pedido sem nome ganha
   o prefixo `"Orçamento - "` (`SavedQuote.AUTO_NAME_PREFIX`) e é reconhecido por uma
   expressão regular sobre esse texto, que quebraria em outro idioma. Vira uma marca
-  no registro, com migração e teste (regra da decisão 106).
-- [ ] **PDF, mensagem e imagem com textos em recursos**, pelo mesmo mecanismo (fora
+  no registro (`SavedQuote.autoNamed`), com marca na leitura e teste. O formato da pasta
+  ficou em 2 (decisão 139).
+- [x] **PDF, mensagem e imagem com textos em recursos** **Feito (decisões 137 e 139, 2026-11-16),** pelo mesmo mecanismo (fora
   da tela, lendo o recurso diretamente).
-- [ ] **Datas e números pelo idioma.** `DateFormat.jvm.kt` usa `pt-BR` fixo, e a
+- [x] **Datas e números pelo idioma.** **Feito (decisão 139, 2026-11-16).** `DateFormat.jvm.kt` usa `pt-BR` fixo, e a
   entrada numérica (`DecimalInput`) supõe que "2.700" é dois mil e setecentos.
   Passam a seguir o idioma escolhido (na fase A, continua pt-BR).
 

@@ -147,6 +147,10 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [134](decisions/134.md) | 2026-11-16 | Configurações, Sobre e modelos na nova interface | Aprovada |
 | [135](decisions/135.md) | 2026-11-16 | Ajustes do Dashboard depois da revisão | Aprovada |
 | [136](decisions/136.md) | 2026-11-16 | A 2.2 fecha com a Leva 10B | Aprovada |
+| [137](decisions/137.md) | 2026-11-16 | PDF e imagem do orçamento no visual novo, com fundo da imagem pelo brilho da peça | Aprovada |
+| [138](decisions/138.md) | 2026-11-16 | Ícone "Camadas" refinado, com contorno claro nos tamanhos de 16 a 32 px (complementa a 128) | Aprovada |
+| [139](decisions/139.md) | 2026-11-16 | Preparação pra tradução concluída sem mudar o formato dos dados (nome automático por `autoNamed`) | Aprovada |
+| [140](decisions/140.md) | 2026-11-16 | Site na 2.2: capturas, ícone, marca e textos, sem redesenho das páginas | Aprovada |
 
 ## Pendentes de aprovação
 

@@ -46,6 +46,20 @@ lucro que tinham.
 - **Atalhos:** com a tela Insumos, Configurações passou de Ctrl/Cmd+8 pra Ctrl/Cmd+9. Insumos é o 8.
 - **Serviço com tempo informado passa a contar no lucro** pelo que rende acima da sua hora. Serviço sem
   tempo continua como antes, fora do lucro.
+- **PDF do orçamento refeito.** Cabeçalho com a sua marca e o contato, foto na largura da página e um
+  bloco com o valor, a entrega e a validade. O aviso amarelo de prazo saiu, e o documento não leva
+  cor do app: é o seu. Com muitos itens, a lista continua na página seguinte. O catálogo em PDF
+  segue o mesmo estilo.
+- **Imagem pro WhatsApp refeita**, em azul-marinho, com o preço em destaque.
+- **Fundo da imagem automático.** Peça preta sumia no fundo escuro. Agora o app olha o brilho da peça:
+  peça escura sai em fundo claro, as outras no azul-marinho. Em Configurações, Documentos pro cliente,
+  "Fundo da imagem" deixa escolher Automático, Escuro ou Claro.
+- **Ícone novo**, com camadas mais grossas e o bico depositando a camada âmbar. A janela do app também
+  passou a usar o ícone.
+- **Nome do arquivo sugerido** com o singular certo: "1 item", e não "1 itens".
+- **Valores digitados lidos conforme a moeda escolhida** nos cadastros e no Orçamento. Em real nada muda.
+- **Rótulos de campo** quebram em duas linhas em vez de cortar numa janela estreita, e a lista de seções
+  de Configurações ficou mais estreita pra dar espaço aos campos.
 
 ## [2.1.1] - 2026-09-25
 

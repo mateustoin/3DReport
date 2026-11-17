@@ -86,6 +86,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 
 **Personalização do PDF**
 - Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome
+- Fundo da imagem do WhatsApp automático: peça escura sai em fundo claro pra não sumir, e dá pra forçar fundo escuro ou claro em Configurações ("Fundo da imagem")
 - Assinatura discreta "Gerado com 3DReport" no canto do PDF (com link pro site) e da imagem do WhatsApp
 - Prévia do PDF em Configurações ("Ver como fica"), antes mesmo de salvar
 - Modelos — fotos salvas da aparência do PDF (marca d'água, rodapé, borda, tempo de impressão), com indicador do modelo ativo; logo e contato ficam de fora, pra não se perderem ao trocar de modelo. Carregar um modelo preenche os campos e você confirma em "Salvar"
