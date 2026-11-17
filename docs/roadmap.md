@@ -205,26 +205,26 @@ mecânico, bom pra subagentes com revisão.
 
 Esforço G (somando as duas fases), impacto A no alcance (ver Leva 11B).
 
-### Leva 10C: Arquivo do modelo (3MF e STL pesado) e atualização por dentro
+### Leva 10C: Arquivo do modelo (3MF e STL pesado) e atualização por dentro (feita, decisões 141 a 143)
 
 **Incluída em 2026-11-16, a pedido do responsável do projeto.** Quem vende a mesma
 peça de novo não quer perder o arquivo que usou. Hoje o app guarda o STL, mas não o
 `.3mf` do fatiador, que traz a mesa inteira já configurada. E um STL acima de 500 mil
 triângulos fica sem prévia (decisão 63). Tudo aqui roda local. **Fica pra versão
-seguinte à 2.2:** a 2.2 fecha com a Leva 10B, e esta leva abre a próxima. O escopo é
+seguinte à 2.2:** a 2.2 fechou com a Leva 10B, e esta leva abre a próxima (`[Não publicado]` no changelog). O escopo é
 confirmado na especificação da leva.
 
-- [ ] **Guardar o `.3mf` do projeto do fatiador** *(já no roadmap: seção
+- [x] **Guardar o `.3mf` do projeto do fatiador** **Feito (decisão 141, 2026-11-17).** *(já no roadmap: seção
   Visualização e análise de STL, "Evolução futura")*. O campo "arquivo do modelo" do
   orçamento e do produto aceita STL ou 3MF, guarda o arquivo como veio e deixa
   baixar de volta em Pedidos e no Catálogo. Uso só interno, como o STL. O que já
   está gravado continua abrindo (teste de compatibilidade). Esforço P, impacto M.
-- [ ] **Foto a partir do 3MF.** O `.3mf` do Bambu Studio, do OrcaSlicer e do
+- [x] **Foto a partir do 3MF.** **Feito (decisão 141, 2026-11-17).** A leitura do ZIP ficou no `jvmMain` do `composeApp`, não no `core`; a Leva 17 ainda pode reaproveitá-la. O `.3mf` do Bambu Studio, do OrcaSlicer e do
   PrusaSlicer já traz a miniatura da mesa. Ela vira uma das origens da foto do
   produto, junto com a miniatura do G-code, a imagem enviada e a captura do 3D.
   Pede leitura de ZIP no `core`, a mesma do item "Ler o `.gcode.3mf`" da Leva 17.
   Esforço P/M, impacto M.
-- [ ] **Prévia de STL pesado.** Em vez de recusar acima de 500 mil triângulos, o
+- [x] **Prévia de STL pesado.** **Feito (decisão 142, 2026-11-17).** Em vez de recusar acima de 500 mil triângulos, o
   app monta uma versão simplificada só pra desenhar (agrupando vértices próximos
   numa grade, lendo o arquivo aos poucos e fora da thread da tela, com indicação de
   progresso). O arquivo guardado continua o original, e as medidas e o nível de
@@ -233,7 +233,7 @@ confirmado na especificação da leva.
 - [ ] **Ver o 3MF em 3D** (opcional, decidir na especificação). Ler a malha do
   `.3mf` pra mostrar no visualizador, com a mesma simplificação. Sem isso, o 3MF
   fica só com a miniatura. Esforço M, impacto B.
-- [ ] **Atualizar o app por dentro.** *Ideia do responsável do projeto, 2026-11-14;
+- [x] **Atualizar o app por dentro.** **Feito (decisão 143, 2026-11-17); macOS não testado.** *Ideia do responsável do projeto, 2026-11-14;
   precisa de decisão própria antes de implementar. Saiu da Leva 10B em 2026-11-16: fica
   pra versão seguinte à 2.2, junto com esta leva.* Hoje o app só avisa que saiu
   versão nova e abre a página (decisão 116). A proposta é um botão "Atualizar agora"
@@ -245,7 +245,7 @@ confirmado na especificação da leva.
   desligado por padrão. Só vale a partir da versão seguinte à que trouxer o
   mecanismo. Esforço M, impacto M.
 
-- [ ] **Ajustes técnicos guardados no fechamento da 2.2** (pedido do responsável do projeto,
+- [x] **Ajustes técnicos guardados no fechamento da 2.2** **Feito (leva 10C, 2026-11-17).** (pedido do responsável do projeto,
   2026-11-17). Nada muda pra quem usa; cada um é pequeno:
   - o "3D" do `BrandMark` usa branco puro, e o banner do site usa `onNavy`: alinhar os dois no
     token `onNavy`;

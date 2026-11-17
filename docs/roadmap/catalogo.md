@@ -263,8 +263,10 @@ implementação.
     usado pra visualização/cálculo — isso é o restante desta Fase 1,
     abaixo. Feito: `core/model/SavedQuote.stlFileName`,
     `data/QuoteHistoryRepository.stlBytes`.
-    - **Evolução futura (fora de escopo por ora, só registrando a ideia,
-      2026-09-21):** *Agendado na Leva 10C do Plano 2 (antes, Leva 20).*
+    - **Evolução futura (só registrando a ideia, 2026-09-21).** **Feito
+      (decisão 141, 2026-11-17):** o campo "Arquivo do modelo" aceita STL ou
+      3MF, com a miniatura do fatiador como prévia e foto. Ver o 3MF em 3D
+      continua aberto (Leva 10C do `roadmap.md`).
       Permitir guardar também o arquivo `.3mf` do projeto do
       fatiador junto com o orçamento (opcional) — o `.3mf` carrega as
       configurações de fatiamento usadas (perfil de impressora/filamento,

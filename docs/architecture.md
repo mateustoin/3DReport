@@ -12,8 +12,8 @@ Projeto **Kotlin Multiplatform** com três módulos Gradle:
 │     │  ├─ model/            # Filament, PrinterProfile, Service, PrintJob, PricingSettings, BrandingSettings, Quote, SavedQuote
 │     │  ├─ pricing/          # PricingCalculator, OrderPricing (monta o pedido), PriceComposition, PricingError, ProductRepricer, EnergyTariff
 │     │  ├─ report/           # textos e números das saídas (nota, relatório)
-│     │  ├─ slicer/           # leitura de G-code
-│     │  └─ stl/              # parser e análise de STL
+│     │  ├─ slicer/           # leitura de G-code e regra do caminho da miniatura do 3MF
+│     │  └─ stl/              # parser, análise e simplificação de STL (em fluxo)
 │     └─ commonTest/          # testes unitários (kotlin.test)
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
@@ -117,6 +117,14 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   extrusor, tempo, miniatura, configurações de impressão, impressora e
   filamentos, casados com os cadastros por `CatalogMatcher`) e da malha STL
   (parser e análise de complexidade), ambos sem dependência de plataforma.
+  - **STL em fluxo** (decisão 142): `forEachStlTriangle` percorre os triângulos
+    (binário e ASCII) sem montar `StlMesh`; `analyzeStl` mede a malha completa por
+    ele e `simplifyStl` (agrupamento de vértices numa grade, alvo de 200 mil
+    triângulos) gera a malha só pra desenhar acima de 500 mil. `StlPreview.kt`
+    guarda os limites (500 mil triângulos, 300 MB de arquivo).
+  - **3MF** (decisão 141): `slicer/ThreeMfThumbnailPath` acha o caminho da
+    miniatura a partir dos `.rels` e da lista de entradas (regra pura).
+    `ModelFileKind` dá o tipo do arquivo do modelo pela extensão.
 - Alvos atuais: `jvm()` e `js { nodejs() }` (o `web` usa o alvo JS).
 
 ### `web`
@@ -307,6 +315,18 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
       requisição que sai da máquina, e só quando a opção está ligada; no
       desktop quem faz a chamada é `platform/GitHubReleaseSource.kt`
       (`java.net.http`, sem dependência nova).
+    - **Atualizar por dentro** (decisão 143, pacote `app/update`):
+      `ReleaseSource` devolve também os assets da release. `UpdateRules.kt` tem
+      as regras puras (`selectInstallerAsset` por `HostOs` e `HostArch`,
+      `parseSha256Sums`, `checkChecksum`); `UpdateInstaller` é a interface
+      injetada (`UpdatePlan`, `DownloadOutcome`, `InstallOutcome`) e
+      `DesktopUpdateInstaller` (`jvmMain`) baixa pra uma pasta temporária,
+      confere a soma do `SHA256SUMS.txt` e instala por sistema (`msiexec`,
+      `pkexec` com `apt-get` ou `dpkg`, `.dmg`). A janela é
+      `ui/about/UpdateDialog.kt`, com o estado em `UpdateInstall.kt`.
+    - **Arquivo do modelo** (decisão 141): `platform/ThreeMfThumbnail.jvm.kt`
+      lê o ZIP do 3MF (`java.util.zip`) e devolve a miniatura; `stlFileName`
+      guarda STL ou 3MF.
 
 ### Persistência (decisões 104, 106 e 108)
 
@@ -337,7 +357,7 @@ Camadas, de baixo pra cima:
   preferências) com a implementação sobre as coleções acima. As telas só
   conhecem as interfaces: trocar o armazenamento (SQLite, nuvem) ou usar uma
   versão em memória é trocar a implementação.
-- **`AttachmentStore`**: fotos, STLs, logo e miniaturas do G-code, endereçados
+- **`AttachmentStore`**: fotos, arquivos do modelo (STL ou 3MF), logo e miniaturas do G-code, endereçados
   pelo conteúdo (SHA-256 mais a extensão) em `~/.3dreport/attachments/`. O
   mesmo arquivo é gravado uma vez só, um arquivo gravado nunca muda (editar a
   foto de um pedido nunca mexe na de outro), e a chave já serve de chave de

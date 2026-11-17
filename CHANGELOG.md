@@ -7,6 +7,30 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
+### Adicionado
+- **Arquivo do modelo em STL ou 3MF.** O campo do Orçamento agora aceita o `.3mf` do projeto do
+  fatiador, além do STL. Ele fica guardado pra você baixar de novo em Pedidos e no Catálogo, com o
+  nome do orçamento. Com 3MF do Bambu Studio, do OrcaSlicer ou do PrusaSlicer, a miniatura da mesa
+  aparece no lugar da prévia e vira a foto do orçamento, se ele ainda não tem uma. Ver o 3MF em 3D
+  fica pra depois.
+- **Prévia de STL pesado.** Arquivos com mais de 500 mil triângulos antes ficavam sem prévia. Agora
+  o app desenha uma versão simplificada, com barra de progresso, e as medidas e o nível de
+  dificuldade continuam saindo do arquivo completo. O limite agora é o tamanho do arquivo, 300 MB.
+- **Atualizar agora.** Quando sai versão nova, o aviso e o Sobre ganham o botão que baixa o
+  instalador, confere se o arquivo está íntegro e abre a instalação. No Windows, o app fecha e o
+  instalador pede a confirmação de administrador. No Linux, o sistema pede sua senha e o app
+  reabre já atualizado. No Mac, o app abre o instalador e você arrasta pra Aplicativos; esse caminho
+  ainda não foi testado num Mac. O botão só aparece com o app instalado e quando a versão nova tem
+  instalador pro seu sistema. Só funciona a partir da versão seguinte à 2.2: quem está na 2.2
+  atualiza como hoje, pela página. A verificação de versão continua desligada por padrão, e o app só
+  baixa algo quando você clica.
+- **Soma de verificação nas versões.** Cada versão publicada traz o arquivo `SHA256SUMS.txt` com a
+  soma de cada instalador, pra conferir o que você baixou.
+
+### Alterado
+- **"Anexar arquivo STL" virou "Arquivo do modelo"**, e "Baixar STL" virou "Baixar arquivo do modelo".
+  Arrastar e soltar aceita STL e 3MF.
+
 ## [2.2.0] - 2026-11-17
 
 Interface nova, do começo ao fim, e o preço mais certo. Tudo o que mexe no preço entrou junto,

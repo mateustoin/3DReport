@@ -151,6 +151,9 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [138](decisions/138.md) | 2026-11-16 | Ícone "Camadas" refinado, com contorno claro nos tamanhos de 16 a 32 px (complementa a 128) | Aprovada |
 | [139](decisions/139.md) | 2026-11-16 | Preparação pra tradução concluída sem mudar o formato dos dados (nome automático por `autoNamed`) | Aprovada |
 | [140](decisions/140.md) | 2026-11-16 | Site na 2.2: capturas, ícone, marca e textos, sem redesenho das páginas | Aprovada |
+| [141](decisions/141.md) | 2026-11-17 | Arquivo do modelo aceita STL ou 3MF; miniatura do fatiador vira prévia e foto | Aprovada |
+| [142](decisions/142.md) | 2026-11-17 | Prévia de STL pesado por malha simplificada, medidas da malha completa, teto de 300 MB (revisa a 63) | Aprovada |
+| [143](decisions/143.md) | 2026-11-17 | Atualizar o app por dentro: Atualizar agora, SHA256SUMS e instalação por sistema | Aprovada |
 
 ## Pendentes de aprovação
 
