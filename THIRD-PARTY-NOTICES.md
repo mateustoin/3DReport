@@ -30,7 +30,11 @@ desenhados para o próprio 3DReport e seguem a licença do projeto.
 
 - **O que é:** fonte da marca, dos títulos e dos números em destaque, embutida no app
   (arquivo variável de peso, usado em 500, 600 e 700, em
-  `composeApp/src/commonMain/composeResources/font/`).
+  `composeApp/src/commonMain/composeResources/font/`). O PDF e a imagem do orçamento
+  usam uma versão derivada, `space_grotesk_bold_tnum.ttf`: o mesmo desenho fixado no
+  peso 700 e com os algarismos de largura igual no lugar dos comuns, porque o PDF não
+  escolhe peso nem variante de algarismo num arquivo variável. Fora isso, nada foi
+  alterado. A licença não reserva o nome da fonte.
 - **Origem:** [floriankarsten/space-grotesk](https://github.com/floriankarsten/space-grotesk),
   versão 2.0.0.
 - **Direitos autorais:** Copyright 2020 The Space Grotesk Project Authors.

@@ -3,7 +3,11 @@ package com.threedreport.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.FrameWindowScope
@@ -121,6 +125,7 @@ private fun runApp(container: AppContainer, notice: DataFolderNotice?) = applica
         position = saved?.let { WindowPosition(it.x.dp, it.y.dp) } ?: WindowPosition.PlatformDefault,
         size = saved?.let { DpSize(it.width.dp, it.height.dp) } ?: initialWindowSize(),
     )
+    val windowIcon = remember { loadWindowIcon() }
     @OptIn(ExperimentalComposeUiApi::class)
     CompositionLocalProvider(LocalWindowExceptionHandlerFactory provides crashHandlerFactory(container)) {
         Window(
@@ -132,6 +137,7 @@ private fun runApp(container: AppContainer, notice: DataFolderNotice?) = applica
                 }
             },
             title = "3DReport",
+            icon = windowIcon,
             state = windowState,
         ) {
             window.minimumSize = Dimension(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
@@ -363,3 +369,12 @@ private fun FrameWindowScope.FixMultiMonitorDpiRedrawBug() {
         onDispose { window.removeComponentListener(listener) }
     }
 }
+
+/**
+ * O ícone da janela e da barra de tarefas (decisão 128). O instalador traz o seu próprio; este é o que aparece com o
+ * app aberto. Sem o recurso, a janela fica com o ícone padrão do sistema em vez de falhar.
+ */
+private fun loadWindowIcon(): Painter? = runCatching {
+    val bytes = object {}.javaClass.getResourceAsStream("/window-icon.png")?.use { it.readBytes() } ?: return null
+    BitmapPainter(org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap())
+}.getOrNull()
