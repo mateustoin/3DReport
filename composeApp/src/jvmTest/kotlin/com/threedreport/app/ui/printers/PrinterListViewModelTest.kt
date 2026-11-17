@@ -158,6 +158,21 @@ class PrinterListViewModelTest {
     }
 
     @Test
+    fun theMaintenanceDialogAndTheLogUseTheInjectedDay() {
+        val (printers, history, printer) = printerWithFinishedOrder(printMinutes = 60.0)
+        val maintenance = MaintenanceRepository()
+        val viewModel = PrinterListViewModel(printers, history, maintenance, scope, today = { 19_000L })
+        assertNull(viewModel.addComponent(printer.id, "Bico", "50", "0"))
+        viewModel.openMaintenance(printer.id)
+        val dialog = viewModel.uiState.value.maintenance!!
+        assertEquals(19_000L, dialog.today)
+
+        viewModel.markServiced(dialog.statuses.single().component)
+
+        assertEquals(19_000L, viewModel.uiState.value.maintenance!!.data.log.single().dateEpochDay)
+    }
+
+    @Test
     fun manualUsageAddsToPrinterHours() {
         val (printers, history, printer) = printerWithFinishedOrder(printMinutes = 60.0)
         val viewModel = viewModelOf(printers, history)

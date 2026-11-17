@@ -27,6 +27,7 @@ import com.threedreport.app.data.SavedWindowBounds
 import com.threedreport.app.data.appDataDir
 import com.threedreport.app.data.prepareDataDir
 import com.threedreport.app.platform.DesktopPlatform
+import com.threedreport.app.update.deleteOldUpdateDownloads
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -111,6 +112,8 @@ fun main() {
         fatalDialog(StartupTexts.readFailed(e.file.path))
     }
     scheduleAutomaticBackup(appScope, container)
+    // O instalador de uma atualização anterior fica na pasta temporária até aqui (decisão 143).
+    appScope.launch(Dispatchers.IO) { runCatching { deleteOldUpdateDownloads() }.onFailure { AppLog.warn("Não consegui limpar downloads de atualização", it) } }
     runApp(container, notice)
 }
 
@@ -122,23 +125,25 @@ private fun runApp(container: AppContainer, notice: DataFolderNotice?) = applica
         size = saved?.let { DpSize(it.width.dp, it.height.dp) } ?: initialWindowSize(),
     )
     val windowIcon = remember { loadWindowIcon() }
+    // O caminho normal de fechar a janela; a atualização por dentro também fecha o app por ele (decisão 143).
+    val closeApp: () -> Unit = {
+        rememberWindowBounds(container, windowState)
+        if (flushBeforeClosing(container)) {
+            ExitWatchdog.arm(exitDumpFile())
+            exitApplication()
+        }
+    }
     @OptIn(ExperimentalComposeUiApi::class)
     CompositionLocalProvider(LocalWindowExceptionHandlerFactory provides crashHandlerFactory(container)) {
         Window(
-            onCloseRequest = {
-                rememberWindowBounds(container, windowState)
-                if (flushBeforeClosing(container)) {
-                    ExitWatchdog.arm(exitDumpFile())
-                    exitApplication()
-                }
-            },
+            onCloseRequest = closeApp,
             title = "3DReport",
             icon = windowIcon,
             state = windowState,
         ) {
             window.minimumSize = Dimension(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
             FixMultiMonitorDpiRedrawBug()
-            App(container, notice)
+            App(container, notice, onCloseApp = closeApp)
         }
     }
 }

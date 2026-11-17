@@ -76,7 +76,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import com.threedreport.app.platform.epochDayToUtcMillis
 import com.threedreport.app.platform.formatDate
-import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.utcMillisToEpochDay
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppChoiceField
@@ -177,6 +176,7 @@ fun MaintenanceDialog(open: MaintenanceDialogState, viewModel: PrinterListViewMo
             help = HelpText(stringResource(Res.string.printers_maintenance_help_log)).takeIf { open.data.log.any { it.componentId != null } },
         ) {
             LogForm(
+                today = open.today,
                 components = open.data.components,
                 onAdd = { date, description, componentId -> viewModel.logService(printer.id, date, description, componentId) },
             )
@@ -379,13 +379,12 @@ private fun ComponentFields(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LogForm(components: List<MaintenanceComponent>, onAdd: (date: Long, description: String, componentId: String?) -> UiText?) {
+private fun LogForm(today: Long, components: List<MaintenanceComponent>, onAdd: (date: Long, description: String, componentId: String?) -> UiText?) {
     var open by remember { mutableStateOf(false) }
     if (!open) {
         AppButton(stringResource(Res.string.printers_maintenance_log_add), { open = true }, icon = AppIcons.Add)
         return
     }
-    val today = todayEpochDay()
     var description by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(today) }
     var componentId by remember { mutableStateOf<String?>(null) }

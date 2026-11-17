@@ -41,11 +41,15 @@ import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.attachmentExtension
 import com.threedreport.app.platform.FileKind
+import com.threedreport.app.platform.PickFailure
 import com.threedreport.app.platform.PickResult
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
+import com.threedreport.app.platform.ThreeMfThumbnail
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.platform.isModelFileName
+import com.threedreport.app.platform.readThreeMfThumbnail
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.components.matchingClients
@@ -65,6 +69,7 @@ import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
+import com.threedreport.core.model.ModelFileKind
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrintJob
@@ -83,16 +88,18 @@ import com.threedreport.core.pricing.PricingError
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
 import com.threedreport.core.slicer.GCodeMetadataParser
-import com.threedreport.core.stl.StlAnalysis
-import com.threedreport.core.stl.StlAnalyzer
-import com.threedreport.core.stl.StlMesh
-import com.threedreport.core.stl.parseStl
-import com.threedreport.core.stl.peekStlTriangleCount
+import com.threedreport.core.stl.StlPreviewResult
+import com.threedreport.core.stl.StlProgress
+import com.threedreport.core.stl.prepareStlPreview
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -106,18 +113,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.StringResource
-
-/** A prévia 3D do STL anexado, calculada fora do thread da tela (decisão 108). */
-sealed interface StlPreview {
-    data object Loading : StlPreview
-
-    /** Malha grande demais pra desenhar sem travar; o arquivo é salvo normalmente. */
-    data class TooComplex(val triangleCount: Long) : StlPreview
-
-    data object Unreadable : StlPreview
-
-    data class Ready(val mesh: StlMesh, val analysis: StlAnalysis) : StlPreview
-}
 
 /**
  * ViewModel da tela de Orçamento. Expõe um [uiState] só (ver [QuoteUiState]) e os [notices].
@@ -152,6 +147,10 @@ class QuoteViewModel(
     brandingRepository: BrandingRepository? = null,
     /** Hoje, em dias desde 01/01/1970: o prazo vencido é medido contra ele (os testes fixam o dia). */
     private val today: () -> Long = ::todayEpochDay,
+    /** Prepara a prévia de um STL (pesado: roda em [background]); os testes trocam por uma versão controlável. */
+    private val stlPreviewer: (ByteArray, StlProgress) -> StlPreviewResult = { bytes, progress -> prepareStlPreview(bytes, progress) },
+    /** Lê a miniatura de um 3MF (roda em [background]). */
+    private val threeMfReader: (ByteArray) -> ThreeMfThumbnail = ::readThreeMfThumbnail,
 ) {
     private val scope: CoroutineScope = scope
 
@@ -219,6 +218,13 @@ class QuoteViewModel(
             comparison = comparisonFor(fresh),
             queueHints = queueHintsFor(fresh, result),
             deliveryDaysLate = deliveryDaysLate(deadline, today()),
+            suggestRush = shouldSuggestRush(
+                fresh.form.deliveryDateEpochDay,
+                today(),
+                fresh.input.rush,
+                fresh.catalog.settings.rushSurchargeRate,
+                fresh.input.isProduct,
+            ),
             today = today(),
         )
     }
@@ -465,6 +471,7 @@ class QuoteViewModel(
             is PickResult.Picked -> importGCode(result.file, printId)
             is PickResult.Failed -> updatePrint(printId) { it.copy(gcodeImport = GCodeImportResult.PickFailed(result)) }
             PickResult.Cancelled -> Unit
+            is PickResult.Deferred -> Unit
         }
     }
 
@@ -502,6 +509,7 @@ class QuoteViewModel(
             is PickResult.Failed -> GCodeImportResult.PickFailed(result)
             is PickResult.Picked -> GCodeImporter.unsupported(result.file.fileName)
             PickResult.Cancelled -> null
+            is PickResult.Deferred -> null
         }
         if (notGCode != null) {
             updatePrint(state.value.input.prints.last().id) { it.copy(gcodeImport = notGCode) }
@@ -559,7 +567,7 @@ class QuoteViewModel(
         // A foto do pedido é da primeira impressão (ou de quem chegou primeiro sem foto nenhuma): a miniatura
         // da mesa 3 não troca a foto que veio da mesa 1.
         val photoApplied = thumbnail != null &&
-            (form.photo == null || (form.photoFromGCode && (photoGCodePrintId == printId || index == 0)))
+            (form.photo == null || (form.photoAutomatic && (photoGCodePrintId == printId || index == 0)))
         // O G-code só escolhe entre o que não está arquivado (decisão 115).
         val imported = GCodeImporter.apply(
             current, metadata, filaments.filterNot { it.archived }, printers.filterNot { it.archived }, photoApplied, ::newId, separator,
@@ -569,7 +577,7 @@ class QuoteViewModel(
             if (photoBeforeGCode == null) photoBeforeGCode = form
             photoGCodePrintId = printId
             updateForm {
-                it.copy(photo = imported.thumbnail, photoFromGCode = true, savedConfirmation = false)
+                it.copy(photo = imported.thumbnail, photoAutomatic = true, savedConfirmation = false)
             }
         }
         updatePrint(printId) { imported }
@@ -594,10 +602,10 @@ class QuoteViewModel(
     private fun undoGCodePhoto() {
         val before = photoBeforeGCode
         updateForm {
-            if (!it.photoFromGCode) {
+            if (!it.photoAutomatic) {
                 it
             } else {
-                it.copy(photo = before?.photo, photoFromGCode = before?.photoFromGCode == true, savedConfirmation = false)
+                it.copy(photo = before?.photo, photoAutomatic = before?.photoAutomatic == true, savedConfirmation = false)
             }
         }
         photoBeforeGCode = null
@@ -701,7 +709,7 @@ class QuoteViewModel(
 
     fun setCategory(text: String) = updateForm { it.copy(category = text, savedConfirmation = false) }
     fun setDeliveryDate(epochDay: Long?) = updateForm { it.copy(deliveryDateEpochDay = epochDay, savedConfirmation = false) }
-    fun clearPhoto() = updateForm { it.copy(photo = null, photoFromGCode = false, photoError = null, savedConfirmation = false) }
+    fun clearPhoto() = updateForm { it.copy(photo = null, photoAutomatic = false, photoError = null, savedConfirmation = false) }
 
     /**
      * Escolhe a foto e confere na hora se ela abre: descobrir que a imagem não abre só ao mandar o PDF
@@ -713,7 +721,7 @@ class QuoteViewModel(
                 val readable = runCatching { decodeImageBitmap(picked.file.bytes) }.isSuccess
                 updateForm {
                     if (readable) {
-                        it.copy(photo = picked.file, photoFromGCode = false, photoError = null, savedConfirmation = false)
+                        it.copy(photo = picked.file, photoAutomatic = false, photoError = null, savedConfirmation = false)
                     } else {
                         it.copy(photoError = uiText(Res.string.quote_photo_unreadable))
                     }
@@ -723,63 +731,189 @@ class QuoteViewModel(
             is PickResult.Failed -> updateForm { it.copy(photoError = picked.text()) }
 
             PickResult.Cancelled -> Unit
+
+            is PickResult.Deferred -> Unit
         }
     }
 
-    fun clearStlFile() {
-        updateForm { it.copy(stlFile = null, savedConfirmation = false) }
-        loadStlPreview(null)
+    /** Tira o arquivo do modelo e cancela a leitura da prévia, se ainda estiver rodando. */
+    fun clearModelFile() {
+        updateForm { it.copy(modelFile = null, savedConfirmation = false) }
+        loadModelPreview(null)
     }
 
     /**
-     * Anexa o arquivo STL do modelo ao orçamento — guardado pra o criador recuperar depois no
-     * Histórico e reaproveitar numa venda futura da mesma peça.
+     * Anexa o arquivo do modelo (STL ou 3MF) ao orçamento, guardado pra a pessoa baixar de novo em Pedidos ou no
+     * Catálogo e reaproveitar numa venda futura da mesma peça. Um arquivo só: escolher outro troca o anterior.
      */
-    fun pickStl() {
-        when (val picked = platform.pickFile(FileKind.STL)) {
-            is PickResult.Picked -> {
-                updateForm { it.copy(stlFile = picked.file, savedConfirmation = false) }
-                loadStlPreview(picked.file)
-            }
-
-            is PickResult.Failed -> state.update { it.copy(stlPreview = StlPreview.Unreadable) }
-
+    fun pickModelFile() {
+        when (val picked = platform.pickFile(FileKind.MODEL)) {
+            is PickResult.Picked -> attachModelFile(picked.file)
+            is PickResult.Failed -> notify(picked.text())
             PickResult.Cancelled -> Unit
+            is PickResult.Deferred -> Unit
         }
+    }
+
+    /**
+     * Um arquivo solto na janela: se é STL ou 3MF, vira o arquivo do modelo; o resto não é com este ViewModel. Um
+     * arquivo ainda por ler ([PickResult.Deferred]) é lido em [background], com [QuoteUiState.readingModelName] já
+     * mostrando o carregamento, e só então anexado.
+     */
+    fun attachDroppedModel(result: PickResult) {
+        when (result) {
+            is PickResult.Picked -> attachModelFile(result.file)
+            is PickResult.Failed -> notify(result.text())
+            PickResult.Cancelled -> Unit
+            is PickResult.Deferred -> readDroppedModel(result)
+        }
+    }
+
+    private var readingJob: Job? = null
+
+    private fun readDroppedModel(deferred: PickResult.Deferred) {
+        readingJob?.cancel()
+        state.update { it.copy(readingModelName = deferred.fileName) }
+        val job = scope.launch(background, start = CoroutineStart.LAZY) {
+            val read = try {
+                deferred.read()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                AppLog.warn("Não consegui ler ${deferred.fileName}", e)
+                PickResult.Failed(PickFailure.UNREADABLE, deferred.fileName)
+            }
+            withContext(main) {
+                readingJob = null
+                state.update { it.copy(readingModelName = null) }
+                attachDroppedModel(read)
+            }
+        }
+        readingJob = job
+        job.start()
+    }
+
+    /**
+     * Guarda [file] como o arquivo do modelo e começa a ler a prévia. Num 3MF, a miniatura vira a foto do orçamento
+     * pela mesma regra da miniatura do G-code: só se ainda não há foto, ou se a foto atual também veio de uma
+     * miniatura automática.
+     */
+    fun attachModelFile(file: PickedFile) {
+        if (!isModelFileName(file.fileName)) return
+        updateForm { it.copy(modelFile = file, savedConfirmation = false) }
+        loadModelPreview(file, applyPhoto = true)
+    }
+
+    /** "Usar como foto do orçamento": a miniatura do 3MF vira a foto, e a regra automática deixa de valer. */
+    fun useModelThumbnailAsPhoto() {
+        val preview = state.value.modelPreview as? ModelPreview.ThreeMf ?: return
+        updateForm { it.copy(photo = preview.thumbnail, photoAutomatic = false, photoError = null, savedConfirmation = false) }
     }
 
     /** Usa uma captura do visualizador 3D (`Stl3DViewerState.captureSnapshot`) como foto do orçamento. */
     fun setPhotoFromStlSnapshot(pngBytes: ByteArray) {
         updateForm {
-            it.copy(photo = PickedFile("captura_stl.png", pngBytes), photoFromGCode = false, photoError = null, savedConfirmation = false)
+            it.copy(photo = PickedFile("captura_stl.png", pngBytes), photoAutomatic = false, photoError = null, savedConfirmation = false)
         }
     }
 
+    /** A leitura da prévia em andamento; trocar ou tirar o arquivo a cancela. */
+    private var previewJob: Job? = null
+
     /**
-     * Lê e analisa o STL fora do thread da tela: uma malha de centenas de milhares de triângulos levava
-     * segundos e travava a tela no meio do desenho.
+     * Lê a prévia do arquivo do modelo fora da thread da tela: um STL de milhões de triângulos leva segundos, e um
+     * 3MF é um pacote ZIP. O progresso do STL (0 a 1) chega em [ModelPreview.Loading]. Trocar ou tirar o arquivo no
+     * meio cancela o trabalho: o progresso é o ponto onde o STL para. [applyPhoto] só é verdade quando a pessoa
+     * acabou de anexar o arquivo; abrir um orçamento salvo não mexe na foto dele.
      */
-    private fun loadStlPreview(file: PickedFile?) {
+    private fun loadModelPreview(file: PickedFile?, applyPhoto: Boolean = false) {
+        cancelPreview()
         if (file == null) {
-            state.update { it.copy(stlPreview = null) }
+            state.update { it.copy(modelPreview = null) }
             return
         }
-        state.update { it.copy(stlPreview = StlPreview.Loading) }
-        scope.launch(background) {
-            val preview = runCatching {
-                val triangles = peekStlTriangleCount(file.bytes)
-                if (triangles > MAX_RENDERABLE_STL_TRIANGLES) {
-                    StlPreview.TooComplex(triangles)
-                } else {
-                    val mesh = parseStl(file.bytes)
-                    StlPreview.Ready(mesh, StlAnalyzer.analyze(mesh))
-                }
-            }.getOrElse { StlPreview.Unreadable }
+        state.update { it.copy(modelPreview = ModelPreview.Loading()) }
+        // Preguiçoso: o trabalho só começa depois de o job estar guardado, pra trocar o arquivo sempre achar quem cancelar.
+        val job = scope.launch(background, start = CoroutineStart.LAZY) {
+            val preview = when (ModelFileKind.of(file.fileName)) {
+                ModelFileKind.THREE_MF -> threeMfPreview(file)
+                else -> stlPreview(file)
+            }
             withContext(main) {
                 // Outro arquivo pode ter sido escolhido enquanto este era lido.
-                if (state.value.form.stlFile === file) state.update { it.copy(stlPreview = preview) }
+                if (state.value.form.modelFile !== file) return@withContext
+                state.update { it.copy(modelPreview = preview) }
+                if (applyPhoto && preview is ModelPreview.ThreeMf) applyThreeMfPhoto(preview.thumbnail)
             }
         }
+        previewJob = job
+        job.start()
+    }
+
+    private fun cancelPreview() {
+        readingJob?.cancel()
+        readingJob = null
+        state.update { if (it.readingModelName != null) it.copy(readingModelName = null) else it }
+        previewJob?.cancel()
+        previewJob = null
+    }
+
+    private fun CoroutineScope.stlPreview(file: PickedFile): ModelPreview = try {
+        when (val result = stlPreviewer(file.bytes) { progress -> ensureActive(); reportPreviewProgress(file, progress) }) {
+            is StlPreviewResult.Ready -> ModelPreview.Stl(result.mesh, result.analysis, result.isSimplified)
+            is StlPreviewResult.TooLarge -> ModelPreview.TooLarge(result.fileSizeBytes)
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        // Inclui a falta de memória: o arquivo é guardado do mesmo jeito, só sem a prévia.
+        AppLog.warn("Não consegui ler o STL ${file.fileName}", e)
+        ModelPreview.Unreadable
+    }
+
+    private fun threeMfPreview(file: PickedFile): ModelPreview {
+        // Um erro na leitura não pode deixar a prévia em "carregando" pra sempre: o 3MF é guardado e fica ilegível.
+        val thumbnail = try {
+            threeMfReader(file.bytes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            AppLog.warn("Não consegui ler o 3MF ${file.fileName}", e)
+            ThreeMfThumbnail.Unreadable
+        }
+        return threeMfPreviewOf(thumbnail)
+    }
+
+    private fun threeMfPreviewOf(thumbnail: ThreeMfThumbnail): ModelPreview = when (thumbnail) {
+        is ThreeMfThumbnail.Found -> {
+            val extension = thumbnail.path.substringAfterLast('.', "png").lowercase()
+            ModelPreview.ThreeMf(PickedFile("miniatura_do_3mf.$extension", thumbnail.imageBytes))
+        }
+
+        ThreeMfThumbnail.Missing -> ModelPreview.ThreeMfNoThumbnail
+
+        ThreeMfThumbnail.Unreadable -> ModelPreview.ThreeMfUnreadable
+    }
+
+    /** Só sobe o progresso de quem ainda é o arquivo atual, e em passos de 1%, pra a tela não redesenhar a cada triângulo. */
+    private fun reportPreviewProgress(file: PickedFile, progress: Float) {
+        state.update { current ->
+            val loading = current.modelPreview as? ModelPreview.Loading
+            if (loading == null || current.form.modelFile !== file || progress - loading.progress < PROGRESS_STEP) {
+                current
+            } else {
+                current.copy(modelPreview = ModelPreview.Loading(progress))
+            }
+        }
+    }
+
+    private fun applyThreeMfPhoto(thumbnail: PickedFile) {
+        val form = state.value.form
+        if (form.photo != null && !form.photoAutomatic) return
+        // A miniatura do 3MF toma o lugar da do G-code: desfazer a importação não devolve mais a foto de antes.
+        photoBeforeGCode = null
+        photoGCodePrintId = null
+        updateForm { it.copy(photo = thumbnail, photoAutomatic = true, savedConfirmation = false) }
     }
 
     /** Ver `SettingsViewModel.consumeSavedConfirmation`. */
@@ -805,11 +939,12 @@ class QuoteViewModel(
             return true
         }
         forgetUndo()
+        cancelPreview()
         change {
             it.copy(
                 input = QuoteInputState(kind = input.kind),
                 form = SaveQuoteFormState(savedConfirmation = true, savedAsProduct = isProduct, savedNumber = saved.displayNumber),
-                stlPreview = null,
+                modelPreview = null,
                 collapsedPrintIds = emptySet(),
                 negotiating = false,
             )
@@ -880,7 +1015,7 @@ class QuoteViewModel(
                     quote = quote,
                     services = services,
                     photo = form.photo,
-                    stlFile = form.stlFile,
+                    stlFile = form.modelFile,
                     sourceLink = form.sourceLink,
                     client = client,
                     printThumbnails = thumbnails,
@@ -907,7 +1042,7 @@ class QuoteViewModel(
             quote = quote,
             services = services,
             photo = form.photo,
-            stlFile = form.stlFile,
+            stlFile = form.modelFile,
             sourceLink = form.sourceLink,
             client = client,
             printThumbnails = thumbnails,
@@ -1095,17 +1230,17 @@ class QuoteViewModel(
         val photo = savedQuote.photoFileName?.let { fileName ->
             historyRepository.photoBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
         }
-        val stlFile = savedQuote.stlFileName?.let { fileName ->
-            historyRepository.stlBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
+        val modelFile = savedQuote.modelFileName?.let { fileName ->
+            historyRepository.modelBytes(savedQuote)?.let { bytes -> PickedFile(fileName, bytes) }
         }
-        return SavedQuoteMapper.saveFormFrom(savedQuote, photo, stlFile)
+        return SavedQuoteMapper.saveFormFrom(savedQuote, photo, modelFile)
     }
 
     /** Troca o pedido e o formulário de uma vez, pra conta nunca ver um sem o outro. */
     private fun setInputAndForm(input: QuoteInputState, form: SaveQuoteFormState) {
         forgetUndo()
         change { it.copy(input = input, form = form, collapsedPrintIds = emptySet(), negotiating = false) }
-        loadStlPreview(form.stlFile)
+        loadModelPreview(form.modelFile)
     }
 
     /** Um formulário novo não desfaz nada do anterior (os cartões recolhidos saem junto, no estado). */
@@ -1161,7 +1296,8 @@ class QuoteViewModel(
     /** Limpa a peça e o formulário de salvar, pra começar um orçamento novo (Ctrl/Cmd+N, cancelar). */
     fun resetForm() {
         forgetUndo()
-        change { it.copy(input = QuoteInputState(), form = SaveQuoteFormState(), stlPreview = null, collapsedPrintIds = emptySet(), negotiating = false) }
+        cancelPreview()
+        change { it.copy(input = QuoteInputState(), form = SaveQuoteFormState(), modelPreview = null, collapsedPrintIds = emptySet(), negotiating = false) }
     }
 
     /**
@@ -1452,8 +1588,8 @@ class QuoteViewModel(
         /** Quantos avisos esperam a tela buscar, se vierem em sequência. */
         const val NOTICE_BUFFER = 8
 
-        /** Acima disso, a prévia 3D não é desenhada (decisão 63): o arquivo é salvo normalmente. */
-        const val MAX_RENDERABLE_STL_TRIANGLES = 500_000L
+        /** O progresso da prévia só é publicado a cada 1%. */
+        const val PROGRESS_STEP = 0.01f
     }
 }
 

@@ -86,6 +86,8 @@ data class MaintenanceDialogState(
     /** Situação de cada componente, o mais urgente primeiro. */
     val statuses: List<ComponentStatus>,
     val data: PrinterMaintenance,
+    /** Hoje, em dias desde 01/01/1970: a data padrão do diário e o limite do calendário. */
+    val today: Long,
 )
 
 /**
@@ -116,6 +118,8 @@ class PrinterListViewModel(
     scope: CoroutineScope,
     /** A moeda em uso: os números são lidos e mostrados com o separador decimal dela, o mesmo que o campo usa pra validar. */
     private val currency: () -> Currency = { Currency.BRL },
+    /** Hoje, em dias desde 01/01/1970: o diário de manutenção e as horas manuais usam este dia (os testes o fixam). */
+    private val today: () -> Long = ::todayEpochDay,
 ) {
     private val separator: Char get() = currency().decimalSeparator
 
@@ -347,7 +351,7 @@ class PrinterListViewModel(
 
     /** "Feito hoje": registra no diário com o nome do componente e recomeça o contador dele. */
     fun markServiced(component: MaintenanceComponent) {
-        logService(component.printerId, todayEpochDay(), component.name, component.id)
+        logService(component.printerId, today(), component.name, component.id)
     }
 
     /**
@@ -384,7 +388,7 @@ class PrinterListViewModel(
             ManualUsageEntry(
                 id = Uuid.random().toString(),
                 printerId = printerId,
-                dateEpochDay = todayEpochDay(),
+                dateEpochDay = today(),
                 hours = hours,
                 reason = trimmed,
             ),
@@ -433,6 +437,7 @@ class PrinterListViewModel(
         hours = hours,
         statuses = statusesOf(printer.id, hours, all),
         data = all.forPrinter(printer.id),
+        today = today(),
     )
 
     /** Situação de cada componente de [printerId], o mais urgente primeiro. */

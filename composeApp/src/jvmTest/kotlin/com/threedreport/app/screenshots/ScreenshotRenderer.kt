@@ -61,12 +61,22 @@ import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.navigation.AppDestination
 import com.threedreport.app.ui.quote.GCodeDropOverlay
 import com.threedreport.app.ui.quote.GCodeDropTarget
+import com.threedreport.app.ui.quote.ModelPreview
 import com.threedreport.app.ui.quote.PrintInput
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.DarkAppColors
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.update.DownloadOutcome
+import com.threedreport.app.update.DownloadedUpdate
+import com.threedreport.app.update.InstallMethod
+import com.threedreport.app.update.InstallOutcome
+import com.threedreport.app.update.NoUpdateInstaller
+import com.threedreport.app.update.ReleaseAsset
+import com.threedreport.app.update.UpdateFailure
+import com.threedreport.app.update.UpdateInstaller
+import com.threedreport.app.update.UpdatePlan
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.ChannelFeeTier
 import com.threedreport.core.model.Consumable
@@ -85,6 +95,7 @@ import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.model.ThemeMode
+import kotlinx.coroutines.awaitCancellation
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.jetbrains.skia.EncodedImageFormat
@@ -347,7 +358,207 @@ class ScreenshotRenderer {
 
         // O conjunto novo troca o histórico (agora "pedidos.png", com o Kanban da barra lateral).
         File(outDir, "historico.png").delete()
+
+        if (System.getProperty("screenshots.leva10c") != null) renderLeva10cScreenshots(container, outDir)
     }
+}
+
+/**
+ * Os estados novos da Leva 10C: o arquivo do modelo com 3MF (miniatura) e com STL pesado (prévia simplificada) e a
+ * janela de atualização (baixando e pronta pra instalar). Só com `-Pscreenshots.leva10c=true`: não entram no conjunto
+ * do site.
+ */
+private fun renderLeva10cScreenshots(container: AppContainer, outDir: File) {
+    container.theme.update(ThemeMode.LIGHT)
+    val photo = File("src/commonMain/composeResources/files/preview_sample_photo.png").readBytes()
+
+    // 3MF com a miniatura do fatiador: vira foto do orçamento e aparece no lugar da prévia 3D.
+    renderAppPng(File(outDir, "orcamento-3mf.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(
+            container,
+            startAt = AppDestination.QUOTE,
+            prepareQuote = { vm ->
+                fillDraftQuote(vm)
+                vm.attachModelFile(PickedFile("Suporte de monitor.3mf", threeMfWithThumbnail(photo)))
+            },
+        )
+    }
+
+    // 3MF sem miniatura: o aviso curto, e o arquivo guardado do mesmo jeito.
+    renderAppPng(File(outDir, "orcamento-3mf-sem-miniatura.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(
+            container,
+            startAt = AppDestination.QUOTE,
+            prepareQuote = { vm ->
+                fillDraftQuote(vm)
+                vm.attachModelFile(PickedFile("Projeto sem miniatura.3mf", threeMfWithThumbnail(null)))
+            },
+        )
+    }
+
+    // STL de 600 mil triângulos: a prévia é simplificada, e a nota diz que as medidas usam o arquivo completo.
+    var heavyVm: QuoteViewModel? = null
+    renderAppPng(
+        File(outDir, "orcamento-stl-simplificado.png"),
+        afterSettle = { scene ->
+            val deadline = System.currentTimeMillis() + 120_000
+            while (heavyVm?.uiState?.value?.modelPreview !is ModelPreview.Stl && System.currentTimeMillis() < deadline) {
+                Thread.sleep(200)
+                scene.render(System.nanoTime())
+            }
+            settle(scene, frames = 3)
+            scene.scrollAllToEnd()
+        },
+    ) {
+        sampleApp(
+            container,
+            startAt = AppDestination.QUOTE,
+            prepareQuote = { vm ->
+                fillDraftQuote(vm)
+                heavyVm = vm
+                vm.attachModelFile(PickedFile("Esfera pesada.stl", binaryStlSphere(segments = 550)))
+            },
+        )
+    }
+
+    // Revisão de design: o bloco do arquivo sem arquivo, com STL carregando e com 3MF no escuro.
+    renderAppPng(File(outDir, "orcamento-modelo-vazio.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(container, startAt = AppDestination.QUOTE, prepareQuote = { vm -> fillDraftQuote(vm) })
+    }
+    renderAppPng(File(outDir, "orcamento-stl-carregando.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(
+            container,
+            startAt = AppDestination.QUOTE,
+            prepareQuote = { vm ->
+                fillDraftQuote(vm)
+                vm.attachModelFile(PickedFile("Esfera enorme.stl", binaryStlSphere(segments = 1200)))
+            },
+        )
+    }
+    container.theme.update(ThemeMode.DARK)
+    renderAppPng(File(outDir, "orcamento-3mf-escuro.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(
+            container,
+            startAt = AppDestination.QUOTE,
+            prepareQuote = { vm ->
+                fillDraftQuote(vm)
+                vm.attachModelFile(PickedFile("Suporte de monitor.3mf", threeMfWithThumbnail(photo)))
+            },
+        )
+    }
+    container.theme.update(ThemeMode.LIGHT)
+
+    // A janela de atualização: baixando (barra e Cancelar) e pronta pra instalar (o que vai acontecer no sistema).
+    val release = LatestRelease("9.9.9", "https://example.com/novidades", listOf(ReleaseAsset("3dreport_9.9.9-1_amd64.deb", "https://example.com/a.deb", 90_000_000)))
+    for ((name, installer) in listOf("baixando" to PreviewInstaller(downloading = true), "pronto" to PreviewInstaller(downloading = false))) {
+        val dir = createTempDirectory("3dreport-screenshots-update-$name").toFile()
+        LocalStorage(dir, Clock.System).onboarding().markCompleted()
+        val updateContainer = buildContainer(dir, ReleaseSource { release }, installer)
+        updateContainer.preferences.update(updateContainer.preferences.preferences.value.copy(checkForUpdates = true))
+        for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+            updateContainer.theme.update(theme)
+            renderAppPng(File(outDir, "atualizacao-$name$suffix.png"), afterSettle = { it.clickByText("Atualizar agora") }) {
+                sampleApp(updateContainer, startAt = AppDestination.ABOUT)
+            }
+        }
+    }
+
+    // Erro de rede, Linux sem pkexec (comando pra copiar) e orçamento não salvo antes de instalar.
+    data class State(val name: String, val installer: PreviewInstaller, val steps: List<String>, val draft: Boolean = false)
+    for (state in listOf(
+        State("erro", PreviewInstaller(downloading = false, fails = true), listOf("Atualizar agora")),
+        State("manual", PreviewInstaller(downloading = false, manual = true), listOf("Atualizar agora", "Abrir a pasta")),
+        State("nao-salvo", PreviewInstaller(downloading = false), listOf("Atualizar agora", "Instalar e fechar o app"), draft = true),
+    )) {
+        val dir = createTempDirectory("3dreport-screenshots-update-${state.name}").toFile()
+        LocalStorage(dir, Clock.System).onboarding().markCompleted()
+        val updateContainer = buildContainer(dir, ReleaseSource { release }, state.installer)
+        updateContainer.preferences.update(updateContainer.preferences.preferences.value.copy(checkForUpdates = true))
+        for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+            updateContainer.theme.update(theme)
+            renderAppPng(
+                File(outDir, "atualizacao-${state.name}$suffix.png"),
+                afterSettle = { scene -> state.steps.forEach { step -> scene.clickByText(step); settle(scene, frames = 4) } },
+            ) {
+                sampleApp(updateContainer, startAt = AppDestination.ABOUT, prepareQuote = { vm -> if (state.draft) fillDraftQuote(vm) })
+            }
+        }
+    }
+}
+
+/** Um instalador de mentira pras capturas: ou fica baixando a 42%, ou entrega o arquivo na hora. */
+private class PreviewInstaller(
+    private val downloading: Boolean,
+    private val fails: Boolean = false,
+    private val manual: Boolean = false,
+) : UpdateInstaller {
+    override fun plan(release: LatestRelease) =
+        UpdatePlan(release, release.assets.first(), if (manual) InstallMethod.LINUX_DEB_MANUAL else InstallMethod.LINUX_DEB)
+
+    override suspend fun download(plan: UpdatePlan, onProgress: (Float) -> Unit): DownloadOutcome {
+        if (downloading) {
+            onProgress(0.42f)
+            awaitCancellation()
+        }
+        if (fails) return DownloadOutcome.Failed(UpdateFailure.NETWORK)
+        return DownloadOutcome.Ready(DownloadedUpdate(plan, "/tmp/${plan.asset.name}"))
+    }
+
+    override suspend fun install(update: DownloadedUpdate): InstallOutcome =
+        if (manual) InstallOutcome.Manual("/tmp", "sudo apt-get install /tmp/${update.plan.asset.name}") else InstallOutcome.CloseApp
+
+    override fun discard(update: DownloadedUpdate) = Unit
+}
+
+/** Um 3MF mínimo no formato do Bambu Studio; com [thumbnail] nulo, sem a imagem. */
+private fun threeMfWithThumbnail(thumbnail: ByteArray?): ByteArray {
+    val out = java.io.ByteArrayOutputStream()
+    java.util.zip.ZipOutputStream(out).use { zip ->
+        fun entry(name: String, bytes: ByteArray) {
+            zip.putNextEntry(java.util.zip.ZipEntry(name))
+            zip.write(bytes)
+            zip.closeEntry()
+        }
+        entry("[Content_Types].xml", "<Types/>".encodeToByteArray())
+        entry("3D/3dmodel.model", "<model/>".encodeToByteArray())
+        if (thumbnail != null) {
+            entry(
+                "_rels/.rels",
+                """<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/Metadata/plate_1.png" Id="rel-2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"/></Relationships>""".encodeToByteArray(),
+            )
+            entry("Metadata/plate_1.png", thumbnail)
+        }
+    }
+    return out.toByteArray()
+}
+
+/** Uma esfera em STL binário de uns 2 x [segments] x [segments] triângulos, pra passar do limite da prévia completa. */
+private fun binaryStlSphere(segments: Int): ByteArray {
+    val triangles = 2 * segments * (segments - 1)
+    val buffer = java.nio.ByteBuffer.allocate(84 + 50 * triangles).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+    buffer.position(80)
+    buffer.putInt(triangles)
+    fun point(lat: Int, lon: Int): FloatArray {
+        val theta = Math.PI * lat / segments
+        val phi = 2 * Math.PI * (lon % segments) / segments
+        return floatArrayOf((30 * Math.sin(theta) * Math.cos(phi)).toFloat(), (30 * Math.sin(theta) * Math.sin(phi)).toFloat(), (30 * Math.cos(theta)).toFloat())
+    }
+    fun put(a: FloatArray, b: FloatArray, c: FloatArray) {
+        repeat(3) { buffer.putFloat(0f) }
+        for (v in listOf(a, b, c)) v.forEach { buffer.putFloat(it) }
+        buffer.putShort(0)
+    }
+    for (lat in 0 until segments) {
+        for (lon in 0 until segments) {
+            val p00 = point(lat, lon)
+            val p01 = point(lat, lon + 1)
+            val p10 = point(lat + 1, lon)
+            val p11 = point(lat + 1, lon + 1)
+            if (lat > 0) put(p00, p10, p01)
+            if (lat < segments - 1) put(p01, p10, p11)
+        }
+    }
+    return buffer.array()
 }
 
 /**
@@ -1015,7 +1226,7 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
 
 /** Monta o [AppContainer] pra renderizar, como [com.threedreport.app.DesktopContainer.createDesktopContainer], mas
  * sobre a pasta temporária e sem gravação em segundo plano nem verificação de atualização de verdade. */
-private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }): AppContainer {
+private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }, installer: UpdateInstaller = NoUpdateInstaller): AppContainer {
     val storage = LocalStorage(dataDir, Clock.System)
     return AppContainer(
         filaments = storage.filaments(),
@@ -1036,6 +1247,7 @@ private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSourc
         backup = storage.backup(),
         storageHealth = storage.health,
         releases = releases,
+        updateInstaller = installer,
     )
 }
 

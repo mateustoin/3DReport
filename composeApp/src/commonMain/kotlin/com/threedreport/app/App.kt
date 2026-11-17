@@ -2,6 +2,7 @@ package com.threedreport.app
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.about_updates_announce
+import _3dreport.composeapp.generated.resources.about_updates_install_now
 import _3dreport.composeapp.generated.resources.about_updates_see_news
 import _3dreport.composeapp.generated.resources.app_discard_edit_message
 import _3dreport.composeapp.generated.resources.app_discard_edit_title
@@ -72,10 +73,12 @@ import androidx.compose.ui.input.key.type
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.platform.fileDropTarget
+import com.threedreport.app.platform.isModelFile
 import com.threedreport.app.platform.openFolder
 import com.threedreport.app.platform.openUrl
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.AboutScreen
+import com.threedreport.app.ui.about.UpdateDialog
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.ButtonKind
@@ -120,6 +123,8 @@ fun App(
     prepareQuote: (QuoteViewModel) -> Unit = {},
     today: () -> Long = ::todayEpochDay,
     clock: Clock = Clock.System,
+    // Fecha o app pelo caminho normal de fechar a janela, que grava o que está pendente; a atualização por dentro o usa.
+    onCloseApp: () -> Unit = {},
 ) {
     val settingsRepository = container.settings
     val printerRepository = container.printers
@@ -131,7 +136,7 @@ fun App(
     // pedidos"): o `nav` é preenchido logo abaixo, antes de qualquer toque na tela.
     val (viewModels, navigator) = remember {
         lateinit var nav: AppNavigator
-        val models = AppViewModels(container, appScope, showOrders = { nav.goTo(AppDestination.ORDERS) }, prepareQuote = prepareQuote, today = today, clock = clock)
+        val models = AppViewModels(container, appScope, showOrders = { nav.goTo(AppDestination.ORDERS) }, prepareQuote = prepareQuote, today = today, clock = clock, closeApp = onCloseApp)
         nav = AppNavigator(
             startAt,
             models.quoteViewModel,
@@ -216,11 +221,16 @@ fun App(
                         onDrop = { dropped, position ->
                             // Seja qual for a aba aberta, o G-code vai pro Orçamento, que é onde o resultado aparece.
                             navigator.goTo(AppDestination.QUOTE)
-                            val zone = position?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key }
-                            when (zone) {
-                                is GCodeDropTarget.Replace -> visibleQuoteViewModel.importDroppedInto(zone.printId, dropped)
-                                GCodeDropTarget.AddNew -> dropped.forEach(visibleQuoteViewModel::importDroppedAsNewPrint)
-                                null -> visibleQuoteViewModel.importDroppedFiles(dropped)
+                            // STL e 3MF vão pro arquivo do modelo (o último vale, um por orçamento); o resto é G-code.
+                            val (models, gcodes) = dropped.partition { it.isModelFile() }
+                            models.lastOrNull()?.let(visibleQuoteViewModel::attachDroppedModel)
+                            if (models.isEmpty() || gcodes.isNotEmpty()) {
+                                val zone = position?.let { point -> dropZones.entries.firstOrNull { it.value.contains(point) }?.key }
+                                when (zone) {
+                                    is GCodeDropTarget.Replace -> visibleQuoteViewModel.importDroppedInto(zone.printId, gcodes)
+                                    GCodeDropTarget.AddNew -> gcodes.forEach(visibleQuoteViewModel::importDroppedAsNewPrint)
+                                    null -> visibleQuoteViewModel.importDroppedFiles(gcodes)
+                                }
                             }
                         },
                     ),
@@ -339,13 +349,18 @@ fun App(
             LaunchedEffect(available?.version) {
                 if (available == null || navigator.destination == AppDestination.ABOUT) return@LaunchedEffect
                 updateViewModel.markAnnounced(available)
+                // Com instalação por dentro, a ação do aviso é "Atualizar agora"; "Ver novidades" fica no Sobre e na janela.
+                val canInstall = updateViewModel.uiState.value.canInstall
                 val result = snackbarHostState.showSnackbar(
                     getString(Res.string.about_updates_announce, available.version),
-                    actionLabel = getString(Res.string.about_updates_see_news),
+                    actionLabel = getString(if (canInstall) Res.string.about_updates_install_now else Res.string.about_updates_see_news),
                     duration = SnackbarDuration.Long,
                 )
-                if (result == SnackbarResult.ActionPerformed) openUrl(available.url)
+                if (result == SnackbarResult.ActionPerformed) {
+                    if (canInstall) updateViewModel.startUpdate() else openUrl(available.url)
+                }
             }
+            updateState.install?.let { UpdateDialog(it, updateViewModel) }
 
             // O aviso dos dados antigos vem antes: o onboarding só aparece depois de ele ser lido.
             if (!onboardingCompleted && !showOldDataNotice) {

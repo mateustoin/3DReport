@@ -36,6 +36,8 @@ class AppViewModels(
     /** Hoje e agora de Pedidos e do Catálogo; só o gerador de capturas troca, pra os prazos de exemplo não envelhecerem. */
     private val today: () -> Long = ::todayEpochDay,
     private val clock: Clock = Clock.System,
+    /** Fecha o app pelo caminho normal de fechar a janela (grava o que está pendente); a atualização por dentro usa. */
+    private val closeApp: () -> Unit = {},
 ) {
     private fun newQuoteViewModel() = QuoteViewModel(
         container.filaments, container.printers, container.settings, container.services,
@@ -117,6 +119,18 @@ class AppViewModels(
 
     /** Cedo: a verificação roda ao abrir (decisão 116), e o aviso pode aparecer em qualquer tela. */
     val updateViewModel: UpdateViewModel by lazy {
-        UpdateViewModel(container.preferences, container.releases, APP_VERSION, scope = scope, background = Dispatchers.IO, main = Dispatchers.Main)
+        UpdateViewModel(
+            container.preferences, container.releases, APP_VERSION,
+            scope = scope,
+            background = Dispatchers.IO,
+            main = Dispatchers.Main,
+            installer = container.updateInstaller,
+            // O que o app perde ao fechar: os rascunhos do Orçamento e as Configurações ou a Marca por salvar.
+            hasUnsavedWork = {
+                quoteViewModel.hasDraft || editQuoteViewModel.hasUnsavedEdits ||
+                    settingsViewModel.hasUnsavedChanges || brandingViewModel.hasUnsavedChanges
+            },
+            closeApp = closeApp,
+        )
     }
 }

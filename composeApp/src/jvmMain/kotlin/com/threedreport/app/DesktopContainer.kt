@@ -6,6 +6,7 @@ import com.threedreport.app.data.WriteBehind
 import com.threedreport.app.data.appDataDir
 import com.threedreport.app.data.store.StorageHealth
 import com.threedreport.app.platform.GitHubReleaseSource
+import com.threedreport.app.update.DesktopUpdateInstaller
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -45,5 +46,6 @@ fun createDesktopContainer(scope: CoroutineScope): AppContainer {
         storageHealth = health,
         pendingWrites = writeBehind,
         releases = GitHubReleaseSource(APP_VERSION),
+        updateInstaller = DesktopUpdateInstaller(APP_VERSION),
     )
 }

@@ -1,0 +1,170 @@
+package com.threedreport.app.platform
+
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import javax.imageio.ImageIO
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+/** Pacotes 3MF mínimos montados aqui, no formato de cada fatiador, sem arquivo de terceiros no repositório. */
+class ThreeMfThumbnailTest {
+
+    private val png: ByteArray = ByteArrayOutputStream().also { ImageIO.write(BufferedImage(4, 3, BufferedImage.TYPE_INT_ARGB), "png", it) }.toByteArray()
+
+    private fun zip(vararg entries: Pair<String, ByteArray>): ByteArray {
+        val out = ByteArrayOutputStream()
+        ZipOutputStream(out).use { zip ->
+            for ((name, content) in entries) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(content)
+                zip.closeEntry()
+            }
+        }
+        return out.toByteArray()
+    }
+
+    private fun rels(target: String) = """<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+ <Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
+ <Relationship Target="$target" Id="rel-2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"/>
+</Relationships>""".encodeToByteArray()
+
+    private val model = "3D/3dmodel.model" to "<model/>".encodeToByteArray()
+    private val contentTypes = "[Content_Types].xml" to "<Types/>".encodeToByteArray()
+
+    @Test
+    fun bambuStudioPackage() {
+        val bytes = zip(
+            contentTypes,
+            "_rels/.rels" to rels("/Metadata/plate_1.png"),
+            model,
+            "Metadata/pick_1.png" to byteArrayOf(1, 2, 3),
+            "Metadata/plate_1.png" to png,
+            "Metadata/plate_1_small.png" to png,
+        )
+
+        val result = readThreeMfThumbnail(bytes)
+
+        assertIs<ThreeMfThumbnail.Found>(result)
+        assertEquals("Metadata/plate_1.png", result.path)
+        assertContentEquals(png, result.imageBytes)
+    }
+
+    @Test
+    fun prusaSlicerPackage() {
+        val bytes = zip(contentTypes, "_rels/.rels" to rels("/Metadata/thumbnail.png"), model, "Metadata/thumbnail.png" to png)
+
+        val result = readThreeMfThumbnail(bytes)
+
+        assertIs<ThreeMfThumbnail.Found>(result)
+        assertEquals("Metadata/thumbnail.png", result.path)
+    }
+
+    @Test
+    fun orcaSlicerPackageWithoutThumbnailRelationship() {
+        val plainRels = """<Relationships><Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>"""
+        val bytes = zip(
+            contentTypes,
+            "_rels/.rels" to plainRels.encodeToByteArray(),
+            model,
+            "Auxiliaries/.thumbnails/thumbnail_small.png" to png,
+            "Auxiliaries/.thumbnails/thumbnail_3mf.png" to png,
+        )
+
+        val result = readThreeMfThumbnail(bytes)
+
+        assertIs<ThreeMfThumbnail.Found>(result)
+        assertEquals("Auxiliaries/.thumbnails/thumbnail_3mf.png", result.path)
+    }
+
+    @Test
+    fun packageWithoutThumbnail() {
+        assertEquals(ThreeMfThumbnail.Missing, readThreeMfThumbnail(zip(contentTypes, model)))
+    }
+
+    @Test
+    fun thumbnailThatIsNotAnImageCountsAsMissing() {
+        val bytes = zip(contentTypes, "_rels/.rels" to rels("/Metadata/thumbnail.png"), model, "Metadata/thumbnail.png" to "não é png".encodeToByteArray())
+        assertEquals(ThreeMfThumbnail.Missing, readThreeMfThumbnail(bytes))
+    }
+
+    @Test
+    fun fileThatIsNotAPackage() {
+        assertEquals(ThreeMfThumbnail.Unreadable, readThreeMfThumbnail("solid peça\nendsolid".encodeToByteArray()))
+        assertEquals(ThreeMfThumbnail.Unreadable, readThreeMfThumbnail(ByteArray(0)))
+    }
+
+    @Test
+    fun truncatedPackage() {
+        val bytes = zip(contentTypes, "_rels/.rels" to rels("/Metadata/thumbnail.png"), model, "Metadata/thumbnail.png" to png)
+        val result = readThreeMfThumbnail(bytes.copyOf(bytes.size / 2))
+        // Cortado no meio: o que vem antes do corte ainda pode ser lido, mas nunca vira exceção.
+        assertIs<ThreeMfThumbnail>(result)
+    }
+
+    /**
+     * PNG cinza de [side] x [side] todo preto, montado à mão: as linhas de zeros comprimem pra poucas centenas de KB,
+     * mas abrir pede [side]² × 4 bytes. É o "PNG bomba" que um 3MF malicioso ou estragado poderia trazer.
+     */
+    private fun pngBomb(side: Int): ByteArray {
+        val out = ByteArrayOutputStream()
+        val data = java.io.DataOutputStream(out)
+        fun chunk(type: String, body: ByteArray) {
+            data.writeInt(body.size)
+            val typeBytes = type.encodeToByteArray()
+            data.write(typeBytes)
+            data.write(body)
+            data.writeInt(java.util.zip.CRC32().apply { update(typeBytes); update(body) }.value.toInt())
+        }
+        data.write(byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 13, 10, 26, 10))
+        chunk("IHDR", java.nio.ByteBuffer.allocate(13).putInt(side).putInt(side).put(8).put(0).put(0).put(0).put(0).array())
+        val compressed = ByteArrayOutputStream()
+        java.util.zip.DeflaterOutputStream(compressed, java.util.zip.Deflater(9)).use { deflate ->
+            val row = ByteArray(side + 1) // filtro 0 + pixels pretos
+            repeat(side) { deflate.write(row) }
+        }
+        chunk("IDAT", compressed.toByteArray())
+        chunk("IEND", ByteArray(0))
+        return out.toByteArray()
+    }
+
+    @Test
+    fun thumbnailDeclaringAHugeSizeIsRefusedBeforeDecoding() {
+        // Decodificar 24000 x 24000 pede uns 2,3 GB: OutOfMemoryError, que não é Exception.
+        val bomb = pngBomb(24_000)
+        assertTrue(bomb.size < 2_000_000, "a bomba é pequena no disco: ${bomb.size}")
+        val bytes = zip(contentTypes, "_rels/.rels" to rels("/Metadata/thumbnail.png"), model, "Metadata/thumbnail.png" to bomb)
+        assertEquals(ThreeMfThumbnail.Missing, readThreeMfThumbnail(bytes))
+    }
+
+    @Test
+    fun thumbnailStoredBeforeTheRelationshipsIsFoundInTheSinglePass() {
+        // A leitura é numa passada só: a imagem pode vir antes do _rels/.rels que diz qual é ela.
+        val bytes = zip(
+            "Metadata/plate_2.png" to png,
+            "Metadata/capa.png" to png,
+            contentTypes,
+            model,
+            "_rels/.rels" to rels("/Metadata/capa.png"),
+        )
+
+        val result = readThreeMfThumbnail(bytes)
+
+        assertIs<ThreeMfThumbnail.Found>(result)
+        assertEquals("Metadata/capa.png", result.path)
+    }
+
+    @Test
+    fun imageSizeIsReadFromTheHeaderWithoutDecoding() {
+        assertEquals(4 to 3, imageSizeFromHeader(png))
+        assertEquals(24_000 to 24_000, imageSizeFromHeader(pngBomb(24_000)))
+        assertEquals(null, imageSizeFromHeader("não é imagem".encodeToByteArray()))
+        assertTrue(24_000L * 24_000 > MAX_THUMBNAIL_PIXELS)
+        assertTrue(4L * 3 <= MAX_THUMBNAIL_PIXELS)
+    }
+}

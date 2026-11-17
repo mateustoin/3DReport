@@ -7,6 +7,7 @@ import _3dreport.composeapp.generated.resources.about_updates_checking
 import _3dreport.composeapp.generated.resources.about_updates_failed
 import _3dreport.composeapp.generated.resources.about_updates_help
 import _3dreport.composeapp.generated.resources.about_updates_help_detail
+import _3dreport.composeapp.generated.resources.about_updates_install_now
 import _3dreport.composeapp.generated.resources.about_updates_see_news
 import _3dreport.composeapp.generated.resources.about_updates_title
 import _3dreport.composeapp.generated.resources.about_updates_toggle
@@ -31,8 +32,8 @@ import com.threedreport.app.ui.theme.spacing
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * "Atualizações" no Sobre (decisão 116): a opção, o resultado em texto e a ação que resolve. O app só avisa e abre a
- * página da versão; não instala nada.
+ * "Atualizações" no Sobre (decisões 116 e 143): a opção, o resultado em texto e a ação que resolve: "Atualizar agora"
+ * (quando dá pra instalar por dentro) e "Ver novidades", que abre a página da versão.
  */
 @Composable
 fun UpdateSection(viewModel: UpdateViewModel) {
@@ -49,7 +50,16 @@ fun UpdateSection(viewModel: UpdateViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
             when (val status = state.status) {
                 is UpdateState.Available -> {
-                    AppButton(stringResource(Res.string.about_updates_see_news), { openUrl(status.release.url) }, kind = ButtonKind.Primary, icon = AppIcons.OpenInNew)
+                    // "Atualizar agora" é a ação principal quando dá pra instalar por dentro; senão é "Ver novidades".
+                    if (state.canInstall) {
+                        AppButton(stringResource(Res.string.about_updates_install_now), viewModel::startUpdate, kind = ButtonKind.Primary, icon = AppIcons.Download)
+                    }
+                    AppButton(
+                        stringResource(Res.string.about_updates_see_news),
+                        { openUrl(status.release.url) },
+                        kind = if (state.canInstall) ButtonKind.Secondary else ButtonKind.Primary,
+                        icon = AppIcons.OpenInNew,
+                    )
                     Text(
                         stringResource(Res.string.about_updates_available, status.release.version),
                         style = MaterialTheme.appType.bodyStrong,

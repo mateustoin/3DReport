@@ -13,7 +13,6 @@ import _3dreport.composeapp.generated.resources.history_notice_see_all
 import _3dreport.composeapp.generated.resources.history_notice_see_orders
 import _3dreport.composeapp.generated.resources.history_notice_status_cancelled
 import _3dreport.composeapp.generated.resources.history_notice_status_moved
-import _3dreport.composeapp.generated.resources.history_notice_stl_saved
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CatalogView
 import com.threedreport.app.data.ClientRepository
@@ -319,7 +318,7 @@ class QuoteHistoryViewModel(
     fun photoThumbnail(savedQuote: SavedQuote): ByteArray? = repository.photoThumbnail(savedQuote, THUMBNAIL_PX)
 
     fun downloadPhoto(savedQuote: SavedQuote) = exports.downloadPhoto(savedQuote)
-    fun downloadStl(savedQuote: SavedQuote) = exports.downloadStl(savedQuote)
+    fun downloadModelFile(savedQuote: SavedQuote) = exports.downloadModelFile(savedQuote)
     fun exportPdf(savedQuote: SavedQuote) = exports.exportPdf(savedQuote)
     fun openInWhatsApp(savedQuote: SavedQuote) = exports.openInWhatsApp(savedQuote)
     fun saveShareableImage(savedQuote: SavedQuote) = exports.saveShareableImage(savedQuote)

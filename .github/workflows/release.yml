@@ -120,6 +120,19 @@ jobs:
         with:
           path: dist
 
+      # Soma SHA-256 de cada instalador, no formato do sha256sum (só o nome do arquivo, sem pasta). O
+      # "Atualizar agora" do app só instala se a soma do que baixou bater com a daqui (decisão 143).
+      - name: Gerar SHA256SUMS.txt
+        run: |
+          find dist -type f \( -name '*.msi' -o -name '*.deb' -o -name '*.dmg' \) | sort | while read -r f; do
+            (cd "$(dirname "$f")" && sha256sum "$(basename "$f")")
+          done > SHA256SUMS.txt
+          if [ ! -s SHA256SUMS.txt ]; then
+            echo "::error::Nenhum instalador pra somar."
+            exit 1
+          fi
+          cat SHA256SUMS.txt
+
       - name: Montar notas de release (intro + mudanças do CHANGELOG.md + doação + instalação)
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
@@ -168,6 +181,10 @@ jobs:
             pedir confirmação com senha/Touch ID).
           - **Linux (`.deb`)** — Debian/Ubuntu e derivados:
             `sudo dpkg -i threedreport_*.deb`.
+
+          O arquivo `SHA256SUMS.txt` traz a soma SHA-256 de cada instalador.
+          Pra conferir o que você baixou: `sha256sum -c SHA256SUMS.txt --ignore-missing`.
+          O app usa esse arquivo pra conferir a atualização antes de instalar.
           EOF
 
           cat release_notes.md
@@ -179,4 +196,6 @@ jobs:
           name: 3DReport ${{ github.ref_name }}
           body_path: release_notes.md
           draft: true
-          files: dist/**/*
+          files: |
+            dist/**/*
+            SHA256SUMS.txt

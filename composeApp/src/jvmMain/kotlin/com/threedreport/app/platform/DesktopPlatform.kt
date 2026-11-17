@@ -4,7 +4,7 @@ import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.platform_pick_backup
 import _3dreport.composeapp.generated.resources.platform_pick_gcode
 import _3dreport.composeapp.generated.resources.platform_pick_image
-import _3dreport.composeapp.generated.resources.platform_pick_stl
+import _3dreport.composeapp.generated.resources.platform_pick_model
 import _3dreport.composeapp.generated.resources.platform_save_as
 import com.threedreport.app.AppLog
 import com.threedreport.app.ExitWatchdog
@@ -54,7 +54,7 @@ object DesktopPlatform : PlatformServices {
                     byKind = mapOf(
                         FileKind.IMAGE to getString(Res.string.platform_pick_image),
                         FileKind.GCODE to getString(Res.string.platform_pick_gcode),
-                        FileKind.STL to getString(Res.string.platform_pick_stl),
+                        FileKind.MODEL to getString(Res.string.platform_pick_model),
                         FileKind.BACKUP to getString(Res.string.platform_pick_backup),
                     ),
                     saveAs = getString(Res.string.platform_save_as),

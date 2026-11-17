@@ -9,11 +9,30 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [2.2.0] - 2026-11-17
 
-Interface nova, do começo ao fim, e o preço mais certo. Tudo o que mexe no preço entrou junto,
+Interface nova, do começo ao fim, o preço mais certo, o projeto do fatiador (3MF) guardado com o pedido e a
+atualização pelo próprio app. Tudo o que mexe no preço entrou junto,
 pra você recalibrar uma vez só, e **nada muda sozinho**: cada regra nova começa desligada, e os pedidos salvos continuam com o preço e o
 lucro que tinham.
 
 ### Adicionado
+- **Arquivo do modelo em STL ou 3MF.** O campo do Orçamento agora aceita o `.3mf` do projeto do
+  fatiador, além do STL. Ele fica guardado pra você baixar de novo em Pedidos e no Catálogo, com o
+  nome do orçamento. Com 3MF do Bambu Studio, do OrcaSlicer ou do PrusaSlicer, a miniatura da mesa
+  aparece no lugar da prévia e vira a foto do orçamento, se ele ainda não tem uma. Ver o 3MF em 3D
+  fica pra depois.
+- **Prévia de STL pesado.** Arquivos com mais de 500 mil triângulos antes ficavam sem prévia. Agora
+  o app desenha uma versão simplificada, com barra de progresso, e as medidas e o nível de
+  dificuldade continuam saindo do arquivo completo. O limite agora é o tamanho do arquivo, 300 MB.
+- **Atualizar agora.** Quando sai versão nova, o aviso e o Sobre ganham o botão que baixa o
+  instalador, confere se o arquivo está íntegro e abre a instalação. No Windows, o app fecha e o
+  instalador pede a confirmação de administrador. No Linux, o sistema pede sua senha e o app
+  reabre já atualizado. No Mac, o app abre o instalador e você arrasta pra Aplicativos; esse caminho
+  ainda não foi testado num Mac. O botão só aparece com o app instalado e quando a versão nova tem
+  instalador pro seu sistema. Ele vale da 2.2 em diante: pra chegar
+  nesta versão, quem está na 2.1 ainda baixa pela página. A verificação de versão continua desligada por padrão, e o app só
+  baixa algo quando você clica.
+- **Soma de verificação nas versões.** Cada versão publicada traz o arquivo `SHA256SUMS.txt` com a
+  soma de cada instalador, pra conferir o que você baixou.
 - **Taxa fixa por item no canal de venda.** A Shopee e o Mercado Livre cobram alguns reais por item
   vendido, além do percentual, e o app não contava isso: num chaveiro de R$ 15, os R$ 4 da Shopee
   são 27% do preço. O canal ganhou o valor fixo e, pra quem precisa, faixas de preço ("até R$ 79,99
@@ -29,6 +48,8 @@ lucro que tinham.
 - **Calcular o kWh** pela conta de luz, pela bandeira do mês ou pela tarifa branca, em Negócio e custos.
 
 ### Alterado
+- **"Anexar arquivo STL" virou "Arquivo do modelo"**, e "Baixar STL" virou "Baixar arquivo do modelo".
+  Arrastar e soltar aceita STL e 3MF.
 - **Configurações em seções.** Negócio e custos, Canais de venda, Documentos pro cliente, Aparência e
   Backup ficam numa lista ao lado, uma seção por vez. Uma barra única "Alterações não salvas" salva ou
   descarta tudo de uma vez, e o botão "Salvar" é o único âmbar da tela.

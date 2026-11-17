@@ -2,18 +2,35 @@ package com.threedreport.app.ui.about
 
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.PreferencesRepository
+import com.threedreport.app.platform.PlatformServices
+import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.update.DownloadOutcome
+import com.threedreport.app.update.DownloadedUpdate
+import com.threedreport.app.update.InstallOutcome
+import com.threedreport.app.update.NoUpdateInstaller
+import com.threedreport.app.update.ReleaseAsset
+import com.threedreport.app.update.UpdateFailure
+import com.threedreport.app.update.UpdateInstaller
+import com.threedreport.app.update.UpdatePlan
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** A versão publicada mais recente e a página dela. */
-data class LatestRelease(val version: String, val url: String)
+/**
+ * A versão publicada mais recente, a página dela e os arquivos publicados ([assets], de onde sai o instalador do
+ * "Atualizar agora", decisão 143).
+ */
+data class LatestRelease(val version: String, val url: String, val assets: List<ReleaseAsset> = emptyList())
 
 /** De onde vem a versão mais recente (a API de releases do GitHub no desktop). `null` quando não deu pra saber. */
 fun interface ReleaseSource {
@@ -29,8 +46,16 @@ sealed interface UpdateState {
     data object Failed : UpdateState
 }
 
-/** O que a seção Atualizações do Sobre mostra: se a verificação está ligada e o que ela achou. */
-data class UpdateUiState(val enabled: Boolean = false, val status: UpdateState = UpdateState.Idle)
+/**
+ * O que o Sobre e a janela de atualização mostram: se a verificação está ligada, o que ela achou, se dá pra instalar
+ * por dentro ([canInstall], senão só "Ver novidades") e em que passo está o "Atualizar agora" ([install]).
+ */
+data class UpdateUiState(
+    val enabled: Boolean = false,
+    val status: UpdateState = UpdateState.Idle,
+    val canInstall: Boolean = false,
+    val install: UpdateInstall? = null,
+)
 
 /**
  * Se [candidate] ("v2.2.0", "2.1.10") é mais nova que [current], comparando MAJOR.MINOR.PATCH como números.
@@ -63,6 +88,13 @@ class UpdateViewModel(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
     private val background: CoroutineDispatcher = Dispatchers.Unconfined,
     private val main: CoroutineDispatcher = Dispatchers.Unconfined,
+    /** Baixa, confere e instala a versão nova (decisão 143). Sem ele, só há "Ver novidades". */
+    private val installer: UpdateInstaller = NoUpdateInstaller,
+    /** Se há um orçamento não salvo, pra perguntar antes de o app fechar na instalação. */
+    private val hasUnsavedWork: () -> Boolean = { false },
+    /** Fecha o app pelo caminho normal de fechar a janela: grava o que está pendente antes de sair. */
+    private val closeApp: () -> Unit = {},
+    private val platform: PlatformServices = defaultPlatform,
 ) {
     private val state = MutableStateFlow(UpdateUiState(enabled = preferences.preferences.value.checkForUpdates))
 
@@ -110,16 +142,192 @@ class UpdateViewModel(
             val latest = runCatching { source.latest() }
                 .onFailure { AppLog.warn("Não consegui verificar atualizações", it) }
                 .getOrNull()
+            val newer = latest?.takeIf { isNewerVersion(it.version, currentVersion) }
+            // O plano consulta o sistema (instalador, pkexec): feito aqui, fora da thread da tela.
+            val plan = newer?.let { runCatching { installer.plan(it) }.getOrNull() }
             withContext(main) {
                 if (started != generation) return@withContext
                 state.value = state.value.copy(
                     status = when {
                         latest == null -> UpdateState.Failed
-                        isNewerVersion(latest.version, currentVersion) -> UpdateState.Available(latest)
+                        newer != null -> UpdateState.Available(newer)
                         else -> UpdateState.UpToDate
+                    },
+                    canInstall = plan != null,
+                )
+                updatePlan = plan
+            }
+        }
+    }
+
+    // Atualizar por dentro (decisão 143): baixar, conferir, perguntar e instalar.
+
+    /** Sobe a cada passo novo: o resultado de um download cancelado ou refeito não mexe mais na janela. */
+    private var installGeneration = 0
+    private var installJob: Job? = null
+
+    /** "Atualizar agora": baixa e confere o instalador da versão achada. Sem instalador pro sistema, não faz nada. */
+    fun startUpdate() {
+        val release = (state.value.status as? UpdateState.Available)?.release ?: return
+        startDownload(release)
+    }
+
+    /** O que fazer pra instalar a versão achada na última verificação, ou `null` sem "Atualizar agora". */
+    private var updatePlan: UpdatePlan? = null
+
+    private fun startDownload(release: LatestRelease) {
+        if (state.value.install.isBusy) return
+        val plan = updatePlan?.takeIf { it.release == release } ?: return
+        val token = ++installGeneration
+        state.update { it.copy(install = UpdateInstall.Downloading(release, 0f, plan.asset.sizeBytes)) }
+        installJob = scope.launch(background) {
+            val outcome = try {
+                installer.download(plan) { progress -> reportDownload(token, release, plan.asset.sizeBytes, progress) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.warn("Não consegui baixar a atualização", e)
+                DownloadOutcome.Failed(UpdateFailure.NETWORK)
+            }
+            withContext(main) {
+                if (token != installGeneration) {
+                    // Cancelado enquanto terminava: o arquivo baixado não tem mais dono.
+                    if (outcome is DownloadOutcome.Ready) installer.discard(outcome.update)
+                    return@withContext
+                }
+                setInstall(
+                    when (outcome) {
+                        is DownloadOutcome.Ready -> UpdateInstall.Ready(release, outcome.update)
+                        is DownloadOutcome.Failed -> UpdateInstall.Failed(release, outcome.reason.toError())
                     },
                 )
             }
         }
     }
+
+    /** Em 100% o arquivo já desceu e falta conferir a soma. */
+    private fun reportDownload(token: Int, release: LatestRelease, totalBytes: Long, progress: Float) {
+        state.update { current ->
+            if (token != installGeneration || current.install !is UpdateInstall.Downloading) {
+                current
+            } else if (progress >= 1f) {
+                current.copy(install = UpdateInstall.Verifying(release))
+            } else if (progress - current.install.progress < DOWNLOAD_PROGRESS_STEP) {
+                // O instalador avisa a cada pedaço lido (centenas de vezes): a tela só muda de 1% em 1%.
+                current
+            } else {
+                current.copy(install = UpdateInstall.Downloading(release, progress, totalBytes))
+            }
+        }
+    }
+
+    /** "Tentar de novo" depois de uma falha de rede ou do instalador. */
+    fun retryUpdate() {
+        val failed = state.value.install as? UpdateInstall.Failed ?: return
+        setInstall(null)
+        startDownload(failed.release)
+    }
+
+    /**
+     * "Instalar e fechar o app". Com orçamento não salvo, pergunta antes ([UpdateInstall.ConfirmUnsaved]); o resto
+     * (gravar o que está pendente) é do caminho normal de fechar a janela, que [closeApp] segue.
+     */
+    fun installNow() {
+        val ready = state.value.install as? UpdateInstall.Ready ?: return
+        if (hasUnsavedWork()) {
+            setInstall(UpdateInstall.ConfirmUnsaved(ready.release, ready.update))
+        } else {
+            runInstall(ready.release, ready.update)
+        }
+    }
+
+    /** "Instalar mesmo assim", depois do aviso de orçamento não salvo. */
+    fun installAnyway() {
+        val confirm = state.value.install as? UpdateInstall.ConfirmUnsaved ?: return
+        runInstall(confirm.release, confirm.update)
+    }
+
+    /** "Voltar", no aviso de orçamento não salvo. */
+    fun backToReady() {
+        val confirm = state.value.install as? UpdateInstall.ConfirmUnsaved ?: return
+        setInstall(UpdateInstall.Ready(confirm.release, confirm.update))
+    }
+
+    private fun runInstall(release: LatestRelease, update: DownloadedUpdate) {
+        val token = ++installGeneration
+        setInstall(UpdateInstall.Installing(release, update))
+        installJob = scope.launch(background) {
+            val outcome = try {
+                installer.install(update)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.warn("Não consegui instalar a atualização", e)
+                InstallOutcome.Failed
+            }
+            withContext(main) {
+                if (token != installGeneration) return@withContext
+                when (outcome) {
+                    InstallOutcome.CloseApp -> {
+                        setInstall(null)
+                        closeApp()
+                    }
+
+                    InstallOutcome.Cancelled -> setInstall(UpdateInstall.Ready(release, update, passwordCancelled = true))
+
+                    InstallOutcome.Failed -> {
+                        installer.discard(update)
+                        setInstall(UpdateInstall.Failed(release, UpdateError.INSTALL))
+                    }
+
+                    is InstallOutcome.Manual -> setInstall(UpdateInstall.Manual(release, outcome.folderPath, outcome.command))
+                }
+            }
+        }
+    }
+
+    /** Copia o comando de instalar do Linux sem `pkexec` ([UpdateInstall.Manual]). */
+    fun copyManualCommand() {
+        val manual = state.value.install as? UpdateInstall.Manual ?: return
+        if (!platform.copyToClipboard(manual.command)) return
+        setInstall(manual.copy(copied = true))
+        // "Copiado" some depois de um instante, desde que a janela ainda seja a mesma.
+        scope.launch(main) {
+            delay(COPIED_MILLIS)
+            state.update { current -> if (current.install == manual.copy(copied = true)) current.copy(install = manual) else current }
+        }
+    }
+
+    /**
+     * "Cancelar" ou fechar a janela: interrompe o download, apaga o arquivo que já estava pronto e volta ao que era.
+     * Instalando, não cancela (o instalador do sistema já está com a pessoa).
+     */
+    fun dismissUpdate() {
+        val current = state.value.install ?: return
+        if (current is UpdateInstall.Installing) return
+        installGeneration++
+        installJob?.cancel()
+        installJob = null
+        when (current) {
+            is UpdateInstall.Ready -> installer.discard(current.update)
+            is UpdateInstall.ConfirmUnsaved -> installer.discard(current.update)
+            else -> Unit
+        }
+        setInstall(null)
+    }
+
+    private fun setInstall(install: UpdateInstall?) = state.update { it.copy(install = install) }
+
+    private val UpdateInstall?.isBusy: Boolean
+        get() = this != null && this !is UpdateInstall.Failed
+
+    private fun UpdateFailure.toError() = when (this) {
+        UpdateFailure.NETWORK -> UpdateError.NETWORK
+        UpdateFailure.NO_CHECKSUMS -> UpdateError.NO_CHECKSUMS
+        UpdateFailure.CHECKSUM_MISMATCH -> UpdateError.CHECKSUM_MISMATCH
+    }
 }
+
+private const val COPIED_MILLIS = 2000L
+
+private const val DOWNLOAD_PROGRESS_STEP = 0.01f

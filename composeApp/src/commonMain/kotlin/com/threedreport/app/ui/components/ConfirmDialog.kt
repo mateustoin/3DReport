@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.DialogProperties
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -27,7 +29,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * Diálogo do kit: fundo `card`, raio 12, título em `panelTitle`, o [content] e os [buttons] no pé, alinhados à
- * direita (o último é o que confirma). O diálogo nunca passa da altura da janela menos 2 vezes `space.xxl`: o título e os botões ficam fixos e só o corpo rola. Com [dismissOnClickOutside] desligado, só os botões fecham (formulário: perder o que foi digitado por um clique distraído é pior que um clique a mais). [help] vira uma dica ao lado do título, no lugar de um parágrafo no corpo. Base do [ConfirmDialog] e do [DeleteOrArchiveDialog].
+ * direita (o último é o que confirma). O diálogo nunca passa da altura da janela menos 2 vezes `space.xxl`: o título e os botões ficam fixos e só o corpo rola. Com [dismissOnClickOutside] desligado, só os botões fecham (formulário: perder o que foi digitado por um clique distraído é pior que um clique a mais). [width] fixa a largura (a janela de atualização não muda de tamanho entre os passos; sem ele, o diálogo se ajusta ao conteúdo). [help] vira uma dica ao lado do título, no lugar de um parágrafo no corpo. Base do [ConfirmDialog] e do [DeleteOrArchiveDialog].
  */
 @Composable
 fun AppDialog(
@@ -36,12 +38,13 @@ fun AppDialog(
     buttons: @Composable RowScope.() -> Unit,
     help: HelpText? = null,
     dismissOnClickOutside: Boolean = true,
+    width: Dp? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val space = MaterialTheme.spacing
     val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     AlertDialog(
-        modifier = Modifier.heightIn(max = windowHeight - space.xxl * 2),
+        modifier = Modifier.heightIn(max = windowHeight - space.xxl * 2).then(if (width != null) Modifier.width(width) else Modifier),
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnClickOutside = dismissOnClickOutside),
         containerColor = MaterialTheme.appColors.card,

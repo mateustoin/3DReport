@@ -25,7 +25,8 @@ interface QuoteHistoryRepository {
 
     /**
      * Salva [quote] com [name] (gera um nome genérico se vazio), os [services] escolhidos (retrato do
-     * preço no momento), [photo], [stlFile], [sourceLink] e [client] opcionais. Nasce
+     * preço no momento), [photo], [stlFile] (o arquivo do modelo, STL ou 3MF, guardado com a extensão dele),
+     * [sourceLink] e [client] opcionais. Nasce
      * [OrderStatus.ORCADO], com o próximo número da sequência e a mudança de status registrada.
      *
      * Os anexos vão pro [AttachmentStore] pelo conteúdo: reabrir, duplicar ou vender e salvar com a
@@ -131,8 +132,11 @@ interface QuoteHistoryRepository {
     /** Miniatura da foto de [savedQuote] (lado maior de [maxSizePx]), ou `null`. */
     fun photoThumbnail(savedQuote: SavedQuote, maxSizePx: Int): ByteArray?
 
-    /** Bytes do arquivo STL de [savedQuote], ou `null` se não houver STL salvo. */
-    fun stlBytes(savedQuote: SavedQuote): ByteArray?
+    /**
+     * Bytes do arquivo do modelo de [savedQuote] (STL ou 3MF, ver [SavedQuote.modelFileKind]), ou `null` se não
+     * houver arquivo salvo.
+     */
+    fun modelBytes(savedQuote: SavedQuote): ByteArray?
 
     /** Bytes de um anexo pela chave (a miniatura de uma impressão, por exemplo), ou `null`. */
     fun attachmentBytes(key: String): ByteArray?
@@ -213,7 +217,7 @@ class StoredQuoteHistoryRepository(
         val saved = draft.copy(
             quote = draft.quote.withThumbnails(printThumbnails),
             photoFileName = photo?.let(::store),
-            stlFileName = stlFile?.let(::store),
+            modelFileName = stlFile?.let(::store),
         )
         collection.add(saved)
         lastNumber.set(saved.number)
@@ -259,7 +263,7 @@ class StoredQuoteHistoryRepository(
             draft.copy(
                 quote = draft.quote.withThumbnails(printThumbnails),
                 photoFileName = photo?.let(::store),
-                stlFileName = stlFile?.let(::store),
+                modelFileName = stlFile?.let(::store),
             )
         }
     }
@@ -329,14 +333,14 @@ class StoredQuoteHistoryRepository(
     override fun photoThumbnail(savedQuote: SavedQuote, maxSizePx: Int): ByteArray? =
         savedQuote.photoFileName?.let { attachments.thumbnail(it, maxSizePx) }
 
-    override fun stlBytes(savedQuote: SavedQuote): ByteArray? = savedQuote.stlFileName?.let(attachments::read)
+    override fun modelBytes(savedQuote: SavedQuote): ByteArray? = savedQuote.modelFileName?.let(attachments::read)
 
     override fun attachmentBytes(key: String): ByteArray? = attachments.read(key)
 
     override fun referencedAttachments(): Set<String> = collection.allRecords
         .mapNotNull { it.data }
         .flatMapTo(HashSet()) { saved ->
-            listOfNotNull(saved.photoFileName, saved.stlFileName) + saved.quote.prints.mapNotNull { it.job.thumbnailFileName }
+            listOfNotNull(saved.photoFileName, saved.modelFileName) + saved.quote.prints.mapNotNull { it.job.thumbnailFileName }
         }
 
     override fun quotesIncludingTrash(): List<SavedQuote> = collection.allRecords.mapNotNull { it.data }

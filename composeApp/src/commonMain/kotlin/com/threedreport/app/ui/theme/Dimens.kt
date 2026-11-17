@@ -62,6 +62,9 @@ object AppDimens {
 
     val iconSize = 18.dp
 
+    /** Largura fixa da janela de atualização, igual em todos os passos (`AppDialog(width = ...)`). */
+    val updateDialogWidth = 440.dp
+
     /** Caixa de marcar e o visto dentro dela. */
     val checkboxSize = 20.dp
     val checkmarkSize = 14.dp

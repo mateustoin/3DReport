@@ -20,7 +20,7 @@ class QuoteActions(
     /** `null` com várias impressões: cada uma tem as suas, e elas se editam no Orçamento (decisão 114). */
     val onPrintSettings: (() -> Unit)?,
     val onDownloadPhoto: (() -> Unit)?,
-    val onDownloadStl: (() -> Unit)?,
+    val onDownloadModelFile: (() -> Unit)?,
     val onExportPdf: () -> Unit,
     val onCopy: () -> Unit,
     val onOpenWhatsApp: () -> Unit,
@@ -54,7 +54,7 @@ fun quoteActionsFor(row: HistoryRow, viewModel: QuoteHistoryViewModel, navigatio
         onEditDeliveryDate = if (isOrder) ({ viewModel.startEditingDeliveryDate(quote) }) else null,
         onPrintSettings = if (row.canEditPrintSettings) ({ viewModel.startEditingPrintSettings(quote) }) else null,
         onDownloadPhoto = quote.photoFileName?.let { { viewModel.downloadPhoto(quote) } },
-        onDownloadStl = quote.stlFileName?.let { { viewModel.downloadStl(quote) } },
+        onDownloadModelFile = quote.modelFileName?.let { { viewModel.downloadModelFile(quote) } },
         onExportPdf = { viewModel.exportPdf(quote) },
         onCopy = { viewModel.copyQuoteToClipboard(quote) },
         onOpenWhatsApp = { viewModel.openInWhatsApp(quote) },

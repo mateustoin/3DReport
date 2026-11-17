@@ -54,6 +54,8 @@ internal class HistoryDetailsEditor(
         when (val picked = platform.pickFile(FileKind.IMAGE)) {
             PickResult.Cancelled -> Unit
 
+            is PickResult.Deferred -> Unit
+
             is PickResult.Failed -> showPhotoError(picked.text())
 
             is PickResult.Picked ->
