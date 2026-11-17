@@ -185,7 +185,8 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         }
         val backgrounds = ImageBackground.entries
         FormGrid {
-            cell(1) {
+            // Duas colunas: com os três rótulos inteiros ("Automático" truncava numa coluna só).
+            cell(2) {
                 AppChoiceField(
                     label = stringResource(Res.string.settings_docs_image_background),
                     options = backgrounds.map { stringResource(it.labelRes()) },
