@@ -1241,9 +1241,12 @@ private fun renderOgBanner(iconFile: File, orcamentoScreenshot: File, outFile: F
 }
 
 @Composable
-private fun OgBanner(icon: ImageBitmap, screenshot: ImageBitmap) {
+private fun OgBanner(icon: ImageBitmap, screenshot: ImageBitmap) = AppTheme(ThemeMode.LIGHT) {
+    val colors = MaterialTheme.appColors
+    val type = MaterialTheme.appType
     Box(
-        modifier = Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFF0B5FA8), Color(0xFF083E6E)))),
+        // Do azul da marca (tema claro) ao azul do tema escuro: os dois são tokens do sistema de design.
+        modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(colors.navy, DarkAppColors.navy), end = Offset(1200f, 630f))),
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 72.dp, vertical = 56.dp),
@@ -1253,30 +1256,36 @@ private fun OgBanner(icon: ImageBitmap, screenshot: ImageBitmap) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(bitmap = icon, contentDescription = null, modifier = Modifier.size(84.dp))
                     Spacer(Modifier.width(24.dp))
-                    Text("3DReport", color = Color.White, fontSize = 54.sp, fontWeight = FontWeight.Bold)
+                    // A mesma composição do BrandMark: "3D" em onNavy e "Report" em âmbar, Space Grotesk 700.
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = colors.onNavy)) { append("3D") }
+                            withStyle(SpanStyle(color = colors.amber)) { append("Report") }
+                        },
+                        style = type.brand.copy(fontSize = 54.sp, lineHeight = 64.sp),
+                        maxLines = 1,
+                    )
                 }
                 Spacer(Modifier.height(36.dp))
                 Text(
                     "O sistema de quem vende\nimpressão 3D",
-                    color = Color.White,
-                    fontSize = 34.sp,
-                    lineHeight = 42.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onNavy,
+                    style = type.panelTitle.copy(fontSize = 34.sp, lineHeight = 42.sp),
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
                     "Grátis, open source e 100% no seu computador",
-                    color = Color(0xFFD3E4FF),
-                    fontSize = 23.sp,
+                    color = colors.onNavyMuted,
+                    style = type.body.copy(fontSize = 23.sp, lineHeight = 30.sp),
                 )
             }
             Spacer(Modifier.width(32.dp))
             Box(
                 modifier = Modifier
                     .size(420.dp, 480.dp)
-                    .shadow(elevation = 28.dp, shape = RoundedCornerShape(20.dp), clip = false)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White),
+                    .shadow(elevation = 28.dp, shape = MaterialTheme.shapes.large, clip = false)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(colors.card),
             ) {
                 Image(
                     bitmap = screenshot,
