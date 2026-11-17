@@ -122,23 +122,25 @@ private fun runApp(container: AppContainer, notice: DataFolderNotice?) = applica
         size = saved?.let { DpSize(it.width.dp, it.height.dp) } ?: initialWindowSize(),
     )
     val windowIcon = remember { loadWindowIcon() }
+    // O caminho normal de fechar a janela; a atualização por dentro também fecha o app por ele (decisão 143).
+    val closeApp: () -> Unit = {
+        rememberWindowBounds(container, windowState)
+        if (flushBeforeClosing(container)) {
+            ExitWatchdog.arm(exitDumpFile())
+            exitApplication()
+        }
+    }
     @OptIn(ExperimentalComposeUiApi::class)
     CompositionLocalProvider(LocalWindowExceptionHandlerFactory provides crashHandlerFactory(container)) {
         Window(
-            onCloseRequest = {
-                rememberWindowBounds(container, windowState)
-                if (flushBeforeClosing(container)) {
-                    ExitWatchdog.arm(exitDumpFile())
-                    exitApplication()
-                }
-            },
+            onCloseRequest = closeApp,
             title = "3DReport",
             icon = windowIcon,
             state = windowState,
         ) {
             window.minimumSize = Dimension(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
             FixMultiMonitorDpiRedrawBug()
-            App(container, notice)
+            App(container, notice, onCloseApp = closeApp)
         }
     }
 }

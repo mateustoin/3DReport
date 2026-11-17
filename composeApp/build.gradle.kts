@@ -84,6 +84,8 @@ val renderScreenshots by tasks.registering(Test::class) {
     )
     systemProperty("screenshots.iconPath", project.layout.projectDirectory.file("packaging/icons/icon.png").asFile.absolutePath)
     providers.gradleProperty("screenshots.gcodes").orNull?.let { systemProperty("screenshots.gcodes", it) }
+    // `-Pscreenshots.leva10c=true` acrescenta as capturas da Leva 10C (3MF, prévia simplificada, atualização por dentro).
+    providers.gradleProperty("screenshots.leva10c").orNull?.let { systemProperty("screenshots.leva10c", it) }
     maxHeapSize = "2g" // alguns G-codes reais de exemplo passam de 50 MB
     outputs.upToDateWhen { false }
 }
