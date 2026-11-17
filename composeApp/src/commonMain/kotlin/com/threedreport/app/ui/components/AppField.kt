@@ -451,6 +451,15 @@ fun FormSection(number: Int?, title: String, modifier: Modifier = Modifier, help
     }
 }
 
+/**
+ * Célula de [FormGrid] que não é um campo (o botão de remover uma linha, por exemplo): ocupa a altura de uma caixa de campo e
+ * se alinha por ela, então continua na altura das caixas vizinhas mesmo quando um rótulo da linha quebra em duas linhas.
+ */
+@Composable
+fun FieldRowAction(content: @Composable () -> Unit) {
+    Box(Modifier.height(AppDimens.controlHeight).fieldBoxLine(), contentAlignment = Alignment.Center) { content() }
+}
+
 class FormGridScope {
     internal val cells = mutableListOf<Pair<Int, @Composable () -> Unit>>()
 

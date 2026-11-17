@@ -8,8 +8,10 @@ import _3dreport.composeapp.generated.resources.settings_docs_logo_unreadable
 import _3dreport.composeapp.generated.resources.settings_docs_notice_template_failed
 import _3dreport.composeapp.generated.resources.settings_docs_notice_template_saved
 import _3dreport.composeapp.generated.resources.settings_docs_preview_client
+import _3dreport.composeapp.generated.resources.settings_docs_preview_failed
 import _3dreport.composeapp.generated.resources.settings_docs_preview_printer
 import _3dreport.composeapp.generated.resources.settings_notice_saved
+import com.threedreport.app.AppLog
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
@@ -40,7 +42,10 @@ import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,7 +54,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -71,6 +78,8 @@ class BrandingViewModel(
     private val scope: CoroutineScope,
     private val currency: () -> Currency = { Currency.BRL },
     private val pickImage: () -> PickedFile? = { (defaultPlatform.pickFile(FileKind.IMAGE) as? PickResult.Picked)?.file },
+    /** Onde a prévia do PDF é desenhada: fora da thread da tela, que não pode travar enquanto o PDF é montado. */
+    private val renderDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
 
     /** O que está gravado e de onde o formulário saiu; serve pra saber se há edição por salvar. */
@@ -120,9 +129,18 @@ class BrandingViewModel(
 
     /** Publica [next] com a marca de "há o que salvar" recalculada contra o que está gravado. */
     private fun publish(next: BrandingUiState) {
-        val dirty = next.logoChange != LogoChange.Keep ||
-            runCatching { next.toSettings() }.getOrNull() != baseline.copy(logoFileName = null)
-        state.value = next.copy(hasUnsavedChanges = dirty)
+        state.value = next.withDirtyFlag()
+    }
+
+    /** Muda o estado de forma atômica, a partir do que está nele agora (e não de uma cópia lida antes), recalculando "há o que salvar". */
+    private fun update(transform: (BrandingUiState) -> BrandingUiState) {
+        state.update { transform(it).withDirtyFlag() }
+    }
+
+    private fun BrandingUiState.withDirtyFlag(): BrandingUiState {
+        val dirty = logoChange != LogoChange.Keep ||
+            runCatching { toSettings() }.getOrNull() != baseline.copy(logoFileName = null)
+        return copy(hasUnsavedChanges = dirty)
     }
 
     /** Toda edição de campo apaga os erros anteriores, que já não valem pro formulário novo. */
@@ -209,20 +227,33 @@ class BrandingViewModel(
         val currency = currency()
         // Os textos do documento vêm dos recursos, lidos fora da tela; com `Unconfined` (testes) a prévia sai na hora.
         scope.launch {
-            val sample = previewSampleQuote(sampleName, currency)
-            val pdf = renderSavedQuotesPdf(
-                items = listOf(QuoteExportItem(sample, photoBytes = null)),
-                texts = loadClientDocumentTexts(listOf(sample)),
-                brandName = branding.brandName,
-                footerText = branding.footerText,
-                options = branding.options,
-            )
-            publish(state.value.copy(previewPng = renderPdfFirstPagePng(pdf)))
+            // Desenha fora da thread da tela e volta pra ela só pra publicar, mexendo apenas no campo da prévia: o que a
+            // pessoa digitou enquanto o PDF era montado não é sobrescrito por uma cópia antiga do formulário.
+            val png = try {
+                withContext(renderDispatcher) {
+                    val sample = previewSampleQuote(sampleName, currency)
+                    val pdf = renderSavedQuotesPdf(
+                        items = listOf(QuoteExportItem(sample, photoBytes = null)),
+                        texts = loadClientDocumentTexts(listOf(sample)),
+                        brandName = branding.brandName,
+                        footerText = branding.footerText,
+                        options = branding.options,
+                    )
+                    renderPdfFirstPagePng(pdf)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.warn("Falha ao gerar a prévia do PDF", e)
+                noticeChannel.trySend(UiNotice(uiText(Res.string.settings_docs_preview_failed), isError = true))
+                return@launch
+            }
+            update { it.copy(previewPng = png) }
         }
     }
 
     fun closePreview() {
-        publish(state.value.copy(previewPng = null))
+        update { it.copy(previewPng = null) }
     }
 
     fun startSaveAsTemplate() {

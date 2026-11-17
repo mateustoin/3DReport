@@ -223,4 +223,39 @@ class PdfLayoutTest {
         for (y in 0 until height) for (x in 0 until width) image.setRGB(x, y, random.nextInt(0xFFFFFF))
         return ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
     }
+
+    /** Onde cada trecho de texto da primeira página ficou: esquerda, direita e linha de base (de cima pra baixo). */
+    private class Spot(val text: String, val left: Float, val right: Float, val baseline: Float)
+
+    private fun spotsOf(pdf: ByteArray): List<Spot> = Loader.loadPDF(pdf).use { document ->
+        val spots = mutableListOf<Spot>()
+        object : PDFTextStripper() {
+            override fun writeString(text: String, textPositions: MutableList<org.apache.pdfbox.text.TextPosition>) {
+                if (textPositions.isNotEmpty()) {
+                    spots += Spot(text, textPositions.minOf { it.x }, textPositions.maxOf { it.x + it.width }, textPositions.first().y)
+                }
+            }
+        }.apply { startPage = 1; endPage = 1 }.getText(document)
+        spots
+    }
+
+    private fun priceAndDelivery(salePrice: Double): Pair<Spot, Spot> {
+        val big = savedQuote.copy(
+            quote = savedQuote.quote.copy(salePrice = salePrice),
+            deliveryDateEpochDay = 20_400L,
+        )
+        val spots = spotsOf(renderSavedQuotesPdf(listOf(QuoteExportItem(big, null)), testClientTexts, null, null))
+        val whole = salePrice.toLong().toString().reversed().chunked(3).joinToString(".").reversed()
+        return spots.first { it.text.contains(whole) } to spots.first { it.text.contains(formatDate(20_400L)) }
+    }
+
+    @Test
+    fun aBigPriceNeverRunsIntoTheDeliveryColumn() {
+        for (amount in listOf(123_456.78, 12_345_678.9)) {
+            val (price, delivery) = priceAndDelivery(amount)
+            val besideIt = price.right + 8f <= delivery.left
+            val belowIt = delivery.baseline > price.baseline
+            assertTrue(besideIt || belowIt, "$amount: o preço (${price.left} a ${price.right}) invade a entrega (a partir de ${delivery.left})")
+        }
+    }
 }

@@ -175,10 +175,12 @@ private class PdfContext(
 private fun preparePhoto(document: PDDocument, bytes: ByteArray?, maxPixels: Int): PDImageXObject? {
     val decoded = decodePhotoAsBufferedImage(bytes) ?: return null
     return runCatching {
-        if (decoded.hasTransparency()) {
-            LosslessFactory.createFromImage(document, decoded.scaledToFit(maxPixels, keepAlpha = true))
+        // Reduz uma vez (mantendo o alfa) e decide sobre a imagem já reduzida, pela regra única de transparência.
+        val reduced = decoded.scaledToFit(maxPixels, keepAlpha = true)
+        if (reduced.hasTransparency()) {
+            LosslessFactory.createFromImage(document, reduced)
         } else {
-            JPEGFactory.createFromImage(document, decoded.scaledToFit(maxPixels, keepAlpha = false), PHOTO_JPEG_QUALITY)
+            JPEGFactory.createFromImage(document, reduced.scaledToFit(maxPixels, keepAlpha = false), PHOTO_JPEG_QUALITY)
         }
     }.getOrNull()
 }
@@ -271,7 +273,7 @@ private fun PDPageContentStream.textRight(font: PDFont, size: Float, rightX: Flo
 private fun PDPageContentStream.overline(font: PDFont, size: Float, x: Float, y: Float, text: String, color: Color = INK_MUTED, rightAligned: Boolean = false) {
     val upper = pdfSafe(font, text.uppercase(Locale.ROOT))
     val spacing = size * LABEL_TRACKING
-    val width = font.widthOf(upper, size) + upper.length * spacing
+    val width = overlineWidth(font, size, text)
     saveGraphicsState()
     setNonStrokingColor(color)
     beginText()
@@ -281,6 +283,12 @@ private fun PDPageContentStream.overline(font: PDFont, size: Float, x: Float, y:
     showText(upper)
     endText()
     restoreGraphicsState()
+}
+
+/** Largura de um rótulo em maiúsculas com as letras afastadas, como o [overline] o desenha. */
+private fun overlineWidth(font: PDFont, size: Float, text: String): Float {
+    val upper = pdfSafe(font, text.uppercase(Locale.ROOT))
+    return font.widthOf(upper, size) + upper.length * size * LABEL_TRACKING
 }
 
 private fun PDFont.widthOf(text: String, size: Float): Float = getStringWidth(pdfSafe(this, text)) / 1000f * size
@@ -412,43 +420,86 @@ private fun priceBlock(savedQuote: SavedQuote, options: PdfLayoutOptions, texts:
     )
 }
 
+/** O menor corpo do preço antes de a coluna da direita descer pra baixo dele. */
+private val MIN_PRICE_SIZE = cqw(5.2f)
+
+/** Como o bloco do valor se organiza pra largura que tem: o corpo do preço e se a coluna da direita vai pra baixo dele. */
+private class PriceLayout(val priceSize: Float, val stacked: Boolean)
+
+/** Largura da coluna da direita: a mais larga entre os rótulos e os valores. */
+private fun rightColumnWidth(context: PdfContext, block: PriceBlock): Float = block.lines.maxOfOrNull { line ->
+    val valueFont = if (line.muted) context.bodyFont else context.strongFont
+    val valueWidth = valueFont.widthOf(line.value, line.valueSize)
+    val labelWidth = line.label?.let { overlineWidth(context.bodyFont, LABEL_SIZE, it) } ?: 0f
+    maxOf(valueWidth, labelWidth)
+} ?: 0f
+
+/**
+ * O preço mede o próprio texto: encolhe o corpo, até [MIN_PRICE_SIZE], pra nunca invadir a coluna da direita (como o
+ * `fitFont` da imagem). Se nem no mínimo cabe ao lado, a coluna da direita desce pra baixo do preço, que então usa a
+ * largura inteira do bloco.
+ */
+private fun priceLayout(context: PdfContext, block: PriceBlock, width: Float): PriceLayout {
+    val inner = width - BLOCK_PAD_X * 2
+    val fullWidth = context.displayFont.widthOf(block.price, PRICE_SIZE).coerceAtLeast(1f)
+    val rightWidth = rightColumnWidth(context, block)
+    val beside = if (rightWidth > 0f) inner - rightWidth - GROUP_GAP else inner
+    if (fullWidth <= beside) return PriceLayout(PRICE_SIZE, stacked = false)
+    val fitted = PRICE_SIZE * beside / fullWidth
+    if (fitted >= MIN_PRICE_SIZE) return PriceLayout(fitted, stacked = false)
+    return PriceLayout(minOf(PRICE_SIZE, PRICE_SIZE * inner / fullWidth), stacked = true)
+}
+
 /** Altura do que a coluna da esquerda ocupa, do alto do rótulo até a linha de base do preço. */
-private fun leftColumnHeight(): Float = LABEL_SIZE * CAP_HEIGHT + LABEL_GAP + PRICE_SIZE * CAP_HEIGHT
+private fun leftColumnHeight(priceSize: Float): Float = LABEL_SIZE * CAP_HEIGHT + LABEL_GAP + priceSize * CAP_HEIGHT
 
 /** Altura da coluna da direita, do alto do primeiro rótulo até a linha de base do último valor. */
 private fun rightColumnHeight(block: PriceBlock): Float = block.lines.sumOf { line ->
     ((if (line.label != null) LABEL_SIZE * CAP_HEIGHT + LABEL_GAP else 0f) + line.valueSize * CAP_HEIGHT + line.gapBelow).toDouble()
 }.toFloat()
 
-private fun blockHeight(block: PriceBlock): Float =
-    BLOCK_PAD_Y * 2 + maxOf(leftColumnHeight(), rightColumnHeight(block)) + cqw(0.5f)
+private fun blockHeight(block: PriceBlock, layout: PriceLayout): Float {
+    val left = leftColumnHeight(layout.priceSize)
+    val right = rightColumnHeight(block)
+    val content = if (layout.stacked && right > 0f) left + GROUP_GAP + right else maxOf(left, right)
+    return BLOCK_PAD_Y * 2 + content + cqw(0.5f)
+}
 
 /** Desenha o bloco cinza com o valor, alinhando as duas colunas pela linha de base de baixo. */
-private fun drawPriceBlock(context: PdfContext, writer: PageWriter, block: PriceBlock, x: Float, width: Float) {
+private fun drawPriceBlock(context: PdfContext, writer: PageWriter, block: PriceBlock, layout: PriceLayout, x: Float, width: Float) {
     val content = writer.content
-    val height = blockHeight(block)
+    val height = blockHeight(block, layout)
     val bottom = writer.y - height
     content.fillPanel(x, bottom, width, height)
 
-    val baseline = bottom + BLOCK_PAD_Y + cqw(0.5f)
     val gap = LABEL_GAP
-    content.text(context.displayFont, PRICE_SIZE, x + BLOCK_PAD_X, baseline, block.price)
-    content.overline(context.bodyFont, LABEL_SIZE, x + BLOCK_PAD_X, baseline + PRICE_SIZE * CAP_HEIGHT + gap, block.label)
+    val rightHeight = rightColumnHeight(block)
+    // Empilhado, a coluna da direita fica embaixo, alinhada à esquerda como o preço; lado a lado, ela vai à direita.
+    val rightBase = bottom + BLOCK_PAD_Y + cqw(0.5f)
+    val baseline = if (layout.stacked) rightBase + rightHeight + GROUP_GAP else rightBase
+    content.text(context.displayFont, layout.priceSize, x + BLOCK_PAD_X, baseline, block.price)
+    content.overline(context.bodyFont, LABEL_SIZE, x + BLOCK_PAD_X, baseline + layout.priceSize * CAP_HEIGHT + gap, block.label)
 
-    // Do alto pra baixo: cada item tem o rótulo (se houver) e o valor; o último valor fica na linha de base do preço.
-    var cursor = baseline + rightColumnHeight(block)
+    // Do alto pra baixo: cada item tem o rótulo (se houver) e o valor; o último valor fica na linha de base de baixo.
+    var cursor = rightBase + rightHeight
     val right = x + width - BLOCK_PAD_X
     block.lines.forEach { line ->
         if (line.label != null) {
             val labelBaseline = cursor - LABEL_SIZE * CAP_HEIGHT
-            content.overline(context.bodyFont, LABEL_SIZE, right, labelBaseline, line.label, rightAligned = true)
+            if (layout.stacked) {
+                content.overline(context.bodyFont, LABEL_SIZE, x + BLOCK_PAD_X, labelBaseline, line.label)
+            } else {
+                content.overline(context.bodyFont, LABEL_SIZE, right, labelBaseline, line.label, rightAligned = true)
+            }
             cursor = labelBaseline - gap
         }
         val valueBaseline = cursor - line.valueSize * CAP_HEIGHT
-        if (line.muted) {
-            content.textRight(context.bodyFont, line.valueSize, right, valueBaseline, line.value, INK_MUTED)
+        val font = if (line.muted) context.bodyFont else context.strongFont
+        val color = if (line.muted) INK_MUTED else INK
+        if (layout.stacked) {
+            content.text(font, line.valueSize, x + BLOCK_PAD_X, valueBaseline, line.value, color)
         } else {
-            content.textRight(context.strongFont, line.valueSize, right, valueBaseline, line.value)
+            content.textRight(font, line.valueSize, right, valueBaseline, line.value, color)
         }
         cursor = valueBaseline - line.gapBelow
     }
@@ -469,7 +520,8 @@ private fun drawQuote(context: PdfContext, item: QuoteExportItem, brandName: Str
     val photo = preparePhoto(context.document, item.photoBytes, QUOTE_PHOTO_MAX_PIXELS)
     val rows = detailRows(savedQuote, context.options, texts)
     val block = priceBlock(savedQuote, context.options, texts)
-    val blockHeight = blockHeight(block)
+    val priceLayout = priceLayout(context, block, contentWidth)
+    val blockHeight = blockHeight(block, priceLayout)
 
     var writer = context.startPage(withHeader = true)
     val content = writer.content
@@ -527,7 +579,7 @@ private fun drawQuote(context: PdfContext, item: QuoteExportItem, brandName: Str
         context.finishPage(writer, brandName, footerText)
         writer = context.startPage(withHeader = false)
     }
-    drawPriceBlock(context, writer, block, SIDE_MARGIN, contentWidth)
+    drawPriceBlock(context, writer, block, priceLayout, SIDE_MARGIN, contentWidth)
     context.finishPage(writer, brandName, footerText)
 
     if (photoPending && photo != null) {

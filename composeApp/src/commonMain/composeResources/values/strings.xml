@@ -989,6 +989,7 @@
     <string name="settings_docs_preview_help">Orçamento de exemplo, com o que está no formulário agora (mesmo sem salvar).</string>
     <string name="settings_docs_preview_description">Prévia do PDF</string>
     <string name="settings_docs_preview_sample">Exemplo: suporte de celular</string>
+    <string name="settings_docs_preview_failed">Não consegui gerar a prévia. Tente de novo.</string>
     <string name="settings_docs_preview_client">Maria</string>
     <string name="settings_docs_preview_printer">Impressora</string>
     <string name="settings_docs_templates_title">Modelos</string>

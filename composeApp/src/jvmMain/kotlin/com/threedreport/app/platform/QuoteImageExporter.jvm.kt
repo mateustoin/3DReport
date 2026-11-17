@@ -133,7 +133,10 @@ actual fun renderQuoteImage(
     deliveryText: String?,
     background: ImageBackground,
 ): ByteArray {
-    val tone = resolveImageTone(background, photoBytes)
+    // A mesma decodificação por Skia usada no PDF (decisão 65): o ImageIO do Java devolve null em
+    // silêncio pra WebP, e a foto sumiria da imagem sem nenhum erro aparecer. Uma vez só: o tom e o desenho usam a mesma.
+    val photo = photoBytes?.let(::decodeToBufferedImage)
+    val tone = background.resolve(photo?.let(::averageImageLuminance))
     val palette = if (tone == ImageTone.LIGHT) LIGHT_PALETTE else DARK_PALETTE
 
     val image = BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_RGB)
@@ -146,10 +149,6 @@ actual fun renderQuoteImage(
 
     graphics.color = palette.background
     graphics.fillRect(0, 0, SIZE, SIZE)
-
-    // A mesma decodificação por Skia usada no PDF (decisão 65): o ImageIO do Java devolve null em
-    // silêncio pra WebP, e a foto sumiria da imagem sem nenhum erro aparecer.
-    val photo = photoBytes?.let(::decodeToBufferedImage)
 
     // O bloco da direita primeiro: a largura dele diz quanto sobra pro nome e pro preço.
     val signatureFont = INTER_REGULAR.deriveFont(SIGNATURE_SIZE)

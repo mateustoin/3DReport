@@ -8,6 +8,7 @@ import com.threedreport.app.data.store.RecordCollection
 import com.threedreport.app.data.store.StorageHealth
 import com.threedreport.app.data.store.StoredDocument
 import com.threedreport.app.data.store.StoredRecord
+import com.threedreport.app.platform.fillTemplate
 import com.threedreport.app.platform.formatDateTime
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
@@ -62,8 +63,9 @@ class LocalStorage(
         name: String,
         serializer: KSerializer<T>,
         upgrade: ((JsonElement) -> JsonElement)? = null,
+        upgradeNeeded: (String) -> Boolean = { true },
     ): DataFile<List<StoredRecord<T>>> =
-        wrapper.wrap(JsonDataFile(File(dataDir, name), ListSerializer(StoredRecord.serializer(serializer)), health, upgrade))
+        wrapper.wrap(JsonDataFile(File(dataDir, name), ListSerializer(StoredRecord.serializer(serializer)), health, upgrade, upgradeNeeded))
 
     private fun <T> records(
         name: String,
@@ -71,7 +73,8 @@ class LocalStorage(
         idOf: (T) -> String,
         seed: () -> List<T> = { emptyList() },
         upgrade: ((JsonElement) -> JsonElement)? = null,
-    ) = RecordCollection(recordFile(name, serializer, upgrade), idOf, clock, seed)
+        upgradeNeeded: (String) -> Boolean = { true },
+    ) = RecordCollection(recordFile(name, serializer, upgrade, upgradeNeeded), idOf, clock, seed)
 
     private fun <T> document(name: String, serializer: KSerializer<T>, default: () -> T) =
         DocumentValue(wrapper.wrap(JsonDataFile(File(dataDir, name), StoredDocument.serializer(serializer), health)), clock, default)
@@ -96,12 +99,12 @@ class LocalStorage(
     )
 
     fun quoteHistory(): QuoteHistoryRepository = StoredQuoteHistoryRepository(
-        collection = records("quotes.json", SavedQuote.serializer(), { it.id }, upgrade = ::markLegacyAutoNamedQuotes),
+        collection = records("quotes.json", SavedQuote.serializer(), { it.id }, upgrade = ::markLegacyAutoNamedQuotes, upgradeNeeded = ::quotesNeedAutoNamedUpgrade),
         lastNumber = document("quote-number.json", Int.serializer()) { 0 },
         attachments = attachments,
         clock = clock,
         defaultName = ::defaultQuoteName,
-    )
+    ).also { warmUpAutoNameTemplate() }
 
     fun settings(): SettingsRepository = StoredSettingsRepository(document("settings.json", PricingSettings.serializer()) { Seeds.settings })
 
@@ -120,13 +123,42 @@ class LocalStorage(
     companion object {
         const val ATTACHMENTS_DIR = "attachments"
 
+        /** O modelo do nome automático ("Orçamento - %1$s"), lido uma vez dos recursos e guardado. */
+        @Volatile
+        private var autoNameTemplate: String? = null
+
+        private fun loadAutoNameTemplate(): String =
+            autoNameTemplate ?: runBlocking { getString(Res.string.quote_auto_name) }.also { autoNameTemplate = it }
+
+        /** Lê o modelo na abertura do app, pra o primeiro salvamento não esperar o arquivo de textos na thread da tela. */
+        private fun warmUpAutoNameTemplate() {
+            loadAutoNameTemplate()
+        }
+
         /**
          * Nome que o app dá quando o campo fica em branco ("Orçamento - 24/09/2026 14:30"), no momento [epochMillis].
          * O texto vem de `strings.xml` (`quote_auto_name`); quem pergunta se o nome é automático lê
-         * [SavedQuote.autoNamed], e não o texto. Roda no thread da tela ao salvar: o `getString` só lê o arquivo de
-         * textos na primeira vez, depois usa o que já leu.
+         * [SavedQuote.autoNamed], e não o texto. O modelo é lido uma vez ([warmUpAutoNameTemplate]) e guardado: salvar
+         * não bloqueia a thread da tela a cada vez. Se o idioma do app passar a mudar com o app aberto (Leva 11B), o
+         * modelo guardado precisa ser descartado nessa hora.
          */
-        fun defaultQuoteName(epochMillis: Long): String =
-            runBlocking { getString(Res.string.quote_auto_name, formatDateTime(epochMillis)) }
+        fun defaultQuoteName(epochMillis: Long): String = fillTemplate(loadAutoNameTemplate(), formatDateTime(epochMillis))
     }
+}
+
+/**
+ * Se o texto do `quotes.json` pode ter registro sem a chave `autoNamed` (gravado pela 2.1), caso em que o
+ * [markLegacyAutoNamedQuotes] precisa completar. Conta, sem montar árvore, as chaves `"data"` e `"autoNamed"` entre aspas:
+ * texto digitado que as cite vem escapado (`\"autoNamed\"`) e não conta. Na dúvida (menos chaves que registros) completa.
+ */
+internal fun quotesNeedAutoNamedUpgrade(text: String): Boolean = countKey(text, "\"data\"") > countKey(text, "\"autoNamed\"")
+
+private fun countKey(text: String, key: String): Int {
+    var count = 0
+    var from = text.indexOf(key)
+    while (from >= 0) {
+        count++
+        from = text.indexOf(key, from + key.length)
+    }
+    return count
 }

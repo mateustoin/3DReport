@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.FieldRowAction
 import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.IconAction
@@ -216,7 +217,7 @@ private fun FilamentRow(
         }
         if (multicolor) {
             cell {
-                Box(Modifier.padding(top = MaterialTheme.spacing.md, start = MaterialTheme.spacing.xxs)) {
+                FieldRowAction {
                     IconAction(AppIcons.Close, removeDescription, onClick = { viewModel.removeFilament(row.id, printId) })
                 }
             }

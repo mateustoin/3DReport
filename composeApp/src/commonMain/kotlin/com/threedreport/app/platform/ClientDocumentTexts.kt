@@ -60,8 +60,17 @@ class ClientDocumentTexts internal constructor(
     private val templates: Map<StringResource, String>,
     private val piecesByCount: Map<Int, String>,
 ) {
-    private fun fill(resource: StringResource, vararg args: Any): String =
-        templates.getValue(resource).replace(PLACEHOLDER) { match -> args[match.groupValues[1].toInt() - 1].toString() }
+    private fun fill(resource: StringResource, vararg args: Any): String = fillTemplate(templates.getValue(resource), *args)
+
+    /** Os modelos de duração, montados uma vez só (o PDF pede a duração de cada orçamento). */
+    private val durationTexts: DurationTexts by lazy {
+        DurationTexts(
+            hoursAndMinutes = templates.getValue(Res.string.duration_hours_minutes),
+            hoursOnly = templates.getValue(Res.string.duration_hours),
+            minutesOnly = templates.getValue(Res.string.duration_minutes),
+            decimalHoursTemplate = templates.getValue(Res.string.duration_decimal_hours),
+        )
+    }
 
     /** "3 peças", "1 peça". Só quantidades resolvidas em [loadClientDocumentTexts]. */
     fun pieces(count: Int): String = piecesByCount[count] ?: error("quantidade $count não foi carregada")
@@ -97,12 +106,7 @@ class ClientDocumentTexts internal constructor(
     val rush: String get() = fill(Res.string.client_doc_rush)
 
     /** "6 h 30 min", pro tempo de impressão (ver [DurationTexts.duration]). */
-    fun duration(minutes: Double): String = DurationTexts(
-        hoursAndMinutes = templates.getValue(Res.string.duration_hours_minutes),
-        hoursOnly = templates.getValue(Res.string.duration_hours),
-        minutesOnly = templates.getValue(Res.string.duration_minutes),
-        decimalHoursTemplate = templates.getValue(Res.string.duration_decimal_hours),
-    ).duration(minutes)
+    fun duration(minutes: Double): String = durationTexts.duration(minutes)
 
     /** "Tempo de impressão: 6 h 30 min". */
     fun printTime(duration: String) = fill(Res.string.client_doc_print_time, duration)
@@ -186,8 +190,6 @@ class ClientDocumentTexts internal constructor(
     val labelPrintTime: String get() = fill(Res.string.client_doc_label_print_time)
 
     private companion object {
-        /** O mesmo marcador que o `getString` do Compose preenche: `%1$s`, `%2$d`. */
-        val PLACEHOLDER = Regex("""%(\d+)\$[ds]""")
         const val APP_NAME_PLACEHOLDER = "%1\$s"
     }
 }

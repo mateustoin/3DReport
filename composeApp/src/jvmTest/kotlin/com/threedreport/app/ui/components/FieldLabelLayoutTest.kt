@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.unit.Density
+import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.core.model.ThemeMode
 import kotlin.test.Test
@@ -70,5 +71,38 @@ class FieldLabelLayoutTest {
         val single = layoutOf(shortLabel).getValue(shortLabel).first
 
         assertTrue(wrapped > single, "o rótulo de duas linhas empurra a caixa: $wrapped contra $single")
+    }
+
+    /** O centro vertical dos nós cujas descrições são [descriptions], numa grade com dois campos e uma ação de linha. */
+    private fun centersWithAction(vararg labels: String): Map<String, Float> {
+        val scene = ImageComposeScene(width = 600, height = 300, density = Density(1f)) {
+            AppTheme(ThemeMode.LIGHT) {
+                FormGrid {
+                    labels.forEach { label -> cell(1) { AppTextField(label = label, value = "", onValueChange = {}) } }
+                    cell(1) { FieldRowAction { IconAction(AppIcons.Close, "remover filamento", onClick = {}) } }
+                }
+            }
+        }
+        try {
+            repeat(3) { scene.render(it * 16_000_000L) }
+            val found = mutableMapOf<String, Float>()
+            fun walk(node: SemanticsNode) {
+                node.config.getOrNull(SemanticsProperties.ContentDescription)?.firstOrNull()?.let { description ->
+                    if (description in labels || description == "remover filamento") found[description] = node.boundsInRoot.center.y
+                }
+                node.children.forEach(::walk)
+            }
+            scene.semanticsOwners.forEach { walk(it.rootSemanticsNode) }
+            return found
+        } finally {
+            scene.close()
+        }
+    }
+
+    @Test
+    fun aRowActionStaysAlignedWithTheBoxesWhenALabelWraps() {
+        val centers = centersWithAction(longLabel, shortLabel)
+
+        assertEquals(centers.getValue(shortLabel), centers.getValue("remover filamento"), "o botão fica na altura das caixas")
     }
 }

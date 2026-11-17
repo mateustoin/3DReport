@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -38,12 +39,17 @@ class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     scope: CoroutineScope,
     private val currency: () -> Currency = { Currency.BRL },
+    /** Avisa quando a moeda muda, pra o rascunho limpo passar a mostrar os números com o separador da moeda nova. */
+    currencyChanges: Flow<Currency> = emptyFlow(),
 ) {
 
     /** O que está gravado e de onde o rascunho saiu; serve pra saber se há edição por salvar. */
     private var baseline: PricingSettings = settingsRepository.settings.value
 
-    private val state = MutableStateFlow(baseline.toUiState())
+    /** O separador com que o texto do rascunho foi escrito; o de um rascunho com edição só muda quando ele é refeito. */
+    private var shownSeparator: Char = currency().decimalSeparator
+
+    private val state = MutableStateFlow(baseline.toUiState(shownSeparator))
     val uiState: StateFlow<SettingsUiState> = state.asStateFlow()
 
     private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
@@ -51,6 +57,24 @@ class SettingsViewModel(
 
     init {
         settingsRepository.settings.onEach(::syncWith).launchIn(scope)
+        currencyChanges.onEach { refreshSeparator() }.launchIn(scope)
+    }
+
+    /**
+     * A moeda mudou: o rascunho sem edição é refeito com o separador novo (e continua sem edição); o que a pessoa já
+     * digitou fica como ela digitou.
+     */
+    fun refreshSeparator() {
+        val separator = currency().decimalSeparator
+        if (separator == shownSeparator || hasUnsavedChanges) return
+        shownSeparator = separator
+        publish(baseline.toUiState(separator))
+    }
+
+    /** Refaz o texto do rascunho a partir de [settings], com o separador da moeda de agora. */
+    private fun fromSaved(settings: PricingSettings): SettingsUiState {
+        shownSeparator = currency().decimalSeparator
+        return settings.toUiState(shownSeparator)
     }
 
     /** Se o formulário tem alguma mudança ainda não salva. */
@@ -71,12 +95,12 @@ class SettingsViewModel(
         if (saved == baseline) return
         val wasClean = !hasUnsavedChanges
         baseline = saved
-        publish(if (wasClean) saved.toUiState() else state.value)
+        publish(if (wasClean) fromSaved(saved) else state.value)
     }
 
     /** Volta o formulário pro que está gravado ("Descartar" da barra de alterações, decisão 112). */
     fun discard() {
-        publish(baseline.toUiState())
+        publish(fromSaved(baseline))
     }
 
     /**
@@ -102,7 +126,7 @@ class SettingsViewModel(
         }
         settingsRepository.update(settings)
         baseline = settings
-        publish(settings.toUiState())
+        publish(fromSaved(settings))
         if (!announce) return
         // Custo fixo sem horas pra dividir não entra no preço: melhor avisar do que deixar a pessoa achar que entrou. O
         // aviso é um só (o kit não tem um tom de atenção, então fica no estilo que demora e ganha o "x").
@@ -160,7 +184,7 @@ class SettingsViewModel(
      */
     private fun publish(next: SettingsUiState) {
         state.value = next.copy(
-            hasUnsavedChanges = next.fieldsOnly() != baseline.toUiState().fieldsOnly(),
+            hasUnsavedChanges = next.fieldsOnly() != baseline.toUiState(shownSeparator).fieldsOnly(),
             fixedCostWithoutHours = baseline.hasFixedCostWithoutHours(),
         )
     }
@@ -171,17 +195,17 @@ private fun PricingSettings.hasFixedCostWithoutHours() = monthlyFixedCost > 0 &&
 
 private fun SettingsUiState.fieldsOnly() = copy(errors = emptyMap(), fixedCostWithoutHours = false, hasUnsavedChanges = false)
 
-private fun PricingSettings.toUiState() = SettingsUiState(
-    energyPricePerKwhText = energyPricePerKwh.toInputText(),
-    failureRatePercentText = (failureRate * 100).toInputText(),
-    finishingRatePercentText = (finishingRate * 100).toInputText(),
-    laborRatePerHourText = laborRatePerHour.toInputText(),
-    monthlyFixedCostText = monthlyFixedCost.toInputText(),
-    productiveHoursPerMonthText = productiveHoursPerMonth.toInputText(),
-    administrativeCostText = administrativeCost.toInputText(),
-    profitMarginPercentText = (profitMargin * 100).toInputText(),
-    taxRatePercentText = (taxRate * 100).toInputText(),
-    minimumOrderPriceText = minimumOrderPrice.toInputText(),
-    rushSurchargeRatePercentText = (rushSurchargeRate * 100).toInputText(),
+private fun PricingSettings.toUiState(separator: Char) = SettingsUiState(
+    energyPricePerKwhText = energyPricePerKwh.toInputText(separator),
+    failureRatePercentText = (failureRate * 100).toInputText(separator),
+    finishingRatePercentText = (finishingRate * 100).toInputText(separator),
+    laborRatePerHourText = laborRatePerHour.toInputText(separator),
+    monthlyFixedCostText = monthlyFixedCost.toInputText(separator),
+    productiveHoursPerMonthText = productiveHoursPerMonth.toInputText(separator),
+    administrativeCostText = administrativeCost.toInputText(separator),
+    profitMarginPercentText = (profitMargin * 100).toInputText(separator),
+    taxRatePercentText = (taxRate * 100).toInputText(separator),
+    minimumOrderPriceText = minimumOrderPrice.toInputText(separator),
+    rushSurchargeRatePercentText = (rushSurchargeRate * 100).toInputText(separator),
     fixedCostWithoutHours = hasFixedCostWithoutHours(),
 )

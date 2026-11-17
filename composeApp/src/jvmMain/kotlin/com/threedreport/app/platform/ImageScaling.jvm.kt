@@ -40,15 +40,33 @@ internal fun BufferedImage.scaledToFit(maxPixels: Int, keepAlpha: Boolean = true
     }
 }
 
-/** Se algum pixel da imagem é transparente ou translúcido (miniatura do G-code, captura do 3D, logo recortada). */
+/** Lado da grade de amostragem: até 64 × 64 pontos decidem a transparência, sem varrer a foto pixel a pixel. */
+private const val TRANSPARENCY_GRID = 64
+
+/** Alfa abaixo disto (de 255) conta como transparente; o que fica acima é opaco pra todo efeito visível. */
+private const val TRANSPARENT_ALPHA_BELOW = 250
+
+/** Fração mínima dos pontos amostrados transparentes pra a imagem ser "com transparência" (2%). */
+private const val TRANSPARENT_SHARE = 0.02
+
+/**
+ * Se a imagem tem transparência de verdade (miniatura do G-code, captura do 3D, logo recortada), decidido por amostragem
+ * numa grade fixa e por um limiar: uma foto opaca com cantos arredondados, ou com um pixel translúcido, conta como opaca.
+ * É a regra única do PDF e da imagem pra escolher entre "preencher a área" e "mostrar inteira".
+ */
 internal fun BufferedImage.hasTransparency(): Boolean {
     if (!colorModel.hasAlpha()) return false
-    for (y in 0 until height) {
-        for (x in 0 until width) {
-            if ((getRGB(x, y) ushr 24) != 0xFF) return true
+    val columns = minOf(width, TRANSPARENCY_GRID)
+    val rows = minOf(height, TRANSPARENCY_GRID)
+    var transparent = 0
+    for (row in 0 until rows) {
+        val y = ((row + 0.5) * height / rows).toInt()
+        for (column in 0 until columns) {
+            val x = ((column + 0.5) * width / columns).toInt()
+            if ((getRGB(x, y) ushr 24) < TRANSPARENT_ALPHA_BELOW) transparent++
         }
     }
-    return false
+    return transparent >= columns * rows * TRANSPARENT_SHARE
 }
 
 internal fun BufferedImage.encodePng(): ByteArray =

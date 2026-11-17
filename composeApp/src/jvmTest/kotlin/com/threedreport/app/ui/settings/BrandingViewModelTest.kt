@@ -19,6 +19,7 @@ import com.threedreport.core.model.ImageBackground
 import com.threedreport.core.model.QuoteTemplate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -276,6 +277,34 @@ class BrandingViewModelTest {
 
         viewModel.closePreview()
         assertNull(viewModel.uiState.value.previewPng)
+    }
+
+    @Test
+    fun anEditMadeWhileThePreviewIsBeingRenderedIsNotLost() {
+        val renderThread = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val releaseRender = java.util.concurrent.CountDownLatch(1)
+        // A fila da renderização fica parada até o teste editar o campo: a prévia só termina depois da edição.
+        renderThread.execute { releaseRender.await() }
+        try {
+            val viewModel = BrandingViewModel(
+                BrandingRepository(),
+                TemplateRepository(),
+                scope,
+                renderDispatcher = renderThread.asCoroutineDispatcher(),
+            )
+            viewModel.showPreview("Exemplo")
+
+            viewModel.update("Digitado no meio")
+            assertTrue(viewModel.uiState.value.hasUnsavedChanges)
+            releaseRender.countDown()
+
+            val state = assertNotNull(runBlocking { withTimeoutOrNull(10_000) { viewModel.uiState.first { it.previewPng != null } } })
+            assertEquals("Digitado no meio", state.brandNameInput, "a edição feita durante a renderização continua")
+            assertTrue(state.hasUnsavedChanges)
+        } finally {
+            releaseRender.countDown()
+            renderThread.shutdownNow()
+        }
     }
 
     @Test

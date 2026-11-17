@@ -120,19 +120,20 @@ class SalesChannelViewModel(
     }
 
     fun startEdit(channel: SalesChannel) {
+        val separator = currency().decimalSeparator
         state.update {
             it.copy(
                 form = SalesChannelFormState(
                     nameText = channel.name,
-                    feeRatePercentText = (channel.feeRate * 100).toInputText(),
+                    feeRatePercentText = (channel.feeRate * 100).toInputText(separator),
                     // Sem valor fixo, o campo fica vazio (vazio vale zero), em vez de mostrar um "0" pra apagar.
-                    fixedFeePerItemText = channel.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText().orEmpty(),
+                    fixedFeePerItemText = channel.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText(separator).orEmpty(),
                     tiers = channel.tiers.map { tier ->
                         ChannelTierFormRow(
                             id = newTierId(),
-                            upToUnitPriceText = tier.upToUnitPrice?.toInputText().orEmpty(),
-                            feeRatePercentText = (tier.feeRate * 100).toInputText(),
-                            fixedFeePerItemText = tier.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText().orEmpty(),
+                            upToUnitPriceText = tier.upToUnitPrice?.toInputText(separator).orEmpty(),
+                            feeRatePercentText = (tier.feeRate * 100).toInputText(separator),
+                            fixedFeePerItemText = tier.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText(separator).orEmpty(),
                         )
                     },
                     tiersExpanded = channel.tiers.isNotEmpty(),

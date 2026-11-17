@@ -47,6 +47,11 @@ class JsonDataFile<T>(
     private val serializer: KSerializer<T>,
     private val health: StorageHealth? = null,
     private val upgrade: ((JsonElement) -> JsonElement)? = null,
+    /**
+     * Confere, barato e sobre o texto, se há o que completar com [upgrade]. Arquivo que já veio completo (o da 2.2 em
+     * diante grava todo campo) pula a etapa de árvore e é decodificado direto.
+     */
+    private val upgradeNeeded: (String) -> Boolean = { true },
 ) : DataFile<T> {
 
     override val name: String
@@ -91,7 +96,7 @@ class JsonDataFile<T>(
     private fun decodeOrNull(source: File): T? {
         val text = readWithRetry(source)
         return try {
-            if (upgrade == null) {
+            if (upgrade == null || !upgradeNeeded(text)) {
                 dataJson.decodeFromString(serializer, text)
             } else {
                 dataJson.decodeFromJsonElement(serializer, upgrade(dataJson.parseToJsonElement(text)))

@@ -130,9 +130,9 @@ class QuoteImageExporterTest {
 
     @Test
     fun anOpaquePhotoFillsTheAreaButAPieceWithTransparencyStaysInsideWithAMargin() {
-        // Peça larga (4:1) com um pixel transparente só pra contar como "com transparência": contida, deixa a margem lateral livre.
+        // Peça larga (4:1) com uma faixa transparente de cada lado (20% da imagem, como numa miniatura do G-code): contida, deixa a margem lateral livre.
         val wide = BufferedImage(800, 200, BufferedImage.TYPE_INT_ARGB)
-        for (y in 0 until 200) for (x in 1 until 800) wide.setRGB(x, y, 0xFF336699.toInt())
+        for (y in 0 until 200) for (x in 80 until 720) wide.setRGB(x, y, 0xFF336699.toInt())
         val widePiece = ByteArrayOutputStream().also { ImageIO.write(wide, "png", it) }.toByteArray()
 
         val contained = render(widePiece, ImageBackground.DARK)

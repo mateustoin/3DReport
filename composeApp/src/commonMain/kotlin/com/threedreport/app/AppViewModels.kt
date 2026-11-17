@@ -93,7 +93,7 @@ class AppViewModels(
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */
-    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }) }
+    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency) }
     val brandingViewModel: BrandingViewModel by lazy {
         BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value })
     }

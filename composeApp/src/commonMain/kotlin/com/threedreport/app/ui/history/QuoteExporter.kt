@@ -38,6 +38,7 @@ import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.SavedQuote
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,6 +66,9 @@ class QuoteExporter(
     private val notify: (UiNotice) -> Unit,
 ) {
     private val busyState = MutableStateFlow<UiText?>(null)
+
+    /** Ligada no clique e solta ao terminar (ou cancelar o "Salvar como"): um segundo clique no meio não abre outro diálogo. */
+    private var inProgress = false
 
     /** O que está sendo gerado agora ("Gerando PDF…"), ou `null`. */
     val busy: StateFlow<UiText?> = busyState.asStateFlow()
@@ -162,27 +166,41 @@ class QuoteExporter(
         onSaved: () -> Unit = {},
         generate: suspend () -> ByteArray,
     ) {
-        if (busyState.value != null) return
+        // A guarda liga já no clique, antes do diálogo: o "Salvar como" do sistema deixa um segundo clique entrar.
+        if (inProgress) return
+        inProgress = true
         scope.launch(main) {
-            val fileName = suggestedFileName()
-            val path = platform.chooseSaveLocation(fileName) ?: return@launch
-            if (busyState.value != null) return@launch
-            busyState.value = busyMessage
-            // `null`: não deu pra gerar o arquivo (o motivo vai pro log).
-            val result = withContext(background) {
-                try {
-                    platform.writeFile(path, generate())
+            try {
+                val fileName = try {
+                    suggestedFileName()
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
-                    AppLog.warn("Falha ao gerar $fileName", e)
-                    null
+                    AppLog.warn("Falha ao montar o nome do arquivo", e)
+                    notify(UiNotice(uiText(Res.string.export_failed_generate), isError = true))
+                    return@launch
                 }
-            }
-            busyState.value = null
-            if (result is SaveResult.Saved) onSaved()
-            if (result == null) {
-                notify(UiNotice(uiText(Res.string.export_failed_generate), isError = true))
-            } else {
-                report(result, savedMessage)
+                val path = platform.chooseSaveLocation(fileName) ?: return@launch
+                busyState.value = busyMessage
+                // `null`: não deu pra gerar o arquivo (o motivo vai pro log).
+                val result = withContext(background) {
+                    try {
+                        platform.writeFile(path, generate())
+                    } catch (e: Exception) {
+                        AppLog.warn("Falha ao gerar $fileName", e)
+                        null
+                    }
+                }
+                busyState.value = null
+                if (result is SaveResult.Saved) onSaved()
+                if (result == null) {
+                    notify(UiNotice(uiText(Res.string.export_failed_generate), isError = true))
+                } else {
+                    report(result, savedMessage)
+                }
+            } finally {
+                busyState.value = null
+                inProgress = false
             }
         }
     }

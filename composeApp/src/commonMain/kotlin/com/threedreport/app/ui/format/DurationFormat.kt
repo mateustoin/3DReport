@@ -7,6 +7,7 @@ import _3dreport.composeapp.generated.resources.duration_hours_minutes
 import _3dreport.composeapp.generated.resources.duration_minutes
 import androidx.compose.runtime.Composable
 import com.threedreport.app.platform.AppLocale
+import com.threedreport.app.platform.fillTemplate
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
@@ -51,13 +52,7 @@ class DurationTexts(
         return decimalHoursTemplate.fill(number)
     }
 
-    private fun String.fill(vararg args: Any): String =
-        replace(PLACEHOLDER) { match -> args[match.groupValues[1].toInt() - 1].toString() }
-
-    private companion object {
-        /** O mesmo marcador que o `getString` do Compose preenche: `%1$s`, `%2$d`. */
-        val PLACEHOLDER = Regex("""%(\d+)\$[ds]""")
-    }
+    private fun String.fill(vararg args: Any): String = fillTemplate(this, *args)
 }
 
 /** Os modelos de duração em [DurationTexts], na tela. */

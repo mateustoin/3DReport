@@ -138,12 +138,13 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
     } else {
         RowAction(AppIcons.Archive, stringResource(Res.string.common_archive), { viewModel.setArchived(filament.id, true) })
     }
+    val separator = LocalCurrency.current.decimalSeparator
     val unnamed = stringResource(Res.string.filaments_color_unnamed)
     val outOfStock = stringResource(Res.string.filaments_color_out_of_stock)
     ListRow(
         title = filament.name,
         details = listOfNotNull(
-            stringResource(Res.string.filaments_row_specs, filament.densityGPerCm3.toInputText(), filament.diameterMm.toInputText()),
+            stringResource(Res.string.filaments_row_specs, filament.densityGPerCm3.toInputText(separator), filament.diameterMm.toInputText(separator)),
             stringResource(Res.string.filaments_row_out_of_stock).takeIf { !filament.archived && !filament.hasStockAvailable },
         ),
         value = stringResource(Res.string.filaments_row_price, filament.pricePerKg.toMoney()),
