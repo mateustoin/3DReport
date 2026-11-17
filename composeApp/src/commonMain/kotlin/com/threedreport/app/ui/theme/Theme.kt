@@ -1,10 +1,10 @@
 package com.threedreport.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import com.threedreport.app.platform.systemPrefersDark
 import com.threedreport.core.model.ThemeMode
 
 /**
@@ -17,7 +17,7 @@ fun AppTheme(mode: ThemeMode, content: @Composable () -> Unit) {
     val isDark = when (mode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.SYSTEM -> systemPrefersDark()
     }
     val appType = rememberAppTypography()
     val material = remember(appType) { appType.toMaterial() }
