@@ -5,7 +5,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -23,7 +22,7 @@ import com.threedreport.app.ui.theme.appType
 @Composable
 fun BrandMark(modifier: Modifier = Modifier, compact: Boolean = false, onNavy: Boolean = true) {
     val colors = MaterialTheme.appColors
-    val first = if (onNavy) Color.White else MaterialTheme.colorScheme.onBackground
+    val first = if (onNavy) colors.onNavy else MaterialTheme.colorScheme.onBackground
     val second = if (onNavy) colors.amber else colors.amberText
     Text(
         buildAnnotatedString {

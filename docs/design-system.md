@@ -130,7 +130,7 @@ fonte. Não se usa fonte monoespaçada.
 
 | Componente | Regra |
 |---|---|
-| Barra lateral | Fundo `navy` nos dois temas. Marca "3D" em branco e "Report" em âmbar. Grupos em `overline`. Item ativo: fundo `navyRaised`, texto branco em 600 e ícone âmbar |
+| Barra lateral | Fundo `navy` nos dois temas. Marca "3D" em `onNavy` e "Report" em âmbar. Grupos em `overline`. Item ativo: fundo `navyRaised`, texto branco em 600 e ícone âmbar |
 | Cabeçalho de tela | Título em `headline` à esquerda; à direita, o seletor da tela e a ação principal. Sem subtítulo |
 | Seção de formulário | Marcador redondo numerado (24, fundo `tint`, número em `primary`) e título em `sectionTitle`. Sem ícone decorativo. **Seção única** (a tela só tem uma, como Canais de venda e Aparência em Configurações, decisão 134) não leva título nem número: o conteúdo começa direto e a ajuda vai num `HelpHint` |
 | Célula de ação na grade | `FieldRowAction`: célula de `FormGrid` que não é campo (o botão de remover uma linha). Ocupa a altura de uma caixa e se alinha por ela, então fica na altura das caixas vizinhas mesmo quando um rótulo da linha quebra em duas linhas |
@@ -142,11 +142,11 @@ fonte. Não se usa fonte monoespaçada.
 | Botão só de ícone | `IconAction`: descrição e dica, anel de foco; versão `onNavy` pro painel de resultado |
 | Diálogo | `AppDialog`: fundo `card`, raio 12, título em `panelTitle` (com dica de ajuda ao lado, se precisar), botões à direita e o último confirma. Altura máxima de a janela menos duas margens (`space.xxl`): título e botões ficam fixos e só o corpo rola (não há parâmetro `scrollable`) |
 | Seletor de duas ou três opções | Segmentado com borda `line` (`AppChoiceField` junta o rótulo e a ajuda, como o "Fundo da imagem" de Configurações, com três); a opção ativa tem fundo `primary`; recebe anel de foco visível (`SegmentedChoice`). Com `fillWidth` (também em `AppChoiceField`) as opções dividem a largura do campo em partes iguais, pra o rótulo não truncar numa coluna estreita da grade. `AdaptiveChoice` é o mesmo seletor que, em janela estreita (`compact`), vira a lista suspensa do kit com o rótulo só pra leitor de tela, na altura dos outros controles do cabeçalho (período do Dashboard) |
-| Marca | `BrandMark`: por padrão (`onNavy = true`), "3D" em branco e "Report" em âmbar, pra barra lateral. Com `onNavy = false`, a variante pra fundo claro ("3D" na cor do texto, "Report" em âmbar de texto), sem bloco de fundo, como no Sobre. O azul-marinho fica só na barra lateral e no painel de resultado |
+| Marca | `BrandMark`: por padrão (`onNavy = true`), "3D" em `onNavy` e "Report" em âmbar, pra barra lateral. Com `onNavy = false`, a variante pra fundo claro ("3D" na cor do texto, "Report" em âmbar de texto), sem bloco de fundo, como no Sobre. O azul-marinho fica só na barra lateral e no painel de resultado |
 | Linha só de leitura | `InfoRow(title, value)`: título em `body` à esquerda, valor em `bodyStrong` com algarismos tabulares à direita, altura mínima `AppDimens.infoRowHeight` (40) e divisor de 1 px. Não clica |
 | Painel de resultado | Coluna fixa à direita, fundo `navy`: rótulo em `overline`, preço em `displayPrice`, dois blocos (lucro em âmbar e mínimo sem prejuízo), barra de composição, e as ações no pé |
 | Bloco de resumo | Número em `statValue` e legenda em `caption`, fundo `card`, borda `line`, raio 10 (`SummaryBlock`). A cor do número pode ser a de prazo; a legenda sempre diz o que ele é |
-| Barra de progresso | `BusyBar`: faixa fina em `primary` sobre `line` no topo da tela, com o que está sendo feito em `caption` embaixo (gerar PDF ou imagem) |
+| Barra de progresso | `AppProgressBar(progress)`: faixa fina em `primary` sobre `line`; com `progress` de 0 a 1 mostra quanto já foi feito, sem ele anda sem fim. Quem usa dá a descrição pra leitor de tela. `BusyBar` é a mesma faixa no topo da tela, com o que está sendo feito em `caption` embaixo (gerar PDF ou imagem). A prévia do STL e a janela de atualização usam a `AppProgressBar` |
 | Selo | Texto em `label` semibold, fundo de raio 6 (`AppBadge`). O prazo usa as cores de prazo; o pedido que já saiu do fluxo mostra o prazo só como texto de apoio |
 | Situação | Ponto de 8 na cor da situação e o nome ao lado (`StatusLabel`) |
 | Tabela | Cabeçalho de 34 com os títulos em `label` e linhas de 52, divisor de 1 px, valor à direita (`TableHeader`, `TableRow`). Ações no hover ou no foco, por cima do fim da linha, como na linha de lista. No modo de seleção, a primeira coluna é a caixa de marcar, clicar na linha marca e as ações da linha ficam ocultas. Colunas de valor têm largura fixa (`tableMoneyColumn`) e a da peça absorve a sobra. `TableStaticRow` é a linha só de leitura (o ranking do Dashboard): mesmas medidas e divisor, sem clique, ação nem foco, pra o Tab não parar nela |
@@ -164,10 +164,6 @@ PDF, catálogo em PDF e imagem quadrada do orçamento (decisão 137) usam a mesm
 - **Imagem:** a identidade do app aparece. Fundo `navy`, faixa inferior `#081526` e só o preço em `amber`. Quando a peça é escura (`BrandingSettings.imageBackground`, por padrão automático), o fundo vira o tom claro: `#F6F8FB`, cartão branco pra peça, preço em texto escuro e entrega em âmbar de texto.
 - **Cores num ponto só:** `DocumentColors` reúne as cores do PDF e da imagem. As de marca e de tema (`navy`, `amber`, `onNavy` e as do tom claro) vêm do tema do app, sem hexadecimal repetido; as do PDF (tinta e cinzas) ficam nele.
 - Os dois levam "Gerado com 3DReport" discreto, longe do nome e do preço.
-
-## Sem uso no momento
-
-- `FieldHelp` (ajuda recolhível "Saiba mais" embaixo de campo) está no kit, mas nenhuma tela o usa hoje: a ajuda de campo vai em `HelpHint`. Fica registrado, não removido.
 
 ## Comportamento
 
