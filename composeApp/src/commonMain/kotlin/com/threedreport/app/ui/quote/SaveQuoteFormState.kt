@@ -13,10 +13,10 @@ data class SaveQuoteFormState(
      */
     val autoName: String? = null,
     val photo: PickedFile? = null,
-    /** `true` quando [photo] veio da miniatura embutida num G-code importado, não de escolha manual. */
-    val photoFromGCode: Boolean = false,
-    /** Arquivo STL do modelo (opcional), guardado pra recuperar/reaproveitar numa venda futura. */
-    val stlFile: PickedFile? = null,
+    /** `true` quando [photo] veio de uma miniatura automática (a de um G-code importado ou a de um 3MF), não de escolha manual. */
+    val photoAutomatic: Boolean = false,
+    /** Arquivo do modelo, STL ou 3MF (opcional), guardado pra recuperar/reaproveitar numa venda futura. */
+    val modelFile: PickedFile? = null,
     val sourceLink: String = "",
     val clientName: String = "",
     val clientContact: String = "",

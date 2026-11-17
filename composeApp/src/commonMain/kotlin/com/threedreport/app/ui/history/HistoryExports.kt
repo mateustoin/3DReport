@@ -2,8 +2,8 @@ package com.threedreport.app.ui.history
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.export_copy_failed
+import _3dreport.composeapp.generated.resources.history_notice_model_saved
 import _3dreport.composeapp.generated.resources.history_notice_photo_saved
-import _3dreport.composeapp.generated.resources.history_notice_stl_saved
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.PlatformServices
@@ -14,7 +14,7 @@ import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
 
 /**
- * Tudo o que Pedidos e o Catálogo mandam pra fora: PDF, imagem, WhatsApp, texto copiado, foto e STL, e a exportação em lote.
+ * Tudo o que Pedidos e o Catálogo mandam pra fora: PDF, imagem, WhatsApp, texto copiado, foto e arquivo do modelo, e a exportação em lote.
  * A geração dos arquivos é a do "Enviar pro cliente" do Orçamento (ver [QuoteExporter]). Os envios que mostram o prazo
  * passam pelo aviso de prazo vencido ([HistoryUiState.pendingExport]); o catálogo não, porque não mostra prazo.
  */
@@ -69,9 +69,11 @@ internal class HistoryExports(
         exporter.saveAttachment(savedQuote, bytes, extension, uiText(Res.string.history_notice_photo_saved))
     }
 
-    fun downloadStl(savedQuote: SavedQuote) {
-        val bytes = repository.stlBytes(savedQuote) ?: return
-        exporter.saveAttachment(savedQuote, bytes, "stl", uiText(Res.string.history_notice_stl_saved))
+    /** Baixa o arquivo do modelo com o nome do orçamento e a extensão dele (`.stl` ou `.3mf`). */
+    fun downloadModelFile(savedQuote: SavedQuote) {
+        val bytes = repository.modelBytes(savedQuote) ?: return
+        val extension = savedQuote.modelFileKind?.extension ?: "stl"
+        exporter.saveAttachment(savedQuote, bytes, extension, uiText(Res.string.history_notice_model_saved))
     }
 
     /** "Enviar assim mesmo" no aviso de prazo vencido: faz o envio que tinha sido segurado, sem perguntar de novo. */

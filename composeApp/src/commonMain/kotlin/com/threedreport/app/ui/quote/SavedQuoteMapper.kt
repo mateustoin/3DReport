@@ -94,12 +94,12 @@ internal object SavedQuoteMapper {
         )
     }
 
-    /** O formulário de salvar a partir do retrato, com a foto e o STL já lidos. */
-    fun saveFormFrom(savedQuote: SavedQuote, photo: PickedFile?, stlFile: PickedFile?) = SaveQuoteFormState(
+    /** O formulário de salvar a partir do retrato, com a foto e o arquivo do modelo já lidos. */
+    fun saveFormFrom(savedQuote: SavedQuote, photo: PickedFile?, modelFile: PickedFile?) = SaveQuoteFormState(
         name = savedQuote.name,
         autoName = savedQuote.name.takeIf { savedQuote.autoNamed },
         photo = photo,
-        stlFile = stlFile,
+        modelFile = modelFile,
         sourceLink = savedQuote.sourceLink.orEmpty(),
         clientName = savedQuote.client?.name.orEmpty(),
         clientContact = savedQuote.client?.contact.orEmpty(),

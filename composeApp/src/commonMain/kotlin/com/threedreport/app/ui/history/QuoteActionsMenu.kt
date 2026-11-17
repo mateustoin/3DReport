@@ -8,8 +8,8 @@ import _3dreport.composeapp.generated.resources.history_menu_copy_text
 import _3dreport.composeapp.generated.resources.history_menu_copy_to_catalog
 import _3dreport.composeapp.generated.resources.history_menu_deadline_change
 import _3dreport.composeapp.generated.resources.history_menu_deadline_set
+import _3dreport.composeapp.generated.resources.history_menu_download_model
 import _3dreport.composeapp.generated.resources.history_menu_download_photo
-import _3dreport.composeapp.generated.resources.history_menu_download_stl
 import _3dreport.composeapp.generated.resources.history_menu_duplicate
 import _3dreport.composeapp.generated.resources.history_menu_edit_calculation
 import _3dreport.composeapp.generated.resources.history_menu_edit_details
@@ -102,11 +102,11 @@ private fun SendGroup(actions: QuoteActions, close: () -> Unit) {
 
 @Composable
 private fun FilesGroup(actions: QuoteActions, close: () -> Unit) {
-    if (actions.onDownloadPhoto == null && actions.onDownloadStl == null && actions.onPrintSettings == null) return
+    if (actions.onDownloadPhoto == null && actions.onDownloadModelFile == null && actions.onPrintSettings == null) return
     AppMenuDivider()
     AppMenuGroup(stringResource(Res.string.history_menu_group_files))
     actions.onDownloadPhoto?.let { AppMenuItem(stringResource(Res.string.history_menu_download_photo), { close(); it() }, AppIcons.Image) }
-    actions.onDownloadStl?.let { AppMenuItem(stringResource(Res.string.history_menu_download_stl), { close(); it() }, AppIcons.Download) }
+    actions.onDownloadModelFile?.let { AppMenuItem(stringResource(Res.string.history_menu_download_model), { close(); it() }, AppIcons.Download) }
     actions.onPrintSettings?.let { onPrintSettings ->
         AppMenuItem(stringResource(Res.string.history_menu_print_settings), { close(); onPrintSettings() }, AppIcons.Tune)
     }

@@ -118,11 +118,6 @@ data class SavedQuote(
     val modelFileKind: ModelFileKind?
         get() = modelFileName?.let { ModelFileKind.of(it) ?: ModelFileKind.STL }
 
-    /** Nome antigo de [modelFileName], enquanto as telas não migram. */
-    @Deprecated("O arquivo do modelo pode ser STL ou 3MF", ReplaceWith("modelFileName"))
-    val stlFileName: String?
-        get() = modelFileName
-
     /** Número pra mostrar ao cliente ("#0042"), ou `null` sem número. */
     val displayNumber: String?
         get() = if (number > 0) "#" + number.toString().padStart(4, '0') else null

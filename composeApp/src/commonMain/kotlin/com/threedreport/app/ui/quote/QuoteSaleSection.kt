@@ -66,7 +66,7 @@ internal fun SaleFields(
     form: SaveQuoteFormState,
     result: QuoteResult,
     currency: Currency,
-    today: Long,
+    suggestRush: Boolean,
 ) {
     val space = MaterialTheme.spacing
     val settings: PricingSettings = catalog.settings
@@ -180,8 +180,7 @@ internal fun SaleFields(
             // Urgência (decisão 125): só existe com o acréscimo configurado, senão a opção não teria efeito.
             if (settings.rushSurchargeRate > 0) {
                 AppCheckbox(stringResource(Res.string.quote_sale_rush, settings.rushSurchargeRate.toPercentText()), input.rush, viewModel::setRush)
-                val deadline = form.deliveryDateEpochDay
-                if (!input.rush && deadline != null && deadline - today in 0..2) {
+                if (suggestRush) {
                     AppButton(stringResource(Res.string.quote_sale_rush_suggest), onClick = { viewModel.setRush(true) })
                 }
             }

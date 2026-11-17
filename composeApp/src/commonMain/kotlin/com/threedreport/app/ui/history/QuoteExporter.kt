@@ -243,7 +243,7 @@ class QuoteExporter(
     }
 
     /**
-     * Grava [bytes] (a foto ou o STL de [savedQuote]) com o nome dele e a [extension], perguntando onde, e avisa com
+     * Grava [bytes] (a foto ou o arquivo do modelo de [savedQuote]) com o nome dele e a [extension], perguntando onde, e avisa com
      * [savedMessage]. O nome sugerido vem dos recursos, lidos em [main].
      */
     fun saveAttachment(savedQuote: SavedQuote, bytes: ByteArray, extension: String, savedMessage: UiText) {

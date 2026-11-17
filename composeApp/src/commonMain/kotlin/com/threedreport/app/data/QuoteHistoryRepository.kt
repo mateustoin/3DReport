@@ -138,10 +138,6 @@ interface QuoteHistoryRepository {
      */
     fun modelBytes(savedQuote: SavedQuote): ByteArray?
 
-    /** Nome antigo de [modelBytes], enquanto as telas não migram. */
-    @Deprecated("O arquivo do modelo pode ser STL ou 3MF", ReplaceWith("modelBytes(savedQuote)"))
-    fun stlBytes(savedQuote: SavedQuote): ByteArray? = modelBytes(savedQuote)
-
     /** Bytes de um anexo pela chave (a miniatura de uma impressão, por exemplo), ou `null`. */
     fun attachmentBytes(key: String): ByteArray?
 

@@ -40,7 +40,7 @@
     <string name="startup_close">Fechar</string>
     <string name="platform_pick_image">Escolher foto</string>
     <string name="platform_pick_gcode">Escolher arquivo G-code</string>
-    <string name="platform_pick_stl">Escolher arquivo STL</string>
+    <string name="platform_pick_model">Escolher arquivo do modelo</string>
     <string name="platform_pick_backup">Escolher backup do 3DReport</string>
     <string name="platform_save_as">Salvar como</string>
 
@@ -59,8 +59,6 @@
     <string name="common_archived_section">Arquivados (%1$d)</string>
     <string name="common_add">Adicionar</string>
     <string name="common_optional">Opcional</string>
-    <string name="common_help_more">Saiba mais</string>
-    <string name="common_help_less">Menos</string>
     <string name="common_help_for">Ajuda: %1$s</string>
     <string name="common_field_charge">Cobrança</string>
     <string name="common_charge_per_piece">Por peça</string>
@@ -424,7 +422,7 @@
     <string name="quote_section_extras">Trabalho e extras</string>
     <string name="quote_section_sale">Venda</string>
     <string name="quote_section_details">Detalhes</string>
-    <string name="quote_help_details">Foto e prazo saem no PDF e na mensagem. Contato, STL e link ficam só com você.</string>
+    <string name="quote_help_details">Foto e prazo saem no PDF e na mensagem. Contato, arquivo do modelo e link ficam só com você.</string>
     <string name="quote_field_name">Nome da peça (opcional)</string>
     <string name="quote_field_quantity">Quantidade de peças</string>
     <string name="quote_help_quantity">Peso, comprimento e tempo são de UMA peça: o app multiplica pela quantidade.</string>
@@ -574,16 +572,21 @@
     <string name="quote_details_photo_remove">Remover foto</string>
     <string name="quote_details_photo_description">Foto da peça</string>
     <string name="quote_details_photo_unavailable">Não consegui mostrar essa imagem.</string>
-    <string name="quote_details_photo_from_gcode">Miniatura do G-code</string>
+    <string name="quote_details_photo_automatic">Miniatura do arquivo</string>
     <string name="quote_details_settings_add">Adicionar configurações de impressão</string>
     <string name="quote_details_settings_edit">Editar configurações de impressão</string>
-    <string name="quote_stl_attach">Anexar arquivo STL (opcional)</string>
-    <string name="quote_stl_remove">Remover STL</string>
-    <string name="quote_stl_hint_label">Arquivo STL</string>
-    <string name="quote_help_stl">Guardado pra você baixar de novo em Pedidos ou no Catálogo e reaproveitar numa venda futura da mesma peça.</string>
-    <string name="quote_stl_loading">Preparando a prévia 3D…</string>
-    <string name="quote_stl_too_complex">Esse modelo é muito complexo pra pré-visualizar (~%1$d triângulos). O arquivo é salvo normalmente, só sem a prévia 3D, pra não travar o app.</string>
-    <string name="quote_stl_unreadable">Não consegui ler esse arquivo STL: pode estar corrompido ou num formato não suportado.</string>
+    <string name="quote_model_attach">Arquivo do modelo (opcional)</string>
+    <string name="quote_model_remove">Remover arquivo</string>
+    <string name="quote_model_hint_label">Arquivo do modelo</string>
+    <string name="quote_help_model">STL ou 3MF. Guardado pra você baixar de novo em Pedidos ou no Catálogo.</string>
+    <string name="quote_model_loading">Preparando a prévia</string>
+    <string name="quote_model_too_large">Esse arquivo é grande demais pra pré-visualizar (%1$d MB). Ele é guardado normalmente, só sem a prévia 3D.</string>
+    <string name="quote_model_stl_unreadable">Não consegui ler esse STL. Ele pode estar corrompido.</string>
+    <string name="quote_model_stl_simplified">Prévia simplificada pra desenhar mais rápido. As medidas usam o arquivo completo.</string>
+    <string name="quote_model_3mf_thumbnail">Miniatura do 3MF</string>
+    <string name="quote_model_3mf_use_as_photo">Usar como foto do orçamento</string>
+    <string name="quote_model_3mf_no_thumbnail">Esse 3MF não tem miniatura</string>
+    <string name="quote_model_3mf_unreadable">Não consegui ler esse 3MF</string>
     <string name="quote_stl_viewer_label">Prévia 3D</string>
     <string name="quote_help_stl_viewer">Arraste pra girar, use a roda do mouse pra zoom.</string>
     <string name="quote_stl_capture">Capturar como foto do orçamento</string>
@@ -738,7 +741,7 @@
     <string name="history_notice_see_orders">Ver pedidos</string>
     <string name="history_notice_details_saved">Detalhes de "%1$s" salvos.</string>
     <string name="history_notice_photo_saved">Foto salva.</string>
-    <string name="history_notice_stl_saved">STL salvo.</string>
+    <string name="history_notice_model_saved">Arquivo do modelo salvo.</string>
     <string name="history_error_photo_unreadable">Não consegui abrir %1$s como imagem. Use PNG ou JPG.</string>
 
     <!-- Catálogo: o aviso do cartão quando o preço de hoje não é o guardado -->
@@ -822,7 +825,7 @@
     <string name="history_menu_save_image">Salvar imagem pro WhatsApp</string>
     <string name="history_menu_copy_text">Copiar texto</string>
     <string name="history_menu_download_photo">Baixar foto</string>
-    <string name="history_menu_download_stl">Baixar STL</string>
+    <string name="history_menu_download_model">Baixar arquivo do modelo</string>
     <string name="history_menu_print_settings">Configurações de impressão</string>
     <string name="history_menu_sell">Vender</string>
     <string name="history_menu_edit_details">Editar detalhes</string>
@@ -1060,7 +1063,7 @@
     <string name="settings_appearance_currency_help_detail">Não afeta o cálculo. Cada orçamento salvo continua na moeda em que foi feito. Vale na hora, sem precisar salvar.</string>
 
     <string name="settings_backup_title">Backup</string>
-    <string name="settings_backup_help">Seus orçamentos, clientes, catálogos, fotos e arquivos STL ficam só neste computador.</string>
+    <string name="settings_backup_help">Seus orçamentos, clientes, catálogos, fotos e arquivos de modelo ficam só neste computador.</string>
     <string name="settings_backup_help_detail">O backup junta tudo isso num arquivo .zip, pra você guardar em outro lugar ou levar pra outra máquina.</string>
     <string name="settings_backup_last">Último backup</string>
     <string name="settings_backup_none">Nenhum backup feito neste computador ainda.</string>
@@ -1086,7 +1089,7 @@
     <string name="settings_backup_restore_apply_failed_kept">Não consegui aplicar o backup. Seus dados atuais foram mantidos.</string>
     <string name="settings_backup_restore_apply_failed_moved">Não consegui aplicar o backup, e seus dados atuais ficaram guardados em %1$s. Renomeie essa pasta de volta pra %2$s antes de abrir o app de novo.</string>
     <string name="settings_backup_restore_title">Restaurar este backup?</string>
-    <string name="settings_backup_restore_message">Todos os dados atuais do app (orçamentos, clientes, catálogos, configurações, fotos e STLs) serão substituídos pelo conteúdo de "%1$s". Uma cópia dos dados atuais é guardada automaticamente, e o app será fechado ao final pra carregar os dados restaurados.</string>
+    <string name="settings_backup_restore_message">Todos os dados atuais do app (orçamentos, clientes, catálogos, configurações, fotos e arquivos de modelo) serão substituídos pelo conteúdo de "%1$s". Uma cópia dos dados atuais é guardada automaticamente, e o app será fechado ao final pra carregar os dados restaurados.</string>
     <string name="settings_backup_restore_confirm">Restaurar</string>
     <string name="settings_backup_restored_title">Backup restaurado</string>
     <string name="settings_backup_restored_message">O app precisa ser fechado agora pra carregar os dados restaurados. Os dados que existiam antes foram guardados em:</string>
@@ -1133,6 +1136,27 @@
     <string name="about_updates_failed">Não consegui verificar. Confira a internet e tente de novo.</string>
     <string name="about_updates_available">Versão %1$s disponível</string>
     <string name="about_updates_see_news">Ver novidades</string>
+    <string name="about_updates_install_now">Atualizar agora</string>
+    <string name="update_title">Atualizar pra versão %1$s</string>
+    <string name="update_downloading">Baixando o instalador</string>
+    <string name="update_verifying">Conferindo o arquivo</string>
+    <string name="update_installing">Instalando</string>
+    <string name="update_ready_windows">O instalador do Windows abre e o 3DReport fecha. Confirme a permissão de administrador pra concluir.</string>
+    <string name="update_ready_linux">O 3DReport pede a sua senha, instala a versão nova, fecha e abre de novo.</string>
+    <string name="update_ready_linux_manual">O arquivo está pronto. Vou abrir a pasta e mostrar o comando que instala.</string>
+    <string name="update_ready_macos">O arquivo de instalação abre e o 3DReport fecha. Arraste o 3DReport pra Aplicativos e substitua o atual.</string>
+    <string name="update_password_cancelled">Instalação cancelada. Nada mudou.</string>
+    <string name="update_install_and_close">Instalar e fechar o app</string>
+    <string name="update_open_folder">Abrir a pasta</string>
+    <string name="update_unsaved">Você tem um orçamento não salvo. Ao fechar o app, ele se perde.</string>
+    <string name="update_install_anyway">Instalar mesmo assim</string>
+    <string name="update_back">Voltar</string>
+    <string name="update_manual_message">A pasta com o arquivo foi aberta. Pra instalar, rode no terminal:</string>
+    <string name="update_copy_command">Copiar comando</string>
+    <string name="update_error_network">Não consegui baixar a atualização. Confira a internet.</string>
+    <string name="update_error_no_checksums">Essa versão não traz o arquivo de conferência, então o app não instala por aqui.</string>
+    <string name="update_error_checksum_mismatch">O arquivo baixado não passou na conferência e foi apagado. Nada foi instalado.</string>
+    <string name="update_error_install">Não consegui instalar. Nada mudou.</string>
     <string name="about_updates_announce">Versão %1$s do 3DReport disponível.</string>
 
     <!-- Primeiro uso -->

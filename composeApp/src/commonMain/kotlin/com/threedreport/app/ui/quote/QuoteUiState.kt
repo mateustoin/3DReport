@@ -32,7 +32,7 @@ data class QuoteCatalog(
  * Tudo o que a tela de Orçamento mostra, num valor só.
  *
  * @property input o que a pessoa digitou.
- * @property form o que é de salvar: nome, cliente, foto, STL, prazo e a operação em curso.
+ * @property form o que é de salvar: nome, cliente, foto, arquivo do modelo, prazo e a operação em curso.
  * @property result a conta, feita pelo `core` a partir de [input] e [catalog]; é a mesma da tela e do Ctrl+S.
  * @property comparison o mesmo orçamento em cada impressora cadastrada (ver `QuoteViewModel.comparePrinters`); vazio
  *   com uma impressora só ou sem conta.
@@ -41,8 +41,10 @@ data class QuoteCatalog(
  *   formulário recomeça (salvar, orçamento novo).
  * @property deliveryDaysLate quantos dias o prazo do formulário já passou (0 sem prazo ou em dia), pro painel e pro
  *   seletor de prazo dizerem o mesmo.
- * @property today hoje, em dias desde 01/01/1970, a mesma régua do atraso; o seletor de prazo e a sugestão de urgência
- *   usam este, e não o relógio do sistema.
+ * @property suggestRush o prazo está a 0 a 2 dias e a urgência está configurada e desmarcada: a tela oferece "Marcar
+ *   como urgente" (ver [shouldSuggestRush]).
+ * @property today hoje, em dias desde 01/01/1970, a mesma régua do atraso; o seletor de prazo usa este, e não o
+ *   relógio do sistema.
  * @property pendingSend o envio ("Enviar pro cliente") segurado porque o prazo já venceu, até a pessoa confirmar ou
  *   desistir; o mesmo aviso de Pedidos.
  * @property exporting o PDF ou a imagem do "Enviar pro cliente" está sendo gerado.
@@ -56,13 +58,14 @@ data class QuoteUiState(
     val form: SaveQuoteFormState = SaveQuoteFormState(),
     val result: QuoteResult = QuoteResult(),
     val importing: Boolean = false,
-    val stlPreview: StlPreview? = null,
+    val modelPreview: ModelPreview? = null,
     val collapsedPrintIds: Set<Int> = emptySet(),
     val exporting: Boolean = false,
     val comparison: List<Pair<PrinterProfile, Quote>> = emptyList(),
     val queueHints: List<QueueHint> = emptyList(),
     val negotiating: Boolean = false,
     val deliveryDaysLate: Int = 0,
+    val suggestRush: Boolean = false,
     val today: Long = 0L,
     val pendingSend: ClientExport? = null,
 )

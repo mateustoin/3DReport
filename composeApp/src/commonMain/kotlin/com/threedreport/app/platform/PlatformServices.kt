@@ -1,5 +1,7 @@
 package com.threedreport.app.platform
 
+import com.threedreport.core.model.ModelFileKind
+
 /**
  * Os tipos de arquivo que o app pede pra escolher, com as extensões aceitas. O título do diálogo do sistema vem de
  * recurso, lido pela plataforma (ver `PlatformTexts`).
@@ -7,9 +9,18 @@ package com.threedreport.app.platform
 enum class FileKind(val extensions: Set<String>) {
     IMAGE(setOf("png", "jpg", "jpeg", "gif", "bmp", "webp")),
     GCODE(setOf("gcode", "gco", "g")),
-    STL(setOf("stl")),
+
+    /** O arquivo do modelo de um orçamento (decisão 141): STL ou 3MF. */
+    MODEL(setOf("stl", "3mf")),
     BACKUP(setOf("zip")),
 }
+
+/**
+ * Se [fileName] é um arquivo do modelo (STL ou 3MF). O `.gcode.3mf` (arquivo fatiado do Bambu Studio) não é: ele
+ * continua sendo tratado como G-code que o app ainda não lê.
+ */
+fun isModelFileName(fileName: String): Boolean =
+    ModelFileKind.of(fileName) != null && !fileName.lowercase().endsWith(".gcode.3mf")
 
 /** Resultado de escolher e ler um arquivo. */
 sealed interface PickResult {
@@ -21,6 +32,13 @@ sealed interface PickResult {
      * @property fileName o arquivo que falhou, pro texto citar
      */
     data class Failed(val reason: PickFailure, val fileName: String) : PickResult
+}
+
+/** Se este arquivo, escolhido ou arrastado, é um arquivo do modelo (ver [isModelFileName]). */
+fun PickResult.isModelFile(): Boolean = when (this) {
+    is PickResult.Picked -> isModelFileName(file.fileName)
+    is PickResult.Failed -> isModelFileName(fileName)
+    PickResult.Cancelled -> false
 }
 
 /** Por que um arquivo escolhido ou arrastado não foi lido. */

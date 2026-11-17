@@ -43,7 +43,14 @@ actual fun Modifier.fileDropTarget(
                 val files = droppedFiles(event).ifEmpty { return false }
                 val picked = files.map { file ->
                     val isGCode = file.extension.lowercase() in FileKind.GCODE.extensions
-                    if (isGCode) DesktopPlatform.readPicked(file, FileKind.GCODE) else PickResult.Picked(PickedFile(file.name, ByteArray(0)))
+                    when {
+                        isGCode -> DesktopPlatform.readPicked(file, FileKind.GCODE)
+
+                        // O arquivo do modelo (STL ou 3MF) vem inteiro: é guardado como veio.
+                        isModelFileName(file.name) -> DesktopPlatform.readPicked(file, FileKind.MODEL)
+
+                        else -> PickResult.Picked(PickedFile(file.name, ByteArray(0)))
+                    }
                 }
                 currentOnDrop(picked, event.windowPosition(density))
                 return true

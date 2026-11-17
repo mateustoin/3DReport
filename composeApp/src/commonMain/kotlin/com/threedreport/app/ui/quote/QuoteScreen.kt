@@ -287,13 +287,13 @@ private fun QuoteForm(
             }
         }
 
-        FormSection(++number, stringResource(Res.string.quote_section_sale)) { SaleFields(viewModel, catalog, input, form, result, currency, state.today) }
+        FormSection(++number, stringResource(Res.string.quote_section_sale)) { SaleFields(viewModel, catalog, input, form, result, currency, state.suggestRush) }
 
         FormSection(
             ++number,
             stringResource(Res.string.quote_section_details),
             help = HelpText(stringResource(Res.string.quote_help_details)),
-        ) { DetailsFields(viewModel, catalog, state.stlPreview, input, form, state.queueHints, state.deliveryDaysLate, state.today) }
+        ) { DetailsFields(viewModel, catalog, state.modelPreview, input, form, state.queueHints, state.deliveryDaysLate, state.today) }
     }
 }
 
