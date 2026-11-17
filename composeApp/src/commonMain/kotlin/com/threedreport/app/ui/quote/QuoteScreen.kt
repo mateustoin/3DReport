@@ -293,7 +293,7 @@ private fun QuoteForm(
             ++number,
             stringResource(Res.string.quote_section_details),
             help = HelpText(stringResource(Res.string.quote_help_details)),
-        ) { DetailsFields(viewModel, catalog, state.modelPreview, input, form, state.queueHints, state.deliveryDaysLate, state.today) }
+        ) { DetailsFields(viewModel, catalog, state.modelPreview, state.readingModelName, input, form, state.queueHints, state.deliveryDaysLate, state.today) }
     }
 }
 

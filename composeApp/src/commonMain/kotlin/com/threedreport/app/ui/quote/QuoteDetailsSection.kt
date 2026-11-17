@@ -101,6 +101,7 @@ internal fun DetailsFields(
     viewModel: QuoteViewModel,
     catalog: QuoteCatalog,
     modelPreview: ModelPreview?,
+    readingModelName: String?,
     input: QuoteInputState,
     form: SaveQuoteFormState,
     queueHints: List<QueueHint>,
@@ -146,7 +147,7 @@ internal fun DetailsFields(
         if (form.sourceLink.isNotBlank()) LinkText(text = stringResource(Res.string.quote_details_open_link), url = form.sourceLink)
 
         PhotoRow(viewModel, form)
-        ModelAttachment(viewModel, form, modelPreview)
+        ModelAttachment(viewModel, form, modelPreview, readingModelName)
 
         // Com várias impressões, cada bloco tem as configurações da própria mesa (decisão 114).
         val singlePrint = input.prints.singleOrNull()
@@ -205,12 +206,17 @@ private fun PhotoRow(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
  * fora da thread da tela ([QuoteUiState.modelPreview]).
  */
 @Composable
-private fun ModelAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState, preview: ModelPreview?) {
+private fun ModelAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState, preview: ModelPreview?, readingName: String?) {
     val space = MaterialTheme.spacing
     val modelFile = form.modelFile
     Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
         Text(stringResource(Res.string.quote_model_label), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (modelFile == null) {
+        if (modelFile == null && readingName != null) {
+            Text(readingName, style = MaterialTheme.appType.body)
+            val description = stringResource(Res.string.quote_model_loading)
+            AppProgressBar(progress = null, modifier = Modifier.semantics { contentDescription = description })
+            Text(description, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else if (modelFile == null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
                 AppButton(stringResource(Res.string.quote_model_attach), onClick = viewModel::pickModelFile, icon = AppIcons.FolderOpen)
                 HelpHint(HelpText(stringResource(Res.string.quote_help_model)), stringResource(Res.string.quote_model_hint_label))

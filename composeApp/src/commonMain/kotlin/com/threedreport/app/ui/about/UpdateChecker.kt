@@ -212,6 +212,9 @@ class UpdateViewModel(
                 current
             } else if (progress >= 1f) {
                 current.copy(install = UpdateInstall.Verifying(release))
+            } else if (progress - current.install.progress < DOWNLOAD_PROGRESS_STEP) {
+                // O instalador avisa a cada pedaço lido (centenas de vezes): a tela só muda de 1% em 1%.
+                current
             } else {
                 current.copy(install = UpdateInstall.Downloading(release, progress, totalBytes))
             }
@@ -326,3 +329,5 @@ class UpdateViewModel(
 }
 
 private const val COPIED_MILLIS = 2000L
+
+private const val DOWNLOAD_PROGRESS_STEP = 0.01f

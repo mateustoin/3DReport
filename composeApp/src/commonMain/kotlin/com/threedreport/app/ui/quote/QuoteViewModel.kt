@@ -41,6 +41,7 @@ import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.attachmentExtension
 import com.threedreport.app.platform.FileKind
+import com.threedreport.app.platform.PickFailure
 import com.threedreport.app.platform.PickResult
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
@@ -470,6 +471,7 @@ class QuoteViewModel(
             is PickResult.Picked -> importGCode(result.file, printId)
             is PickResult.Failed -> updatePrint(printId) { it.copy(gcodeImport = GCodeImportResult.PickFailed(result)) }
             PickResult.Cancelled -> Unit
+            is PickResult.Deferred -> Unit
         }
     }
 
@@ -507,6 +509,7 @@ class QuoteViewModel(
             is PickResult.Failed -> GCodeImportResult.PickFailed(result)
             is PickResult.Picked -> GCodeImporter.unsupported(result.file.fileName)
             PickResult.Cancelled -> null
+            is PickResult.Deferred -> null
         }
         if (notGCode != null) {
             updatePrint(state.value.input.prints.last().id) { it.copy(gcodeImport = notGCode) }
@@ -728,6 +731,8 @@ class QuoteViewModel(
             is PickResult.Failed -> updateForm { it.copy(photoError = picked.text()) }
 
             PickResult.Cancelled -> Unit
+
+            is PickResult.Deferred -> Unit
         }
     }
 
@@ -746,16 +751,46 @@ class QuoteViewModel(
             is PickResult.Picked -> attachModelFile(picked.file)
             is PickResult.Failed -> notify(picked.text())
             PickResult.Cancelled -> Unit
+            is PickResult.Deferred -> Unit
         }
     }
 
-    /** Um arquivo solto na janela: se é STL ou 3MF, vira o arquivo do modelo; o resto não é com este ViewModel. */
+    /**
+     * Um arquivo solto na janela: se é STL ou 3MF, vira o arquivo do modelo; o resto não é com este ViewModel. Um
+     * arquivo ainda por ler ([PickResult.Deferred]) é lido em [background], com [QuoteUiState.readingModelName] já
+     * mostrando o carregamento, e só então anexado.
+     */
     fun attachDroppedModel(result: PickResult) {
         when (result) {
             is PickResult.Picked -> attachModelFile(result.file)
             is PickResult.Failed -> notify(result.text())
             PickResult.Cancelled -> Unit
+            is PickResult.Deferred -> readDroppedModel(result)
         }
+    }
+
+    private var readingJob: Job? = null
+
+    private fun readDroppedModel(deferred: PickResult.Deferred) {
+        readingJob?.cancel()
+        state.update { it.copy(readingModelName = deferred.fileName) }
+        val job = scope.launch(background, start = CoroutineStart.LAZY) {
+            val read = try {
+                deferred.read()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                AppLog.warn("Não consegui ler ${deferred.fileName}", e)
+                PickResult.Failed(PickFailure.UNREADABLE, deferred.fileName)
+            }
+            withContext(main) {
+                readingJob = null
+                state.update { it.copy(readingModelName = null) }
+                attachDroppedModel(read)
+            }
+        }
+        readingJob = job
+        job.start()
     }
 
     /**
@@ -816,6 +851,9 @@ class QuoteViewModel(
     }
 
     private fun cancelPreview() {
+        readingJob?.cancel()
+        readingJob = null
+        state.update { if (it.readingModelName != null) it.copy(readingModelName = null) else it }
         previewJob?.cancel()
         previewJob = null
     }
@@ -833,7 +871,20 @@ class QuoteViewModel(
         ModelPreview.Unreadable
     }
 
-    private fun threeMfPreview(file: PickedFile): ModelPreview = when (val thumbnail = threeMfReader(file.bytes)) {
+    private fun threeMfPreview(file: PickedFile): ModelPreview {
+        // Um erro na leitura não pode deixar a prévia em "carregando" pra sempre: o 3MF é guardado e fica ilegível.
+        val thumbnail = try {
+            threeMfReader(file.bytes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            AppLog.warn("Não consegui ler o 3MF ${file.fileName}", e)
+            ThreeMfThumbnail.Unreadable
+        }
+        return threeMfPreviewOf(thumbnail)
+    }
+
+    private fun threeMfPreviewOf(thumbnail: ThreeMfThumbnail): ModelPreview = when (thumbnail) {
         is ThreeMfThumbnail.Found -> {
             val extension = thumbnail.path.substringAfterLast('.', "png").lowercase()
             ModelPreview.ThreeMf(PickedFile("miniatura_do_3mf.$extension", thumbnail.imageBytes))

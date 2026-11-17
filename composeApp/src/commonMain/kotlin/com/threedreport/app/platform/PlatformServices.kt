@@ -32,12 +32,19 @@ sealed interface PickResult {
      * @property fileName o arquivo que falhou, pro texto citar
      */
     data class Failed(val reason: PickFailure, val fileName: String) : PickResult
+
+    /**
+     * Arquivo arrastado que ainda não foi lido: [read] lê (bloqueia, e pode devolver [Picked] ou [Failed]) e quem
+     * recebe chama fora da thread da tela. Só o arquivo do modelo chega assim: um STL pesado travaria a janela.
+     */
+    class Deferred(val fileName: String, val read: () -> PickResult) : PickResult
 }
 
 /** Se este arquivo, escolhido ou arrastado, é um arquivo do modelo (ver [isModelFileName]). */
 fun PickResult.isModelFile(): Boolean = when (this) {
     is PickResult.Picked -> isModelFileName(file.fileName)
     is PickResult.Failed -> isModelFileName(fileName)
+    is PickResult.Deferred -> isModelFileName(fileName)
     PickResult.Cancelled -> false
 }
 

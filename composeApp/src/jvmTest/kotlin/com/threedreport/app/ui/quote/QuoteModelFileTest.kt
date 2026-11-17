@@ -154,6 +154,63 @@ class QuoteModelFileTest {
     }
 
     @Test
+    fun aThreeMfReaderThatThrowsLeavesTheFileStoredAndTheThumbnailUnreadable() {
+        val vm = viewModel(threeMf = { throw OutOfMemoryError("sem memória") })
+
+        vm.attachModelFile(file("pesado.3mf"))
+
+        assertEquals(ModelPreview.ThreeMfUnreadable, vm.uiState.value.modelPreview)
+        assertNotNull(vm.uiState.value.form.modelFile)
+    }
+
+    @Test
+    fun aDroppedModelIsReadOffTheScreenThreadAndShowsLoadingMeanwhile() {
+        val queue = mutableListOf<Runnable>()
+        val manual = object : kotlinx.coroutines.CoroutineDispatcher() {
+            override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
+                queue += block
+            }
+        }
+        val vm = QuoteViewModel(
+            FilamentRepository(), PrinterRepository(), settings, ServiceRepository(), SalesChannelRepository(), history,
+            platform = platform,
+            background = manual,
+            threeMfReader = { thumbnail(4) },
+        )
+
+        vm.attachDroppedModel(PickResult.Deferred("solto.3mf") { PickResult.Picked(file("solto.3mf", 9)) })
+
+        assertEquals("solto.3mf", vm.uiState.value.readingModelName)
+        assertNull(vm.uiState.value.form.modelFile, "ainda não leu: nada anexado")
+        while (queue.isNotEmpty()) queue.removeAt(0).run()
+
+        assertNull(vm.uiState.value.readingModelName)
+        assertEquals("solto.3mf", vm.uiState.value.form.modelFile?.fileName)
+    }
+
+    @Test
+    fun removingOrReplacingWhileADropIsBeingReadCancelsIt() {
+        val queue = mutableListOf<Runnable>()
+        val manual = object : kotlinx.coroutines.CoroutineDispatcher() {
+            override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
+                queue += block
+            }
+        }
+        val vm = QuoteViewModel(
+            FilamentRepository(), PrinterRepository(), settings, ServiceRepository(), SalesChannelRepository(), history,
+            platform = platform,
+            background = manual,
+        )
+        vm.attachDroppedModel(PickResult.Deferred("solto.3mf") { error("não devia ler") })
+
+        vm.clearModelFile()
+        while (queue.isNotEmpty()) queue.removeAt(0).run()
+
+        assertNull(vm.uiState.value.readingModelName)
+        assertNull(vm.uiState.value.form.modelFile)
+    }
+
+    @Test
     fun pickingAFileThroughThePickerAttachesIt() {
         val vm = viewModel(threeMf = { thumbnail(5) })
         platform.nextPick = PickResult.Picked(file("projeto.3mf"))

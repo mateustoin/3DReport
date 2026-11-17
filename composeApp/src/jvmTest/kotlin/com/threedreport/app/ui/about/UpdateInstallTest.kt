@@ -119,6 +119,25 @@ class UpdateInstallTest {
     }
 
     @Test
+    fun theDownloadProgressOnlyChangesTheStateEveryOnePercent() {
+        val installer = FakeInstaller()
+        val seen = mutableListOf<Float>()
+        lateinit var vm: UpdateViewModel
+        installer.downloadOutcome = { plan, onProgress ->
+            for (i in 1..1000) {
+                onProgress(i / 1001f)
+                (vm.uiState.value.install as? UpdateInstall.Downloading)?.progress?.let { if (seen.lastOrNull() != it) seen += it }
+            }
+            DownloadOutcome.Ready(DownloadedUpdate(plan, "/tmp/a.deb"))
+        }
+        vm = viewModel(installer)
+
+        vm.startUpdate()
+
+        assertTrue(seen.size in 90..101, "1000 avisos viraram ${seen.size} mudanças")
+    }
+
+    @Test
     fun cancellingWhileDownloadingStopsItAndKeepsNothing() {
         val installer = FakeInstaller()
         val gate = CompletableDeferred<DownloadOutcome>()

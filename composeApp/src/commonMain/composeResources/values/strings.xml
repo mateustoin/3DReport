@@ -1142,7 +1142,7 @@
     <string name="update_title">Atualizar pra versão %1$s</string>
     <string name="update_downloading">Baixando o instalador</string>
     <string name="update_downloading_size">%1$d de %2$d MB</string>
-    <string name="update_unsaved_title">Fechar sem salvar o orçamento?</string>
+    <string name="update_unsaved_title">Fechar sem salvar?</string>
     <string name="update_verifying">Conferindo o arquivo</string>
     <string name="update_installing">Instalando</string>
     <string name="update_ready_windows">O instalador do Windows abre e a janela fecha. Confirme a permissão de administrador pra concluir.</string>
@@ -1152,7 +1152,7 @@
     <string name="update_password_cancelled">Instalação cancelada. Nada mudou.</string>
     <string name="update_install_and_close">Instalar e fechar o app</string>
     <string name="update_open_folder">Abrir a pasta</string>
-    <string name="update_unsaved">O orçamento em andamento não foi salvo e se perde ao fechar.</string>
+    <string name="update_unsaved">Há mudanças não salvas. Ao fechar o app, elas se perdem.</string>
     <string name="update_install_anyway">Instalar mesmo assim</string>
     <string name="update_back">Voltar</string>
     <string name="update_manual_message">A pasta com o arquivo abriu. Pra instalar, rode no terminal:</string>

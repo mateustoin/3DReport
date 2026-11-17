@@ -46,8 +46,8 @@ actual fun Modifier.fileDropTarget(
                     when {
                         isGCode -> DesktopPlatform.readPicked(file, FileKind.GCODE)
 
-                        // O arquivo do modelo (STL ou 3MF) vem inteiro: é guardado como veio.
-                        isModelFileName(file.name) -> DesktopPlatform.readPicked(file, FileKind.MODEL)
+                        // O arquivo do modelo (STL ou 3MF) é guardado inteiro; a leitura fica pra fora da thread da tela.
+                        isModelFileName(file.name) -> PickResult.Deferred(file.name) { DesktopPlatform.readPicked(file, FileKind.MODEL) }
 
                         else -> PickResult.Picked(PickedFile(file.name, ByteArray(0)))
                     }

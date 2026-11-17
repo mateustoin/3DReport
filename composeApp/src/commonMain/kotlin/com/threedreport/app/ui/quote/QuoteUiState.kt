@@ -33,6 +33,7 @@ data class QuoteCatalog(
  *
  * @property input o que a pessoa digitou.
  * @property form o que é de salvar: nome, cliente, foto, arquivo do modelo, prazo e a operação em curso.
+ * @property readingModelName o STL ou 3MF arrastado que ainda está sendo lido do disco (fora da thread da tela).
  * @property result a conta, feita pelo `core` a partir de [input] e [catalog]; é a mesma da tela e do Ctrl+S.
  * @property comparison o mesmo orçamento em cada impressora cadastrada (ver `QuoteViewModel.comparePrinters`); vazio
  *   com uma impressora só ou sem conta.
@@ -59,6 +60,7 @@ data class QuoteUiState(
     val result: QuoteResult = QuoteResult(),
     val importing: Boolean = false,
     val modelPreview: ModelPreview? = null,
+    val readingModelName: String? = null,
     val collapsedPrintIds: Set<Int> = emptySet(),
     val exporting: Boolean = false,
     val comparison: List<Pair<PrinterProfile, Quote>> = emptyList(),

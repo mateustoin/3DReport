@@ -125,7 +125,11 @@ class AppViewModels(
             background = Dispatchers.IO,
             main = Dispatchers.Main,
             installer = container.updateInstaller,
-            hasUnsavedWork = { quoteViewModel.hasDraft || editQuoteViewModel.hasUnsavedEdits },
+            // O que o app perde ao fechar: os rascunhos do Orçamento e as Configurações ou a Marca por salvar.
+            hasUnsavedWork = {
+                quoteViewModel.hasDraft || editQuoteViewModel.hasUnsavedEdits ||
+                    settingsViewModel.hasUnsavedChanges || brandingViewModel.hasUnsavedChanges
+            },
             closeApp = closeApp,
         )
     }
