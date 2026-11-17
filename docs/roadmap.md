@@ -595,7 +595,7 @@ servidor do projeto. A credencial de publicação fica no cofre da Leva 18.
   Bambu Farm Manager. Esforço G, impacto M.
 - [ ] **Energia medida de verdade.** Consumo real da impressora (tomada
   inteligente, Home Assistant) no lugar da potência do manual, que superestima
-  (decisão 54). Visto em: Atlas3D, ha-bambu-costs. Esforço M, impacto B.
+  (decisões 54 e 144: a lista já usa o consumo médio de referência). Visto em: Atlas3D, ha-bambu-costs. Esforço M, impacto B.
 - [ ] **Fase 2 do STL: estimar peso e tempo** *(já no roadmap: seção Visualização e
   análise de STL)*. Volta pra fila por ser pré-requisito do item seguinte.
 - [ ] **Orçamento instantâneo no site do vendedor.** O cliente sobe o STL e vê o

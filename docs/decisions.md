@@ -154,6 +154,7 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [141](decisions/141.md) | 2026-11-17 | Arquivo do modelo aceita STL ou 3MF; miniatura do fatiador vira prévia e foto | Aprovada |
 | [142](decisions/142.md) | 2026-11-17 | Prévia de STL pesado por malha simplificada, medidas da malha completa, teto de 300 MB (revisa a 63) | Aprovada |
 | [143](decisions/143.md) | 2026-11-17 | Atualizar o app por dentro: Atualizar agora, SHA256SUMS e instalação por sistema | Aprovada |
+| [144](decisions/144.md) | 2026-11-17 | Impressoras da lista com valores de referência: consumo médio (oficial, medido ou estimado pela família, com a máxima ao lado), preço médio no Brasil datado de nov/2026, manutenção por faixa (0,20 aberta de entrada, 0,30 fechada/CoreXY, 0,45 multicolor/grande) e uso padrão de 12 h/dia, 25 dias, 12 meses em todo cadastro novo; aviso pra trocar pelos valores reais. Revisa a 54 | Aprovada |
 
 ## Pendentes de aprovação
 
