@@ -1,11 +1,10 @@
 package com.threedreport.app.ui.history
 
-import com.threedreport.core.model.Consumable
-import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.ClientRepository
 import com.threedreport.app.data.Clock
+import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteDetails
@@ -35,6 +34,7 @@ import com.threedreport.app.ui.components.UserNotice
 import com.threedreport.app.ui.components.toNotice
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
@@ -268,6 +268,7 @@ class QuoteHistoryViewModel(
                 actionLabel = "Ver todos",
                 action = { setStatusFilter(null) },
             )
+
             status == OrderStatus.CANCELADO -> notify(
                 "\"${before.name}\" cancelado.",
                 actionLabel = "Desfazer",
@@ -331,7 +332,9 @@ class QuoteHistoryViewModel(
     /** Escolhe uma foto nova pro "Editar detalhes". Devolve o motivo quando o arquivo não serve. */
     fun pickPhoto(): PhotoPick = when (val picked = platform.pickFile(FileKind.IMAGE)) {
         PickResult.Cancelled -> PhotoPick.Cancelled
+
         is PickResult.Failed -> PhotoPick.Failed(picked.message)
+
         is PickResult.Picked -> if (runCatching { decodeImageBitmap(picked.file.bytes) }.isSuccess) {
             PhotoPick.Picked(picked.file)
         } else {

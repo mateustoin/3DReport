@@ -2,10 +2,10 @@ package com.threedreport.app.ui.dashboard
 
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SettingsRepository
-import com.threedreport.core.model.PricingSettings
 import com.threedreport.app.platform.PeriodPreset
 import com.threedreport.app.platform.periodEndEpochMillis
 import com.threedreport.app.platform.periodStartEpochMillis
+import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.QuoteSummary
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.report.CatalogReport

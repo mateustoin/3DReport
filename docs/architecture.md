@@ -10,7 +10,7 @@ Projeto **Kotlin Multiplatform** com três módulos Gradle:
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/core/
 │     │  ├─ model/            # Filament, PrinterProfile, Service, PrintJob, PricingSettings, BrandingSettings, Quote, SavedQuote
-│     │  ├─ pricing/          # PricingCalculator, ProductRepricer, EnergyTariff
+│     │  ├─ pricing/          # PricingCalculator, OrderPricing (monta o pedido), PriceComposition, PricingError, ProductRepricer, EnergyTariff
 │     │  ├─ report/           # textos e números das saídas (nota, relatório)
 │     │  ├─ slicer/           # leitura de G-code
 │     │  └─ stl/              # parser e análise de STL
@@ -18,7 +18,9 @@ Projeto **Kotlin Multiplatform** com três módulos Gradle:
 ├─ composeApp/                # UI Compose Multiplatform
 │  └─ src/
 │     ├─ commonMain/kotlin/com/threedreport/app/
-│     │  ├─ App.kt            # raiz: navegação pela barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Insumos, Configurações, Sobre)
+│     │  ├─ App.kt            # raiz: desenha a barra lateral, a tela do destino atual e os diálogos
+│     │  ├─ AppNavigator.kt   # destino atual e regras de rascunho e edição (classe comum, com teste)
+│     │  ├─ AppViewModels.kt  # um ViewModel por tela, criado na primeira visita
 │     │  ├─ data/              # repositórios: interface + implementação sobre data/store (ver "Persistência" abaixo)
 │     │  ├─ platform/          # capacidades específicas de plataforma (expect fun — ver "Capacidades de plataforma")
 │     │  └─ ui/                # uma pasta por tela: <tela>/<Tela>Screen.kt + <Tela>ViewModel.kt + <Tela>UiState.kt/FormState.kt
@@ -138,6 +140,20 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   gravado, o `ExitWatchdog` força a saída se a JVM ainda estiver viva 10 s
   depois, e grava as pilhas das threads em `logs/encerramento-travado.txt`
   (decisão 117).
+- **Raiz do app (decisão 130).** `App()` só desenha. `AppViewModels` guarda um
+  ViewModel por tela em propriedades `by lazy`: os de Pedidos, Catálogo, Dashboard,
+  cadastros, modelos, canais e backup nascem na primeira visita; os do Orçamento,
+  de Configurações, tema, moeda e atualização nascem na abertura, porque a janela
+  depende deles. `AppNavigator` guarda o destino atual e decide o que acontece ao
+  editar, duplicar, vender ou guardar no catálogo com um rascunho ou uma edição em
+  andamento (as perguntas de descartar e de encerrar a edição). Tela nova entra em
+  três lugares, todos cobrados pelo compilador: o `enum` `AppDestination` (rótulo,
+  grupo e ícones), uma propriedade em `AppViewModels` e um ramo do `when` do `App()`.
+- **Erro de preço com tipo.** O `core` não escreve frase pra tela: o que a tela
+  precisa explicar chega como `PricingError` (hoje, `DeductionsReachFullPrice`), e
+  cada tela escolhe o texto. `OrderPricing.quote` recebe os termos do pedido já
+  lidos (`OrderTerms`: preço fechado, frete, frete grátis, urgência, tipo) e
+  devolve o `Quote`; o `QuoteViewModel` fica com ler e validar os campos.
 - Padrão de apresentação: **MVVM**. Cada tela tem um `ViewModel` (Kotlin puro,
   sem `Composable`, expõe `StateFlow`) e um `*Screen` (`@Composable` que observa o
   `ViewModel` e envia eventos). O formato do estado ainda varia: Configurações,
@@ -193,8 +209,8 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
       impressões pelo id estável da linha, nunca por posição.
     - **Editar na própria aba** (decisão 113): reabrir um pedido ou produto
       não abre mais diálogo (`EditQuoteDialog` foi removido): enquanto
-      `editQuoteViewModel` (uma segunda instância de `QuoteViewModel`, criada no
-      `App.kt`) está em `QuoteOperation.Editing`, a tela de Orçamento mostra ele
+      `editQuoteViewModel` (uma segunda instância de `QuoteViewModel`, criada em
+      `AppViewModels`) está em `QuoteOperation.Editing`, a tela de Orçamento mostra ele
       no lugar do `quoteViewModel` da aba, que continua com o rascunho intacto
       e volta sozinho ao salvar ou cancelar. `originalInput`/`originalForm`
       são como o pedido editado abriu, pra saber se há alteração a perder. A barra de operação no rodapé mostra

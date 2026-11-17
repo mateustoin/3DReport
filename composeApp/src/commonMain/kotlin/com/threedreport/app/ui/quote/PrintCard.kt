@@ -37,9 +37,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.FieldHelp
-import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.components.IconLabel
 import com.threedreport.app.ui.components.SectionTitle
+import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.filaments.displayLabel
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.NumberKind

@@ -1,12 +1,12 @@
 package com.threedreport.app.ui.services
 
-import com.threedreport.core.model.SavedQuote
-import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
+import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.toRequiredDouble
+import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

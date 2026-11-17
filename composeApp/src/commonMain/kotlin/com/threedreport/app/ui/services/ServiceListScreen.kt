@@ -1,7 +1,5 @@
 package com.threedreport.app.ui.services
 
-import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ArchivedSection
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.FieldHelp
 import com.threedreport.app.ui.focus.tabToNavigate
@@ -90,10 +90,10 @@ fun ServiceListScreen(viewModel: ServiceListViewModel, modifier: Modifier = Modi
             what = "o serviço \"${service.name}\"",
             usageCount = viewModel.usageCount(service.id),
             deleteMessage = "\"${service.name}\" será removido do catálogo. Pedidos já salvos continuam com o valor que tinham.",
-            onArchive = if (service.archived) null else ({
+            onArchive = {
                 viewModel.setArchived(service.id, true)
                 pendingDelete = null
-            }),
+            }.takeUnless { service.archived },
             onDelete = {
                 viewModel.delete(service.id)
                 pendingDelete = null

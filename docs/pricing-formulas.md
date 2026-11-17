@@ -435,6 +435,38 @@ pela tarifa branca (média dos preços de cada período, pesada pelas horas de
 impressão em cada um). Nenhum valor da ANEEL vem no app, pelo mesmo motivo
 das faixas dos marketplaces.
 
+## Montagem do pedido e composição do preço (2026-11-14, decisão 130)
+
+Nada aqui muda um valor: são regras que já existiam na tela de Orçamento e
+passaram pro `core`, com teste.
+
+### Antes da conta (`OrderTerms`, `OrderPricing.quote`)
+
+- **Preço fechado:** o total digitado é o que o cliente paga, então a peça é
+  `total − serviços − frete cobrado`. Um total menor que serviços + frete
+  não é aceito (a tela marca o campo).
+- **Preço anunciado** (pedido que nasceu de um produto pelo "Vender"): sem
+  total fechado, a peça sai por `anunciado · quantidade`.
+- **Frete grátis:** só vale num pedido de cliente com frete. O frete sai do
+  que o cliente paga e entra como custo absorvido (decisão 124).
+- **Produto do catálogo:** sem frete, sem preço anunciado e sem urgência.
+- **Urgência:** só num pedido de cliente e com o acréscimo configurado.
+
+### Composição em quatro grupos (`Quote.priceComposition`)
+
+A barra do painel de resultado divide o que o cliente paga em quatro grupos,
+que somam exatamente o total:
+
+| Grupo | O que entra |
+|---|---|
+| Material e máquina | produção − trabalho − acabamento (material, energia, manutenção, retorno da máquina, custo fixo, administrativo, insumos, reserva de falha) |
+| Trabalho e serviços | trabalho + acabamento + serviços − o que os serviços com tempo rendem acima da sua hora |
+| Taxas e impostos | taxa do canal (percentual e fixo) + imposto + frete cobrado + frete grátis pago por você |
+| Lucro | o lucro do pedido |
+
+A soma fecha porque o lucro é o total menos exatamente o que vai nos outros
+três grupos. Só o lucro pode ser negativo (preço fechado abaixo do custo).
+
 ## Exemplo de referência (planilha)
 
 Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.

@@ -1,12 +1,12 @@
 package com.threedreport.app.ui.printers
 
-import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.platform.todayEpochDay
+import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.toRequiredNonNegative
 import com.threedreport.app.ui.format.toRequiredPositive

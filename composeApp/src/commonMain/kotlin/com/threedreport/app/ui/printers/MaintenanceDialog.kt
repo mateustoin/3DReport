@@ -1,6 +1,5 @@
 package com.threedreport.app.ui.printers
 
-import com.threedreport.app.ui.format.toInputText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -44,6 +43,7 @@ import com.threedreport.app.ui.components.ConfirmDialog
 import com.threedreport.app.ui.components.SubsectionTitle
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.minutesToHoursText
+import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.core.model.MaintenanceComponent
 import com.threedreport.core.model.PrinterProfile
@@ -430,4 +430,3 @@ private fun EntryRow(text: String, onDelete: () -> Unit) {
         TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
     }
 }
-

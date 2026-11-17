@@ -1,7 +1,5 @@
 package com.threedreport.app.ui.consumables
 
-import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ArchivedSection
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
@@ -94,10 +94,10 @@ fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier 
             what = "o insumo \"${consumable.name}\"",
             usageCount = viewModel.usageCount(consumable.id),
             deleteMessage = "\"${consumable.name}\" será removido do catálogo. Pedidos já salvos continuam com o custo que tinham.",
-            onArchive = if (consumable.archived) null else ({
+            onArchive = {
                 viewModel.setArchived(consumable.id, true)
                 pendingDelete = null
-            }),
+            }.takeUnless { consumable.archived },
             onDelete = {
                 viewModel.delete(consumable.id)
                 pendingDelete = null

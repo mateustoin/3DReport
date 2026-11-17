@@ -1,12 +1,12 @@
 package com.threedreport.app.ui.consumables
 
-import com.threedreport.core.model.SavedQuote
-import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
+import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.format.toRequiredNonNegative
 import com.threedreport.core.model.Consumable
+import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

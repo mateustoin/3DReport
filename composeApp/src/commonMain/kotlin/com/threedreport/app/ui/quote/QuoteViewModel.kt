@@ -1,11 +1,8 @@
 package com.threedreport.app.ui.quote
 
-import com.threedreport.app.ui.format.toDurationInputText
-import com.threedreport.core.model.QuotedConsumable
-import com.threedreport.core.model.Consumable
-import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.ClientRepository
+import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -19,15 +16,17 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.ui.components.NoticeIds
+import com.threedreport.app.ui.components.UserNotice
 import com.threedreport.app.ui.components.matchingClients
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.parseWholeNumber
-import com.threedreport.app.ui.components.NoticeIds
-import com.threedreport.app.ui.components.UserNotice
+import com.threedreport.app.ui.format.toDurationInputText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
@@ -39,10 +38,13 @@ import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
+import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
-import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.pricing.OrderPricing
+import com.threedreport.core.pricing.OrderTerms
+import com.threedreport.core.pricing.PricingError
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
 import com.threedreport.core.slicer.GCodeMetadataParser
@@ -61,7 +63,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.round
 
 /** A prévia 3D do STL anexado, calculada fora do thread da tela (decisão 108). */
 sealed interface StlPreview {
@@ -184,7 +185,9 @@ class QuoteViewModel(
         val grams = parseDecimal(text, NumberKind.AMOUNT)
         val meters = when {
             text.isBlank() -> ""
+
             grams == null || grams < 0 || filament == null -> lengthText
+
             // Duas casas, como o G-code: com mais, o campo mostrava "16,764181" pra 50 g.
             else -> GCodeImporter.formatLength(filament.lengthMeters(grams))
         }
@@ -559,17 +562,6 @@ class QuoteViewModel(
     fun setShippingCost(text: String) = inputState.update { it.copy(shippingCostText = text) }
     fun setTargetTotal(text: String) = inputState.update { it.copy(targetTotalText = text) }
 
-    /**
-     * "Arredondar pra R$ 18,90" do preço anunciado (decisão 102): o próximo valor terminado em ,90
-     * a partir do [total] calculado, ou `null` quando ele já termina assim. Função pura; a tela
-     * mostra o chip só quando há sugestão.
-     */
-    fun showcasePriceSuggestion(total: Double): Double? {
-        val cents = round(total * 100).toLong()
-        val suggestion = ((cents - 90 + 99) / 100) * 100 + 90
-        return (suggestion / 100.0).takeIf { suggestion != cents }
-    }
-
     fun applyShowcasePrice(value: Double) = inputState.update { it.copy(targetTotalText = value.toInputText()) }
 
     fun setSaveName(text: String) = saveFormState.update { it.copy(name = text, savedConfirmation = false) }
@@ -607,7 +599,9 @@ class QuoteViewModel(
                     }
                 }
             }
+
             is PickResult.Failed -> saveFormState.update { it.copy(photoError = picked.message) }
+
             PickResult.Cancelled -> Unit
         }
     }
@@ -627,7 +621,9 @@ class QuoteViewModel(
                 saveFormState.update { it.copy(stlFile = picked.file, savedConfirmation = false) }
                 loadStlPreview(picked.file)
             }
+
             is PickResult.Failed -> stlPreviewState.value = StlPreview.Unreadable
+
             PickResult.Cancelled -> Unit
         }
     }
@@ -704,27 +700,29 @@ class QuoteViewModel(
             }
         }
         val shippingCost = if (isProduct) 0.0 else parseDecimal(input.shippingCostText) ?: 0.0
-        val shippingAbsorbed = input.absorbsShipping(shippingCost)
+        // Se o frete grátis vale de fato é a mesma regra da conta (decisão 124), que é do `core`.
+        val shippingAbsorbed =
+            OrderTerms(shippingCost = shippingCost, shippingAbsorbed = input.shippingAbsorbed, catalogProduct = isProduct).absorbsShipping
 
         val editing = form.operation as? QuoteOperation.Editing
         if (editing != null) {
             val update = {
                 historyRepository.update(
-                id = editing.savedQuote.id,
-                name = form.name,
-                quote = quote,
-                services = services,
-                photo = form.photo,
-                stlFile = form.stlFile,
-                sourceLink = form.sourceLink,
-                client = client,
-                printThumbnails = thumbnails,
-                shippingCost = shippingCost,
-                deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
-                category = form.category,
-                soldAtCatalogPrice = soldAtCatalogPrice,
-                shippingAbsorbed = shippingAbsorbed,
-            )
+                    id = editing.savedQuote.id,
+                    name = form.name,
+                    quote = quote,
+                    services = services,
+                    photo = form.photo,
+                    stlFile = form.stlFile,
+                    sourceLink = form.sourceLink,
+                    client = client,
+                    printThumbnails = thumbnails,
+                    shippingCost = shippingCost,
+                    deliveryDateEpochDay = form.deliveryDateEpochDay.takeUnless { isProduct },
+                    category = form.category,
+                    soldAtCatalogPrice = soldAtCatalogPrice,
+                    shippingAbsorbed = shippingAbsorbed,
+                )
             }
             // A edição não é mais modal (decisão 113): o pedido pode ter ido pra lixeira enquanto era editado.
             // Salvar tira ele de lá com as alterações; sem ele nem na lixeira, avisa em vez de dizer que salvou.
@@ -882,9 +880,12 @@ class QuoteViewModel(
         val quote = result.quote
         val blocked = when {
             result.fieldErrors.isNotEmpty() -> "Não salvei: ${result.fieldErrors.values.first()}"
+
             quote == null -> result.errorMessage?.let { "Não salvei: $it" }
                 ?: "Não salvei: preencha filamento, impressora, comprimento e tempo."
+
             result.missingServicePrice -> "Não salvei: informe o valor de cada serviço marcado."
+
             else -> null
         }
         if (blocked != null || quote == null) {
@@ -1028,26 +1029,27 @@ class QuoteViewModel(
         }
         val channel = channels.find { it.id == input.salesChannelId }
         // Produto do catálogo não tem frete (decisão 101): o campo some da tela, e o que tiver ficado
-        // digitado nele não pode mexer no preço.
+        // digitado nele não é lido (nem vira erro). O `core` também o ignora na conta.
         val shippingCost = if (input.isProduct) 0.0 else amount(input.shippingCostText, QuoteFields.SHIPPING, "Frete", errors) ?: 0.0
-        // Frete grátis (decisão 124): o frete é pago por você, então fica fora do que o cliente paga.
-        val shippingAbsorbed = input.absorbsShipping(shippingCost)
-        val chargedShipping = SavedQuote.chargedShipping(shippingCost, shippingAbsorbed)
-        val servicesTotal = selectedServices.sumOf { it.total(quantity) }
-        // O preço alvo é o total que o cliente paga, então serviços e frete saem antes de sobrar o
-        // que de fato é a peça. Um alvo que nem cobre os extras é erro no campo: zerar a peça salvaria
-        // um total diferente do digitado, sem ninguém ver.
-        val target = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors)?.let { typed ->
-            val extras = servicesTotal + chargedShipping
-            if (typed < extras) {
-                errors[QuoteFields.TARGET] = "Esse preço não cobre serviços e frete (${extras.toInputText()}): digite pelo menos esse valor."
-                null
-            } else {
-                typed
-            }
+        // O que vem antes da conta (preço da peça a partir do total fechado, frete grátis, produto, urgência)
+        // é regra do `core` (decisão 130); aqui só entram os valores lidos.
+        val typedTerms = OrderTerms(
+            quantity = quantity,
+            services = selectedServices,
+            consumables = usedConsumables,
+            shippingCost = shippingCost,
+            shippingAbsorbed = input.shippingAbsorbed,
+            catalogProduct = input.isProduct,
+            customerTotal = amount(input.targetTotalText, QuoteFields.TARGET, "Preço", errors),
+            announcedUnitPrice = input.announcedUnitPrice,
+            rush = input.rush,
+        )
+        // Um total que nem cobre os extras é erro no campo: zerar a peça salvaria um total diferente do
+        // digitado, sem ninguém ver.
+        if (!typedTerms.coversExtras) {
+            errors[QuoteFields.TARGET] =
+                "Esse preço não cobre serviços e frete (${typedTerms.extrasTotal.toInputText()}): digite pelo menos esse valor."
         }
-        val negotiatedSalePrice = target?.let { it - servicesTotal - chargedShipping }
-            ?: input.announcedUnitPrice?.takeUnless { input.isProduct }?.let { it * quantity }
         val laborMinutes = if (input.laborMinutesText.isBlank()) {
             0.0
         } else {
@@ -1055,13 +1057,15 @@ class QuoteViewModel(
                 errors[QuoteFields.LABOR] = "Tempo de trabalho: use minutos (90) ou horas e minutos (1h30)."
             }
         }
+        // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
+        val terms = typedTerms.copy(laborMinutes = laborMinutes)
 
         val base = QuoteResult(
             prints = resolved,
             selectedServices = selectedServices,
             salesChannel = channel,
             shippingCost = shippingCost,
-            shippingAbsorbed = shippingAbsorbed,
+            shippingAbsorbed = terms.absorbsShipping,
             missingServicePrice = missingServicePrice,
         )
         missingFromCatalog(input, resolved)?.let { return base.copy(errorMessage = it, fieldErrors = errors) }
@@ -1069,27 +1073,13 @@ class QuoteViewModel(
         if (errors.isNotEmpty()) return base.copy(fieldErrors = errors)
         jobs ?: return base
         return runCatching {
-            PricingCalculator.calculate(
-                prints = jobs,
-                settings = settings,
-                channel = channel,
-                quantity = quantity,
-                // O tempo digitado já é do pedido inteiro, então entra uma vez só, sem multiplicar.
-                laborMinutes = laborMinutes,
-                negotiatedSalePrice = negotiatedSalePrice,
-                extrasTotal = servicesTotal + chargedShipping,
-                services = selectedServices,
-                consumables = usedConsumables,
-                // Urgência só existe com o acréscimo configurado e em pedido de cliente (decisão 125).
-                rush = input.rush && !input.isProduct && settings.rushSurchargeRate > 0,
-                absorbedShippingCost = if (shippingAbsorbed) shippingCost else 0.0,
-            )
+            OrderPricing.quote(prints = jobs, settings = settings, channel = channel, terms = terms)
         }.fold(
             onSuccess = { base.copy(quote = it) },
             onFailure = { error ->
-                // As mensagens do `core` que chegam aqui já foram escritas pra tela (a de canal + imposto
-                // chegando a 100%); o resto é validação que a tela já fez, e não deveria acontecer.
-                val message = error.message?.takeIf { it.startsWith("A taxa do canal") } ?: "Confira os valores digitados."
+                // O `core` diz o que aconteceu pelo tipo e a frase é escolhida aqui (decisão 130); o resto é
+                // validação que a tela já fez, e não deveria acontecer.
+                val message = (error as? PricingError)?.let(::pricingErrorMessage) ?: "Confira os valores digitados."
                 base.copy(errorMessage = message)
             },
         )
@@ -1142,6 +1132,7 @@ class QuoteViewModel(
                 when {
                     row.weightText != null && row.weightText.isNotBlank() && (parseDecimal(row.weightText, NumberKind.AMOUNT) ?: -1.0) < 0 ->
                         errors[QuoteFields.length(print.id, row.id)] = "Peso: use um número em gramas (42 ou 42,5)."
+
                     row.lengthText.isNotBlank() && (length == null || length < 0) ->
                         errors[QuoteFields.length(print.id, row.id)] = "Comprimento: use um número em metros (27,5)."
                 }
@@ -1209,3 +1200,13 @@ class QuoteViewModel(
 }
 
 private fun <T> List<T>.replaced(index: Int, transform: (T) -> T): List<T> = mapIndexed { i, item -> if (i == index) transform(item) else item }
+
+/**
+ * A frase de cada erro de preço do `core` (decisão 130). O texto é o mesmo de antes de o `core` passar a
+ * devolver o erro pelo tipo; muda pra recurso traduzível quando a tela de Orçamento for reescrita.
+ */
+internal fun pricingErrorMessage(error: PricingError): String = when (error) {
+    is PricingError.DeductionsReachFullPrice ->
+        "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. " +
+            "Revise a taxa do canal ou o imposto em Configurações."
+}

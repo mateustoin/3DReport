@@ -72,11 +72,13 @@ fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
             epochDay < today -> Text(
                 "Entrega até ${formatDate(epochDay)} (${weekdayName(epochDay)}) — essa data já passou.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
+
             else -> Text(
                 "Entrega até ${formatDate(epochDay)} (${weekdayName(epochDay)})",
                 style = MaterialTheme.typography.bodyMedium,

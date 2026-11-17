@@ -24,6 +24,7 @@ as falhas, sem encher o contexto com o log do Gradle.
 | Testes do core | `scripts/check.sh :core:allTests` |
 | Testes do app | `scripts/check.sh :composeApp:jvmTest` |
 | Uma classe de teste | `scripts/check.sh :composeApp:jvmTest --tests "com.threedreport.app.ui.quote.QuoteViewModelTest"` |
+| Formatar o código (ktlint) | `scripts/check.sh ktlintFormat` |
 | Capturas de tela | `scripts/check.sh :composeApp:renderScreenshots` (grava em `site/assets/screenshots/`) |
 | Rodar o app sem tocar nos dados reais | `JAVA_TOOL_OPTIONS=-Dthreedreport.dataDir=<pasta temporária> ./gradlew :composeApp:run` |
 

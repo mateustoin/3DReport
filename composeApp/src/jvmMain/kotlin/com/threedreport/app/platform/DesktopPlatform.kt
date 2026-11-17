@@ -1,8 +1,8 @@
 package com.threedreport.app.platform
 
+import com.threedreport.app.AppLog
 import com.threedreport.app.ExitWatchdog
 import com.threedreport.app.exitDumpFile
-import com.threedreport.app.AppLog
 import java.awt.Desktop
 import java.awt.FileDialog
 import java.awt.Frame

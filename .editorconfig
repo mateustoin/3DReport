@@ -1,0 +1,34 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+ktlint_code_style = intellij_idea
+max_line_length = 120
+# Compose: funções @Composable levam nome em maiúscula.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# Regras de quebra de linha desligadas: o código usa um estilo compacto (vários argumentos, lambdas e
+# declarações por linha) e religá-las reescreveria milhares de linhas sem ganho.
+# Limite de 120 colunas (guia da IDE): mais de 900 linhas passam disso, em strings e textos em português.
+ktlint_standard_max-line-length = disabled
+# Argumentos de chamada em linhas separadas: ~4000 ocorrências, todas de estilo compacto.
+ktlint_standard_argument-list-wrapping = disabled
+# Lambda de uma linha com setas e chaves: padrão em todo o Compose do projeto.
+ktlint_standard_function-literal = disabled
+ktlint_standard_binary-expression-wrapping = disabled
+ktlint_standard_statement-wrapping = disabled
+ktlint_standard_property-wrapping = disabled
+ktlint_standard_parameter-list-wrapping = disabled
+ktlint_standard_function-signature = disabled
+ktlint_standard_class-signature = disabled
+# Exigiria renomear o arquivo e o histórico dele (WebCalculator.kt tem a classe WebQuote).
+ktlint_standard_filename = disabled
+# Corpo em bloco que vira expressão muda a leitura do código, não só o espaço.
+ktlint_standard_function-expression-body = disabled

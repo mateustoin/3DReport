@@ -8,6 +8,7 @@ import com.threedreport.app.data.store.StoredDocument
 import com.threedreport.app.data.store.StoredRecord
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MaintenanceComponent
@@ -17,7 +18,6 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.SalesChannel
-import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.model.ThemeMode

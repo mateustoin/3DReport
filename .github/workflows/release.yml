@@ -11,7 +11,33 @@ permissions:
   contents: write
 
 jobs:
+  # Barra a release antes dos instaladores: a tag precisa bater com a versão do app e o build
+  # (estilo e testes) precisa passar.
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir a tag com o appVersion
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          APP_VERSION=$(grep '^appVersion=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          if [ "$TAG_VERSION" != "$APP_VERSION" ]; then
+            echo "::error::A tag $GITHUB_REF_NAME pede appVersion=$TAG_VERSION, mas gradle.properties tem appVersion=$APP_VERSION."
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Build e testes
+        run: ./gradlew build
+
   build-installer:
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -80,10 +106,12 @@ jobs:
           path: ${{ matrix.glob }}
 
   draft-release:
-    needs: build-installer
+    needs: [verify, build-installer]
     # Segue mesmo se algum SO falhar, pra ainda ter um rascunho com os
     # instaladores que deram certo — revise no GitHub antes de publicar.
-    if: ${{ !cancelled() }}
+    # Mas não sem a conferência da tag e do build: se o verify falhar, os instaladores
+    # nem rodam e não deve sair rascunho nenhum.
+    if: ${{ !cancelled() && needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
