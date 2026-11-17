@@ -56,7 +56,7 @@ import org.jetbrains.compose.resources.stringResource
  * clique a mais em Cancelar.
  */
 @Composable
-fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel, clients: List<Client>) {
+fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel, clients: List<Client>, today: Long) {
     val quote = editing.quote
     val form = editing.form
     AppDialog(
@@ -94,6 +94,7 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
             DeliveryDatePicker(
                 epochDay = form.deliveryDateEpochDay,
                 daysLate = viewModel.deliveryDaysLate(form.deliveryDateEpochDay),
+                today = today,
                 onChange = { day -> viewModel.updateDetails { it.copy(deliveryDateEpochDay = day) } },
             )
         } else {

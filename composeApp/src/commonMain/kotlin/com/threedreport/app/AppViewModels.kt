@@ -47,6 +47,7 @@ class AppViewModels(
         main = Dispatchers.Main,
         consumableRepository = container.consumables,
         brandingRepository = container.branding,
+        today = today,
     )
 
     /** O da aba. Cedo: é a tela de abertura, e o gerador de capturas ([prepareQuote]) o preenche antes de desenhar. */
@@ -95,7 +96,7 @@ class AppViewModels(
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */
     val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency) }
     val brandingViewModel: BrandingViewModel by lazy {
-        BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value })
+        BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value }, today = today)
     }
     val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding, scope) }
     val salesChannelViewModel: SalesChannelViewModel by lazy {

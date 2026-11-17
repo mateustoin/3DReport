@@ -94,6 +94,7 @@ internal fun DetailsFields(
     form: SaveQuoteFormState,
     queueHints: List<QueueHint>,
     deliveryDaysLate: Int,
+    today: Long,
 ) {
     val space = MaterialTheme.spacing
     val savedQuotes = catalog.savedQuotes
@@ -113,7 +114,7 @@ internal fun DetailsFields(
         if (!input.isProduct) {
             Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
                 Text(stringResource(Res.string.quote_details_deadline), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, daysLate = deliveryDaysLate, onChange = viewModel::setDeliveryDate)
+                DeliveryDatePicker(epochDay = form.deliveryDateEpochDay, daysLate = deliveryDaysLate, today = today, onChange = viewModel::setDeliveryDate)
                 queueHint?.let { Text(it, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }

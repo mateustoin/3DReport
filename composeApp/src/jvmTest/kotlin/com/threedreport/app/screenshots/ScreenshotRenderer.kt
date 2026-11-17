@@ -22,6 +22,7 @@ import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -31,7 +32,10 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,6 +64,9 @@ import com.threedreport.app.ui.quote.GCodeDropTarget
 import com.threedreport.app.ui.quote.PrintInput
 import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.theme.AppTheme
+import com.threedreport.app.ui.theme.DarkAppColors
+import com.threedreport.app.ui.theme.appColors
+import com.threedreport.app.ui.theme.appType
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.ChannelFeeTier
 import com.threedreport.core.model.Consumable
@@ -136,7 +143,7 @@ class ScreenshotRenderer {
         val container = buildContainer(dataDir)
 
         renderAppPng(File(outDir, "orcamento.png")) {
-            App(
+            sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm -> fillDraftQuote(vm) },
@@ -145,7 +152,7 @@ class ScreenshotRenderer {
 
         // "Negociar" (decisão 131): o painel com o preço combinado aberto, e o preço, o lucro e o mínimo já mudados por ele.
         renderAppPng(File(outDir, "orcamento-negociar.png"), afterSettle = { it.clickByText("Negociar") }) {
-            App(
+            sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm ->
@@ -159,7 +166,7 @@ class ScreenshotRenderer {
         val settingsBefore = container.settings.settings.value
         container.settings.update(settingsBefore.copy(minimumOrderPrice = 250.0))
         renderAppPng(File(outDir, "orcamento-abaixo-minimo.png"), afterSettle = { it.clickByText("Negociar") }) {
-            App(
+            sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm ->
@@ -172,7 +179,7 @@ class ScreenshotRenderer {
 
         // O formulário rolado até o fim: as seções Venda e Detalhes.
         renderAppPng(File(outDir, "orcamento-venda.png"), afterSettle = { it.scrollAllToEnd() }) {
-            App(
+            sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm -> fillDraftQuote(vm) },
@@ -181,7 +188,7 @@ class ScreenshotRenderer {
 
         // O diálogo de configurações de impressão de uma impressão.
         renderAppPng(File(outDir, "orcamento-configuracoes.png"), afterSettle = { it.clickByText("Configurações de impressão") }) {
-            App(
+            sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm -> fillDraftQuote(vm) },
@@ -191,7 +198,7 @@ class ScreenshotRenderer {
         // O mesmo Orçamento no tema escuro, pra conferir o tema novo nos dois.
         container.theme.update(ThemeMode.DARK)
         renderAppPng(File(outDir, "orcamento-escuro.png")) {
-            App(
+            sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm -> fillDraftQuote(vm) },
@@ -199,7 +206,7 @@ class ScreenshotRenderer {
         }
         // E o painel de negociação no escuro, onde o azul-marinho e o campo se confundem mais fácil.
         renderAppPng(File(outDir, "orcamento-negociar-escuro.png"), afterSettle = { it.clickByText("Negociar") }) {
-            App(
+            sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm ->
@@ -249,20 +256,20 @@ class ScreenshotRenderer {
                 File(outDir, "insumos$suffix.png"),
                 afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
             ) {
-                App(container, startAt = AppDestination.CONSUMABLES)
+                sampleApp(container, startAt = AppDestination.CONSUMABLES)
             }
             renderAppPng(File(outDir, "servicos$suffix.png"), afterSettle = { it.clickByText("Montagem") }) {
-                App(container, startAt = AppDestination.SERVICES)
+                sampleApp(container, startAt = AppDestination.SERVICES)
             }
             // Filamentos e Impressoras: a lista (no escuro, com os arquivados abertos) e o painel de edição aberto.
             renderAppPng(
                 File(outDir, "filamentos$suffix.png"),
                 afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
             ) {
-                App(container, startAt = AppDestination.FILAMENTS)
+                sampleApp(container, startAt = AppDestination.FILAMENTS)
             }
             renderAppPng(File(outDir, "filamentos-painel$suffix.png"), afterSettle = { it.clickByText("PLA Voolt3D") }) {
-                App(container, startAt = AppDestination.FILAMENTS)
+                sampleApp(container, startAt = AppDestination.FILAMENTS)
             }
             renderAppPng(
                 File(outDir, "filamentos-cores$suffix.png"),
@@ -272,31 +279,31 @@ class ScreenshotRenderer {
                     it.scrollAllToEnd()
                 },
             ) {
-                App(container, startAt = AppDestination.FILAMENTS)
+                sampleApp(container, startAt = AppDestination.FILAMENTS)
             }
             renderAppPng(
                 File(outDir, "impressoras$suffix.png"),
                 afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
             ) {
-                App(container, startAt = AppDestination.PRINTERS)
+                sampleApp(container, startAt = AppDestination.PRINTERS)
             }
             renderAppPng(File(outDir, "impressoras-painel$suffix.png"), afterSettle = { it.clickByText("Bambu Lab A1") }) {
-                App(container, startAt = AppDestination.PRINTERS)
+                sampleApp(container, startAt = AppDestination.PRINTERS)
             }
         }
         container.theme.update(ThemeMode.LIGHT)
 
         // Os diálogos de Impressoras: a manutenção e a lista pré-cadastrada.
         renderAppPng(File(outDir, "impressoras-manutencao.png"), afterSettle = { it.clickByDescription("Manutenção") }) {
-            App(container, startAt = AppDestination.PRINTERS)
+            sampleApp(container, startAt = AppDestination.PRINTERS)
         }
         container.theme.update(ThemeMode.DARK)
         renderAppPng(File(outDir, "impressoras-manutencao-escuro.png"), afterSettle = { it.clickByDescription("Manutenção") }) {
-            App(container, startAt = AppDestination.PRINTERS)
+            sampleApp(container, startAt = AppDestination.PRINTERS)
         }
         container.theme.update(ThemeMode.LIGHT)
         renderAppPng(File(outDir, "impressoras-lista.png"), afterSettle = { it.clickByText("Escolher da lista") }) {
-            App(container, startAt = AppDestination.PRINTERS)
+            sampleApp(container, startAt = AppDestination.PRINTERS)
         }
 
         // Configurações, Sobre e os diálogos (Leva 10B-5). Cada seção de Configurações no claro, e Negócio e Canais também no
@@ -359,7 +366,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             it.clickByText("Ver modelos salvos")
         },
     ) {
-        App(container, startAt = AppDestination.SETTINGS)
+        sampleApp(container, startAt = AppDestination.SETTINGS)
     }
     // Um canal com faixas de preço e dois modelos, pra o diálogo do canal e a lista de modelos terem o que mostrar.
     val shopee = container.salesChannels.channels.value.first { it.id == Catalog.SHOPEE_ID }
@@ -371,7 +378,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
         container.theme.update(theme)
         for ((title, slug) in sections) {
             renderAppPng(File(outDir, "configuracoes-$slug$suffix.png"), afterSettle = { if (slug != "negocio") it.clickByText(title) }) {
-                App(container, startAt = AppDestination.SETTINGS)
+                sampleApp(container, startAt = AppDestination.SETTINGS)
             }
         }
         // Uma alteração por salvar: a barra embaixo e o "Não salvo" na lista.
@@ -379,7 +386,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             File(outDir, "configuracoes-negocio-alterado$suffix.png"),
             afterSettle = { it.setTextByLabel("Margem de lucro (%)", "150") },
         ) {
-            App(container, startAt = AppDestination.SETTINGS)
+            sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         if (theme == ThemeMode.LIGHT) {
             // O erro de cada campo, depois de "Salvar".
@@ -392,10 +399,10 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                     it.clickByText("Salvar")
                 },
             ) {
-                App(container, startAt = AppDestination.SETTINGS)
+                sampleApp(container, startAt = AppDestination.SETTINGS)
             }
             renderAppPng(File(outDir, "configuracoes-negocio-fim.png"), afterSettle = { it.scrollAllToEnd() }) {
-                App(container, startAt = AppDestination.SETTINGS)
+                sampleApp(container, startAt = AppDestination.SETTINGS)
             }
             renderAppPng(
                 File(outDir, "configuracoes-documentos-fim.png"),
@@ -405,7 +412,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                     it.scrollAllToEnd()
                 },
             ) {
-                App(container, startAt = AppDestination.SETTINGS)
+                sampleApp(container, startAt = AppDestination.SETTINGS)
             }
         }
 
@@ -428,11 +435,11 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                 it.clickByText("Shopee")
             },
         ) {
-            App(container, startAt = AppDestination.SETTINGS)
+            sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         container.salesChannels.update(shopee)
         renderAppPng(File(outDir, "configuracoes-tarifa$suffix.png"), afterSettle = { it.clickByText("Calcular o kWh") }) {
-            App(container, startAt = AppDestination.SETTINGS)
+            sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         renderAppPng(
             File(outDir, "configuracoes-tarifa-branca$suffix.png"),
@@ -442,7 +449,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                 it.clickByText("Tarifa branca")
             },
         ) {
-            App(container, startAt = AppDestination.SETTINGS)
+            sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         renderAppPng(
             File(outDir, "configuracoes-tarifa-resultado$suffix.png"),
@@ -453,7 +460,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                 it.setTextByLabel("Consumo do mês (kWh)", "250")
             },
         ) {
-            App(container, startAt = AppDestination.SETTINGS)
+            sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         renderAppPng(
             File(outDir, "configuracoes-templates$suffix.png"),
@@ -463,7 +470,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                 it.clickByText("Ver modelos salvos")
             },
         ) {
-            App(container, startAt = AppDestination.SETTINGS)
+            sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         // "Carregar" põe o modelo no rascunho: a barra de alterações aparece e nada foi gravado.
         renderAppPng(
@@ -476,7 +483,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                 it.clickByDescription("Carregar")
             },
         ) {
-            App(container, startAt = AppDestination.SETTINGS)
+            sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         if (theme == ThemeMode.LIGHT) {
             renderAppPng(
@@ -487,7 +494,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                     it.clickByText("Salvar como modelo")
                 },
             ) {
-                App(container, startAt = AppDestination.SETTINGS)
+                sampleApp(container, startAt = AppDestination.SETTINGS)
             }
             renderAppPng(
                 File(outDir, "configuracoes-documentos-previa.png"),
@@ -497,11 +504,11 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                     it.clickByText("Ver como fica o PDF")
                 },
             ) {
-                App(container, startAt = AppDestination.SETTINGS)
+                sampleApp(container, startAt = AppDestination.SETTINGS)
             }
         }
 
-        renderAppPng(File(outDir, "sobre$suffix.png")) { App(container, startAt = AppDestination.ABOUT) }
+        renderAppPng(File(outDir, "sobre$suffix.png")) { sampleApp(container, startAt = AppDestination.ABOUT) }
     }
     container.theme.update(ThemeMode.LIGHT)
 
@@ -512,16 +519,16 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
     updatedContainer.preferences.update(updatedContainer.preferences.preferences.value.copy(checkForUpdates = true))
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
         updatedContainer.theme.update(theme)
-        renderAppPng(File(outDir, "sobre-atualizacao$suffix.png")) { App(updatedContainer, startAt = AppDestination.ABOUT) }
+        renderAppPng(File(outDir, "sobre-atualizacao$suffix.png")) { sampleApp(updatedContainer, startAt = AppDestination.ABOUT) }
     }
 
     // O primeiro uso, numa pasta de dados vazia (onde o onboarding ainda não foi feito): os dois passos, no claro e no escuro.
     val emptyContainer = buildContainer(createTempDirectory("3dreport-screenshots-onboarding").toFile())
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
         emptyContainer.theme.update(theme)
-        renderAppPng(File(outDir, "primeiro-uso$suffix.png")) { App(emptyContainer, startAt = AppDestination.QUOTE) }
+        renderAppPng(File(outDir, "primeiro-uso$suffix.png")) { sampleApp(emptyContainer, startAt = AppDestination.QUOTE) }
         renderAppPng(File(outDir, "primeiro-uso-custos$suffix.png"), afterSettle = { it.clickByText("Continuar") }) {
-            App(emptyContainer, startAt = AppDestination.QUOTE)
+            sampleApp(emptyContainer, startAt = AppDestination.QUOTE)
         }
     }
 }
@@ -545,13 +552,13 @@ private fun renderDashboardScreenshots(container: AppContainer, outDir: File, gc
 
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
         for (target in listOf(container, noSales, empty)) target.theme.update(theme)
-        renderAppPng(File(outDir, "dashboard$suffix.png")) { App(container, startAt = AppDestination.DASHBOARD) }
-        renderAppPng(File(outDir, "dashboard-sem-vendas$suffix.png")) { App(noSales, startAt = AppDestination.DASHBOARD) }
-        renderAppPng(File(outDir, "dashboard-vazio$suffix.png")) { App(empty, startAt = AppDestination.DASHBOARD) }
+        renderAppPng(File(outDir, "dashboard$suffix.png")) { sampleApp(container, startAt = AppDestination.DASHBOARD) }
+        renderAppPng(File(outDir, "dashboard-sem-vendas$suffix.png")) { sampleApp(noSales, startAt = AppDestination.DASHBOARD) }
+        renderAppPng(File(outDir, "dashboard-vazio$suffix.png")) { sampleApp(empty, startAt = AppDestination.DASHBOARD) }
     }
     container.theme.update(ThemeMode.LIGHT)
     renderAppPng(File(outDir, "dashboard-estreito.png"), width = NARROW_WIDTH, height = NARROW_HEIGHT) {
-        App(container, startAt = AppDestination.DASHBOARD)
+        sampleApp(container, startAt = AppDestination.DASHBOARD)
     }
 
     // Prejuízo: uma única venda fechada por menos do que custou, pra o lucro sair em vermelho.
@@ -562,7 +569,7 @@ private fun renderDashboardScreenshots(container: AppContainer, outDir: File, gc
     loss.quoteHistory.savedQuotes.value.filter { it.isOrder && !it.status.isOpen }.forEach { loss.quoteHistory.delete(it.id) }
     val sold = loss.quoteHistory.save(name = "Pedido com prejuízo", quote = sample.quote.copy(salePrice = 1.0), services = emptyList(), photo = null, sourceLink = null)
     loss.quoteHistory.updateStatus(sold.id, OrderStatus.APROVADO)
-    renderAppPng(File(outDir, "dashboard-prejuizo.png")) { App(loss, startAt = AppDestination.DASHBOARD) }
+    renderAppPng(File(outDir, "dashboard-prejuizo.png")) { sampleApp(loss, startAt = AppDestination.DASHBOARD) }
 }
 
 /**
@@ -600,7 +607,7 @@ private fun renderDropOverlayScreenshots(outDir: File) {
 private fun renderNarrowSettingsScreenshots(container: AppContainer, outDir: File) {
     container.theme.update(ThemeMode.LIGHT)
     renderAppPng(File(outDir, "configuracoes-negocio-janela-estreita.png"), width = 900, height = 700) {
-        App(container, startAt = AppDestination.SETTINGS)
+        sampleApp(container, startAt = AppDestination.SETTINGS)
     }
     renderAppPng(
         File(outDir, "configuracoes-documentos-janela-estreita.png"),
@@ -608,14 +615,23 @@ private fun renderNarrowSettingsScreenshots(container: AppContainer, outDir: Fil
         width = 900,
         height = 700,
     ) {
-        App(container, startAt = AppDestination.SETTINGS)
+        sampleApp(container, startAt = AppDestination.SETTINGS)
     }
 }
 
 /** Pedidos ou Catálogo com o "hoje" e o "agora" dos dados de exemplo. */
 @Composable
 private fun historyApp(container: AppContainer, startAt: AppDestination) {
-    App(container, startAt = startAt, today = { TODAY.toEpochDay() }, clock = { atDaysAgo(0, 12) })
+    sampleApp(container, startAt = startAt)
+}
+
+/**
+ * O [App] com o "hoje" e o "agora" dos dados de exemplo em todas as telas (Orçamento, Pedidos, Catálogo...): nenhuma
+ * captura depende do dia em que é gerada.
+ */
+@Composable
+private fun sampleApp(container: AppContainer, startAt: AppDestination, prepareQuote: (QuoteViewModel) -> Unit = {}) {
+    App(container, startAt = startAt, prepareQuote = prepareQuote, today = { TODAY.toEpochDay() }, clock = { atDaysAgo(0, 12) })
 }
 
 /**
@@ -1133,14 +1149,14 @@ private fun findClickableNodeWithText(node: SemanticsNode, text: String): Semant
 /** O PDF de verdade (mesmo exportador do app), a primeira página rasterizada e composta num fundo neutro. */
 private fun renderPdfComposite(savedQuote: SavedQuote, photoBytes: ByteArray?, branding: BrandingSettings, outFile: File) {
     val resolved = branding.resolvePdfBranding(logoBytes = null)
-    val pdfBytes = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes)), testClientTexts, resolved.brandName, resolved.footerText, resolved.options)
+    val pdfBytes = renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, photoBytes)), testClientTexts, resolved.brandName, resolved.footerText, resolved.options.copy(issuedOnEpochDay = TODAY.toEpochDay()))
     composePdfPage(pdfBytes, outFile)
 }
 
 /** O catálogo de verdade (mesmo exportador do app), a primeira página composta num fundo neutro. */
 private fun renderCatalogComposite(items: List<QuoteExportItem>, branding: BrandingSettings, outFile: File) {
     val resolved = branding.resolvePdfBranding(logoBytes = null)
-    composePdfPage(renderCatalogPdf(items, testClientTexts, resolved.brandName, resolved.footerText, resolved.options), outFile)
+    composePdfPage(renderCatalogPdf(items, testClientTexts, resolved.brandName, resolved.footerText, resolved.options.copy(issuedOnEpochDay = TODAY.toEpochDay())), outFile)
 }
 
 private fun composePdfPage(pdfBytes: ByteArray, outFile: File) {

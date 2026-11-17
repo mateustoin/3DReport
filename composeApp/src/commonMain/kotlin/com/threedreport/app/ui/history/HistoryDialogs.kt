@@ -17,11 +17,12 @@ fun HistoryDialogs(state: HistoryUiState, viewModel: QuoteHistoryViewModel) {
             quoteName = quote.name,
             initial = quote.deliveryDateEpochDay,
             daysLate = viewModel::deliveryDaysLate,
+            today = state.today,
             onDismiss = viewModel::cancelEditingDeliveryDate,
             onSave = viewModel::saveDeliveryDate,
         )
     }
-    state.details?.let { editing -> QuoteDetailsDialog(editing, viewModel, state.clients) }
+    state.details?.let { editing -> QuoteDetailsDialog(editing, viewModel, state.clients, state.today) }
     state.printSettingsEditing?.let { quote ->
         PrintSettingsDialog(
             initial = quote.printSettings ?: PrintSettings(),

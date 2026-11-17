@@ -101,6 +101,7 @@ class QuoteOverdueSendTest {
         assertEquals(0, viewModel(TODAY).uiState.value.deliveryDaysLate)
         assertEquals(0, viewModel(TODAY + 5).uiState.value.deliveryDaysLate)
         assertEquals(0, viewModel(null).uiState.value.deliveryDaysLate)
+        assertEquals(TODAY, viewModel(null).uiState.value.today)
     }
 
     private companion object {

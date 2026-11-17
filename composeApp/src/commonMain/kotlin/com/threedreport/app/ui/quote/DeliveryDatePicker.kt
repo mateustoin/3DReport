@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import com.threedreport.app.platform.epochDayToUtcMillis
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.formatShortDate
-import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.platform.utcMillisToEpochDay
 import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.AppButton
@@ -59,12 +58,12 @@ private val QUICK_DAYS = listOf(3, 7, 15)
  *
  * @param epochDay prazo atual (dias desde 01/01/1970), ou `null` sem prazo.
  * @param daysLate quantos dias [epochDay] já passou (0 em dia), calculado pelo ViewModel ([deliveryDaysLate]).
+ * @param today hoje, em dias desde 01/01/1970, de quem chama (o ViewModel), pra os atalhos e o calendário.
  * @param onChange chamado com o novo prazo, ou `null` pra remover.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun DeliveryDatePicker(epochDay: Long?, daysLate: Int, onChange: (Long?) -> Unit) {
-    val today = todayEpochDay()
+fun DeliveryDatePicker(epochDay: Long?, daysLate: Int, today: Long, onChange: (Long?) -> Unit) {
     val space = MaterialTheme.spacing
     var showCalendar by remember { mutableStateOf(false) }
 
@@ -143,7 +142,7 @@ fun DeliveryDatePicker(epochDay: Long?, daysLate: Int, onChange: (Long?) -> Unit
  * orçamento é o caminho natural quando o cliente demorou a responder e o prazo venceu.
  */
 @Composable
-fun DeliveryDateDialog(quoteName: String, initial: Long?, daysLate: (Long?) -> Int, onDismiss: () -> Unit, onSave: (Long?) -> Unit) {
+fun DeliveryDateDialog(quoteName: String, initial: Long?, daysLate: (Long?) -> Int, today: Long, onDismiss: () -> Unit, onSave: (Long?) -> Unit) {
     var epochDay by remember { mutableStateOf(initial) }
 
     AppDialog(
@@ -155,6 +154,6 @@ fun DeliveryDateDialog(quoteName: String, initial: Long?, daysLate: (Long?) -> I
         },
     ) {
         DialogText(quoteName)
-        DeliveryDatePicker(epochDay = epochDay, daysLate = daysLate(epochDay), onChange = { epochDay = it })
+        DeliveryDatePicker(epochDay = epochDay, daysLate = daysLate(epochDay), today = today, onChange = { epochDay = it })
     }
 }

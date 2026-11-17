@@ -41,6 +41,8 @@ data class QuoteCatalog(
  *   formulário recomeça (salvar, orçamento novo).
  * @property deliveryDaysLate quantos dias o prazo do formulário já passou (0 sem prazo ou em dia), pro painel e pro
  *   seletor de prazo dizerem o mesmo.
+ * @property today hoje, em dias desde 01/01/1970, a mesma régua do atraso; o seletor de prazo e a sugestão de urgência
+ *   usam este, e não o relógio do sistema.
  * @property pendingSend o envio ("Enviar pro cliente") segurado porque o prazo já venceu, até a pessoa confirmar ou
  *   desistir; o mesmo aviso de Pedidos.
  * @property exporting o PDF ou a imagem do "Enviar pro cliente" está sendo gerado.
@@ -61,6 +63,7 @@ data class QuoteUiState(
     val queueHints: List<QueueHint> = emptyList(),
     val negotiating: Boolean = false,
     val deliveryDaysLate: Int = 0,
+    val today: Long = 0L,
     val pendingSend: ClientExport? = null,
 )
 

@@ -219,6 +219,7 @@ class QuoteViewModel(
             comparison = comparisonFor(fresh),
             queueHints = queueHintsFor(fresh, result),
             deliveryDaysLate = deliveryDaysLate(deadline, today()),
+            today = today(),
         )
     }
 

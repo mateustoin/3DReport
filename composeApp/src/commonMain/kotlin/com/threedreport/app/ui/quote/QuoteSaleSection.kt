@@ -34,7 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppCheckbox
 import com.threedreport.app.ui.components.AppDropdownField
@@ -67,6 +66,7 @@ internal fun SaleFields(
     form: SaveQuoteFormState,
     result: QuoteResult,
     currency: Currency,
+    today: Long,
 ) {
     val space = MaterialTheme.spacing
     val settings: PricingSettings = catalog.settings
@@ -181,7 +181,7 @@ internal fun SaleFields(
             if (settings.rushSurchargeRate > 0) {
                 AppCheckbox(stringResource(Res.string.quote_sale_rush, settings.rushSurchargeRate.toPercentText()), input.rush, viewModel::setRush)
                 val deadline = form.deliveryDateEpochDay
-                if (!input.rush && deadline != null && deadline - todayEpochDay() in 0..2) {
+                if (!input.rush && deadline != null && deadline - today in 0..2) {
                     AppButton(stringResource(Res.string.quote_sale_rush_suggest), onClick = { viewModel.setRush(true) })
                 }
             }

@@ -80,6 +80,8 @@ class BrandingViewModel(
     private val pickImage: () -> PickedFile? = { (defaultPlatform.pickFile(FileKind.IMAGE) as? PickResult.Picked)?.file },
     /** Onde a prévia do PDF é desenhada: fora da thread da tela, que não pode travar enquanto o PDF é montado. */
     private val renderDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    /** Hoje, em dias desde 01/01/1970: a emissão e o prazo da prévia saem dele (o gerador de capturas fixa o dia). */
+    private val today: () -> Long = ::todayEpochDay,
 ) {
 
     /** O que está gravado e de onde o formulário saiu; serve pra saber se há edição por salvar. */
@@ -231,13 +233,13 @@ class BrandingViewModel(
             // pessoa digitou enquanto o PDF era montado não é sobrescrito por uma cópia antiga do formulário.
             val png = try {
                 withContext(renderDispatcher) {
-                    val sample = previewSampleQuote(sampleName, currency)
+                    val sample = previewSampleQuote(sampleName, currency, today())
                     val pdf = renderSavedQuotesPdf(
                         items = listOf(QuoteExportItem(sample, photoBytes = Res.readBytes(PREVIEW_PHOTO))),
                         texts = loadClientDocumentTexts(listOf(sample)),
                         brandName = branding.brandName,
                         footerText = branding.footerText,
-                        options = branding.options,
+                        options = branding.options.copy(issuedOnEpochDay = today()),
                     )
                     renderPdfFirstPagePng(pdf)
                 }
@@ -381,7 +383,7 @@ private const val PREVIEW_PHOTO = "files/preview_sample_photo.png"
  * Orçamento fictício da prévia: com prazo, número e cliente, pra todas as opções terem onde aparecer. O nome do cliente
  * e o da impressora vêm dos recursos traduzíveis.
  */
-internal suspend fun previewSampleQuote(name: String, currency: Currency) = SavedQuote(
+internal suspend fun previewSampleQuote(name: String, currency: Currency, today: Long = todayEpochDay()) = SavedQuote(
     id = "preview",
     name = name,
     number = 42,
@@ -404,5 +406,5 @@ internal suspend fun previewSampleQuote(name: String, currency: Currency) = Save
         salePrice = 45.0,
     ),
     savedAtEpochMillis = 0L,
-    deliveryDateEpochDay = todayEpochDay() + 7,
+    deliveryDateEpochDay = today + 7,
 )
