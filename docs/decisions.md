@@ -137,7 +137,20 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [124](decisions/124.md) | 2026-09-29 | Leva 10: frete grátis desconta do lucro sem mudar o preço da peça | Aprovada |
 | [125](decisions/125.md) | 2026-09-29 | Leva 10: preço mínimo do pedido e acréscimo por urgência | Aprovada |
 | [126](decisions/126.md) | 2026-09-29 | Leva 10: ajuda para calcular o kWh por conta de luz, bandeira ou tarifa branca | Aprovada |
+| [127](decisions/127.md) | 2026-11-14 | Nova interface na direção Oficina (azul-marinho e âmbar) pra todo o app | Aprovada |
+| [128](decisions/128.md) | 2026-11-14 | Ícone novo do app, três camadas com a última em âmbar | Aprovada |
+| [129](decisions/129.md) | 2026-11-14 | Pedidos abre na última visualização usada (kanban ou lista) | Aprovada |
 | [130](decisions/130.md) | 2026-11-14 | Fundação de arquitetura antes da nova interface | Aprovada |
+| [131](decisions/131.md) | 2026-11-15 | "Negociar" e "Enviar pro cliente" no painel de resultado do Orçamento | Aprovada |
+| [132](decisions/132.md) | 2026-11-15 | Pedidos em lista vira tabela, e o Catálogo abre em grade com foto | Aprovada |
+| [133](decisions/133.md) | 2026-11-15 | Dashboard em blocos, sem gráfico por enquanto | Aprovada |
+| [134](decisions/134.md) | 2026-11-16 | Configurações, Sobre e modelos na nova interface | Aprovada |
+| [135](decisions/135.md) | 2026-11-16 | Ajustes do Dashboard depois da revisão | Aprovada |
+| [136](decisions/136.md) | 2026-11-16 | A 2.2 fecha com a Leva 10B | Aprovada |
+| [137](decisions/137.md) | 2026-11-16 | PDF e imagem do orçamento no visual novo, com fundo da imagem pelo brilho da peça | Aprovada |
+| [138](decisions/138.md) | 2026-11-16 | Ícone "Camadas" refinado, com contorno claro nos tamanhos de 16 a 32 px (complementa a 128) | Aprovada |
+| [139](decisions/139.md) | 2026-11-16 | Preparação pra tradução concluída sem mudar o formato dos dados (nome automático por `autoNamed`) | Aprovada |
+| [140](decisions/140.md) | 2026-11-16 | Site na 2.2: capturas, ícone, marca e textos, sem redesenho das páginas | Aprovada |
 
 ## Pendentes de aprovação
 

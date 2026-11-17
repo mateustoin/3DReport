@@ -1,11 +1,14 @@
 package com.threedreport.app.platform
 
-/** Os tipos de arquivo que o app pede pra escolher, com o título do diálogo e as extensões aceitas. */
-enum class FileKind(val dialogTitle: String, val extensions: Set<String>) {
-    IMAGE("Escolher foto", setOf("png", "jpg", "jpeg", "gif", "bmp", "webp")),
-    GCODE("Escolher arquivo G-code", setOf("gcode", "gco", "g")),
-    STL("Escolher arquivo STL", setOf("stl")),
-    BACKUP("Escolher backup do 3DReport", setOf("zip")),
+/**
+ * Os tipos de arquivo que o app pede pra escolher, com as extensões aceitas. O título do diálogo do sistema vem de
+ * recurso, lido pela plataforma (ver `PlatformTexts`).
+ */
+enum class FileKind(val extensions: Set<String>) {
+    IMAGE(setOf("png", "jpg", "jpeg", "gif", "bmp", "webp")),
+    GCODE(setOf("gcode", "gco", "g")),
+    STL(setOf("stl")),
+    BACKUP(setOf("zip")),
 }
 
 /** Resultado de escolher e ler um arquivo. */
@@ -13,8 +16,20 @@ sealed interface PickResult {
     data class Picked(val file: PickedFile) : PickResult
     data object Cancelled : PickResult
 
-    /** @property message motivo, já escrito pra pessoa ("O arquivo está aberto em outro programa…"). */
-    data class Failed(val message: String) : PickResult
+    /**
+     * @property reason por que não deu pra ler; a interface escolhe o texto (ver `PickResult.Failed.text`)
+     * @property fileName o arquivo que falhou, pro texto citar
+     */
+    data class Failed(val reason: PickFailure, val fileName: String) : PickResult
+}
+
+/** Por que um arquivo escolhido ou arrastado não foi lido. */
+enum class PickFailure {
+    /** Não abriu: está aberto em outro programa ou foi movido. */
+    UNREADABLE,
+
+    /** É grande demais pra caber na memória do app. */
+    TOO_LARGE,
 }
 
 /** Resultado de gravar um arquivo onde a pessoa escolheu. */
@@ -23,8 +38,8 @@ sealed interface SaveResult {
     data class Saved(val path: String) : SaveResult
     data object Cancelled : SaveResult
 
-    /** @property message motivo, já escrito pra pessoa. */
-    data class Failed(val message: String) : SaveResult
+    /** @property fileName o arquivo que não deu pra gravar (o motivo provável é sempre o mesmo, e a tela o explica). */
+    data class Failed(val fileName: String) : SaveResult
 }
 
 /**

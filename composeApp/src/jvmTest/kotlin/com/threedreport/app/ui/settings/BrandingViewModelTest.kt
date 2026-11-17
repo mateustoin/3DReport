@@ -1,9 +1,29 @@
 package com.threedreport.app.ui.settings
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_error_name_required
+import _3dreport.composeapp.generated.resources.settings_docs_error_options
+import _3dreport.composeapp.generated.resources.settings_docs_error_validity
+import _3dreport.composeapp.generated.resources.settings_docs_logo_unreadable
+import _3dreport.composeapp.generated.resources.settings_docs_notice_template_saved
+import _3dreport.composeapp.generated.resources.settings_notice_saved
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
+import com.threedreport.app.data.dataJson
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.ImageBackground
+import com.threedreport.core.model.QuoteTemplate
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -17,6 +37,8 @@ import kotlin.test.assertTrue
 /** Valida a regra: com nome preenchido, ao menos marca d'água ou rodapé precisa estar marcado. */
 class BrandingViewModelTest {
 
+    private val scope = CoroutineScope(Dispatchers.Unconfined)
+
     @BeforeTest
     fun setDataDir() {
         System.setProperty("threedreport.dataDir", createTempDirectory("3dreport-test").toString())
@@ -24,13 +46,17 @@ class BrandingViewModelTest {
 
     @AfterTest
     fun clearDataDir() {
+        scope.cancel()
         System.clearProperty("threedreport.dataDir")
     }
 
     private fun newViewModel(
         brandingRepository: BrandingRepository = BrandingRepository(),
         templateRepository: TemplateRepository = TemplateRepository(),
-    ) = BrandingViewModel(brandingRepository, templateRepository)
+    ) = BrandingViewModel(brandingRepository, templateRepository, scope)
+
+    /** O aviso emitido depois da última ação, ou `null` se não houve nenhum. */
+    private fun BrandingViewModel.pendingNotice(): UiNotice? = runBlocking { withTimeoutOrNull(200) { notices.first() } }
 
     @Test
     fun savingWithNameAndBothOptionsUncheckedFails() {
@@ -42,8 +68,9 @@ class BrandingViewModelTest {
         viewModel.setShowFooter(false)
         viewModel.save()
 
-        assertNotNull(viewModel.uiState.value.errorMessage)
+        assertEquals(uiText(Res.string.settings_docs_error_options), viewModel.uiState.value.optionsError)
         assertNull(repository.branding.value.brandName) // nada foi persistido
+        assertNull(viewModel.pendingNotice())
     }
 
     @Test
@@ -56,7 +83,8 @@ class BrandingViewModelTest {
         viewModel.setShowFooter(true)
         viewModel.save()
 
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.optionsError)
+        assertEquals(UiNotice(uiText(Res.string.settings_notice_saved)), viewModel.pendingNotice())
         assertEquals("Minha Marca", repository.branding.value.brandName)
         assertEquals(false, repository.branding.value.showWatermark)
         assertEquals(true, repository.branding.value.showFooter)
@@ -71,7 +99,7 @@ class BrandingViewModelTest {
         viewModel.setShowFooter(false)
         viewModel.save()
 
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.optionsError)
         assertNull(repository.branding.value.brandName)
     }
 
@@ -91,8 +119,8 @@ class BrandingViewModelTest {
         assertEquals("Minha Marca", saved.brandName)
         assertTrue(saved.showWatermark)
         assertEquals(false, saved.showFooter)
-        assertTrue(viewModel.uiState.value.templateSavedConfirmation)
-        assertEquals(false, viewModel.uiState.value.isSavingAsTemplate)
+        assertEquals(UiNotice(uiText(Res.string.settings_docs_notice_template_saved)), viewModel.pendingNotice())
+        assertNull(viewModel.uiState.value.savingTemplate)
     }
 
     @Test
@@ -103,7 +131,7 @@ class BrandingViewModelTest {
         viewModel.updateTemplateName("   ")
         viewModel.confirmSaveAsTemplate()
 
-        assertNotNull(viewModel.uiState.value.templateSaveError)
+        assertEquals(uiText(Res.string.common_error_name_required), viewModel.uiState.value.savingTemplate?.error)
     }
 
     @Test
@@ -118,7 +146,25 @@ class BrandingViewModelTest {
         viewModel.updateTemplateName("Formal")
         viewModel.confirmSaveAsTemplate()
 
-        assertNotNull(viewModel.uiState.value.templateSaveError)
+        // O erro é das opções do formulário, não do nome do modelo: o diálogo fecha e o erro aparece no campo certo.
+        assertNull(viewModel.uiState.value.savingTemplate)
+        assertEquals(uiText(Res.string.settings_docs_error_options), viewModel.uiState.value.optionsError)
+        assertTrue(templateRepository.templates.value.isEmpty())
+    }
+
+    @Test
+    fun confirmSaveAsTemplateWithAnInvalidValidityClosesTheDialogAndShowsTheErrorOnTheValidityField() {
+        val templateRepository = TemplateRepository()
+        val viewModel = newViewModel(templateRepository = templateRepository)
+
+        viewModel.setValidityDays("dez")
+        viewModel.startSaveAsTemplate()
+        viewModel.updateTemplateName("Formal")
+        viewModel.confirmSaveAsTemplate()
+
+        assertNull(viewModel.uiState.value.savingTemplate)
+        assertEquals(uiText(Res.string.settings_docs_error_validity, BrandingSettings.MAX_VALIDITY_DAYS), viewModel.uiState.value.validityError)
+        assertNull(viewModel.uiState.value.optionsError)
         assertTrue(templateRepository.templates.value.isEmpty())
     }
 
@@ -132,7 +178,7 @@ class BrandingViewModelTest {
     fun pickedLogoIsOnlyStoredOnSave() {
         val repository = BrandingRepository()
         val png = tinyPng()
-        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", png) })
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), scope, pickImage = { PickedFile("logo.png", png) })
 
         viewModel.pickLogo()
         assertNull(repository.branding.value.logoFileName, "escolher não grava: o formulário é rascunho até Salvar")
@@ -144,18 +190,18 @@ class BrandingViewModelTest {
 
     @Test
     fun unreadableLogoShowsAnErrorAndKeepsTheFormAsItWas() {
-        val viewModel = BrandingViewModel(BrandingRepository(), TemplateRepository(), pickImage = { PickedFile("logo.png", byteArrayOf(1, 2, 3)) })
+        val viewModel = BrandingViewModel(BrandingRepository(), TemplateRepository(), scope, pickImage = { PickedFile("logo.png", byteArrayOf(1, 2, 3)) })
 
         viewModel.pickLogo()
 
-        assertNotNull(viewModel.uiState.value.logoError)
+        assertEquals(uiText(Res.string.settings_docs_logo_unreadable), viewModel.uiState.value.logoError)
         assertNull(viewModel.uiState.value.logoBytes)
     }
 
     @Test
     fun discardDropsTheEditsAndThePickedLogo() {
         val repository = BrandingRepository()
-        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", tinyPng()) })
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), scope, pickImage = { PickedFile("logo.png", tinyPng()) })
         viewModel.update("Loja Nova")
         viewModel.pickLogo()
         assertTrue(viewModel.hasUnsavedChanges)
@@ -172,7 +218,7 @@ class BrandingViewModelTest {
     fun removingTheLogoTakesEffectOnSave() {
         val repository = BrandingRepository()
         val png = tinyPng()
-        val viewModel = BrandingViewModel(repository, TemplateRepository(), pickImage = { PickedFile("logo.png", png) })
+        val viewModel = BrandingViewModel(repository, TemplateRepository(), scope, pickImage = { PickedFile("logo.png", png) })
         viewModel.pickLogo()
         viewModel.save()
 
@@ -194,7 +240,7 @@ class BrandingViewModelTest {
         viewModel.setContactInstagram("minhamarca")
         viewModel.save()
 
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.optionsError)
         assertEquals("@minhamarca", repository.branding.value.instagramHandle)
     }
 
@@ -222,9 +268,10 @@ class BrandingViewModelTest {
         viewModel.update("Minha Marca")
         viewModel.setShowBorder(true)
 
-        viewModel.showPreview()
+        viewModel.showPreview("Exemplo")
 
-        val png = assertNotNull(viewModel.uiState.value.previewPng)
+        // Na primeira leitura, os recursos chegam de outro thread: espera a prévia em vez de olhar na hora.
+        val png = assertNotNull(runBlocking { withTimeoutOrNull(10_000) { viewModel.uiState.first { it.previewPng != null } } }?.previewPng)
         assertNotNull(javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(png)))
         assertNull(repository.branding.value.brandName, "a prévia não salva nada")
 
@@ -233,20 +280,167 @@ class BrandingViewModelTest {
     }
 
     @Test
-    fun loadingATemplateShowsItInTheFormAndTheNextSaveKeepsIt() {
+    fun anEditMadeWhileThePreviewIsBeingRenderedIsNotLost() {
+        val renderThread = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val releaseRender = java.util.concurrent.CountDownLatch(1)
+        // A fila da renderização fica parada até o teste editar o campo: a prévia só termina depois da edição.
+        renderThread.execute { releaseRender.await() }
+        try {
+            val viewModel = BrandingViewModel(
+                BrandingRepository(),
+                TemplateRepository(),
+                scope,
+                renderDispatcher = renderThread.asCoroutineDispatcher(),
+            )
+            viewModel.showPreview("Exemplo")
+
+            viewModel.update("Digitado no meio")
+            assertTrue(viewModel.uiState.value.hasUnsavedChanges)
+            releaseRender.countDown()
+
+            val state = assertNotNull(runBlocking { withTimeoutOrNull(10_000) { viewModel.uiState.first { it.previewPng != null } } })
+            assertEquals("Digitado no meio", state.brandNameInput, "a edição feita durante a renderização continua")
+            assertTrue(state.hasUnsavedChanges)
+        } finally {
+            releaseRender.countDown()
+            renderThread.shutdownNow()
+        }
+    }
+
+    @Test
+    fun thePreviewSampleIsTheSameAsBefore() = runBlocking {
+        val sample = previewSampleQuote("Exemplo", com.threedreport.core.model.Currency.BRL)
+
+        assertEquals("Maria", sample.client?.name)
+        assertEquals("Impressora", sample.quote.prints.single().printerName)
+        assertEquals("#0042", sample.displayNumber)
+    }
+
+    private val loja = com.threedreport.core.model.QuoteTemplate(
+        id = "t", name = "Loja", brandName = "Minha Loja", showWatermark = false, showFooter = true, showPrintTime = true, showBorder = true,
+    )
+
+    @Test
+    fun loadingATemplateOnlyFillsTheDraftAndDoesNotSave() {
         val brandingRepository = BrandingRepository()
         val viewModel = newViewModel(brandingRepository = brandingRepository)
-        val template = com.threedreport.core.model.QuoteTemplate(
-            id = "t", name = "Loja", brandName = "Minha Loja", showWatermark = false, showFooter = true, showPrintTime = true, showBorder = true,
-        )
+        assertFalse(viewModel.hasUnsavedChanges)
 
-        viewModel.applyTemplate(template)
+        viewModel.applyTemplate(loja)
+
         assertEquals("Minha Loja", viewModel.uiState.value.brandNameInput)
         assertTrue(viewModel.uiState.value.showBorder)
+        assertTrue(viewModel.hasUnsavedChanges, "a barra de alterações não salvas aparece")
+        assertNull(brandingRepository.branding.value.brandName, "carregar não grava")
+        assertFalse(brandingRepository.branding.value.showBorder)
+        assertNull(viewModel.pendingNotice(), "e não avisa de salvo")
+    }
 
+    @Test
+    fun savingAfterLoadingATemplateAdoptsIt() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.applyTemplate(loja)
         viewModel.save()
+
         assertEquals("Minha Loja", brandingRepository.branding.value.brandName)
         assertTrue(brandingRepository.branding.value.showPrintTime)
+        assertFalse(viewModel.hasUnsavedChanges)
+    }
+
+    @Test
+    fun discardingAfterLoadingATemplateBringsBackWhatWasSaved() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.applyTemplate(loja)
+        viewModel.discard()
+
+        assertEquals("", viewModel.uiState.value.brandNameInput)
+        assertFalse(viewModel.uiState.value.showBorder)
+        assertFalse(viewModel.hasUnsavedChanges)
+        assertNull(brandingRepository.branding.value.brandName)
+    }
+
+    @Test
+    fun loadingATemplateKeepsTheSellerLogoAndContact() {
+        val brandingRepository = BrandingRepository()
+        brandingRepository.update(
+            BrandingSettings(contactInstagram = "loja"),
+            LogoChange.Replace(PickedFile("logo.png", byteArrayOf(1))),
+        )
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.applyTemplate(loja)
+        viewModel.save()
+
+        val branding = brandingRepository.branding.value
+        assertTrue(branding.showBorder)
+        assertEquals("@loja", branding.instagramHandle)
+        assertNotNull(branding.logoFileName)
+    }
+
+    @Test
+    fun theImageBackgroundIsADraftUntilSaved() {
+        val brandingRepository = BrandingRepository()
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+        assertEquals(ImageBackground.AUTO, viewModel.uiState.value.imageBackground)
+
+        viewModel.setImageBackground(ImageBackground.LIGHT)
+
+        assertEquals(ImageBackground.LIGHT, viewModel.uiState.value.imageBackground)
+        assertTrue(viewModel.hasUnsavedChanges)
+        assertEquals(ImageBackground.AUTO, brandingRepository.branding.value.imageBackground, "escolher não grava")
+
+        viewModel.save()
+
+        assertEquals(ImageBackground.LIGHT, brandingRepository.branding.value.imageBackground)
+        assertFalse(viewModel.hasUnsavedChanges)
+        assertEquals(ImageBackground.LIGHT, newViewModel(brandingRepository = BrandingRepository()).uiState.value.imageBackground)
+    }
+
+    @Test
+    fun discardBringsBackTheSavedImageBackground() {
+        val brandingRepository = BrandingRepository()
+        brandingRepository.update(BrandingSettings(imageBackground = ImageBackground.DARK))
+        val viewModel = newViewModel(brandingRepository = brandingRepository)
+
+        viewModel.setImageBackground(ImageBackground.AUTO)
+        viewModel.discard()
+
+        assertEquals(ImageBackground.DARK, viewModel.uiState.value.imageBackground)
+        assertFalse(viewModel.hasUnsavedChanges)
+    }
+
+    @Test
+    fun choosingTheSavedBackgroundAgainLeavesNothingToSave() {
+        val viewModel = newViewModel()
+
+        viewModel.setImageBackground(ImageBackground.DARK)
+        viewModel.setImageBackground(ImageBackground.AUTO)
+
+        assertFalse(viewModel.hasUnsavedChanges)
+    }
+
+    @Test
+    fun aTemplateNeitherKeepsNorChangesTheImageBackground() {
+        val brandingRepository = BrandingRepository()
+        brandingRepository.update(BrandingSettings(imageBackground = ImageBackground.LIGHT))
+        val templateRepository = TemplateRepository()
+        val viewModel = newViewModel(brandingRepository, templateRepository)
+
+        viewModel.applyTemplate(loja)
+        assertEquals(ImageBackground.LIGHT, viewModel.uiState.value.imageBackground)
+        viewModel.save()
+        assertEquals(ImageBackground.LIGHT, brandingRepository.branding.value.imageBackground)
+
+        viewModel.setImageBackground(ImageBackground.DARK)
+        viewModel.startSaveAsTemplate()
+        viewModel.updateTemplateName("Escuro")
+        viewModel.confirmSaveAsTemplate()
+        val template = templateRepository.templates.value.first { it.name == "Escuro" }
+        assertFalse(dataJson.encodeToString(QuoteTemplate.serializer(), template).contains("imageBackground"), "o modelo não guarda o fundo")
     }
 
     @Test
@@ -257,7 +451,10 @@ class BrandingViewModelTest {
         viewModel.setValidityDays("dez")
         viewModel.save()
 
-        assertTrue(viewModel.uiState.value.errorMessage!!.contains("Validade"))
-        assertEquals(com.threedreport.core.model.BrandingSettings.DEFAULT_VALIDITY_DAYS, brandingRepository.branding.value.quoteValidityDays)
+        assertEquals(
+            uiText(Res.string.settings_docs_error_validity, BrandingSettings.MAX_VALIDITY_DAYS),
+            viewModel.uiState.value.validityError,
+        )
+        assertEquals(BrandingSettings.DEFAULT_VALIDITY_DAYS, brandingRepository.branding.value.quoteValidityDays)
     }
 }

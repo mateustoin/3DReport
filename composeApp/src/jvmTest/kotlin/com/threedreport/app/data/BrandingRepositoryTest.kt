@@ -2,6 +2,7 @@ package com.threedreport.app.data
 
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.ImageBackground
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -23,6 +24,26 @@ class BrandingRepositoryTest {
     @AfterTest
     fun clearDataDir() {
         System.clearProperty("threedreport.dataDir")
+    }
+
+    /** `branding.json` da 2.1, sem o fundo da imagem: abre no automático (Leva 10B, parte 7). */
+    @Test
+    fun brandingFromBeforeOpensWithTheAutomaticImageBackground() {
+        java.io.File(appDataDir(), "branding.json").apply { parentFile.mkdirs() }.writeText(
+            """{"data": {"brandName": "Minha Marca", "showWatermark": true, "showFooter": false}, "updatedAtEpochMillis": 0}""",
+        )
+
+        val branding = BrandingRepository().branding.value
+
+        assertEquals("Minha Marca", branding.brandName)
+        assertEquals(ImageBackground.AUTO, branding.imageBackground)
+    }
+
+    @Test
+    fun theImageBackgroundSurvivesNewRepositoryInstance() {
+        BrandingRepository().update(BrandingSettings(imageBackground = ImageBackground.LIGHT))
+
+        assertEquals(ImageBackground.LIGHT, BrandingRepository().branding.value.imageBackground)
     }
 
     @Test

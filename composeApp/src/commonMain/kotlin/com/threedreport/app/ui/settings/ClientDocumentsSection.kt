@@ -1,145 +1,282 @@
 package com.threedreport.app.ui.settings
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_close
+import _3dreport.composeapp.generated.resources.common_optional
+import _3dreport.composeapp.generated.resources.common_save
+import _3dreport.composeapp.generated.resources.settings_docs_action_preview
+import _3dreport.composeapp.generated.resources.settings_docs_border
+import _3dreport.composeapp.generated.resources.settings_docs_brand_title
+import _3dreport.composeapp.generated.resources.settings_docs_client_name
+import _3dreport.composeapp.generated.resources.settings_docs_contact_help
+import _3dreport.composeapp.generated.resources.settings_docs_contact_title
+import _3dreport.composeapp.generated.resources.settings_docs_field_brand
+import _3dreport.composeapp.generated.resources.settings_docs_field_email
+import _3dreport.composeapp.generated.resources.settings_docs_field_instagram
+import _3dreport.composeapp.generated.resources.settings_docs_field_instagram_hint
+import _3dreport.composeapp.generated.resources.settings_docs_field_validity
+import _3dreport.composeapp.generated.resources.settings_docs_field_whatsapp
+import _3dreport.composeapp.generated.resources.settings_docs_footer
+import _3dreport.composeapp.generated.resources.settings_docs_image_background
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_auto
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_dark
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_help
+import _3dreport.composeapp.generated.resources.settings_docs_image_background_light
+import _3dreport.composeapp.generated.resources.settings_docs_logo_choose
+import _3dreport.composeapp.generated.resources.settings_docs_logo_help
+import _3dreport.composeapp.generated.resources.settings_docs_logo_label
+import _3dreport.composeapp.generated.resources.settings_docs_logo_missing
+import _3dreport.composeapp.generated.resources.settings_docs_logo_remove
+import _3dreport.composeapp.generated.resources.settings_docs_logo_replace
+import _3dreport.composeapp.generated.resources.settings_docs_pdf_help
+import _3dreport.composeapp.generated.resources.settings_docs_pdf_help_detail
+import _3dreport.composeapp.generated.resources.settings_docs_pdf_title
+import _3dreport.composeapp.generated.resources.settings_docs_preview_description
+import _3dreport.composeapp.generated.resources.settings_docs_preview_help
+import _3dreport.composeapp.generated.resources.settings_docs_preview_sample
+import _3dreport.composeapp.generated.resources.settings_docs_preview_title
+import _3dreport.composeapp.generated.resources.settings_docs_print_time
+import _3dreport.composeapp.generated.resources.settings_docs_print_time_help
+import _3dreport.composeapp.generated.resources.settings_docs_print_time_help_detail
+import _3dreport.composeapp.generated.resources.settings_docs_template_list
+import _3dreport.composeapp.generated.resources.settings_docs_template_name
+import _3dreport.composeapp.generated.resources.settings_docs_template_name_hint
+import _3dreport.composeapp.generated.resources.settings_docs_template_save
+import _3dreport.composeapp.generated.resources.settings_docs_templates_help
+import _3dreport.composeapp.generated.resources.settings_docs_templates_title
+import _3dreport.composeapp.generated.resources.settings_docs_validity_help
+import _3dreport.composeapp.generated.resources.settings_docs_validity_help_detail
+import _3dreport.composeapp.generated.resources.settings_docs_watermark
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.decodeImageBitmap
-import com.threedreport.app.ui.components.SectionTitle
-import com.threedreport.app.ui.components.ShowSnackbarOnce
-import com.threedreport.app.ui.components.SubsectionTitle
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppCheckbox
+import com.threedreport.app.ui.components.AppChoiceField
+import com.threedreport.app.ui.components.AppDialog
+import com.threedreport.app.ui.components.AppNumberField
+import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.ButtonKind
+import com.threedreport.app.ui.components.FieldError
+import com.threedreport.app.ui.components.FieldLabel
+import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.FormSection
+import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.templates.TemplateListDialog
+import com.threedreport.app.ui.templates.TemplateListViewModel
+import com.threedreport.app.ui.text.asString
+import com.threedreport.app.ui.theme.AppDimens
+import com.threedreport.app.ui.theme.appColors
+import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
+import com.threedreport.core.model.ImageBackground
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
- * Seção "Documentos pro cliente" de Configurações, em três blocos: **sua marca** (nome, logo e
- * contato, a identidade de quem vende), **aparência do PDF** (o que um template guarda) e as ações
- * (salvar, ver como fica, templates). Separar identidade de aparência na tela é o mesmo corte do
- * modelo: aplicar um template muda o segundo bloco e nunca o primeiro (decisão 86).
+ * A seção "Documentos pro cliente" de Configurações, em quatro blocos: **sua marca** (a logo), **seu contato** (a
+ * identidade de quem vende), **aparência do PDF** (o nome da marca, que é o texto da marca d'água e do rodapé, mais as
+ * opções do PDF: o que um modelo guarda) e os modelos. Separar identidade de aparência na tela é o mesmo corte do
+ * modelo: carregar um modelo muda só o terceiro bloco, no rascunho, e nunca os dois primeiros (decisão 86).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun ClientDocumentsSection(viewModel: BrandingViewModel, onShowTemplates: () -> Unit) {
+internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListViewModel: TemplateListViewModel) {
     val branding by viewModel.uiState.collectAsState()
+    var showTemplates by remember { mutableStateOf(false) }
+    val space = MaterialTheme.spacing
 
-    SectionTitle(AppIcons.Description, "Documentos pro cliente")
-    Text(
-        "O que aparece no PDF, na imagem quadrada e na mensagem que você manda pro cliente.",
-        style = MaterialTheme.typography.bodySmall,
-    )
-    branding.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    FormSection(1, stringResource(Res.string.settings_docs_brand_title)) {
+        LogoPicker(branding, viewModel)
+    }
 
-    SubsectionTitle(AppIcons.Badge, "Sua marca", modifier = Modifier.padding(top = 4.dp))
-    LabeledField("Nome da sua marca (opcional)", branding.brandNameInput, viewModel::update)
-
-    LogoPicker(branding, viewModel)
-
-    Text(
-        "Seu contato (aparece no PDF e na imagem, pro cliente falar com você)",
-        style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier.padding(top = 4.dp),
-    )
-    LabeledField("WhatsApp (opcional)", branding.contactWhatsAppInput, viewModel::setContactWhatsApp)
-    LabeledField("E-mail (opcional)", branding.contactEmailInput, viewModel::setContactEmail)
-    LabeledField("Instagram (opcional, ex.: @minhaloja)", branding.contactInstagramInput, viewModel::setContactInstagram)
-
-    SubsectionTitle(AppIcons.FormatPaint, "Aparência do PDF", modifier = Modifier.padding(top = 4.dp))
-    CheckboxRow("Marca d'água diagonal com o nome", branding.showWatermark, viewModel::setShowWatermark)
-    CheckboxRow("Rodapé com o nome", branding.showFooter, viewModel::setShowFooter)
-    CheckboxRow("Borda em volta da página", branding.showBorder, viewModel::setShowBorder)
-    CheckboxRow("Tempo de impressão no PDF e na mensagem", branding.showPrintTime, viewModel::setShowPrintTime)
-    CheckboxRow("Nome do cliente no PDF (\"Para: Maria\")", branding.showClientName, viewModel::setShowClientName)
-    NumberField("Validade do orçamento (dias)", branding.validityDaysText, NumberKind.MEASURE, onValueChange = viewModel::setValidityDays)
-    Text(
-        "O PDF diz \"Válido até\" a data de emissão mais esses dias, pra um cliente que volta meses depois não " +
-            "cobrar o preço antigo. Deixe 0 pra não mostrar.",
-        style = MaterialTheme.typography.bodySmall,
-    )
-    Text(
-        "O tempo de impressão é o tempo de máquina do pedido (ex.: \"6 h 30 min\"). Ajuda o cliente a " +
-            "entender o trabalho, mas também pode virar argumento pra pedir desconto, por isso começa desligado.",
-        style = MaterialTheme.typography.bodySmall,
-    )
-    Text(
-        "Os PDFs e a imagem do WhatsApp levam uma linha discreta \"Gerado com 3DReport\" no canto, longe do seu " +
-            "nome e do preço, com link pro site no PDF. É assim que o app, que é gratuito, chega a outros vendedores.",
-        style = MaterialTheme.typography.bodySmall,
-    )
-
-    // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
-    OutlinedButton(onClick = viewModel::showPreview) { Text("Ver como fica") }
-
-    if (branding.isSavingAsTemplate) {
-        LabeledField("Nome do template (ex.: Formal, Simples)", branding.templateNameInput, viewModel::updateTemplateName)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = viewModel::confirmSaveAsTemplate) { Text("Salvar template") }
-            TextButton(onClick = viewModel::cancelSaveAsTemplate) { Text("Cancelar") }
+    FormSection(2, stringResource(Res.string.settings_docs_contact_title), help = HelpText(stringResource(Res.string.settings_docs_contact_help))) {
+        FormGrid {
+            cell(1) {
+                AppTextField(
+                    label = stringResource(Res.string.settings_docs_field_whatsapp),
+                    value = branding.contactWhatsAppInput,
+                    onValueChange = viewModel::setContactWhatsApp,
+                    placeholder = stringResource(Res.string.common_optional),
+                )
+            }
+            cell(1) {
+                AppTextField(
+                    label = stringResource(Res.string.settings_docs_field_email),
+                    value = branding.contactEmailInput,
+                    onValueChange = viewModel::setContactEmail,
+                    placeholder = stringResource(Res.string.common_optional),
+                )
+            }
+            cell(1) {
+                AppTextField(
+                    label = stringResource(Res.string.settings_docs_field_instagram),
+                    value = branding.contactInstagramInput,
+                    onValueChange = viewModel::setContactInstagram,
+                    placeholder = stringResource(Res.string.settings_docs_field_instagram_hint),
+                )
+            }
         }
-        branding.templateSaveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-    } else {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = viewModel::startSaveAsTemplate) { Text("Salvar como template") }
-            TextButton(onClick = onShowTemplates) { Text("Ver templates salvos") }
+    }
+
+    FormSection(
+        3,
+        stringResource(Res.string.settings_docs_pdf_title),
+        help = HelpText(stringResource(Res.string.settings_docs_pdf_help), stringResource(Res.string.settings_docs_pdf_help_detail)),
+    ) {
+        FormGrid {
+            cell(2) {
+                AppTextField(
+                    label = stringResource(Res.string.settings_docs_field_brand),
+                    value = branding.brandNameInput,
+                    onValueChange = viewModel::update,
+                    placeholder = stringResource(Res.string.common_optional),
+                )
+            }
         }
-        Text(
-            "Um template guarda o nome e a aparência do PDF. Sua logo e seu contato ficam sempre os mesmos.",
-            style = MaterialTheme.typography.bodySmall,
+        Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+            AppCheckbox(stringResource(Res.string.settings_docs_watermark), branding.showWatermark, viewModel::setShowWatermark)
+            AppCheckbox(stringResource(Res.string.settings_docs_footer), branding.showFooter, viewModel::setShowFooter)
+            AppCheckbox(stringResource(Res.string.settings_docs_border), branding.showBorder, viewModel::setShowBorder)
+            AppCheckbox(
+                stringResource(Res.string.settings_docs_print_time),
+                branding.showPrintTime,
+                viewModel::setShowPrintTime,
+                help = HelpText(stringResource(Res.string.settings_docs_print_time_help), stringResource(Res.string.settings_docs_print_time_help_detail)),
+            )
+            AppCheckbox(stringResource(Res.string.settings_docs_client_name), branding.showClientName, viewModel::setShowClientName)
+            FieldError(branding.optionsError?.asString())
+        }
+        FormGrid {
+            cell(1) {
+                AppNumberField(
+                    label = stringResource(Res.string.settings_docs_field_validity),
+                    value = branding.validityDaysText,
+                    onValueChange = viewModel::setValidityDays,
+                    kind = NumberKind.MEASURE,
+                    error = branding.validityError?.asString(),
+                    help = HelpText(stringResource(Res.string.settings_docs_validity_help), stringResource(Res.string.settings_docs_validity_help_detail)),
+                )
+            }
+        }
+        // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
+        val sampleName = stringResource(Res.string.settings_docs_preview_sample)
+        AppButton(stringResource(Res.string.settings_docs_action_preview), onClick = { viewModel.showPreview(sampleName) }, icon = AppIcons.Visibility)
+        val backgrounds = ImageBackground.entries
+        FormGrid {
+            // Duas colunas: com os três rótulos inteiros ("Automático" truncava numa coluna só).
+            cell(2) {
+                AppChoiceField(
+                    label = stringResource(Res.string.settings_docs_image_background),
+                    options = backgrounds.map { stringResource(it.labelRes()) },
+                    selectedIndex = backgrounds.indexOf(branding.imageBackground),
+                    onSelect = { viewModel.setImageBackground(backgrounds[it]) },
+                    help = HelpText(stringResource(Res.string.settings_docs_image_background_help)),
+                    fillWidth = true,
+                )
+            }
+        }
+    }
+
+    FormSection(4, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
+            AppButton(stringResource(Res.string.settings_docs_template_save), viewModel::startSaveAsTemplate, icon = AppIcons.Save)
+            AppButton(stringResource(Res.string.settings_docs_template_list), onClick = { showTemplates = true }, icon = AppIcons.ViewList)
+        }
+    }
+
+    branding.savingTemplate?.let { form ->
+        AppDialog(
+            title = stringResource(Res.string.settings_docs_template_save),
+            onDismiss = viewModel::cancelSaveAsTemplate,
+            buttons = {
+                AppButton(stringResource(Res.string.common_cancel), viewModel::cancelSaveAsTemplate)
+                AppButton(stringResource(Res.string.common_save), viewModel::confirmSaveAsTemplate, kind = ButtonKind.Primary)
+            },
+        ) {
+            AppTextField(
+                label = stringResource(Res.string.settings_docs_template_name),
+                value = form.name,
+                onValueChange = viewModel::updateTemplateName,
+                placeholder = stringResource(Res.string.settings_docs_template_name_hint),
+                error = form.error?.asString(),
+                autoFocus = true,
+            )
+        }
+    }
+    if (showTemplates) {
+        TemplateListDialog(
+            templateListViewModel,
+            onLoad = viewModel::applyTemplate,
+            onSaveAsTemplate = {
+                showTemplates = false
+                viewModel.startSaveAsTemplate()
+            },
+            onDismiss = { showTemplates = false },
         )
     }
-    ShowSnackbarOnce(branding.templateSavedConfirmation, "Template salvo.", viewModel::consumeTemplateSavedConfirmation)
-
     branding.previewPng?.let { png -> PdfPreviewDialog(png, onDismiss = viewModel::closePreview) }
+}
+
+private fun ImageBackground.labelRes(): StringResource = when (this) {
+    ImageBackground.AUTO -> Res.string.settings_docs_image_background_auto
+    ImageBackground.DARK -> Res.string.settings_docs_image_background_dark
+    ImageBackground.LIGHT -> Res.string.settings_docs_image_background_light
 }
 
 @Composable
 private fun LogoPicker(branding: BrandingUiState, viewModel: BrandingViewModel) {
+    val space = MaterialTheme.spacing
     val logo = branding.logoBytes
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (logo != null) {
-            val bitmap = remember(logo) { runCatching { decodeImageBitmap(logo) }.getOrNull() }
-            if (bitmap != null) {
-                OutlinedCard {
-                    Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.size(64.dp).padding(4.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(space.xxs)) {
+        FieldLabel(stringResource(Res.string.settings_docs_logo_label), HelpText(stringResource(Res.string.settings_docs_logo_help)))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+            if (logo != null) {
+                val bitmap = remember(logo) { runCatching { decodeImageBitmap(logo) }.getOrNull() }
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .size(AppDimens.thumbnailSize)
+                            .background(MaterialTheme.appColors.cardBlock, MaterialTheme.shapes.medium)
+                            .border(AppDimens.borderWidth, MaterialTheme.appColors.line, MaterialTheme.shapes.medium)
+                            .padding(space.xxs),
+                    )
                 }
+                AppButton(stringResource(Res.string.settings_docs_logo_replace), viewModel::pickLogo)
+                AppButton(stringResource(Res.string.settings_docs_logo_remove), viewModel::removeLogo)
+            } else {
+                AppButton(stringResource(Res.string.settings_docs_logo_choose), viewModel::pickLogo, icon = AppIcons.AddPhotoAlternate)
             }
-            OutlinedButton(onClick = viewModel::pickLogo) { Text("Trocar logo…") }
-            TextButton(onClick = viewModel::removeLogo) { Text("Remover logo") }
-        } else {
-            OutlinedButton(onClick = viewModel::pickLogo) { Text("Escolher logo… (opcional)") }
         }
-    }
-    when {
-        branding.logoError != null -> Text(branding.logoError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-
-        branding.logoMissing -> Text(
-            "A logo salva não foi encontrada na pasta do app. Escolha de novo.",
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        else -> Text(
-            "Vai no cabeçalho do PDF. PNG com fundo transparente fica melhor.",
-            style = MaterialTheme.typography.bodySmall,
+        FieldError(
+            branding.logoError?.asString() ?: stringResource(Res.string.settings_docs_logo_missing).takeIf { branding.logoMissing },
         )
     }
 }
@@ -148,22 +285,19 @@ private fun LogoPicker(branding: BrandingUiState, viewModel: BrandingViewModel) 
 @Composable
 private fun PdfPreviewDialog(png: ByteArray, onDismiss: () -> Unit) {
     val bitmap = remember(png) { decodeImageBitmap(png) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Como fica o PDF") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "Orçamento de exemplo, com o que está no formulário agora (mesmo sem salvar).",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Column(modifier = Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
-                    OutlinedCard {
-                        Image(bitmap = bitmap, contentDescription = "Prévia do PDF", modifier = Modifier.fillMaxWidth())
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
-    )
+    AppDialog(
+        title = stringResource(Res.string.settings_docs_preview_title),
+        onDismiss = onDismiss,
+        help = HelpText(stringResource(Res.string.settings_docs_preview_help)),
+        buttons = { AppButton(stringResource(Res.string.common_close), onDismiss) },
+    ) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = stringResource(Res.string.settings_docs_preview_description),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .border(AppDimens.borderWidth, MaterialTheme.appColors.line, MaterialTheme.shapes.medium),
+        )
+    }
 }

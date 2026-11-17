@@ -1,29 +1,48 @@
 package com.threedreport.app.ui.quote
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_save
+import _3dreport.composeapp.generated.resources.quote_deadline_days
+import _3dreport.composeapp.generated.resources.quote_deadline_none
+import _3dreport.composeapp.generated.resources.quote_deadline_pick
+import _3dreport.composeapp.generated.resources.quote_deadline_title
+import _3dreport.composeapp.generated.resources.quote_deadline_unset
+import _3dreport.composeapp.generated.resources.quote_deadline_until
+import _3dreport.composeapp.generated.resources.quote_deadline_use
+import _3dreport.composeapp.generated.resources.quote_result_deadline_overdue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
 import com.threedreport.app.platform.epochDayToUtcMillis
 import com.threedreport.app.platform.formatDate
-import com.threedreport.app.platform.todayEpochDay
+import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.utcMillisToEpochDay
 import com.threedreport.app.platform.weekdayName
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppDialog
+import com.threedreport.app.ui.components.ButtonKind
+import com.threedreport.app.ui.components.DialogText
+import com.threedreport.app.ui.components.SegmentedChoice
+import com.threedreport.app.ui.theme.appColors
+import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Atalhos de prazo, em dias a partir de hoje. O vendedor pensa em "uma semana", não em "dia 30";
@@ -38,50 +57,51 @@ private val QUICK_DAYS = listOf(3, 7, 15)
  * Histórico, pra os dois lugares funcionarem igual.
  *
  * @param epochDay prazo atual (dias desde 01/01/1970), ou `null` sem prazo.
+ * @param daysLate quantos dias [epochDay] já passou (0 em dia), calculado pelo ViewModel ([deliveryDaysLate]).
+ * @param today hoje, em dias desde 01/01/1970, de quem chama (o ViewModel), pra os atalhos e o calendário.
  * @param onChange chamado com o novo prazo, ou `null` pra remover.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
-    val today = todayEpochDay()
+fun DeliveryDatePicker(epochDay: Long?, daysLate: Int, today: Long, onChange: (Long?) -> Unit) {
+    val space = MaterialTheme.spacing
     var showCalendar by remember { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            QUICK_DAYS.forEach { days ->
-                FilterChip(
-                    selected = epochDay == today + days,
-                    onClick = { onChange(today + days) },
-                    label = { Text("+$days dias") },
-                )
+    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
+            // Os atalhos e "Escolher data…" formam um seletor só. Marca "Escolher data…" quando a data veio do
+            // calendário e não bate com nenhum atalho.
+            val picked = epochDay != null && QUICK_DAYS.none { epochDay == today + it }
+            val selected = when {
+                picked -> QUICK_DAYS.size
+                else -> QUICK_DAYS.indexOfFirst { epochDay == today + it }
             }
-            FilterChip(
-                // Marcado quando a data veio do calendário e não bate com nenhum atalho.
-                selected = epochDay != null && QUICK_DAYS.none { epochDay == today + it },
-                onClick = { showCalendar = true },
-                label = { Text("Escolher data…") },
+            SegmentedChoice(
+                options = QUICK_DAYS.map { stringResource(Res.string.quote_deadline_days, it) } + stringResource(Res.string.quote_deadline_pick),
+                selectedIndex = selected,
+                onSelect = { index -> if (index < QUICK_DAYS.size) onChange(today + QUICK_DAYS[index]) else showCalendar = true },
             )
-            if (epochDay != null) {
-                FilterChip(selected = false, onClick = { onChange(null) }, label = { Text("Sem prazo") })
-            }
+            if (epochDay != null) AppButton(stringResource(Res.string.quote_deadline_none), onClick = { onChange(null) })
         }
 
         when {
             epochDay == null -> Text(
-                "Sem prazo definido — não aparece no PDF nem na mensagem.",
-                style = MaterialTheme.typography.bodySmall,
+                stringResource(Res.string.quote_deadline_unset),
+                style = MaterialTheme.appType.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            epochDay < today -> Text(
-                "Entrega até ${formatDate(epochDay)} (${weekdayName(epochDay)}) — essa data já passou.",
-                style = MaterialTheme.typography.bodyMedium,
+            daysLate > 0 -> Text(
+                // A mesma frase do painel de resultado.
+                pluralStringResource(Res.plurals.quote_result_deadline_overdue, daysLate, formatShortDate(epochDay), weekdayName(epochDay), daysLate),
+                style = MaterialTheme.appType.body,
                 color = MaterialTheme.colorScheme.error,
             )
 
             else -> Text(
-                "Entrega até ${formatDate(epochDay)} (${weekdayName(epochDay)})",
-                style = MaterialTheme.typography.bodyMedium,
+                stringResource(Res.string.quote_deadline_until, formatDate(epochDay), weekdayName(epochDay)),
+                style = MaterialTheme.appType.body,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -94,42 +114,46 @@ fun DeliveryDatePicker(epochDay: Long?, onChange: (Long?) -> Unit) {
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcMillisToEpochDay(utcTimeMillis) >= today
             },
         )
+        // O calendário é o do Material 3, com a forma e a cor do tema; os botões são os do kit.
         DatePickerDialog(
             onDismissRequest = { showCalendar = false },
+            shape = MaterialTheme.shapes.large,
+            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.appColors.card),
             confirmButton = {
-                TextButton(
+                AppButton(
+                    stringResource(Res.string.quote_deadline_use),
                     onClick = {
                         state.selectedDateMillis?.let { onChange(utcMillisToEpochDay(it)) }
                         showCalendar = false
                     },
+                    kind = ButtonKind.Primary,
                     enabled = state.selectedDateMillis != null,
-                ) { Text("Usar esta data") }
+                )
             },
-            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text("Cancelar") } },
+            dismissButton = { AppButton(stringResource(Res.string.common_cancel), onClick = { showCalendar = false }) },
         ) {
-            DatePicker(state = state, showModeToggle = false)
+            DatePicker(state = state, showModeToggle = false, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.appColors.card))
         }
     }
 }
 
 /**
  * Diálogo "Prazo de entrega" do Histórico: muda só a data, sem abrir a edição completa do
- * orçamento — é o caminho natural quando o cliente demorou a responder e o prazo venceu.
+ * orçamento é o caminho natural quando o cliente demorou a responder e o prazo venceu.
  */
 @Composable
-fun DeliveryDateDialog(quoteName: String, initial: Long?, onDismiss: () -> Unit, onSave: (Long?) -> Unit) {
+fun DeliveryDateDialog(quoteName: String, initial: Long?, daysLate: (Long?) -> Int, today: Long, onDismiss: () -> Unit, onSave: (Long?) -> Unit) {
     var epochDay by remember { mutableStateOf(initial) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Prazo de entrega") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(quoteName, style = MaterialTheme.typography.bodyMedium)
-                DeliveryDatePicker(epochDay = epochDay, onChange = { epochDay = it })
-            }
+    AppDialog(
+        title = stringResource(Res.string.quote_deadline_title),
+        onDismiss = onDismiss,
+        buttons = {
+            AppButton(stringResource(Res.string.common_cancel), onDismiss)
+            AppButton(stringResource(Res.string.common_save), { onSave(epochDay) }, kind = ButtonKind.Primary)
         },
-        confirmButton = { TextButton(onClick = { onSave(epochDay) }) { Text("Salvar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
-    )
+    ) {
+        DialogText(quoteName)
+        DeliveryDatePicker(epochDay = epochDay, daysLate = daysLate(epochDay), today = today, onChange = { epochDay = it })
+    }
 }

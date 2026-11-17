@@ -76,7 +76,7 @@ object QuoteReport {
     }
 
     /**
-     * Nome automático ("Orçamento - 24/09/2026 14:30") fica fora: cada um seria uma "peça"
+     * Nome automático ([SavedQuote.autoNamed]) fica fora: cada um seria uma "peça"
      * diferente e o ranking viraria uma lista de datas.
      *
      * Vendas do mesmo produto do catálogo juntam pelo produto de origem
@@ -85,7 +85,7 @@ object QuoteReport {
      * existir); o resto continua juntando pelo nome.
      */
     private fun topProducts(sold: List<SavedQuote>): List<ProductRanking> {
-        val named = sold.filterNot { it.hasAutoName }
+        val named = sold.filterNot { it.autoNamed }
         val sourceByName = named
             .filter { it.sourceProductId != null }
             .sortedBy { it.savedAtEpochMillis }

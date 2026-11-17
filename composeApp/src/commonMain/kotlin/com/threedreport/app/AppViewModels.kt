@@ -1,5 +1,7 @@
 package com.threedreport.app
 
+import com.threedreport.app.data.Clock
+import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.consumables.ConsumableListViewModel
 import com.threedreport.app.ui.dashboard.DashboardViewModel
@@ -31,6 +33,9 @@ class AppViewModels(
     /** Pra onde "ver pedidos" leva (o Catálogo usa depois de vender): abre Pedidos. */
     private val showOrders: () -> Unit,
     private val prepareQuote: (QuoteViewModel) -> Unit = {},
+    /** Hoje e agora de Pedidos e do Catálogo; só o gerador de capturas troca, pra os prazos de exemplo não envelhecerem. */
+    private val today: () -> Long = ::todayEpochDay,
+    private val clock: Clock = Clock.System,
 ) {
     private fun newQuoteViewModel() = QuoteViewModel(
         container.filaments, container.printers, container.settings, container.services,
@@ -41,6 +46,8 @@ class AppViewModels(
         background = Dispatchers.Default,
         main = Dispatchers.Main,
         consumableRepository = container.consumables,
+        brandingRepository = container.branding,
+        today = today,
     )
 
     /** O da aba. Cedo: é a tela de abertura, e o gerador de capturas ([prepareQuote]) o preenche antes de desenhar. */
@@ -57,40 +64,48 @@ class AppViewModels(
     // pra busca, filtros e seleção de uma não vazarem pra outra.
     private fun newHistoryViewModel(kind: QuoteKind) = QuoteHistoryViewModel(
         container.quoteHistory, container.branding,
-        container.filaments, container.printers, container.settings, container.salesChannels,
+        container.filaments, container.printers, container.settings, container.salesChannels, container.preferences,
+        today = today,
         clientRepository = container.clients,
+        clock = clock,
         scope = scope,
         background = Dispatchers.Default,
         main = Dispatchers.Main,
         kind = kind,
         showOrders = { showOrders() },
         consumableRepository = container.consumables,
+        currency = container.currency.currency,
     )
 
     val ordersViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.ORDER) }
     val catalogViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.PRODUCT) }
-    val dashboardViewModel: DashboardViewModel by lazy { DashboardViewModel(container.quoteHistory, container.settings) }
+    val dashboardViewModel: DashboardViewModel by lazy { DashboardViewModel(container.quoteHistory, container.settings, scope) }
     val filamentListViewModel: FilamentListViewModel by lazy {
-        FilamentListViewModel(container.filaments, container.quoteHistory::quotesIncludingTrash)
+        FilamentListViewModel(container.filaments, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
     }
     val printerListViewModel: PrinterListViewModel by lazy {
-        PrinterListViewModel(container.printers, container.quoteHistory, container.maintenance)
+        PrinterListViewModel(container.printers, container.quoteHistory, container.maintenance, scope, currency = { container.currency.currency.value })
     }
     val serviceListViewModel: ServiceListViewModel by lazy {
-        ServiceListViewModel(container.services, container.quoteHistory::quotesIncludingTrash)
+        ServiceListViewModel(container.services, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
     }
     val consumableListViewModel: ConsumableListViewModel by lazy {
-        ConsumableListViewModel(container.consumables, container.quoteHistory::quotesIncludingTrash)
+        ConsumableListViewModel(container.consumables, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */
-    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings) }
+    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency) }
     val brandingViewModel: BrandingViewModel by lazy {
-        BrandingViewModel(container.branding, container.templates, currency = { container.currency.currency.value })
+        BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value }, today = today)
     }
-    val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding) }
+    val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding, scope) }
     val salesChannelViewModel: SalesChannelViewModel by lazy {
-        SalesChannelViewModel(container.salesChannels, container.quoteHistory::quotesIncludingTrash)
+        SalesChannelViewModel(
+            container.salesChannels,
+            scope,
+            container.quoteHistory::quotesIncludingTrash,
+            currency = { container.currency.currency.value },
+        )
     }
     val backupViewModel: BackupViewModel by lazy {
         BackupViewModel(container.backup, container.preferences, container.pendingWrites, scope = scope)

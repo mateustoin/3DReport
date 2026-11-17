@@ -1,8 +1,16 @@
 package com.threedreport.app.platform
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.platform_pick_backup
+import _3dreport.composeapp.generated.resources.platform_pick_gcode
+import _3dreport.composeapp.generated.resources.platform_pick_image
+import _3dreport.composeapp.generated.resources.platform_pick_stl
+import _3dreport.composeapp.generated.resources.platform_save_as
 import com.threedreport.app.AppLog
 import com.threedreport.app.ExitWatchdog
 import com.threedreport.app.exitDumpFile
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.getString
 import java.awt.Desktop
 import java.awt.FileDialog
 import java.awt.Frame
@@ -28,6 +36,33 @@ object DesktopPlatform : PlatformServices {
     private const val GCODE_FULL_READ_LIMIT = 8L * 1024 * 1024
     private const val GCODE_EDGE_BYTES = 4 * 1024 * 1024
 
+    /** Os títulos dos seletores do sistema, lidos de recurso por [loadDialogTitles]. */
+    private class DialogTitles(val byKind: Map<FileKind, String>, val saveAs: String)
+
+    @Volatile
+    private var dialogTitles: DialogTitles? = null
+
+    /**
+     * Lê os títulos dos diálogos de arquivo. O `main` chama uma vez, na thread principal e antes de abrir a janela:
+     * os seletores são Swing/AWT e abrem na thread da tela, onde esperar o arquivo de textos não é aceitável. Sem
+     * essa chamada (um teste, por exemplo), os diálogos abrem sem título.
+     */
+    fun loadDialogTitles() {
+        dialogTitles = runCatching {
+            runBlocking {
+                DialogTitles(
+                    byKind = mapOf(
+                        FileKind.IMAGE to getString(Res.string.platform_pick_image),
+                        FileKind.GCODE to getString(Res.string.platform_pick_gcode),
+                        FileKind.STL to getString(Res.string.platform_pick_stl),
+                        FileKind.BACKUP to getString(Res.string.platform_pick_backup),
+                    ),
+                    saveAs = getString(Res.string.platform_save_as),
+                )
+            }
+        }.onFailure { AppLog.warn("Não consegui ler os títulos dos diálogos de arquivo", it) }.getOrNull()
+    }
+
     override fun pickFile(kind: FileKind): PickResult {
         val file = showOpenDialog(kind) ?: return PickResult.Cancelled
         return readPicked(file, kind)
@@ -48,7 +83,7 @@ object DesktopPlatform : PlatformServices {
     }
 
     override fun chooseSaveLocation(suggestedFileName: String, initialDirectory: String?): String? {
-        val dialog = FileDialog(null as Frame?, "Salvar como", FileDialog.SAVE)
+        val dialog = FileDialog(null as Frame?, dialogTitles?.saveAs.orEmpty(), FileDialog.SAVE)
         dialog.file = suggestedFileName
         initialDirectory?.let { dialog.directory = it }
         dialog.isVisible = true
@@ -71,10 +106,7 @@ object DesktopPlatform : PlatformServices {
             SaveResult.Saved(path)
         } catch (e: IOException) {
             AppLog.warn("Falha ao salvar $path", e)
-            SaveResult.Failed(
-                "Não consegui salvar ${File(path).name}. Se ele estiver aberto em outro programa (leitor de PDF, " +
-                    "visualizador de imagens), feche e tente de novo, ou salve com outro nome.",
-            )
+            SaveResult.Failed(File(path).name)
         }
     }
 
@@ -110,7 +142,7 @@ object DesktopPlatform : PlatformServices {
     }
 
     private fun showOpenDialog(kind: FileKind): File? {
-        val dialog = FileDialog(null as Frame?, kind.dialogTitle, FileDialog.LOAD)
+        val dialog = FileDialog(null as Frame?, dialogTitles?.byKind?.get(kind).orEmpty(), FileDialog.LOAD)
         // O filtro funciona onde o diálogo nativo respeita o FilenameFilter (Linux); no Windows ele é
         // ignorado, limitação aceita pra manter o diálogo nativo (decisão 59).
         dialog.filenameFilter = FilenameFilter { _, name -> name.substringAfterLast('.', "").lowercase() in kind.extensions }
@@ -126,10 +158,10 @@ object DesktopPlatform : PlatformServices {
         PickResult.Picked(PickedFile(file.name, bytes))
     } catch (e: IOException) {
         AppLog.warn("Falha ao ler ${file.path}", e)
-        PickResult.Failed("Não consegui ler ${file.name}. Ele pode estar aberto em outro programa ou ter sido movido.")
+        PickResult.Failed(PickFailure.UNREADABLE, file.name)
     } catch (e: OutOfMemoryError) {
         AppLog.warn("Arquivo grande demais: ${file.path}", e)
-        PickResult.Failed("${file.name} é grande demais pra abrir no app.")
+        PickResult.Failed(PickFailure.TOO_LARGE, file.name)
     }
 
     /**

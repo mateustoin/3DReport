@@ -23,11 +23,13 @@ class QuoteReportTest {
         status: OrderStatus = OrderStatus.APROVADO,
         name: String = "Peça",
         printTimeMinutes: Double = 10.0,
+        autoNamed: Boolean = false,
     ): SavedQuote {
         val filament = Filament(id = filamentName, name = filamentName, pricePerKg = 100.0, densityGPerCm3 = 1.24)
         return SavedQuote(
             id = filamentName + salePrice,
             name = name,
+            autoNamed = autoNamed,
             status = status,
             quote = Quote(
                 prints = listOf(quotedPrint(PrintJob(filament = filament, filamentLengthMeters = 1.0, printTimeMinutes = printTimeMinutes))),
@@ -189,14 +191,15 @@ class QuoteReportTest {
 
     @Test
     fun productRankingSkipsAutomaticNames() {
+        // Quem diz se o nome é automático é o campo, e não o texto: o nome pode estar em qualquer idioma.
         val quotes = listOf(
+            quoteOf("PLA", 20.0, 10.0, name = "Quote - 09/24/2026 2:30 PM", autoNamed = true),
             quoteOf("PLA", 20.0, 10.0, name = "Orçamento - 24/09/2026 14:30"),
-            quoteOf("PLA", 20.0, 10.0, name = "Orçamento - suporte de fone"),
         )
 
         val ranking = QuoteReport.summarize(quotes).topProducts
 
-        assertEquals(listOf("Orçamento - suporte de fone"), ranking.map { it.name })
+        assertEquals(listOf("Orçamento - 24/09/2026 14:30"), ranking.map { it.name })
     }
 
     @Test

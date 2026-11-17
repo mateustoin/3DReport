@@ -6,16 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.threedreport.app.ui.theme.TABULAR_FIGURES
 
 /**
- * Texto pra um valor numérico (preço, peso, tempo, %) em fonte monoespaçada — dá aos números do
- * app um tratamento visual consistente de "leitura de instrumento" (dígitos de largura fixa,
- * alinhados), já que produzir esses números com precisão é o motivo do app existir. Usado sempre
- * ao lado de um rótulo em texto normal, nunca sozinho sem contexto (ver telas de Orçamento,
- * Dashboard, Kanban e Histórico).
+ * Texto pra um valor numérico (preço, peso, tempo, %) com algarismos tabulares da própria fonte do app
+ * (`tnum`): os dígitos têm largura fixa e alinham em coluna, sem trocar de fonte (docs/design-system.md).
+ * Usado sempre ao lado de um rótulo em texto normal, nunca sozinho sem contexto.
  */
 @Composable
 fun NumericText(
@@ -29,7 +27,7 @@ fun NumericText(
     Text(
         text = text,
         modifier = modifier,
-        style = style.copy(fontFamily = FontFamily.Monospace),
+        style = style.copy(fontFeatureSettings = TABULAR_FIGURES),
         color = color,
         fontWeight = fontWeight,
         textAlign = textAlign,

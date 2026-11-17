@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.PrinterProfile
@@ -24,7 +25,7 @@ data class ResolvedPrint(val printer: PrinterProfile?, val filaments: List<Resol
 data class QuoteResult(
     val prints: List<ResolvedPrint> = emptyList(),
     val quote: Quote? = null,
-    val errorMessage: String? = null,
+    val errorMessage: UiText? = null,
     val selectedServices: List<QuoteService> = emptyList(),
     val salesChannel: SalesChannel? = null,
     val shippingCost: Double = 0.0,
@@ -39,7 +40,7 @@ data class QuoteResult(
      * Campos com valor que não dá pra usar (texto que não é número, negativo), pela chave de
      * [QuoteFields]. Com qualquer um, não há [quote]: um valor inválido não vira zero nem 1 em silêncio.
      */
-    val fieldErrors: Map<String, String> = emptyMap(),
+    val fieldErrors: Map<String, UiText> = emptyMap(),
     /**
      * Reabrindo um orçamento sem mexer em nada que muda o preço: [quote] é o cálculo congelado dele, e
      * [todaysQuote] mostra quanto sairia com os custos de hoje (decisão 108).
@@ -64,6 +65,13 @@ data class QuoteResult(
     /** Valor de venda + serviços + frete cobrado: o que de fato será cobrado do cliente. */
     val grandTotal: Double?
         get() = quote?.let { it.salePrice + servicesTotal + chargedShipping }
+
+    /**
+     * O total que a conta daria sem o preço combinado (a venda de tabela mais serviços e frete), só quando há preço
+     * combinado ou anunciado; `null` nos demais. É o "Calculado" que o painel mostra ao lado do preço negociado.
+     */
+    val calculatedTotal: Double?
+        get() = quote?.tableSalePrice?.let { it + servicesTotal + chargedShipping }
 }
 
 /** Chaves de [QuoteResult.fieldErrors]: um nome por campo, com a impressão e a linha quando é de uma delas. */

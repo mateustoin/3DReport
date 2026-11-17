@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.app.platform.testClientTexts
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Currency
@@ -46,28 +47,28 @@ class QuoteExportTextTest {
 
     @Test
     fun includesNameAndSalePriceOnly() {
-        val text = savedQuote.toCopyPasteText()
+        val text = savedQuote.toCopyPasteText(testClientTexts)
 
         assertEquals("Suporte de celular\nValor: R$ 16,19", text)
     }
 
     @Test
     fun neverIncludesInternalSourceLink() {
-        val text = savedQuote.toCopyPasteText()
+        val text = savedQuote.toCopyPasteText(testClientTexts)
 
         assertFalse(text.contains(savedQuote.sourceLink!!))
     }
 
     @Test
     fun neverIncludesInternalClient() {
-        val text = savedQuote.toCopyPasteText()
+        val text = savedQuote.toCopyPasteText(testClientTexts)
 
         assertFalse(text.contains(savedQuote.client!!.name))
     }
 
     @Test
     fun neverIncludesProductionCostOrProfit() {
-        val text = savedQuote.toCopyPasteText()
+        val text = savedQuote.toCopyPasteText(testClientTexts)
 
         assertFalse(text.contains(savedQuote.quote.productionCost.toString()))
         assertFalse(text.contains("Lucro"))
@@ -80,14 +81,14 @@ class QuoteExportTextTest {
             services = listOf(QuoteService(id = "paint", name = "Pintura", price = 20.0, chargedPerOrder = false)),
         )
 
-        val text = withServices.toCopyPasteText()
+        val text = withServices.toCopyPasteText(testClientTexts)
 
         assertEquals("Suporte de celular\nValor: R$ 16,19\nPintura: R$ 20,00\nTotal: R$ 36,19", text)
     }
 
     @Test
     fun noTotalLineWhenThereAreNoServices() {
-        val text = savedQuote.toCopyPasteText()
+        val text = savedQuote.toCopyPasteText(testClientTexts)
 
         assertFalse(text.contains("Total"))
         assertTrue(text.contains("Valor"))
@@ -95,7 +96,7 @@ class QuoteExportTextTest {
 
     @Test
     fun usesTheGivenCurrencyInsteadOfBrl() {
-        val text = savedQuote.toCopyPasteText(Currency.USD)
+        val text = savedQuote.toCopyPasteText(testClientTexts, Currency.USD)
 
         assertEquals("Suporte de celular\nValor: $ 16.19", text)
     }
@@ -110,7 +111,7 @@ class QuoteExportTextTest {
             ),
         )
 
-        val text = withQuantity.toCopyPasteText()
+        val text = withQuantity.toCopyPasteText(testClientTexts)
 
         assertEquals(
             "Suporte de celular\nValor: 10 × R$ 6,02 = R$ 60,20\nPintura (× 10): R$ 10,00\nEntrega: R$ 15,00\nTotal: R$ 85,20",
@@ -125,7 +126,7 @@ class QuoteExportTextTest {
             services = listOf(QuoteService(id = "paint", name = "Pintura", price = 15.0, chargedPerOrder = false)),
         )
 
-        val text = withQuantity.toCopyPasteText()
+        val text = withQuantity.toCopyPasteText(testClientTexts)
 
         // O "cada" fecha o texto e sai do total que o cliente paga (R$ 210,20 / 10), não do valor
         // de venda: é o mesmo número que a tela de Orçamento mostra pro mesmo orçamento.
@@ -141,7 +142,7 @@ class QuoteExportTextTest {
     fun includesShippingAndTotalEvenWithNoServices() {
         val withShipping = savedQuote.copy(shippingCost = 12.0)
 
-        val text = withShipping.toCopyPasteText()
+        val text = withShipping.toCopyPasteText(testClientTexts)
 
         assertEquals("Suporte de celular\nValor: R$ 16,19\nFrete: R$ 12,00\nTotal: R$ 28,19", text)
         assertEquals(withShipping.totalWithServices, 16.19 + 12.0, 0.001)
@@ -155,7 +156,7 @@ class QuoteExportTextTest {
             shippingCost = 25.0,
         )
 
-        val text = withShippingAndServices.toCopyPasteText()
+        val text = withShippingAndServices.toCopyPasteText(testClientTexts)
 
         assertEquals(
             "Suporte de celular\nValor: 10 × R$ 6,02 = R$ 60,20\nPintura (× 10): R$ 150,00\nFrete: R$ 25,00\nTotal: R$ 235,20",
@@ -171,7 +172,7 @@ class QuoteExportTextTest {
         )
         check(quantityOne.quote.quantity == 1)
 
-        val text = quantityOne.toCopyPasteText()
+        val text = quantityOne.toCopyPasteText(testClientTexts)
 
         assertEquals("Suporte de celular\nValor: R$ 16,19\nPintura: R$ 20,00\nTotal: R$ 36,19", text)
         assertFalse(text.contains("peças"))
@@ -185,7 +186,7 @@ class QuoteExportTextTest {
     fun deliveryDateClosesTheMessage() {
         val withDeadline = savedQuote.copy(deliveryDateEpochDay = september30)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nPrazo de entrega: até 30/09/2026", withDeadline.toCopyPasteText())
+        assertEquals("Suporte de celular\nValor: R$ 16,19\nPrazo de entrega: até 30/09/2026", withDeadline.toCopyPasteText(testClientTexts))
     }
 
     @Test
@@ -195,11 +196,11 @@ class QuoteExportTextTest {
             deliveryDateEpochDay = september30,
         )
 
-        assertFalse(twoPieces.toCopyPasteText().contains("Tempo"))
+        assertFalse(twoPieces.toCopyPasteText(testClientTexts).contains("Tempo"))
         assertEquals(
             "Suporte de celular\nValor: 2 × R$ 16,19 = R$ 32,38\nPrazo de entrega: até 30/09/2026\n" +
                 "Tempo de impressão: 6 h 20 min (2 peças)",
-            twoPieces.toCopyPasteText(showPrintTime = true),
+            twoPieces.toCopyPasteText(testClientTexts, showPrintTime = true),
         )
     }
 
@@ -207,32 +208,32 @@ class QuoteExportTextTest {
     fun singlePiecePrintTimeHasNoPieceCount() {
         assertEquals(
             "Suporte de celular\nValor: R$ 16,19\nTempo de impressão: 3 h 10 min",
-            savedQuote.toCopyPasteText(showPrintTime = true),
+            savedQuote.toCopyPasteText(testClientTexts, showPrintTime = true),
         )
     }
 
     @Test
     fun orderTitleCarriesTheNumberAndAnAutoNameNeverReachesTheClient() {
         val numbered = savedQuote.copy(number = 42)
-        assertEquals("Suporte de celular · #0042", numbered.clientTitle())
+        assertEquals("Suporte de celular · #0042", numbered.clientTitle(testClientTexts))
 
-        val autoNamed = numbered.copy(name = SavedQuote.AUTO_NAME_PREFIX + "24/09/2026 14:30")
-        assertEquals("Orçamento #0042", autoNamed.clientTitle())
-        assertTrue(autoNamed.toCopyPasteText().startsWith("Orçamento #0042\n"))
+        val autoNamed = numbered.copy(name = "Orçamento - 24/09/2026 14:30", autoNamed = true)
+        assertEquals("Orçamento #0042", autoNamed.clientTitle(testClientTexts))
+        assertTrue(autoNamed.toCopyPasteText(testClientTexts).startsWith("Orçamento #0042\n"))
     }
 
     @Test
     fun usesTheCurrencyTheQuoteWasSavedIn() {
         val inDollars = savedQuote.copy(currency = Currency.USD)
 
-        assertEquals("Suporte de celular\nValor: $ 16.19", inDollars.toCopyPasteText())
+        assertEquals("Suporte de celular\nValor: $ 16.19", inDollars.toCopyPasteText(testClientTexts))
     }
 
     @Test
     fun freeShippingShowsAsGratisAndTotalExcludesTheValue() {
         val withFreeShipping = savedQuote.copy(shippingCost = 18.0, shippingAbsorbed = true)
 
-        val text = withFreeShipping.toCopyPasteText()
+        val text = withFreeShipping.toCopyPasteText(testClientTexts)
 
         assertEquals("Suporte de celular\nValor: R$ 16,19\nFrete: grátis\nTotal: R$ 16,19", text)
         assertEquals(16.19, withFreeShipping.totalWithServices, 0.001)
@@ -245,7 +246,7 @@ class QuoteExportTextTest {
             deliveryDateEpochDay = september30,
         )
 
-        val text = rushWithDeadline.toCopyPasteText()
+        val text = rushWithDeadline.toCopyPasteText(testClientTexts)
 
         assertEquals("Suporte de celular\nValor: R$ 16,19\nPrazo de entrega: até 30/09/2026 (entrega expressa)", text)
     }
@@ -254,7 +255,7 @@ class QuoteExportTextTest {
     fun rushWithoutADeadlineIsItsOwnLine() {
         val rushWithoutDeadline = savedQuote.copy(quote = savedQuote.quote.copy(rush = true))
 
-        val text = rushWithoutDeadline.toCopyPasteText()
+        val text = rushWithoutDeadline.toCopyPasteText(testClientTexts)
 
         assertEquals("Suporte de celular\nValor: R$ 16,19\nEntrega expressa", text)
     }

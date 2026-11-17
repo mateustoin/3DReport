@@ -8,10 +8,13 @@ import kotlin.test.assertTrue
 class BrandingSettingsTest {
 
     @Test
-    fun contactLinesFollowAFixedOrderAndSkipBlanks() {
+    fun contactsFollowAFixedOrderAndSkipBlanks() {
         val branding = BrandingSettings(contactWhatsApp = " (11) 99999-0000 ", contactEmail = "  ", contactInstagram = "minhaloja")
 
-        assertEquals(listOf("WhatsApp (11) 99999-0000", "@minhaloja"), branding.contactLines)
+        assertEquals(
+            listOf(ContactEntry(ContactChannel.WHATSAPP, "(11) 99999-0000"), ContactEntry(ContactChannel.INSTAGRAM, "@minhaloja")),
+            branding.contacts,
+        )
     }
 
     @Test

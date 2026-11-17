@@ -1,18 +1,46 @@
 package com.threedreport.app.ui.settings
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_error_name_required
+import _3dreport.composeapp.generated.resources.common_error_negative
+import _3dreport.composeapp.generated.resources.common_error_number_invalid
+import _3dreport.composeapp.generated.resources.settings_channels_error_fee_range
+import _3dreport.composeapp.generated.resources.settings_channels_error_tier_fee_number
+import _3dreport.composeapp.generated.resources.settings_channels_error_tier_fee_range
+import _3dreport.composeapp.generated.resources.settings_channels_error_tier_fixed_negative
+import _3dreport.composeapp.generated.resources.settings_channels_error_tier_fixed_number
+import _3dreport.composeapp.generated.resources.settings_channels_error_tier_limit_missing
+import _3dreport.composeapp.generated.resources.settings_channels_error_tier_limit_order
+import _3dreport.composeapp.generated.resources.settings_channels_error_tier_limit_zero
+import _3dreport.composeapp.generated.resources.settings_channels_notice_archived
+import _3dreport.composeapp.generated.resources.settings_channels_notice_deleted
+import _3dreport.composeapp.generated.resources.settings_channels_notice_restored
+import _3dreport.composeapp.generated.resources.settings_channels_notice_saved
+import _3dreport.composeapp.generated.resources.settings_channels_tier_promoted
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.ui.components.CatalogUsage
+import com.threedreport.app.ui.components.PendingDelete
+import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.ChannelFeeTier
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -29,8 +57,8 @@ data class ChannelTierFormRow(
 )
 
 /**
- * Formulário de cadastro de canal de venda. `editingId` não-nulo significa que o formulário está
- * editando um canal existente em vez de criar um novo.
+ * Formulário de cadastro de canal de venda. [editingId] não-nulo significa que o formulário está editando um canal
+ * existente em vez de criar um novo. Cada campo tem o seu erro; [tiersError] é o das faixas.
  */
 data class SalesChannelFormState(
     val nameText: String = "",
@@ -39,41 +67,107 @@ data class SalesChannelFormState(
     val tiers: List<ChannelTierFormRow> = emptyList(),
     val tiersExpanded: Boolean = false,
     /** Aviso de uma mudança nas faixas que a pessoa pode não ter percebido (ver [SalesChannelViewModel.removeTierRow]). */
-    val tierNotice: String? = null,
+    val tierNotice: UiText? = null,
     val editingId: String? = null,
-    val errorMessage: String? = null,
+    val nameError: UiText? = null,
+    val feeError: UiText? = null,
+    val fixedFeeError: UiText? = null,
+    val tiersError: UiText? = null,
 )
 
-/** Ver [SalesChannel] pro porquê de canal e forma de pagamento serem o mesmo campo. */
+/**
+ * Tudo o que a seção Canais de venda mostra: a lista (ativos e arquivados), o formulário aberto (nulo quando nenhum) e a
+ * pergunta de exclusão pendente (nula quando nenhuma).
+ */
+data class SalesChannelsUiState(
+    val active: List<SalesChannel> = emptyList(),
+    val archived: List<SalesChannel> = emptyList(),
+    val form: SalesChannelFormState? = null,
+    val pendingDelete: PendingDelete? = null,
+) {
+    /** Nenhum canal cadastrado, nem arquivado. */
+    val isEmpty: Boolean get() = active.isEmpty() && archived.isEmpty()
+}
+
+/**
+ * ViewModel dos canais de venda. Um [uiState] só e os [notices]. Ver [SalesChannel] pro porquê de canal e forma de
+ * pagamento serem o mesmo campo. A lista acompanha o repositório dentro de [scope].
+ */
 class SalesChannelViewModel(
     private val repository: SalesChannelRepository,
+    scope: CoroutineScope,
     /**
      * Pedidos e produtos salvos, inclusive os da lixeira, pra saber quem usa cada canal antes de excluir
      * (decisão 115).
      */
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
+    /** A moeda em uso: os números são lidos com o separador decimal dela, o mesmo que o campo usa pra validar. */
+    private val currency: () -> Currency = { Currency.BRL },
 ) {
 
-    val channels: StateFlow<List<SalesChannel>> = repository.channels
+    private val state = MutableStateFlow(SalesChannelsUiState().withItems(repository.channels.value))
+    val uiState: StateFlow<SalesChannelsUiState> = state.asStateFlow()
 
-    private val formState = MutableStateFlow(SalesChannelFormState())
-    val form: StateFlow<SalesChannelFormState> = formState.asStateFlow()
+    private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
+    val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
 
-    fun setName(text: String) = formState.update { it.copy(nameText = text, errorMessage = null) }
-    fun setFeeRate(text: String) = formState.update { it.copy(feeRatePercentText = text, errorMessage = null) }
-    fun setFixedFeePerItem(text: String) = formState.update { it.copy(fixedFeePerItemText = text, errorMessage = null) }
-    fun setTiersExpanded(expanded: Boolean) = formState.update { it.copy(tiersExpanded = expanded) }
+    init {
+        repository.channels.onEach { items -> state.update { it.withItems(items) } }.launchIn(scope)
+    }
+
+    fun startAdd() {
+        state.update { it.copy(form = SalesChannelFormState()) }
+    }
+
+    fun startEdit(channel: SalesChannel) {
+        val separator = currency().decimalSeparator
+        state.update {
+            it.copy(
+                form = SalesChannelFormState(
+                    nameText = channel.name,
+                    feeRatePercentText = (channel.feeRate * 100).toInputText(separator),
+                    // Sem valor fixo, o campo fica vazio (vazio vale zero), em vez de mostrar um "0" pra apagar.
+                    fixedFeePerItemText = channel.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText(separator).orEmpty(),
+                    tiers = channel.tiers.map { tier ->
+                        ChannelTierFormRow(
+                            id = newTierId(),
+                            upToUnitPriceText = tier.upToUnitPrice?.toInputText(separator).orEmpty(),
+                            feeRatePercentText = (tier.feeRate * 100).toInputText(separator),
+                            fixedFeePerItemText = tier.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText(separator).orEmpty(),
+                        )
+                    },
+                    tiersExpanded = channel.tiers.isNotEmpty(),
+                    editingId = channel.id,
+                ),
+            )
+        }
+    }
+
+    fun cancelEdit() {
+        state.update { it.copy(form = null) }
+    }
+
+    /** Muda o formulário aberto e apaga os erros, que já não valem pro texto novo. */
+    private fun updateForm(transform: (SalesChannelFormState) -> SalesChannelFormState) {
+        state.update { s ->
+            s.copy(form = s.form?.let { transform(it).copy(nameError = null, feeError = null, fixedFeeError = null, tiersError = null) })
+        }
+    }
+
+    fun setName(text: String) = updateForm { it.copy(nameText = text) }
+    fun setFeeRate(text: String) = updateForm { it.copy(feeRatePercentText = text) }
+    fun setFixedFeePerItem(text: String) = updateForm { it.copy(fixedFeePerItemText = text) }
+    fun setTiersExpanded(expanded: Boolean) = state.update { s -> s.copy(form = s.form?.copy(tiersExpanded = expanded)) }
 
     /** A primeira faixa cria duas linhas: uma com limite pra preencher e a última, sem limite ("Acima disso"). */
-    @OptIn(ExperimentalUuidApi::class)
     fun addTierRow() {
-        formState.update { form ->
+        updateForm { form ->
             val tiers = if (form.tiers.isEmpty()) {
                 listOf(ChannelTierFormRow(id = newTierId()), ChannelTierFormRow(id = newTierId()))
             } else {
                 form.tiers.toMutableList().apply { add(lastIndex, ChannelTierFormRow(id = newTierId())) }
             }
-            form.copy(tiers = tiers, tiersExpanded = true, errorMessage = null, tierNotice = null)
+            form.copy(tiers = tiers, tiersExpanded = true, tierNotice = null)
         }
     }
 
@@ -83,110 +177,127 @@ class SalesChannelViewModel(
      * aviso, em vez de sumir sem ninguém ver.
      */
     fun removeTierRow(id: String) {
-        formState.update { form ->
+        updateForm { form ->
             val removedLast = form.tiers.lastOrNull()?.id == id
             val remaining = form.tiers.filterNot { it.id == id }
-            if (remaining.size <= 1) return@update form.copy(tiers = emptyList(), errorMessage = null, tierNotice = null)
+            if (remaining.size <= 1) return@updateForm form.copy(tiers = emptyList(), tierNotice = null)
             val promoted = remaining.last()
             val notice = if (removedLast && promoted.upToUnitPriceText.isNotBlank()) {
-                "A faixa até ${promoted.upToUnitPriceText} virou \"Acima disso\", e o limite dela foi descartado."
+                uiText(Res.string.settings_channels_tier_promoted, promoted.upToUnitPriceText)
             } else {
                 null
             }
             val tiers = if (removedLast) remaining.dropLast(1) + promoted.copy(upToUnitPriceText = "") else remaining
-            form.copy(tiers = tiers, errorMessage = null, tierNotice = notice)
+            form.copy(tiers = tiers, tierNotice = notice)
         }
     }
 
     fun updateTierRow(id: String, transform: (ChannelTierFormRow) -> ChannelTierFormRow) {
-        formState.update { form -> form.copy(tiers = form.tiers.map { if (it.id == id) transform(it) else it }, errorMessage = null, tierNotice = null) }
-    }
-
-    fun startEditing(channel: SalesChannel) {
-        formState.value = SalesChannelFormState(
-            nameText = channel.name,
-            feeRatePercentText = (channel.feeRate * 100).toInputText(),
-            // Sem valor fixo, o campo fica vazio (vazio vale zero), em vez de mostrar um "0" pra apagar.
-            fixedFeePerItemText = channel.fixedFeePerItem.takeIf { it > 0 }?.toInputText().orEmpty(),
-            tiers = channel.tiers.map {
-                ChannelTierFormRow(
-                    id = newTierId(),
-                    upToUnitPriceText = it.upToUnitPrice?.toInputText().orEmpty(),
-                    feeRatePercentText = (it.feeRate * 100).toInputText(),
-                    fixedFeePerItemText = it.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText().orEmpty(),
-                )
-            },
-            tiersExpanded = channel.tiers.isNotEmpty(),
-            editingId = channel.id,
-        )
-    }
-
-    fun cancelEditing() {
-        formState.value = SalesChannelFormState()
+        updateForm { form -> form.copy(tiers = form.tiers.map { if (it.id == id) transform(it) else it }, tierNotice = null) }
     }
 
     @OptIn(ExperimentalUuidApi::class)
     fun save() {
-        val current = formState.value
+        val current = state.value.form ?: return
         val name = current.nameText.trim()
+        val separator = currency().decimalSeparator
 
-        val channel = runCatching {
-            require(name.isNotBlank()) { "Dê um nome ao canal (ex.: Shopee, Cartão, Pix)." }
-            // Em branco é taxa zero (Pix, dinheiro); texto que não é número é erro, e não zero: um "20 por
-            // cento" que virasse 0% tiraria a taxa do marketplace do preço sem ninguém ver.
-            val feeRate = current.feeRatePercentText.blankAsZeroPercent("A taxa")
-            require(feeRate >= 0 && feeRate < 1) { "A taxa precisa ficar entre 0% e 100%." }
-            val fixedFeePerItem = current.fixedFeePerItemText.blankAsZeroAmount("O valor fixo por item")
-            require(fixedFeePerItem >= 0) { "O valor fixo por item não pode ser negativo." }
-            val tiers = current.tiers.toChannelFeeTiers()
-            // Id aleatório, como o de todo cadastro: gerado do nome, renomear um canal e criar outro com o
-            // nome antigo fazia os dois terem o mesmo id.
-            SalesChannel(
-                id = current.editingId ?: Uuid.random().toString(),
-                name = name,
-                feeRate = feeRate,
-                fixedFeePerItem = fixedFeePerItem,
-                tiers = tiers,
-            )
+        // Em branco é taxa zero (Pix, dinheiro); texto que não é número é erro, e não zero: um "20 por
+        // cento" que virasse 0% tiraria a taxa do marketplace do preço sem ninguém ver.
+        val feeRate = blankAsZero(current.feeRatePercentText, NumberKind.MEASURE, separator)
+        val fixedFee = blankAsZero(current.fixedFeePerItemText, NumberKind.AMOUNT, separator)
+        val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isBlank() }
+        val feeError = when {
+            feeRate == null -> uiText(Res.string.common_error_number_invalid)
+            feeRate < 0 || feeRate >= 100 -> uiText(Res.string.settings_channels_error_fee_range)
+            else -> null
+        }
+        val fixedFeeError = when {
+            fixedFee == null -> uiText(Res.string.common_error_number_invalid)
+            fixedFee < 0 -> uiText(Res.string.common_error_negative)
+            else -> null
+        }
+        val tiers = runCatching { current.tiers.toChannelFeeTiers(separator) }
+        val tiersError = (tiers.exceptionOrNull() as? TierError)?.text
+        if (nameError != null || feeError != null || fixedFeeError != null || tiersError != null || feeRate == null || fixedFee == null) {
+            state.update {
+                it.copy(
+                    form = current.copy(
+                        nameError = nameError,
+                        feeError = feeError,
+                        fixedFeeError = fixedFeeError,
+                        tiersError = tiersError,
+                        // O erro das faixas fica numa área que pode estar recolhida: abre pra a mensagem aparecer.
+                        tiersExpanded = current.tiersExpanded || tiersError != null,
+                    ),
+                )
+            }
+            return
         }
 
-        formState.value = channel.fold(
-            onSuccess = {
-                if (current.editingId != null) repository.updateKeepingArchived(it) else repository.add(it)
-                SalesChannelFormState()
-            },
-            onFailure = { current.copy(errorMessage = it.message) },
+        // Id aleatório, como o de todo cadastro: gerado do nome, renomear um canal e criar outro com o
+        // nome antigo fazia os dois terem o mesmo id.
+        val channel = SalesChannel(
+            id = current.editingId ?: Uuid.random().toString(),
+            name = name,
+            feeRate = feeRate / 100.0,
+            fixedFeePerItem = fixedFee,
+            tiers = tiers.getOrThrow(),
         )
+        if (current.editingId != null) repository.updateKeepingArchived(channel) else repository.add(channel)
+        state.update { it.copy(form = null) }
+        noticeChannel.trySend(UiNotice(uiText(Res.string.settings_channels_notice_saved)))
+    }
+
+    /** Pergunta se pode excluir o canal [id], com quantos pedidos e produtos o usam (decisão 115). */
+    fun requestDelete(id: String) {
+        val channel = repository.channels.value.find { it.id == id } ?: return
+        state.update { it.copy(pendingDelete = PendingDelete(id, channel.name, usageCount(id), canArchive = !channel.archived)) }
+    }
+
+    fun dismissDelete() {
+        state.update { it.copy(pendingDelete = null) }
     }
 
     /** Quantos pedidos e produtos usam o canal [id]. */
     fun usageCount(id: String): Int = CatalogUsage.channel(id, usageQuotes())
 
     /** Arquiva (ou restaura) o canal [id] (decisão 115). */
-    fun setArchived(id: String, archived: Boolean) = repository.setArchived(id, archived)
+    fun setArchived(id: String, archived: Boolean) {
+        repository.setArchived(id, archived)
+        state.update { it.copy(pendingDelete = null) }
+        noticeChannel.trySend(
+            UiNotice(uiText(if (archived) Res.string.settings_channels_notice_archived else Res.string.settings_channels_notice_restored)),
+        )
+    }
 
     fun delete(id: String) {
         repository.delete(id)
-        if (formState.value.editingId == id) formState.value = SalesChannelFormState()
+        state.update { s -> s.copy(form = s.form?.takeUnless { it.editingId == id }, pendingDelete = null) }
+        noticeChannel.trySend(UiNotice(uiText(Res.string.settings_channels_notice_deleted)))
+    }
+
+    private fun SalesChannelsUiState.withItems(items: List<SalesChannel>): SalesChannelsUiState {
+        val (archived, active) = items.partition { it.archived }
+        return copy(active = active, archived = archived)
     }
 
     @OptIn(ExperimentalUuidApi::class)
     private fun newTierId(): String = Uuid.random().toString()
 }
 
-/** Percentual digitado, em branco vale 0 (Pix, dinheiro); texto que não é número é erro, não zero. */
-private fun String.blankAsZeroPercent(label: String): Double =
-    if (isBlank()) 0.0 else (parseDecimal(this, NumberKind.MEASURE) ?: error("$label não é um número. Ex.: 20 ou 4,99.")) / 100.0
+/** Um erro nas faixas: o texto que a tela mostra embaixo da tabela. */
+private class TierError(val text: UiText) : IllegalStateException()
 
-/** Valor em R$ digitado, em branco vale 0. */
-private fun String.blankAsZeroAmount(label: String): Double =
-    if (isBlank()) 0.0 else parseDecimal(this, NumberKind.AMOUNT) ?: error("$label não é um número.")
+/** O número digitado, em branco vale 0; `null` quando o texto não é um número. */
+private fun blankAsZero(text: String, kind: NumberKind, separator: Char): Double? =
+    if (text.isBlank()) 0.0 else parseDecimal(text, kind, separator)
 
 /**
  * As linhas do rascunho como [ChannelFeeTier] (decisão 121): limite obrigatório e crescente em toda
  * faixa menos a última, que fica sem limite ("Acima disso").
  */
-private fun List<ChannelTierFormRow>.toChannelFeeTiers(): List<ChannelFeeTier> {
+private fun List<ChannelTierFormRow>.toChannelFeeTiers(separator: Char): List<ChannelFeeTier> {
     if (isEmpty()) return emptyList()
     var previousLimit: Double? = null
     return mapIndexed { index, row ->
@@ -194,18 +305,16 @@ private fun List<ChannelTierFormRow>.toChannelFeeTiers(): List<ChannelFeeTier> {
         val limit = if (isLast) {
             null
         } else {
-            val value = parseDecimal(row.upToUnitPriceText, NumberKind.AMOUNT) ?: error("Preencha o limite de todas as faixas, menos a última.")
-            require(value > 0) { "O limite da faixa precisa ser maior que zero." }
-            require(previousLimit == null || value > previousLimit) {
-                "Os limites das faixas precisam subir de uma faixa pra outra."
-            }
+            val value = parseDecimal(row.upToUnitPriceText, NumberKind.AMOUNT, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_limit_missing))
+            if (value <= 0) throw TierError(uiText(Res.string.settings_channels_error_tier_limit_zero))
+            if (previousLimit != null && value <= previousLimit) throw TierError(uiText(Res.string.settings_channels_error_tier_limit_order))
             previousLimit = value
             value
         }
-        val feeRate = row.feeRatePercentText.blankAsZeroPercent("A taxa da faixa")
-        require(feeRate >= 0 && feeRate < 1) { "A taxa da faixa precisa ficar entre 0% e 100%." }
-        val fixedFeePerItem = row.fixedFeePerItemText.blankAsZeroAmount("O valor fixo da faixa")
-        require(fixedFeePerItem >= 0) { "O valor fixo da faixa não pode ser negativo." }
-        ChannelFeeTier(upToUnitPrice = limit, feeRate = feeRate, fixedFeePerItem = fixedFeePerItem)
+        val feeRate = blankAsZero(row.feeRatePercentText, NumberKind.MEASURE, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fee_number))
+        if (feeRate < 0 || feeRate >= 100) throw TierError(uiText(Res.string.settings_channels_error_tier_fee_range))
+        val fixedFee = blankAsZero(row.fixedFeePerItemText, NumberKind.AMOUNT, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fixed_number))
+        if (fixedFee < 0) throw TierError(uiText(Res.string.settings_channels_error_tier_fixed_negative))
+        ChannelFeeTier(upToUnitPrice = limit, feeRate = feeRate / 100.0, fixedFeePerItem = fixedFee)
     }
 }

@@ -30,6 +30,8 @@ Telas (`ui/`), repositórios (`data/`) e o que depende do sistema (`platform/`).
 - Ícones só de `ui/icons/AppIcons.kt`. Sem emoji e sem caractere fazendo papel de
   ícone ("+", "▾", "⋮").
 - Texto da interface vai em recurso traduzível, não em literal no código.
+- No `strings.xml`, aspas e apóstrofo vão sem barra (`"%1$s"`, não `\"%1$s\"`): o Compose
+  Multiplatform não trata o escape do Android, e a barra aparece na tela.
 
 ## Conferir
 - `scripts/check.sh :composeApp:jvmTest`

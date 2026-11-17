@@ -40,9 +40,9 @@ class UpdateViewModelTest {
 
         viewModel.checkOnStart()
 
-        assertFalse(viewModel.enabled.value)
+        assertFalse(viewModel.uiState.value.enabled)
         assertEquals(0, asked)
-        assertEquals(UpdateState.Idle, viewModel.state.value)
+        assertEquals(UpdateState.Idle, viewModel.uiState.value.status)
     }
 
     @Test
@@ -53,18 +53,18 @@ class UpdateViewModelTest {
         viewModel.setEnabled(true)
 
         assertTrue(preferences.preferences.value.checkForUpdates)
-        assertEquals(UpdateState.Available(LatestRelease("2.2.0", "https://x")), viewModel.state.value)
+        assertEquals(UpdateState.Available(LatestRelease("2.2.0", "https://x")), viewModel.uiState.value.status)
     }
 
     @Test
     fun sameVersionIsUpToDateAndAFailureSaysSo() {
         assertEquals(
             UpdateState.UpToDate,
-            UpdateViewModel(PreferencesRepository(), { LatestRelease("2.1.0", "https://x") }, "2.1.0").apply { checkNow() }.state.value,
+            UpdateViewModel(PreferencesRepository(), { LatestRelease("2.1.0", "https://x") }, "2.1.0").apply { checkNow() }.uiState.value.status,
         )
         assertEquals(
             UpdateState.Failed,
-            UpdateViewModel(PreferencesRepository(), { error("sem internet") }, "2.1.0").apply { checkNow() }.state.value,
+            UpdateViewModel(PreferencesRepository(), { error("sem internet") }, "2.1.0").apply { checkNow() }.uiState.value.status,
         )
     }
 
@@ -86,7 +86,7 @@ class UpdateViewModelTest {
 
         finish!!.invoke()
 
-        assertEquals(UpdateState.Idle, viewModel.state.value)
+        assertEquals(UpdateState.Idle, viewModel.uiState.value.status)
     }
 
     @Test
@@ -94,10 +94,10 @@ class UpdateViewModelTest {
         val preferences = PreferencesRepository()
         val viewModel = UpdateViewModel(preferences, { LatestRelease("2.2.0", "https://x") }, "2.1.0")
         viewModel.checkNow()
-        val release = assertNotNull(viewModel.unannounced(viewModel.state.value))
+        val release = assertNotNull(viewModel.unannounced(viewModel.uiState.value.status))
 
         viewModel.markAnnounced(release)
 
-        assertEquals(null, UpdateViewModel(preferences, { release }, "2.1.0").apply { checkNow() }.let { it.unannounced(it.state.value) })
+        assertEquals(null, UpdateViewModel(preferences, { release }, "2.1.0").apply { checkNow() }.let { it.unannounced(it.uiState.value.status) })
     }
 }

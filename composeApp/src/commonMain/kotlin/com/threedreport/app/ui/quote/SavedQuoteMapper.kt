@@ -19,7 +19,7 @@ internal object SavedQuoteMapper {
      * As entradas da tela a partir do retrato salvo. Filamento, impressora e canal voltam pelo id; o que
      * não está mais no cadastro fica marcado com o nome antigo, e a tela pede pra escolher de novo (nunca
      * cai em outro em silêncio, o que mudaria o preço). Cada impressão volta com as próprias configurações e
-     * a miniatura ([thumbnail] lê o anexo pela chave).
+     * a miniatura ([thumbnail] lê o anexo pela chave). Os números voltam com [decimalSeparator], o da moeda em uso.
      */
     fun inputStateFrom(
         savedQuote: SavedQuote,
@@ -28,6 +28,7 @@ internal object SavedQuoteMapper {
         channels: List<SalesChannel>,
         newId: () -> Int,
         thumbnail: (String) -> PickedFile? = { null },
+        decimalSeparator: Char = ',',
     ): QuoteInputState {
         val quote = savedQuote.quote
         // Pelo id; um canal excluído e recriado com o mesmo nome ganha id novo, então o nome é a segunda
@@ -45,7 +46,7 @@ internal object SavedQuoteMapper {
                         FilamentInput(
                             filamentId = usage.filament.id,
                             colorId = usage.color?.id,
-                            lengthText = usage.lengthMeters.toInputText(),
+                            lengthText = usage.lengthMeters.toInputText(decimalSeparator),
                             missingFilamentName = usage.filament.name.takeIf { filaments.none { it.id == usage.filament.id } },
                             id = newId(),
                         )
@@ -64,7 +65,7 @@ internal object SavedQuoteMapper {
             selectedServices = savedQuote.services.associate { service ->
                 service.id to ServiceInput(
                     name = service.name,
-                    priceText = service.price.toInputText(),
+                    priceText = service.price.toInputText(decimalSeparator),
                     chargedPerOrder = service.chargedPerOrder,
                     laborMinutesText = service.laborMinutes.takeIf { it > 0 }?.toDurationInputText().orEmpty(),
                 )
@@ -75,7 +76,7 @@ internal object SavedQuoteMapper {
                 used.id to ConsumableInput(
                     name = used.name,
                     unitCost = used.unitCost,
-                    quantityText = used.quantity.toInputText(),
+                    quantityText = used.quantity.toInputText(decimalSeparator),
                     chargedPerOrder = used.chargedPerOrder,
                 )
             },
@@ -83,12 +84,12 @@ internal object SavedQuoteMapper {
             shippingAbsorbed = savedQuote.shippingAbsorbed,
             salesChannelId = channel?.id,
             missingChannelName = quote.channelName.takeIf { channel == null },
-            shippingCostText = if (savedQuote.shippingCost > 0) savedQuote.shippingCost.toInputText() else "",
+            shippingCostText = if (savedQuote.shippingCost > 0) savedQuote.shippingCost.toInputText(decimalSeparator) else "",
             // Sem isso, reabrir um orçamento negociado e salvar de novo voltaria em silêncio pro preço
             // de tabela. O campo recebe o total do cliente, igual ao que foi digitado (ver `calculate`).
             // Pedido vendido pelo preço do catálogo volta com o anunciado no lugar dele, e não como preço
             // digitado: salvar de novo mantém o preço e continua fora dos números de negociação.
-            targetTotalText = if (quote.isNegotiated && !savedQuote.soldAtCatalogPrice) savedQuote.totalWithServices.toInputText() else "",
+            targetTotalText = if (quote.isNegotiated && !savedQuote.soldAtCatalogPrice) savedQuote.totalWithServices.toInputText(decimalSeparator) else "",
             announcedUnitPrice = if (savedQuote.soldAtCatalogPrice) quote.unitSalePrice else null,
         )
     }
@@ -96,6 +97,7 @@ internal object SavedQuoteMapper {
     /** O formulário de salvar a partir do retrato, com a foto e o STL já lidos. */
     fun saveFormFrom(savedQuote: SavedQuote, photo: PickedFile?, stlFile: PickedFile?) = SaveQuoteFormState(
         name = savedQuote.name,
+        autoName = savedQuote.name.takeIf { savedQuote.autoNamed },
         photo = photo,
         stlFile = stlFile,
         sourceLink = savedQuote.sourceLink.orEmpty(),

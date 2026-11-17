@@ -1,10 +1,10 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.app.platform.ClientDocumentTexts
 import com.threedreport.app.platform.formatDate
-import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.core.model.Currency
-import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SavedQuote
 
 /**
@@ -25,54 +25,60 @@ import com.threedreport.core.model.SavedQuote
  * Fecha com o prazo de entrega (se houver) e o tempo de impressão (só com [showPrintTime], ver
  * `BrandingSettings.showPrintTime`), nessa ordem: o prazo é o que o cliente usa pra decidir, o tempo
  * é detalhe.
+ *
+ * Os textos vêm de [texts] (recursos traduzíveis), carregados por quem manda a mensagem.
  */
-internal fun SavedQuote.toCopyPasteText(currency: Currency = this.currency, showPrintTime: Boolean = false): String = buildString {
+internal fun SavedQuote.toCopyPasteText(
+    texts: ClientDocumentTexts,
+    currency: Currency = this.currency,
+    showPrintTime: Boolean = false,
+): String = buildString {
     val quantity = quote.quantity
-    appendLine(clientTitle())
-    append("Valor: ")
-    if (quantity > 1) {
-        append(quantity).append(" × ").append(quote.unitSalePrice.toCurrencyText(currency)).append(" = ")
-    }
-    append(quote.salePrice.toCurrencyText(currency))
+    appendLine(clientTitle(texts))
+    val sale = quote.salePrice.toCurrencyText(currency)
+    append(texts.value(if (quantity > 1) texts.valueTimesQuantity(quantity, quote.unitSalePrice.toCurrencyText(currency), sale) else sale))
     services.forEach { service ->
         appendLine()
-        append(service.name)
-        if (quantity > 1 && !service.chargedPerOrder) append(" (× ").append(quantity).append(")")
-        append(": ").append(service.total(quantity).toCurrencyText(currency))
+        append(texts.lineAmount(service.label(texts, quantity), service.total(quantity).toCurrencyText(currency)))
     }
     if (shippingAbsorbed) {
         appendLine()
-        append("Frete: grátis")
+        append(texts.shippingFree)
     } else if (shippingCost > 0) {
         appendLine()
-        append("Frete: ").append(chargedShipping.toCurrencyText(currency))
+        append(texts.shipping(chargedShipping.toCurrencyText(currency)))
     }
     if (services.isNotEmpty() || shippingCost > 0) {
         appendLine()
-        append("Total: ").append(totalWithServices.toCurrencyText(currency))
+        append(texts.total(totalWithServices.toCurrencyText(currency)))
     }
     // Entrega expressa (decisão 125) junto do prazo, que é como o cliente lê os dois num relance; sem
     // prazo, vira linha própria em vez de sumir.
-    val delivery = deliveryDateText()
-    when {
-        delivery != null && quote.rush -> {
-            appendLine()
-            append(delivery).append(" (entrega expressa)")
-        }
-
-        delivery != null -> {
-            appendLine()
-            append(delivery)
-        }
-
-        quote.rush -> {
-            appendLine()
-            append("Entrega expressa")
-        }
+    deliveryHighlightText(texts)?.let {
+        appendLine()
+        append(it)
     }
     if (showPrintTime) {
         appendLine()
-        append(printTimeText())
+        append(printTimeText(texts))
+    }
+}
+
+/** O nome do serviço na linha do valor: "Pintura (× 3)" quando é cobrado por peça num pedido de mais de uma. */
+internal fun QuoteService.label(texts: ClientDocumentTexts, quantity: Int): String =
+    if (quantity > 1 && !chargedPerOrder) texts.servicePerPiece(name, quantity) else name
+
+/**
+ * O prazo com a entrega expressa (decisão 125): "Prazo de entrega: até 30/09/2026 (entrega expressa)", só o prazo,
+ * só "Entrega expressa", ou `null` sem nenhum dos dois. Mesmo texto no PDF e na mensagem.
+ */
+internal fun SavedQuote.deliveryHighlightText(texts: ClientDocumentTexts): String? {
+    val delivery = deliveryDateText(texts)
+    return when {
+        delivery != null && quote.rush -> texts.deliveryRush(delivery)
+        delivery != null -> delivery
+        quote.rush -> texts.rush
+        else -> null
     }
 }
 
@@ -81,26 +87,26 @@ internal fun SavedQuote.toCopyPasteText(currency: Currency = this.currency, show
  * Nome automático vira "Orçamento #0042" (ou "Produto", no catálogo), porque "Orçamento - 24/09/2026
  * 14:30" é rótulo interno, não nome de peça.
  */
-internal fun SavedQuote.clientTitle(withNumber: Boolean = true): String {
+internal fun SavedQuote.clientTitle(texts: ClientDocumentTexts, withNumber: Boolean = true): String {
     val number = displayNumber?.takeIf { isOrder && withNumber }
     return when {
-        hasAutoName && !isOrder -> "Produto"
-        hasAutoName -> listOfNotNull("Orçamento", number).joinToString(" ")
-        number != null -> "$name · $number"
+        autoNamed && !isOrder -> texts.autoProductTitle
+        autoNamed -> texts.autoOrderTitle(number)
+        number != null -> texts.titleNumbered(name, number)
         else -> name
     }
 }
 
 /** "Prazo de entrega: até 30/09/2026", ou `null` sem prazo. Mesmo texto no PDF e no copiar/colar. */
-internal fun SavedQuote.deliveryDateText(): String? =
-    deliveryDateEpochDay?.let { "Prazo de entrega: até ${formatDate(it)}" }
+internal fun SavedQuote.deliveryDateText(texts: ClientDocumentTexts): String? =
+    deliveryDateEpochDay?.let { texts.delivery(formatDate(it)) }
 
 /**
  * "Tempo de impressão: 6 h 30 min", com "(N peças)" quando há mais de uma, porque o tempo é do
  * pedido inteiro. "Impressão", e não "fabricação": o número é tempo de máquina, e "fabricação"
  * sugeriria um prazo que ele não é.
  */
-internal fun SavedQuote.printTimeText(): String = buildString {
-    append("Tempo de impressão: ").append(totalPrintTimeMinutes.minutesToDurationText())
-    if (quote.quantity > 1) append(" (").append(quote.quantity).append(" peças)")
+internal fun SavedQuote.printTimeText(texts: ClientDocumentTexts): String {
+    val line = texts.printTime(texts.duration(totalPrintTimeMinutes))
+    return if (quote.quantity > 1) texts.printTimeForPieces(line, quote.quantity) else line
 }

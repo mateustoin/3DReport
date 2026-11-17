@@ -29,6 +29,8 @@ import kotlinx.serialization.Serializable
  *   meses depois com o preço antigo, depois de o filamento subir.
  * @property showClientName "Para: nome do cliente" no PDF. Desligado por padrão: o cliente é dado interno
  *   (decisão 19), e só vai pro documento quando o vendedor escolhe.
+ * @property imageBackground fundo da imagem quadrada pro cliente ([ImageBackground]). Nasce [ImageBackground.AUTO].
+ *   É do vendedor, como a logo: um [QuoteTemplate] não guarda nem muda este campo.
  */
 @Serializable
 data class BrandingSettings(
@@ -43,6 +45,7 @@ data class BrandingSettings(
     val showBorder: Boolean = false,
     val quoteValidityDays: Int = DEFAULT_VALIDITY_DAYS,
     val showClientName: Boolean = false,
+    val imageBackground: ImageBackground = ImageBackground.AUTO,
 ) {
     init {
         require(quoteValidityDays in 0..MAX_VALIDITY_DAYS) { "quoteValidityDays fora de 0..$MAX_VALIDITY_DAYS: $quoteValidityDays" }
@@ -53,22 +56,28 @@ data class BrandingSettings(
         get() = contactInstagram?.trim()?.removePrefix("@")?.trim()?.takeIf { it.isNotEmpty() }?.let { "@$it" }
 
     /**
-     * Contatos prontos pra exibir, na ordem WhatsApp, e-mail, Instagram, pulando os vazios. É o
-     * mesmo texto no cabeçalho do PDF e na prévia em Configurações.
+     * Contatos do vendedor pro cabeçalho do PDF, na ordem WhatsApp, e-mail, Instagram, pulando os vazios. Cada
+     * um diz o canal e o valor; quem desenha escolhe o texto (o `core` não escreve frase pra interface).
      */
-    val contactLines: List<String>
+    val contacts: List<ContactEntry>
         get() = listOfNotNull(
-            contactWhatsApp?.trim()?.takeIf { it.isNotEmpty() }?.let { "WhatsApp $it" },
-            contactEmail?.trim()?.takeIf { it.isNotEmpty() },
-            instagramHandle,
+            contactWhatsApp?.trim()?.takeIf { it.isNotEmpty() }?.let { ContactEntry(ContactChannel.WHATSAPP, it) },
+            contactEmail?.trim()?.takeIf { it.isNotEmpty() }?.let { ContactEntry(ContactChannel.EMAIL, it) },
+            instagramHandle?.let { ContactEntry(ContactChannel.INSTAGRAM, it) },
         )
 
     /** Se há algo pro cabeçalho do PDF (logo ou contato). Sem isso, a página fica como sempre foi. */
     val hasIdentity: Boolean
-        get() = logoFileName != null || contactLines.isNotEmpty()
+        get() = logoFileName != null || contacts.isNotEmpty()
 
     companion object {
         const val DEFAULT_VALIDITY_DAYS = 7
         const val MAX_VALIDITY_DAYS = 365
     }
 }
+
+/** Por onde o cliente pode responder ao vendedor. */
+enum class ContactChannel { WHATSAPP, EMAIL, INSTAGRAM }
+
+/** Um contato público do vendedor: o canal e o valor como vai pro documento (o Instagram já com "@"). */
+data class ContactEntry(val channel: ContactChannel, val value: String)

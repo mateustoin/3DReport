@@ -7,8 +7,10 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
-Rumo à 2.2. Tudo o que mexe no preço entrou junto, pra você recalibrar uma vez só, e **nada
-muda sozinho**: cada regra nova começa desligada, e os pedidos salvos continuam com o preço e o
+## [2.2.0] - 2026-11-17
+
+Interface nova, do começo ao fim, e o preço mais certo. Tudo o que mexe no preço entrou junto,
+pra você recalibrar uma vez só, e **nada muda sozinho**: cada regra nova começa desligada, e os pedidos salvos continuam com o preço e o
 lucro que tinham.
 
 ### Adicionado
@@ -27,9 +29,49 @@ lucro que tinham.
 - **Calcular o kWh** pela conta de luz, pela bandeira do mês ou pela tarifa branca, em Negócio e custos.
 
 ### Alterado
+- **Configurações em seções.** Negócio e custos, Canais de venda, Documentos pro cliente, Aparência e
+  Backup ficam numa lista ao lado, uma seção por vez. Uma barra única "Alterações não salvas" salva ou
+  descarta tudo de uma vez, e o botão "Salvar" é o único âmbar da tela.
+- **Modelos do PDF:** carregar um modelo agora só preenche os campos de Documentos pro cliente, e você
+  confirma em "Salvar" ou descarta. Antes, clicar no modelo aplicava e gravava na hora, junto com
+  qualquer outra alteração pendente. O que antes se chamava "template" agora é "modelo".
+- **O nome da marca fica junto da aparência do PDF**, porque é o texto da marca d'água. "Sua marca"
+  fica só com a logo.
+- **Sobre** com visual novo. Quando há versão nova, "Ver novidades" é o botão em destaque e
+  "Apoiar o projeto" fica discreto.
+- **Dashboard refeito.** O período escolhido fica no topo, com quatro números de resumo (vendas, total
+  vendido, lucro e lucro por hora de máquina), o ranking de peças ao lado e os blocos de pedidos em
+  aberto, quanto cada hora rendeu e o que mais é usado. Sem vendas no período, os números continuam
+  na tela, zerados, e a tela não pula ao trocar de período. O lucro negativo aparece em vermelho. Em
+  janela estreita, o período vira uma lista suspensa.
+- **Primeiro uso** abre com "Boas-vindas ao 3DReport".
 - **Atalhos:** com a tela Insumos, Configurações passou de Ctrl/Cmd+8 pra Ctrl/Cmd+9. Insumos é o 8.
 - **Serviço com tempo informado passa a contar no lucro** pelo que rende acima da sua hora. Serviço sem
   tempo continua como antes, fora do lucro.
+- **PDF do orçamento refeito.** Cabeçalho com a sua marca e o contato, foto na largura da página e um
+  bloco com o valor, a entrega e a validade. O aviso amarelo de prazo saiu, e o documento não leva
+  cor do app: é o seu. Com muitos itens, a lista continua na página seguinte. O catálogo em PDF
+  segue o mesmo estilo.
+- **Prévia do PDF com foto de exemplo.** Em Configurações, Documentos pro cliente, o botão agora é
+  "Ver como fica o PDF" e a prévia mostra o "Suporte de celular" com uma foto, pra você ver a moldura,
+  o cinza e a marca d'água como ficam num pedido de verdade.
+- **Imagem pro WhatsApp refeita**, em azul-marinho, com o preço em destaque.
+- **Fundo da imagem automático.** Peça preta sumia no fundo escuro. Agora o app olha o brilho da peça:
+  peça escura sai em fundo claro, as outras no azul-marinho. Em Configurações, Documentos pro cliente,
+  "Fundo da imagem" deixa escolher Automático, Escuro ou Claro.
+- **Ícone novo**, com camadas mais grossas e o bico depositando a camada âmbar. A janela do app também
+  passou a usar o ícone.
+- **Nome do arquivo sugerido** com o singular certo: "1 item", e não "1 itens".
+- **Valores digitados lidos conforme a moeda escolhida** nos cadastros e no Orçamento. Em real nada muda.
+- **Canal com uma faixa de preço** mostra "1 faixa de preço", e não "1 faixas de preço".
+- **Rótulos de campo** quebram em duas linhas em vez de cortar numa janela estreita, e a lista de seções
+  de Configurações ficou mais estreita pra dar espaço aos campos.
+
+### Corrigido
+- **Tema "Do sistema" no Linux.** O app abria claro mesmo com o sistema no escuro. Agora segue o
+  escuro do sistema (GNOME, KDE, Cinnamon e outros) e acompanha a troca com o app aberto.
+- **Exportar com duplo clique** não abre mais dois diálogos de "Salvar como".
+- **Editar enquanto a prévia do PDF carrega** não perde mais o que você digitou.
 
 ## [2.1.1] - 2026-09-25
 

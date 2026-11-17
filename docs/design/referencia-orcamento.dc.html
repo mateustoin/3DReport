@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Direção C, Orçamento</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+body{margin:0}
+.r{--bg:#F6F8FB;--card:#FFFFFF;--line:#DCE2EA;--fg:#0F1B2B;--mut:#536173;--acc:#0B5FA8;--onacc:#FFFFFF;--navy:#0C2742;--navy2:#143657;--onnavy:#EAF1F8;--mutnavy:#A9BCD0;--amber:#F2A541;--onamber:#2A1A02;--tint:#E6EFF8}
+.r[data-theme=dark]{--bg:#0B1420;--card:#111D2C;--line:#22324A;--fg:#E8EEF5;--mut:#9DAEC2;--acc:#7DB8F5;--onacc:#06213A;--navy:#081526;--navy2:#12263D;--onnavy:#EAF1F8;--mutnavy:#A9BCD0;--amber:#F2A541;--onamber:#2A1A02;--tint:#16283D}
+.r *{box-sizing:border-box}
+.nv{display:flex;align-items:center;gap:11px;height:36px;padding:0 12px;border-radius:8px;color:var(--mutnavy);text-decoration:none;font-size:14px;border-left:0}
+.nv:hover{background:var(--navy2);color:var(--onnavy)}
+.nv.on{background:var(--navy2);color:#FFFFFF;font-weight:600}
+.nv.on svg{color:var(--amber)}
+.nv svg{width:18px;height:18px;flex:none}
+.gh{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mutnavy);padding:16px 12px 6px}
+.fl{display:flex;flex-direction:column;gap:5px}
+.fl label{font-size:12px;font-weight:500;color:var(--mut)}
+.in{height:40px;width:100%;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit;font-size:14px;padding:0 12px}
+.in:hover{border-color:var(--acc)}
+.in:focus{outline:2px solid var(--acc);outline-offset:1px}
+.st{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin:0}
+.st i{width:24px;height:24px;border-radius:50%;background:var(--tint);color:var(--acc);font-style:normal;font-size:13px;display:grid;place-items:center}
+.btn{height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.btn:hover{border-color:var(--acc)}
+.btn.amb{background:var(--amber);border-color:var(--amber);color:var(--onamber);font-weight:600}
+.btn.gh2{background:transparent;border-color:var(--navy2);color:var(--onnavy)}
+.ln{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:6px 0;color:var(--mutnavy)}
+.ln span:last-child{color:var(--onnavy);font-variant-numeric:tabular-nums}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.seg button{height:38px;padding:0 14px;border:0;background:transparent;color:var(--mut);font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--acc);color:var(--onacc);font-weight:600}
+</style>
+</helmet>
+<div class="r" data-theme="{{theme}}" style="width: 1280px; height: 800px; display: flex; background: var(--bg); color: var(--fg); font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<nav aria-label="Navegação" style="width: 212px; flex: none; background: var(--navy); padding: 18px 10px; display: flex; flex-direction: column">
+<div style="padding: 0 12px 4px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #FFFFFF">3D<span style="color: var(--amber)">Report</span></div>
+<div class="gh">Vendas</div>
+<sc-for list="{{vendas}}" as="n" hint-placeholder-count="4"><a href="#" class="{{n.cls}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg>{{n.t}}</a></sc-for>
+<div class="gh">Cadastros</div>
+<sc-for list="{{cadastros}}" as="n" hint-placeholder-count="4"><a href="#" class="{{n.cls}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg>{{n.t}}</a></sc-for>
+<div style="flex: 1"></div>
+<sc-for list="{{pe}}" as="n" hint-placeholder-count="2"><a href="#" class="{{n.cls}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg>{{n.t}}</a></sc-for>
+</nav>
+<main style="flex: 1; min-width: 0; display: flex">
+<section aria-label="Dados da impressão" style="flex: 1; min-width: 0; padding: 26px 32px; display: flex; flex-direction: column; gap: 22px; overflow: auto">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -.01em">Novo orçamento</h1>
+<div class="seg" role="group" aria-label="Tipo"><button type="button" class="on">Pedido de cliente</button><button type="button">Produto do catálogo</button></div>
+</div>
+<button type="button" style="height: 56px; border: 1.5px dashed var(--line); border-radius: 10px; background: transparent; color: var(--mut); font: inherit; font-size: 14px; cursor: pointer">Arraste um G-code aqui ou <span style="color: var(--acc); font-weight: 600">escolha o arquivo</span></button>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="st"><i>1</i>Impressão</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px">
+<sc-for list="{{impressao}}" as="f" hint-placeholder-count="6"><div class="fl" style="grid-column: {{f.span}}"><label for="{{f.id}}">{{f.l}}</label><input class="in" id="{{f.id}}" value="{{f.v}}"></div></sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="st"><i>2</i>Trabalho e extras</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px">
+<sc-for list="{{extras}}" as="f" hint-placeholder-count="3"><div class="fl"><label for="{{f.id}}">{{f.l}}</label><input class="in" id="{{f.id}}" value="{{f.v}}"></div></sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="st"><i>3</i>Venda</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px">
+<sc-for list="{{venda}}" as="f" hint-placeholder-count="3"><div class="fl"><label for="{{f.id}}">{{f.l}}</label><input class="in" id="{{f.id}}" value="{{f.v}}"></div></sc-for>
+</div>
+</div>
+</section>
+<aside aria-label="Resultado" style="width: 380px; flex: none; background: var(--navy); color: var(--onnavy); padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div>
+<div style="font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--mutnavy)">Você cobra</div>
+<div style="font-family: 'Space Grotesk', sans-serif; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; color: #FFFFFF; font-variant-numeric: tabular-nums; margin-top: 4px">R$ 174,34</div>
+<div style="font-size: 14px; color: var(--mutnavy)">2 unidades · R$ 87,17 cada</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="background: var(--navy2); border-radius: 10px; padding: 12px 14px"><div style="font-size: 12px; color: var(--mutnavy)">Seu lucro</div><div style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; color: var(--amber); font-variant-numeric: tabular-nums">R$ 54,00</div></div>
+<div style="background: var(--navy2); border-radius: 10px; padding: 12px 14px"><div style="font-size: 12px; color: var(--mutnavy)">Mínimo sem prejuízo</div><div style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; color: #FFFFFF; font-variant-numeric: tabular-nums">R$ 120,34</div></div>
+</div>
+<div>
+<div role="img" aria-label="Composição do preço" style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px">
+<sc-for list="{{linhas}}" as="b" hint-placeholder-count="5"><div style="flex: {{b.w}}; background: {{b.c}}"></div></sc-for>
+</div>
+<div style="margin-top: 12px">
+<sc-for list="{{linhas}}" as="l" hint-placeholder-count="5"><div class="ln"><span style="display: flex; align-items: center; gap: 8px"><i style="width: 10px; height: 10px; border-radius: 3px; background: {{l.c}}; display: inline-block"></i>{{l.t}}</span><span>{{l.v}}</span></div></sc-for>
+</div>
+</div>
+<div style="flex: 1"></div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button type="button" class="btn amb" style="height: 46px; font-size: 15px">Salvar pedido</button>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px"><button type="button" class="btn gh2">Negociar</button><button type="button" class="btn gh2">Enviar pro cliente</button></div>
+</div>
+</aside>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"escuro":{"editor":"boolean","default":false},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+const nav = (t, d, on) => ({ t, d, cls: on ? 'nv on' : 'nv' });
+const f = (id, l, v, span) => ({ id, l, v, span: span || 'auto' });
+return {
+theme: (this.props.escuro ?? false) ? 'dark' : 'light',
+vendas: [nav('Orçamento', 'M6 3h12v18H6zM9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01', true), nav('Pedidos', 'M4 13l2-8h12l2 8v6H4zM4 13h5l1 2h4l1-2h5'), nav('Catálogo', 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'), nav('Dashboard', 'M4 20V10M10 20V4M16 20v-7M21 20H3')],
+cadastros: [nav('Filamentos', 'M12 3a9 9 0 100 18 9 9 0 000-18zM12 9a3 3 0 100 6 3 3 0 000-6z'), nav('Impressoras', 'M5 4h14v12H5zM9 16v4M15 16v4M7 20h10M10 8h4v3h-4z'), nav('Serviços', 'M14 6l4 4-9 9H5v-4z'), nav('Insumos', 'M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8')],
+pe: [nav('Configurações', 'M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4'), nav('Sobre', 'M12 3a9 9 0 100 18 9 9 0 000-18zM12 11v5M12 8h.01')],
+impressao: [f('nome', 'Nome', 'Suporte de headset', 'span 2'), f('qtd', 'Quantidade', '2'), f('fil', 'Filamento', 'PLA Preto'), f('peso', 'Peso', '182 g'), f('tempo', 'Tempo', '6 h 40 min'), f('imp', 'Impressora', 'Bambu Lab A1', 'span 2')],
+extras: [f('trab', 'Seu trabalho', '40 min'), f('serv', 'Serviços', 'Pintura · R$ 15,50'), f('ins', 'Insumos', 'Nenhum')],
+venda: [f('canal', 'Canal', 'Shopee'), f('frete', 'Frete', 'Por conta do cliente'), f('cli', 'Cliente', 'Rafael N.')],
+linhas: [{ t: 'Material e máquina', v: 'R$ 60,60', c: '#7DB8F5', w: 60.6 }, { t: 'Trabalho e serviços', v: 'R$ 35,50', c: '#4C8FD0', w: 35.5 }, { t: 'Taxa da Shopee', v: 'R$ 24,24', c: '#6C7F95', w: 24.24 }, { t: 'Lucro', v: 'R$ 54,00', c: '#F2A541', w: 54 }]
+};
+}
+}
+</script>
+</body>
+</html>

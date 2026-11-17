@@ -41,5 +41,12 @@ val FILAMENT_MATERIAL_TYPE_PRESETS: List<MaterialTypePreset> = listOf(
     MaterialTypePreset("Madeira (wood-fill)", null),
 )
 
-/** Rótulo da opção de digitar um tipo que não está em [FILAMENT_MATERIAL_TYPE_PRESETS]. */
-const val CUSTOM_MATERIAL_TYPE_LABEL = "Personalizado"
+/** O que a lista de tipo de material oferece: um dos [FILAMENT_MATERIAL_TYPE_PRESETS] ou digitar um tipo que não está nela. */
+sealed interface MaterialOption {
+    data class Preset(val preset: MaterialTypePreset) : MaterialOption
+
+    data object Custom : MaterialOption
+}
+
+/** Os tipos prontos e, por último, a opção de digitar outro. */
+val MATERIAL_OPTIONS: List<MaterialOption> = FILAMENT_MATERIAL_TYPE_PRESETS.map { MaterialOption.Preset(it) } + MaterialOption.Custom

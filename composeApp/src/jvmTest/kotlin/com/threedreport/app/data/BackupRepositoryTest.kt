@@ -92,6 +92,7 @@ class BackupRepositoryTest {
         val result = BackupRepository().restoreFromZip(notABackup)
 
         assertIs<RestoreResult.Failure>(result)
+        assertEquals(RestoreFailure.NotABackup, result.reason)
         assertEquals("dados atuais", File(dataDir, "quotes.json").readText())
     }
 
@@ -102,6 +103,7 @@ class BackupRepositoryTest {
         val result = BackupRepository().restoreFromZip(byteArrayOf(0, 1, 2, 3, 4, 5))
 
         assertIs<RestoreResult.Failure>(result)
+        assertEquals(RestoreFailure.UnreadableFile, result.reason)
         assertEquals("dados atuais", File(dataDir, "quotes.json").readText())
     }
 

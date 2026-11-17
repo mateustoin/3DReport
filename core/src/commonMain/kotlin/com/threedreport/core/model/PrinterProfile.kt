@@ -31,6 +31,13 @@ data class PrinterProfile(
         require(printerPowerWatts >= 0) { "printerPowerWatts não pode ser negativo" }
         require(maintenanceCostPerHour >= 0) { "maintenanceCostPerHour não pode ser negativo" }
     }
+
+    /**
+     * Quanto a máquina custa por hora de impressão, sem a energia: retorno do investimento mais
+     * manutenção. É o número que o cadastro mostra na lista e na prévia do formulário.
+     */
+    val machineCostPerHour: Double
+        get() = machineInvestment.costPerHour + maintenanceCostPerHour
 }
 
 /**

@@ -4,12 +4,16 @@ import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.FilamentTotal
 
-/** Texto de exibição de uma cor: nome escrito, ou o hex, ou um rótulo genérico se nenhum estiver preenchido. */
-fun FilamentColor.displayLabel(): String = name?.takeIf { it.isNotBlank() } ?: hex ?: "Sem nome"
+/** O nome escrito da cor ou, na falta dele, o hex; `null` se nenhum estiver preenchido (a tela escolhe o rótulo genérico). */
+fun FilamentColor.labelOrNull(): String? = name?.takeIf { it.isNotBlank() } ?: hex
+
+/** O texto de exibição de uma cor: o nome, o hex ou, sem nenhum dos dois, [unnamed] (o recurso `filaments_color_unnamed`). */
+fun FilamentColor.displayLabel(unnamed: String): String = labelOrNull() ?: unnamed
 
 /**
  * "PLA · Preto 42 g": consumo de um filamento no pedido, como o vendedor confere no estoque. A cor
- * só aparece quando foi registrada (filamento de uma cor só não tem o que diferenciar).
+ * só aparece quando foi registrada (filamento de uma cor só não tem o que diferenciar). [unnamedColor] é o texto
+ * da cor sem nome nem hex (`filaments_color_unnamed`).
  */
-fun FilamentTotal.displayText(): String =
-    filament.name + (color?.takeIf { it.name != null || it.hex != null }?.let { " · ${it.displayLabel()}" } ?: "") + " " + weightGrams.toWeightText()
+fun FilamentTotal.displayText(unnamedColor: String): String =
+    filament.name + (color?.takeIf { it.name != null || it.hex != null }?.let { " · ${it.displayLabel(unnamedColor)}" } ?: "") + " " + weightGrams.toWeightText()

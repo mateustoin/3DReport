@@ -11,7 +11,7 @@ class FakePlatform : PlatformServices {
     var clipboardWorks = true
     var browserWorks = true
 
-    val written = mutableMapOf<String, ByteArray>()
+    val written: MutableMap<String, ByteArray> = java.util.concurrent.ConcurrentHashMap()
     val copied = mutableListOf<String>()
     val opened = mutableListOf<String>()
 
@@ -39,6 +39,16 @@ class FakePlatform : PlatformServices {
     override fun openUrl(url: String): Boolean {
         if (browserWorks) opened += url
         return browserWorks
+    }
+
+    /**
+     * Espera até haver [count] arquivos gravados (ou o tempo acabar) e devolve [written]. Salvar lê o nome sugerido e os
+     * textos dos recursos; na primeira leitura eles chegam de outro thread, mesmo com `Unconfined`.
+     */
+    fun awaitWritten(count: Int = 1, timeoutMillis: Long = 10_000): Map<String, ByteArray> {
+        val deadline = System.currentTimeMillis() + timeoutMillis
+        while (written.size < count && System.currentTimeMillis() < deadline) Thread.sleep(10)
+        return written
     }
 
     override fun openFolder(path: String): Boolean = true

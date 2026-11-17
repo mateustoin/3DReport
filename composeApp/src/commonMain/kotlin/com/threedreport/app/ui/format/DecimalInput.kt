@@ -83,26 +83,6 @@ private fun isValidGrouping(text: String, separator: Char): Boolean {
     return groups.drop(1).all { it.length == 3 && it.all(Char::isDigit) }
 }
 
-/** [parseDecimal] que falha com uma mensagem amigável quando o texto é inválido. */
-fun String.toRequiredDouble(fieldLabel: String, kind: NumberKind = NumberKind.AMOUNT, decimalSeparator: Char = ','): Double =
-    parseDecimal(this, kind, decimalSeparator) ?: error("Confira o campo \"$fieldLabel\": não é um número.")
-
-/** [toRequiredDouble] maior que zero, com a mensagem dizendo qual campo (e não a do `require` do core). */
-fun String.toRequiredPositive(fieldLabel: String, kind: NumberKind = NumberKind.AMOUNT): Double =
-    toRequiredDouble(fieldLabel, kind).also { if (it <= 0) error("\"$fieldLabel\" precisa ser maior que zero.") }
-
-/** [toRequiredDouble] que não aceita negativo. */
-fun String.toRequiredNonNegative(fieldLabel: String, kind: NumberKind = NumberKind.AMOUNT): Double =
-    toRequiredDouble(fieldLabel, kind).also { if (it < 0) error("\"$fieldLabel\" não pode ser negativo.") }
-
-/** [toRequiredInt] maior que zero. */
-fun String.toRequiredPositiveInt(fieldLabel: String): Int =
-    toRequiredInt(fieldLabel).also { if (it <= 0) error("\"$fieldLabel\" precisa ser maior que zero.") }
-
-/** Converte texto digitado pelo usuário em [Int], com mensagem amigável quando inválido. */
-fun String.toRequiredInt(fieldLabel: String): Int =
-    parseWholeNumber(this) ?: error("Confira o campo \"$fieldLabel\": use um número inteiro.")
-
 /** Número inteiro digitado ("1.000" e "1000" valem mil), ou `null` se não for inteiro. */
 fun parseWholeNumber(text: String): Int? {
     val value = parseDecimal(text, NumberKind.AMOUNT) ?: return null

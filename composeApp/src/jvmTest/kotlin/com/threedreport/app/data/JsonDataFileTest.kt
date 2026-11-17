@@ -78,4 +78,36 @@ class JsonDataFileTest {
 
         assertEquals(listOf("antigo"), dataFile().read())
     }
+
+    @Test
+    fun theUpgradeStepIsSkippedWhenThePredicateSaysThereIsNothingToComplete() {
+        var upgrades = 0
+        val upgrade: (kotlinx.serialization.json.JsonElement) -> kotlinx.serialization.json.JsonElement = {
+            upgrades++
+            it
+        }
+        File(dir, "itens.json").writeText("""["a", "b"]""")
+
+        val skipped = JsonDataFile(File(dir, "itens.json"), serializer, upgrade = upgrade, upgradeNeeded = { false })
+        assertEquals(listOf("a", "b"), skipped.read())
+        assertEquals(0, upgrades)
+
+        val needed = JsonDataFile(File(dir, "itens.json"), serializer, upgrade = upgrade)
+        assertEquals(listOf("a", "b"), needed.read())
+        assertEquals(1, upgrades)
+    }
+
+    @Test
+    fun theQuotesFileOnlyNeedsTheUpgradeWhenSomeRecordLacksAutoNamed() {
+        val withKey = """[{"id": "a", "data": {"id": "a", "name": "x", "autoNamed": false}}, {"id": "b", "data": {"id": "b", "autoNamed": true}}]"""
+        val missingOne = """[{"id": "a", "data": {"id": "a", "name": "x", "autoNamed": false}}, {"id": "b", "data": {"id": "b", "name": "y"}}]"""
+        val typedLikeTheKey = """[{"id": "a", "data": {"id": "a", "name": "um \"autoNamed\": falso"}}]"""
+        val purgedRecord = """[{"id": "gone", "createdAtEpochMillis": 0}]"""
+
+        assertFalse(quotesNeedAutoNamedUpgrade(withKey))
+        assertTrue(quotesNeedAutoNamedUpgrade(missingOne))
+        assertTrue(quotesNeedAutoNamedUpgrade(typedLikeTheKey), "um nome que cita a chave não conta como a chave")
+        assertFalse(quotesNeedAutoNamedUpgrade(purgedRecord))
+        assertFalse(quotesNeedAutoNamedUpgrade("[]"))
+    }
 }

@@ -90,7 +90,10 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     catálogo** (decisão 101); `SavedQuote.isOrder` é a única regra de "o que é
     pedido", e os relatórios de `report/` deixam os produtos de fora por ela.
     `BrandingSettings` guarda a identidade do vendedor (nome, logo,
-    contato) e a aparência dos documentos pro cliente.
+    contato) e a aparência dos documentos pro cliente. O contato sai de
+    `BrandingSettings.contacts`, uma lista de `ContactEntry` (`ContactChannel`
+    `WHATSAPP`, `EMAIL` ou `INSTAGRAM`, mais o valor), no lugar do antigo
+    `contactLines`: o `core` não escreve frase, e quem desenha o PDF escolhe o texto.
 - `pricing/ProductRepricer`: recalcula um produto do catálogo com os cadastros de
   hoje (decisão 102), mantendo o preço anunciado; devolve o motivo quando falta
   filamento, impressora ou canal.
@@ -157,7 +160,7 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
 - Padrão de apresentação: **MVVM**. Cada tela tem um `ViewModel` (Kotlin puro,
   sem `Composable`, expõe `StateFlow`) e um `*Screen` (`@Composable` que observa o
   `ViewModel` e envia eventos). O formato do estado ainda varia: Configurações,
-  Marca e Backup têm um `UiState` único; os cadastros expõem a lista mais um
+  Marca, Backup e Dashboard (`DashboardUiState`) têm um `UiState` único; os cadastros expõem a lista mais um
   `FormState`; Orçamento e Pedidos expõem vários `StateFlow` separados, e o
   `QuoteScreen` dispara o cálculo durante a composição. O padrão pra telas novas
   está em [`composeApp/CLAUDE.md`](../composeApp/CLAUDE.md).
@@ -277,17 +280,17 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
       pra salvar sem perder a marca, e `availableOrSelected` (em
       `ui/components/Archive.kt`) pros seletores do Orçamento.
   - **Configurações** (`ui/settings`, decisão 112): uma lista de seções à
-    esquerda (`SettingsSection`: Negócio e custos, que inclui Moeda,
-    Canais, Documentos pro cliente, Aparência, Dados) mostra uma seção por
+    esquerda (`SettingsSection`: Negócio, Canais de venda,
+    Documentos pro cliente, Aparência, que inclui tema e moeda, e Backup) mostra uma seção por
     vez, com ~720dp de largura de leitura. Custos (`PricingSettings`) e
     "Documentos pro cliente" (`BrandingViewModel`: nome da marca, logo,
-    contato, marca d'água, rodapé, borda, tempo de impressão, prévia "Ver
-    como fica" e templates) são rascunho; no lugar dos dois botões "Salvar"
+    contato, marca d'água, rodapé, borda, tempo de impressão, fundo da imagem (`ImageBackground`), prévia "Ver
+    como fica" e modelos de orçamento, `Template` no código) são rascunho; no lugar dos dois botões "Salvar"
     separados, uma barra fixa embaixo ("Alterações não salvas" com
     "Descartar"/"Salvar") salva ou descarta os dois rascunhos juntos, e um
     erro pula pra seção dele. O rascunho sobrevive a trocar de seção ou de
     tela; a barra lateral mostra um pontinho em Configurações enquanto há
-    rascunho. Tema, moeda, canais e backup continuam aplicando na hora.
+    rascunho. Carregar um modelo só preenche o rascunho de Documentos (decisão 134). Tema, moeda, canais e backup continuam aplicando na hora.
   - **Sobre** (`ui/about/AboutScreen.kt`, decisão 111): substitui o rodapé
     fixo que ficava embaixo de toda aba (versão, autor, links pro GitHub e
     pro Buy Me a Coffee) e o diálogo de Ajuda: agora é uma tela com a
@@ -354,11 +357,24 @@ Formato e migrações:
   numa cópia e só então troca de lugar, guardando o original em
   `~/.3dreport-v<versão>`. Sem migração, ou de uma versão mais nova: a pasta é
   guardada inteira à parte e o app começa numa nova. O backup restaurado passa
-  pelas mesmas migrações.
+  pelas mesmas migrações. Ainda não há nenhuma.
+- Campo novo cujo padrão estaria errado no dado antigo é completado **na
+  leitura**, sem mudar a versão (o `upgrade` do `JsonDataFile`), e a versão
+  anterior continua abrindo o arquivo (`ignoreUnknownKeys`). Caso único até
+  agora: `SavedQuote.autoNamed` (2.2). O registro do `quotes.json` que vem sem
+  a chave é marcado se o nome é o automático da 2.1 ("Orçamento - 24/09/2026
+  14:30"); o que já tem a chave fica como está. Daí em diante o nome
+  automático vem de `strings.xml` e é reconhecido pelo campo, não pelo texto.
 - **Depois da tag 2.0.0, toda mudança incompatível no formato vem com
   migração e teste** (decisão 106).
 - O arquivo grava todos os campos (`encodeDefaults`), e os enums têm nome fixo
   em inglês no arquivo (`@SerialName`), separado do nome da constante.
+- Preferências deste computador ficam em `preferences.json` (`AppPreferences`):
+  backup automático, aviso de versão nova, posição da janela e a visualização
+  lembrada de Pedidos (`OrdersView`, kanban por padrão, decisão 129) e do
+  Catálogo (`CatalogView`, grade por padrão, decisão 132). Esses dois enums são
+  gravados pelo nome da constante e, se o arquivo trouxer um valor que a versão
+  não conhece, abrem no padrão em vez de pôr o arquivo de lado como ilegível.
 
 Outros:
 
@@ -388,7 +404,17 @@ Outros:
   com o motivo) e salvar devolve `SaveResult` (salvo com o caminho, cancelado
   ou falhou). No desktop é o `DesktopPlatform` (`java.awt.FileDialog`, decisão
   59, e `JFileChooser` só pra escolher pasta). G-code grande é lido só pelo
-  começo e pelo fim (8 MB), onde ficam os metadados.
+  começo e pelo fim (8 MB), onde ficam os metadados. Os títulos dos seletores do
+  sistema vêm de `strings.xml`: `DesktopPlatform.loadDialogTitles()` os lê uma vez, no
+  começo do `Main.kt`, e os diálogos só os usam.
+- **Falhas tipadas, texto na interface.** Quem falha devolve o motivo, e a tela
+  escolhe a frase em `strings.xml`: `PickFailure` (`UNREADABLE`, `TOO_LARGE`, dentro de
+  `PickResult.Failed`; texto em `ui/text/PickFailureText.kt`) e `RestoreFailure`
+  (dentro de `RestoreResult.Failure`; texto em `ui/settings/RestoreFailureText.kt`).
+- **`StartupTexts`** (`jvmMain`, `StartupTexts.kt`) guarda os textos dos diálogos de
+  antes do Compose (erro de inicialização, segunda instância, erro na janela, falha ao
+  gravar ao fechar). `StartupTexts.load` lê tudo uma vez no começo do `main`, na thread
+  principal, porque esses diálogos podem aparecer dentro de um tratador de erro.
 - Continuam como `expect`/`actual` as primitivas pequenas: `decodeImageBitmap`
   (Skia), datas (`java.time`), períodos, a barra de rolagem, arrastar arquivo e
   os exportadores.
@@ -399,6 +425,31 @@ Outros:
   quantidade × unitário, nome em até duas linhas e "Para" opcional (decisão
   108). Marca d'água e rodapé são desenhados **por cima de todo o conteúdo**
   (decisão 21). Gerar roda fora do thread da tela, com aviso de "Gerando PDF…".
+- O PDF e a imagem quadrada seguem o visual da decisão 137 e usam as fontes do app
+  (`ClientDocumentFonts`: Inter e `space_grotesk_bold_tnum.ttf`, o Space Grotesk fixado no
+  peso 700 com algarismos tabulares). O PDF não usa cor do app. Na imagem, o fundo vem de
+  `BrandingSettings.imageBackground`: em `AUTO`, `ImageBrightness` mede a luminância média
+  da foto e `ImageBackground.resolve` escolhe o tom (`ImageTone`) pelo limiar
+  `DARK_PIECE_LUMINANCE`. O modelo de orçamento não guarda o campo.
+- `DocumentColors` (`jvmMain/platform`) tem as cores do PDF e da imagem num ponto só,
+  derivadas do tema do app. `TemplateFill.kt` (`fillTemplate`) preenche os modelos
+  de `strings.xml` (`%1$s`, `%2$d`) fora da composição: os textos dos documentos, as
+  durações e os diálogos de inicialização usam essa função.
+- Os rótulos de `OrderStatus`, `QuoteKind`, `ThemeMode` e `PrintDifficulty` não ficam
+  no `core` (decisão 139): cada um tem uma função de rótulo em `composeApp` que lê
+  `strings.xml`.
+- Os textos do que vai pro cliente (PDF, catálogo, imagem quadrada e mensagem
+  do WhatsApp) moram em `strings.xml` (chaves `client_doc_`). Como o PDF e a
+  imagem são desenhados fora da tela, quem gera chama antes
+  `loadClientDocumentTexts(orçamentos)`, que lê os recursos e já resolve o
+  plural de "peças" pras quantidades usadas, e passa o `ClientDocumentTexts`
+  pros exportadores e pro `toCopyPasteText`.
+- Idioma dos formatos num ponto só: `platform/AppLocale.kt` tem a tag do
+  idioma (hoje `pt-BR`, fixa), os padrões de data e o separador decimal das
+  horas. `formatDate`, `formatShortDate`, `formatDateTime` e `weekdayName` leem
+  dele. As palavras de duração ("h", "min") vêm de `strings.xml`
+  (`duration_`), pelo `DurationTexts` (`durationTexts()` na tela,
+  `loadDurationTexts()` ou `ClientDocumentTexts.duration` fora dela).
 
 ### Workaround: janela em monitores com DPI diferentes
 `Main.kt` contorna um bug conhecido do Compose Desktop/Skiko (decisão 23):

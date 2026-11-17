@@ -1,383 +1,305 @@
 package com.threedreport.app.ui.filaments
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_archive
+import _3dreport.composeapp.generated.resources.common_delete
+import _3dreport.composeapp.generated.resources.common_edit
+import _3dreport.composeapp.generated.resources.common_optional
+import _3dreport.composeapp.generated.resources.common_restore
+import _3dreport.composeapp.generated.resources.filaments_action_add_color
+import _3dreport.composeapp.generated.resources.filaments_action_new
+import _3dreport.composeapp.generated.resources.filaments_action_remove_color
+import _3dreport.composeapp.generated.resources.filaments_color_block
+import _3dreport.composeapp.generated.resources.filaments_color_out_of_stock
+import _3dreport.composeapp.generated.resources.filaments_color_unnamed
+import _3dreport.composeapp.generated.resources.filaments_delete_message
+import _3dreport.composeapp.generated.resources.filaments_delete_title
+import _3dreport.composeapp.generated.resources.filaments_delete_what
+import _3dreport.composeapp.generated.resources.filaments_empty
+import _3dreport.composeapp.generated.resources.filaments_field_brand
+import _3dreport.composeapp.generated.resources.filaments_field_color_hex
+import _3dreport.composeapp.generated.resources.filaments_field_color_hex_hint
+import _3dreport.composeapp.generated.resources.filaments_field_color_name
+import _3dreport.composeapp.generated.resources.filaments_field_color_name_hint
+import _3dreport.composeapp.generated.resources.filaments_field_color_presets
+import _3dreport.composeapp.generated.resources.filaments_field_color_stock
+import _3dreport.composeapp.generated.resources.filaments_field_density
+import _3dreport.composeapp.generated.resources.filaments_field_diameter
+import _3dreport.composeapp.generated.resources.filaments_field_material
+import _3dreport.composeapp.generated.resources.filaments_field_material_custom
+import _3dreport.composeapp.generated.resources.filaments_field_name
+import _3dreport.composeapp.generated.resources.filaments_field_name_hint
+import _3dreport.composeapp.generated.resources.filaments_field_price
+import _3dreport.composeapp.generated.resources.filaments_form_edit
+import _3dreport.composeapp.generated.resources.filaments_form_new
+import _3dreport.composeapp.generated.resources.filaments_help_colors
+import _3dreport.composeapp.generated.resources.filaments_help_density
+import _3dreport.composeapp.generated.resources.filaments_help_density_varies
+import _3dreport.composeapp.generated.resources.filaments_in_stock
+import _3dreport.composeapp.generated.resources.filaments_material_custom_option
+import _3dreport.composeapp.generated.resources.filaments_out_of_stock
+import _3dreport.composeapp.generated.resources.filaments_row_out_of_stock
+import _3dreport.composeapp.generated.resources.filaments_row_price
+import _3dreport.composeapp.generated.resources.filaments_row_specs
+import _3dreport.composeapp.generated.resources.filaments_section_basics
+import _3dreport.composeapp.generated.resources.filaments_section_colors
+import _3dreport.composeapp.generated.resources.filaments_section_price
+import _3dreport.composeapp.generated.resources.filaments_title
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppChoiceField
+import com.threedreport.app.ui.components.AppDropdownField
+import com.threedreport.app.ui.components.AppSuggestField
+import com.threedreport.app.ui.components.AppSwatchField
+import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.ButtonKind
+import com.threedreport.app.ui.components.ColorChip
+import com.threedreport.app.ui.components.ColorSwatch
 import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
-import com.threedreport.app.ui.components.PresetChip
-import com.threedreport.app.ui.focus.tabToNavigate
+import com.threedreport.app.ui.components.FormBlock
+import com.threedreport.app.ui.components.FormPanel
+import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.ListRow
+import com.threedreport.app.ui.components.ListScreenLayout
+import com.threedreport.app.ui.components.ObserveNotices
+import com.threedreport.app.ui.components.PanelSection
+import com.threedreport.app.ui.components.RowAction
+import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.text.asString
+import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Filament
+import org.jetbrains.compose.resources.stringResource
 
-/** Tela de Filamentos: catálogo salvo, escolhido depois na tela de Orçamento. */
+/** Tela de Filamentos: catálogo salvo, escolhido depois na tela de Orçamento. Mesmo molde da tela de Insumos. */
 @Composable
 fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Modifier) {
-    val filaments by viewModel.filaments.collectAsState()
-    val form by viewModel.form.collectAsState()
-    var pendingDelete by remember { mutableStateOf<Filament?>(null) }
+    val state by viewModel.uiState.collectAsState()
+    ObserveNotices(viewModel.notices)
 
-    Column(
-        modifier = modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Filamentos", style = MaterialTheme.typography.titleLarge)
-
-        val (archived, active) = filaments.partition { it.archived }
-        if (active.isEmpty()) {
-            EmptyState("Nenhum filamento cadastrado ainda. Cadastre o primeiro abaixo.")
+    val form = state.form
+    val panel: (@Composable () -> Unit)? = form?.let { open ->
+        { FilamentFormPanel(open, viewModel) }
+    }
+    ListScreenLayout(panel = panel, modifier = modifier) {
+        ScreenHeader(stringResource(Res.string.filaments_title)) {
+            if (!state.isEmpty) {
+                AppButton(
+                    stringResource(Res.string.filaments_action_new),
+                    onClick = viewModel::startAdd,
+                    kind = if (form == null) ButtonKind.Primary else ButtonKind.Secondary,
+                    icon = AppIcons.Add,
+                )
+            }
         }
-
-        val row: @Composable (Filament) -> Unit = { filament ->
-            FilamentRow(
-                filament = filament,
-                onEdit = { viewModel.startEdit(filament) },
-                onArchiveToggle = { viewModel.setArchived(filament.id, !filament.archived) },
-                onDelete = { pendingDelete = filament },
-                onToggleColorInStock = { colorId -> viewModel.toggleColorInStock(filament.id, colorId) },
+        if (state.active.isEmpty()) {
+            EmptyState(
+                stringResource(Res.string.filaments_empty),
+                actionLabel = stringResource(Res.string.filaments_action_new).takeIf { state.isEmpty },
+                onAction = viewModel::startAdd.takeIf { state.isEmpty },
             )
         }
-        active.forEach { row(it) }
-        ArchivedSection(archived.size) { archived.forEach { row(it) } }
-
-        val currentForm = form
-        if (currentForm == null) {
-            Button(onClick = viewModel::startAdd) { Text("+ Novo filamento") }
-        } else {
-            HorizontalDivider()
-            FilamentForm(
-                form = currentForm,
-                onChange = viewModel::updateForm,
-                onAddColor = viewModel::addColorRow,
-                onRemoveColor = viewModel::removeColorRow,
-                onColorChange = viewModel::updateColorRow,
-                onSave = viewModel::save,
-                onCancel = viewModel::cancelEdit,
-            )
-        }
+        state.active.forEach { key(it.id) { FilamentRow(it, viewModel, selectedId = form?.id) } }
+        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { FilamentRow(it, viewModel, selectedId = form?.id) } } }
     }
 
-    pendingDelete?.let { filament ->
+    state.pendingDelete?.let { pending ->
         DeleteOrArchiveDialog(
-            title = "Excluir filamento?",
-            what = "o filamento \"${filament.name}\"",
-            usageCount = viewModel.usageCount(filament.id),
-            deleteMessage = "\"${filament.name}\" sai da lista de filamentos. Pedidos e produtos já salvos guardam o próprio " +
-                "retrato e não mudam, mas um produto feito com ele só volta a ter o preço atualizado depois de você " +
-                "escolher outro filamento em \"Editar cálculo\".",
-            onArchive = {
-                viewModel.setArchived(filament.id, true)
-                pendingDelete = null
-            }.takeUnless { filament.archived },
-            onDelete = {
-                viewModel.delete(filament.id)
-                pendingDelete = null
-            },
-            onDismiss = { pendingDelete = null },
+            title = stringResource(Res.string.filaments_delete_title),
+            what = stringResource(Res.string.filaments_delete_what, pending.name),
+            usageCount = pending.usageCount,
+            deleteMessage = stringResource(Res.string.filaments_delete_message, pending.name),
+            onArchive = { viewModel.setArchived(pending.id, true) }.takeIf { pending.canArchive },
+            onDelete = { viewModel.delete(pending.id) },
+            onDismiss = viewModel::dismissDelete,
         )
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FilamentRow(
-    filament: Filament,
-    onEdit: () -> Unit,
-    onArchiveToggle: () -> Unit,
-    onDelete: () -> Unit,
-    onToggleColorInStock: (String) -> Unit,
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text(
-                        filament.name + when {
-                            filament.archived -> " · arquivado"
-                            filament.hasStockAvailable -> ""
-                            else -> " · esgotado"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        buildString {
-                            filament.materialType?.let { append("$it · ") }
-                            append("${filament.pricePerKg.toMoney()}/kg · ${filament.densityGPerCm3.toInputText()} g/cm³")
-                            filament.brand?.let { append(" · $it") }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                Row {
-                    TextButton(onClick = onEdit) { Text("Editar") }
-                    TextButton(onClick = onArchiveToggle) { Text(if (filament.archived) "Restaurar" else "Arquivar") }
-                    TextButton(onClick = onDelete) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
-                }
-            }
-
-            // Estoque é um controle com rótulo (decisão 108): antes era um clique escondido no chip da cor, e
-            // o card inteiro ficava apagado, parecendo desabilitado.
-            Text(
-                "Cores em estoque (clique numa cor pra marcar que acabou ou que chegou):",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                filament.colors.forEach { color ->
-                    ColorChip(
-                        label = color.displayLabel(),
-                        hex = color.hex,
-                        inStock = color.inStock,
-                        onClick = { onToggleColorInStock(color.id) },
-                    )
-                }
-            }
-        }
+private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, selectedId: String?) {
+    val archiveOrRestore = if (filament.archived) {
+        RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(filament.id, false) })
+    } else {
+        RowAction(AppIcons.Archive, stringResource(Res.string.common_archive), { viewModel.setArchived(filament.id, true) })
     }
-}
-
-@Composable
-private fun ColorChip(label: String, hex: String?, inStock: Boolean, onClick: () -> Unit) {
-    FilterChip(
-        selected = inStock,
-        onClick = onClick,
-        label = { Text(if (inStock) label else "$label (acabou)") },
-        leadingIcon = { parseHexColor(hex)?.let { ColorSwatch(color = it, size = 14.dp) } },
-        modifier = Modifier.alpha(if (inStock) 1f else 0.6f),
-    )
-}
-
-@Composable
-private fun ColorSwatch(color: Color, size: Dp, selected: Boolean = false, onClick: (() -> Unit)? = null) {
-    Box(
-        modifier = Modifier
-            .size(size)
-            .background(color, CircleShape)
-            .border(if (selected) 2.dp else 1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it },
-    )
-}
-
-@Composable
-private fun FilamentForm(
-    form: FilamentFormState,
-    onChange: ((FilamentFormState) -> FilamentFormState) -> Unit,
-    onAddColor: () -> Unit,
-    onRemoveColor: (String) -> Unit,
-    onColorChange: (String, (FilamentColorFormState) -> FilamentColorFormState) -> Unit,
-    onSave: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(if (form.id == null) "Novo filamento" else "Editar filamento", style = MaterialTheme.typography.titleMedium)
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.name,
-            onValueChange = { text -> onChange { it.copy(name = text) } },
-            label = { Text("Nome") },
-        )
-
-        Text("Tipo de material (opcional)", style = MaterialTheme.typography.bodySmall)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            FILAMENT_MATERIAL_TYPE_PRESETS.forEach { preset ->
-                PresetChip(
-                    label = preset.label,
-                    selected = !form.isCustomMaterialType && form.materialType == preset.label,
-                    onClick = {
-                        onChange {
-                            it.copy(
-                                materialType = preset.label,
-                                isCustomMaterialType = false,
-                                densityGPerCm3Text = preset.defaultDensityGPerCm3?.toInputText() ?: it.densityGPerCm3Text,
+    val separator = LocalCurrency.current.decimalSeparator
+    val unnamed = stringResource(Res.string.filaments_color_unnamed)
+    val outOfStock = stringResource(Res.string.filaments_color_out_of_stock)
+    ListRow(
+        title = filament.name,
+        details = listOfNotNull(
+            stringResource(Res.string.filaments_row_specs, filament.densityGPerCm3.toInputText(separator), filament.diameterMm.toInputText(separator)),
+            stringResource(Res.string.filaments_row_out_of_stock).takeIf { !filament.archived && !filament.hasStockAvailable },
+        ),
+        value = stringResource(Res.string.filaments_row_price, filament.pricePerKg.toMoney()),
+        muted = filament.archived,
+        selected = selectedId == filament.id,
+        onClick = { viewModel.startEdit(filament.id) },
+        actions = listOf(
+            RowAction(AppIcons.Edit, stringResource(Res.string.common_edit), { viewModel.startEdit(filament.id) }),
+            archiveOrRestore,
+            RowAction(AppIcons.Delete, stringResource(Res.string.common_delete), { viewModel.requestDelete(filament.id) }, danger = true),
+        ),
+        // Uma cor só, sem nome e em estoque não diz nada: o selo some e a linha fica mais baixa.
+        footer = if (filament.colors.size == 1 && filament.colors[0].let { it.labelOrNull() == null && it.inStock }) {
+            null
+        } else {
+            {
+                FlowRow(
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.xs),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
+                ) {
+                    filament.colors.forEach { color ->
+                        key(color.id) {
+                            ColorChip(
+                                label = color.labelOrNull() ?: unnamed,
+                                color = parseHexColor(color.hex),
+                                inStock = color.inStock,
+                                outOfStockLabel = outOfStock,
+                                onToggle = { viewModel.toggleColorInStock(filament.id, color.id) },
+                                onSelectedRow = selectedId == filament.id,
                             )
                         }
-                    },
-                )
-            }
-            PresetChip(
-                label = CUSTOM_MATERIAL_TYPE_LABEL,
-                selected = form.isCustomMaterialType,
-                onClick = { onChange { it.copy(materialType = "", isCustomMaterialType = true) } },
-            )
-        }
-        if (form.isCustomMaterialType) {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().tabToNavigate(),
-                value = form.materialType,
-                onValueChange = { text -> onChange { it.copy(materialType = text) } },
-                label = { Text("Nome do tipo personalizado") },
-            )
-        }
-        FILAMENT_MATERIAL_TYPE_PRESETS.find { it.label == form.materialType && it.defaultDensityGPerCm3 == null }?.let {
-            Text(
-                "Densidade varia bastante conforme o fabricante e o % de carga nesse tipo — confira a ficha " +
-                    "técnica do rolo e ajuste o campo abaixo.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.pricePerKgText,
-            onValueChange = { text -> onChange { it.copy(pricePerKgText = text) } },
-            label = { Text("Preço por kg (${LocalCurrency.current.symbol})") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.densityGPerCm3Text,
-            onValueChange = { text -> onChange { it.copy(densityGPerCm3Text = text) } },
-            label = { Text("Densidade (g/cm³)") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.diameterMmText,
-            onValueChange = { text -> onChange { it.copy(diameterMmText = text) } },
-            label = { Text("Diâmetro (mm)") },
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().tabToNavigate(),
-            value = form.brand,
-            onValueChange = { text -> onChange { it.copy(brand = text) } },
-            label = { Text("Marca (opcional)") },
-        )
-        Text("Marcas conhecidas:", style = MaterialTheme.typography.bodySmall)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            (FILAMENT_BRAND_PRESETS_INTERNATIONAL + FILAMENT_BRAND_PRESETS_BRAZIL).forEach { brand ->
-                PresetChip(
-                    label = brand,
-                    selected = form.brand == brand,
-                    onClick = { onChange { it.copy(brand = brand) } },
-                )
-            }
-        }
-
-        HorizontalDivider()
-
-        Text("Cores", style = MaterialTheme.typography.titleSmall)
-        Text(
-            "Cadastre mais de uma cor pra esse mesmo filamento (mesma marca/preço) em vez de duplicar o " +
-                "cadastro — cada cor tem seu próprio controle de estoque.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-
-        form.colors.forEach { colorForm ->
-            ColorRowEditor(
-                colorForm = colorForm,
-                canRemove = form.colors.size > 1,
-                onChange = { transform -> onColorChange(colorForm.id, transform) },
-                onRemove = { onRemoveColor(colorForm.id) },
-            )
-        }
-        TextButton(onClick = onAddColor) { Text("+ Adicionar cor") }
-
-        form.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onSave) { Text("Salvar") }
-            TextButton(onClick = onCancel) { Text("Cancelar") }
-        }
-    }
-}
-
-@Composable
-private fun ColorRowEditor(
-    colorForm: FilamentColorFormState,
-    canRemove: Boolean,
-    onChange: ((FilamentColorFormState) -> FilamentColorFormState) -> Unit,
-    onRemove: () -> Unit,
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    modifier = Modifier.weight(1f).tabToNavigate(),
-                    value = colorForm.name,
-                    onValueChange = { text -> onChange { it.copy(name = text) } },
-                    label = { Text("Nome da cor (opcional, ex.: Vermelho Fosco)") },
-                )
-                if (canRemove) {
-                    TextButton(onClick = onRemove) { Text("Remover", color = MaterialTheme.colorScheme.error) }
-                }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    modifier = Modifier.weight(1f).tabToNavigate(),
-                    value = colorForm.hex.orEmpty(),
-                    onValueChange = { text -> onChange { it.copy(hex = text.ifBlank { null }) } },
-                    label = { Text("Cor personalizada (hex, opcional, ex.: #E53935)") },
-                )
-                val previewColor = parseHexColor(colorForm.hex)
-                ColorSwatch(color = previewColor ?: MaterialTheme.colorScheme.surfaceVariant, size = 32.dp)
-            }
-
-            Text("Ou escolha uma cor pronta:", style = MaterialTheme.typography.bodySmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FILAMENT_COLOR_PRESETS.forEach { (label, hex) ->
-                    parseHexColor(hex)?.let { color ->
-                        ColorSwatch(
-                            color = color,
-                            size = 28.dp,
-                            selected = colorForm.hex == hex,
-                            onClick = {
-                                onChange { it.copy(hex = hex, name = it.name.ifBlank { label }) }
-                            },
-                        )
                     }
                 }
             }
+        },
+    )
+}
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Switch(checked = colorForm.inStock, onCheckedChange = { checked -> onChange { it.copy(inStock = checked) } })
-                Text(if (colorForm.inStock) "Em estoque" else "Acabou")
+@Composable
+private fun FilamentFormPanel(form: FilamentFormState, viewModel: FilamentListViewModel) {
+    val symbol = LocalCurrency.current.symbol
+    FormPanel(
+        title = stringResource(if (form.id == null) Res.string.filaments_form_new else Res.string.filaments_form_edit),
+        onSave = viewModel::save,
+        onCancel = viewModel::cancelEdit,
+    ) {
+        PanelSection(1, stringResource(Res.string.filaments_section_basics)) {
+            AppTextField(
+                label = stringResource(Res.string.filaments_field_name),
+                value = form.name,
+                onValueChange = { text -> viewModel.updateForm { it.copy(name = text) } },
+                placeholder = stringResource(Res.string.filaments_field_name_hint),
+                error = form.nameError?.asString(),
+            )
+            val customOption = stringResource(Res.string.filaments_material_custom_option)
+            AppDropdownField(
+                label = stringResource(Res.string.filaments_field_material),
+                items = MATERIAL_OPTIONS,
+                selected = form.materialOption,
+                itemLabel = { option -> if (option is MaterialOption.Preset) option.preset.label else customOption },
+                displayText = { option -> if (option is MaterialOption.Preset) option.preset.label else customOption },
+                onSelect = { option -> viewModel.chooseMaterialType((option as? MaterialOption.Preset)?.preset) },
+                emptyText = stringResource(Res.string.common_optional),
+            )
+            if (form.isCustomMaterialType) {
+                AppTextField(
+                    label = stringResource(Res.string.filaments_field_material_custom),
+                    value = form.materialType,
+                    onValueChange = { text -> viewModel.updateForm { it.copy(materialType = text) } },
+                )
             }
+            AppSuggestField(
+                label = stringResource(Res.string.filaments_field_brand),
+                value = form.brand,
+                onValueChange = { text -> viewModel.updateForm { it.copy(brand = text) } },
+                suggestions = form.brandSuggestions,
+                suggestionLabel = { it },
+                onChoose = { brand -> viewModel.updateForm { it.copy(brand = brand) } },
+                placeholder = stringResource(Res.string.common_optional),
+            )
         }
+        PanelSection(2, stringResource(Res.string.filaments_section_price)) {
+            AppTextField(
+                label = stringResource(Res.string.filaments_field_price, symbol),
+                value = form.pricePerKgText,
+                onValueChange = { text -> viewModel.updateForm { it.copy(pricePerKgText = text) } },
+                error = form.priceError?.asString(),
+            )
+            AppTextField(
+                label = stringResource(Res.string.filaments_field_density),
+                value = form.densityGPerCm3Text,
+                onValueChange = { text -> viewModel.updateForm { it.copy(densityGPerCm3Text = text) } },
+                error = form.densityError?.asString(),
+                help = HelpText(
+                    stringResource(if (form.densityNeedsCheck) Res.string.filaments_help_density_varies else Res.string.filaments_help_density),
+                    warning = form.densityNeedsCheck,
+                ),
+            )
+            AppTextField(
+                label = stringResource(Res.string.filaments_field_diameter),
+                value = form.diameterMmText,
+                onValueChange = { text -> viewModel.updateForm { it.copy(diameterMmText = text) } },
+                error = form.diameterError?.asString(),
+            )
+        }
+        PanelSection(3, stringResource(Res.string.filaments_section_colors), help = HelpText(stringResource(Res.string.filaments_help_colors))) {
+            form.colors.forEachIndexed { index, colorForm ->
+                key(colorForm.id) {
+                    ColorBlock(index + 1, colorForm, canRemove = form.colors.size > 1, viewModel = viewModel)
+                }
+            }
+            AppButton(stringResource(Res.string.filaments_action_add_color), viewModel::addColorRow, icon = AppIcons.Add)
+        }
+    }
+}
+
+@Composable
+private fun ColorBlock(number: Int, colorForm: FilamentColorFormState, canRemove: Boolean, viewModel: FilamentListViewModel) {
+    val presetNames = FILAMENT_COLOR_PRESETS.associate { it.hex to stringResource(it.name) }
+    FormBlock(
+        title = stringResource(Res.string.filaments_color_block, number),
+        action = RowAction(
+            AppIcons.Delete,
+            stringResource(Res.string.filaments_action_remove_color),
+            { viewModel.removeColorRow(colorForm.id) },
+            danger = true,
+        ).takeIf { canRemove },
+    ) {
+        AppTextField(
+            label = stringResource(Res.string.filaments_field_color_name),
+            value = colorForm.name,
+            onValueChange = { text -> viewModel.updateColorRow(colorForm.id) { it.copy(name = text) } },
+            placeholder = stringResource(Res.string.filaments_field_color_name_hint),
+        )
+        AppTextField(
+            label = stringResource(Res.string.filaments_field_color_hex),
+            value = colorForm.hex.orEmpty(),
+            onValueChange = { text -> viewModel.updateColorRow(colorForm.id) { it.copy(hex = text.ifBlank { null }) } },
+            placeholder = stringResource(Res.string.filaments_field_color_hex_hint),
+            trailing = { ColorSwatch(parseHexColor(colorForm.hex)) },
+        )
+        AppSwatchField(
+            label = stringResource(Res.string.filaments_field_color_presets),
+            options = FILAMENT_COLOR_PRESETS,
+            optionLabel = { presetNames.getValue(it.hex) },
+            optionColor = { it.color },
+            isSelected = { it.hex == colorForm.hex },
+            onSelect = { preset -> viewModel.applyColorPreset(colorForm.id, presetNames.getValue(preset.hex), preset.hex) },
+        )
+        AppChoiceField(
+            label = stringResource(Res.string.filaments_field_color_stock),
+            options = listOf(stringResource(Res.string.filaments_in_stock), stringResource(Res.string.filaments_out_of_stock)),
+            selectedIndex = if (colorForm.inStock) 0 else 1,
+            onSelect = { index -> viewModel.updateColorRow(colorForm.id) { it.copy(inStock = index == 0) } },
+        )
     }
 }

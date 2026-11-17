@@ -22,10 +22,15 @@ object Seeds {
         Filament(id = Uuid.random().toString(), name = "PETG", pricePerKg = 110.0, densityGPerCm3 = 1.27, materialType = "PETG"),
     )
 
-    fun printers(): List<PrinterProfile> = listOf(
+    /**
+     * A impressora de exemplo. O nome é texto que a pessoa lê e edita, então vem de recurso (`seed_printer_name`) e é
+     * gravado em disco na primeira abertura, no idioma de então; quem já tem dados não é afetado. Os nomes dos
+     * filamentos de [filaments] são nomes de material (PLA, ABS, PETG), iguais em qualquer idioma.
+     */
+    fun printers(name: String): List<PrinterProfile> = listOf(
         PrinterProfile(
             id = Uuid.random().toString(),
-            name = "Minha impressora",
+            name = name,
             printerPowerWatts = 380.0,
             maintenanceCostPerHour = 0.17,
             machineInvestment = MachineInvestment(

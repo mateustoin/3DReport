@@ -6,11 +6,14 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.math.sin
 
-/** Nível de dificuldade de impressão sugerido pra peça, calculado a partir de heurísticas da malha. */
-enum class PrintDifficulty(val label: String) {
-    FACIL("Fácil"),
-    MEDIO("Médio"),
-    DIFICIL("Difícil"),
+/**
+ * Nível de dificuldade de impressão sugerido pra peça, calculado a partir de heurísticas da malha. Sem texto: a
+ * interface escolhe o rótulo (`labelRes()` no `composeApp`).
+ */
+enum class PrintDifficulty {
+    FACIL,
+    MEDIO,
+    DIFICIL,
 }
 
 /**

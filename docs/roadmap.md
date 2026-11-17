@@ -82,7 +82,7 @@ Quando dois itens mexem no mesmo lugar, entram na mesma leva, pelo motivo da Lev
 - Campo novo nasce neutro (zero ou desligado): atualizar o app não muda o preço de
   ninguém em silêncio, e pedido salvo continua congelado.
 
-**Resumo da ordem:** preço certo → textos prontos pra tradução → receber e
+**Resumo da ordem:** preço certo → nova interface e textos prontos pra tradução → receber e
 conversar → inglês → estoque → dinheiro → cliente → produção → oferta e pronta-entrega → chegar e ficar → conectado sem custo
 (D1, depois D2) → apostas locais → Android e sincronização sem servidor → servidor →
 depois do servidor.
@@ -138,7 +138,34 @@ junto.
   bandeira escolhido nas Configurações. Visto em: 3D Prime (tarifa da ANEEL por
   estado), ha-bambu-costs (tarifa por horário). Esforço P, impacto B.
 
-### Leva 10B: Textos prontos pra tradução (idioma, fase A)
+### Leva 10B: Nova interface e textos prontos pra tradução (idioma, fase A) (quase feita, decisões 127 a 140)
+
+**Revisão de 2026-11-14.** A leva ganhou a nova interface (decisões 127 a 129) e uma
+fundação de arquitetura, e deixou de ser "nada muda pro usuário". Os dois trabalhos
+mexem nos mesmos arquivos de tela, então cada tela é reescrita uma vez só: já com o
+visual novo, no padrão de estado novo e com os textos em recursos. A ordem é:
+fundação, sistema de design, e depois as telas em grupos.
+
+- [x] **Fundação de arquitetura.** **Feito (decisão 130, 2026-11-14).** Formatação e análise automáticas (ktlint) e
+  cobertura (Kover) no CI; a release passa a rodar os testes e a conferir a tag
+  contra a versão. Registro de telas no lugar dos `when` de `App.kt`, com cada
+  ViewModel criado na primeira visita. Regras de preço que hoje estão em
+  `QuoteViewModel.calculate` vão pro `core`, e o `core` passa a identificar erro por
+  tipo, sem frase (pré-requisito da tradução). Um padrão único de estado pra tela
+  nova. Sem mudança visível. O registro de telas foi descartado na decisão 130 (fica o `enum` com um `when`).
+- [x] **Sistema de design** ([design-system.md](design-system.md), decisão 127). **Feito (decisão 127, 2026-11-14).**
+  Tema com tipografia, formas, espaçamento e as fontes embutidas (Inter e Space
+  Grotesk), e o kit de componentes em `ui/components/` no lugar das reimplementações de
+  hoje (cinco wrappers de campo, quatro tratamentos de card, três barras de rodapé).
+- [x] **Telas na nova interface** **Feito (decisões 131 a 135, 2026-11-16).** Em grupos: moldura e barra lateral; os quatro
+  cadastros; Orçamento (dividindo `QuoteScreen.kt`); Pedidos e Catálogo, com a
+  visualização lembrada (decisão 129); Dashboard, Configurações e Sobre. O PDF e a
+  imagem exportados vieram na decisão 137.
+- [x] **Ícone novo** (decisão 128) no instalador, na janela e no site. **Feito (decisão 138, 2026-11-16).**
+- [ ] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`, e o
+  site com elas (decisão 140). Falta gerar as capturas novas e trocá-las no site e no README.
+
+O que segue é o texto original da leva, que continua valendo pros textos.
 
 Primeira metade do item *(já no roadmap)* "Idioma da interface configurável"
 (seção UX extras), avaliado em 2026-09-28 a pedido do responsável do projeto: a
@@ -149,28 +176,84 @@ evita refazer o trabalho em cima de umas 1.500 frases em vez das cerca de 1.050 
 hoje. Pode sair junto da 2.2 ou numa versão só dela. Trabalho quase todo
 mecânico, bom pra subagentes com revisão.
 
-- [ ] **Textos em recursos.** As cerca de 1.050 frases escritas direto no código,
-  em uns 140 arquivos (as que mais têm: Orçamento, Configurações e Pedidos), vão
+- [x] **Textos em recursos.** **Feito (decisão 139, 2026-11-17).** As cerca de 1.050 frases escritas direto no código,
+  em uns 140 arquivos (as que mais têm: Orçamento, Configurações e Pedidos), foram
   pra arquivos de texto do Compose (`composeResources`, com `stringResource`), só
   em português por enquanto. Plurais ("3 impressões") como plurais de verdade.
-- [ ] **Mensagens dos ViewModels como chave e valores.** Avisos e mensagens montados
+  Continuam como literal de propósito: mensagens de programador (`require`, `error`, logs),
+  o padrão antigo do nome automático (`LegacyAutoName`, que reconhece pedidos gravados antes),
+  nomes de marca e de material ("3DReport", "WhatsApp", "PLA", "ABS", "PETG", o "Report" do
+  `BrandMark`), o cabeçalho técnico do texto de erro copiado pra issue e os nomes de pasta
+  do sistema ("Documents" e "Documentos").
+- [x] **Mensagens dos ViewModels como chave e valores.** **Feito (decisões 131 a 139, 2026-11-16).** Avisos e mensagens montados
   fora das telas (`QuoteHistoryViewModel`, `QuoteViewModel` e outros) passam a
   levar a chave do texto e os valores, e a tela é que traduz, porque o
   `stringResource` só existe dentro da tela.
-- [ ] **Rótulos fora do `core`.** `OrderStatus`, `QuoteKind` e `ThemeMode` carregam
+- [x] **Rótulos fora do `core`.** **Feito (decisão 139, 2026-11-16).** `OrderStatus`, `QuoteKind` e `ThemeMode` carregam
   o texto em português (`OrderStatus("Orçado")`); o rótulo passa pra interface, e
   o `core` fica sem texto de tela.
-- [ ] **Nome automático do pedido sem depender do idioma.** O pedido sem nome ganha
+- [x] **Nome automático do pedido sem depender do idioma.** **Feito (decisão 139, 2026-11-16).** O pedido sem nome ganha
   o prefixo `"Orçamento - "` (`SavedQuote.AUTO_NAME_PREFIX`) e é reconhecido por uma
   expressão regular sobre esse texto, que quebraria em outro idioma. Vira uma marca
-  no registro, com migração e teste (regra da decisão 106).
-- [ ] **PDF, mensagem e imagem com textos em recursos**, pelo mesmo mecanismo (fora
+  no registro (`SavedQuote.autoNamed`), com marca na leitura e teste. O formato da pasta
+  ficou em 2 (decisão 139).
+- [x] **PDF, mensagem e imagem com textos em recursos** **Feito (decisões 137 e 139, 2026-11-16),** pelo mesmo mecanismo (fora
   da tela, lendo o recurso diretamente).
-- [ ] **Datas e números pelo idioma.** `DateFormat.jvm.kt` usa `pt-BR` fixo, e a
+- [x] **Datas e números pelo idioma.** **Feito (decisão 139, 2026-11-16).** `DateFormat.jvm.kt` usa `pt-BR` fixo, e a
   entrada numérica (`DecimalInput`) supõe que "2.700" é dois mil e setecentos.
   Passam a seguir o idioma escolhido (na fase A, continua pt-BR).
 
 Esforço G (somando as duas fases), impacto A no alcance (ver Leva 11B).
+
+### Leva 10C: Arquivo do modelo (3MF e STL pesado) e atualização por dentro
+
+**Incluída em 2026-11-16, a pedido do responsável do projeto.** Quem vende a mesma
+peça de novo não quer perder o arquivo que usou. Hoje o app guarda o STL, mas não o
+`.3mf` do fatiador, que traz a mesa inteira já configurada. E um STL acima de 500 mil
+triângulos fica sem prévia (decisão 63). Tudo aqui roda local. **Fica pra versão
+seguinte à 2.2:** a 2.2 fecha com a Leva 10B, e esta leva abre a próxima. O escopo é
+confirmado na especificação da leva.
+
+- [ ] **Guardar o `.3mf` do projeto do fatiador** *(já no roadmap: seção
+  Visualização e análise de STL, "Evolução futura")*. O campo "arquivo do modelo" do
+  orçamento e do produto aceita STL ou 3MF, guarda o arquivo como veio e deixa
+  baixar de volta em Pedidos e no Catálogo. Uso só interno, como o STL. O que já
+  está gravado continua abrindo (teste de compatibilidade). Esforço P, impacto M.
+- [ ] **Foto a partir do 3MF.** O `.3mf` do Bambu Studio, do OrcaSlicer e do
+  PrusaSlicer já traz a miniatura da mesa. Ela vira uma das origens da foto do
+  produto, junto com a miniatura do G-code, a imagem enviada e a captura do 3D.
+  Pede leitura de ZIP no `core`, a mesma do item "Ler o `.gcode.3mf`" da Leva 17.
+  Esforço P/M, impacto M.
+- [ ] **Prévia de STL pesado.** Em vez de recusar acima de 500 mil triângulos, o
+  app monta uma versão simplificada só pra desenhar (agrupando vértices próximos
+  numa grade, lendo o arquivo aos poucos e fora da thread da tela, com indicação de
+  progresso). O arquivo guardado continua o original, e as medidas e o nível de
+  dificuldade continuam saindo da malha completa. Com a prévia, a captura do 3D
+  como foto passa a valer pra qualquer STL. Esforço M, impacto M.
+- [ ] **Ver o 3MF em 3D** (opcional, decidir na especificação). Ler a malha do
+  `.3mf` pra mostrar no visualizador, com a mesma simplificação. Sem isso, o 3MF
+  fica só com a miniatura. Esforço M, impacto B.
+- [ ] **Atualizar o app por dentro.** *Ideia do responsável do projeto, 2026-11-14;
+  precisa de decisão própria antes de implementar. Saiu da Leva 10B em 2026-11-16: fica
+  pra versão seguinte à 2.2, junto com esta leva.* Hoje o app só avisa que saiu
+  versão nova e abre a página (decisão 116). A proposta é um botão "Atualizar agora"
+  que baixa o instalador do sistema, confere a integridade, abre a instalação e
+  fecha o app. Sobra uma confirmação de administrador no Windows e um pedido de
+  senha no Linux; no macOS depende de teste, porque o app não é assinado.
+  Atualização silenciosa em segundo plano fica de fora: exige assinatura de código,
+  que é paga (decisão 15). **Conectado:** só baixa quando a pessoa clica, e continua
+  desligado por padrão. Só vale a partir da versão seguinte à que trouxer o
+  mecanismo. Esforço M, impacto M.
+
+- [ ] **Ajustes técnicos guardados no fechamento da 2.2** (pedido do responsável do projeto,
+  2026-11-17). Nada muda pra quem usa; cada um é pequeno:
+  - o "3D" do `BrandMark` usa branco puro, e o banner do site usa `onNavy`: alinhar os dois no
+    token `onNavy`;
+  - a regra que sugere entrega urgente com prazo de 0 a 2 dias mora em `QuoteSaleSection`
+    (tela): passa pro `QuoteViewModel` ou pro `core`, com teste;
+  - `MaintenanceDialog` lê a data do computador direto (`todayEpochDay()`): passa a receber o
+    dia injetado, como o Orçamento desde a 2.2;
+  - `FieldHelp` não é usado em lugar nenhum: remover do kit e do sistema de design.
 
 ### Leva 11: Receber e conversar com o cliente
 
@@ -520,8 +603,6 @@ servidor do projeto. A credencial de publicação fica no cofre da Leva 18.
   calculadora do site, decisão 98), com a tabela de preço do vendedor publicada
   pela Leva 19. Virar pedido a partir dali exige servidor (Leva 22). Visto em:
   Layers, DigiFabster, PrintQuote (Shopify), Craftcloud. Esforço G, impacto M.
-- [ ] **Guardar o `.3mf` do projeto do fatiador** *(já no roadmap: seção
-  Visualização e análise de STL, "Evolução futura")*.
 - [ ] **Imagens das impressoras** e **marcas brasileiras nos presets** *(já no
   roadmap: seção Presets de cadastro)*.
 

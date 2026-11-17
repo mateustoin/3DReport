@@ -52,7 +52,7 @@ class QuoteLeva10Test {
         setPrintTimeMinutes("190")
     }
 
-    private fun QuoteViewModel.quote() = assertNotNull(currentResult().quote, currentResult().fieldErrors.toString())
+    private fun QuoteViewModel.quote() = assertNotNull(uiState.value.result.quote, uiState.value.result.fieldErrors.toString())
 
     @Test
     fun aConsumableEntersTheCostWithTodaysCatalogPrice() {
@@ -75,7 +75,7 @@ class QuoteLeva10Test {
         vm.toggleConsumable("argola")
         vm.setConsumableQuantity("argola", "0")
 
-        val result = vm.currentResult()
+        val result = vm.uiState.value.result
         assertNull(result.quote)
         assertTrue(QuoteFields.consumable("argola") in result.fieldErrors)
     }
@@ -97,9 +97,9 @@ class QuoteLeva10Test {
     fun freeShippingStaysOutOfTheCustomerTotalAndIsSaved() {
         val vm = viewModel()
         vm.setShippingCost("18")
-        val charged = vm.currentResult()
+        val charged = vm.uiState.value.result
         vm.setShippingAbsorbed(true)
-        val free = vm.currentResult()
+        val free = vm.uiState.value.result
         val quote = assertNotNull(free.quote)
 
         assertEquals(assertNotNull(charged.grandTotal) - 18.0, assertNotNull(free.grandTotal), 1e-9)
@@ -122,7 +122,7 @@ class QuoteLeva10Test {
 
         vm.useShippingCoveringPrice()
 
-        assertTrue(vm.input.value.targetTotalText.isNotBlank())
+        assertTrue(vm.uiState.value.input.targetTotalText.isNotBlank())
         assertEquals(tableProfit, vm.quote().profit, 0.01)
     }
 
@@ -133,7 +133,7 @@ class QuoteLeva10Test {
         val vm = viewModel()
         vm.toggleService("paint")
 
-        val input = assertNotNull(vm.input.value.selectedServices["paint"])
+        val input = assertNotNull(vm.uiState.value.input.selectedServices["paint"])
         assertEquals("15", input.priceText)
         assertEquals("30", input.laborMinutesText)
         val quote = vm.quote()
@@ -160,11 +160,11 @@ class QuoteLeva10Test {
         val editor = viewModel()
         editor.loadForEditing(saved)
 
-        val input = editor.input.value
+        val input = editor.uiState.value.input
         assertTrue(input.rush)
         assertTrue(input.shippingAbsorbed)
         assertEquals("1", input.selectedConsumables["caixa"]?.quantityText)
-        val reopened = editor.currentResult()
+        val reopened = editor.uiState.value.result
         assertTrue(reopened.keepsOriginalPrice)
         assertEquals(saved.quote, reopened.quote)
         // O custo de hoje aparece só como "sairia R$ X hoje".

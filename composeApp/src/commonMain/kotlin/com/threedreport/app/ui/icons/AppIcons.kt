@@ -74,14 +74,32 @@ object AppIcons {
     /** `account_balance` */
     val AccountBalance: ImageVector by lazy { symbol("account_balance", "M200-280v-280h80v280h-80Zm240 0v-280h80v280h-80ZM80-120v-80h800v80H80Zm600-160v-280h80v280h-80ZM80-640v-80l400-200 400 200v80H80Zm178-80h444-444Zm0 0h444L480-830 258-720Z") }
 
+    /** `add` */
+    val Add: ImageVector by lazy { symbol("add", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z") }
+
+    /** `expand_more` */
+    val ExpandMore: ImageVector by lazy { symbol("expand_more", "M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z") }
+
+    /** `expand_less` */
+    val ExpandLess: ImageVector by lazy { symbol("expand_less", "m296-345-56-56 240-240 240 240-56 56-184-184-184 184Z") }
+
     /** `add_photo_alternate` */
     val AddPhotoAlternate: ImageVector by lazy { symbol("add_photo_alternate", "M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h360v80H200v560h560v-360h80v360q0 33-23.5 56.5T760-120H200Zm480-480v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM240-280h480L570-480 450-320l-90-120-120 160Zm-40-480v560-560Z") }
+
+    /** `archive` */
+    val Archive: ImageVector by lazy { symbol("archive", "m480-240 160-160-56-56-64 64v-168h-80v168l-64-64-56 56 160 160ZM200-640v440h560v-440H200Zm0 520q-33 0-56.5-23.5T120-200v-499q0-14 4.5-27t13.5-24l50-61q11-14 27.5-21.5T250-840h460q18 0 34.5 7.5T772-811l50 61q9 11 13.5 24t4.5 27v499q0 33-23.5 56.5T760-120H200Zm16-600h528l-34-40H250l-34 40Zm264 300Z") }
+
+    /** `unarchive` */
+    val Unarchive: ImageVector by lazy { symbol("unarchive", "m480-560-160 160 56 56 64-64v168h80v-168l64 64 56-56-160-160ZM200-640v440h560v-440H200Zm0 520q-33 0-56.5-23.5T120-200v-499q0-14 4.5-27t13.5-24l50-61q11-14 27.5-21.5T250-840h460q18 0 34.5 7.5T772-811l50 61q9 11 13.5 24t4.5 27v499q0 33-23.5 56.5T760-120H200Zm16-600h528l-34-40H250l-34 40Zm264 300Z") }
 
     /** `badge` */
     val Badge: ImageVector by lazy { symbol("badge", "M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm0-80h640v-440H600q0 33-23.5 56.5T520-520h-80q-33 0-56.5-23.5T360-600H160v440Zm80-80h240v-18q0-17-9.5-31.5T444-312q-20-9-40.5-13.5T360-330q-23 0-43.5 4.5T276-312q-17 8-26.5 22.5T240-258v18Zm320-60h160v-60H560v60Zm-200-60q25 0 42.5-17.5T420-420q0-25-17.5-42.5T360-480q-25 0-42.5 17.5T300-420q0 25 17.5 42.5T360-360Zm200-60h160v-60H560v60ZM440-600h80v-200h-80v200Zm40 220Z") }
 
     /** `bar_chart` */
     val BarChart: ImageVector by lazy { symbol("bar_chart", "M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z") }
+
+    /** `arrow_back`: voltar de um submenu */
+    val ArrowBack: ImageVector by lazy { symbol("arrow_back", "m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z") }
 
     /** `bar_chart (preenchido)` */
     val BarChartFilled: ImageVector by lazy { symbol("bar_chart_fill", "M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z") }
@@ -99,6 +117,8 @@ object AppIcons {
     val Chat: ImageVector by lazy { symbol("chat", "M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z") }
 
     /** `close`: cancelar a operação em andamento (decisão 102) */
+    val Check: ImageVector by lazy { symbol("check", "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z") }
+
     val Close: ImageVector by lazy { symbol("close", "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z") }
 
     /** `content_copy` */
@@ -121,6 +141,12 @@ object AppIcons {
 
     /** `file_copy` */
     val FileCopy: ImageVector by lazy { symbol("file_copy", "M760-200H320q-33 0-56.5-23.5T240-280v-560q0-33 23.5-56.5T320-920h280l240 240v400q0 33-23.5 56.5T760-200ZM560-640v-200H320v560h440v-360H560ZM160-40q-33 0-56.5-23.5T80-120v-560h80v560h440v80H160Zm160-800v200-200 560-560Z") }
+
+    /** `folder` */
+    val Folder: ImageVector by lazy { symbol("folder", "M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Zm0-80h640v-400H447l-80-80H160v480Zm0 0v-480 480Z") }
+
+    /** `folder_open` */
+    val FolderOpen: ImageVector by lazy { symbol("folder_open", "M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640H447l-80-80H160v480l96-320h684L837-217q-8 26-29.5 41.5T760-160H160Zm84-80h516l72-240H316l-72 240Zm0 0 72-240-72 240ZM160-640v-80 80Z") }
 
     /** `format_paint` */
     val FormatPaint: ImageVector by lazy { symbol("format_paint", "M440-80q-33 0-56.5-23.5T360-160v-160H240q-33 0-56.5-23.5T160-400v-280q0-66 47-113t113-47h480v440q0 33-23.5 56.5T720-320H600v160q0 33-23.5 56.5T520-80h-80ZM240-560h480v-200h-40v160h-80v-160h-40v80h-80v-80H320q-33 0-56.5 23.5T240-680v120Zm0 160h480v-80H240v80Zm0 0v-80 80Z") }
@@ -170,6 +196,9 @@ object AppIcons {
     /** `palette` */
     val Palette: ImageVector by lazy { symbol("palette", "M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 32.5-156t88-127Q256-817 330-848.5T488-880q80 0 151 27.5t124.5 76q53.5 48.5 85 115T880-518q0 115-70 176.5T640-280h-74q-9 0-12.5 5t-3.5 11q0 12 15 34.5t15 51.5q0 50-27.5 74T480-80Zm0-400Zm-220 40q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm120-160q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm200 0q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm120 160q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17ZM480-160q9 0 14.5-5t5.5-13q0-14-15-33t-15-57q0-42 29-67t71-25h70q66 0 113-38.5T800-518q0-121-92.5-201.5T488-800q-136 0-232 93t-96 227q0 133 93.5 226.5T480-160Z") }
 
+    /** `open_in_new`: link que abre fora do app */
+    val OpenInNew: ImageVector by lazy { symbol("open_in_new", "M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z") }
+
     /** `payments` */
     val Payments: ImageVector by lazy { symbol("payments", "M560-440q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM280-320q-33 0-56.5-23.5T200-400v-320q0-33 23.5-56.5T280-800h560q33 0 56.5 23.5T920-720v320q0 33-23.5 56.5T840-320H280Zm80-80h400q0-33 23.5-56.5T840-480v-160q-33 0-56.5-23.5T760-720H360q0 33-23.5 56.5T280-640v160q33 0 56.5 23.5T360-400Zm440 240H120q-33 0-56.5-23.5T40-240v-440h80v440h680v80ZM280-400v-320 320Z") }
 
@@ -187,6 +216,9 @@ object AppIcons {
 
     /** `save` */
     val Save: ImageVector by lazy { symbol("save", "M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z") }
+
+    /** `restore`, que no Material Symbols é o mesmo desenho de `history`. */
+    val Restore: ImageVector get() = History
 
     /** `schedule` */
     val Schedule: ImageVector by lazy { symbol("schedule", "m612-292 56-56-148-148v-184h-80v216l172 172ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-400Zm0 320q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Z") }

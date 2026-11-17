@@ -37,6 +37,10 @@ interface QuoteHistoryRepository {
      * [category] é só de produto (decisão 102): num pedido, é descartada. As configurações de cada impressão
      * vêm no próprio [quote]; [printThumbnails] traz a miniatura de cada uma, na ordem de `quote.prints`,
      * guardada como anexo (decisão 114).
+     *
+     * Nome em branco ganha o nome automático e [SavedQuote.autoNamed]. [autoNamed] diz que [name] é um nome
+     * automático trazido de outro registro sem ninguém mexer (duplicar, vender, guardar no catálogo): ele continua
+     * automático. Um nome digitado nunca é, mesmo que pareça.
      */
     fun save(
         name: String,
@@ -55,6 +59,7 @@ interface QuoteHistoryRepository {
         soldAtCatalogPrice: Boolean = false,
         currency: Currency = Currency.BRL,
         shippingAbsorbed: Boolean = false,
+        autoNamed: Boolean = false,
     ): SavedQuote
 
     /**
@@ -62,7 +67,8 @@ interface QuoteHistoryRepository {
      * preservando [SavedQuote.savedAtEpochMillis], o número, o andamento e a moeda, e marcando
      * [SavedQuote.lastEditedEpochMillis]. `null` de [photo]/[stlFile] remove o anexo. Retorna `null`
      * sem fazer nada se [id] não existir. O [SavedQuote.kind] não muda por aqui (produto continua
-     * produto); mudar de tipo é pelo [convertToOrder].
+     * produto); mudar de tipo é pelo [convertToOrder]. Nome em branco ganha um nome automático novo; [autoNamed] diz
+     * que [name] é o automático que já estava no campo, sem ninguém mexer, e aí ele continua automático.
      */
     fun update(
         id: String,
@@ -79,11 +85,13 @@ interface QuoteHistoryRepository {
         category: String? = null,
         soldAtCatalogPrice: Boolean = false,
         shippingAbsorbed: Boolean = false,
+        autoNamed: Boolean = false,
     ): SavedQuote?
 
     /**
      * Troca só os dados que não mexem no preço ("Editar detalhes", decisão 108): nome, cliente, link,
-     * foto, prazo e categoria. O cálculo congelado fica como está.
+     * foto, prazo e categoria. O cálculo congelado fica como está. Nome em branco mantém o atual (e, se era
+     * automático, continua automático); um nome diferente do atual deixa de ser automático.
      */
     fun updateDetails(id: String, details: QuoteDetails): SavedQuote?
 
@@ -152,8 +160,8 @@ class StoredQuoteHistoryRepository(
     private val lastNumber: DocumentValue<Int>,
     private val attachments: AttachmentStore,
     private val clock: Clock,
-    /** Nome automático ("Orçamento - 24/09/2026 14:30") pra quem salva com o nome em branco. */
-    private val defaultName: () -> String,
+    /** Nome automático ("Orçamento - 24/09/2026 14:30") no momento dado, pra quem salva com o nome em branco. */
+    private val defaultName: (epochMillis: Long) -> String,
 ) : QuoteHistoryRepository {
 
     override val savedQuotes: StateFlow<List<SavedQuote>> = collection.items
@@ -175,14 +183,17 @@ class StoredQuoteHistoryRepository(
         soldAtCatalogPrice: Boolean,
         currency: Currency,
         shippingAbsorbed: Boolean,
+        autoNamed: Boolean,
     ): SavedQuote {
         val isProduct = kind == QuoteKind.PRODUCT
         val now = clock.nowMillis()
+        val typedName = name.trim()
         // O modelo valida no `init`; montar antes de guardar os anexos evita arquivo órfão quando algo
         // não passa (um frete negativo, por exemplo).
         val draft = SavedQuote(
             id = Uuid.random().toString(),
-            name = name.trim().ifEmpty { defaultName() },
+            name = typedName.ifEmpty { defaultName(now) },
+            autoNamed = typedName.isEmpty() || autoNamed,
             quote = quote,
             services = services,
             sourceLink = sourceLink.clean(),
@@ -224,16 +235,20 @@ class StoredQuoteHistoryRepository(
         category: String?,
         soldAtCatalogPrice: Boolean,
         shippingAbsorbed: Boolean,
+        autoNamed: Boolean,
     ): SavedQuote? {
         val existing = collection.find(id) ?: return null
         val isProduct = !existing.isOrder
+        val now = clock.nowMillis()
+        val typedName = name.trim()
         val draft = existing.copy(
-            name = name.trim().ifEmpty { defaultName() },
+            name = typedName.ifEmpty { defaultName(now) },
+            autoNamed = typedName.isEmpty() || autoNamed,
             quote = quote,
             services = services,
             sourceLink = sourceLink.clean(),
             client = if (isProduct) null else client,
-            lastEditedEpochMillis = clock.nowMillis(),
+            lastEditedEpochMillis = now,
             shippingCost = if (isProduct) 0.0 else shippingCost,
             deliveryDateEpochDay = if (isProduct) null else deliveryDateEpochDay,
             category = if (isProduct) category.normalizedCategory(excludingId = id) else null,
@@ -251,8 +266,10 @@ class StoredQuoteHistoryRepository(
 
     override fun updateDetails(id: String, details: QuoteDetails): SavedQuote? = collection.update(id) { existing ->
         val isProduct = !existing.isOrder
+        val name = details.name.trim().ifEmpty { existing.name }
         existing.copy(
-            name = details.name.trim().ifEmpty { existing.name },
+            name = name,
+            autoNamed = existing.autoNamed && name == existing.name,
             client = if (isProduct) null else details.client,
             sourceLink = details.sourceLink.clean(),
             photoFileName = details.photo?.let(::store),

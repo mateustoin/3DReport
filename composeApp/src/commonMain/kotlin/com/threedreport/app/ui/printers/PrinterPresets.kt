@@ -89,3 +89,7 @@ val PRINTER_PRESETS: List<PrinterPreset> = listOf(
     PrinterPreset(brand = "Snapmaker", model = "Artisan", ratedPowerWatts = 400.0),
     PrinterPreset(brand = "Snapmaker", model = "J1", ratedPowerWatts = 400.0),
 )
+
+/** Os presets que combinam com [query] na marca ou no modelo (sem diferenciar maiúsculas); todos com a busca vazia. */
+fun printerPresetsMatching(query: String): List<PrinterPreset> =
+    PRINTER_PRESETS.filter { query.isBlank() || it.brand.contains(query.trim(), ignoreCase = true) || it.model.contains(query.trim(), ignoreCase = true) }

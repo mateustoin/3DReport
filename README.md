@@ -54,7 +54,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Editar um pedido ou produto salvo acontece na própria aba de Orçamento (duas colunas), sem diálogo, com uma barra "Editando #0042" e "Cancelar edição"
 - Tela de orçamento em duas colunas — entradas de um lado, o preço, a composição e a negociação do outro
 - Quantidade por orçamento, com preço unitário e o seu tempo de trabalho informado pelo pedido inteiro (lote sai mais barato por peça)
-- Negociação: digite o preço fechado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
+- Negociação: digite o preço combinado com o cliente e veja lucro, margem e aviso de prejuízo, com o preço mínimo sempre à vista, e veja no Dashboard quanto de desconto você deu no período
 - Comparação entre as suas impressoras: quanto a mesma peça custa em cada máquina
 - Salvar orçamento (nome, foto e link do modelo opcionais)
 - Serviços opcionais no orçamento (pintura, lixamento, entrega etc.), com o valor digitado em cada pedido e cobrança por peça ou uma vez pelo pedido; com o tempo do serviço informado, o valor vem sugerido pela sua hora e o lucro mostra quanto o serviço rende de verdade
@@ -86,13 +86,14 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 
 **Personalização do PDF**
 - Sua marca no PDF: logo e contato (WhatsApp, e-mail, Instagram) no cabeçalho, borda opcional, marca d'água e rodapé com o nome
+- Fundo da imagem do WhatsApp automático: peça escura sai em fundo claro pra não sumir, e dá pra forçar fundo escuro ou claro em Configurações ("Fundo da imagem")
 - Assinatura discreta "Gerado com 3DReport" no canto do PDF (com link pro site) e da imagem do WhatsApp
 - Prévia do PDF em Configurações ("Ver como fica"), antes mesmo de salvar
-- Templates — fotos salvas da aparência do PDF (marca d'água, rodapé, borda, tempo de impressão), com indicador do template ativo; logo e contato ficam de fora, pra não se perderem ao trocar de template
+- Modelos — fotos salvas da aparência do PDF (marca d'água, rodapé, borda, tempo de impressão), com indicador do modelo ativo; logo e contato ficam de fora, pra não se perderem ao trocar de modelo. Carregar um modelo preenche os campos e você confirma em "Salvar"
 
 **Configurações & plataforma**
 - Barra lateral com as telas agrupadas (Vendas, Cadastros, Configurações e Sobre); abaixo de uma certa largura de janela vira um trilho só de ícones com dica ao passar o mouse
-- Configurações em seções (Negócio e custos, Canais, Documentos pro cliente, Aparência, Dados), com uma barra "Alterações não salvas" só, no lugar de vários botões "Salvar" espalhados
+- Configurações em seções (Negócio, Canais de venda, Documentos pro cliente, Aparência, Backup), com uma barra "Alterações não salvas" só, no lugar de vários botões "Salvar" espalhados
 - Backup e restauração dos seus dados num arquivo `.zip` (levar pro outro computador, recuperar depois de formatar)
 - Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
 - Tema claro/escuro (segue o sistema por padrão)

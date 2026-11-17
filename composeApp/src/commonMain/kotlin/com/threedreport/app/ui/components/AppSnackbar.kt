@@ -4,6 +4,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.resolve
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Avisos transitórios de sucesso ("Orçamento salvo", "Configurações salvas"), mostrados sempre no
@@ -36,5 +39,17 @@ fun ShowSnackbarOnce(show: Boolean, message: String, onShown: () -> Unit) {
         // e cancelaria a própria corrotina no meio, engolindo o aviso.
         hostState.showSnackbar(message)
         onShown()
+    }
+}
+
+/**
+ * Mostra, na barra de mensagens, cada aviso que o ViewModel da tela emitir ([UiText] já escolhido por ele). É
+ * como uma tela nova liga o `notices` do seu ViewModel: uma linha.
+ */
+@Composable
+fun ObserveNotices(notices: Flow<UiText>) {
+    val hostState = LocalSnackbarHostState.current
+    LaunchedEffect(notices) {
+        notices.collect { hostState.showSnackbar(it.resolve()) }
     }
 }

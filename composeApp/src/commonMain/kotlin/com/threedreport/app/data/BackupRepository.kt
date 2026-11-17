@@ -49,6 +49,36 @@ sealed interface RestoreResult {
     /** @property previousDataPath onde os dados que existiam antes da restauração foram guardados. */
     data class Success(val previousDataPath: String) : RestoreResult
 
-    /** @property message motivo da falha, já escrito pra ser exibido direto pro usuário. */
-    data class Failure(val message: String) : RestoreResult
+    /** @property reason o motivo da falha; a interface escolhe o texto (ver `RestoreFailure`). */
+    data class Failure(val reason: RestoreFailure) : RestoreResult
+}
+
+/** Por que uma restauração não foi feita. Nenhum caso mexe nos dados atuais, salvo [CurrentDataMoved]. */
+sealed interface RestoreFailure {
+
+    /** A pasta de dados não tem pasta-mãe onde preparar a troca. */
+    data object NoDataFolder : RestoreFailure
+
+    /** O arquivo escolhido não abriu como `.zip` (ou tem entradas fora da pasta de destino). */
+    data object UnreadableFile : RestoreFailure
+
+    /** É um `.zip` que não é backup do 3DReport. */
+    data object NotABackup : RestoreFailure
+
+    /** O backup é de uma versão mais nova do app. */
+    data object NewerVersion : RestoreFailure
+
+    /** O backup é do formato de dados antigo (1.x) e não tem como ser convertido. */
+    data object OldFormat : RestoreFailure
+
+    /** Não deu pra guardar uma cópia dos dados atuais, e nada foi alterado. */
+    data object CouldNotKeepCurrentData : RestoreFailure
+
+    /** Não deu pra aplicar o backup e os dados atuais continuam onde estavam. */
+    data object ApplyFailedKept : RestoreFailure
+
+    /**
+     * Não deu pra aplicar o backup e os dados atuais ficaram na pasta [keptAt], que precisa voltar a se chamar [dataFolderName].
+     */
+    data class CurrentDataMoved(val keptAt: String, val dataFolderName: String) : RestoreFailure
 }

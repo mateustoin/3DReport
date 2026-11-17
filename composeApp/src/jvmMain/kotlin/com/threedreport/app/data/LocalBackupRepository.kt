@@ -92,7 +92,7 @@ class LocalBackupRepository(
     }
 
     override fun restore(sourcePath: String): RestoreResult {
-        val parent = dataDir.parentFile ?: return RestoreResult.Failure("Não consegui acessar a pasta de dados do app.")
+        val parent = dataDir.parentFile ?: return RestoreResult.Failure(RestoreFailure.NoDataFolder)
 
         // Pastas irmãs da pasta de dados (mesmo disco), pra que a troca no fim seja uma renomeação
         // simples em vez de copiar arquivo por arquivo — copiar tem como falhar no meio.
@@ -102,18 +102,18 @@ class LocalBackupRepository(
         staging.deleteRecursively()
         if (runCatching { extractInto(File(sourcePath), staging) }.isFailure) {
             staging.deleteRecursively()
-            return RestoreResult.Failure("Não consegui ler esse arquivo — ele pode não ser um .zip válido ou estar corrompido.")
+            return RestoreResult.Failure(RestoreFailure.UnreadableFile)
         }
 
         val manifest = File(staging, MANIFEST_ENTRY)
         if (!isBackupOfThisApp(manifest)) {
             staging.deleteRecursively()
-            return RestoreResult.Failure("Esse arquivo não parece ser um backup do 3DReport. Nada foi alterado.")
+            return RestoreResult.Failure(RestoreFailure.NotABackup)
         }
         val backupFormat = dataFormatVersionOf(manifest) ?: 1
         if (backupFormat > DATA_FORMAT_VERSION) {
             staging.deleteRecursively()
-            return RestoreResult.Failure("Esse backup é de uma versão mais nova do 3DReport. Atualize o app pra restaurar. Nada foi alterado.")
+            return RestoreResult.Failure(RestoreFailure.NewerVersion)
         }
         if (backupFormat < DATA_FORMAT_VERSION) {
             // Backup de um formato anterior é convertido, como a pasta de dados ao abrir (decisão 106).
@@ -121,10 +121,7 @@ class LocalBackupRepository(
             val converted = path != null && runCatching { path.forEach { it.migrate(staging) } }.isSuccess
             if (!converted) {
                 staging.deleteRecursively()
-                return RestoreResult.Failure(
-                    "Esse backup é de uma versão com formato de dados anterior (1.x) e não abre nesta. " +
-                        "Abra com a versão em que ele foi feito. Nada foi alterado.",
-                )
+                return RestoreResult.Failure(RestoreFailure.OldFormat)
             }
         }
         manifest.delete()
@@ -132,18 +129,13 @@ class LocalBackupRepository(
 
         if (dataDir.exists() && !dataDir.renameTo(previous)) {
             staging.deleteRecursively()
-            return RestoreResult.Failure("Não consegui guardar uma cópia dos dados atuais. Feche outros programas que usem a pasta e tente de novo. Nada foi alterado.")
+            return RestoreResult.Failure(RestoreFailure.CouldNotKeepCurrentData)
         }
         if (!staging.renameTo(dataDir)) {
             val rolledBack = previous.renameTo(dataDir)
             staging.deleteRecursively()
             return RestoreResult.Failure(
-                if (rolledBack) {
-                    "Não consegui aplicar o backup. Seus dados atuais foram mantidos."
-                } else {
-                    "Não consegui aplicar o backup, e seus dados atuais ficaram guardados em ${previous.path}. " +
-                        "Renomeie essa pasta de volta pra ${dataDir.name} antes de abrir o app de novo."
-                },
+                if (rolledBack) RestoreFailure.ApplyFailedKept else RestoreFailure.CurrentDataMoved(previous.path, dataDir.name),
             )
         }
         return RestoreResult.Success(previousDataPath = previous.path)

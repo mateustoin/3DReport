@@ -14,6 +14,9 @@ import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.Service
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -31,6 +34,7 @@ class ArchiveTest {
     private lateinit var filaments: FilamentRepository
     private lateinit var printers: PrinterRepository
     private lateinit var history: QuoteHistoryRepository
+    private val scope = CoroutineScope(Dispatchers.Unconfined)
 
     @BeforeTest
     fun setDataDir() {
@@ -42,6 +46,7 @@ class ArchiveTest {
 
     @AfterTest
     fun clearDataDir() {
+        scope.cancel()
         System.clearProperty("threedreport.dataDir")
     }
 
@@ -61,7 +66,7 @@ class ArchiveTest {
     fun usageCountsTheOrdersThatUseTheFilament() {
         saveOrder()
         saveOrder()
-        val viewModel = FilamentListViewModel(filaments, history::quotesIncludingTrash)
+        val viewModel = FilamentListViewModel(filaments, scope, history::quotesIncludingTrash)
         val used = filaments.filaments.value.first().id
         filaments.add(petg)
 
@@ -78,8 +83,8 @@ class ArchiveTest {
         val printer = saved.quote.prints.single().printerId
 
         // Na lixeira o pedido ainda pode voltar, então excluir o filamento continua sugerindo arquivar.
-        assertEquals(1, FilamentListViewModel(filaments, history::quotesIncludingTrash).usageCount(used))
-        assertEquals(1, PrinterListViewModel(printers, history, MaintenanceRepository()).usageCount(printer))
+        assertEquals(1, FilamentListViewModel(filaments, scope, history::quotesIncludingTrash).usageCount(used))
+        assertEquals(1, PrinterListViewModel(printers, history, MaintenanceRepository(), scope).usageCount(printer))
     }
 
     @Test
@@ -93,11 +98,11 @@ class ArchiveTest {
 
     @Test
     fun editingAnArchivedFilamentKeepsItArchived() {
-        val viewModel = FilamentListViewModel(filaments, history::quotesIncludingTrash)
+        val viewModel = FilamentListViewModel(filaments, scope, history::quotesIncludingTrash)
         filaments.add(petg)
         viewModel.setArchived(petg.id, true)
 
-        viewModel.startEdit(filaments.filaments.value.single { it.id == petg.id })
+        viewModel.startEdit(petg.id)
         viewModel.updateForm { it.copy(pricePerKgText = "140") }
         viewModel.save()
 
@@ -113,7 +118,7 @@ class ArchiveTest {
     fun anArchivedFilamentOrPrinterIsNotPickedByItselfInANewQuote() {
         val first = filaments.filaments.value.first()
         filaments.add(petg)
-        FilamentListViewModel(filaments).setArchived(first.id, true)
+        FilamentListViewModel(filaments, scope).setArchived(first.id, true)
         val firstPrinter = printers.printers.value.first()
         printers.add(firstPrinter.copy(id = "outra", name = "Outra"))
         printers.update(firstPrinter.copy(archived = true))
@@ -122,11 +127,11 @@ class ArchiveTest {
         viewModel.setLengthMeters("12")
         viewModel.setPrintTimeMinutes("190")
 
-        val result = viewModel.currentResult()
+        val result = viewModel.uiState.value.result
         val chosen = assertNotNull(result.prints.single().filaments.single().filament)
         assertTrue(chosen.id != first.id && !chosen.archived)
         assertEquals("outra", result.prints.single().printer?.id)
-        assertTrue(viewModel.comparePrinters(filaments.filaments.value, printers.printers.value, SettingsRepository().settings.value, emptyList(), viewModel.input.value).isEmpty())
+        assertTrue(viewModel.comparePrinters(filaments.filaments.value, printers.printers.value, SettingsRepository().settings.value, emptyList(), viewModel.uiState.value.input).isEmpty())
     }
 
     @Test
@@ -134,13 +139,13 @@ class ArchiveTest {
         saveOrder()
         val saved = history.savedQuotes.value.single()
         val used = saved.quote.prints.single().job.filaments.single().filament.id
-        FilamentListViewModel(filaments).setArchived(used, true)
+        FilamentListViewModel(filaments, scope).setArchived(used, true)
 
         val viewModel = quoteViewModel()
         viewModel.loadForEditing(saved)
         viewModel.setLengthMeters("13")
 
-        val result = viewModel.currentResult()
+        val result = viewModel.uiState.value.result
         assertNull(result.errorMessage, "arquivado não é \"saiu do cadastro\"")
         assertNotNull(result.quote)
         assertEquals(used, result.prints.single().filaments.single().filament?.id)
@@ -157,6 +162,6 @@ class ArchiveTest {
         }
         assertTrue(quote.saveCurrentQuote())
 
-        assertEquals(1, ServiceListViewModel(services, history::quotesIncludingTrash).usageCount("pintura"))
+        assertEquals(1, ServiceListViewModel(services, scope, history::quotesIncludingTrash).usageCount("pintura"))
     }
 }

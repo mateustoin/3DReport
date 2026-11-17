@@ -49,6 +49,7 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
+            implementation(libs.compose.resources)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
         }
@@ -75,7 +76,12 @@ val renderScreenshots by tasks.registering(Test::class) {
     testClassesDirs = jvmTest.testClassesDirs
     classpath = jvmTest.classpath
     filter { includeTestsMatching("com.threedreport.app.screenshots.ScreenshotRenderer.renderScreenshots") }
-    systemProperty("screenshots.out", rootProject.layout.projectDirectory.dir("site/assets/screenshots").asFile.absolutePath)
+    // Padrão: os prints públicos do site. `-Pscreenshots.dir=/outra/pasta` grava em outro lugar, sem tocar neles.
+    systemProperty(
+        "screenshots.out",
+        providers.gradleProperty("screenshots.dir").orNull
+            ?: rootProject.layout.projectDirectory.dir("site/assets/screenshots").asFile.absolutePath,
+    )
     systemProperty("screenshots.iconPath", project.layout.projectDirectory.file("packaging/icons/icon.png").asFile.absolutePath)
     providers.gradleProperty("screenshots.gcodes").orNull?.let { systemProperty("screenshots.gcodes", it) }
     maxHeapSize = "2g" // alguns G-codes reais de exemplo passam de 50 MB

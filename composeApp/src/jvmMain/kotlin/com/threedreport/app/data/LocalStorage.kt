@@ -1,11 +1,16 @@
 package com.threedreport.app.data
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.quote_auto_name
+import _3dreport.composeapp.generated.resources.seed_printer_name
 import com.threedreport.app.data.store.DataFile
 import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.app.data.store.RecordCollection
 import com.threedreport.app.data.store.StorageHealth
 import com.threedreport.app.data.store.StoredDocument
 import com.threedreport.app.data.store.StoredRecord
+import com.threedreport.app.platform.fillTemplate
+import com.threedreport.app.platform.formatDateTime
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Consumable
@@ -21,12 +26,13 @@ import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
 import com.threedreport.core.model.ThemeMode
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.JsonElement
+import org.jetbrains.compose.resources.getString
 import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 /** Como cada arquivo é gravado: direto (testes) ou em segundo plano ([com.threedreport.app.data.store.WriteBehindFile]). */
 interface DataFileWrapper {
@@ -54,18 +60,29 @@ class LocalStorage(
 ) {
     val attachments: AttachmentStore by lazy { FileAttachmentStore(File(dataDir, ATTACHMENTS_DIR)) }
 
-    private fun <T> recordFile(name: String, serializer: KSerializer<T>): DataFile<List<StoredRecord<T>>> =
-        wrapper.wrap(JsonDataFile(File(dataDir, name), ListSerializer(StoredRecord.serializer(serializer)), health))
+    private fun <T> recordFile(
+        name: String,
+        serializer: KSerializer<T>,
+        upgrade: ((JsonElement) -> JsonElement)? = null,
+        upgradeNeeded: (String) -> Boolean = { true },
+    ): DataFile<List<StoredRecord<T>>> =
+        wrapper.wrap(JsonDataFile(File(dataDir, name), ListSerializer(StoredRecord.serializer(serializer)), health, upgrade, upgradeNeeded))
 
-    private fun <T> records(name: String, serializer: KSerializer<T>, idOf: (T) -> String, seed: () -> List<T> = { emptyList() }) =
-        RecordCollection(recordFile(name, serializer), idOf, clock, seed)
+    private fun <T> records(
+        name: String,
+        serializer: KSerializer<T>,
+        idOf: (T) -> String,
+        seed: () -> List<T> = { emptyList() },
+        upgrade: ((JsonElement) -> JsonElement)? = null,
+        upgradeNeeded: (String) -> Boolean = { true },
+    ) = RecordCollection(recordFile(name, serializer, upgrade, upgradeNeeded), idOf, clock, seed)
 
     private fun <T> document(name: String, serializer: KSerializer<T>, default: () -> T) =
         DocumentValue(wrapper.wrap(JsonDataFile(File(dataDir, name), StoredDocument.serializer(serializer), health)), clock, default)
 
     fun filaments(): FilamentRepository = RecordFilamentRepository(records("filaments.json", Filament.serializer(), { it.id }, Seeds::filaments))
 
-    fun printers(): PrinterRepository = RecordPrinterRepository(records("printers.json", PrinterProfile.serializer(), { it.id }, Seeds::printers))
+    fun printers(): PrinterRepository = RecordPrinterRepository(records("printers.json", PrinterProfile.serializer(), { it.id }, { Seeds.printers(loadSeedPrinterName()) }))
 
     fun services(): ServiceRepository = RecordServiceRepository(records("services.json", Service.serializer(), { it.id }))
 
@@ -83,12 +100,12 @@ class LocalStorage(
     )
 
     fun quoteHistory(): QuoteHistoryRepository = StoredQuoteHistoryRepository(
-        collection = records("quotes.json", SavedQuote.serializer(), { it.id }),
+        collection = records("quotes.json", SavedQuote.serializer(), { it.id }, upgrade = ::markLegacyAutoNamedQuotes, upgradeNeeded = ::quotesNeedAutoNamedUpgrade),
         lastNumber = document("quote-number.json", Int.serializer()) { 0 },
         attachments = attachments,
         clock = clock,
         defaultName = ::defaultQuoteName,
-    )
+    ).also { warmUpAutoNameTemplate() }
 
     fun settings(): SettingsRepository = StoredSettingsRepository(document("settings.json", PricingSettings.serializer()) { Seeds.settings })
 
@@ -107,8 +124,48 @@ class LocalStorage(
     companion object {
         const val ATTACHMENTS_DIR = "attachments"
 
-        /** Nome que o app dá quando o campo fica em branco ("Orçamento - 24/09/2026 14:30"). */
-        fun defaultQuoteName(): String =
-            SavedQuote.AUTO_NAME_PREFIX + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+        /** O modelo do nome automático ("Orçamento - %1$s"), lido uma vez dos recursos e guardado. */
+        @Volatile
+        private var autoNameTemplate: String? = null
+
+        private fun loadAutoNameTemplate(): String =
+            autoNameTemplate ?: runBlocking { getString(Res.string.quote_auto_name) }.also { autoNameTemplate = it }
+
+        /**
+         * O nome da impressora de exemplo. Só é lido quando o `printers.json` ainda não existe, ou seja, na primeira
+         * abertura do app, no `main` e antes de a janela subir: nunca na thread da tela.
+         */
+        private fun loadSeedPrinterName(): String = runBlocking { getString(Res.string.seed_printer_name) }
+
+        /** Lê o modelo na abertura do app, pra o primeiro salvamento não esperar o arquivo de textos na thread da tela. */
+        private fun warmUpAutoNameTemplate() {
+            loadAutoNameTemplate()
+        }
+
+        /**
+         * Nome que o app dá quando o campo fica em branco ("Orçamento - 24/09/2026 14:30"), no momento [epochMillis].
+         * O texto vem de `strings.xml` (`quote_auto_name`); quem pergunta se o nome é automático lê
+         * [SavedQuote.autoNamed], e não o texto. O modelo é lido uma vez ([warmUpAutoNameTemplate]) e guardado: salvar
+         * não bloqueia a thread da tela a cada vez. Se o idioma do app passar a mudar com o app aberto (Leva 11B), o
+         * modelo guardado precisa ser descartado nessa hora.
+         */
+        fun defaultQuoteName(epochMillis: Long): String = fillTemplate(loadAutoNameTemplate(), formatDateTime(epochMillis))
     }
+}
+
+/**
+ * Se o texto do `quotes.json` pode ter registro sem a chave `autoNamed` (gravado pela 2.1), caso em que o
+ * [markLegacyAutoNamedQuotes] precisa completar. Conta, sem montar árvore, as chaves `"data"` e `"autoNamed"` entre aspas:
+ * texto digitado que as cite vem escapado (`\"autoNamed\"`) e não conta. Na dúvida (menos chaves que registros) completa.
+ */
+internal fun quotesNeedAutoNamedUpgrade(text: String): Boolean = countKey(text, "\"data\"") > countKey(text, "\"autoNamed\"")
+
+private fun countKey(text: String, key: String): Int {
+    var count = 0
+    var from = text.indexOf(key)
+    while (from >= 0) {
+        count++
+        from = text.indexOf(key, from + key.length)
+    }
+    return count
 }
