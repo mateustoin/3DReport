@@ -8,6 +8,7 @@ import _3dreport.composeapp.generated.resources.quote_details_link
 import _3dreport.composeapp.generated.resources.quote_details_open_link
 import _3dreport.composeapp.generated.resources.quote_details_photo_automatic
 import _3dreport.composeapp.generated.resources.quote_details_photo_description
+import _3dreport.composeapp.generated.resources.quote_details_photo_label
 import _3dreport.composeapp.generated.resources.quote_details_photo_pick
 import _3dreport.composeapp.generated.resources.quote_details_photo_remove
 import _3dreport.composeapp.generated.resources.quote_details_photo_unavailable
@@ -171,6 +172,7 @@ private fun PhotoRow(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
     val space = MaterialTheme.spacing
     val photo = form.photo
     Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        Text(stringResource(Res.string.quote_details_photo_label), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (photo != null) {
             // Decodifica uma vez por foto, e não a cada tecla digitada em outro campo; uma imagem que não
             // abre vira aviso, e não derruba a tela.
@@ -210,7 +212,7 @@ private fun ModelAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState,
         Text(stringResource(Res.string.quote_model_label), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (modelFile == null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
-                AppButton(stringResource(Res.string.quote_model_attach), onClick = viewModel::pickModelFile, icon = AppIcons.Add)
+                AppButton(stringResource(Res.string.quote_model_attach), onClick = viewModel::pickModelFile, icon = AppIcons.FolderOpen)
                 HelpHint(HelpText(stringResource(Res.string.quote_help_model)), stringResource(Res.string.quote_model_hint_label))
             }
         } else {

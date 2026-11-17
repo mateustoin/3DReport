@@ -568,7 +568,8 @@
     <string name="quote_help_category">Separa a lista de produtos e o catálogo em PDF em seções.</string>
     <string name="quote_details_link">Link do modelo (opcional)</string>
     <string name="quote_details_open_link">Abrir link no navegador</string>
-    <string name="quote_details_photo_pick">Escolher foto (opcional)</string>
+    <string name="quote_details_photo_pick">Escolher foto</string>
+    <string name="quote_details_photo_label">Foto (opcional)</string>
     <string name="quote_details_photo_remove">Remover foto</string>
     <string name="quote_details_photo_description">Foto da peça</string>
     <string name="quote_details_photo_unavailable">Não consegui mostrar essa imagem.</string>
@@ -1145,7 +1146,7 @@
     <string name="update_verifying">Conferindo o arquivo</string>
     <string name="update_installing">Instalando</string>
     <string name="update_ready_windows">O instalador do Windows abre e a janela fecha. Confirme a permissão de administrador pra concluir.</string>
-    <string name="update_ready_linux">Pede a sua senha, instala a versão nova e abre de novo.</string>
+    <string name="update_ready_linux">O sistema pede a sua senha. A versão nova é instalada e o app abre de novo.</string>
     <string name="update_ready_linux_manual">O arquivo está pronto. A pasta abre e o comando de instalar aparece aqui.</string>
     <string name="update_ready_macos">O arquivo de instalação abre. Arraste o 3DReport pra Aplicativos e substitua o atual.</string>
     <string name="update_password_cancelled">Instalação cancelada. Nada mudou.</string>
