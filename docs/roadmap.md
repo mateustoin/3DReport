@@ -176,15 +176,15 @@ evita refazer o trabalho em cima de umas 1.500 frases em vez das cerca de 1.050 
 hoje. Pode sair junto da 2.2 ou numa versão só dela. Trabalho quase todo
 mecânico, bom pra subagentes com revisão.
 
-- [ ] **Textos em recursos.** As cerca de 1.050 frases escritas direto no código,
-  em uns 140 arquivos (as que mais têm: Orçamento, Configurações e Pedidos), vão
+- [x] **Textos em recursos.** **Feito (decisão 139, 2026-11-17).** As cerca de 1.050 frases escritas direto no código,
+  em uns 140 arquivos (as que mais têm: Orçamento, Configurações e Pedidos), foram
   pra arquivos de texto do Compose (`composeResources`, com `stringResource`), só
   em português por enquanto. Plurais ("3 impressões") como plurais de verdade.
-  **Quase feito (decisão 139):** telas, PDF, imagem e mensagem estão em recursos. Faltam
-  poucos textos no código: os nomes dos destinos da barra lateral (`AppDestination`), os
-  períodos (`Period`), "Saiba mais"/"Menos" em `FieldHelp`, os títulos dos seletores de
-  arquivo (`PlatformServices`), "Sem nome" em `FilamentLabels`, "N faixas de preço" em
-  `SalesChannelFormat`, a impressora de exemplo em `Seeds` e os diálogos fatais de `Main.kt`.
+  Continuam como literal de propósito: mensagens de programador (`require`, `error`, logs),
+  o padrão antigo do nome automático (`LegacyAutoName`, que reconhece pedidos gravados antes),
+  nomes de marca e de material ("3DReport", "WhatsApp", "PLA", "ABS", "PETG", o "Report" do
+  `BrandMark`), o cabeçalho técnico do texto de erro copiado pra issue e os nomes de pasta
+  do sistema ("Documents" e "Documentos").
 - [x] **Mensagens dos ViewModels como chave e valores.** **Feito (decisões 131 a 139, 2026-11-16).** Avisos e mensagens montados
   fora das telas (`QuoteHistoryViewModel`, `QuoteViewModel` e outros) passam a
   levar a chave do texto e os valores, e a tela é que traduz, porque o

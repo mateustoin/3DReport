@@ -50,6 +50,9 @@ lucro que tinham.
   bloco com o valor, a entrega e a validade. O aviso amarelo de prazo saiu, e o documento não leva
   cor do app: é o seu. Com muitos itens, a lista continua na página seguinte. O catálogo em PDF
   segue o mesmo estilo.
+- **Prévia do PDF com foto de exemplo.** Em Configurações, Documentos pro cliente, o botão agora é
+  "Ver como fica o PDF" e a prévia mostra o "Suporte de celular" com uma foto, pra você ver a moldura,
+  o cinza e a marca d'água como ficam num pedido de verdade.
 - **Imagem pro WhatsApp refeita**, em azul-marinho, com o preço em destaque.
 - **Fundo da imagem automático.** Peça preta sumia no fundo escuro. Agora o app olha o brilho da peça:
   peça escura sai em fundo claro, as outras no azul-marinho. Em Configurações, Documentos pro cliente,
@@ -58,8 +61,13 @@ lucro que tinham.
   passou a usar o ícone.
 - **Nome do arquivo sugerido** com o singular certo: "1 item", e não "1 itens".
 - **Valores digitados lidos conforme a moeda escolhida** nos cadastros e no Orçamento. Em real nada muda.
+- **Canal com uma faixa de preço** mostra "1 faixa de preço", e não "1 faixas de preço".
 - **Rótulos de campo** quebram em duas linhas em vez de cortar numa janela estreita, e a lista de seções
   de Configurações ficou mais estreita pra dar espaço aos campos.
+
+### Corrigido
+- **Exportar com duplo clique** não abre mais dois diálogos de "Salvar como".
+- **Editar enquanto a prévia do PDF carrega** não perde mais o que você digitou.
 
 ## [2.1.1] - 2026-09-25
 

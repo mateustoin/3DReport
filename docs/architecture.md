@@ -90,7 +90,10 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
     catálogo** (decisão 101); `SavedQuote.isOrder` é a única regra de "o que é
     pedido", e os relatórios de `report/` deixam os produtos de fora por ela.
     `BrandingSettings` guarda a identidade do vendedor (nome, logo,
-    contato) e a aparência dos documentos pro cliente.
+    contato) e a aparência dos documentos pro cliente. O contato sai de
+    `BrandingSettings.contacts`, uma lista de `ContactEntry` (`ContactChannel`
+    `WHATSAPP`, `EMAIL` ou `INSTAGRAM`, mais o valor), no lugar do antigo
+    `contactLines`: o `core` não escreve frase, e quem desenha o PDF escolhe o texto.
 - `pricing/ProductRepricer`: recalcula um produto do catálogo com os cadastros de
   hoje (decisão 102), mantendo o preço anunciado; devolve o motivo quando falta
   filamento, impressora ou canal.
@@ -401,7 +404,17 @@ Outros:
   com o motivo) e salvar devolve `SaveResult` (salvo com o caminho, cancelado
   ou falhou). No desktop é o `DesktopPlatform` (`java.awt.FileDialog`, decisão
   59, e `JFileChooser` só pra escolher pasta). G-code grande é lido só pelo
-  começo e pelo fim (8 MB), onde ficam os metadados.
+  começo e pelo fim (8 MB), onde ficam os metadados. Os títulos dos seletores do
+  sistema vêm de `strings.xml`: `DesktopPlatform.loadDialogTitles()` os lê uma vez, no
+  começo do `Main.kt`, e os diálogos só os usam.
+- **Falhas tipadas, texto na interface.** Quem falha devolve o motivo, e a tela
+  escolhe a frase em `strings.xml`: `PickFailure` (`UNREADABLE`, `TOO_LARGE`, dentro de
+  `PickResult.Failed`; texto em `ui/text/PickFailureText.kt`) e `RestoreFailure`
+  (dentro de `RestoreResult.Failure`; texto em `ui/settings/RestoreFailureText.kt`).
+- **`StartupTexts`** (`jvmMain`, `StartupTexts.kt`) guarda os textos dos diálogos de
+  antes do Compose (erro de inicialização, segunda instância, erro na janela, falha ao
+  gravar ao fechar). `StartupTexts.load` lê tudo uma vez no começo do `main`, na thread
+  principal, porque esses diálogos podem aparecer dentro de um tratador de erro.
 - Continuam como `expect`/`actual` as primitivas pequenas: `decodeImageBitmap`
   (Skia), datas (`java.time`), períodos, a barra de rolagem, arrastar arquivo e
   os exportadores.
@@ -418,6 +431,10 @@ Outros:
   `BrandingSettings.imageBackground`: em `AUTO`, `ImageBrightness` mede a luminância média
   da foto e `ImageBackground.resolve` escolhe o tom (`ImageTone`) pelo limiar
   `DARK_PIECE_LUMINANCE`. O modelo de orçamento não guarda o campo.
+- `DocumentColors` (`jvmMain/platform`) tem as cores do PDF e da imagem num ponto só,
+  derivadas do tema do app. `TemplateFill.kt` (`fillTemplate`) preenche os modelos
+  de `strings.xml` (`%1$s`, `%2$d`) fora da composição: os textos dos documentos, as
+  durações e os diálogos de inicialização usam essa função.
 - Os rótulos de `OrderStatus`, `QuoteKind`, `ThemeMode` e `PrintDifficulty` não ficam
   no `core` (decisão 139): cada um tem uma função de rótulo em `composeApp` que lê
   `strings.xml`.
