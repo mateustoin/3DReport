@@ -1,5 +1,6 @@
 package com.threedreport.core.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,11 +23,12 @@ import kotlinx.serialization.Serializable
  *   (resolvido pela camada de persistência da UI — não é um caminho
  *   absoluto). Entra no PDF e fica disponível pra download no histórico;
  *   nunca entra no texto de copiar/colar.
- * @property stlFileName nome do arquivo STL do modelo, se houver (mesmo
+ * @property modelFileName chave do arquivo do modelo, STL ou 3MF (decisão 141), se houver (mesmo
  *   tratamento do [photoFileName] — resolvido pela camada de persistência,
  *   não é um caminho absoluto). Guardado pra o criador recuperar depois e
  *   reaproveitar numa venda futura da mesma peça — uso só interno, nunca
- *   entra em nenhum export (PDF ou copiar/colar).
+ *   entra em nenhum export (PDF ou copiar/colar). No arquivo continua com o nome `stlFileName`, do tempo em que
+ *   só aceitava STL: o JSON gravado não muda. O tipo sai da extensão ([modelFileKind]).
  * @property sourceLink link de onde o modelo 3D foi obtido, se houver. Uso
  *   **só interno**: nunca aparece em nenhum export (PDF ou copiar/colar).
  * @property savedAtEpochMillis quando foi salvo (epoch millis).
@@ -85,7 +87,8 @@ data class SavedQuote(
     val quote: Quote,
     val services: List<QuoteService> = emptyList(),
     val photoFileName: String? = null,
-    val stlFileName: String? = null,
+    @SerialName("stlFileName")
+    val modelFileName: String? = null,
     val sourceLink: String? = null,
     val savedAtEpochMillis: Long,
     val client: Client? = null,
@@ -107,6 +110,18 @@ data class SavedQuote(
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
         require(number >= 0) { "number não pode ser negativo: $number" }
     }
+
+    /**
+     * Tipo do arquivo do modelo, pela extensão de [modelFileName], ou `null` sem arquivo. Só `.3mf` é 3MF: antes da
+     * decisão 141 o campo só aceitava STL, então qualquer outra extensão gravada é STL.
+     */
+    val modelFileKind: ModelFileKind?
+        get() = modelFileName?.let { ModelFileKind.of(it) ?: ModelFileKind.STL }
+
+    /** Nome antigo de [modelFileName], enquanto as telas não migram. */
+    @Deprecated("O arquivo do modelo pode ser STL ou 3MF", ReplaceWith("modelFileName"))
+    val stlFileName: String?
+        get() = modelFileName
 
     /** Número pra mostrar ao cliente ("#0042"), ou `null` sem número. */
     val displayNumber: String?

@@ -181,7 +181,7 @@ class QuoteHistoryRepositoryTest {
 
         val reloadedRepository = QuoteHistoryRepository()
         val reloaded = reloadedRepository.savedQuotes.value.first { it.id == saved.id }
-        assertContentEquals(stlBytes, reloadedRepository.stlBytes(reloaded))
+        assertContentEquals(stlBytes, reloadedRepository.modelBytes(reloaded))
     }
 
     @Test
@@ -402,7 +402,7 @@ class QuoteHistoryRepositoryTest {
             sourceLink = null,
         )
 
-        assertEquals(original.stlFileName, duplicate.stlFileName)
+        assertEquals(original.modelFileName, duplicate.modelFileName)
     }
 
     @Test
@@ -646,7 +646,7 @@ class QuoteHistoryRepositoryTest {
 
         repository.delete(saved.id)
 
-        assertTrue(saved.stlFileName!! in repository.referencedAttachments(), "na lixeira, o STL ainda pode voltar")
+        assertTrue(saved.modelFileName!! in repository.referencedAttachments(), "na lixeira, o STL ainda pode voltar")
     }
 
     @Test
