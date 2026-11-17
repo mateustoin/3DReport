@@ -245,6 +245,16 @@ confirmado na especificação da leva.
   desligado por padrão. Só vale a partir da versão seguinte à que trouxer o
   mecanismo. Esforço M, impacto M.
 
+- [ ] **Ajustes técnicos guardados no fechamento da 2.2** (pedido do responsável do projeto,
+  2026-11-17). Nada muda pra quem usa; cada um é pequeno:
+  - o "3D" do `BrandMark` usa branco puro, e o banner do site usa `onNavy`: alinhar os dois no
+    token `onNavy`;
+  - a regra que sugere entrega urgente com prazo de 0 a 2 dias mora em `QuoteSaleSection`
+    (tela): passa pro `QuoteViewModel` ou pro `core`, com teste;
+  - `MaintenanceDialog` lê a data do computador direto (`todayEpochDay()`): passa a receber o
+    dia injetado, como o Orçamento desde a 2.2;
+  - `FieldHelp` não é usado em lugar nenhum: remover do kit e do sistema de design.
+
 ### Leva 11: Receber e conversar com o cliente
 
 O que o vendedor faz o dia inteiro depois de mandar o orçamento: cobrar, receber e

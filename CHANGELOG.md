@@ -7,8 +7,10 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
-Rumo à 2.2. Tudo o que mexe no preço entrou junto, pra você recalibrar uma vez só, e **nada
-muda sozinho**: cada regra nova começa desligada, e os pedidos salvos continuam com o preço e o
+## [2.2.0] - 2026-11-17
+
+Interface nova, do começo ao fim, e o preço mais certo. Tudo o que mexe no preço entrou junto,
+pra você recalibrar uma vez só, e **nada muda sozinho**: cada regra nova começa desligada, e os pedidos salvos continuam com o preço e o
 lucro que tinham.
 
 ### Adicionado
@@ -66,6 +68,8 @@ lucro que tinham.
   de Configurações ficou mais estreita pra dar espaço aos campos.
 
 ### Corrigido
+- **Tema "Do sistema" no Linux.** O app abria claro mesmo com o sistema no escuro. Agora segue o
+  escuro do sistema (GNOME, KDE, Cinnamon e outros) e acompanha a troca com o app aberto.
 - **Exportar com duplo clique** não abre mais dois diálogos de "Salvar como".
 - **Editar enquanto a prévia do PDF carrega** não perde mais o que você digitou.
 
