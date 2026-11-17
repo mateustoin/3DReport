@@ -98,6 +98,8 @@ compose.desktop {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = "3DReport"
             vendor = "Mateus Antonio da Silva"
+            // A dica do atalho no menu do Linux (Comment=) e a descrição do pacote nos três sistemas.
+            description = "Orçamento, pedidos e catálogo pra quem vende impressão 3D"
             // Lido de gradle.properties, a mesma fonte do APP_VERSION do app (generateAppVersion).
             packageVersion = providers.gradleProperty("appVersion").get()
 
@@ -132,6 +134,11 @@ compose.desktop {
                 packageName = "threedreport"
                 iconFile.set(project.file("packaging/icons/icon.png"))
                 shortcut = true
+                // Vira o Categories= do atalho do menu (sem isso sai "Unknown" e o app cai em "Outros").
+                // Office, da especificação freedesktop, é o que os menus mostram como Escritório.
+                menuGroup = "Office;"
+                // Seção do pacote .deb.
+                appCategory = "utils"
             }
         }
     }

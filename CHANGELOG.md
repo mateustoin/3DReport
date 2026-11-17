@@ -7,6 +7,11 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
+### Corrigido
+- **Linux: o 3DReport aparece em Escritório no menu de aplicativos**, com uma descrição curta ao passar
+  o mouse. Antes ficava em "Outros". Pra ver a mudança depois de atualizar, saia da sessão e entre de
+  novo (no Cinnamon, `Ctrl+Alt+Esc` basta).
+
 ## [2.2.0] - 2026-11-17
 
 Interface nova, do começo ao fim, o preço mais certo, o projeto do fatiador (3MF) guardado com o pedido e a
