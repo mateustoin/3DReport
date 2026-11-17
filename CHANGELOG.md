@@ -13,7 +13,7 @@ Impressoras da lista com valores de referência e atualização pelo próprio ap
 você já tem **não mudam**: os valores novos valem só pra cadastros novos.
 
 ### Adicionado
-- **Lista de impressoras maior, com 58 modelos**, incluindo as versões Combo. Cada uma traz o consumo
+- **Lista de impressoras maior, com 57 modelos**, incluindo as versões Combo. Cada uma traz o consumo
   médio imprimindo (com a potência máxima ao lado, quando o fabricante informa), o preço de referência
   no Brasil de nov/2026, quando existe, e a manutenção por hora de acordo com o tipo da máquina.
 - **Uso padrão de 12 h por dia, 25 dias por mês e retorno em 12 meses** em todo cadastro novo de
