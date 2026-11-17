@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.filaments_color_unnamed
 import _3dreport.composeapp.generated.resources.quote_import_extruder_ambiguous
 import _3dreport.composeapp.generated.resources.quote_import_extruder_item
 import _3dreport.composeapp.generated.resources.quote_import_extruder_not_registered
@@ -33,13 +34,15 @@ import _3dreport.composeapp.generated.resources.quote_import_unsupported_bgcode
 import _3dreport.composeapp.generated.resources.quote_import_unsupported_other
 import _3dreport.composeapp.generated.resources.quote_import_unsupported_sliced_3mf
 import androidx.compose.runtime.Composable
+import com.threedreport.app.ui.text.asString
+import com.threedreport.app.ui.text.text
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /** O texto que a tela mostra sobre a importação de G-code: a escolha da frase é daqui, o conteúdo é do [GCodeImportResult]. */
 @Composable
 fun GCodeImportResult.asText(): String = when (this) {
-    is GCodeImportResult.PickFailed -> message
+    is GCodeImportResult.PickFailed -> failure.text().asString()
 
     GCodeImportResult.Unreadable -> stringResource(Res.string.quote_import_unreadable)
 
@@ -108,8 +111,11 @@ private fun GCodeFilamentsNote.asText(): String = when (this) {
 
 /** "PLA, cor Verde" ou só o nome, quando o filamento não tem cor. */
 @Composable
-private fun GCodeFilamentNote.Found.label(): String =
-    if (colorLabel == null) name else stringResource(Res.string.quote_import_filament_color, name, colorLabel)
+private fun GCodeFilamentNote.Found.label(): String = when {
+    colorLabel != null -> stringResource(Res.string.quote_import_filament_color, name, colorLabel)
+    colorUnnamed -> stringResource(Res.string.quote_import_filament_color, name, stringResource(Res.string.filaments_color_unnamed))
+    else -> name
+}
 
 @Composable
 private fun GCodeFilamentNote.extruderText(): String = when (this) {

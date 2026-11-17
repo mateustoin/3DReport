@@ -1,7 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import com.threedreport.app.platform.PickedFile
-import com.threedreport.app.ui.filaments.displayLabel
+import com.threedreport.app.ui.filaments.labelOrNull
 import com.threedreport.app.ui.format.toDurationInputText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.core.model.Filament
@@ -172,7 +172,7 @@ object GCodeImporter {
     }
 
     private fun note(match: FilamentMatch): GCodeFilamentNote = when (match) {
-        is FilamentMatch.Found -> GCodeFilamentNote.Found(match.filament.name, match.color?.displayLabel())
+        is FilamentMatch.Found -> GCodeFilamentNote.Found(match.filament.name, match.color?.labelOrNull(), colorUnnamed = match.color != null && match.color?.labelOrNull() == null)
         is FilamentMatch.Ambiguous -> GCodeFilamentNote.Ambiguous(match.type, match.count)
         is FilamentMatch.NotRegistered -> GCodeFilamentNote.NotRegistered(match.type, match.vendor)
         FilamentMatch.Unknown -> GCodeFilamentNote.Unknown

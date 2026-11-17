@@ -1,5 +1,8 @@
 package com.threedreport.app.ui.components
 
+import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.common_help_less
+import _3dreport.composeapp.generated.resources.common_help_more
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Ajuda de um campo em duas camadas (decisão 108): uma linha curta sempre à vista e o detalhe atrás de
@@ -34,7 +38,7 @@ fun FieldHelp(short: String, detail: String? = null, modifier: Modifier = Modifi
             )
             if (detail != null) {
                 TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Menos" else "Saiba mais", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(if (expanded) Res.string.common_help_less else Res.string.common_help_more), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }

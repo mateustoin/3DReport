@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.filaments_color_unnamed
 import _3dreport.composeapp.generated.resources.quote_color
 import _3dreport.composeapp.generated.resources.quote_color_n
 import _3dreport.composeapp.generated.resources.quote_filament
@@ -155,6 +156,7 @@ private fun FilamentRow(
     val colors = filament?.colors.orEmpty().filter { it.inStock || it.id == resolved?.color?.id }
     val archivedMark = stringResource(Res.string.quote_mark_archived)
     val outOfStockMark = stringResource(Res.string.quote_mark_out_of_stock)
+    val unnamedColor = stringResource(Res.string.filaments_color_unnamed)
 
     fun Filament.availabilityMark(): String = when {
         archived -> " $archivedMark"
@@ -192,8 +194,8 @@ private fun FilamentRow(
                     label = if (multicolor) stringResource(Res.string.quote_color_n, number) else stringResource(Res.string.quote_color),
                     items = colors,
                     selected = resolved?.color,
-                    itemLabel = { it.displayLabel() + if (it.inStock) "" else " $outOfStockMark" },
-                    displayText = { it.displayLabel() },
+                    itemLabel = { it.displayLabel(unnamedColor) + if (it.inStock) "" else " $outOfStockMark" },
+                    displayText = { it.displayLabel(unnamedColor) },
                     onSelect = { viewModel.selectFilamentColor(it.id, printId, row.id) },
                 )
             }

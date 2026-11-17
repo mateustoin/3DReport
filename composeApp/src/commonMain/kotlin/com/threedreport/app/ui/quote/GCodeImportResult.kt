@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.quote
 
+import com.threedreport.app.platform.PickResult
+
 /**
  * O que a importação de um G-code disse sobre a impressão: dado puro, sem frase. A tela escolhe o texto (ver
  * `asText` em `GCodeImportText.kt`), e o teste compara o tipo e os argumentos.
@@ -25,7 +27,7 @@ sealed interface GCodeImportResult {
     data object Unreadable : GCodeImportResult
 
     /** O sistema não conseguiu abrir o arquivo; [message] já vem escrita pela plataforma. */
-    data class PickFailed(val message: String) : GCodeImportResult
+    data class PickFailed(val failure: PickResult.Failed) : GCodeImportResult
 }
 
 enum class GCodeFilled { FILAMENT_PER_EXTRUDER, FILAMENT_LENGTH, PRINT_TIME, PHOTO, SETTINGS }
@@ -43,7 +45,11 @@ sealed interface GCodePrinterNote {
 
 /** O filamento de um extrusor contra os cadastrados. */
 sealed interface GCodeFilamentNote {
-    data class Found(val name: String, val colorLabel: String?) : GCodeFilamentNote
+    /**
+     * @property colorLabel o nome ou o hex da cor achada; `null` sem cor ou com uma cor sem nome nem hex
+     * @property colorUnnamed a cor achada não tem nome nem hex (a tela escreve "Sem nome")
+     */
+    data class Found(val name: String, val colorLabel: String?, val colorUnnamed: Boolean = false) : GCodeFilamentNote
 
     data class Ambiguous(val type: String, val count: Int) : GCodeFilamentNote
 

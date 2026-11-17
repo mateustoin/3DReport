@@ -2,7 +2,6 @@ package com.threedreport.app.ui.history
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.history_error_photo_unreadable
-import _3dreport.composeapp.generated.resources.history_error_pick_failed
 import _3dreport.composeapp.generated.resources.history_notice_details_saved
 import com.threedreport.app.data.ClientRepository
 import com.threedreport.app.data.QuoteDetails
@@ -14,6 +13,7 @@ import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.text
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.SavedQuote
@@ -54,7 +54,7 @@ internal class HistoryDetailsEditor(
         when (val picked = platform.pickFile(FileKind.IMAGE)) {
             PickResult.Cancelled -> Unit
 
-            is PickResult.Failed -> showPhotoError(uiText(Res.string.history_error_pick_failed, picked.message))
+            is PickResult.Failed -> showPhotoError(picked.text())
 
             is PickResult.Picked ->
                 if (runCatching { decodeImageBitmap(picked.file.bytes) }.isSuccess) {

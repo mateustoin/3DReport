@@ -159,7 +159,7 @@ class DataFormatTest {
         val result = BackupRepository().restoreFromZip(oldBackup)
 
         assertIs<RestoreResult.Failure>(result)
-        assertTrue(result.message.contains("formato de dados anterior"))
+        assertEquals(RestoreFailure.OldFormat, result.reason)
         assertTrue(File(dataDir, "quotes.json").isFile)
     }
 

@@ -26,6 +26,7 @@ import com.threedreport.app.data.LOGS_DIR_NAME
 import com.threedreport.app.data.SavedWindowBounds
 import com.threedreport.app.data.appDataDir
 import com.threedreport.app.data.prepareDataDir
+import com.threedreport.app.platform.DesktopPlatform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,6 +56,9 @@ private var instanceLock: FileLock? = null
 /** Ponto de entrada do app desktop. */
 fun main() {
     DesktopLog.install(File(appDataDir(), LOGS_DIR_NAME))
+    // Os diálogos abaixo e os seletores de arquivo são Swing/AWT: os textos são lidos aqui, uma vez, antes de qualquer janela.
+    StartupTexts.load()
+    DesktopPlatform.loadDialogTitles()
     Thread.setDefaultUncaughtExceptionHandler { thread, error ->
         AppLog.error("Erro não tratado no thread ${thread.name}", error)
         showErrorDialog(error, fatal = false)
@@ -65,7 +69,7 @@ fun main() {
     if (!acquireSingleInstanceLock()) {
         JOptionPane.showMessageDialog(
             null,
-            "O 3DReport já está aberto. Use a janela que já está aberta (ela pode estar minimizada ou atrás de outra).",
+            StartupTexts.alreadyRunning,
             "3DReport",
             JOptionPane.INFORMATION_MESSAGE,
         )
@@ -76,15 +80,10 @@ fun main() {
     // uma pasta à parte (decisões 104 e 106).
     val prepared = runCatching { prepareDataDir() }.getOrElse { error ->
         AppLog.error("Não consegui preparar a pasta de dados", error)
-        fatalDialog("Não consegui abrir a pasta de dados\n${appDataDir().path}\n\n${error.message}\n\nNada foi apagado.")
+        fatalDialog(StartupTexts.dataDirFailed(appDataDir().path, error.message))
     }
     val notice = when (prepared) {
-        is DataDirResult.Failed -> fatalDialog(
-            "Esta versão usa um formato de dados novo e precisa guardar os dados da versão anterior à " +
-                "parte, mas não conseguiu mover a pasta\n${prepared.dataDir.path}\n\n" +
-                "Feche os programas que estejam usando essa pasta (explorador de arquivos, antivírus, " +
-                "backup) e abra o 3DReport de novo. Nada foi apagado.",
-        )
+        is DataDirResult.Failed -> fatalDialog(StartupTexts.moveFailed(prepared.dataDir.path))
 
         is DataDirResult.Ready -> {
             val moved = prepared.moved
@@ -109,10 +108,7 @@ fun main() {
         createDesktopContainer(appScope)
     } catch (e: DataReadException) {
         AppLog.error("Não consegui ler ${e.file.path}", e)
-        fatalDialog(
-            "Não consegui ler o arquivo\n${e.file.path}\n\nEle pode estar aberto em outro programa (antivírus, " +
-                "OneDrive, backup). Feche esses programas e abra o 3DReport de novo. Nada foi apagado.",
-        )
+        fatalDialog(StartupTexts.readFailed(e.file.path))
     }
     scheduleAutomaticBackup(appScope, container)
     runApp(container, notice)
@@ -234,14 +230,13 @@ private fun flushBeforeClosing(container: AppContainer): Boolean {
         val failures = container.storageHealth.writeFailures.value.entries.joinToString("\n") { "• ${it.key}: ${it.value}" }
         val choice = JOptionPane.showOptionDialog(
             null,
-            "Não consegui gravar as últimas mudanças no disco.\n\n$failures\n\n" +
-                "Feche programas que possam estar usando a pasta de dados e tente de novo.",
+            StartupTexts.writeFailed(failures),
             "3DReport",
             JOptionPane.YES_NO_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE,
             null,
-            arrayOf("Tentar de novo", "Fechar mesmo assim", "Voltar pro app"),
-            "Tentar de novo",
+            StartupTexts.writeFailedButtons,
+            StartupTexts.writeFailedButtons[0],
         )
         when (choice) {
             0 -> container.pendingWrites.retry()
@@ -267,10 +262,7 @@ private fun crashHandlerFactory(container: AppContainer) = WindowExceptionHandle
 }
 
 private fun showErrorDialog(error: Throwable, fatal: Boolean) {
-    val message = (if (fatal) "O 3DReport encontrou um erro e precisa fechar." else "O 3DReport encontrou um erro.") +
-        " Seus dados já gravados estão a salvo.\n\n" +
-        "Se quiser ajudar a corrigir, copie os detalhes e mande numa issue do GitHub.\n" +
-        (DesktopLog.currentFile?.let { "Registro completo em: ${it.path}" } ?: "")
+    val message = StartupTexts.errorMessage(fatal, DesktopLog.currentFile?.path)
     val choice = JOptionPane.showOptionDialog(
         null,
         message,
@@ -278,8 +270,8 @@ private fun showErrorDialog(error: Throwable, fatal: Boolean) {
         JOptionPane.DEFAULT_OPTION,
         JOptionPane.ERROR_MESSAGE,
         null,
-        arrayOf("Copiar detalhes", "Fechar"),
-        "Fechar",
+        arrayOf(StartupTexts.errorCopy, StartupTexts.close),
+        StartupTexts.close,
     )
     if (choice == 0) {
         runCatching {

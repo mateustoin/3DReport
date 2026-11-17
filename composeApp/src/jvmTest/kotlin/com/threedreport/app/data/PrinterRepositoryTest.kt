@@ -2,10 +2,12 @@ package com.threedreport.app.data
 
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
+import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** Valida que os perfis de impressora sobrevivem a uma nova instância do repositório (persistência em disco). */
@@ -25,6 +27,15 @@ class PrinterRepositoryTest {
     fun startsWithDefaultPrinter() {
         val printers = PrinterRepository().printers.value
         assertTrue(printers.isNotEmpty())
+    }
+
+    @Test
+    fun firstOpeningWritesTheSameExampleNamesAsBefore() {
+        // O nome de exemplo vem de recurso, mas o que fica gravado em disco na primeira abertura é o mesmo de sempre.
+        val printers = PrinterRepository().printers.value
+        assertEquals(listOf("Minha impressora"), printers.map { it.name })
+        assertEquals(listOf("PLA", "ABS", "PETG"), FilamentRepository().filaments.value.map { it.name })
+        assertTrue(File(appDataDir(), "printers.json").readText().contains("Minha impressora"))
     }
 
     @Test

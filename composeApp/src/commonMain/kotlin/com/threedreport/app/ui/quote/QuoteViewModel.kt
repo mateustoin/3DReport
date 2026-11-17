@@ -29,7 +29,6 @@ import _3dreport.composeapp.generated.resources.quote_error_target_negative
 import _3dreport.composeapp.generated.resources.quote_error_weight
 import _3dreport.composeapp.generated.resources.quote_notice_print_removed
 import _3dreport.composeapp.generated.resources.quote_photo_unreadable
-import _3dreport.composeapp.generated.resources.quote_pick_failed
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.ClientRepository
@@ -59,6 +58,7 @@ import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.history.ClientExport
 import com.threedreport.app.ui.history.QuoteExporter
 import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.text
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Consumable
@@ -462,7 +462,7 @@ class QuoteViewModel(
     fun importDropped(result: PickResult, printId: Int? = null) {
         when (result) {
             is PickResult.Picked -> importGCode(result.file, printId)
-            is PickResult.Failed -> updatePrint(printId) { it.copy(gcodeImport = GCodeImportResult.PickFailed(result.message)) }
+            is PickResult.Failed -> updatePrint(printId) { it.copy(gcodeImport = GCodeImportResult.PickFailed(result)) }
             PickResult.Cancelled -> Unit
         }
     }
@@ -498,7 +498,7 @@ class QuoteViewModel(
     fun importDroppedAsNewPrint(result: PickResult) {
         if (result == PickResult.Cancelled) return
         val notGCode: GCodeImportResult? = when (result) {
-            is PickResult.Failed -> GCodeImportResult.PickFailed(result.message)
+            is PickResult.Failed -> GCodeImportResult.PickFailed(result)
             is PickResult.Picked -> GCodeImporter.unsupported(result.file.fileName)
             PickResult.Cancelled -> null
         }
@@ -719,7 +719,7 @@ class QuoteViewModel(
                 }
             }
 
-            is PickResult.Failed -> updateForm { it.copy(photoError = uiText(Res.string.quote_pick_failed, picked.message)) }
+            is PickResult.Failed -> updateForm { it.copy(photoError = picked.text()) }
 
             PickResult.Cancelled -> Unit
         }

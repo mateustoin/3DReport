@@ -53,6 +53,7 @@ import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
+import org.jetbrains.compose.resources.stringResource
 
 /** Largura da barra com rótulos e do trilho só com ícones. */
 val SIDEBAR_WIDTH = AppDimens.sidebarWidth
@@ -127,7 +128,7 @@ private fun Brand(compact: Boolean) {
 
 @Composable
 private fun GroupTitle(group: DestinationGroup, compact: Boolean) {
-    val title = group.title ?: return
+    val title = group.titleRes()?.let { stringResource(it) } ?: return
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
     if (compact) {
@@ -158,6 +159,7 @@ private fun SidebarItem(
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
+    val label = stringResource(destination.labelRes())
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     var focused by remember { mutableStateOf(false) }
@@ -185,7 +187,7 @@ private fun SidebarItem(
             Box {
                 Icon(
                     if (selected) destination.selectedIcon else destination.icon,
-                    contentDescription = if (compact) destination.label else null,
+                    contentDescription = if (compact) label else null,
                     tint = if (selected) colors.amber else textColor,
                     modifier = Modifier.size(AppDimens.navIconSize),
                 )
@@ -195,7 +197,7 @@ private fun SidebarItem(
             }
             if (!compact) {
                 Text(
-                    destination.label,
+                    label,
                     style = MaterialTheme.appType.body,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                     color = textColor,
@@ -212,7 +214,7 @@ private fun SidebarItem(
     if (compact) {
         TooltipBox(
             positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-            tooltip = { PlainTooltip { Text(listOfNotNull(destination.label, status).joinToString(" · ")) } },
+            tooltip = { PlainTooltip { Text(listOfNotNull(label, status).joinToString(" · ")) } },
             state = rememberTooltipState(),
         ) { item() }
     } else {

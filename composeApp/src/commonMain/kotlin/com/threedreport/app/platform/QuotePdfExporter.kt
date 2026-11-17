@@ -1,6 +1,7 @@
 package com.threedreport.app.platform
 
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.ContactEntry
 import com.threedreport.core.model.SavedQuote
 
 /** Um orçamento salvo a incluir na exportação em PDF, com sua foto (se houver) já carregada em memória. */
@@ -15,8 +16,8 @@ data class QuoteExportItem(val savedQuote: SavedQuote, val photoBytes: ByteArray
  *   `BrandingSettings.showPrintTime`).
  * @property logoBytes logo do vendedor, pro cabeçalho. Imagem que não decodifica é ignorada.
  * @property brandName nome da marca, mostrado no cabeçalho junto da logo/contato.
- * @property contactLines contato público do vendedor, uma linha por item (ver
- *   `BrandingSettings.contactLines`).
+ * @property contacts contato público do vendedor, uma linha por item (ver
+ *   `BrandingSettings.contacts`); o texto de cada linha sai de [ClientDocumentTexts.contactLine].
  * @property showBorder borda fina em volta da página.
  * @property showAppSignature "Gerado com 3DReport" no canto inferior direito, com "3DReport" como link
  *   pro site. Nos exports do app vem sempre ligada ([resolvePdfBranding], decisão 91).
@@ -32,7 +33,7 @@ data class PdfLayoutOptions(
     val showPrintTime: Boolean = false,
     val logoBytes: ByteArray? = null,
     val brandName: String? = null,
-    val contactLines: List<String> = emptyList(),
+    val contacts: List<ContactEntry> = emptyList(),
     val showBorder: Boolean = false,
     val showAppSignature: Boolean = false,
     val validityDays: Int? = null,
@@ -111,7 +112,7 @@ fun BrandingSettings.resolvePdfBranding(logoBytes: ByteArray?): ResolvedPdfBrand
             showPrintTime = showPrintTime,
             logoBytes = logoBytes,
             brandName = brandName,
-            contactLines = contactLines,
+            contacts = contacts,
             showBorder = showBorder,
             // Sempre ligada nos exports do app (decisão 91): opcional, todo mundo desligaria.
             showAppSignature = true,

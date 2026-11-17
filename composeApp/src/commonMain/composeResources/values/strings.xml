@@ -5,6 +5,48 @@
   Grupos de uma tela: _title, _action_, _field_, _help_, _error_, _notice_, _delete_, _empty.
 -->
 <resources>
+    <!-- Barra lateral -->
+    <string name="nav_group_sales">Vendas</string>
+    <string name="nav_group_registries">Cadastros</string>
+    <string name="nav_quote">Orçamento</string>
+    <string name="nav_orders">Pedidos</string>
+    <string name="nav_catalog">Catálogo</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_filaments">Filamentos</string>
+    <string name="nav_printers">Impressoras</string>
+    <string name="nav_services">Serviços</string>
+    <string name="nav_consumables">Insumos</string>
+    <string name="nav_settings">Configurações</string>
+    <string name="nav_about">Sobre</string>
+
+    <!-- Diálogos do sistema: erros de inicialização e títulos dos seletores de arquivo (lidos fora da tela) -->
+    <string name="startup_already_running">O 3DReport já está aberto. Use a janela que já está aberta (ela pode estar minimizada ou atrás de outra).</string>
+    <string name="startup_data_dir_failed">Não consegui abrir a pasta de dados</string>
+    <string name="startup_nothing_deleted">Nada foi apagado.</string>
+    <string name="startup_move_failed">Esta versão usa um formato de dados novo e precisa guardar os dados da versão anterior à parte, mas não conseguiu mover a pasta</string>
+    <string name="startup_move_failed_advice">Feche os programas que estejam usando essa pasta (explorador de arquivos, antivírus, backup) e abra o 3DReport de novo. Nada foi apagado.</string>
+    <string name="startup_read_failed">Não consegui ler o arquivo</string>
+    <string name="startup_read_failed_advice">Ele pode estar aberto em outro programa (antivírus, OneDrive, backup). Feche esses programas e abra o 3DReport de novo. Nada foi apagado.</string>
+    <string name="startup_write_failed">Não consegui gravar as últimas mudanças no disco.</string>
+    <string name="startup_write_failed_advice">Feche programas que possam estar usando a pasta de dados e tente de novo.</string>
+    <string name="startup_write_retry">Tentar de novo</string>
+    <string name="startup_write_close_anyway">Fechar mesmo assim</string>
+    <string name="startup_write_back">Voltar pro app</string>
+    <string name="startup_error_fatal">O 3DReport encontrou um erro e precisa fechar. Seus dados já gravados estão a salvo.</string>
+    <string name="startup_error_nonfatal">O 3DReport encontrou um erro. Seus dados já gravados estão a salvo.</string>
+    <string name="startup_error_report">Se quiser ajudar a corrigir, copie os detalhes e mande numa issue do GitHub.</string>
+    <string name="startup_error_log">Registro completo em: %1$s</string>
+    <string name="startup_error_copy">Copiar detalhes</string>
+    <string name="startup_close">Fechar</string>
+    <string name="platform_pick_image">Escolher foto</string>
+    <string name="platform_pick_gcode">Escolher arquivo G-code</string>
+    <string name="platform_pick_stl">Escolher arquivo STL</string>
+    <string name="platform_pick_backup">Escolher backup do 3DReport</string>
+    <string name="platform_save_as">Salvar como</string>
+
+    <!-- Dados de exemplo gravados na primeira abertura -->
+    <string name="seed_printer_name">Minha impressora</string>
+
     <!-- Comum -->
     <string name="common_save">Salvar</string>
     <string name="common_cancel">Cancelar</string>
@@ -17,6 +59,8 @@
     <string name="common_archived_section">Arquivados (%1$d)</string>
     <string name="common_add">Adicionar</string>
     <string name="common_optional">Opcional</string>
+    <string name="common_help_more">Saiba mais</string>
+    <string name="common_help_less">Menos</string>
     <string name="common_help_for">Ajuda: %1$s</string>
     <string name="common_field_charge">Cobrança</string>
     <string name="common_charge_per_piece">Por peça</string>
@@ -295,7 +339,8 @@
     <string name="quote_blocked_service_price">Não salvei: informe o valor de cada serviço marcado.</string>
     <string name="quote_blocked_deleted">Não salvei: "%1$s" foi excluído. Cancele a edição e use Duplicar num pedido parecido.</string>
     <string name="quote_photo_unreadable">Não consegui ler essa imagem. Tente um PNG ou JPG.</string>
-    <string name="quote_pick_failed">%1$s</string>
+    <string name="pick_failed_unreadable">Não consegui ler %1$s. Ele pode estar aberto em outro programa ou ter sido movido.</string>
+    <string name="pick_failed_too_large">%1$s é grande demais pra abrir no app.</string>
     <string name="export_busy_pdf">Gerando PDF…</string>
     <string name="export_saved_pdf">PDF salvo.</string>
     <string name="export_busy_image">Gerando imagem…</string>
@@ -694,7 +739,6 @@
     <string name="history_notice_details_saved">Detalhes de "%1$s" salvos.</string>
     <string name="history_notice_photo_saved">Foto salva.</string>
     <string name="history_notice_stl_saved">STL salvo.</string>
-    <string name="history_error_pick_failed">%1$s</string>
     <string name="history_error_photo_unreadable">Não consegui abrir %1$s como imagem. Use PNG ou JPG.</string>
 
     <!-- Catálogo: o aviso do cartão quando o preço de hoje não é o guardado -->
@@ -926,6 +970,11 @@
         <item quantity="one">%1$d faixa de preço ativa: ela substitui a taxa e o valor fixo acima.</item>
         <item quantity="other">%1$d faixas de preço ativas: elas substituem a taxa e o valor fixo acima.</item>
     </plurals>
+    <plurals name="settings_channels_fee_tiers">
+        <item quantity="one">%1$d faixa de preço</item>
+        <item quantity="other">%1$d faixas de preço</item>
+    </plurals>
+    <string name="settings_channels_fee_with_fixed">%1$s + %2$s por item</string>
     <string name="settings_channels_tier_up_to">Até (por peça)</string>
     <string name="settings_channels_tier_fee">Taxa (%)</string>
     <string name="settings_channels_tier_fixed">Fixo por item</string>
@@ -1028,7 +1077,14 @@
     <string name="settings_backup_notice_failed">Não consegui gravar o backup. Confira se a pasta existe e tem espaço, e tente de novo.</string>
     <string name="settings_backup_notice_folder_missing">A pasta ainda não existe: ela é criada no primeiro backup automático.</string>
     <string name="settings_backup_notice_restore_failed">Não consegui restaurar esse backup. Nada foi alterado.</string>
-    <string name="settings_backup_notice_restore_reason">%1$s</string>
+    <string name="settings_backup_restore_no_data_folder">Não consegui acessar a pasta de dados do app.</string>
+    <string name="settings_backup_restore_unreadable">Não consegui ler esse arquivo. Ele pode não ser um .zip válido ou estar corrompido.</string>
+    <string name="settings_backup_restore_not_a_backup">Esse arquivo não parece ser um backup do 3DReport. Nada foi alterado.</string>
+    <string name="settings_backup_restore_newer_version">Esse backup é de uma versão mais nova do 3DReport. Atualize o app pra restaurar. Nada foi alterado.</string>
+    <string name="settings_backup_restore_old_format">Esse backup é de uma versão com formato de dados anterior (1.x) e não abre nesta. Abra com a versão em que ele foi feito. Nada foi alterado.</string>
+    <string name="settings_backup_restore_keep_failed">Não consegui guardar uma cópia dos dados atuais. Feche outros programas que usem a pasta e tente de novo. Nada foi alterado.</string>
+    <string name="settings_backup_restore_apply_failed_kept">Não consegui aplicar o backup. Seus dados atuais foram mantidos.</string>
+    <string name="settings_backup_restore_apply_failed_moved">Não consegui aplicar o backup, e seus dados atuais ficaram guardados em %1$s. Renomeie essa pasta de volta pra %2$s antes de abrir o app de novo.</string>
     <string name="settings_backup_restore_title">Restaurar este backup?</string>
     <string name="settings_backup_restore_message">Todos os dados atuais do app (orçamentos, clientes, catálogos, configurações, fotos e STLs) serão substituídos pelo conteúdo de "%1$s". Uma cópia dos dados atuais é guardada automaticamente, e o app será fechado ao final pra carregar os dados restaurados.</string>
     <string name="settings_backup_restore_confirm">Restaurar</string>
@@ -1204,6 +1260,7 @@
     <string name="client_doc_image_unit_price">%1$s · %2$s cada</string>
 
     <!-- Rótulos soltos do PDF (o valor vai ao lado, em outra fonte). -->
+    <string name="client_doc_contact_whatsapp">WhatsApp %1$s</string>
     <string name="client_doc_label_value">Valor</string>
     <string name="client_doc_label_total">Total</string>
     <string name="client_doc_label_shipping">Frete</string>

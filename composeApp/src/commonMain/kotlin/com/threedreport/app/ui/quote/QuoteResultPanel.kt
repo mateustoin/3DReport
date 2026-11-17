@@ -1,6 +1,7 @@
 package com.threedreport.app.ui.quote
 
 import _3dreport.composeapp.generated.resources.Res
+import _3dreport.composeapp.generated.resources.filaments_color_unnamed
 import _3dreport.composeapp.generated.resources.quote_compare_title
 import _3dreport.composeapp.generated.resources.quote_result_all_out_of_stock
 import _3dreport.composeapp.generated.resources.quote_result_below_minimum
@@ -244,7 +245,8 @@ private fun PriceHeader(quote: Quote, result: QuoteResult, input: QuoteInputStat
             null
         }
         // Um carretel por linha: numa linha só, um "· Preto 44,7 g" podia cair sozinho no começo da seguinte.
-        val consumptionLines = quote.filamentTotals().map { stringResource(Res.string.quote_result_consumption, it.displayText()) }
+        val unnamedColor = stringResource(Res.string.filaments_color_unnamed)
+        val consumptionLines = quote.filamentTotals().map { stringResource(Res.string.quote_result_consumption, it.displayText(unnamedColor)) }
         // Preço combinado sem sinal nenhum no painel parecia o preço de sempre: o calculado fica logo abaixo do número.
         val calculatedLine = result.calculatedTotal?.takeIf { quote.isNegotiated }
             ?.let { stringResource(Res.string.quote_result_calculated, it.toMoney()) }

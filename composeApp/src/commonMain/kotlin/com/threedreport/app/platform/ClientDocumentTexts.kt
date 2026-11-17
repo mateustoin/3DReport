@@ -3,6 +3,7 @@ package com.threedreport.app.platform
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.client_doc_catalog_other
 import _3dreport.composeapp.generated.resources.client_doc_catalog_title
+import _3dreport.composeapp.generated.resources.client_doc_contact_whatsapp
 import _3dreport.composeapp.generated.resources.client_doc_delivery
 import _3dreport.composeapp.generated.resources.client_doc_delivery_rush
 import _3dreport.composeapp.generated.resources.client_doc_image_delivery
@@ -41,6 +42,8 @@ import _3dreport.composeapp.generated.resources.duration_hours
 import _3dreport.composeapp.generated.resources.duration_hours_minutes
 import _3dreport.composeapp.generated.resources.duration_minutes
 import com.threedreport.app.ui.format.DurationTexts
+import com.threedreport.core.model.ContactChannel
+import com.threedreport.core.model.ContactEntry
 import com.threedreport.core.model.SavedQuote
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getPluralString
@@ -180,6 +183,15 @@ class ClientDocumentTexts internal constructor(
     /** "grátis", o valor do frete absorvido. */
     val labelShippingFree: String get() = fill(Res.string.client_doc_label_shipping_free)
 
+    /**
+     * A linha de contato do cabeçalho do PDF: "WhatsApp (11) 99999-0000" (o nome do canal e o modelo vêm do recurso, pra
+     * cada língua escolher a ordem), ou só o e-mail ou o Instagram.
+     */
+    fun contactLine(contact: ContactEntry): String = when (contact.channel) {
+        ContactChannel.WHATSAPP -> fill(Res.string.client_doc_contact_whatsapp, contact.value)
+        ContactChannel.EMAIL, ContactChannel.INSTAGRAM -> contact.value
+    }
+
     /** "Entrega até", rótulo solto do PDF (a data vai ao lado). */
     val labelDelivery: String get() = fill(Res.string.client_doc_label_delivery)
 
@@ -222,6 +234,7 @@ private val CLIENT_DOCUMENT_TEMPLATES: List<StringResource> = listOf(
     Res.string.client_doc_image_delivery,
     Res.string.client_doc_image_delivery_rush,
     Res.string.client_doc_image_unit_price,
+    Res.string.client_doc_contact_whatsapp,
     Res.string.client_doc_label_value,
     Res.string.client_doc_label_total,
     Res.string.client_doc_label_shipping,

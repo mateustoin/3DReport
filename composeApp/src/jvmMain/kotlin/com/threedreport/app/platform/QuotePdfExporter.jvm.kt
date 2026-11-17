@@ -166,7 +166,7 @@ private class PdfContext(
 
     /** Se o cabeçalho de identidade aparece. Sem logo nem contato, a página é a de sempre. */
     val hasHeader: Boolean
-        get() = logo != null || options.contactLines.isNotEmpty()
+        get() = logo != null || options.contacts.isNotEmpty()
 
     private fun loadFont(bytes: ByteArray): PDFont = PDType0Font.load(document, ByteArrayInputStream(bytes), true)
 }
@@ -745,7 +745,7 @@ private fun drawIdentityHeader(
     // Com logo, o nome vai pro bloco da direita junto do contato; sem logo, ele já está à esquerda.
     val rightLines = buildList {
         if (logo != null && brandName != null) add(Triple(context.displayFont, CONTACT_SIZE, brandName))
-        options.contactLines.forEach { add(Triple(context.bodyFont, CONTACT_SIZE, it)) }
+        options.contacts.forEach { add(Triple(context.bodyFont, CONTACT_SIZE, context.texts.contactLine(it))) }
     }
     var lineY = top
     val lineHeight = CONTACT_SIZE * 1.5f

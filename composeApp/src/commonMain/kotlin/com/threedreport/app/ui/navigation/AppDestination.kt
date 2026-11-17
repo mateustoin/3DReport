@@ -3,11 +3,11 @@ package com.threedreport.app.ui.navigation
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.threedreport.app.ui.icons.AppIcons
 
-/** Grupo da barra lateral (decisão 111). [title] `null` é o pé da barra, sem título. */
-enum class DestinationGroup(val title: String?) {
-    SALES("Vendas"),
-    REGISTRIES("Cadastros"),
-    FOOTER(null),
+/** Grupo da barra lateral (decisão 111). O pé da barra não tem título; os nomes vêm de [titleRes]. */
+enum class DestinationGroup {
+    SALES,
+    REGISTRIES,
+    FOOTER,
 }
 
 /**
@@ -15,21 +15,20 @@ enum class DestinationGroup(val title: String?) {
  * Sobre. A ordem também é a dos atalhos Ctrl/Cmd+1 a 9; o Sobre fica sem atalho.
  */
 enum class AppDestination(
-    val label: String,
     val group: DestinationGroup,
     private val outlinedIcon: () -> ImageVector,
     private val filledIcon: (() -> ImageVector)? = null,
 ) {
-    QUOTE("Orçamento", DestinationGroup.SALES, { AppIcons.RequestQuote }, { AppIcons.RequestQuoteFilled }),
-    ORDERS("Pedidos", DestinationGroup.SALES, { AppIcons.ReceiptLong }),
-    CATALOG("Catálogo", DestinationGroup.SALES, { AppIcons.Storefront }),
-    DASHBOARD("Dashboard", DestinationGroup.SALES, { AppIcons.BarChart }, { AppIcons.BarChartFilled }),
-    FILAMENTS("Filamentos", DestinationGroup.REGISTRIES, { AppIcons.Spool }, { AppIcons.SpoolFilled }),
-    PRINTERS("Impressoras", DestinationGroup.REGISTRIES, { AppIcons.Printer3d }, { AppIcons.Printer3dFilled }),
-    SERVICES("Serviços", DestinationGroup.REGISTRIES, { AppIcons.Handyman }, { AppIcons.HandymanFilled }),
-    CONSUMABLES("Insumos", DestinationGroup.REGISTRIES, { AppIcons.Inventory2 }, { AppIcons.Inventory2Filled }),
-    SETTINGS("Configurações", DestinationGroup.FOOTER, { AppIcons.Settings }, { AppIcons.SettingsFilled }),
-    ABOUT("Sobre", DestinationGroup.FOOTER, { AppIcons.Info }),
+    QUOTE(DestinationGroup.SALES, { AppIcons.RequestQuote }, { AppIcons.RequestQuoteFilled }),
+    ORDERS(DestinationGroup.SALES, { AppIcons.ReceiptLong }),
+    CATALOG(DestinationGroup.SALES, { AppIcons.Storefront }),
+    DASHBOARD(DestinationGroup.SALES, { AppIcons.BarChart }, { AppIcons.BarChartFilled }),
+    FILAMENTS(DestinationGroup.REGISTRIES, { AppIcons.Spool }, { AppIcons.SpoolFilled }),
+    PRINTERS(DestinationGroup.REGISTRIES, { AppIcons.Printer3d }, { AppIcons.Printer3dFilled }),
+    SERVICES(DestinationGroup.REGISTRIES, { AppIcons.Handyman }, { AppIcons.HandymanFilled }),
+    CONSUMABLES(DestinationGroup.REGISTRIES, { AppIcons.Inventory2 }, { AppIcons.Inventory2Filled }),
+    SETTINGS(DestinationGroup.FOOTER, { AppIcons.Settings }, { AppIcons.SettingsFilled }),
+    ABOUT(DestinationGroup.FOOTER, { AppIcons.Info }),
     ;
 
     /** O número do atalho Ctrl/Cmd+N, ou `null` pra quem não tem. */

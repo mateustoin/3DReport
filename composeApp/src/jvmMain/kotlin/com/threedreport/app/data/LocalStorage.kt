@@ -2,6 +2,7 @@ package com.threedreport.app.data
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.quote_auto_name
+import _3dreport.composeapp.generated.resources.seed_printer_name
 import com.threedreport.app.data.store.DataFile
 import com.threedreport.app.data.store.DocumentValue
 import com.threedreport.app.data.store.RecordCollection
@@ -81,7 +82,7 @@ class LocalStorage(
 
     fun filaments(): FilamentRepository = RecordFilamentRepository(records("filaments.json", Filament.serializer(), { it.id }, Seeds::filaments))
 
-    fun printers(): PrinterRepository = RecordPrinterRepository(records("printers.json", PrinterProfile.serializer(), { it.id }, Seeds::printers))
+    fun printers(): PrinterRepository = RecordPrinterRepository(records("printers.json", PrinterProfile.serializer(), { it.id }, { Seeds.printers(loadSeedPrinterName()) }))
 
     fun services(): ServiceRepository = RecordServiceRepository(records("services.json", Service.serializer(), { it.id }))
 
@@ -129,6 +130,12 @@ class LocalStorage(
 
         private fun loadAutoNameTemplate(): String =
             autoNameTemplate ?: runBlocking { getString(Res.string.quote_auto_name) }.also { autoNameTemplate = it }
+
+        /**
+         * O nome da impressora de exemplo. Só é lido quando o `printers.json` ainda não existe, ou seja, na primeira
+         * abertura do app, no `main` e antes de a janela subir: nunca na thread da tela.
+         */
+        private fun loadSeedPrinterName(): String = runBlocking { getString(Res.string.seed_printer_name) }
 
         /** Lê o modelo na abertura do app, pra o primeiro salvamento não esperar o arquivo de textos na thread da tela. */
         private fun warmUpAutoNameTemplate() {

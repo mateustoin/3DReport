@@ -2,11 +2,11 @@ package com.threedreport.app.ui.settings
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.settings_backup_notice_failed
-import _3dreport.composeapp.generated.resources.settings_backup_notice_restore_reason
 import _3dreport.composeapp.generated.resources.settings_backup_notice_saved
 import com.threedreport.app.PendingWrites
 import com.threedreport.app.data.BackupRepository
 import com.threedreport.app.data.PreferencesRepository
+import com.threedreport.app.data.RestoreFailure
 import com.threedreport.app.data.RestoreResult
 import com.threedreport.app.platform.FakePlatform
 import com.threedreport.app.ui.text.uiText
@@ -84,7 +84,7 @@ class BackupViewModelTest {
 
     @Test
     fun aFailedRestoreLetsWritesGoOn() {
-        val viewModel = viewModel(RestoreResult.Failure("não é um backup"))
+        val viewModel = viewModel(RestoreResult.Failure(RestoreFailure.NotABackup))
         viewModel.pickBackupToRestore()
 
         viewModel.confirmRestore()
@@ -133,13 +133,13 @@ class BackupViewModelTest {
 
     @Test
     fun aFailedRestoreExplainsWhyAndRestoresNothing() {
-        val viewModel = viewModel(RestoreResult.Failure("não é um backup"))
+        val viewModel = viewModel(RestoreResult.Failure(RestoreFailure.NotABackup))
         viewModel.pickBackupToRestore()
 
         viewModel.confirmRestore()
 
         val notice = runBlocking { viewModel.notices.first() }
-        assertEquals(uiText(Res.string.settings_backup_notice_restore_reason, "não é um backup"), notice.message)
+        assertEquals(RestoreFailure.NotABackup.text(), notice.message)
         assertTrue(notice.isError)
         assertNull(viewModel.uiState.value.restoredFromPreviousDataAt)
         assertFalse(viewModel.uiState.value.busy)

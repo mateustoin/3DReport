@@ -349,7 +349,7 @@ private fun BrandingUiState.validityDays(): Int {
  */
 private fun BrandingUiState.toSettingsOrError(): Result<BrandingSettings> {
     val settings = runCatching { toSettings() }.getOrElse { return Result.failure(it) }
-    val hasHeader = logoBytes != null || settings.contactLines.isNotEmpty()
+    val hasHeader = logoBytes != null || settings.contacts.isNotEmpty()
     if (settings.brandName != null && !showWatermark && !showFooter && !hasHeader) {
         return Result.failure(FormError(uiText(Res.string.settings_docs_error_options), onValidity = false))
     }

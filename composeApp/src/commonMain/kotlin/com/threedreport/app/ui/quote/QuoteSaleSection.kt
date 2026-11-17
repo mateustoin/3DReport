@@ -46,7 +46,7 @@ import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
-import com.threedreport.app.ui.format.channelFeeSummary
+import com.threedreport.app.ui.format.channelFeeSummaries
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
@@ -75,6 +75,7 @@ internal fun SaleFields(
     // escolhe "Venda direta" pra liberar o cálculo.
     val offeredChannels: List<SalesChannel> = catalog.salesChannels.availableOrSelected { it.id == input.salesChannelId }
     val directSale = stringResource(Res.string.quote_sale_direct)
+    val feeSummaries = channelFeeSummaries(offeredChannels, currency)
     val clientOnlyForYou = HelpText(stringResource(Res.string.quote_help_client_private))
 
     Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
@@ -85,7 +86,7 @@ internal fun SaleFields(
                         label = stringResource(Res.string.quote_sale_field_channel),
                         items = listOf(null) + offeredChannels,
                         selected = result.salesChannel,
-                        itemLabel = { it?.let { channel -> "${channel.name} · ${channelFeeSummary(channel, currency)}" } ?: directSale },
+                        itemLabel = { it?.let { channel -> "${channel.name} · ${feeSummaries[channel.id].orEmpty()}" } ?: directSale },
                         displayText = { it?.name ?: directSale },
                         onSelect = { viewModel.selectSalesChannel(it?.id) },
                         emptyText = input.missingChannelName?.let { stringResource(Res.string.quote_sale_channel_deleted, it) } ?: directSale,

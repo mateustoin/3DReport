@@ -1,6 +1,8 @@
 package com.threedreport.app.platform
 
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.ContactChannel
+import com.threedreport.core.model.ContactEntry
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
@@ -579,7 +581,7 @@ class QuotePdfExporterTest {
 
     @Test
     fun headerShowsBrandNameAndContactWhenThereIsIdentity() {
-        val options = PdfLayoutOptions(brandName = "Minha Loja 3D", contactLines = listOf("WhatsApp (11) 99999-0000", "@minhaloja"))
+        val options = PdfLayoutOptions(brandName = "Minha Loja 3D", contacts = listOf(ContactEntry(ContactChannel.WHATSAPP, "(11) 99999-0000"), ContactEntry(ContactChannel.INSTAGRAM, "@minhaloja")))
 
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null, options = options))
 
@@ -602,7 +604,7 @@ class QuotePdfExporterTest {
     @Test
     fun emojiInTheNameOrContactDoesNotBreakTheExport() {
         val withEmoji = savedQuote.copy(name = "Vaso 🌵 decorativo")
-        val options = PdfLayoutOptions(contactLines = listOf("WhatsApp 📱 (11) 99999-0000"))
+        val options = PdfLayoutOptions(contacts = listOf(ContactEntry(ContactChannel.WHATSAPP, "📱 (11) 99999-0000")))
 
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(withEmoji, null)), testClientTexts, "Loja ✨", "Loja ✨", options = options))
 
@@ -624,7 +626,7 @@ class QuotePdfExporterTest {
 
     @Test
     fun anUnreadableLogoIsIgnored() {
-        val options = PdfLayoutOptions(logoBytes = byteArrayOf(1, 2, 3), contactLines = listOf("@loja"))
+        val options = PdfLayoutOptions(logoBytes = byteArrayOf(1, 2, 3), contacts = listOf(ContactEntry(ContactChannel.INSTAGRAM, "@loja")))
 
         val text = textOf(renderSavedQuotesPdf(listOf(QuoteExportItem(savedQuote, null)), testClientTexts, null, null, options = options))
 
@@ -633,7 +635,7 @@ class QuotePdfExporterTest {
 
     @Test
     fun catalogWithHeaderAndBorderStillListsEveryItem() {
-        val options = PdfLayoutOptions(logoBytes = noisyLogoPng(64), brandName = "Loja", contactLines = listOf("@loja", "loja@example.com"), showBorder = true)
+        val options = PdfLayoutOptions(logoBytes = noisyLogoPng(64), brandName = "Loja", contacts = listOf(ContactEntry(ContactChannel.INSTAGRAM, "@loja"), ContactEntry(ContactChannel.EMAIL, "loja@example.com")), showBorder = true)
         val items = List(7) { index -> QuoteExportItem(savedQuote.copy(id = "$index", name = "Peça $index"), null) }
 
         val text = textOf(renderCatalogPdf(items, testClientTexts, null, "Loja", options = options))

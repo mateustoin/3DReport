@@ -4,7 +4,6 @@ import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_undo
 import _3dreport.composeapp.generated.resources.export_copy_failed
 import _3dreport.composeapp.generated.resources.history_error_photo_unreadable
-import _3dreport.composeapp.generated.resources.history_error_pick_failed
 import _3dreport.composeapp.generated.resources.history_notice_converted
 import _3dreport.composeapp.generated.resources.history_notice_deleted
 import _3dreport.composeapp.generated.resources.history_notice_details_saved

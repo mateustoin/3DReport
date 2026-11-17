@@ -11,6 +11,8 @@ import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.testClientTexts
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.ContactChannel
+import com.threedreport.core.model.ContactEntry
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.ImageBackground
@@ -104,7 +106,7 @@ class ClientDocumentTextTest {
     private val options = PdfLayoutOptions(
         showPrintTime = true,
         brandName = "Minha Loja",
-        contactLines = listOf("(11) 99999-0000"),
+        contacts = listOf(ContactEntry(ContactChannel.EMAIL, "(11) 99999-0000")),
         showAppSignature = true,
         validityDays = 7,
         issuedOnEpochDay = 20_356L,

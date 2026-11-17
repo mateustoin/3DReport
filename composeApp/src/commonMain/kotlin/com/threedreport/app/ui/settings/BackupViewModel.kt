@@ -5,7 +5,6 @@ import _3dreport.composeapp.generated.resources.export_open_folder
 import _3dreport.composeapp.generated.resources.settings_backup_notice_failed
 import _3dreport.composeapp.generated.resources.settings_backup_notice_folder_missing
 import _3dreport.composeapp.generated.resources.settings_backup_notice_restore_failed
-import _3dreport.composeapp.generated.resources.settings_backup_notice_restore_reason
 import _3dreport.composeapp.generated.resources.settings_backup_notice_saved
 import com.threedreport.app.PendingWrites
 import com.threedreport.app.data.AppPreferences
@@ -159,10 +158,8 @@ class BackupViewModel(
                 when (result) {
                     is RestoreResult.Success -> state.update { it.copy(restoredFromPreviousDataAt = result.previousDataPath) }
 
-                    // O motivo vem do repositório, que já o escreve pra quem lê (ver RestoreResult.Failure).
-                    is RestoreResult.Failure -> noticeChannel.trySend(
-                        UiNotice(uiText(Res.string.settings_backup_notice_restore_reason, result.message), isError = true),
-                    )
+                    // O repositório diz o motivo por tipo; o texto sai de recurso (ver RestoreFailure.text).
+                    is RestoreResult.Failure -> noticeChannel.trySend(UiNotice(result.reason.text(), isError = true))
 
                     null -> noticeChannel.trySend(UiNotice(uiText(Res.string.settings_backup_notice_restore_failed), isError = true))
                 }

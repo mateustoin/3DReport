@@ -1,6 +1,8 @@
 package com.threedreport.app.platform
 
 import com.threedreport.core.model.Client
+import com.threedreport.core.model.ContactChannel
+import com.threedreport.core.model.ContactEntry
 import com.threedreport.core.model.CostBreakdown
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintCost
@@ -167,7 +169,7 @@ class PdfLayoutTest {
         assertTrue("Tempo de impressão" in textFor(null, null, base.copy(showPrintTime = true)))
         assertFalse("Tempo de impressão" in textFor(null, null, base))
         // Cabeçalho: contato e logo só quando existem.
-        assertTrue("contato@example.com" in textFor(null, null, base.copy(contactLines = listOf("contato@example.com"))))
+        assertTrue("contato@example.com" in textFor(null, null, base.copy(contacts = listOf(ContactEntry(ContactChannel.EMAIL, "contato@example.com")))))
         assertFalse("contato@example.com" in textFor(null, null, base))
     }
 
