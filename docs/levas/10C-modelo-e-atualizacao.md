@@ -19,9 +19,10 @@ com um clique, sem ir até o site.
    `.stl` ou `.3mf`. O seletor de arquivo e o arrastar e soltar aceitam os dois.
    Um arquivo só por orçamento: escolher outro troca o anterior.
 2. O arquivo é guardado como veio, na mesma pasta de hoje (`models/`), e baixado de
-   volta em Pedidos e no Catálogo ("Baixar arquivo do modelo", com o nome e a
-   extensão originais). Uso só interno, como hoje: nunca entra no PDF, na imagem
-   nem na mensagem.
+   volta em Pedidos e no Catálogo ("Baixar arquivo do modelo", com o nome do
+   orçamento, como hoje, e a extensão certa, `.stl` ou `.3mf`; o nome original do
+   arquivo não é guardado, pra não criar campo novo no disco). Uso só interno, como
+   hoje: nunca entra no PDF, na imagem nem na mensagem.
 3. **Com STL:** tudo como hoje (prévia 3D, análise, captura como foto).
 4. **Com 3MF:** sem prévia 3D. O app lê a miniatura que o fatiador grava dentro do
    arquivo (Bambu Studio, OrcaSlicer e PrusaSlicer; o caminho da imagem é lido do
