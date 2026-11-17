@@ -5,9 +5,11 @@ import _3dreport.composeapp.generated.resources.about_updates_see_news
 import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.common_close
 import _3dreport.composeapp.generated.resources.common_retry
+import _3dreport.composeapp.generated.resources.history_action_copied
 import _3dreport.composeapp.generated.resources.update_back
 import _3dreport.composeapp.generated.resources.update_copy_command
 import _3dreport.composeapp.generated.resources.update_downloading
+import _3dreport.composeapp.generated.resources.update_downloading_size
 import _3dreport.composeapp.generated.resources.update_error_checksum_mismatch
 import _3dreport.composeapp.generated.resources.update_error_install
 import _3dreport.composeapp.generated.resources.update_error_network
@@ -24,9 +26,12 @@ import _3dreport.composeapp.generated.resources.update_ready_macos
 import _3dreport.composeapp.generated.resources.update_ready_windows
 import _3dreport.composeapp.generated.resources.update_title
 import _3dreport.composeapp.generated.resources.update_unsaved
+import _3dreport.composeapp.generated.resources.update_unsaved_title
 import _3dreport.composeapp.generated.resources.update_verifying
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -34,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.threedreport.app.platform.openUrl
@@ -43,6 +49,9 @@ import com.threedreport.app.ui.components.AppProgressBar
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.theme.AppDimens
+import com.threedreport.app.ui.theme.TABULAR_FIGURES
+import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.app.update.InstallMethod
@@ -61,15 +70,21 @@ fun UpdateDialog(install: UpdateInstall, viewModel: UpdateViewModel) {
     when (install) {
         is UpdateInstall.Downloading -> AppDialog(
             title = title,
+            width = AppDimens.updateDialogWidth,
             onDismiss = viewModel::dismissUpdate,
             dismissOnClickOutside = false,
             buttons = { AppButton(stringResource(Res.string.common_cancel), viewModel::dismissUpdate) },
         ) {
-            ProgressBlock(stringResource(Res.string.update_downloading), install.progress.takeIf { it > 0f })
+            ProgressBlock(
+                stringResource(Res.string.update_downloading),
+                install.progress.takeIf { it > 0f },
+                detail = install.megabytes?.let { (done, total) -> stringResource(Res.string.update_downloading_size, done, total) },
+            )
         }
 
         is UpdateInstall.Verifying -> AppDialog(
             title = title,
+            width = AppDimens.updateDialogWidth,
             onDismiss = viewModel::dismissUpdate,
             dismissOnClickOutside = false,
             buttons = { AppButton(stringResource(Res.string.common_cancel), viewModel::dismissUpdate) },
@@ -79,6 +94,7 @@ fun UpdateDialog(install: UpdateInstall, viewModel: UpdateViewModel) {
 
         is UpdateInstall.Ready -> AppDialog(
             title = title,
+            width = AppDimens.updateDialogWidth,
             onDismiss = viewModel::dismissUpdate,
             buttons = {
                 AppButton(stringResource(Res.string.common_cancel), viewModel::dismissUpdate)
@@ -94,7 +110,8 @@ fun UpdateDialog(install: UpdateInstall, viewModel: UpdateViewModel) {
         }
 
         is UpdateInstall.ConfirmUnsaved -> AppDialog(
-            title = title,
+            title = stringResource(Res.string.update_unsaved_title),
+            width = AppDimens.updateDialogWidth,
             onDismiss = viewModel::backToReady,
             buttons = {
                 AppButton(stringResource(Res.string.update_back), viewModel::backToReady)
@@ -106,6 +123,7 @@ fun UpdateDialog(install: UpdateInstall, viewModel: UpdateViewModel) {
 
         is UpdateInstall.Installing -> AppDialog(
             title = title,
+            width = AppDimens.updateDialogWidth,
             onDismiss = {},
             dismissOnClickOutside = false,
             buttons = {},
@@ -115,9 +133,14 @@ fun UpdateDialog(install: UpdateInstall, viewModel: UpdateViewModel) {
 
         is UpdateInstall.Manual -> AppDialog(
             title = title,
+            width = AppDimens.updateDialogWidth,
             onDismiss = viewModel::dismissUpdate,
             buttons = {
-                AppButton(stringResource(Res.string.update_copy_command), viewModel::copyManualCommand, icon = AppIcons.ContentCopy)
+                AppButton(
+                    stringResource(if (install.copied) Res.string.history_action_copied else Res.string.update_copy_command),
+                    viewModel::copyManualCommand,
+                    icon = if (install.copied) AppIcons.Check else AppIcons.ContentCopy,
+                )
                 AppButton(stringResource(Res.string.common_close), viewModel::dismissUpdate, kind = ButtonKind.Primary)
             },
         ) {
@@ -127,22 +150,28 @@ fun UpdateDialog(install: UpdateInstall, viewModel: UpdateViewModel) {
                     install.command,
                     style = MaterialTheme.appType.body,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = space.xxs),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.appColors.cardBlock)
+                        .padding(space.sm),
                 )
             }
         }
 
         is UpdateInstall.Failed -> AppDialog(
             title = title,
+            width = AppDimens.updateDialogWidth,
             onDismiss = viewModel::dismissUpdate,
             buttons = {
-                if (install.canRetry) {
-                    AppButton(seeNews, { openUrl(install.release.url) }, icon = AppIcons.OpenInNew)
-                    AppButton(stringResource(Res.string.common_retry), viewModel::retryUpdate, kind = ButtonKind.Primary)
-                } else {
-                    AppButton(stringResource(Res.string.common_close), viewModel::dismissUpdate)
-                    AppButton(seeNews, { openUrl(install.release.url) }, kind = ButtonKind.Primary, icon = AppIcons.OpenInNew)
-                }
+                AppButton(stringResource(Res.string.common_close), viewModel::dismissUpdate)
+                AppButton(
+                    seeNews,
+                    { openUrl(install.release.url) },
+                    kind = if (install.canRetry) ButtonKind.Secondary else ButtonKind.Primary,
+                    icon = AppIcons.OpenInNew,
+                )
+                if (install.canRetry) AppButton(stringResource(Res.string.common_retry), viewModel::retryUpdate, kind = ButtonKind.Primary)
             },
         ) {
             DialogText(stringResource(install.reason.text()))
@@ -152,10 +181,20 @@ fun UpdateDialog(install: UpdateInstall, viewModel: UpdateViewModel) {
 
 /** A barra de progresso do passo e, embaixo, o que está sendo feito. Sem [progress], a barra anda sem fim. */
 @Composable
-private fun ProgressBlock(label: String, progress: Float?) {
+private fun ProgressBlock(label: String, progress: Float?, detail: String? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs), modifier = Modifier.fillMaxWidth()) {
         AppProgressBar(progress, modifier = Modifier.semantics { contentDescription = label })
-        Text(label, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Text(label, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Algarismos tabulares: o número não faz o texto tremer a cada atualização.
+            detail?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.appType.caption.copy(fontFeatureSettings = TABULAR_FIGURES),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

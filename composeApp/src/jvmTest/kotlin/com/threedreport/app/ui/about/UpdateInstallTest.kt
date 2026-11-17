@@ -103,12 +103,19 @@ class UpdateInstallTest {
         vm.startUpdate()
 
         assertEquals(
-            listOf<UpdateInstall?>(UpdateInstall.Downloading(release, 0f), UpdateInstall.Downloading(release, 0.4f), UpdateInstall.Verifying(release)),
+            listOf<UpdateInstall?>(UpdateInstall.Downloading(release, 0f, 100), UpdateInstall.Downloading(release, 0.4f, 100), UpdateInstall.Verifying(release)),
             seen,
         )
         val ready = assertIs<UpdateInstall.Ready>(vm.uiState.value.install)
         assertEquals(InstallMethod.LINUX_DEB, ready.update.plan.method)
         assertTrue(installer.installed.isEmpty(), "nada instala antes de a pessoa confirmar")
+    }
+
+    @Test
+    fun theDownloadKnowsHowManyMegabytesItHas() {
+        val state = UpdateInstall.Downloading(release, 0.5f, 98L * 1024 * 1024)
+        assertEquals(49L to 98L, state.megabytes)
+        assertNull(UpdateInstall.Downloading(release, 0.5f, 0).megabytes)
     }
 
     @Test
@@ -257,6 +264,7 @@ class UpdateInstallTest {
         assertEquals(0, closed, "o app continua aberto")
         vm.copyManualCommand()
         assertEquals(listOf("sudo apt-get install /tmp/3dreport/a.deb"), platform.copied)
+        assertTrue(assertIs<UpdateInstall.Manual>(vm.uiState.value.install).copied, "o botão vira Copiado por uns segundos")
         vm.dismissUpdate()
         assertNull(vm.uiState.value.install)
         assertTrue(installer.discarded.isEmpty(), "a pessoa ainda precisa do arquivo")

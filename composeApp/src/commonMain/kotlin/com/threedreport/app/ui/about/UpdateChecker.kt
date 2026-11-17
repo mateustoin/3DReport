@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -178,10 +179,10 @@ class UpdateViewModel(
         if (state.value.install.isBusy) return
         val plan = updatePlan?.takeIf { it.release == release } ?: return
         val token = ++installGeneration
-        state.update { it.copy(install = UpdateInstall.Downloading(release)) }
+        state.update { it.copy(install = UpdateInstall.Downloading(release, 0f, plan.asset.sizeBytes)) }
         installJob = scope.launch(background) {
             val outcome = try {
-                installer.download(plan) { progress -> reportDownload(token, release, progress) }
+                installer.download(plan) { progress -> reportDownload(token, release, plan.asset.sizeBytes, progress) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -205,14 +206,14 @@ class UpdateViewModel(
     }
 
     /** Em 100% o arquivo já desceu e falta conferir a soma. */
-    private fun reportDownload(token: Int, release: LatestRelease, progress: Float) {
+    private fun reportDownload(token: Int, release: LatestRelease, totalBytes: Long, progress: Float) {
         state.update { current ->
             if (token != installGeneration || current.install !is UpdateInstall.Downloading) {
                 current
             } else if (progress >= 1f) {
                 current.copy(install = UpdateInstall.Verifying(release))
             } else {
-                current.copy(install = UpdateInstall.Downloading(release, progress))
+                current.copy(install = UpdateInstall.Downloading(release, progress, totalBytes))
             }
         }
     }
@@ -285,7 +286,13 @@ class UpdateViewModel(
     /** Copia o comando de instalar do Linux sem `pkexec` ([UpdateInstall.Manual]). */
     fun copyManualCommand() {
         val manual = state.value.install as? UpdateInstall.Manual ?: return
-        platform.copyToClipboard(manual.command)
+        if (!platform.copyToClipboard(manual.command)) return
+        setInstall(manual.copy(copied = true))
+        // "Copiado" some depois de um instante, desde que a janela ainda seja a mesma.
+        scope.launch(main) {
+            delay(COPIED_MILLIS)
+            state.update { current -> if (current.install == manual.copy(copied = true)) current.copy(install = manual) else current }
+        }
     }
 
     /**
@@ -317,3 +324,5 @@ class UpdateViewModel(
         UpdateFailure.CHECKSUM_MISMATCH -> UpdateError.CHECKSUM_MISMATCH
     }
 }
+
+private const val COPIED_MILLIS = 2000L

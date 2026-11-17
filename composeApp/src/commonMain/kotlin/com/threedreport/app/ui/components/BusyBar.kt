@@ -42,7 +42,7 @@ fun AppProgressBar(progress: Float?, modifier: Modifier = Modifier) {
     val color = MaterialTheme.colorScheme.primary
     val track = MaterialTheme.appColors.line
     if (progress == null) {
-        LinearProgressIndicator(modifier = modifier.fillMaxWidth(), color = color, trackColor = track)
+        LinearProgressIndicator(modifier = modifier.fillMaxWidth(), color = color, trackColor = track, gapSize = 0.dp)
     } else {
         LinearProgressIndicator(
             progress = { progress.coerceIn(0f, 1f) },

@@ -23,7 +23,11 @@ sealed interface UpdateInstall {
     val release: LatestRelease
 
     /** Baixando o instalador; [progress] vai de 0 a 1. */
-    data class Downloading(override val release: LatestRelease, val progress: Float = 0f) : UpdateInstall
+    data class Downloading(override val release: LatestRelease, val progress: Float = 0f, val totalBytes: Long = 0) : UpdateInstall {
+        /** Megabytes já baixados e o total, pro "34 de 98 MB"; `null` sem tamanho conhecido. */
+        val megabytes: Pair<Long, Long>?
+            get() = totalBytes.takeIf { it > 0 }?.let { (it * progress).toLong() / BYTES_PER_MEGABYTE to it / BYTES_PER_MEGABYTE }
+    }
 
     /** Baixou; conferindo a soma SHA-256. */
     data class Verifying(override val release: LatestRelease) : UpdateInstall
@@ -38,10 +42,12 @@ sealed interface UpdateInstall {
     data class Installing(override val release: LatestRelease, val update: DownloadedUpdate) : UpdateInstall
 
     /** Sem `pkexec`: a pasta do arquivo foi aberta e [command] é o que a pessoa roda no terminal. */
-    data class Manual(override val release: LatestRelease, val folderPath: String, val command: String) : UpdateInstall
+    data class Manual(override val release: LatestRelease, val folderPath: String, val command: String, val copied: Boolean = false) : UpdateInstall
 
     /** Não deu. [canRetry]: tentar de novo faz sentido (rede ou instalador), ao contrário de uma soma que não bate. */
     data class Failed(override val release: LatestRelease, val reason: UpdateError) : UpdateInstall {
         val canRetry: Boolean get() = reason == UpdateError.NETWORK || reason == UpdateError.INSTALL
     }
 }
+
+private const val BYTES_PER_MEGABYTE = 1024L * 1024L

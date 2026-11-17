@@ -74,6 +74,7 @@ import com.threedreport.app.update.InstallMethod
 import com.threedreport.app.update.InstallOutcome
 import com.threedreport.app.update.NoUpdateInstaller
 import com.threedreport.app.update.ReleaseAsset
+import com.threedreport.app.update.UpdateFailure
 import com.threedreport.app.update.UpdateInstaller
 import com.threedreport.app.update.UpdatePlan
 import com.threedreport.core.model.BrandingSettings
@@ -420,6 +421,33 @@ private fun renderLeva10cScreenshots(container: AppContainer, outDir: File) {
         )
     }
 
+    // Revisão de design: o bloco do arquivo sem arquivo, com STL carregando e com 3MF no escuro.
+    renderAppPng(File(outDir, "orcamento-modelo-vazio.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(container, startAt = AppDestination.QUOTE, prepareQuote = { vm -> fillDraftQuote(vm) })
+    }
+    renderAppPng(File(outDir, "orcamento-stl-carregando.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(
+            container,
+            startAt = AppDestination.QUOTE,
+            prepareQuote = { vm ->
+                fillDraftQuote(vm)
+                vm.attachModelFile(PickedFile("Esfera enorme.stl", binaryStlSphere(segments = 1200)))
+            },
+        )
+    }
+    container.theme.update(ThemeMode.DARK)
+    renderAppPng(File(outDir, "orcamento-3mf-escuro.png"), afterSettle = { it.scrollAllToEnd() }) {
+        sampleApp(
+            container,
+            startAt = AppDestination.QUOTE,
+            prepareQuote = { vm ->
+                fillDraftQuote(vm)
+                vm.attachModelFile(PickedFile("Suporte de monitor.3mf", threeMfWithThumbnail(photo)))
+            },
+        )
+    }
+    container.theme.update(ThemeMode.LIGHT)
+
     // A janela de atualização: baixando (barra e Cancelar) e pronta pra instalar (o que vai acontecer no sistema).
     val release = LatestRelease("9.9.9", "https://example.com/novidades", listOf(ReleaseAsset("3dreport_9.9.9-1_amd64.deb", "https://example.com/a.deb", 90_000_000)))
     for ((name, installer) in listOf("baixando" to PreviewInstaller(downloading = true), "pronto" to PreviewInstaller(downloading = false))) {
@@ -434,21 +462,50 @@ private fun renderLeva10cScreenshots(container: AppContainer, outDir: File) {
             }
         }
     }
+
+    // Erro de rede, Linux sem pkexec (comando pra copiar) e orçamento não salvo antes de instalar.
+    data class State(val name: String, val installer: PreviewInstaller, val steps: List<String>, val draft: Boolean = false)
+    for (state in listOf(
+        State("erro", PreviewInstaller(downloading = false, fails = true), listOf("Atualizar agora")),
+        State("manual", PreviewInstaller(downloading = false, manual = true), listOf("Atualizar agora", "Abrir a pasta")),
+        State("nao-salvo", PreviewInstaller(downloading = false), listOf("Atualizar agora", "Instalar e fechar o app"), draft = true),
+    )) {
+        val dir = createTempDirectory("3dreport-screenshots-update-${state.name}").toFile()
+        LocalStorage(dir, Clock.System).onboarding().markCompleted()
+        val updateContainer = buildContainer(dir, ReleaseSource { release }, state.installer)
+        updateContainer.preferences.update(updateContainer.preferences.preferences.value.copy(checkForUpdates = true))
+        for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
+            updateContainer.theme.update(theme)
+            renderAppPng(
+                File(outDir, "atualizacao-${state.name}$suffix.png"),
+                afterSettle = { scene -> state.steps.forEach { step -> scene.clickByText(step); settle(scene, frames = 4) } },
+            ) {
+                sampleApp(updateContainer, startAt = AppDestination.ABOUT, prepareQuote = { vm -> if (state.draft) fillDraftQuote(vm) })
+            }
+        }
+    }
 }
 
 /** Um instalador de mentira pras capturas: ou fica baixando a 42%, ou entrega o arquivo na hora. */
-private class PreviewInstaller(private val downloading: Boolean) : UpdateInstaller {
-    override fun plan(release: LatestRelease) = UpdatePlan(release, release.assets.first(), InstallMethod.LINUX_DEB)
+private class PreviewInstaller(
+    private val downloading: Boolean,
+    private val fails: Boolean = false,
+    private val manual: Boolean = false,
+) : UpdateInstaller {
+    override fun plan(release: LatestRelease) =
+        UpdatePlan(release, release.assets.first(), if (manual) InstallMethod.LINUX_DEB_MANUAL else InstallMethod.LINUX_DEB)
 
     override suspend fun download(plan: UpdatePlan, onProgress: (Float) -> Unit): DownloadOutcome {
         if (downloading) {
             onProgress(0.42f)
             awaitCancellation()
         }
+        if (fails) return DownloadOutcome.Failed(UpdateFailure.NETWORK)
         return DownloadOutcome.Ready(DownloadedUpdate(plan, "/tmp/${plan.asset.name}"))
     }
 
-    override suspend fun install(update: DownloadedUpdate) = InstallOutcome.CloseApp
+    override suspend fun install(update: DownloadedUpdate): InstallOutcome =
+        if (manual) InstallOutcome.Manual("/tmp", "sudo apt-get install /tmp/${update.plan.asset.name}") else InstallOutcome.CloseApp
 
     override fun discard(update: DownloadedUpdate) = Unit
 }

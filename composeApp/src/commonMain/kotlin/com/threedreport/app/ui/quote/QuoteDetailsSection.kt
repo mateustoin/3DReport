@@ -25,6 +25,7 @@ import _3dreport.composeapp.generated.resources.quote_model_3mf_unreadable
 import _3dreport.composeapp.generated.resources.quote_model_3mf_use_as_photo
 import _3dreport.composeapp.generated.resources.quote_model_attach
 import _3dreport.composeapp.generated.resources.quote_model_hint_label
+import _3dreport.composeapp.generated.resources.quote_model_label
 import _3dreport.composeapp.generated.resources.quote_model_loading
 import _3dreport.composeapp.generated.resources.quote_model_remove
 import _3dreport.composeapp.generated.resources.quote_model_stl_simplified
@@ -38,7 +39,6 @@ import _3dreport.composeapp.generated.resources.quote_stl_not_manifold
 import _3dreport.composeapp.generated.resources.quote_stl_pieces
 import _3dreport.composeapp.generated.resources.quote_stl_viewer_label
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -206,27 +206,34 @@ private fun PhotoRow(viewModel: QuoteViewModel, form: SaveQuoteFormState) {
 private fun ModelAttachment(viewModel: QuoteViewModel, form: SaveQuoteFormState, preview: ModelPreview?) {
     val space = MaterialTheme.spacing
     val modelFile = form.modelFile
-    if (modelFile == null) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
-            AppButton(stringResource(Res.string.quote_model_attach), onClick = viewModel::pickModelFile)
-            HelpHint(HelpText(stringResource(Res.string.quote_help_model)), stringResource(Res.string.quote_model_hint_label))
+    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+        Text(stringResource(Res.string.quote_model_label), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (modelFile == null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                AppButton(stringResource(Res.string.quote_model_attach), onClick = viewModel::pickModelFile, icon = AppIcons.Add)
+                HelpHint(HelpText(stringResource(Res.string.quote_help_model)), stringResource(Res.string.quote_model_hint_label))
+            }
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
+                Text(modelFile.fileName, style = MaterialTheme.appType.body)
+                AppButton(stringResource(Res.string.quote_model_remove), onClick = viewModel::clearModelFile)
+            }
         }
-        return
     }
+    if (modelFile == null) return
     Column(verticalArrangement = Arrangement.spacedBy(space.sm)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
-            Text(modelFile.fileName, style = MaterialTheme.appType.body)
-            AppButton(stringResource(Res.string.quote_model_remove), onClick = viewModel::clearModelFile)
-        }
         when (val current = preview) {
             null -> Unit
 
             is ModelPreview.Loading -> {
                 val description = stringResource(Res.string.quote_model_loading)
-                AppProgressBar(
-                    progress = current.progress.takeIf { it > 0f },
-                    modifier = Modifier.semantics { contentDescription = description },
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
+                    AppProgressBar(
+                        progress = current.progress.takeIf { it > 0f },
+                        modifier = Modifier.semantics { contentDescription = description },
+                    )
+                    Text(description, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
 
             is ModelPreview.TooLarge -> Text(
@@ -260,7 +267,6 @@ private fun ErrorCaption(text: String) {
 /** A miniatura que o fatiador gravou no 3MF, no lugar da prévia 3D, e o botão que a usa como foto. */
 @Composable
 private fun ThreeMfThumbnailBlock(viewModel: QuoteViewModel, preview: ModelPreview.ThreeMf, form: SaveQuoteFormState) {
-    val space = MaterialTheme.spacing
     val bitmap = remember(preview.thumbnail) { runCatching { decodeImageBitmap(preview.thumbnail.bytes) }.getOrNull() }
     if (bitmap == null) {
         ErrorCaption(stringResource(Res.string.quote_model_3mf_unreadable))
@@ -271,7 +277,6 @@ private fun ThreeMfThumbnailBlock(viewModel: QuoteViewModel, preview: ModelPrevi
             .fillMaxWidth()
             .height(AppDimens.stlViewerHeight)
             .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.appColors.cardBlock)
             .border(AppDimens.borderWidth, MaterialTheme.appColors.line, MaterialTheme.shapes.medium),
     ) {
         Image(
@@ -282,10 +287,9 @@ private fun ThreeMfThumbnailBlock(viewModel: QuoteViewModel, preview: ModelPrevi
         )
     }
     // A foto já é esta miniatura (a regra automática a pôs): o botão só serve pra trocar uma foto diferente.
-    if (form.photo !== preview.thumbnail) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
-            AppButton(stringResource(Res.string.quote_model_3mf_use_as_photo), onClick = viewModel::useModelThumbnailAsPhoto, icon = AppIcons.Image)
-        }
+    val alreadyThePhoto = form.photo?.bytes?.contentEquals(preview.thumbnail.bytes) == true
+    if (!alreadyThePhoto) {
+        AppButton(stringResource(Res.string.quote_model_3mf_use_as_photo), onClick = viewModel::useModelThumbnailAsPhoto, icon = AppIcons.Image)
     }
 }
 
