@@ -128,15 +128,35 @@ private fun Modifier.fieldBoxLine(): Modifier = layout { measurable, constraints
 @Composable
 internal fun FieldLabel(label: String, help: HelpText?, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant) {
     // Altura mínima a do ícone de ajuda: campos com e sem ajuda, de uma linha, ficam alinhados na mesma linha da grade.
-    // O ícone fica na primeira linha quando o rótulo quebra.
-    Row(
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
-    ) {
-        Box(Modifier.weight(1f, fill = false).heightIn(min = AppDimens.iconSize), contentAlignment = Alignment.CenterStart) {
-            Text(label, style = MaterialTheme.appType.label, color = color, maxLines = LABEL_MAX_LINES, overflow = TextOverflow.Ellipsis)
+    // O ícone fica na primeira linha quando o rótulo quebra, e o texto se limita à linha mais larga medida, pra o ícone
+    // ficar colado no fim das palavras e não na borda da coluna.
+    val density = LocalDensity.current
+    BoxWithConstraints {
+        // Chaveado na largura disponível: ao redimensionar a janela a medida é refeita.
+        var widestLine by remember(label, maxWidth) { mutableStateOf<Dp?>(null) }
+        Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
+        ) {
+            Box(Modifier.weight(1f, fill = false).heightIn(min = AppDimens.iconSize), contentAlignment = Alignment.CenterStart) {
+                Text(
+                    label,
+                    style = MaterialTheme.appType.label,
+                    color = color,
+                    maxLines = LABEL_MAX_LINES,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = widestLine?.let { Modifier.width(it) } ?: Modifier,
+                    onTextLayout = { result ->
+                        if (result.lineCount > 1 && widestLine == null) {
+                            val widest = (0 until result.lineCount).maxOf { result.getLineRight(it) - result.getLineLeft(it) }
+                            // Arredonda pra cima: um pixel a menos faria a última palavra pular de linha.
+                            widestLine = with(density) { kotlin.math.ceil(widest).plus(1f).toDp() }
+                        }
+                    },
+                )
+            }
+            if (help != null) HelpHint(help, label, tint = if (help.warning) MaterialTheme.appColors.amberText else androidx.compose.ui.graphics.Color.Unspecified)
         }
-        if (help != null) HelpHint(help, label, tint = if (help.warning) MaterialTheme.appColors.amberText else androidx.compose.ui.graphics.Color.Unspecified)
     }
 }
 
@@ -351,13 +371,16 @@ fun <T> AppDropdownField(
     }
 }
 
-/** Seletor segmentado de poucas opções, com borda `line`; a opção ativa tem fundo `primary`. */
+/**
+ * Seletor segmentado de poucas opções, com borda `line`; a opção ativa tem fundo `primary`. Com [fillWidth] ocupa a
+ * largura que receber e as opções dividem o espaço por igual (o texto que não cabe termina em reticências).
+ */
 @Composable
-fun SegmentedChoice(options: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun SegmentedChoice(options: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, fillWidth: Boolean = false) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
     Row(
-        modifier = modifier
+        modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier)
             .fieldBoxLine()
             .background(colors.card, MaterialTheme.shapes.small)
             .border(AppDimens.borderWidth, colors.line, MaterialTheme.shapes.small)
@@ -366,11 +389,11 @@ fun SegmentedChoice(options: List<String>, selectedIndex: Int, onSelect: (Int) -
         options.forEachIndexed { index, option ->
             val active = index == selectedIndex
             Box(
-                modifier = Modifier
+                modifier = (if (fillWidth) Modifier.weight(1f) else Modifier)
                     .height(AppDimens.controlHeight - AppDimens.borderWidth * 2)
                     .background(if (active) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent, MaterialTheme.shapes.extraSmall)
                     .clickableAction(onClick = { onSelect(index) }, shape = MaterialTheme.shapes.extraSmall, role = Role.RadioButton)
-                    .padding(horizontal = space.md),
+                    .padding(horizontal = if (fillWidth) space.xxs else space.md),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -379,6 +402,7 @@ fun SegmentedChoice(options: List<String>, selectedIndex: Int, onSelect: (Int) -
                     fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                     color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -394,10 +418,11 @@ fun AppChoiceField(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     help: HelpText? = null,
+    fillWidth: Boolean = false,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
         FieldLabel(label, help)
-        SegmentedChoice(options, selectedIndex, onSelect)
+        SegmentedChoice(options, selectedIndex, onSelect, fillWidth = fillWidth)
     }
 }
 

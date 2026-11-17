@@ -184,13 +184,18 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
             }
         }
         val backgrounds = ImageBackground.entries
-        AppChoiceField(
-            label = stringResource(Res.string.settings_docs_image_background),
-            options = backgrounds.map { stringResource(it.labelRes()) },
-            selectedIndex = backgrounds.indexOf(branding.imageBackground),
-            onSelect = { viewModel.setImageBackground(backgrounds[it]) },
-            help = HelpText(stringResource(Res.string.settings_docs_image_background_help)),
-        )
+        FormGrid {
+            cell(1) {
+                AppChoiceField(
+                    label = stringResource(Res.string.settings_docs_image_background),
+                    options = backgrounds.map { stringResource(it.labelRes()) },
+                    selectedIndex = backgrounds.indexOf(branding.imageBackground),
+                    onSelect = { viewModel.setImageBackground(backgrounds[it]) },
+                    help = HelpText(stringResource(Res.string.settings_docs_image_background_help)),
+                    fillWidth = true,
+                )
+            }
+        }
         // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
         val sampleName = stringResource(Res.string.settings_docs_preview_sample)
         AppButton(stringResource(Res.string.settings_docs_action_preview), onClick = { viewModel.showPreview(sampleName) }, icon = AppIcons.Visibility)

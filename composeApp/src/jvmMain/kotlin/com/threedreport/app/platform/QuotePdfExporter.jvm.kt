@@ -46,15 +46,14 @@ private val PAGE_HEIGHT = PDRectangle.A4.height
 private fun cqw(percent: Float): Float = percent * PAGE_WIDTH / 100f
 
 /** Tinta do texto, e seus apagados. */
-private val INK = Color(0x10, 0x15, 0x1C)
-private val INK_MUTED = Color(0x5B, 0x66, 0x73)
-private val INK_FAINT = Color(0x7A, 0x85, 0x93)
+private val INK = DocumentColors.ink
+private val INK_MUTED = DocumentColors.inkMuted
 
 /** Linha de separação (cabeçalho e rodapé), linha fina entre as linhas de detalhe e o cinza dos blocos. */
-private val RULE = Color(0xD5, 0xDB, 0xE3)
-private val ROW_RULE = Color(0xE6, 0xE9, 0xEE)
-private val PANEL = Color(0xF1, 0xF3, 0xF6)
-private val BORDER = Color(190, 190, 190)
+private val RULE = DocumentColors.rule
+private val ROW_RULE = DocumentColors.rowRule
+private val PANEL = DocumentColors.panel
+private val BORDER = DocumentColors.pageBorder
 
 private val SIDE_MARGIN = cqw(8f)
 private val TOP_MARGIN = cqw(7f)
@@ -64,12 +63,12 @@ private val PANEL_RADIUS = cqw(1.2f)
 // Tamanhos de letra.
 private val BRAND_SIZE = cqw(4.2f)
 private val CONTACT_SIZE = cqw(2.1f)
-private val META_SIZE = cqw(2.2f)
+private val META_SIZE = cqw(2.3f)
 private val TITLE_SIZE = cqw(6.4f)
-private val LABEL_SIZE = cqw(1.8f)
+private val LABEL_SIZE = cqw(2f)
 private val VALUE_SIZE = cqw(3.2f)
 private val PRICE_SIZE = cqw(8.4f)
-private val ROW_SIZE = cqw(2f)
+private val ROW_SIZE = cqw(2.3f)
 private val FOOT_SIZE = cqw(1.9f)
 
 /** Espaço entre as letras de um rótulo em maiúsculas, em fração do corpo (0,06 em). */
@@ -86,8 +85,13 @@ private val PHOTO_BOX_PADDING = cqw(2f)
 private val ROW_HEIGHT = cqw(4.2f)
 private val GAP = cqw(2.6f)
 
-/** Espaço entre o rótulo pequeno e o número do bloco do valor, e folga de arredondamento nas contas de altura. */
-private val LABEL_GAP = cqw(1.2f)
+/**
+ * Espaço entre o rótulo pequeno e o valor do bloco do valor, e entre um grupo (rótulo e valor) e o seguinte. O entre grupos
+ * é mais que o dobro do outro, pra "Entrega até" e "Válido até" não se confundirem num bloco só. Mais a folga de
+ * arredondamento nas contas de altura.
+ */
+private val LABEL_GAP = cqw(0.8f)
+private val GROUP_GAP = cqw(2.6f)
 private const val EPSILON = 0.5f
 
 /** Rodapé: o texto fica na margem de baixo e a linha fina acima dele. */
@@ -355,8 +359,8 @@ private fun PdfContext.finishPage(writer: PageWriter, brandName: String?, footer
 /** O que o cliente lê numa linha de detalhe: "Pintura (× 3)" à esquerda e o valor à direita. */
 private class DetailRow(val label: String, val value: String)
 
-/** Uma linha do lado direito do bloco do valor: rótulo pequeno em maiúsculas (se houver), valor, e o respiro até a próxima. */
-private class BlockLine(val label: String?, val value: String, val valueSize: Float, val gapBelow: Float)
+/** Uma linha do lado direito do bloco do valor: rótulo pequeno em maiúsculas (se houver), valor, e o respiro até a próxima. [muted] é a linha de apoio (fonte de corpo, cor apagada), como a entrega expressa. */
+private class BlockLine(val label: String?, val value: String, val valueSize: Float, val gapBelow: Float, val muted: Boolean = false)
 
 /** O bloco cinza: rótulo e preço grande à esquerda, entrega e validade à direita. */
 private class PriceBlock(val label: String, val price: String, val lines: List<BlockLine>)
@@ -391,16 +395,16 @@ private fun priceBlock(savedQuote: SavedQuote, options: PdfLayoutOptions, texts:
         val validDays = options.validityDays?.takeIf { it > 0 && savedQuote.isOrder }
         // Entrega expressa (decisão 125) junto do prazo; sem prazo, vira a própria linha do bloco.
         if (deliveryDay != null) {
-            add(BlockLine(texts.labelDelivery, formatDate(deliveryDay), VALUE_SIZE, gapBelow = if (rush) cqw(1f) else cqw(1.4f)))
-            if (rush) add(BlockLine(null, texts.rush, ROW_SIZE, gapBelow = cqw(1.4f)))
+            add(BlockLine(texts.labelDelivery, formatDate(deliveryDay), VALUE_SIZE, gapBelow = if (rush) LABEL_GAP else GROUP_GAP))
+            if (rush) add(BlockLine(null, texts.rush, ROW_SIZE, gapBelow = GROUP_GAP, muted = true))
         } else if (rush) {
-            add(BlockLine(null, texts.rush, VALUE_SIZE, gapBelow = cqw(1.4f)))
+            add(BlockLine(null, texts.rush, VALUE_SIZE, gapBelow = GROUP_GAP))
         }
         if (validDays != null) {
             add(BlockLine(texts.labelValidUntil, formatDate((options.issuedOnEpochDay ?: todayEpochDay()) + validDays), VALUE_SIZE, gapBelow = 0f))
         }
     }
-    val closed = if (lines.isNotEmpty()) lines.dropLast(1) + lines.last().let { BlockLine(it.label, it.value, it.valueSize, gapBelow = 0f) } else lines
+    val closed = if (lines.isNotEmpty()) lines.dropLast(1) + lines.last().let { BlockLine(it.label, it.value, it.valueSize, gapBelow = 0f, muted = it.muted) } else lines
     return PriceBlock(
         label = if (hasBreakdown(savedQuote)) texts.labelTotal else texts.labelValue,
         price = savedQuote.totalWithServices.toCurrencyText(savedQuote.currency),
@@ -441,7 +445,11 @@ private fun drawPriceBlock(context: PdfContext, writer: PageWriter, block: Price
             cursor = labelBaseline - gap
         }
         val valueBaseline = cursor - line.valueSize * CAP_HEIGHT
-        content.textRight(context.strongFont, line.valueSize, right, valueBaseline, line.value)
+        if (line.muted) {
+            content.textRight(context.bodyFont, line.valueSize, right, valueBaseline, line.value, INK_MUTED)
+        } else {
+            content.textRight(context.strongFont, line.valueSize, right, valueBaseline, line.value)
+        }
         cursor = valueBaseline - line.gapBelow
     }
     writer.y = bottom
@@ -617,7 +625,7 @@ private fun drawFooter(context: PdfContext, page: PDPage, content: PDPageContent
     if (!hasText && !context.options.showAppSignature) return
     val right = PAGE_WIDTH - SIDE_MARGIN
     content.hairline(SIDE_MARGIN, right, FOOTER_RULE_Y)
-    if (hasText) content.text(context.bodyFont, FOOT_SIZE, SIDE_MARGIN, BOTTOM_MARGIN, footerText!!, INK_FAINT)
+    if (hasText) content.text(context.bodyFont, FOOT_SIZE, SIDE_MARGIN, BOTTOM_MARGIN, footerText!!, INK_MUTED)
     if (context.options.showAppSignature) drawAppSignature(context, page, content, right, BOTTOM_MARGIN)
 }
 
@@ -634,7 +642,7 @@ private fun drawAppSignature(context: PdfContext, page: PDPage, content: PDPageC
     val suffixWidth = if (after.isEmpty()) 0f else font.widthOf(after, FOOT_SIZE)
     val x = right - prefixWidth - nameWidth - suffixWidth
 
-    content.text(font, FOOT_SIZE, x, baselineY, before + name + after, INK_FAINT)
+    content.text(font, FOOT_SIZE, x, baselineY, before + name + after, INK_MUTED)
 
     val link = PDAnnotationLink().apply {
         rectangle = PDRectangle(x + prefixWidth, baselineY - 2f, nameWidth, FOOT_SIZE + 4f)
@@ -712,12 +720,12 @@ actual fun renderCatalogPdf(
 
         val margin = SIDE_MARGIN
         val columns = 2
-        val gutter = 20f
+        val gutter = CATALOG_GUTTER
         val titleSize = cqw(4f)
         val titleHeight = titleSize + GAP
-        val photoSize = 180f
-        val cellHeight = photoSize + 58f
-        val rowGap = 20f
+        val photoSize = CATALOG_PHOTO_SIZE
+        val cellHeight = photoSize + CATALOG_TEXT_HEIGHT
+        val rowGap = CATALOG_ROW_GAP
         val cellWidth = (PAGE_WIDTH - margin * 2 - gutter * (columns - 1)) / columns
 
         // O cabeçalho de identidade tem altura variável (logo, número de contatos). Mede numa
@@ -736,7 +744,7 @@ actual fun renderCatalogPdf(
         }
         val headerHeight = titleHeight + identityHeight
 
-        val sectionHeaderHeight = SECTION_HEADER_HEIGHT + 14f
+        val sectionHeaderHeight = SECTION_HEADER_HEIGHT + SECTION_AFTER_GAP
         val blocks = catalogSections(items, texts.catalogOther).flatMap { (title, sectionItems) ->
             listOfNotNull(title?.let(CatalogBlock::Header)) + sectionItems.chunked(columns).map(CatalogBlock::Row)
         }
@@ -774,7 +782,7 @@ actual fun renderCatalogPdf(
             val current = writer!!
             when (block) {
                 is CatalogBlock.Header -> {
-                    current.y = drawSectionHeader(context, current.content, block.title, margin, current.y, PAGE_WIDTH - margin * 2) - 14f
+                    current.y = drawSectionHeader(context, current.content, block.title, margin, current.y, PAGE_WIDTH - margin * 2) - SECTION_AFTER_GAP
                 }
 
                 is CatalogBlock.Row -> {
@@ -830,8 +838,9 @@ private fun drawCatalogCell(
     photoSize: Float,
 ) {
     val savedQuote = item.savedQuote
+    // O quadro cinza fica mesmo sem foto, pra a grade não ganhar um buraco branco.
+    content.fillPanel(cellX, cellTop - photoSize, cellWidth, photoSize, PANEL_RADIUS)
     preparePhoto(context.document, item.photoBytes, CATALOG_PHOTO_MAX_PIXELS)?.let { pdImage ->
-        content.fillPanel(cellX, cellTop - photoSize, cellWidth, photoSize, PANEL_RADIUS)
         val inner = PHOTO_BOX_PADDING
         val scale = minOf((cellWidth - inner * 2) / pdImage.width, (photoSize - inner * 2) / pdImage.height, 1f)
         val drawWidth = pdImage.width * scale
@@ -841,20 +850,35 @@ private fun drawCatalogCell(
         content.drawImage(pdImage, offsetX, offsetY, drawWidth, drawHeight)
     }
 
-    var textY = cellTop - photoSize - 18f
-    wrapText(context.displayFont, 12f, savedQuote.clientTitle(context.texts, withNumber = false), cellWidth, maxLines = 2).forEach { line ->
-        content.text(context.displayFont, 12f, cellX, textY, line)
-        textY -= 14f
+    var textY = cellTop - photoSize - CATALOG_NAME_TOP
+    wrapText(context.strongFont, CATALOG_NAME_SIZE, savedQuote.clientTitle(context.texts, withNumber = false), cellWidth, maxLines = 2).forEach { line ->
+        content.text(context.strongFont, CATALOG_NAME_SIZE, cellX, textY, line)
+        textY -= CATALOG_NAME_LINE
     }
-    textY -= 2f
-    content.text(context.strongFont, 12f, cellX, textY, savedQuote.totalWithServices.toCurrencyText(savedQuote.currency))
+    textY -= CATALOG_PRICE_GAP
+    content.text(context.displayFont, CATALOG_PRICE_SIZE, cellX, textY, savedQuote.totalWithServices.toCurrencyText(savedQuote.currency))
 }
 
+/** Medidas da grade do catálogo, em pontos: o vão entre colunas e entre linhas, o quadro da foto e o texto embaixo dele. */
+private const val CATALOG_GUTTER = 20f
+private const val CATALOG_ROW_GAP = 20f
+private const val CATALOG_PHOTO_SIZE = 180f
+private const val CATALOG_TEXT_HEIGHT = 62f
+
+/** Nome (Inter semibold) e preço (Space Grotesk) da célula, e a distância do quadro até a primeira linha do nome. */
+private const val CATALOG_NAME_SIZE = 12f
+private const val CATALOG_PRICE_SIZE = 14.5f
+private const val CATALOG_NAME_LINE = 14f
+private const val CATALOG_NAME_TOP = 18f
+private const val CATALOG_PRICE_GAP = 4f
+
 private const val SECTION_HEADER_HEIGHT = 26f
+private const val SECTION_TITLE_SIZE = 14f
+private const val SECTION_AFTER_GAP = 14f
 
 /** Título de uma seção do catálogo: o nome em destaque e uma linha fina embaixo. Devolve o novo cursor, abaixo dela. */
 private fun drawSectionHeader(context: PdfContext, content: PDPageContentStream, text: String, x: Float, top: Float, width: Float): Float {
-    val size = 14f
+    val size = SECTION_TITLE_SIZE
     val bottom = top - SECTION_HEADER_HEIGHT
     content.text(context.displayFont, size, x, top - size - 2f, text)
     content.hairline(x, x + width, bottom)

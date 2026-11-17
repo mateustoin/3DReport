@@ -66,9 +66,8 @@ private const val RIGHT_GAP = 10
 private const val PIECE_MARGIN_X = 86
 private const val PIECE_MARGIN_Y = 54
 
-/** Tom claro: o cartão da peça. Margem (5%), onde ele termina (67% da altura), raio dos cantos (2,4%) e espessura da borda. */
+/** Tom claro: o cartão da peça. Margem (5%), raio dos cantos (2,4%) e espessura da borda. Ele desce até [CARD_TEXT_GAP] acima do texto. */
 private const val CARD_MARGIN = 54
-private const val CARD_MAX_BOTTOM = 724
 private const val CARD_TEXT_GAP = 48
 private const val CARD_RADIUS = 26
 private const val CARD_BORDER = 2
@@ -92,27 +91,27 @@ private class Palette(
 
 /** Tom escuro, o do azul-marinho: `navy` no fundo e `navy` do tema escuro na faixa, `onNavy` e `onNavyMuted` no texto. Só o preço em `amber`. */
 private val DARK_PALETTE = Palette(
-    background = Color(0x0C, 0x27, 0x42),
-    band = Color(0x08, 0x15, 0x26),
-    name = Color(0xEA, 0xF1, 0xF8),
-    price = Color(0xF2, 0xA5, 0x41),
-    delivery = Color(0xEA, 0xF1, 0xF8),
-    muted = Color(0xA9, 0xBC, 0xD0),
+    background = DocumentColors.navy,
+    band = DocumentColors.navyDeep,
+    name = DocumentColors.onNavy,
+    price = DocumentColors.amber,
+    delivery = DocumentColors.onNavy,
+    muted = DocumentColors.onNavyMuted,
 )
 
 /** Tom claro: `background` no fundo, `text` no nome e no preço, `textMuted` no contato e a entrega no âmbar de texto (o `amber` não tem contraste no claro). */
 private val LIGHT_PALETTE = Palette(
-    background = Color(0xF6, 0xF8, 0xFB),
+    background = DocumentColors.screenBackground,
     band = null,
-    name = Color(0x0F, 0x1B, 0x2B),
-    price = Color(0x0F, 0x1B, 0x2B),
-    delivery = Color(0xC9, 0x7A, 0x12),
-    muted = Color(0x53, 0x61, 0x73),
+    name = DocumentColors.text,
+    price = DocumentColors.text,
+    delivery = DocumentColors.amberText,
+    muted = DocumentColors.textMuted,
 )
 
 /** `card` e `line`: o cartão branco com borda onde a peça fica no tom claro. */
-private val CARD_COLOR = Color.WHITE
-private val CARD_LINE = Color(0xDC, 0xE2, 0xEA)
+private val CARD_COLOR = DocumentColors.card
+private val CARD_LINE = DocumentColors.line
 
 private fun loadFont(bytes: ByteArray): Font = Font.createFont(Font.TRUETYPE_FONT, ByteArrayInputStream(bytes))
 
@@ -189,7 +188,7 @@ actual fun renderQuoteImage(
 
     if (hasPhoto) {
         if (tone == ImageTone.LIGHT) {
-            drawCard(graphics, photo!!, min(CARD_MAX_BOTTOM, floor(infoTop - CARD_TEXT_GAP).toInt()))
+            drawCard(graphics, photo!!, floor(infoTop - CARD_TEXT_GAP).toInt())
         } else {
             drawPieceOnBackground(graphics, photo!!, bandTop)
             graphics.color = palette.band
