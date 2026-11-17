@@ -4,6 +4,7 @@ import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.format.toMoneyInputText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
@@ -73,7 +74,7 @@ data class PrinterFormState(
             name = preset.displayName,
             printerPowerWattsText = preset.averagePowerWatts.toInputText(decimalSeparator),
             maintenanceCostPerHourText = preset.maintenance.costPerHour.toInputText(decimalSeparator),
-            machinePriceText = preset.referencePrice?.toInputText(decimalSeparator).orEmpty(),
+            machinePriceText = preset.referencePrice?.toMoneyInputText(decimalSeparator).orEmpty(),
             fromPreset = true,
         )
     }

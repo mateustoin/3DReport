@@ -1,5 +1,7 @@
 package com.threedreport.app.ui.printers
 
+import com.threedreport.app.ui.format.toMoneyInputText
+import com.threedreport.app.ui.format.toWholeCurrencyText
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
 import kotlin.test.Test
@@ -53,21 +55,37 @@ class PrinterPresetsTest {
 
         assertEquals("144", form.printerPowerWattsText)
         assertEquals("0,3", form.maintenanceCostPerHourText)
-        assertEquals("3999", form.machinePriceText)
+        assertEquals("3999,00", form.machinePriceText)
         assertEquals("12", form.paybackMonthsText)
         assertEquals("25", form.printingDaysPerMonthText)
         assertEquals("12", form.printingHoursPerDayText)
     }
 
     @Test
-    fun withPresetAppliesAverageMaintenanceAndReferencePriceButKeepsUsage() {
+    fun withPresetAppliesAverageMaintenanceReferencePriceAndDefaultUsage() {
         val result = example.withPreset(PRINTER_PRESETS.first { it.model == "A1" }, machinePrice = null)
 
         assertEquals("Bambu Lab A1", result.name)
         assertEquals(95.0, result.printerPowerWatts)
         assertEquals(0.20, result.maintenanceCostPerHour)
         assertEquals(2998.0, result.machineInvestment.machinePrice)
-        assertEquals(16.0, result.machineInvestment.printingHoursPerDay)
+        assertEquals(12.0, result.machineInvestment.printingHoursPerDay)
+        assertEquals(25, result.machineInvestment.printingDaysPerMonth)
+        assertEquals(12, result.machineInvestment.paybackMonths)
+    }
+
+    @Test
+    fun withoutAPresetTheUsageStays() {
+        assertEquals(16.0, example.withPreset(null, machinePrice = 1800.0).machineInvestment.printingHoursPerDay)
+    }
+
+    @Test
+    fun moneyFormats() {
+        assertEquals("R$ 2.998", 2998.0.toWholeCurrencyText())
+        assertEquals("R$ 4.499", 4498.5.toWholeCurrencyText())
+        assertEquals("R$ 22.997", 22997.0.toWholeCurrencyText())
+        assertEquals("4498,50", 4498.5.toMoneyInputText())
+        assertEquals("2178,50", PrinterFormState.fromPreset(PRINTER_PRESETS.first { it.model == "A1 mini" }).machinePriceText)
     }
 
     @Test

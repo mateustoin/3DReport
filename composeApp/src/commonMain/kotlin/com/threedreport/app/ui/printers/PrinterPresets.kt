@@ -163,15 +163,25 @@ fun printerPresetsMatching(query: String): List<PrinterPreset> =
 
 /**
  * Aplica [preset] numa impressora já cadastrada (a de exemplo, no primeiro uso): nome, consumo médio, manutenção da
- * faixa e preço. O preço é o que a pessoa digitou ([machinePrice]); sem ele, o de referência do preset; sem nenhum, o
- * que a impressora já tinha. Sem [preset], só o preço digitado muda. O uso (horas, dias, meses) não muda.
+ * faixa, preço e o uso típico ([PrinterUsageDefaults]), como num cadastro novo. O preço é o que a pessoa digitou
+ * ([machinePrice]); sem ele, o de referência do preset; sem nenhum, o que a impressora já tinha. Sem [preset], só o
+ * preço digitado muda e o resto fica como estava.
  */
 fun PrinterProfile.withPreset(preset: PrinterPreset?, machinePrice: Double?): PrinterProfile {
     val price = machinePrice ?: preset?.referencePrice
+    val investment = if (preset == null) {
+        machineInvestment
+    } else {
+        machineInvestment.copy(
+            paybackMonths = PrinterUsageDefaults.PAYBACK_MONTHS,
+            printingDaysPerMonth = PrinterUsageDefaults.DAYS_PER_MONTH,
+            printingHoursPerDay = PrinterUsageDefaults.HOURS_PER_DAY,
+        )
+    }
     return copy(
         name = preset?.displayName ?: name,
         printerPowerWatts = preset?.averagePowerWatts ?: printerPowerWatts,
         maintenanceCostPerHour = preset?.maintenance?.costPerHour ?: maintenanceCostPerHour,
-        machineInvestment = price?.let { machineInvestment.copy(machinePrice = it) } ?: machineInvestment,
+        machineInvestment = price?.let { investment.copy(machinePrice = it) } ?: investment,
     )
 }

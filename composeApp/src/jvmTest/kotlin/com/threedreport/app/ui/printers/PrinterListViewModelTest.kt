@@ -79,7 +79,7 @@ class PrinterListViewModelTest {
         assertEquals("Bambu Lab A1 Combo", form.name)
         assertEquals("95", form.printerPowerWattsText)
         assertEquals("0,45", form.maintenanceCostPerHourText)
-        assertEquals("4498,5", form.machinePriceText)
+        assertEquals("4498,50", form.machinePriceText)
         assertEquals("12", form.paybackMonthsText)
         assertEquals("25", form.printingDaysPerMonthText)
         assertEquals("12", form.printingHoursPerDayText)

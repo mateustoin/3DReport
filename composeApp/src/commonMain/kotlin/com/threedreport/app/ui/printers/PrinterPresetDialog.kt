@@ -28,7 +28,8 @@ import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.components.ListRow
 import com.threedreport.app.ui.components.RowAction
-import com.threedreport.app.ui.format.toCurrencyText
+import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.toWholeCurrencyText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
 import org.jetbrains.compose.resources.stringResource
@@ -42,6 +43,7 @@ import org.jetbrains.compose.resources.stringResource
 fun PrinterPresetDialog(onPick: (PrinterPreset) -> Unit, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val filtered = printerPresetsMatching(query)
+    val currency = LocalCurrency.current
 
     AppDialog(
         title = stringResource(Res.string.printers_presets_title),
@@ -60,7 +62,7 @@ fun PrinterPresetDialog(onPick: (PrinterPreset) -> Unit, onDismiss: () -> Unit) 
             filtered.forEach { preset ->
                 ListRow(
                     title = preset.displayName,
-                    details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.toCurrencyText()),
+                    details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.toWholeCurrencyText(currency)),
                     onClick = { onPick(preset) },
                     actions = listOf(RowAction(AppIcons.Check, stringResource(Res.string.printers_presets_use), { onPick(preset) })),
                 )

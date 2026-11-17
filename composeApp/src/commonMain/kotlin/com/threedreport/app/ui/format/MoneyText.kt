@@ -15,6 +15,13 @@ fun Double.toCurrencyText(currency: Currency = Currency.BRL): String {
     return "${sign}${currency.symbol} $whole${currency.decimalSeparator}$fraction"
 }
 
+/** Como [toCurrencyText], arredondado pra unidade inteira, sem centavos (ex.: `2998.0` em BRL → `"R$ 2.998"`). */
+fun Double.toWholeCurrencyText(currency: Currency = Currency.BRL): String {
+    val units = kotlin.math.floor(kotlin.math.abs(this) + 0.5).toLong() * (if (this < 0) -1 else 1)
+    val sign = if (units < 0) "-" else ""
+    return "$sign${currency.symbol} ${groupThousands(kotlin.math.abs(units).toString(), currency.thousandsSeparator)}"
+}
+
 /** Ex.: `groupThousands("1234567", '.')` → `"1.234.567"`. */
 private fun groupThousands(digits: String, separator: Char): String =
     digits.reversed().chunked(3).joinToString(separator.toString()).reversed()

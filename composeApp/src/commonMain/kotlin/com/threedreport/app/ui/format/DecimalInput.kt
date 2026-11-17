@@ -109,6 +109,14 @@ fun Double.toInputText(decimalSeparator: Char = ',', maxDecimals: Int = 6): Stri
     return if (fraction.isEmpty()) "$sign$integerPart" else "$sign$integerPart$decimalSeparator$fraction"
 }
 
+/** Valor monetário pra um campo de texto, sempre com duas casas (`4498.5` → `"4498,50"`), sem separador de milhar. */
+fun Double.toMoneyInputText(decimalSeparator: Char = ','): String {
+    if (!isFinite()) return ""
+    val cents = (abs(this) * 100).roundToLong()
+    val sign = if (this < 0 && cents != 0L) "-" else ""
+    return "$sign${cents / 100}$decimalSeparator${(cents % 100).toString().padStart(2, '0')}"
+}
+
 /**
  * O que o app entendeu de [text], pra mostrar embaixo do campo quando há como ler de dois jeitos (um
  * ponto numa moeda de vírgula): "= 2.700". `null` quando não há ambiguidade a mostrar.
