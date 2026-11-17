@@ -3,7 +3,8 @@
 > Especificação de trabalho da leva. É o que cada agente recebe pra fazer a sua
 > parte. Depois do merge, o que vale como registro são as decisões em
 > `docs/decisions/`; este arquivo fica como histórico do que foi pedido.
-> Abre a versão seguinte à 2.2 (decisão 136). Tudo vai em `[Não publicado]`.
+> Planejada pra versão seguinte à 2.2 (decisão 136); lançada dentro da 2.2, que ainda não
+> tinha sido publicada (pedido do responsável do projeto, 2026-11-17).
 
 ## Objetivo
 
