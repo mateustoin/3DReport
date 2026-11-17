@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -140,11 +140,16 @@ private fun KanbanColumn(
             .zIndex(if (isDragSource) 1f else 0f)
             .width(width)
             .fillMaxHeight()
-            .clip(MaterialTheme.shapes.large)
-            .background(if (isDropTarget) colors.tint else colors.column)
+            // Fundo com a forma, sem recortar: recortar a coluna escondia o cartão arrastado assim que ele saía dela.
+            .background(if (isDropTarget) colors.tint else colors.column, MaterialTheme.shapes.large)
             .onGloballyPositioned { onBoundsChanged(it.fullBoundsInWindow()) },
     ) {
-        Box(Modifier.fillMaxWidth().height(AppDimens.statusBandHeight).background(column.status.statusColor()))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(AppDimens.statusBandHeight)
+                .background(column.status.statusColor(), MaterialTheme.shapes.large.copy(bottomStart = ZeroCornerSize, bottomEnd = ZeroCornerSize)),
+        )
         val padding = if (compact) space.xs else space.sm
         Column(modifier = Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(padding)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
