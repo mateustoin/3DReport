@@ -559,7 +559,7 @@ funciona hoje.
     falta de dado elétrico publicado (mesma limitação já registrada acima).
     Com o catálogo maior, o diálogo ganhou um **campo de busca** (marca ou
     modelo, mesmo filtro `contains`/case-insensitive do Histórico).
-  - **Revisado (2026-11-17, decisão 144):** a lista passou a 58 modelos, com
+  - **Revisado (2026-11-17, decisão 144):** a lista passou a 57 modelos, com
     consumo médio no lugar da potência máxima, preço de referência de nov/2026,
     manutenção por faixa e uso padrão de 12 h por dia.
 - [x] **Preset de marcas de filamento + tipo de material com densidade
