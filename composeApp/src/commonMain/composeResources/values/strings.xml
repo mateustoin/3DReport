@@ -1033,11 +1033,11 @@
     <string name="settings_docs_image_background_light">Claro</string>
     <string name="settings_docs_error_validity">Use um número de dias de 0 a %1$d (0 tira a linha)</string>
     <string name="settings_docs_error_options">Selecione ao menos uma opção: marca d'água ou rodapé.</string>
-    <string name="settings_docs_action_preview">Ver como fica</string>
+    <string name="settings_docs_action_preview">Ver como fica o PDF</string>
     <string name="settings_docs_preview_title">Como fica o PDF</string>
     <string name="settings_docs_preview_help">Orçamento de exemplo, com o que está no formulário agora (mesmo sem salvar).</string>
     <string name="settings_docs_preview_description">Prévia do PDF</string>
-    <string name="settings_docs_preview_sample">Exemplo: suporte de celular</string>
+    <string name="settings_docs_preview_sample">Suporte de celular</string>
     <string name="settings_docs_preview_failed">Não consegui gerar a prévia. Tente de novo.</string>
     <string name="settings_docs_preview_client">Maria</string>
     <string name="settings_docs_preview_printer">Impressora</string>

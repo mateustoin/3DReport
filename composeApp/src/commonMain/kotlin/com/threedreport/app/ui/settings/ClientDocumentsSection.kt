@@ -183,6 +183,9 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
                 )
             }
         }
+        // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
+        val sampleName = stringResource(Res.string.settings_docs_preview_sample)
+        AppButton(stringResource(Res.string.settings_docs_action_preview), onClick = { viewModel.showPreview(sampleName) }, icon = AppIcons.Visibility)
         val backgrounds = ImageBackground.entries
         FormGrid {
             // Duas colunas: com os três rótulos inteiros ("Automático" truncava numa coluna só).
@@ -197,9 +200,6 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
                 )
             }
         }
-        // Mostra o que está no formulário, mesmo sem salvar: dá pra testar uma logo antes de adotá-la.
-        val sampleName = stringResource(Res.string.settings_docs_preview_sample)
-        AppButton(stringResource(Res.string.settings_docs_action_preview), onClick = { viewModel.showPreview(sampleName) }, icon = AppIcons.Visibility)
     }
 
     FormSection(4, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {

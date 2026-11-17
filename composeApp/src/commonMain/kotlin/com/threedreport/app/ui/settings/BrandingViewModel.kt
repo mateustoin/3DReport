@@ -233,7 +233,7 @@ class BrandingViewModel(
                 withContext(renderDispatcher) {
                     val sample = previewSampleQuote(sampleName, currency)
                     val pdf = renderSavedQuotesPdf(
-                        items = listOf(QuoteExportItem(sample, photoBytes = null)),
+                        items = listOf(QuoteExportItem(sample, photoBytes = Res.readBytes(PREVIEW_PHOTO))),
                         texts = loadClientDocumentTexts(listOf(sample)),
                         brandName = branding.brandName,
                         footerText = branding.footerText,
@@ -373,6 +373,9 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
     // deixar o PDF sair sem logo em silêncio.
     logoMissing = logoFileName != null && logoBytes == null,
 )
+
+/** A foto do orçamento de exemplo: uma peça impressa genérica, pequena, com fundo transparente, embutida no app. */
+private const val PREVIEW_PHOTO = "files/preview_sample_photo.png"
 
 /**
  * Orçamento fictício da prévia: com prazo, número e cliente, pra todas as opções terem onde aparecer. O nome do cliente

@@ -494,7 +494,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
                 afterSettle = {
                     it.clickByText("Documentos pro cliente")
                     settle(it, frames = 3)
-                    it.clickByText("Ver como fica")
+                    it.clickByText("Ver como fica o PDF")
                 },
             ) {
                 App(container, startAt = AppDestination.SETTINGS)
