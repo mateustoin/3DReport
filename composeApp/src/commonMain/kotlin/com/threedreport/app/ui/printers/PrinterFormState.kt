@@ -4,6 +4,7 @@ import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.format.toMoneyInputText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PrinterProfile
@@ -21,8 +22,8 @@ data class PrinterFormState(
     val paybackMonthsText: String = "",
     val printingDaysPerMonthText: String = "",
     val printingHoursPerDayText: String = "",
-    /** O consumo veio de um preset, que traz a potência máxima da fonte (ver aviso no campo). */
-    val powerFromPreset: Boolean = false,
+    /** O formulário nasceu de uma impressora da lista: mostra o aviso de que os valores são de referência. */
+    val fromPreset: Boolean = false,
     /** Separador decimal da moeda em uso, o mesmo do campo: a prévia lê os números com ele. */
     val decimalSeparator: Char = ',',
     val nameError: UiText? = null,
@@ -36,7 +37,7 @@ data class PrinterFormState(
     /**
      * Quanto a máquina custa por hora de impressão, sem a energia: retorno do investimento mais
      * manutenção. `null` enquanto algum campo não é número. É a prévia do formulário (decisão 108), pra o
-     * efeito de "12 meses" ou "16 h por dia" aparecer antes de salvar.
+     * efeito de "12 meses" ou "12 h por dia" aparecer antes de salvar.
      */
     val machineCostPerHour: Double?
         get() {
@@ -50,19 +51,31 @@ data class PrinterFormState(
         }
 
     companion object {
+        /** Manutenção de uma impressora em branco, em reais por hora. */
+        const val BLANK_MAINTENANCE_PER_HOUR = 0.17
+
         /**
-         * Formulário de uma impressora nova, com o uso típico já preenchido (os mesmos valores da impressora
-         * de exemplo): campo vazio era um erro de "não é um número" na cara de quem só quer cadastrar.
+         * Formulário de uma impressora nova em branco, com o uso típico já preenchido ([PrinterUsageDefaults]):
+         * campo vazio era um erro de "não é um número" na cara de quem só quer cadastrar.
          */
-        fun new(name: String = "", powerWatts: Double? = null, fromPreset: Boolean = false, decimalSeparator: Char = ',') = PrinterFormState(
-            name = name,
-            printerPowerWattsText = powerWatts?.toInputText(decimalSeparator).orEmpty(),
-            maintenanceCostPerHourText = 0.17.toInputText(decimalSeparator),
-            paybackMonthsText = "12",
-            printingDaysPerMonthText = "25",
-            printingHoursPerDayText = "16",
-            powerFromPreset = fromPreset,
+        fun new(decimalSeparator: Char = ',') = PrinterFormState(
+            maintenanceCostPerHourText = BLANK_MAINTENANCE_PER_HOUR.toInputText(decimalSeparator),
+            paybackMonthsText = PrinterUsageDefaults.PAYBACK_MONTHS.toString(),
+            printingDaysPerMonthText = PrinterUsageDefaults.DAYS_PER_MONTH.toString(),
+            printingHoursPerDayText = PrinterUsageDefaults.HOURS_PER_DAY.toInputText(decimalSeparator),
             decimalSeparator = decimalSeparator,
+        )
+
+        /**
+         * Formulário de uma impressora da lista: nome, consumo médio, manutenção da faixa e, quando há fonte, o
+         * preço de referência (sem fonte, o campo fica vazio); o uso é o típico.
+         */
+        fun fromPreset(preset: PrinterPreset, decimalSeparator: Char = ',') = new(decimalSeparator).copy(
+            name = preset.displayName,
+            printerPowerWattsText = preset.averagePowerWatts.toInputText(decimalSeparator),
+            maintenanceCostPerHourText = preset.maintenance.costPerHour.toInputText(decimalSeparator),
+            machinePriceText = preset.referencePrice?.toMoneyInputText(decimalSeparator).orEmpty(),
+            fromPreset = true,
         )
     }
 }

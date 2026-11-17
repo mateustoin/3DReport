@@ -86,6 +86,8 @@ val renderScreenshots by tasks.registering(Test::class) {
     providers.gradleProperty("screenshots.gcodes").orNull?.let { systemProperty("screenshots.gcodes", it) }
     // `-Pscreenshots.leva10c=true` acrescenta as capturas da Leva 10C (3MF, prévia simplificada, atualização por dentro).
     providers.gradleProperty("screenshots.leva10c").orNull?.let { systemProperty("screenshots.leva10c", it) }
+    // `-Pscreenshots.presets=true` acrescenta a lista de impressoras pré-cadastradas e o formulário vindo dela, claro e escuro.
+    providers.gradleProperty("screenshots.presets").orNull?.let { systemProperty("screenshots.presets", it) }
     maxHeapSize = "2g" // alguns G-codes reais de exemplo passam de 50 MB
     outputs.upToDateWhen { false }
 }
@@ -98,6 +100,8 @@ compose.desktop {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = "3DReport"
             vendor = "Mateus Antonio da Silva"
+            // A dica do atalho no menu do Linux (Comment=) e a descrição do pacote nos três sistemas.
+            description = "Orçamento, pedidos e catálogo pra quem vende impressão 3D"
             // Lido de gradle.properties, a mesma fonte do APP_VERSION do app (generateAppVersion).
             packageVersion = providers.gradleProperty("appVersion").get()
 
@@ -132,6 +136,11 @@ compose.desktop {
                 packageName = "threedreport"
                 iconFile.set(project.file("packaging/icons/icon.png"))
                 shortcut = true
+                // Vira o Categories= do atalho do menu (sem isso sai "Unknown" e o app cai em "Outros").
+                // Office, da especificação freedesktop, é o que os menus mostram como Escritório.
+                menuGroup = "Office;"
+                // Seção do pacote .deb.
+                appCategory = "utils"
             }
         }
     }

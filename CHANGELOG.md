@@ -7,6 +7,27 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
+## [2.2.1] - 2026-11-17
+
+Impressoras da lista com valores de referência e atualização pelo próprio app. Impressoras e pedidos que
+você já tem **não mudam**: os valores novos valem só pra cadastros novos.
+
+### Adicionado
+- **Lista de impressoras maior, com 57 modelos**, incluindo as versões Combo. Cada uma traz o consumo
+  médio imprimindo (com a potência máxima ao lado, quando o fabricante informa), o preço de referência
+  no Brasil de nov/2026, quando existe, e a manutenção por hora de acordo com o tipo da máquina.
+- **Uso padrão de 12 h por dia, 25 dias por mês e retorno em 12 meses** em todo cadastro novo de
+  impressora, da lista ou em branco.
+- **Aviso no formulário** lembrando que os valores da lista são pra começar. Pra um preço mais certo,
+  troque pelo que você pagou, pelo consumo medido com um medidor de tomada e pelas horas que a sua
+  máquina roda.
+- **Atualizar pelo app.** A partir da 2.2.0, dá pra atualizar pelo botão "Atualizar agora" no Sobre.
+
+### Corrigido
+- **Linux: o 3DReport aparece em Escritório no menu de aplicativos**, com uma descrição curta ao passar
+  o mouse. Antes ficava em "Outros". Pra ver a mudança depois de atualizar, saia da sessão e entre de
+  novo (no Cinnamon, `Ctrl+Alt+Esc` basta).
+
 ## [2.2.0] - 2026-11-17
 
 Interface nova, do começo ao fim, o preço mais certo, o projeto do fatiador (3MF) guardado com o pedido e a

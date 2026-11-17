@@ -69,16 +69,47 @@ class PrinterListViewModelTest {
     }
 
     @Test
-    fun startAddFromPresetPrefillsNameAndPower() {
+    fun startAddFromPresetAppliesAverageMaintenancePriceAndDefaultUsage() {
         val viewModel = viewModelOf(PrinterRepository())
-        val preset = PRINTER_PRESETS.first()
+        val preset = PRINTER_PRESETS.first { it.model == "A1 Combo" }
 
         viewModel.startAddFromPreset(preset)
 
         val form = viewModel.uiState.value.form!!
-        assertEquals("${preset.brand} ${preset.model}", form.name)
-        assertEquals(preset.ratedPowerWatts.toInputText(), form.printerPowerWattsText)
-        assertTrue(form.powerFromPreset, "o campo avisa que é a potência máxima")
+        assertEquals("Bambu Lab A1 Combo", form.name)
+        assertEquals("95", form.printerPowerWattsText)
+        assertEquals("0,45", form.maintenanceCostPerHourText)
+        assertEquals("4498,50", form.machinePriceText)
+        assertEquals("12", form.paybackMonthsText)
+        assertEquals("25", form.printingDaysPerMonthText)
+        assertEquals("12", form.printingHoursPerDayText)
+        assertTrue(form.fromPreset, "o formulário mostra o aviso de valores de referência")
+    }
+
+    @Test
+    fun startAddFromPresetWithoutPriceLeavesThePriceEmpty() {
+        val viewModel = viewModelOf(PrinterRepository())
+
+        viewModel.startAddFromPreset(PRINTER_PRESETS.first { it.model == "P1S" })
+
+        val form = viewModel.uiState.value.form!!
+        assertEquals("", form.machinePriceText)
+        assertEquals("0,3", form.maintenanceCostPerHourText)
+    }
+
+    @Test
+    fun aBlankFormStartsWith12HoursFor25DaysAndPayback12() {
+        val viewModel = viewModelOf(PrinterRepository())
+
+        viewModel.startAdd()
+
+        val form = viewModel.uiState.value.form!!
+        assertEquals("12", form.printingHoursPerDayText)
+        assertEquals("25", form.printingDaysPerMonthText)
+        assertEquals("12", form.paybackMonthsText)
+        assertEquals("0,17", form.maintenanceCostPerHourText)
+        assertEquals("", form.machinePriceText)
+        assertEquals(false, form.fromPreset)
     }
 
     @Test

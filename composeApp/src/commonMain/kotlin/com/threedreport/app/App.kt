@@ -99,6 +99,7 @@ import com.threedreport.app.ui.navigation.destinationForShortcut
 import com.threedreport.app.ui.onboarding.OnboardingDialog
 import com.threedreport.app.ui.onboarding.OnboardingPrinter
 import com.threedreport.app.ui.printers.PrinterListScreen
+import com.threedreport.app.ui.printers.withPreset
 import com.threedreport.app.ui.quote.GCodeDropOverlay
 import com.threedreport.app.ui.quote.GCodeDropTarget
 import com.threedreport.app.ui.quote.QuoteScreen
@@ -411,18 +412,11 @@ fun App(
 
 /**
  * A impressora respondida no onboarding vai pra primeira impressora cadastrada (a de exemplo, numa
- * instalação nova): o modelo troca nome e consumo, o valor troca o preço da máquina.
+ * instalação nova): o modelo troca nome, consumo médio, manutenção e preço de referência, e o valor digitado troca o preço.
  */
 private fun applyOnboardingPrinter(repository: PrinterRepository, choice: OnboardingPrinter) {
     val printer = repository.printers.value.firstOrNull() ?: return
-    val preset = choice.preset
-    repository.update(
-        printer.copy(
-            name = preset?.let { "${it.brand} ${it.model}" } ?: printer.name,
-            printerPowerWatts = preset?.ratedPowerWatts ?: printer.printerPowerWatts,
-            machineInvestment = choice.machinePrice?.let { printer.machineInvestment.copy(machinePrice = it) } ?: printer.machineInvestment,
-        ),
-    )
+    repository.update(printer.withPreset(choice.preset, choice.machinePrice))
 }
 
 /**

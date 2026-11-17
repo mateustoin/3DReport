@@ -25,11 +25,12 @@ import _3dreport.composeapp.generated.resources.printers_form_new
 import _3dreport.composeapp.generated.resources.printers_help_maintenance
 import _3dreport.composeapp.generated.resources.printers_help_power
 import _3dreport.composeapp.generated.resources.printers_help_power_detail
-import _3dreport.composeapp.generated.resources.printers_help_power_preset
-import _3dreport.composeapp.generated.resources.printers_help_power_preset_detail
 import _3dreport.composeapp.generated.resources.printers_maintenance_attention
 import _3dreport.composeapp.generated.resources.printers_maintenance_more_overdue
 import _3dreport.composeapp.generated.resources.printers_maintenance_ok
+import _3dreport.composeapp.generated.resources.printers_notice_reference
+import _3dreport.composeapp.generated.resources.printers_notice_reference_help
+import _3dreport.composeapp.generated.resources.printers_notice_reference_help_detail
 import _3dreport.composeapp.generated.resources.printers_remaining_left
 import _3dreport.composeapp.generated.resources.printers_remaining_overdue
 import _3dreport.composeapp.generated.resources.printers_row_per_hour
@@ -57,6 +58,7 @@ import com.threedreport.app.ui.components.ArchivedSection
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
+import com.threedreport.app.ui.components.FormNotice
 import com.threedreport.app.ui.components.FormPanel
 import com.threedreport.app.ui.components.FormSummary
 import com.threedreport.app.ui.components.HelpText
@@ -199,6 +201,15 @@ private fun PrinterFormPanel(form: PrinterFormState, viewModel: PrinterListViewM
         onSave = viewModel::save,
         onCancel = viewModel::cancelEdit,
     ) {
+        if (form.fromPreset) {
+            FormNotice(
+                text = stringResource(Res.string.printers_notice_reference),
+                help = HelpText(
+                    stringResource(Res.string.printers_notice_reference_help, PRINTER_PRICES_MONTH),
+                    stringResource(Res.string.printers_notice_reference_help_detail),
+                ),
+            )
+        }
         PanelSection(1, stringResource(Res.string.printers_section_printer)) {
             AppTextField(
                 label = stringResource(Res.string.printers_field_name),
@@ -210,17 +221,9 @@ private fun PrinterFormPanel(form: PrinterFormState, viewModel: PrinterListViewM
             AppTextField(
                 label = stringResource(Res.string.printers_field_power),
                 value = form.printerPowerWattsText,
-                onValueChange = { text -> viewModel.updateForm { it.copy(printerPowerWattsText = text, powerFromPreset = false) } },
+                onValueChange = { text -> viewModel.updateForm { it.copy(printerPowerWattsText = text) } },
                 error = form.powerError?.asString(),
-                help = if (form.powerFromPreset) {
-                    HelpText(
-                        stringResource(Res.string.printers_help_power_preset),
-                        stringResource(Res.string.printers_help_power_preset_detail),
-                        warning = true,
-                    )
-                } else {
-                    HelpText(stringResource(Res.string.printers_help_power), stringResource(Res.string.printers_help_power_detail))
-                },
+                help = HelpText(stringResource(Res.string.printers_help_power), stringResource(Res.string.printers_help_power_detail)),
             )
         }
         PanelSection(2, stringResource(Res.string.printers_section_cost)) {

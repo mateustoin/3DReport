@@ -80,6 +80,23 @@ fun FormSummary(label: String, value: String, modifier: Modifier = Modifier, hel
 }
 
 /**
+ * Aviso curto no alto de um formulário (os valores vieram de uma lista de referência): faixa `cardBlock` com [text] em
+ * `caption` e, se houver, a explicação sob demanda no [HelpHint]. [help] é o texto da dica.
+ */
+@Composable
+fun FormNotice(text: String, modifier: Modifier = Modifier, help: HelpText? = null) {
+    val space = MaterialTheme.spacing
+    Row(
+        modifier = modifier.fillMaxWidth().background(MaterialTheme.appColors.cardBlock, MaterialTheme.shapes.medium).padding(space.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(space.xs),
+    ) {
+        Text(text, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+        if (help != null) HelpHint(help, text)
+    }
+}
+
+/**
  * As sugestões que combinam com o que foi digitado: todas com o campo vazio; com texto, as que o contêm (sem diferenciar
  * maiúsculas) e ainda não são o próprio texto. Pro menu do [AppSuggestField].
  */

@@ -230,8 +230,9 @@
     <string name="printers_field_hours">Horas de uso por dia</string>
     <string name="printers_help_power">Quanto ela puxa da tomada, em média, durante uma impressão.</string>
     <string name="printers_help_power_detail">Um medidor de tomada dá o número certo.</string>
-    <string name="printers_help_power_preset">É a potência máxima da fonte, não o consumo médio.</string>
-    <string name="printers_help_power_preset_detail">Na média de uma impressão a máquina gasta bem menos. Com um medidor de tomada, use o valor medido. Senão a energia sai mais cara do que é.</string>
+    <string name="printers_notice_reference">Valores de referência pra começar. Troque pelos da sua máquina.</string>
+    <string name="printers_notice_reference_help">Consumo médio, preço de %1$s e manutenção estimada.</string>
+    <string name="printers_notice_reference_help_detail">Pra um preço mais certo, troque pelo que você pagou, pelo consumo medido com um medidor de tomada e pelas horas que a sua máquina roda.</string>
     <string name="printers_help_maintenance">Bicos, correias, PTFE e peças que gastam, divididos pelas horas que duram.</string>
     <string name="printers_summary_label">Custo por hora</string>
     <string name="printers_summary_help">Retorno do investimento mais manutenção, fora a energia.</string>
@@ -264,7 +265,11 @@
     <string name="printers_presets_title">Impressoras pré-cadastradas</string>
     <string name="printers_presets_field_search">Buscar por marca ou modelo</string>
     <string name="printers_presets_search_hint">Ex.: Ender 3</string>
-    <string name="printers_presets_power">%1$d W (máxima)</string>
+    <string name="printers_presets_intro">Valores de referência pra começar.</string>
+    <string name="printers_presets_power_average">~%1$d W em média</string>
+    <string name="printers_presets_power_average_max">~%1$d W em média (máx. %2$d W)</string>
+    <string name="printers_presets_power_estimated">~%1$d W estimado</string>
+    <string name="printers_presets_power_estimated_max">~%1$d W estimado (máx. %2$d W)</string>
     <string name="printers_presets_use">Usar</string>
     <string name="printers_presets_none">Nenhuma impressora encontrada para "%1$s".</string>
     <string name="printers_maintenance_title">Manutenção: %1$s</string>
@@ -1171,7 +1176,7 @@
     <string name="onboarding_costs_title">Seus custos e sua margem</string>
     <string name="onboarding_field_model">Modelo</string>
     <string name="onboarding_model_other">Outra, ou escolho depois</string>
-    <string name="onboarding_help_model_preset">Consumo: %1$s W, a potência máxima do fabricante.</string>
+    <string name="onboarding_help_model_preset">Consumo médio: %1$s W, valor de referência.</string>
     <string name="onboarding_help_model_preset_detail">Se medir o consumo real, ajuste em Impressoras.</string>
     <string name="onboarding_help_model_none">Sem modelo, o app usa a impressora de exemplo.</string>
     <string name="onboarding_help_model_none_detail">Dá pra cadastrar a sua em Impressoras.</string>
