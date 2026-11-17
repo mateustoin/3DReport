@@ -1,7 +1,5 @@
 package com.threedreport.app.ui.printers
 
-import com.threedreport.app.ui.components.ArchivedSection
-import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.ui.components.ArchivedSection
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DeleteOrArchiveDialog
 import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
@@ -100,10 +100,10 @@ fun PrinterListScreen(viewModel: PrinterListViewModel, modifier: Modifier = Modi
             usageCount = viewModel.usageCount(printer.id),
             deleteMessage = "\"${printer.name}\" será removida do catálogo, junto com os componentes, o diário de manutenção " +
                 "e as horas avulsas dela. Essa ação não pode ser desfeita.",
-            onArchive = if (printer.archived) null else ({
+            onArchive = {
                 viewModel.setArchived(printer.id, true)
                 pendingDelete = null
-            }),
+            }.takeUnless { printer.archived },
             onDelete = {
                 viewModel.delete(printer.id)
                 pendingDelete = null
@@ -181,8 +181,10 @@ private fun MaintenanceLine(statuses: List<ComponentStatus>) {
     val overdueCount = statuses.count { it.state == MaintenanceState.OVERDUE }
     val (text, color) = when {
         urgent == null -> "Manutenção: nenhum componente cadastrado" to MaterialTheme.colorScheme.onSurfaceVariant
+
         urgent.state == MaintenanceState.OK ->
             "Manutenção em dia · próxima: ${urgent.component.name}, ${urgent.remainingText()}" to MaterialTheme.colorScheme.onSurfaceVariant
+
         else -> {
             val others = overdueCount - (if (urgent.state == MaintenanceState.OVERDUE) 1 else 0)
             val suffix = if (others > 0) " (e mais $others vencida${if (others > 1) "s" else ""})" else ""

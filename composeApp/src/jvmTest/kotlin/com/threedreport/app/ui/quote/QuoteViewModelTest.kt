@@ -1,7 +1,5 @@
 package com.threedreport.app.ui.quote
 
-import kotlin.test.assertNull
-import com.threedreport.core.model.QuoteKind
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -12,20 +10,23 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.MachineInvestment
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrintSettings
+import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.Service
 import com.threedreport.core.pricing.PricingCalculator
+import com.threedreport.core.pricing.showcasePriceSuggestion
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -103,7 +104,7 @@ class QuoteViewModelTest {
                 printerPowerWatts = 200.0,
                 maintenanceCostPerHour = 0.05,
                 machineInvestment = MachineInvestment(1000.0, 10, 20, 8.0),
-            )
+            ),
         )
         val viewModel = QuoteViewModel(
             FilamentRepository(),
@@ -900,10 +901,10 @@ class QuoteViewModelTest {
     fun showcaseSuggestionIsTheNextValueEndingIn90() {
         val viewModel = viewModelWith()
 
-        assertEquals(18.90, viewModel.showcasePriceSuggestion(18.37)!!, 1e-9)
-        assertEquals(19.90, viewModel.showcasePriceSuggestion(18.95)!!, 1e-9)
-        assertEquals(0.90, viewModel.showcasePriceSuggestion(0.10)!!, 1e-9)
-        assertNull(viewModel.showcasePriceSuggestion(18.90))
+        assertEquals(18.90, showcasePriceSuggestion(18.37)!!, 1e-9)
+        assertEquals(19.90, showcasePriceSuggestion(18.95)!!, 1e-9)
+        assertEquals(0.90, showcasePriceSuggestion(0.10)!!, 1e-9)
+        assertNull(showcasePriceSuggestion(18.90))
 
         viewModel.applyShowcasePrice(18.90)
         assertEquals("18,9", viewModel.input.value.targetTotalText)

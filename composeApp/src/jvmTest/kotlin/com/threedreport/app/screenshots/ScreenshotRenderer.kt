@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -23,7 +24,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.material3.Text
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -65,8 +65,6 @@ import com.threedreport.core.model.ThemeMode
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.jetbrains.skia.EncodedImageFormat
-import org.jetbrains.skia.Image as SkiaImage
-import java.awt.Color as AwtColor
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.File
@@ -75,6 +73,8 @@ import java.time.ZoneId
 import javax.imageio.ImageIO
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
+import java.awt.Color as AwtColor
+import org.jetbrains.skia.Image as SkiaImage
 
 // Tamanho de todo print de tela do site (decisão 120): 1280 é exatamente o SIDEBAR_LABELS_MIN_WINDOW_WIDTH,
 // então a barra lateral sai com os rótulos, e não só os ícones.

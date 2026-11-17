@@ -1,5 +1,6 @@
 package com.threedreport.core.model
 
+import com.threedreport.core.pricing.PricingError
 import kotlinx.serialization.Serializable
 
 /**
@@ -83,8 +84,8 @@ data class ChannelFeeSchedule(
      * preço exato (o fixo sobe de uma faixa pra outra); aí vale um centavo acima do limite, o primeiro
      * preço da faixa de cima que cobre. Não há iteração, então o resultado é sempre o mesmo.
      *
-     * @throws IllegalArgumentException quando a taxa do canal somada ao imposto chega a 100% em todas as
-     *   faixas: nenhum preço deixa dinheiro na sua mão.
+     * @throws PricingError.DeductionsReachFullPrice quando a taxa do canal somada ao imposto chega a 100%
+     *   em todas as faixas: nenhum preço deixa dinheiro na sua mão.
      */
     fun priceLeaving(receipt: Double, extras: Double, quantity: Int, taxRate: Double): Double {
         require(quantity >= 1) { "quantity deve ser pelo menos 1: $quantity" }
@@ -94,9 +95,9 @@ data class ChannelFeeSchedule(
             tiers.mapIndexed { index, tier -> Option(tier.feeRate, tier.fixedFeePerItem, tiers.getOrNull(index - 1)?.upToUnitPrice) }
         }
         val affordable = options.filter { it.feeRate + taxRate < 1 }
-        require(affordable.isNotEmpty()) {
-            "A taxa do canal somada ao imposto chega a 100% do valor de venda: não sobra nada pra você. " +
-                "Revise a taxa do canal ou o imposto em Configurações."
+        if (affordable.isEmpty()) {
+            // O que aconteceu volta como dado; a frase pra quem usa o app é escolhida pela tela (decisão 130).
+            throw PricingError.DeductionsReachFullPrice(channelFeeRate = options.minOf { it.feeRate }, taxRate = taxRate)
         }
         if (tiers.isEmpty()) return affordable.single().exactPrice(receipt, extras, quantity, taxRate)
 

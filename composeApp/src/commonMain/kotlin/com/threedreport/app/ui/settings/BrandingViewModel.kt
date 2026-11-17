@@ -1,19 +1,19 @@
 package com.threedreport.app.ui.settings
 
-import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.LogoChange
 import com.threedreport.app.data.TemplateRepository
+import com.threedreport.app.platform.FileKind
+import com.threedreport.app.platform.PickResult
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.QuoteExportItem
 import com.threedreport.app.platform.decodeImageBitmap
-import com.threedreport.app.platform.FileKind
-import com.threedreport.app.platform.PickResult
 import com.threedreport.app.platform.defaultPlatform
 import com.threedreport.app.platform.renderPdfFirstPagePng
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
 import com.threedreport.app.platform.todayEpochDay
+import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
@@ -22,8 +22,8 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
-import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.QuoteTemplate
+import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -214,7 +214,7 @@ class BrandingViewModel(
                         showFooter = settings.showFooter,
                         showPrintTime = settings.showPrintTime,
                         showBorder = settings.showBorder,
-                    )
+                    ),
                 )
                 state.value = current.copy(
                     isSavingAsTemplate = false,

@@ -1,6 +1,5 @@
 package com.threedreport.core.pricing
 
-import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
@@ -9,6 +8,7 @@ import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteKind
+import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import kotlin.test.Test
@@ -168,5 +168,20 @@ class ProductRepricerTest {
     fun aConsumableThatLeftTheCatalogNeedsAChoice() {
         val result = reprice(productWithArgola(), channels = emptyList(), consumables = emptyList())
         assertEquals(RepriceResult.Unavailable(RepriceResult.Reason.CONSUMABLE_MISSING, "Argola"), result)
+    }
+
+    @Test
+    fun deductionsReachingTheWholeSaleTodayComeBackByType() {
+        // O canal subiu a taxa depois que o produto foi salvo: com o imposto de hoje, chega a 100%.
+        val product = productOf(channel = shopee)
+        val result = reprice(product, settings = settings.copy(taxRate = 0.4), channels = listOf(shopee.copy(feeRate = 0.6)))
+
+        val unavailable = assertIs<RepriceResult.Unavailable>(result)
+        assertEquals(RepriceResult.Reason.INVALID, unavailable.reason)
+        // O motivo vem pelo tipo; nada de frase de desenvolvedor no lugar do nome que faltou.
+        assertEquals(null, unavailable.missingName)
+        val error = assertIs<PricingError.DeductionsReachFullPrice>(unavailable.pricingError)
+        assertEquals(0.6, error.channelFeeRate)
+        assertEquals(0.4, error.taxRate)
     }
 }

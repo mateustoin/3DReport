@@ -21,8 +21,19 @@ sealed interface RepriceResult {
      */
     data class Repriced(val quote: Quote, val changed: Boolean) : RepriceResult
 
-    /** Não dá pra recalcular sem a pessoa escolher de novo o que sumiu dos cadastros. */
-    data class Unavailable(val reason: Reason, val missingName: String? = null) : RepriceResult
+    /**
+     * Não dá pra recalcular sem a pessoa escolher de novo o que sumiu dos cadastros, ou a conta não fecha
+     * com os cadastros de hoje ([Reason.INVALID]).
+     *
+     * @property missingName o nome do que sumiu, quando é isso. `null` em [Reason.INVALID].
+     * @property pricingError em [Reason.INVALID], o motivo quando o `core` o conhece (decisão 130), pra a
+     *   tela poder explicar. `null` quando é só uma validação interna que recusou a entrada.
+     */
+    data class Unavailable(
+        val reason: Reason,
+        val missingName: String? = null,
+        val pricingError: PricingError? = null,
+    ) : RepriceResult
 
     enum class Reason { FILAMENT_MISSING, PRINTER_MISSING, CHANNEL_MISSING, CONSUMABLE_MISSING, INVALID }
 }
@@ -73,7 +84,7 @@ object ProductRepricer {
             QuotedConsumable.of(consumable, used.quantity, used.chargedPerOrder)
         }
 
-        val repriced = runCatching {
+        val repriced = try {
             PricingCalculator.calculate(
                 prints = prints,
                 settings = settings,
@@ -87,7 +98,12 @@ object ProductRepricer {
                 rush = quote.rush,
                 absorbedShippingCost = quote.absorbedShippingCost,
             )
-        }.getOrElse { return RepriceResult.Unavailable(RepriceResult.Reason.INVALID, it.message) }
+        } catch (error: PricingError) {
+            return RepriceResult.Unavailable(RepriceResult.Reason.INVALID, pricingError = error)
+        } catch (_: Exception) {
+            // Como antes: qualquer outra recusa da conta vira "não deu pra recalcular", sem derrubar a lista.
+            return RepriceResult.Unavailable(RepriceResult.Reason.INVALID)
+        }
 
         return RepriceResult.Repriced(repriced, changed = abs(repriced.calculatedSalePrice - quote.calculatedSalePrice) >= TOLERANCE)
     }

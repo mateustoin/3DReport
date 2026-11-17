@@ -6,6 +6,7 @@ import com.threedreport.app.ui.history.clientTitle
 import com.threedreport.app.ui.history.deliveryDateText
 import com.threedreport.app.ui.history.printTimeText
 import com.threedreport.core.model.SavedQuote
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
@@ -21,7 +22,6 @@ import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDBorderStyleDictionary
 import org.apache.pdfbox.rendering.PDFRenderer
-import org.apache.pdfbox.Loader
 import org.apache.pdfbox.util.Matrix
 import java.awt.Color
 import java.awt.RenderingHints
@@ -523,6 +523,7 @@ actual fun renderCatalogPdf(
                 is CatalogBlock.Header -> {
                     cursor = drawHighlightBand(current, context.titleFont, block.title, margin, cursor, PDRectangle.A4.width - margin * 2) - 14f
                 }
+
                 is CatalogBlock.Row -> {
                     block.items.forEachIndexed { col, item ->
                         val cellX = margin + col * (cellWidth + gutter)

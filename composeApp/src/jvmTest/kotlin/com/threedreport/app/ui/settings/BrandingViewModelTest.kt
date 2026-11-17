@@ -261,4 +261,3 @@ class BrandingViewModelTest {
         assertEquals(com.threedreport.core.model.BrandingSettings.DEFAULT_VALIDITY_DAYS, brandingRepository.branding.value.quoteValidityDays)
     }
 }
-

@@ -4,13 +4,13 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentUsage
 import com.threedreport.core.model.MachineInvestment
 import com.threedreport.core.model.PricingSettings
-import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.PrintJob
+import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.SalesChannel
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**

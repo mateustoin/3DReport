@@ -40,21 +40,25 @@ fun DeliveryBadge(savedQuote: SavedQuote, todayEpochDay: Long, modifier: Modifie
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
         overdue -> Triple(
             "Atrasado · entrega era $date",
             MaterialTheme.colorScheme.errorContainer,
             MaterialTheme.colorScheme.onErrorContainer,
         )
+
         savedQuote.status == OrderStatus.ENTREGUE || savedQuote.status == OrderStatus.CANCELADO -> Triple(
             "Prazo era $date",
             Color.Transparent,
             MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
         deadline == todayEpochDay -> Triple(
             "Entrega hoje",
             MaterialTheme.colorScheme.secondaryContainer,
             MaterialTheme.colorScheme.onSecondaryContainer,
         )
+
         else -> Triple(
             "Entrega até $date",
             MaterialTheme.colorScheme.secondaryContainer,

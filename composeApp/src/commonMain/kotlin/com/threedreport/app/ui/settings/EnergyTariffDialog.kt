@@ -129,6 +129,7 @@ fun EnergyTariffDialog(onDismiss: () -> Unit, onUse: (Double) -> Unit) {
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
+
                     EnergyTariffMode.FLAG -> {
                         NumberField("Tarifa (${LocalCurrency.current.symbol} por kWh)", state.flagTariffText, NumberKind.MEASURE) {
                             state = state.copy(flagTariffText = it)
@@ -143,6 +144,7 @@ fun EnergyTariffDialog(onDismiss: () -> Unit, onUse: (Double) -> Unit) {
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
+
                     EnergyTariffMode.WHITE -> {
                         SubsectionTitle(AppIcons.Bolt, "Fora de ponta")
                         NumberField("${LocalCurrency.current.symbol} por kWh", state.offPeakPriceText, NumberKind.MEASURE) {

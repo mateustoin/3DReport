@@ -1,6 +1,5 @@
 package com.threedreport.app.ui.settings
 
-import com.threedreport.app.ui.format.NumberKind
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +29,7 @@ import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.SectionTitle
 import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.components.SubsectionTitle
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.icons.AppIcons
 
 /**
@@ -130,11 +130,13 @@ private fun LogoPicker(branding: BrandingUiState, viewModel: BrandingViewModel) 
     }
     when {
         branding.logoError != null -> Text(branding.logoError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+
         branding.logoMissing -> Text(
             "A logo salva não foi encontrada na pasta do app. Escolha de novo.",
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
         )
+
         else -> Text(
             "Vai no cabeçalho do PDF. PNG com fundo transparente fica melhor.",
             style = MaterialTheme.typography.bodySmall,

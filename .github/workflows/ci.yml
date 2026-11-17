@@ -21,8 +21,18 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      - name: Build e testes
+      # O build já roda o ktlint (ktlintCheck faz parte do check): código fora do padrão derruba o CI.
+      - name: Build, estilo (ktlint) e testes
         run: ./gradlew build
+
+      # Só mede, sem limite mínimo: o relatório HTML fica no artefato do workflow.
+      - name: Relatório de cobertura (Kover)
+        run: ./gradlew koverHtmlReport
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-kover
+          path: build/reports/kover/html
 
       # O instalador leva um Java reduzido pelo jlink, e um módulo do JDK que fique de fora só quebra
       # no app instalado, nunca na IDE nem nos testes (a 2.1.0 não abria sem o java.net.http, decisão

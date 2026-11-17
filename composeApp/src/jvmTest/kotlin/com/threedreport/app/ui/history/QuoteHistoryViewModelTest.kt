@@ -1,7 +1,5 @@
 package com.threedreport.app.ui.history
 
-import kotlin.test.assertFalse
-import com.threedreport.core.model.QuoteKind
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
@@ -18,12 +16,14 @@ import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PrintCost
 import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
+import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuotedPrint
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -199,6 +199,7 @@ class QuoteHistoryViewModelTest {
 
         assertEquals(listOf(newer, older), visible)
     }
+
     @Test
     fun eachScreenShowsOnlyItsKind() {
         val repository = QuoteHistoryRepository()
@@ -299,7 +300,6 @@ class QuoteHistoryViewModelTest {
 
         assertEquals(QuoteKind.ORDER, viewModel.filter.value.kind)
     }
-
 
     private fun viewModelWith(
         repository: QuoteHistoryRepository,

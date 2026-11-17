@@ -65,7 +65,8 @@ comandos em [docs/development.md](docs/development.md#comandos). Resumo:
 
 1. Faça um fork do repositório e crie uma branch a partir de `main`.
 2. Siga o estilo de código já existente no arquivo que você está editando
-   (sem formatador automático configurado ainda).
+   e rode `./gradlew ktlintFormat` antes do commit
+   (o `./gradlew build` e o CI falham se o estilo estiver fora do padrão).
 3. Se mudar uma fórmula de cálculo, atualize o teste **e**
    [docs/pricing-formulas.md](docs/pricing-formulas.md) no mesmo commit.
 4. Rode `./gradlew build` localmente antes de abrir o PR: o CI roda o mesmo

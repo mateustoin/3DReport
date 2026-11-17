@@ -108,14 +108,18 @@ object GCodeImporter {
             name.endsWith(".bgcode") ->
                 "G-code binário (.bgcode) ainda não é lido. No PrusaSlicer, desligue \"G-code binário\" nas " +
                     "configurações da impressora e exporte de novo."
+
             name.endsWith(".gcode.3mf") ->
                 "Esse é o arquivo fatiado do Bambu Studio (.gcode.3mf), que o app ainda não lê. No Bambu Studio, " +
                     "use \"Exportar G-code\" (em vez de \"Exportar arquivo fatiado da placa\") e arraste o .gcode."
+
             name.endsWith(".3mf") ->
                 "Esse é um arquivo de projeto (.3mf), não um G-code. No fatiador, use \"Exportar G-code\" e " +
                     "arraste o arquivo .gcode."
+
             GCODE_EXTENSIONS.none { name.endsWith(it) } ->
                 "\"$fileName\" não é um G-code. Use o arquivo .gcode exportado pelo fatiador."
+
             else -> null
         }
     }
@@ -151,21 +155,25 @@ object GCodeImporter {
         val sentences = buildList {
             when {
                 filled.isNotEmpty() -> add("Preenchido a partir do G-code: ${filled.joinToString(", ")}.")
+
                 // As linhas mantidas já têm os comprimentos; a frase delas explica o resto.
                 !keptManualRows -> add("Não encontrei comprimento nem tempo nesse G-code — preencha manualmente.")
             }
             printerSentence(printerMatch)?.let(::add)
             when {
                 perExtruder -> add(extrudersSentence(extruders))
+
                 keptManualRows -> add(
                     "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um" +
                         (metadata.filamentLengthMeters?.let { " (${formatLength(it)} m no total)" } ?: "") +
                         ": mantive as suas linhas de filamento como estavam.",
                 )
+
                 extruders.size > 1 -> add(
                     "O G-code usa ${extruders.size} filamentos, mas não informa o consumo de cada um: o total ficou numa " +
                         "linha só. Separe em \"+ Adicionar filamento\" pra cobrar cada um pelo seu preço.",
                 )
+
                 else -> extruders.singleOrNull()?.let { filamentSentence(it.match) }?.let(::add)
             }
             if (metadata.thumbnail != null && !photoApplied) add("Havia uma foto nesse G-code, mas mantive a que você já tinha escolhido.")
@@ -175,18 +183,24 @@ object GCodeImporter {
 
     private fun printerSentence(match: PrinterMatch): String? = when (match) {
         is PrinterMatch.Found -> "Impressora: ${match.printer.name}."
+
         is PrinterMatch.Similar ->
             "O G-code é de uma \"${match.gcodeName}\"; a mais parecida cadastrada é \"${match.printer.name}\" — escolha na lista se for ela."
+
         is PrinterMatch.NotRegistered ->
             "O G-code é de uma \"${match.gcodeName}\", que não está cadastrada (Impressoras → Escolher da lista)."
+
         PrinterMatch.Unknown -> null
     }
 
     private fun filamentSentence(match: FilamentMatch): String? = when (match) {
         is FilamentMatch.Found -> "Filamento: ${match.filament.name}" + (match.color?.let { ", cor ${it.displayLabel()}" } ?: "") + "."
+
         is FilamentMatch.Ambiguous -> "Há ${match.count} filamentos ${match.type} em estoque — escolha qual usou."
+
         is FilamentMatch.NotRegistered ->
             "O G-code usa ${match.type}" + (match.vendor?.let { " da $it" } ?: "") + ", que não está cadastrado em estoque."
+
         FilamentMatch.Unknown -> null
     }
 
