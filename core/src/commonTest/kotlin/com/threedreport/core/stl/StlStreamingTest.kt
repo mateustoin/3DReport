@@ -178,4 +178,38 @@ class StlStreamingTest {
         val bytes = StlTestMeshes.binaryStl(StlTestMeshes.torus(10, 10))
         assertEquals(StlPreviewResult.TooLarge(bytes.size.toLong()), prepareStlPreview(bytes, maxFileBytes = bytes.size - 1L))
     }
+
+    /** Cabeçalho que declara [declared] triângulos num arquivo que só tem [actual]. */
+    private fun lyingHeader(declared: Long, actual: Int): ByteArray {
+        val bytes = StlTestMeshes.binaryStl(StlTestMeshes.torus(actual, 1).take(actual))
+        for (k in 0 until 4) bytes[80 + k] = (declared shr (8 * k)).toByte()
+        return bytes
+    }
+
+    @Test
+    fun lyingHeaderDoesNotReserveMemoryForTrianglesThatAreNotInTheFile() {
+        // Sem conferir com o tamanho, 50 milhões declarados reservavam mais de 1 GB antes de notar o corte.
+        for (declared in listOf(50_000_000L, 0xFFFFFFFFL)) {
+            val bytes = lyingHeader(declared, actual = 2)
+            assertFailsWith<IllegalArgumentException> { analyzeStl(bytes) }
+            assertFailsWith<IllegalArgumentException> { simplifyStl(bytes, targetTriangles = 1) }
+            assertFailsWith<IllegalArgumentException> { prepareStlPreview(bytes) }
+            assertFailsWith<IllegalArgumentException> { parseStl(bytes) }
+        }
+    }
+
+    @Test
+    fun fullMeshPreviewReportsProgressWhileReadingAndAnalysingSoItCanBeCancelled() {
+        val bytes = StlTestMeshes.binaryStl(StlTestMeshes.torus(200, 100)) // 40 mil, abaixo do limite
+        val reported = ArrayList<Float>()
+        prepareStlPreview(bytes, onProgress = { reported += it })
+
+        assertTrue(reported.any { it > 0f && it < 0.5f }, "sem progresso durante a leitura: $reported")
+        assertTrue(reported.any { it > 0.5f && it < 1f }, "sem progresso durante a análise: $reported")
+        assertTrue(reported.zipWithNext().all { (a, b) -> b >= a })
+
+        class Stop : RuntimeException()
+        var calls = 0
+        assertFailsWith<Stop> { prepareStlPreview(bytes, onProgress = { if (++calls == 2) throw Stop() }) }
+    }
 }

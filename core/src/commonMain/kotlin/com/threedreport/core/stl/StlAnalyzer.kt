@@ -49,11 +49,17 @@ data class StlAnalysis(
  */
 object StlAnalyzer {
 
-    fun analyze(mesh: StlMesh, overhangThresholdDegrees: Double = 45.0): StlAnalysis {
-        val accumulator = StlAnalysisAccumulator(overhangThresholdDegrees, mesh.triangles.size)
-        for (t in mesh.triangles) {
+    fun analyze(mesh: StlMesh, overhangThresholdDegrees: Double = 45.0): StlAnalysis = analyze(mesh, overhangThresholdDegrees, null)
+
+    /** [analyze] com progresso, que é o ponto de cancelar (ver [StlProgress]). */
+    internal fun analyze(mesh: StlMesh, overhangThresholdDegrees: Double, onProgress: StlProgress?): StlAnalysis {
+        val triangles = mesh.triangles
+        val accumulator = StlAnalysisAccumulator(overhangThresholdDegrees, triangles.size.toLong())
+        for ((index, t) in triangles.withIndex()) {
+            if (onProgress != null && index % PROGRESS_STEP == 0) onProgress(index.toFloat() / triangles.size)
             accumulator.triangle(t.v1.x, t.v1.y, t.v1.z, t.v2.x, t.v2.y, t.v2.z, t.v3.x, t.v3.y, t.v3.z)
         }
+        onProgress?.invoke(1f)
         return accumulator.result()
     }
 
@@ -105,14 +111,14 @@ object StlAnalyzer {
  * @throws IllegalArgumentException se o arquivo binário estiver truncado.
  */
 fun analyzeStl(bytes: ByteArray, overhangThresholdDegrees: Double = 45.0, onProgress: StlProgress? = null): StlAnalysis =
-    analyzeStlWithBounds(bytes, overhangThresholdDegrees, onProgress).analysis
+    analyzeStlWithBounds(bytes, plausibleStlTriangleCount(bytes), overhangThresholdDegrees, onProgress).analysis
 
 /** A análise mais a caixa da peça, que a simplificação usa pra montar a grade sem ler o arquivo de novo. */
 internal class AnalysisWithBounds(val analysis: StlAnalysis, val boundsMin: Vec3, val boundsMax: Vec3)
 
-internal fun analyzeStlWithBounds(bytes: ByteArray, overhangThresholdDegrees: Double, onProgress: StlProgress?): AnalysisWithBounds {
-    val expected = peekStlTriangleCount(bytes).coerceIn(0L, Int.MAX_VALUE.toLong() / 4).toInt()
-    val accumulator = StlAnalysisAccumulator(overhangThresholdDegrees, expected)
+/** [triangleCount] é a de [plausibleStlTriangleCount], feita uma vez por quem chama. */
+internal fun analyzeStlWithBounds(bytes: ByteArray, triangleCount: Long, overhangThresholdDegrees: Double, onProgress: StlProgress?): AnalysisWithBounds {
+    val accumulator = StlAnalysisAccumulator(overhangThresholdDegrees, triangleCount)
     forEachStlTriangle(bytes, onProgress, accumulator)
     return AnalysisWithBounds(accumulator.result(), accumulator.boundsMin(), accumulator.boundsMax())
 }
@@ -125,7 +131,9 @@ internal fun analyzeStlWithBounds(bytes: ByteArray, overhangThresholdDegrees: Do
  * em algum triângulo e os três vértices de um triângulo ficam juntos. Malha fechada: cada aresta aparece
  * exatamente duas vezes; as arestas vão numa lista de `Long` e são contadas depois de ordenar.
  */
-internal class StlAnalysisAccumulator(overhangThresholdDegrees: Double, expectedTriangles: Int) : StlTriangleVisitor {
+internal class StlAnalysisAccumulator(overhangThresholdDegrees: Double, triangleCount: Long) : StlTriangleVisitor {
+    private val expectedTriangles = preallocationHint(triangleCount)
+
     // Face conta como overhang se aponta pra baixo além do limite configurado — comparação por
     // seno evita chamar acos() por triângulo (só um dot product contra um valor pré-calculado).
     private val overhangDotThreshold = sin(overhangThresholdDegrees * PI / 180.0)
@@ -136,7 +144,7 @@ internal class StlAnalysisAccumulator(overhangThresholdDegrees: Double, expected
 
     private val vertexIds = Int3IdTable(expectedTriangles / 2 + 16)
     private val parent = IntList(expectedTriangles / 2 + 16)
-    private val edges = LongList(expectedTriangles.toLong().times(3).coerceAtMost(Int.MAX_VALUE - 8L).toInt())
+    private val edges = LongList(expectedTriangles * 3)
 
     private var minX = Float.MAX_VALUE
     private var minY = Float.MAX_VALUE

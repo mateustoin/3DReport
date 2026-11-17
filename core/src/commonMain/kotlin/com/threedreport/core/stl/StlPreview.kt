@@ -48,14 +48,14 @@ fun prepareStlPreview(
 ): StlPreviewResult {
     if (bytes.size.toLong() > maxFileBytes) return StlPreviewResult.TooLarge(bytes.size.toLong())
     val progress = MonotonicProgress(onProgress)
-    if (peekStlTriangleCount(bytes) <= fullPreviewLimit) {
-        val mesh = parseStl(bytes)
-        progress.report(0.5f)
-        val analysis = StlAnalyzer.analyze(mesh, overhangThresholdDegrees)
-        progress.report(1f)
+    // Contada uma vez: no ASCII é uma varredura do arquivo inteiro.
+    val triangleCount = plausibleStlTriangleCount(bytes)
+    if (triangleCount <= fullPreviewLimit) {
+        val mesh = parseStl(bytes, triangleCount, progress.range(0f, 0.5f))
+        val analysis = StlAnalyzer.analyze(mesh, overhangThresholdDegrees, progress.range(0.5f, 1f))
         return StlPreviewResult.Ready(mesh, analysis, isSimplified = false)
     }
-    val measured = analyzeStlWithBounds(bytes, overhangThresholdDegrees, progress.range(0f, 0.4f))
-    val mesh = simplifyWithBounds(bytes, simplifiedTarget, measured, progress.range(0.4f, 1f))
+    val measured = analyzeStlWithBounds(bytes, triangleCount, overhangThresholdDegrees, progress.range(0f, 0.4f))
+    val mesh = simplifyWithBounds(bytes, triangleCount, simplifiedTarget, measured, progress.range(0.4f, 1f))
     return StlPreviewResult.Ready(mesh, measured.analysis, isSimplified = true)
 }

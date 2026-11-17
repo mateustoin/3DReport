@@ -25,14 +25,11 @@ const val SIMPLIFIED_STL_TARGET_TRIANGLES: Int = 200_000
  */
 fun simplifyStl(bytes: ByteArray, targetTriangles: Int = SIMPLIFIED_STL_TARGET_TRIANGLES, onProgress: StlProgress? = null): StlMesh {
     require(targetTriangles > 0) { "targetTriangles precisa ser positivo: $targetTriangles" }
-    if (peekStlTriangleCount(bytes) <= targetTriangles) {
-        val mesh = parseStl(bytes)
-        onProgress?.invoke(1f)
-        return mesh
-    }
+    val triangleCount = plausibleStlTriangleCount(bytes)
+    if (triangleCount <= targetTriangles) return parseStl(bytes, triangleCount, onProgress)
     val progress = MonotonicProgress(onProgress)
-    val measured = analyzeStlWithBounds(bytes, 45.0, progress.range(0f, 0.4f))
-    return simplifyWithBounds(bytes, targetTriangles, measured, progress.range(0.4f, 1f))
+    val measured = analyzeStlWithBounds(bytes, triangleCount, 45.0, progress.range(0f, 0.4f))
+    return simplifyWithBounds(bytes, triangleCount, targetTriangles, measured, progress.range(0.4f, 1f))
 }
 
 /** Progresso que nunca volta, dividido em faixas pros passos de um trabalho só. */
@@ -56,7 +53,13 @@ internal class MonotonicProgress(private val sink: StlProgress?) {
  * escolhida der triângulos demais, a tentativa para no meio (sem gastar memória com a saída inteira) e a célula
  * cresce na proporção do excesso. Fica com a melhor tentativa que coube no alvo.
  */
-internal fun simplifyWithBounds(bytes: ByteArray, targetTriangles: Int, measured: AnalysisWithBounds, onProgress: StlProgress): StlMesh {
+internal fun simplifyWithBounds(
+    bytes: ByteArray,
+    triangleCount: Long,
+    targetTriangles: Int,
+    measured: AnalysisWithBounds,
+    onProgress: StlProgress,
+): StlMesh {
     val progress = MonotonicProgress(onProgress)
     val extent = measured.boundsMax - measured.boundsMin
     val longest = max(extent.x, max(extent.y, extent.z)).toDouble()
@@ -75,7 +78,7 @@ internal fun simplifyWithBounds(bytes: ByteArray, targetTriangles: Int, measured
     var start = 0f
     for (attempt in 0 until MAX_ATTEMPTS) {
         val end = if (attempt == MAX_ATTEMPTS - 1) 1f else start + (1f - start) * 0.6f
-        val outcome = clusterOnce(bytes, measured.boundsMin, cell, targetTriangles, progress.range(start, end))
+        val outcome = clusterOnce(bytes, triangleCount, measured.boundsMin, cell, targetTriangles, progress.range(start, end))
         start = end
         when (outcome) {
             is Outcome.TooMany -> cell *= sqrt(outcome.estimatedTriangles / targetTriangles) * 1.1
@@ -90,7 +93,7 @@ internal fun simplifyWithBounds(bytes: ByteArray, targetTriangles: Int, measured
         }
     }
     // Sem nenhuma tentativa que coube: grade bem grossa, que sempre cabe.
-    val result = best ?: (clusterOnce(bytes, measured.boundsMin, longest / 8.0, Int.MAX_VALUE, {}) as Outcome.Done).mesh
+    val result = best ?: (clusterOnce(bytes, triangleCount, measured.boundsMin, longest / 8.0, Int.MAX_VALUE, {}) as Outcome.Done).mesh
     progress.report(1f)
     return result
 }
@@ -110,8 +113,8 @@ private sealed interface Outcome {
     class TooMany(val estimatedTriangles: Double) : Outcome
 }
 
-private fun clusterOnce(bytes: ByteArray, origin: Vec3, cell: Double, limit: Int, onProgress: StlProgress): Outcome {
-    val total = peekStlTriangleCount(bytes).coerceAtLeast(1L)
+private fun clusterOnce(bytes: ByteArray, triangleCount: Long, origin: Vec3, cell: Double, limit: Int, onProgress: StlProgress): Outcome {
+    val total = triangleCount.coerceAtLeast(1L)
     val cells = Int3IdTable(minOf(limit, 1 shl 20))
     val sums = DoubleList()
     val counts = IntList()

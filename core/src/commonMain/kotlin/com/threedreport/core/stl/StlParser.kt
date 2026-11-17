@@ -31,14 +31,34 @@ typealias StlProgress = (fraction: Float) -> Unit
  * @throws IllegalArgumentException se o arquivo binário estiver truncado
  *   (menor do que a contagem de triângulos declarada permite).
  */
-fun parseStl(bytes: ByteArray): StlMesh {
-    val expected = peekStlTriangleCount(bytes).coerceIn(0L, 1_000_000L).toInt()
-    val triangles = ArrayList<StlTriangle>(expected)
-    walkStl(bytes, null) { nx, ny, nz, x1, y1, z1, x2, y2, z2, x3, y3, z3 ->
+fun parseStl(bytes: ByteArray): StlMesh = parseStl(bytes, plausibleStlTriangleCount(bytes), null)
+
+/** [parseStl] com a contagem já feita ([plausibleStlTriangleCount]) e progresso, que é o ponto de cancelar. */
+internal fun parseStl(bytes: ByteArray, triangleCount: Long, onProgress: StlProgress?): StlMesh {
+    val triangles = ArrayList<StlTriangle>(preallocationHint(triangleCount))
+    walkStl(bytes, onProgress) { nx, ny, nz, x1, y1, z1, x2, y2, z2, x3, y3, z3 ->
         triangles += StlTriangle(Vec3(nx, ny, nz), Vec3(x1, y1, z1), Vec3(x2, y2, z2), Vec3(x3, y3, z3))
     }
     return StlMesh(triangles)
 }
+
+/**
+ * Quantos triângulos o arquivo pode ter de verdade: no binário, a contagem do cabeçalho limitada ao que cabe nos
+ * bytes (um cabeçalho mentiroso ou um arquivo cortado não reserva memória pra triângulo que não existe; o corte é
+ * acusado depois, na leitura); no ASCII, os `endfacet`. É a conta que o resto do pacote faz uma vez só e passa
+ * adiante, porque no ASCII ela varre o arquivo inteiro.
+ */
+internal fun plausibleStlTriangleCount(bytes: ByteArray): Long = if (isBinaryStl(bytes)) {
+    if (bytes.size >= 84) minOf(readUInt32LE(bytes, 80), (bytes.size - 84L) / 50L) else 0L
+} else {
+    countAsciiFacets(bytes)
+}
+
+/** Maior reserva antecipada, em triângulos. Acima disso as listas crescem conforme a leitura. */
+private const val MAX_PREALLOCATED_TRIANGLES = 16_000_000L
+
+/** Capacidade inicial pra [triangleCount] triângulos, sem passar de [MAX_PREALLOCATED_TRIANGLES]. */
+internal fun preallocationHint(triangleCount: Long): Int = triangleCount.coerceIn(0L, MAX_PREALLOCATED_TRIANGLES).toInt()
 
 /**
  * Percorre os triângulos de um STL (binário ou ASCII, mesma detecção de [parseStl]) na ordem do arquivo, sem
@@ -111,7 +131,7 @@ private fun isBinaryStl(bytes: ByteArray): Boolean {
 }
 
 /** De quantos em quantos triângulos o progresso é avisado. */
-private const val PROGRESS_STEP = 16_384
+internal const val PROGRESS_STEP = 16_384
 
 private fun walkBinary(bytes: ByteArray, onProgress: StlProgress?, visitor: NormalTriangleVisitor) {
     require(bytes.size >= 84) { "Arquivo STL binário inválido: menor que o cabeçalho mínimo (84 bytes)." }

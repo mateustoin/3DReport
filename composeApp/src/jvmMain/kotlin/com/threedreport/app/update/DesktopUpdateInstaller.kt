@@ -16,10 +16,13 @@ import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.Duration
 
+/** Como terminou um comando: o código de saída e o começo da saída de erro (pra reconhecer a causa, não pra mostrar). */
+data class CommandResult(val exitCode: Int, val errorOutput: String = "")
+
 /** Roda os comandos do sistema. Interface pra os testes não instalarem nada de verdade. */
 interface CommandRunner {
-    /** Roda [command] e espera terminar; devolve o código de saída. */
-    fun runAndWait(command: List<String>): Int
+    /** Roda [command] e espera terminar. */
+    fun runAndWait(command: List<String>): CommandResult
 
     /** Inicia [command] sem esperar e sem prender a entrada e a saída a este processo, pra ele seguir depois que o app fechar. */
     fun startDetached(command: List<String>)
@@ -27,11 +30,25 @@ interface CommandRunner {
 
 /** [CommandRunner] de verdade, com [ProcessBuilder]. */
 object SystemCommandRunner : CommandRunner {
-    override fun runAndWait(command: List<String>): Int = ProcessBuilder(command)
-        .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-        .redirectError(ProcessBuilder.Redirect.DISCARD)
-        .start()
-        .waitFor()
+    override fun runAndWait(command: List<String>): CommandResult {
+        val process = ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .start()
+        // Lida até o fim (o processo não trava com o cano cheio), guardando só o começo.
+        val error = process.errorStream.use { stream ->
+            val kept = java.io.ByteArrayOutputStream()
+            val buffer = ByteArray(8 * 1024)
+            while (true) {
+                val n = stream.read(buffer)
+                if (n < 0) break
+                if (kept.size() < MAX_ERROR_OUTPUT) kept.write(buffer, 0, minOf(n, MAX_ERROR_OUTPUT - kept.size()))
+            }
+            kept.toString(Charsets.UTF_8)
+        }
+        return CommandResult(process.waitFor(), error)
+    }
+
+    private const val MAX_ERROR_OUTPUT = 16 * 1024
 
     override fun startDetached(command: List<String>) {
         ProcessBuilder(command)
@@ -56,7 +73,7 @@ class DesktopUpdateInstaller(
     private val os: HostOs = hostOsOf(System.getProperty("os.name").orEmpty()),
     private val arch: HostArch = hostArchOf(System.getProperty("os.arch").orEmpty()),
     private val appPath: String? = System.getProperty("jpackage.app-path"),
-    private val downloadDir: () -> File = { Files.createTempDirectory("3dreport-update").toFile() },
+    private val downloadDir: () -> File = { Files.createTempDirectory(UPDATE_DOWNLOAD_PREFIX).toFile() },
     private val commandExists: (String) -> Boolean = ::isOnPath,
     private val runner: CommandRunner = SystemCommandRunner,
     private val openFolder: (String) -> Unit = { com.threedreport.app.platform.openFolder(it) },
@@ -186,11 +203,7 @@ class DesktopUpdateInstaller(
 
                 InstallMethod.LINUX_DEB -> installDeb(path)
 
-                InstallMethod.LINUX_DEB_MANUAL -> {
-                    val folder = File(path).parent
-                    openFolder(folder)
-                    InstallOutcome.Manual(folderPath = folder, command = "sudo apt install '${path.replace("'", "'\\''")}'")
-                }
+                InstallMethod.LINUX_DEB_MANUAL -> manualInstall(path)
             }
         } catch (e: IOException) {
             AppLog.warn("Não consegui abrir o instalador da atualização", e)
@@ -198,20 +211,34 @@ class DesktopUpdateInstaller(
         }
     }
 
+    /** Sem como pedir a senha: abre a pasta do arquivo e devolve o comando de terminal que instala. */
+    private fun manualInstall(path: String): InstallOutcome {
+        val folder = File(path).parent
+        openFolder(folder)
+        return InstallOutcome.Manual(folderPath = folder, command = "sudo apt install '${path.replace("'", "'\\''")}'")
+    }
+
     private fun installDeb(path: String): InstallOutcome {
         val command = if (commandExists("apt-get")) listOf("pkexec", "apt-get", "install", "-y", path) else listOf("pkexec", "dpkg", "-i", path)
-        val exit = runner.runAndWait(command)
-        return when (exit) {
-            0 -> {
+        val result = runner.runAndWait(command)
+        return when {
+            result.exitCode == 0 -> {
                 relaunchAfterExit()
                 InstallOutcome.CloseApp
             }
 
-            // 126: a pessoa fechou a janela de senha; 127: não autorizado.
-            PKEXEC_DISMISSED, PKEXEC_NOT_AUTHORIZED -> InstallOutcome.Cancelled
+            // A pessoa fechou a janela de senha.
+            result.exitCode == PKEXEC_DISMISSED -> InstallOutcome.Cancelled
+
+            // Sessão sem agente do polkit: não há janela de senha, e tentar de novo não adianta. O 127 sem essa
+            // mensagem é "não autorizado" (senha errada demais): falha, nada mudou.
+            result.exitCode == PKEXEC_NOT_AUTHORIZED && result.errorOutput.contains("authentication agent", ignoreCase = true) -> {
+                AppLog.warn("Sem agente de autenticação do polkit; instalação pelo terminal")
+                manualInstall(path)
+            }
 
             else -> {
-                AppLog.warn("O instalador do .deb terminou com código $exit")
+                AppLog.warn("O instalador do .deb terminou com código ${result.exitCode}: ${result.errorOutput.take(500)}")
                 InstallOutcome.Failed
             }
         }
@@ -249,3 +276,26 @@ internal fun safeDownloadName(assetName: String): String {
 private fun isOnPath(command: String): Boolean = System.getenv("PATH").orEmpty()
     .split(File.pathSeparatorChar)
     .any { dir -> dir.isNotBlank() && File(dir, command).let { it.isFile && it.canExecute() } }
+
+/** Prefixo das pastas de download da atualização na pasta temporária do sistema (ver [DesktopUpdateInstaller]). */
+internal const val UPDATE_DOWNLOAD_PREFIX = "3dreport-update"
+
+/** Idade mínima pra apagar: um instalador recém entregue ao sistema (o `msiexec` esperando a confirmação) ainda usa o arquivo. */
+private const val UPDATE_DOWNLOAD_MIN_AGE_MILLIS = 60 * 60 * 1000L
+
+/**
+ * Apaga as pastas de download de atualizações antigas ([UPDATE_DOWNLOAD_PREFIX]) da pasta temporária do sistema.
+ * O instalador entregue ao sistema não pode ser apagado na hora (o app fecha logo depois), então o app chama isto
+ * ao abrir. Pasta com menos de uma hora fica pra próxima. Devolve quantas pastas saíram.
+ */
+fun deleteOldUpdateDownloads(
+    tempDir: File = File(System.getProperty("java.io.tmpdir")),
+    nowMillis: Long = System.currentTimeMillis(),
+): Int {
+    val old = tempDir.listFiles { file ->
+        file.isDirectory && file.name.startsWith(UPDATE_DOWNLOAD_PREFIX) && nowMillis - file.lastModified() >= UPDATE_DOWNLOAD_MIN_AGE_MILLIS
+    }.orEmpty()
+    val deleted = old.count { it.deleteRecursively() }
+    if (deleted > 0) AppLog.info("Limpeza de downloads de atualização: $deleted pasta(s) removida(s)")
+    return deleted
+}

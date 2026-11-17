@@ -30,10 +30,11 @@ class DesktopUpdateInstallerTest {
     /** Comandos que o instalador pediu pra rodar, com o código de saída que o teste quer devolver. */
     private val commands = ArrayList<List<String>>()
     private var exitCode = 0
+    private var errorOutput = ""
     private val runner = object : CommandRunner {
-        override fun runAndWait(command: List<String>): Int {
+        override fun runAndWait(command: List<String>): CommandResult {
             commands += command
-            return exitCode
+            return CommandResult(exitCode, errorOutput)
         }
 
         override fun startDetached(command: List<String>) {
@@ -197,7 +198,52 @@ class DesktopUpdateInstallerTest {
         assertEquals(InstallOutcome.Cancelled, desktop().install(downloaded(InstallMethod.LINUX_DEB)))
         exitCode = 100
         assertEquals(InstallOutcome.Failed, desktop().install(downloaded(InstallMethod.LINUX_DEB)))
-        assertEquals(2, commands.size, "sem reabrir o app")
+        exitCode = 127
+        errorOutput = "Error executing command as another user: Not authorized"
+        assertEquals(InstallOutcome.Failed, desktop().install(downloaded(InstallMethod.LINUX_DEB)))
+        assertEquals(3, commands.size, "sem reabrir o app")
+        assertTrue(openedFolders.isEmpty())
+    }
+
+    @Test
+    fun withoutPolkitAgentTheSessionCannotAskThePasswordSoItFallsBackToTheCommand() = runBlocking {
+        // Sessão sem agente do polkit (alguns gerenciadores de janela leves): o pkexec sai na hora com 127.
+        exitCode = 127
+        errorOutput = "Error executing command as another user: No authentication agent found.\n"
+        val update = downloaded(InstallMethod.LINUX_DEB)
+
+        val outcome = desktop().install(update)
+
+        assertIs<InstallOutcome.Manual>(outcome)
+        assertEquals("sudo apt install '${update.filePath}'", outcome.command)
+        assertEquals(listOf(downloads.path), openedFolders)
+        assertEquals(1, commands.size, "sem reabrir o app")
+    }
+
+    @Test
+    fun oldDownloadFoldersAreDeletedAtStartup() {
+        val temp = createTempDirectory("3dreport-temp-test").toFile()
+        try {
+            val now = 10_000_000_000L
+            fun folder(name: String, ageMillis: Long) = File(temp, name).apply {
+                mkdirs()
+                File(this, "threedreport.deb").writeBytes(installer)
+                setLastModified(now - ageMillis)
+            }
+            val old = folder("3dreport-update1234567", ageMillis = 2 * 60 * 60 * 1000L)
+            val recent = folder("3dreport-update7654321", ageMillis = 60 * 1000L)
+            val other = folder("outro-programa", ageMillis = 2 * 60 * 60 * 1000L)
+            val oldFile = File(temp, "3dreport-update-arquivo").apply { writeText("x"); setLastModified(now - 10 * 60 * 60 * 1000L) }
+
+            assertEquals(1, deleteOldUpdateDownloads(temp, nowMillis = now))
+
+            assertFalse(old.exists(), "pasta de download antiga sai")
+            assertTrue(recent.exists(), "uma instalação recém aberta ainda pode estar usando o arquivo")
+            assertTrue(other.exists(), "nada de outro programa")
+            assertTrue(oldFile.exists(), "só pastas")
+        } finally {
+            temp.deleteRecursively()
+        }
     }
 
     @Test
