@@ -2,6 +2,7 @@ package com.threedreport.app.ui.about
 
 import com.threedreport.app.AppLog
 import com.threedreport.app.data.PreferencesRepository
+import com.threedreport.app.update.ReleaseAsset
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,8 +13,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** A versão publicada mais recente e a página dela. */
-data class LatestRelease(val version: String, val url: String)
+/**
+ * A versão publicada mais recente, a página dela e os arquivos publicados ([assets], de onde sai o instalador do
+ * "Atualizar agora", decisão 143).
+ */
+data class LatestRelease(val version: String, val url: String, val assets: List<ReleaseAsset> = emptyList())
 
 /** De onde vem a versão mais recente (a API de releases do GitHub no desktop). `null` quando não deu pra saber. */
 fun interface ReleaseSource {

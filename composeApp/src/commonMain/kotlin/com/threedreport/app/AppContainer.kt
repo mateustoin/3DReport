@@ -18,6 +18,8 @@ import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.data.ThemeRepository
 import com.threedreport.app.data.store.StorageHealth
 import com.threedreport.app.ui.about.ReleaseSource
+import com.threedreport.app.update.NoUpdateInstaller
+import com.threedreport.app.update.UpdateInstaller
 
 /**
  * Tudo que o app usa, montado uma vez na inicialização da plataforma (decisão 108), fora da composição:
@@ -46,6 +48,8 @@ class AppContainer(
     val pendingWrites: PendingWrites = PendingWrites.None,
     /** A versão mais recente publicada, pra verificação opcional de atualizações (decisão 116). */
     val releases: ReleaseSource = ReleaseSource { null },
+    /** Baixa, confere e instala a versão nova pelo "Atualizar agora" (decisão 143). Sem ele, o botão não aparece. */
+    val updateInstaller: UpdateInstaller = NoUpdateInstaller,
 )
 
 /** Gravações pedidas e ainda não confirmadas no disco (ver [com.threedreport.app.data.store.WriteBehindFile]). */
