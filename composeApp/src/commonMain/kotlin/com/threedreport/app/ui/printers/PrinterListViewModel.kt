@@ -136,19 +136,14 @@ class PrinterListViewModel(
     }
 
     fun startAdd() {
-        state.update { it.copy(form = PrinterFormState.new(decimalSeparator = separator)) }
+        state.update { it.copy(form = PrinterFormState.new(separator)) }
     }
 
     /** Abre o formulário de nova impressora já preenchido com um preset, ver [PrinterPreset]. */
     fun startAddFromPreset(preset: PrinterPreset) {
         state.update {
             it.copy(
-                form = PrinterFormState.new(
-                    name = "${preset.brand} ${preset.model}",
-                    powerWatts = preset.ratedPowerWatts,
-                    fromPreset = true,
-                    decimalSeparator = separator,
-                ),
+                form = PrinterFormState.fromPreset(preset, separator),
                 presetPickerOpen = false,
             )
         }

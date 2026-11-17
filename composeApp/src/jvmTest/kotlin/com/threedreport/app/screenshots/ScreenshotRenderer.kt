@@ -360,7 +360,31 @@ class ScreenshotRenderer {
         File(outDir, "historico.png").delete()
 
         if (System.getProperty("screenshots.leva10c") != null) renderLeva10cScreenshots(container, outDir)
+        if (System.getProperty("screenshots.presets") != null) renderPrinterPresetScreenshots(container, outDir)
     }
+}
+
+/** Impressoras da lista (2.2.1): o diálogo de escolha e o formulário que nasce de um preset, nos dois temas. */
+private fun renderPrinterPresetScreenshots(container: AppContainer, outDir: File) {
+    for ((theme, suffix) in listOf(ThemeMode.LIGHT to "claro", ThemeMode.DARK to "escuro")) {
+        container.theme.update(theme)
+        renderAppPng(File(outDir, "impressoras-lista-$suffix.png"), afterSettle = { it.clickByText("Escolher da lista") }) {
+            sampleApp(container, startAt = AppDestination.PRINTERS)
+        }
+        renderAppPng(
+            File(outDir, "impressoras-formulario-preset-$suffix.png"),
+            afterSettle = { scene ->
+                scene.clickByText("Escolher da lista")
+                settle(scene, frames = 3)
+                scene.setTextByLabel("Buscar por marca ou modelo", "A1 Combo")
+                settle(scene, frames = 3)
+                scene.clickByText("Bambu Lab A1 Combo")
+            },
+        ) {
+            sampleApp(container, startAt = AppDestination.PRINTERS)
+        }
+    }
+    container.theme.update(ThemeMode.LIGHT)
 }
 
 /**

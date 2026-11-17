@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.update
 
 /**
  * A impressora respondida no onboarding, aplicada na impressora de exemplo (a que o primeiro orçamento
- * usa): o modelo troca nome e consumo, o valor troca o preço da máquina. `null` em cada um mantém o do
+ * usa): o modelo troca nome, consumo médio, manutenção e preço de referência, e o valor digitado troca o preço. `null` em cada um mantém o do
  * exemplo.
  */
 data class OnboardingPrinter(val preset: PrinterPreset?, val machinePrice: Double?)

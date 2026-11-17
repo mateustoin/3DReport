@@ -3,8 +3,12 @@ package com.threedreport.app.ui.printers
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_close
 import _3dreport.composeapp.generated.resources.printers_presets_field_search
+import _3dreport.composeapp.generated.resources.printers_presets_intro
 import _3dreport.composeapp.generated.resources.printers_presets_none
-import _3dreport.composeapp.generated.resources.printers_presets_power
+import _3dreport.composeapp.generated.resources.printers_presets_power_average
+import _3dreport.composeapp.generated.resources.printers_presets_power_average_max
+import _3dreport.composeapp.generated.resources.printers_presets_power_estimated
+import _3dreport.composeapp.generated.resources.printers_presets_power_estimated_max
 import _3dreport.composeapp.generated.resources.printers_presets_search_hint
 import _3dreport.composeapp.generated.resources.printers_presets_title
 import _3dreport.composeapp.generated.resources.printers_presets_use
@@ -24,13 +28,14 @@ import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.components.ListRow
 import com.threedreport.app.ui.components.RowAction
+import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Diálogo com o catálogo pré-cadastrado de impressoras (decisão 54), aberto pelo botão "Escolher da lista" em
- * Impressoras. Escolher um preset abre o formulário de nova impressora com nome e consumo já preenchidos (continuam
+ * Diálogo com o catálogo pré-cadastrado de impressoras (decisões 54 e 144), aberto pelo botão "Escolher da lista" em
+ * Impressoras. Escolher um preset abre o formulário de nova impressora com os valores de referência já preenchidos (continuam
  * editáveis); não salva nada sozinho. A busca (marca ou modelo) filtra a lista.
  */
 @Composable
@@ -43,6 +48,7 @@ fun PrinterPresetDialog(onPick: (PrinterPreset) -> Unit, onDismiss: () -> Unit) 
         onDismiss = onDismiss,
         buttons = { AppButton(stringResource(Res.string.common_close), onDismiss) },
     ) {
+        DialogText(stringResource(Res.string.printers_presets_intro), muted = true)
         AppTextField(
             label = stringResource(Res.string.printers_presets_field_search),
             value = query,
@@ -53,12 +59,26 @@ fun PrinterPresetDialog(onPick: (PrinterPreset) -> Unit, onDismiss: () -> Unit) 
             if (filtered.isEmpty()) DialogText(stringResource(Res.string.printers_presets_none, query.trim()))
             filtered.forEach { preset ->
                 ListRow(
-                    title = "${preset.brand} ${preset.model}",
-                    details = listOf(stringResource(Res.string.printers_presets_power, preset.ratedPowerWatts.toInt())),
+                    title = preset.displayName,
+                    details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.toCurrencyText()),
                     onClick = { onPick(preset) },
                     actions = listOf(RowAction(AppIcons.Check, stringResource(Res.string.printers_presets_use), { onPick(preset) })),
                 )
             }
         }
+    }
+}
+
+/** Consumo da linha: a média (estimada quando veio da irmã mais próxima) e, quando o fabricante publica, a máxima. */
+@Composable
+private fun presetPowerText(preset: PrinterPreset): String {
+    val average = preset.averagePowerWatts.toInt()
+    val max = preset.maxPowerWatts?.toInt()
+    val estimated = preset.powerSource == PowerSource.ESTIMATED
+    return when {
+        max == null && estimated -> stringResource(Res.string.printers_presets_power_estimated, average)
+        max == null -> stringResource(Res.string.printers_presets_power_average, average)
+        estimated -> stringResource(Res.string.printers_presets_power_estimated_max, average, max)
+        else -> stringResource(Res.string.printers_presets_power_average_max, average, max)
     }
 }

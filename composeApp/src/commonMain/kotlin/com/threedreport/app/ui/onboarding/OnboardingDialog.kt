@@ -101,13 +101,13 @@ fun OnboardingDialog(
                     label = stringResource(Res.string.onboarding_field_model),
                     items = listOf<PrinterPreset?>(null) + PRINTER_PRESETS,
                     selected = preset,
-                    itemLabel = { it?.let { option -> "${option.brand} ${option.model}" } ?: other },
-                    displayText = { it?.let { option -> "${option.brand} ${option.model}" } ?: other },
+                    itemLabel = { it?.let { option -> option.displayName } ?: other },
+                    displayText = { it?.let { option -> option.displayName } ?: other },
                     onSelect = viewModel::setPreset,
                     emptyText = other,
                     help = if (preset != null) {
                         HelpText(
-                            stringResource(Res.string.onboarding_help_model_preset, preset.ratedPowerWatts.toInputText()),
+                            stringResource(Res.string.onboarding_help_model_preset, preset.averagePowerWatts.toInputText()),
                             stringResource(Res.string.onboarding_help_model_preset_detail),
                         )
                     } else {
