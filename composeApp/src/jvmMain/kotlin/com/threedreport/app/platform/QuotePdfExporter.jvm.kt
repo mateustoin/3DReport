@@ -91,6 +91,9 @@ private val GAP = cqw(2.6f)
  * arredondamento nas contas de altura.
  */
 private val LABEL_GAP = cqw(0.8f)
+
+/** Respiro do rótulo do preço grande: da base do rótulo ao topo dos algarismos. Maior que [LABEL_GAP], que serve ao texto pequeno da direita. */
+private val PRICE_LABEL_GAP = cqw(1.6f)
 private val GROUP_GAP = cqw(2.6f)
 private const val EPSILON = 0.5f
 
@@ -451,7 +454,7 @@ private fun priceLayout(context: PdfContext, block: PriceBlock, width: Float): P
 }
 
 /** Altura do que a coluna da esquerda ocupa, do alto do rótulo até a linha de base do preço. */
-private fun leftColumnHeight(priceSize: Float): Float = LABEL_SIZE * CAP_HEIGHT + LABEL_GAP + priceSize * CAP_HEIGHT
+private fun leftColumnHeight(priceSize: Float): Float = LABEL_SIZE * CAP_HEIGHT + PRICE_LABEL_GAP + priceSize * CAP_HEIGHT
 
 /** Altura da coluna da direita, do alto do primeiro rótulo até a linha de base do último valor. */
 private fun rightColumnHeight(block: PriceBlock): Float = block.lines.sumOf { line ->
@@ -478,7 +481,7 @@ private fun drawPriceBlock(context: PdfContext, writer: PageWriter, block: Price
     val rightBase = bottom + BLOCK_PAD_Y + cqw(0.5f)
     val baseline = if (layout.stacked) rightBase + rightHeight + GROUP_GAP else rightBase
     content.text(context.displayFont, layout.priceSize, x + BLOCK_PAD_X, baseline, block.price)
-    content.overline(context.bodyFont, LABEL_SIZE, x + BLOCK_PAD_X, baseline + layout.priceSize * CAP_HEIGHT + gap, block.label)
+    content.overline(context.bodyFont, LABEL_SIZE, x + BLOCK_PAD_X, baseline + layout.priceSize * CAP_HEIGHT + PRICE_LABEL_GAP, block.label)
 
     // Do alto pra baixo: cada item tem o rótulo (se houver) e o valor; o último valor fica na linha de base de baixo.
     var cursor = rightBase + rightHeight
