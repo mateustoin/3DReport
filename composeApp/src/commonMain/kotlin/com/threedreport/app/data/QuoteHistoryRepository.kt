@@ -6,6 +6,8 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.Payment
+import com.threedreport.core.model.PaymentMethod
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
@@ -27,7 +29,9 @@ interface QuoteHistoryRepository {
      * Salva [quote] com [name] (gera um nome genérico se vazio), os [services] escolhidos (retrato do
      * preço no momento), [photo], [stlFile] (o arquivo do modelo, STL ou 3MF, guardado com a extensão dele),
      * [sourceLink] e [client] opcionais. Nasce
-     * [OrderStatus.ORCADO], com o próximo número da sequência e a mudança de status registrada.
+     * [OrderStatus.ORCADO], com o próximo número da sequência e a mudança de status registrada. Um pedido novo nasce
+     * sem pagamento, rastreio nem observação, e com o sinal do % padrão de hoje ([SavedQuote.initialDeposit]); é por
+     * aqui que duplicar e vender passam, então nada disso é copiado do original.
      *
      * Os anexos vão pro [AttachmentStore] pelo conteúdo: reabrir, duplicar ou vender e salvar com a
      * mesma foto reaproveita o mesmo arquivo, e trocar a foto nunca mexe na de outro orçamento.
@@ -66,7 +70,9 @@ interface QuoteHistoryRepository {
     /**
      * Reabre e salva de novo o orçamento [id] (edição explícita) — troca o retrato por um novo,
      * preservando [SavedQuote.savedAtEpochMillis], o número, o andamento e a moeda, e marcando
-     * [SavedQuote.lastEditedEpochMillis]. `null` de [photo]/[stlFile] remove o anexo. Retorna `null`
+     * [SavedQuote.lastEditedEpochMillis]. Também ficam os pagamentos, o rastreio, as observações e o último "Retomar
+     * conversa"; o sinal fica como estava, limitado ao total novo, e só um pedido sem sinal ganha o do % padrão de hoje
+     * ([SavedQuote.withDepositAfterEdit]). `null` de [photo]/[stlFile] remove o anexo. Retorna `null`
      * sem fazer nada se [id] não existir. O [SavedQuote.kind] não muda por aqui (produto continua
      * produto); mudar de tipo é pelo [convertToOrder]. Nome em branco ganha um nome automático novo; [autoNamed] diz
      * que [name] é o automático que já estava no campo, sem ninguém mexer, e aí ele continua automático.
@@ -126,6 +132,25 @@ interface QuoteHistoryRepository {
     /** Troca só o prazo de entrega do pedido [id] (`null` remove). */
     fun updateDeliveryDate(id: String, deliveryDateEpochDay: Long?)
 
+    /**
+     * Registra um pagamento no fim da lista do pedido [id] (decisão 146) e devolve o [Payment] gravado. `null`, sem
+     * gravar nada, se [id] não existe, é produto do catálogo ou [amount] não é válido ([Payment.isValidAmount]).
+     * Não conta como edição do pedido ([SavedQuote.lastEditedEpochMillis] fica como está).
+     */
+    fun addPayment(id: String, amount: Double, method: PaymentMethod, epochDay: Long): Payment?
+
+    /** Tira o pagamento [paymentId] do pedido [id] e devolve o que saiu, ou `null` se não havia. */
+    fun deletePayment(id: String, paymentId: String): Payment?
+
+    /** Troca o sinal pedido do pedido [id], arredondado a centavos e entre zero e o total ([SavedQuote.withDeposit]). */
+    fun updateDeposit(id: String, depositAmount: Double)
+
+    /**
+     * Grava agora como o último contato do "Retomar conversa" do pedido [id] (decisão 149): o destaque de parado some
+     * até passar o prazo de novo ([SavedQuote.staleDays]).
+     */
+    fun recordFollowUp(id: String)
+
     /** Bytes da foto de [savedQuote], ou `null` se não houver foto salva. */
     fun photoBytes(savedQuote: SavedQuote): ByteArray?
 
@@ -148,7 +173,10 @@ interface QuoteHistoryRepository {
     fun quotesIncludingTrash(): List<SavedQuote>
 }
 
-/** Os dados de um orçamento que não mudam o preço (ver [QuoteHistoryRepository.updateDetails]). */
+/**
+ * Os dados de um orçamento que não mudam o preço (ver [QuoteHistoryRepository.updateDetails]). [trackingCode] e
+ * [notes] são só de pedido (decisões 150 e 151): num produto do catálogo são descartados. Em branco vira `null`.
+ */
 data class QuoteDetails(
     val name: String,
     val client: Client?,
@@ -156,6 +184,8 @@ data class QuoteDetails(
     val photo: PickedFile?,
     val deliveryDateEpochDay: Long?,
     val category: String?,
+    val trackingCode: String?,
+    val notes: String?,
 )
 
 @OptIn(ExperimentalUuidApi::class)
@@ -166,6 +196,8 @@ class StoredQuoteHistoryRepository(
     private val clock: Clock,
     /** Nome automático ("Orçamento - 24/09/2026 14:30") no momento dado, pra quem salva com o nome em branco. */
     private val defaultName: (epochMillis: Long) -> String,
+    /** Sinal padrão de hoje, em fração (decisão 146), lido a cada pedido novo. */
+    private val defaultDepositRate: () -> Double = { 0.0 },
 ) : QuoteHistoryRepository {
 
     override val savedQuotes: StateFlow<List<SavedQuote>> = collection.items
@@ -213,7 +245,7 @@ class StoredQuoteHistoryRepository(
             statusHistory = listOf(StatusChange(OrderStatus.ORCADO, now)),
             currency = currency,
             shippingAbsorbed = !isProduct && shippingAbsorbed,
-        )
+        ).let { if (isProduct) it else it.copy(depositAmount = SavedQuote.initialDeposit(it.totalWithServices, defaultDepositRate())) }
         val saved = draft.copy(
             quote = draft.quote.withThumbnails(printThumbnails),
             photoFileName = photo?.let(::store),
@@ -258,7 +290,8 @@ class StoredQuoteHistoryRepository(
             category = if (isProduct) category.normalizedCategory(excludingId = id) else null,
             soldAtCatalogPrice = !isProduct && soldAtCatalogPrice,
             shippingAbsorbed = !isProduct && shippingAbsorbed,
-        )
+            // Pagamentos, rastreio, observações e último contato vêm do `existing` como estão.
+        ).withDepositAfterEdit(defaultDepositRate())
         return collection.update(id) {
             draft.copy(
                 quote = draft.quote.withThumbnails(printThumbnails),
@@ -279,6 +312,8 @@ class StoredQuoteHistoryRepository(
             photoFileName = details.photo?.let(::store),
             deliveryDateEpochDay = if (isProduct) null else details.deliveryDateEpochDay,
             category = if (isProduct) details.category.normalizedCategory(excludingId = id) else null,
+            trackingCode = if (isProduct) null else details.trackingCode.clean(),
+            notes = if (isProduct) null else details.notes.clean(),
             lastEditedEpochMillis = clock.nowMillis(),
         )
     }
@@ -306,7 +341,7 @@ class StoredQuoteHistoryRepository(
                     category = null,
                     // O anunciado do produto vira o preço do pedido sem ser negociação com o cliente.
                     soldAtCatalogPrice = existing.quote.isNegotiated,
-                )
+                ).let { it.copy(depositAmount = SavedQuote.initialDeposit(it.totalWithServices, defaultDepositRate())) }
             }
         }
     }
@@ -326,6 +361,28 @@ class StoredQuoteHistoryRepository(
 
     override fun updateDeliveryDate(id: String, deliveryDateEpochDay: Long?) {
         collection.update(id) { if (it.isOrder) it.copy(deliveryDateEpochDay = deliveryDateEpochDay) else it }
+    }
+
+    override fun addPayment(id: String, amount: Double, method: PaymentMethod, epochDay: Long): Payment? {
+        if (!Payment.isValidAmount(amount) || collection.find(id)?.isOrder != true) return null
+        val payment = Payment(id = Uuid.random().toString(), amount = amount, method = method, epochDay = epochDay)
+        collection.update(id) { it.copy(payments = it.payments + payment) }
+        return payment
+    }
+
+    override fun deletePayment(id: String, paymentId: String): Payment? {
+        val payment = collection.find(id)?.payments?.firstOrNull { it.id == paymentId } ?: return null
+        collection.update(id) { existing -> existing.copy(payments = existing.payments.filterNot { it.id == paymentId }) }
+        return payment
+    }
+
+    override fun updateDeposit(id: String, depositAmount: Double) {
+        collection.update(id) { if (it.isOrder) it.withDeposit(depositAmount) else it }
+    }
+
+    override fun recordFollowUp(id: String) {
+        val now = clock.nowMillis()
+        collection.update(id) { if (it.isOrder) it.copy(lastFollowUpEpochMillis = now) else it }
     }
 
     override fun photoBytes(savedQuote: SavedQuote): ByteArray? = savedQuote.photoFileName?.let(attachments::read)

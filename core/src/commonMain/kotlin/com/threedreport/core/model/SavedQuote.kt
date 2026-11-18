@@ -79,6 +79,16 @@ import kotlinx.serialization.Serializable
  *   mensagem) lê este campo, e não o texto. Nasce `false`; editar o nome à mão desmarca. Dado gravado antes da 2.2
  *   (sem a chave no arquivo) é marcado na leitura pelo `composeApp` (`markLegacyAutoNamedQuotes`), sem mudar o
  *   formato da pasta.
+ * @property payments o que já entrou deste pedido (decisão 146), na ordem em que foi registrado. Nunca entra no
+ *   preço, no lucro nem no Dashboard; a situação sai de [paymentStatus]. Duplicar não copia.
+ * @property depositAmount sinal pedido ao cliente, em valor da moeda do pedido (não em %), `0.0` = sem sinal. Nasce do
+ *   sinal padrão de Configurações ao salvar um pedido novo ([initialDeposit]) e fica congelado como o resto do pedido
+ *   ([withDepositAfterEdit]). Quem lê o sinal pra mostrar ou cobrar usa [requestedDeposit], que nunca passa do total.
+ * @property trackingCode código de rastreio da entrega (decisão 150), texto livre. Vai na mensagem "Saiu pra entrega",
+ *   nunca no PDF nem na imagem.
+ * @property notes observações internas (decisão 151). Uso **só interno**: nunca entra em PDF, imagem, mensagem nem recibo.
+ * @property lastFollowUpEpochMillis último "Retomar conversa" com o cliente (decisão 149), que zera a contagem de
+ *   [staleDays]. `null` se nunca houve.
  */
 @Serializable
 data class SavedQuote(
@@ -105,10 +115,120 @@ data class SavedQuote(
     val currency: Currency = Currency.BRL,
     val shippingAbsorbed: Boolean = false,
     val autoNamed: Boolean = false,
+    val payments: List<Payment> = emptyList(),
+    val depositAmount: Double = 0.0,
+    val trackingCode: String? = null,
+    val notes: String? = null,
+    val lastFollowUpEpochMillis: Long? = null,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
         require(number >= 0) { "number não pode ser negativo: $number" }
+        require(depositAmount >= 0) { "depositAmount não pode ser negativo: $depositAmount" }
+    }
+
+    /** Soma dos [payments]. */
+    val paidTotal: Double
+        get() = payments.sumOf { it.amount }
+
+    /**
+     * Quanto falta pagar: o [totalWithServices] menos o [paidTotal], nunca negativo (pagar a mais é aceito, a falta fica
+     * em zero). Diferença menor que meio centavo conta como zero, pra soma de `Double` não deixar um pedido pago como
+     * "pago em parte".
+     */
+    val remaining: Double
+        get() = moneyLeft(totalWithServices - paidTotal)
+
+    /** O sinal pedido, limitado ao total do pedido (o sinal nunca é maior que o total). */
+    val requestedDeposit: Double
+        get() = minOf(depositAmount, totalWithServices).coerceAtLeast(0.0)
+
+    /** Quanto falta do sinal: zero sem sinal ou com o sinal já coberto pelo que entrou. */
+    val pendingDeposit: Double
+        get() = moneyLeft(requestedDeposit - paidTotal)
+
+    /** Situação do pagamento, calculada (decisão 146, item 11). */
+    val paymentStatus: PaymentStatus
+        get() = when {
+            payments.isEmpty() -> PaymentStatus.NOT_PAID
+            remaining == 0.0 -> PaymentStatus.PAID
+            requestedDeposit > 0.0 && pendingDeposit == 0.0 -> PaymentStatus.DEPOSIT_PAID
+            else -> PaymentStatus.PARTIALLY_PAID
+        }
+
+    /**
+     * Se o pedido acompanha pagamento (há pagamento ou sinal pedido). Sem isso, a tela não mostra selo nem coluna de
+     * pagamento: pedido antigo fica como era.
+     */
+    val hasPaymentTracking: Boolean
+        get() = payments.isNotEmpty() || depositAmount > 0.0
+
+    /**
+     * O que cobrar agora: o que falta do sinal enquanto ele não foi pago, depois o que falta do pedido; `null` quando
+     * não falta nada. É o valor que já vem no formulário de "Registrar pagamento", em qualquer moeda.
+     */
+    val amountDue: AmountDue?
+        get() = when {
+            pendingDeposit > 0.0 -> AmountDue(pendingDeposit, isDeposit = true)
+            remaining > 0.0 -> AmountDue(remaining, isDeposit = false)
+            else -> null
+        }
+
+    /**
+     * O que o Pix deste pedido cobra (decisão 145, item 3): o [amountDue], só em pedido (nunca produto) e em real.
+     * `null` = sem Pix.
+     */
+    val pixCharge: AmountDue?
+        get() = if (isOrder && currency == Currency.BRL) amountDue else null
+
+    /** Valor do Pix ([pixCharge]), ou `null` sem Pix. */
+    val pixAmount: Double?
+        get() = pixCharge?.amount
+
+    /**
+     * Número do recibo do pagamento [paymentId] (decisão 147): o número do pedido e a posição do pagamento na lista,
+     * contando de 1 (`#0042-1`). `null` se o pedido não tem número ou o pagamento não está na lista.
+     */
+    fun receiptNumber(paymentId: String): String? {
+        val number = displayNumber ?: return null
+        val index = payments.indexOfFirst { it.id == paymentId }
+        return if (index < 0) null else "$number-${index + 1}"
+    }
+
+    /** O mesmo pedido com o sinal [amount], arredondado a centavos e mantido entre zero e o total do pedido. */
+    fun withDeposit(amount: Double): SavedQuote {
+        val clamped = if (amount.isNaN()) 0.0 else amount.coerceIn(0.0, totalWithServices.coerceAtLeast(0.0))
+        return copy(depositAmount = roundToCents(clamped))
+    }
+
+    /**
+     * O sinal depois de reabrir o cálculo e salvar (decisão 146, item 10): o que já estava fica (não recalcula pelo % de
+     * hoje), limitado ao total novo; sem sinal e com [rate] maior que zero, ganha o do % padrão ([initialDeposit]).
+     * Produto nunca tem sinal.
+     */
+    fun withDepositAfterEdit(rate: Double): SavedQuote = when {
+        !isOrder -> copy(depositAmount = 0.0)
+        depositAmount > 0.0 -> withDeposit(depositAmount)
+        else -> copy(depositAmount = initialDeposit(totalWithServices, rate))
+    }
+
+    /**
+     * Há quantos dias este orçamento está parado em Orçado (decisão 149, item 26), contando do mais recente entre a
+     * última entrada em Orçado, a criação, a última edição e o último "Retomar conversa". `null` se não é um pedido em
+     * [OrderStatus.ORCADO]. [epochDayOf] diz o dia de um instante no fuso de quem usa o app (o `core` não conhece fuso).
+     */
+    fun staleDays(todayEpochDay: Long, epochDayOf: (Long) -> Long): Int? {
+        if (!isOrder || status != OrderStatus.ORCADO) return null
+        val lastQuoted = statusHistory.lastOrNull { it.status == OrderStatus.ORCADO }?.atEpochMillis
+        val since = listOfNotNull(lastQuoted, savedAtEpochMillis, lastEditedEpochMillis, lastFollowUpEpochMillis).max()
+        return (todayEpochDay - epochDayOf(since)).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+    }
+
+    /** Se o orçamento está parado há [thresholdDays] dias ou mais ([staleDays]). [thresholdDays] zero desliga. */
+    fun isStale(todayEpochDay: Long, thresholdDays: Int, epochDayOf: (Long) -> Long): Boolean {
+        if (thresholdDays <= 0) return false
+        val days = staleDays(todayEpochDay, epochDayOf) ?: return false
+        return days >= thresholdDays
     }
 
     /**
@@ -236,5 +356,21 @@ data class SavedQuote(
          * grátis pra ele. Usada aqui e pela tela de Orçamento, que ainda não tem um pedido salvo.
          */
         fun chargedShipping(shippingCost: Double, shippingAbsorbed: Boolean): Double = if (shippingAbsorbed) 0.0 else shippingCost
+
+        /** Diferença de dinheiro abaixo da qual a conta de pagamento dá zero (meio centavo). */
+        private const val HALF_CENT = 0.005
+
+        /**
+         * Sinal de um pedido novo (decisão 146, item 10): [total] × [rate] (fração, 0,3 = 30%), arredondado a centavos e
+         * nunca maior que o total. [rate] zero (o padrão) dá zero: sem sinal.
+         */
+        fun initialDeposit(total: Double, rate: Double): Double {
+            if (rate <= 0.0 || total <= 0.0 || rate.isNaN()) return 0.0
+            return roundToCents(total * rate.coerceAtMost(1.0))
+        }
+
+        private fun moneyLeft(difference: Double): Double = if (difference < HALF_CENT) 0.0 else difference
+
+        private fun roundToCents(value: Double): Double = kotlin.math.round(value * 100.0) / 100.0
     }
 }

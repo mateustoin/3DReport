@@ -89,6 +89,9 @@ internal class HistoryDetailsEditor(
                 photo = form.photo,
                 deliveryDateEpochDay = form.deliveryDateEpochDay,
                 category = form.category,
+                // Os campos da Leva 11 ainda não estão no formulário: ficam como estavam.
+                trackingCode = editing.quote.trackingCode,
+                notes = editing.quote.notes,
             ),
         )
         change { it.copy(details = null) }

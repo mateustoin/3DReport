@@ -30,4 +30,14 @@ class BrandingSettingsTest {
         assertTrue(BrandingSettings(logoFileName = "logo.png").hasIdentity)
         assertTrue(BrandingSettings(contactEmail = "a@b.com").hasIdentity)
     }
+
+    @Test
+    fun onlyTheEditedMessageTemplatesAreKept() {
+        val kind = com.threedreport.core.message.MessageTemplateKind.FOLLOW_UP
+        val edited = BrandingSettings().withMessageTemplate(kind, text = "Oi, {cliente}! E aí?", defaultText = "Oi, {cliente}! Conseguiu ver?")
+
+        assertEquals(mapOf("followUp" to "Oi, {cliente}! E aí?"), edited.messageTemplates)
+        assertEquals(emptyMap(), edited.withMessageTemplate(kind, text = " Oi, {cliente}! Conseguiu ver? ", defaultText = "Oi, {cliente}! Conseguiu ver?").messageTemplates)
+        assertEquals(emptyMap(), edited.withMessageTemplate(kind, text = "", defaultText = "x").messageTemplates)
+    }
 }

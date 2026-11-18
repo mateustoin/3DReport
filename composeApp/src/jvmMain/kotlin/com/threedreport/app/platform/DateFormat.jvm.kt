@@ -25,3 +25,5 @@ actual fun formatShortDate(epochDay: Long): String = LocalDate.ofEpochDay(epochD
 // "sexta-feira" vira "sexta": é como se fala em português, e cabe melhor ao lado da data.
 actual fun weekdayName(epochDay: Long): String =
     LocalDate.ofEpochDay(epochDay).dayOfWeek.getDisplayName(TextStyle.FULL, LOCALE).substringBefore('-')
+
+actual fun localEpochDayOf(epochMillis: Long): Long = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay()

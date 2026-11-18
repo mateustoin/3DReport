@@ -29,3 +29,9 @@ fun utcMillisToEpochDay(utcMillis: Long): Long = utcMillis.floorDiv(MILLIS_PER_D
 fun epochDayToUtcMillis(epochDay: Long): Long = epochDay * MILLIS_PER_DAY
 
 private const val MILLIS_PER_DAY = 86_400_000L
+
+/**
+ * O dia (desde 01/01/1970) do instante [epochMillis] no fuso do computador, na mesma unidade de [todayEpochDay]. É o
+ * que `SavedQuote.staleDays` recebe pra contar há quantos dias um orçamento está parado (decisão 149).
+ */
+expect fun localEpochDayOf(epochMillis: Long): Long

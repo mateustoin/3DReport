@@ -16,6 +16,10 @@ fun TemplateRepository(): TemplateRepository = testStorage().templates()
 fun ClientRepository(): ClientRepository = testStorage().clients()
 fun MaintenanceRepository(): MaintenanceRepository = testStorage().maintenance()
 fun QuoteHistoryRepository(): QuoteHistoryRepository = testStorage().quoteHistory()
+
+/** O histórico com o sinal padrão [defaultDepositRate] (fração) em Configurações. */
+fun QuoteHistoryRepository(defaultDepositRate: Double): QuoteHistoryRepository = testStorage().quoteHistory { defaultDepositRate }
+fun OrderSettingsRepository(): OrderSettingsRepository = testStorage().orderSettings()
 fun SettingsRepository(): SettingsRepository = testStorage().settings()
 fun BrandingRepository(): BrandingRepository = testStorage().branding()
 fun ThemeRepository(): ThemeRepository = testStorage().theme()

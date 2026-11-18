@@ -1,0 +1,47 @@
+package com.threedreport.core.model
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
+
+/** Configurações de Pedidos da Leva 11: sinal padrão, orçamento parado e site de rastreio (decisões 146, 149 e 150). */
+class OrderSettingsTest {
+
+    @Test
+    fun startsNeutral() {
+        val settings = OrderSettings()
+
+        assertEquals(0.0, settings.defaultDepositRate)
+        assertEquals(3, settings.staleQuoteDays)
+        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, settings.effectiveTrackingUrlTemplate)
+    }
+
+    @Test
+    fun theTrackingLinkPutsTheCodeInPlace() {
+        assertEquals(
+            "https://rastreamento.correios.com.br/app/index.php?objetos=AA123456789BR",
+            OrderSettings().trackingUrl(" AA123456789BR "),
+        )
+        assertEquals("https://x.test/r?c=A%20B%26C", OrderSettings(trackingUrlTemplate = "https://x.test/r?c={codigo}").trackingUrl("A B&C"))
+    }
+
+    @Test
+    fun aBlankSiteOrCodeGivesNoLink() {
+        assertNull(OrderSettings(trackingUrlTemplate = "").trackingUrl("AA123456789BR"))
+        assertNull(OrderSettings(trackingUrlTemplate = "  ").trackingUrl("AA123456789BR"))
+        assertNull(OrderSettings().trackingUrl("  "))
+    }
+
+    @Test
+    fun aSiteWithoutTheMarkerOpensAsIs() {
+        assertEquals("https://x.test/rastreio", OrderSettings(trackingUrlTemplate = "https://x.test/rastreio").trackingUrl("AA1"))
+    }
+
+    @Test
+    fun outOfRangeValuesAreRejected() {
+        assertFailsWith<IllegalArgumentException> { OrderSettings(defaultDepositRate = -0.1) }
+        assertFailsWith<IllegalArgumentException> { OrderSettings(defaultDepositRate = 1.1) }
+        assertFailsWith<IllegalArgumentException> { OrderSettings(staleQuoteDays = -1) }
+    }
+}

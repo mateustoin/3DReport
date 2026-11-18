@@ -57,6 +57,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.pdfbox)
+            // QR Code do Pix no PDF (decisão 145). Só a `core` da ZXing, sem a parte de imagem (`javase`).
+            implementation(libs.zxing.core)
         }
         jvmTest.dependencies {
             implementation(libs.kotlin.test)

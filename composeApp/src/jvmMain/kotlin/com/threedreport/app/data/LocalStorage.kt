@@ -19,6 +19,7 @@ import com.threedreport.core.model.Filament
 import com.threedreport.core.model.MaintenanceComponent
 import com.threedreport.core.model.MaintenanceLogEntry
 import com.threedreport.core.model.ManualUsageEntry
+import com.threedreport.core.model.OrderSettings
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
 import com.threedreport.core.model.QuoteTemplate
@@ -99,15 +100,22 @@ class LocalStorage(
         manualUsage = records("maintenance-usage.json", ManualUsageEntry.serializer(), { it.id }),
     )
 
-    fun quoteHistory(): QuoteHistoryRepository = StoredQuoteHistoryRepository(
+    /**
+     * O histórico de orçamentos. [defaultDepositRate] é o sinal padrão de hoje (do [OrderSettingsRepository] do
+     * contêiner), lido a cada pedido novo; sem ele, sinal zero.
+     */
+    fun quoteHistory(defaultDepositRate: () -> Double = { 0.0 }): QuoteHistoryRepository = StoredQuoteHistoryRepository(
         collection = records("quotes.json", SavedQuote.serializer(), { it.id }, upgrade = ::markLegacyAutoNamedQuotes, upgradeNeeded = ::quotesNeedAutoNamedUpgrade),
         lastNumber = document("quote-number.json", Int.serializer()) { 0 },
         attachments = attachments,
         clock = clock,
         defaultName = ::defaultQuoteName,
+        defaultDepositRate = defaultDepositRate,
     ).also { warmUpAutoNameTemplate() }
 
     fun settings(): SettingsRepository = StoredSettingsRepository(document("settings.json", PricingSettings.serializer()) { Seeds.settings })
+
+    fun orderSettings(): OrderSettingsRepository = StoredOrderSettingsRepository(document("order-settings.json", OrderSettings.serializer()) { OrderSettings() })
 
     fun branding(): BrandingRepository = StoredBrandingRepository(document("branding.json", BrandingSettings.serializer()) { BrandingSettings() }, attachments)
 

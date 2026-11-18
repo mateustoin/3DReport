@@ -1252,6 +1252,7 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
  * sobre a pasta temporária e sem gravação em segundo plano nem verificação de atualização de verdade. */
 private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }, installer: UpdateInstaller = NoUpdateInstaller): AppContainer {
     val storage = LocalStorage(dataDir, Clock.System)
+    val orderSettings = storage.orderSettings()
     return AppContainer(
         filaments = storage.filaments(),
         printers = storage.printers(),
@@ -1261,9 +1262,10 @@ private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSourc
         templates = storage.templates(),
         clients = storage.clients(),
         maintenance = storage.maintenance(),
-        quoteHistory = storage.quoteHistory(),
+        quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate },
         settings = storage.settings(),
         branding = storage.branding(),
+        orderSettings = orderSettings,
         theme = storage.theme(),
         currency = storage.currency(),
         onboarding = storage.onboarding(),

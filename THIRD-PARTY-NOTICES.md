@@ -40,3 +40,15 @@ desenhados para o próprio 3DReport e seguem a licença do projeto.
 - **Direitos autorais:** Copyright 2020 The Space Grotesk Project Authors.
 - **Licença:** [SIL Open Font License 1.1](https://openfontlicense.org/)
   (texto em [licenses/OFL-SpaceGrotesk.txt](licenses/OFL-SpaceGrotesk.txt)).
+
+## ZXing
+
+- **O que é:** biblioteca que gera o QR Code do Pix copia e cola no PDF do orçamento
+  (decisão 145). Só o módulo `core`, usado em
+  `composeApp/src/jvmMain/kotlin/com/threedreport/app/platform/PixQrCode.kt`; o QR é
+  montado no computador, sem internet.
+- **Origem:** [zxing/zxing](https://github.com/zxing/zxing), artefato
+  `com.google.zxing:core`, versão 3.5.4.
+- **Direitos autorais:** Copyright ZXing authors.
+- **Licença:** [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0),
+  a mesma do 3DReport (ver [LICENSE](LICENSE)).
