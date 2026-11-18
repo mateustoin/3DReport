@@ -119,7 +119,7 @@ class AppViewModels(
     }
 
     /** Cedo: o tema e a moeda valem pra janela inteira desde o primeiro desenho. */
-    val themeViewModel: ThemeViewModel by lazy { ThemeViewModel(container.theme) }
+    val themeViewModel: ThemeViewModel by lazy { ThemeViewModel(container.theme, container.preferences, scope) }
     val currencyViewModel: CurrencyViewModel by lazy { CurrencyViewModel(container.currency) }
 
     /** Cedo: a verificação roda ao abrir (decisão 116), e o aviso pode aparecer em qualquer tela. */

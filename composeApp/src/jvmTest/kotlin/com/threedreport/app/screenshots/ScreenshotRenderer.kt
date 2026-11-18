@@ -45,8 +45,11 @@ import com.threedreport.app.data.CatalogView
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.LocalStorage
 import com.threedreport.app.data.OrdersView
+import com.threedreport.app.platform.AppLocaleState
+import com.threedreport.app.platform.DesktopLocale
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.QuoteExportItem
+import com.threedreport.app.platform.UiLanguage
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.platform.formatShortDate
 import com.threedreport.app.platform.imageBrandLine
@@ -139,9 +142,14 @@ class ScreenshotRenderer {
     fun renderScreenshots() {
         val outDirPath = System.getProperty("screenshots.out") ?: return
         System.setProperty("java.awt.headless", "true")
+        // O idioma das capturas (`-Pscreenshots.lang=en`), fixo e não o desta máquina: sem a propriedade, português.
+        val locale = screenshotLocale(System.getProperty("screenshots.lang"))
+        DesktopLocale.use(locale)
 
         val outDir = File(outDirPath).apply { mkdirs() }
-        val ogBannerFile = File(outDir.parentFile, "og-banner.png")
+        // O banner das redes fica uma pasta acima das capturas em português (site/assets/og-banner.png); nas de outro
+        // idioma, junto delas, pra nada fora da pasta pedida ser regravado.
+        val ogBannerFile = if (locale == AppLocaleState.BRAZILIAN_PORTUGUESE) File(outDir.parentFile, "og-banner.png") else File(outDir, "og-banner.png")
         val iconFile = System.getProperty("screenshots.iconPath")?.let(::File)
         val gcodesDir = System.getProperty("screenshots.gcodes")?.let(::File)?.takeIf { it.isDirectory }
 
@@ -363,6 +371,18 @@ class ScreenshotRenderer {
         if (System.getProperty("screenshots.leva11") != null) renderLeva11Screenshots(container, outDir)
         if (System.getProperty("screenshots.presets") != null) renderPrinterPresetScreenshots(container, outDir)
     }
+}
+
+/**
+ * O idioma de `-Pscreenshots.lang` (decisão 157, item 25): "en" é inglês sem região (datas mês/dia, como en-US), "en-GB"
+ * fixa a região; vazio ou ausente é português do Brasil, como sempre foram as capturas.
+ */
+internal fun screenshotLocale(tag: String?): AppLocaleState {
+    if (tag.isNullOrBlank()) return AppLocaleState.BRAZILIAN_PORTUGUESE
+    val locale = java.util.Locale.forLanguageTag(tag.trim())
+    val language = UiLanguage.entries.firstOrNull { it.code == locale.language }
+        ?: error("screenshots.lang=$tag: idioma sem textos no app (use ${UiLanguage.entries.joinToString { it.code }})")
+    return AppLocaleState(language, locale.country.ifEmpty { null })
 }
 
 /** Impressoras da lista (2.2.1): o diálogo de escolha e o formulário que nasce de um preset, nos dois temas. */

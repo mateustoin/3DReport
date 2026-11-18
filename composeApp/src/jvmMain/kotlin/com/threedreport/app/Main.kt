@@ -20,18 +20,24 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.threedreport.app.data.AppLanguage
 import com.threedreport.app.data.DataDirResult
 import com.threedreport.app.data.DataReadException
 import com.threedreport.app.data.LOGS_DIR_NAME
+import com.threedreport.app.data.LocalStorage
 import com.threedreport.app.data.SavedWindowBounds
 import com.threedreport.app.data.appDataDir
 import com.threedreport.app.data.prepareDataDir
+import com.threedreport.app.platform.AppLocale
+import com.threedreport.app.platform.DesktopLocale
 import com.threedreport.app.platform.DesktopPlatform
 import com.threedreport.app.update.deleteOldUpdateDownloads
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -57,7 +63,11 @@ private var instanceLock: FileLock? = null
 /** Ponto de entrada do app desktop. */
 fun main() {
     DesktopLog.install(File(appDataDir(), LOGS_DIR_NAME))
-    // Os diálogos abaixo e os seletores de arquivo são Swing/AWT: os textos são lidos aqui, uma vez, antes de qualquer janela.
+    // Antes de qualquer texto, o idioma do sistema (o automático, decisão 152): sistema em português lê português, e
+    // qualquer outro, inglês. O escolhido em Configurações só pode ser lido depois de a pasta de dados estar pronta.
+    DesktopLocale.apply(AppLanguage.AUTO)
+    // Os diálogos abaixo e os seletores de arquivo são Swing/AWT: os textos são lidos aqui, antes de qualquer janela, e
+    // de novo a cada troca de idioma ([reloadLanguageTexts]).
     StartupTexts.load()
     DesktopPlatform.loadDialogTitles()
     Thread.setDefaultUncaughtExceptionHandler { thread, error ->
@@ -111,6 +121,7 @@ fun main() {
         AppLog.error("Não consegui ler ${e.file.path}", e)
         fatalDialog(StartupTexts.readFailed(e.file.path))
     }
+    followLanguage(appScope, container)
     scheduleAutomaticBackup(appScope, container)
     // O instalador de uma atualização anterior fica na pasta temporária até aqui (decisão 143).
     appScope.launch(Dispatchers.IO) { runCatching { deleteOldUpdateDownloads() }.onFailure { AppLog.warn("Não consegui limpar downloads de atualização", it) } }
@@ -312,6 +323,35 @@ private fun acquireSingleInstanceLock(): Boolean {
         AppLog.warn("Não consegui criar a trava de instância única", e)
         true
     }
+}
+
+/**
+ * O idioma escolhido em Configurações > Aparência (decisão 152): aplicado agora, antes de a janela abrir, e de novo a
+ * cada troca, na thread da tela e com o app aberto. A tela acompanha sozinha ([com.threedreport.app.platform.ProvideAppLocale]);
+ * os textos guardados fora dela são relidos em segundo plano.
+ */
+private fun followLanguage(scope: CoroutineScope, container: AppContainer) {
+    val saved = container.preferences.preferences.value.language
+    if (DesktopLocale.resolve(saved) != AppLocale.current.value) {
+        DesktopLocale.apply(saved)
+        reloadLanguageTexts()
+    }
+    scope.launch(Dispatchers.Main) {
+        container.preferences.preferences.map { it.language }.distinctUntilChanged().collect { language ->
+            val locale = DesktopLocale.resolve(language)
+            if (locale == AppLocale.current.value) return@collect
+            AppLog.info("Idioma: ${locale.languageTag}")
+            DesktopLocale.use(locale)
+            withContext(Dispatchers.IO) { reloadLanguageTexts() }
+        }
+    }
+}
+
+/** Relê os textos guardados fora da tela (diálogos do Swing, títulos dos seletores, nome automático) no idioma em uso. */
+private fun reloadLanguageTexts() {
+    StartupTexts.load()
+    DesktopPlatform.loadDialogTitles()
+    runCatching { LocalStorage.reloadTexts() }.onFailure { AppLog.warn("Não consegui reler o nome automático no idioma novo", it) }
 }
 
 /**

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos em inglês (decisão 154), com as mesmas chaves de values/ e o glossário de docs/glossario.md.
+  Um arquivo por área, com as chaves da mesma área de values/strings.xml. O teste de paridade
+  (StringResourceParityTest) confere chaves, marcadores (%1$s, {cliente}) e plurais.
+-->
+<resources>
+    <!-- Configurações > Aparência -->
+    <string name="settings_appearance_language">Language</string>
+    <string name="settings_appearance_language_help">Automatic follows the system language. Applies right away, also to PDFs and messages.</string>
+    <string name="settings_language_auto">Automatic</string>
+    <!-- O nome de cada idioma fica sempre no próprio idioma, igual em values/ e values-en/: não traduzir. -->
+    <string name="settings_language_portuguese">Português</string>
+    <string name="settings_language_english">English</string>
+</resources>

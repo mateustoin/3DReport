@@ -9,6 +9,8 @@ import com.threedreport.app.data.store.RecordCollection
 import com.threedreport.app.data.store.StorageHealth
 import com.threedreport.app.data.store.StoredDocument
 import com.threedreport.app.data.store.StoredRecord
+import com.threedreport.app.platform.AppLocale
+import com.threedreport.app.platform.AppLocaleState
 import com.threedreport.app.platform.fillTemplate
 import com.threedreport.app.platform.formatDateTime
 import com.threedreport.core.model.BrandingSettings
@@ -132,12 +134,30 @@ class LocalStorage(
     companion object {
         const val ATTACHMENTS_DIR = "attachments"
 
-        /** O modelo do nome automático ("Orçamento - %1$s"), lido uma vez dos recursos e guardado. */
-        @Volatile
-        private var autoNameTemplate: String? = null
+        /** O modelo do nome automático ("Orçamento - %1$s") e o idioma em que foi lido, lido uma vez por idioma e guardado. */
+        private class AutoNameTemplate(val locale: AppLocaleState, val text: String)
 
-        private fun loadAutoNameTemplate(): String =
-            autoNameTemplate ?: runBlocking { getString(Res.string.quote_auto_name) }.also { autoNameTemplate = it }
+        @Volatile
+        private var autoNameTemplate: AutoNameTemplate? = null
+
+        /**
+         * O modelo no idioma em uso. Guardado de outro idioma (a pessoa acabou de trocar), é lido de novo: o nome vai pro
+         * arquivo, então não pode sair no idioma de antes. A troca já relê em segundo plano ([reloadTexts]); ler aqui, na
+         * thread da tela, só acontece se alguém salvar no instante da troca.
+         */
+        private fun loadAutoNameTemplate(): String {
+            val locale = AppLocale.current.value
+            autoNameTemplate?.takeIf { it.locale == locale }?.let { return it.text }
+            return AutoNameTemplate(locale, runBlocking { getString(Res.string.quote_auto_name) }).also { autoNameTemplate = it }.text
+        }
+
+        /**
+         * Relê os textos guardados pra o idioma em uso (decisão 152). Quem troca o idioma chama, fora da thread da tela,
+         * depois de [com.threedreport.app.platform.DesktopLocale] trocar o idioma da JVM.
+         */
+        fun reloadTexts() {
+            loadAutoNameTemplate()
+        }
 
         /**
          * O nome da impressora de exemplo. Só é lido quando o `printers.json` ainda não existe, ou seja, na primeira
@@ -154,8 +174,8 @@ class LocalStorage(
          * Nome que o app dá quando o campo fica em branco ("Orçamento - 24/09/2026 14:30"), no momento [epochMillis].
          * O texto vem de `strings.xml` (`quote_auto_name`); quem pergunta se o nome é automático lê
          * [SavedQuote.autoNamed], e não o texto. O modelo é lido uma vez ([warmUpAutoNameTemplate]) e guardado: salvar
-         * não bloqueia a thread da tela a cada vez. Se o idioma do app passar a mudar com o app aberto (Leva 11B), o
-         * modelo guardado precisa ser descartado nessa hora.
+         * não bloqueia a thread da tela a cada vez. O texto e a data saem no idioma em uso (item 13 da Leva 11B): o modelo
+         * guardado é de um idioma só, e a data vem do [AppLocale].
          */
         fun defaultQuoteName(epochMillis: Long): String = fillTemplate(loadAutoNameTemplate(), formatDateTime(epochMillis))
     }

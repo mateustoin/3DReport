@@ -72,6 +72,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.PrinterRepository
+import com.threedreport.app.platform.ProvideAppLocale
 import com.threedreport.app.platform.fileDropTarget
 import com.threedreport.app.platform.isModelFile
 import com.threedreport.app.platform.openFolder
@@ -113,6 +114,10 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
+/**
+ * A tela inteira. Trocar o idioma recompõe tudo o que está aqui dentro na hora, sem perder estado ([ProvideAppLocale]);
+ * quem troca o idioma da plataforma é o `main` (no desktop, `DesktopLocale`).
+ */
 @Composable
 fun App(
     container: AppContainer,
@@ -126,6 +131,21 @@ fun App(
     clock: Clock = Clock.System,
     // Fecha o app pelo caminho normal de fechar a janela, que grava o que está pendente; a atualização por dentro o usa.
     onCloseApp: () -> Unit = {},
+) {
+    ProvideAppLocale {
+        AppContent(container, dataFolderNotice, startAt, prepareQuote, today, clock, onCloseApp)
+    }
+}
+
+@Composable
+private fun AppContent(
+    container: AppContainer,
+    dataFolderNotice: DataFolderNotice?,
+    startAt: AppDestination,
+    prepareQuote: (QuoteViewModel) -> Unit,
+    today: () -> Long,
+    clock: Clock,
+    onCloseApp: () -> Unit,
 ) {
     val settingsRepository = container.settings
     val printerRepository = container.printers

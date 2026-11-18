@@ -1064,6 +1064,12 @@
     <string name="settings_appearance_currency">Moeda</string>
     <string name="settings_appearance_currency_help">A moeda dos orçamentos novos: símbolo e formato dos valores na tela, no PDF e no copiar/colar.</string>
     <string name="settings_appearance_currency_help_detail">Não afeta o cálculo. Cada orçamento salvo continua na moeda em que foi feito. Vale na hora, sem precisar salvar.</string>
+    <string name="settings_appearance_language">Idioma</string>
+    <string name="settings_appearance_language_help">Automático segue o idioma do sistema. Vale na hora, também pro PDF e as mensagens.</string>
+    <string name="settings_language_auto">Automático</string>
+    <!-- O nome de cada idioma fica sempre no próprio idioma, igual em values/ e values-en/: não traduzir. -->
+    <string name="settings_language_portuguese">Português</string>
+    <string name="settings_language_english">English</string>
 
     <string name="settings_backup_title">Backup</string>
     <string name="settings_backup_help">Seus orçamentos, clientes, catálogos, fotos e arquivos de modelo ficam só neste computador.</string>

@@ -98,4 +98,61 @@ class PreferencesRepositoryTest {
         assertTrue("\"ordersView\": \"LIST\"" in text, text)
         assertTrue("\"catalogView\": \"GRID\"" in text, text)
     }
+
+    // Idioma (decisão 152): nasce automático, sobrevive a reabrir e é gravado com nome fixo em inglês.
+
+    @Test
+    fun aNewInstallFollowsTheSystemLanguage() {
+        assertEquals(AppLanguage.AUTO, PreferencesRepository().preferences.value.language)
+    }
+
+    @Test
+    fun theChosenLanguageSurvivesReopeningAndKeepsTheOtherPreferences() {
+        val repository = PreferencesRepository()
+        repository.setOrdersView(OrdersView.LIST)
+        repository.setLanguage(AppLanguage.EN)
+        assertEquals(AppLanguage.EN, repository.preferences.value.language)
+
+        val reopened = PreferencesRepository().preferences.value
+        assertEquals(AppLanguage.EN, reopened.language)
+        assertEquals(OrdersView.LIST, reopened.ordersView)
+    }
+
+    @Test
+    fun theLanguageIsWrittenWithStableNames() {
+        assertEquals(listOf("AUTO", "PT_BR", "EN"), AppLanguage.entries.map { it.name })
+        val repository = PreferencesRepository()
+        // Do último pro primeiro: o primeiro é o padrão, e gravar o mesmo valor não regrava o arquivo.
+        for (language in AppLanguage.entries.reversed()) {
+            repository.setLanguage(language)
+            val text = File(dataDir, "preferences.json").readText()
+            assertTrue("\"language\": \"${language.name}\"" in text, text)
+        }
+    }
+
+    @Test
+    fun aFileFromBeforeTheLanguageOpensOnAutomatic() {
+        // Como a 2.2 (Leva 11) grava: sem a chave do idioma.
+        File(dataDir, "preferences.json").writeText(
+            """{"data":{"autoBackupEnabled":false,"checkForUpdates":true,"ordersView":"LIST","catalogView":"LIST","announcedUpdateVersion":"2.2.0"},"updatedAtEpochMillis":1}""",
+        )
+
+        val preferences = PreferencesRepository().preferences.value
+        assertEquals(AppLanguage.AUTO, preferences.language)
+        assertEquals(OrdersView.LIST, preferences.ordersView)
+        assertEquals("2.2.0", preferences.announcedUpdateVersion)
+        assertFalse(preferences.autoBackupEnabled)
+    }
+
+    @Test
+    fun anUnknownLanguageFallsBackToAutomaticWithoutLosingTheFile() {
+        File(dataDir, "preferences.json").writeText(
+            """{"data":{"autoBackupEnabled":false,"language":"ES"},"updatedAtEpochMillis":1}""",
+        )
+
+        val preferences = PreferencesRepository().preferences.value
+        assertEquals(AppLanguage.AUTO, preferences.language)
+        assertFalse(preferences.autoBackupEnabled)
+        assertEquals(emptyList(), dataDir.list()!!.filter { "ilegivel" in it })
+    }
 }

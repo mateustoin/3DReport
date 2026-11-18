@@ -67,6 +67,13 @@ kotlin {
     }
 }
 
+// Os testes rodam com a JVM em português do Brasil, em qualquer máquina (decisão 152): o app escolhe os textos pelo
+// idioma da JVM, e os testes que conferem um texto esperam o português. Teste de inglês troca o idioma por conta própria.
+tasks.withType<Test>().configureEach {
+    systemProperty("user.language", "pt")
+    systemProperty("user.country", "BR")
+}
+
 // Gera os prints do site (decisão 120) rodando só o teste de ScreenshotRenderer, com o mesmo classpath e
 // framework de teste do `jvmTest` de sempre. Sempre roda de novo (não é um teste que precise ficar em
 // cache) e recebe o caminho de saída e o da pasta de G-codes reais opcional vindos de fora, pra não
@@ -78,10 +85,11 @@ val renderScreenshots by tasks.registering(Test::class) {
     testClassesDirs = jvmTest.testClassesDirs
     classpath = jvmTest.classpath
     filter { includeTestsMatching("com.threedreport.app.screenshots.ScreenshotRenderer.renderScreenshots") }
-    // Padrão: os prints públicos do site. `-Pscreenshots.dir=/outra/pasta` grava em outro lugar, sem tocar neles.
+    // Padrão: os prints públicos do site. `-Pscreenshots.dir=/outra/pasta` (relativa à raiz do repositório, ou absoluta)
+    // grava em outro lugar, sem tocar neles.
     systemProperty(
         "screenshots.out",
-        providers.gradleProperty("screenshots.dir").orNull
+        providers.gradleProperty("screenshots.dir").orNull?.let { rootProject.file(it).absolutePath }
             ?: rootProject.layout.projectDirectory.dir("site/assets/screenshots").asFile.absolutePath,
     )
     systemProperty("screenshots.iconPath", project.layout.projectDirectory.file("packaging/icons/icon.png").asFile.absolutePath)
@@ -92,6 +100,9 @@ val renderScreenshots by tasks.registering(Test::class) {
     providers.gradleProperty("screenshots.presets").orNull?.let { systemProperty("screenshots.presets", it) }
     // `-Pscreenshots.leva11=true` acrescenta as capturas da Leva 11 (pagamentos, mensagem pro cliente, selos, Pix, recibo).
     providers.gradleProperty("screenshots.leva11").orNull?.let { systemProperty("screenshots.leva11", it) }
+    // `-Pscreenshots.lang=en` gera as capturas com o app em inglês (decisão 157); junto com `-Pscreenshots.dir`, pra não
+    // gravar por cima das em português. Ex.: -Pscreenshots.lang=en -Pscreenshots.dir=site/assets/screenshots/en
+    providers.gradleProperty("screenshots.lang").orNull?.let { systemProperty("screenshots.lang", it) }
     maxHeapSize = "2g" // alguns G-codes reais de exemplo passam de 50 MB
     outputs.upToDateWhen { false }
 }
