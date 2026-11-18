@@ -61,8 +61,9 @@ internal fun OrdersSection(viewModel: OrderSettingsViewModel) {
             )
         }
     }
-    // Os Correios só valem com a moeda padrão em real (decisão 16b da Leva 11B): fora dela o botão some.
-    if (LocalCurrency.current == Currency.BRL && state.trackingUrlText.trim() != OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE) {
+    // Os Correios só valem com a moeda padrão em real (decisão 16b da Leva 11B): fora dela o botão some. A regra fica
+    // no estado (OrderSettingsUiState.canUseDefaultTracking), a mesma do ViewModel.
+    if (state.canUseDefaultTracking) {
         AppButton(stringResource(Res.string.settings_orders_tracking_default), viewModel::useDefaultTracking)
     }
 }

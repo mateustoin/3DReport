@@ -70,4 +70,62 @@ class OnlyInRealTest {
         inDollars.useDefaultTracking()
         assertEquals("", inDollars.uiState.value.trackingUrlText, "o padrão fora do real é vazio")
     }
+
+    @Test
+    fun savingOtherSettingsInDollarsDoesNotWriteAnEmptyTrackingSite() {
+        var currency = Currency.USD
+        val repository = OrderSettingsRepository()
+        val inDollars = OrderSettingsViewModel(repository, scope, currency = { currency })
+        inDollars.setDepositPercent("30")
+        inDollars.save()
+        assertEquals(null, repository.settings.value.trackingUrlTemplate, "o site que só aparecia vazio continua o padrão do app")
+
+        currency = Currency.BRL
+        val inReal = OrderSettingsViewModel(repository, scope, currency = { currency })
+        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, inReal.uiState.value.trackingUrlText, "o link dos Correios volta")
+        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE.replace(OrderSettings.CODE_MARKER, "AA1"), repository.settings.value.trackingUrl("AA1", Currency.BRL))
+    }
+
+    @Test
+    fun erasingTheCorreiosOnPurposeStaysErasedAfterSavingInDollars() {
+        var currency = Currency.BRL
+        val repository = OrderSettingsRepository()
+        val inReal = OrderSettingsViewModel(repository, scope, currency = { currency })
+        inReal.setTrackingUrl("")
+        inReal.save()
+        assertEquals("", repository.settings.value.trackingUrlTemplate)
+
+        currency = Currency.USD
+        val inDollars = OrderSettingsViewModel(repository, scope, currency = { currency })
+        inDollars.setDepositPercent("10")
+        inDollars.save()
+        assertEquals("", repository.settings.value.trackingUrlTemplate, "o site apagado de propósito continua apagado")
+    }
+
+    @Test
+    fun aSiteTypedInDollarsAndThenErasedGoesBackToTheDefault() {
+        val repository = OrderSettingsRepository()
+        val inDollars = OrderSettingsViewModel(repository, scope, currency = { Currency.USD })
+        inDollars.setTrackingUrl("https://x.test/?c={code}")
+        inDollars.save()
+        assertEquals("https://x.test/?c={code}", repository.settings.value.trackingUrlTemplate)
+        inDollars.setTrackingUrl("")
+        inDollars.save()
+        assertEquals(null, repository.settings.value.trackingUrlTemplate, "em dólar não há padrão pra apagar")
+    }
+
+    @Test
+    fun theUseDefaultButtonOnlyAppearsInRealAndFollowsTheCurrency() {
+        val currency = kotlinx.coroutines.flow.MutableStateFlow(Currency.BRL)
+        val viewModel = OrderSettingsViewModel(OrderSettingsRepository(), scope, currency = { currency.value }, currencyChanges = currency)
+        assertFalse(viewModel.uiState.value.canUseDefaultTracking, "já está nos Correios")
+        viewModel.setTrackingUrl("https://x.test/{codigo}")
+        assertTrue(viewModel.uiState.value.canUseDefaultTracking)
+        viewModel.discard()
+
+        currency.value = Currency.USD
+        assertEquals("", viewModel.uiState.value.trackingUrlText, "sem edição, o campo mostra o padrão da moeda nova")
+        viewModel.setTrackingUrl("https://x.test/{code}")
+        assertFalse(viewModel.uiState.value.canUseDefaultTracking, "fora do real não há site padrão")
+    }
 }

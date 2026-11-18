@@ -23,6 +23,14 @@ class SuggestedCurrencyTest {
         assertEquals(Currency.USD, suggestedCurrency(null))
     }
 
+    /** Bulgária (no euro desde 2026-01-01) e os países fora da UE que usam o euro. */
+    @Test
+    fun theNewerAndNonUnionEuroCountriesSuggestTheEuro() {
+        for (region in listOf("BG", "ME", "XK", "AD", "MC", "SM", "VA")) {
+            assertEquals(Currency.EUR, suggestedCurrency(region), region)
+        }
+    }
+
     @Test
     fun onlyAnEmptyFolderIsANewInstall() {
         val dir = createTempDirectory("3dreport-test").toFile()

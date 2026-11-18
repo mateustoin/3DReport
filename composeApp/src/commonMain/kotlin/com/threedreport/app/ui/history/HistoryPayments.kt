@@ -139,7 +139,7 @@ internal class HistoryPayments(
 
 /** As formas de pagamento oferecidas num pedido na moeda [currency]: o Pix só existe em real (decisão 16b da Leva 11B). */
 fun paymentMethodsFor(currency: Currency): List<PaymentMethod> =
-    if (currency == Currency.BRL) PaymentMethod.entries else PaymentMethod.entries - PaymentMethod.PIX
+    if (currency.hasBrazilOnlyFeatures) PaymentMethod.entries else PaymentMethod.entries - PaymentMethod.PIX
 
 /** A forma já marcada: a [preferred] se o pedido a oferece; senão Pix em real e Cartão nas outras moedas. */
 fun defaultPaymentMethod(preferred: PaymentMethod?, currency: Currency): PaymentMethod {

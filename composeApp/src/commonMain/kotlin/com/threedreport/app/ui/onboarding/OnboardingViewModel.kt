@@ -95,8 +95,16 @@ class OnboardingViewModel(
         val old = separator
         if (currency.decimalSeparator == old) return
         separator = currency.decimalSeparator
-        fun convert(text: String): String = parseDecimal(text, NumberKind.MEASURE, old)?.toInputText(separator) ?: text
-        edit { it.copy(machinePriceText = convert(it.machinePriceText), energyText = convert(it.energyText), laborText = convert(it.laborText)) }
+        // Cada campo é relido do jeito que é lido ao terminar: valor da máquina e mão de obra são dinheiro ("2.700" é dois mil
+        // e setecentos), a energia é medida ("1.250" é 1,25).
+        fun convert(text: String, kind: NumberKind): String = parseDecimal(text, kind, old)?.toInputText(separator) ?: text
+        edit {
+            it.copy(
+                machinePriceText = convert(it.machinePriceText, NumberKind.AMOUNT),
+                energyText = convert(it.energyText, NumberKind.MEASURE),
+                laborText = convert(it.laborText, NumberKind.AMOUNT),
+            )
+        }
     }
 
     /** Segue pro passo dos custos, se as respostas do passo atual estão certas. */

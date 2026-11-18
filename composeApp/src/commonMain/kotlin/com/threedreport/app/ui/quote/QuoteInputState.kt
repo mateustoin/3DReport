@@ -1,8 +1,10 @@
 package com.threedreport.app.ui.quote
 
 import com.threedreport.app.platform.PickedFile
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.parseWholeNumber
+import com.threedreport.app.ui.format.rewriteDecimalText
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.QuoteKind
 
@@ -199,4 +201,30 @@ data class ConsumableInput(
     val unitCost: Double,
     val quantityText: String = "1",
     val chargedPerOrder: Boolean = false,
+)
+
+/**
+ * Os números que não são dinheiro do rascunho (comprimento, peso, quantidade de insumo), escritos com [from] como
+ * separador decimal, reescritos com [to]: o idioma mudou com o Orçamento aberto (decisão 153). Tempo e configurações de
+ * fatiamento ficam como estão (o tempo lê vírgula e ponto do mesmo jeito; o fatiamento é sempre com ponto).
+ */
+fun QuoteInputState.withNumberSeparator(from: Char, to: Char): QuoteInputState {
+    if (from == to) return this
+    return copy(
+        prints = prints.map { it.withNumberSeparator(from, to) },
+        selectedConsumables = selectedConsumables.mapValues { (_, consumable) ->
+            consumable.copy(quantityText = rewriteDecimalText(consumable.quantityText, NumberKind.AMOUNT, from, to))
+        },
+    )
+}
+
+/** Ver [QuoteInputState.withNumberSeparator]; inclui o retrato de antes do G-code, pro "Desfazer" voltar no separador novo. */
+fun PrintInput.withNumberSeparator(from: Char, to: Char): PrintInput = copy(
+    filaments = filaments.map { row ->
+        row.copy(
+            lengthText = rewriteDecimalText(row.lengthText, NumberKind.MEASURE, from, to),
+            weightText = row.weightText?.let { rewriteDecimalText(it, NumberKind.AMOUNT, from, to) },
+        )
+    },
+    beforeGCode = beforeGCode?.withNumberSeparator(from, to),
 )

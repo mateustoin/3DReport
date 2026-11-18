@@ -1391,6 +1391,11 @@
     <string name="payment_method_card">Cartão</string>
     <string name="payment_method_cash">Dinheiro</string>
     <string name="payment_method_other">Outro</string>
+    <!-- A forma dentro da frase do recibo ("o valor de R$ 50,00 (Pix)"); em inglês, minúscula no meio da frase ("by card"). -->
+    <string name="payment_method_inline_pix">Pix</string>
+    <string name="payment_method_inline_card">Cartão</string>
+    <string name="payment_method_inline_cash">Dinheiro</string>
+    <string name="payment_method_inline_other">Outro</string>
     <string name="payments_title">Pagamentos</string>
     <string name="payments_deposit">Sinal</string>
     <string name="payments_empty">Nenhum pagamento ainda.</string>

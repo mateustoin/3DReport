@@ -20,6 +20,13 @@ fun autoNameText(template: String, createdAtEpochMillis: Long): String =
 fun SavedQuote.displayName(autoNameTemplate: String): String =
     if (autoNamed) autoNameText(autoNameTemplate, savedAtEpochMillis) else name
 
+/**
+ * O mesmo nome fora da tela (busca, avisos, diálogos montados no ViewModel): [autoName] monta o automático no idioma em
+ * uso a partir da data de criação, normalmente [com.threedreport.app.data.QuoteHistoryRepository.autoName].
+ */
+fun SavedQuote.displayName(autoName: (createdAtEpochMillis: Long) -> String): String =
+    if (autoNamed) autoName(savedAtEpochMillis) else name
+
 /** [displayName] na tela, com o modelo do idioma em uso. */
 @Composable
 fun SavedQuote.shownName(): String = displayName(stringResource(Res.string.quote_auto_name))

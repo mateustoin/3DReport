@@ -14,28 +14,28 @@ class OrderSettingsTest {
 
         assertEquals(0.0, settings.defaultDepositRate)
         assertEquals(3, settings.staleQuoteDays)
-        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, settings.effectiveTrackingUrlTemplate)
+        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, settings.effectiveTrackingUrlTemplate(Currency.BRL))
     }
 
     @Test
     fun theTrackingLinkPutsTheCodeInPlace() {
         assertEquals(
             "https://rastreamento.correios.com.br/app/index.php?objetos=AA123456789BR",
-            OrderSettings().trackingUrl(" AA123456789BR "),
+            OrderSettings().trackingUrl(" AA123456789BR ", Currency.BRL),
         )
-        assertEquals("https://x.test/r?c=A%20B%26C", OrderSettings(trackingUrlTemplate = "https://x.test/r?c={codigo}").trackingUrl("A B&C"))
+        assertEquals("https://x.test/r?c=A%20B%26C", OrderSettings(trackingUrlTemplate = "https://x.test/r?c={codigo}").trackingUrl("A B&C", Currency.BRL))
     }
 
     @Test
     fun aBlankSiteOrCodeGivesNoLink() {
-        assertNull(OrderSettings(trackingUrlTemplate = "").trackingUrl("AA123456789BR"))
-        assertNull(OrderSettings(trackingUrlTemplate = "  ").trackingUrl("AA123456789BR"))
-        assertNull(OrderSettings().trackingUrl("  "))
+        assertNull(OrderSettings(trackingUrlTemplate = "").trackingUrl("AA123456789BR", Currency.BRL))
+        assertNull(OrderSettings(trackingUrlTemplate = "  ").trackingUrl("AA123456789BR", Currency.BRL))
+        assertNull(OrderSettings().trackingUrl("  ", Currency.BRL))
     }
 
     @Test
     fun aSiteWithoutTheMarkerOpensAsIs() {
-        assertEquals("https://x.test/rastreio", OrderSettings(trackingUrlTemplate = "https://x.test/rastreio").trackingUrl("AA1"))
+        assertEquals("https://x.test/rastreio", OrderSettings(trackingUrlTemplate = "https://x.test/rastreio").trackingUrl("AA1", Currency.BRL))
     }
 
     @Test

@@ -44,13 +44,7 @@ class DurationTexts(
     }
 
     /** Minutos em horas com uma casa decimal e o separador do idioma ([AppLocale]), ex.: "12,5 h". */
-    fun decimalHours(minutes: Double): String {
-        val tenths = kotlin.math.round(minutes / 60.0 * 10).toLong()
-        val whole = tenths / 10
-        val decimal = kotlin.math.abs(tenths % 10)
-        val number = if (decimal == 0L) "$whole" else "$whole${AppLocale.decimalSeparator}$decimal"
-        return decimalHoursTemplate.fill(number)
-    }
+    fun decimalHours(minutes: Double): String = decimalHoursTemplate.fill((minutes / 60.0).oneDecimalText())
 
     private fun String.fill(vararg args: Any): String = fillTemplate(this, *args)
 }

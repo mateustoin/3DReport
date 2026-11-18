@@ -208,7 +208,7 @@ private fun PrinterFormPanel(form: PrinterFormState, viewModel: PrinterListViewM
             FormNotice(
                 text = stringResource(Res.string.printers_notice_reference),
                 help = HelpText(
-                    if (LocalCurrency.current == Currency.BRL) {
+                    if (LocalCurrency.current.hasBrazilOnlyFeatures) {
                         stringResource(Res.string.printers_notice_reference_help, shortMonthYearText(PRINTER_PRICES_YEAR, PRINTER_PRICES_MONTH))
                     } else {
                         stringResource(Res.string.printers_notice_reference_help_no_price)

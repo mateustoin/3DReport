@@ -2,8 +2,13 @@ package com.threedreport.app.platform
 
 import com.threedreport.core.model.Currency
 
+/**
+ * Onde a moeda é o euro: os 21 países da zona do euro (a Bulgária desde 2026-01-01) e os que usam o euro fora da UE
+ * (Montenegro, Kosovo, Andorra, Mônaco, San Marino e Vaticano).
+ */
 private val EURO_REGIONS = setOf(
-    "AT", "BE", "HR", "CY", "EE", "FI", "FR", "DE", "GR", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES",
+    "AT", "BE", "BG", "HR", "CY", "EE", "FI", "FR", "DE", "GR", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES",
+    "ME", "XK", "AD", "MC", "SM", "VA",
 )
 
 /**

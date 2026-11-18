@@ -26,6 +26,7 @@ import com.threedreport.app.ui.components.PendingDelete
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.format.rewriteDecimalText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
@@ -104,6 +105,8 @@ class SalesChannelViewModel(
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
     /** A moeda em uso: os números são lidos com o separador decimal dela, o mesmo que o campo usa pra validar. */
     private val currency: () -> Currency = { Currency.BRL },
+    /** Avisa quando o idioma muda, pra o percentual do formulário aberto passar pro separador novo. */
+    languageChanges: Flow<Any?> = AppLocale.current,
 ) {
 
     private val state = MutableStateFlow(SalesChannelsUiState().withItems(repository.channels.value))
@@ -112,8 +115,34 @@ class SalesChannelViewModel(
     private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
     val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
 
+    /** O separador com que os percentuais do formulário foram escritos: o do idioma em que a pessoa digitou. */
+    private var formNumberSeparator: Char = AppLocale.decimalSeparator
+
     init {
         repository.channels.onEach { items -> state.update { it.withItems(items) } }.launchIn(scope)
+        languageChanges.onEach { followLanguage() }.launchIn(scope)
+    }
+
+    /**
+     * O idioma mudou com o formulário aberto (decisão 153): os percentuais passam pro separador novo. Os valores em dinheiro
+     * seguem a moeda e ficam como estão.
+     */
+    private fun followLanguage() {
+        val from = formNumberSeparator
+        val to = AppLocale.decimalSeparator
+        if (from == to) return
+        formNumberSeparator = to
+        fun percent(text: String) = rewriteDecimalText(text, NumberKind.MEASURE, from, to)
+        state.update { s ->
+            s.copy(
+                form = s.form?.let { form ->
+                    form.copy(
+                        feeRatePercentText = percent(form.feeRatePercentText),
+                        tiers = form.tiers.map { it.copy(feeRatePercentText = percent(it.feeRatePercentText)) },
+                    )
+                },
+            )
+        }
     }
 
     fun startAdd() {

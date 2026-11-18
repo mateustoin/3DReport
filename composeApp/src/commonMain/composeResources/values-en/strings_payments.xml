@@ -33,6 +33,11 @@
     <string name="payment_method_card">Card</string>
     <string name="payment_method_cash">Cash</string>
     <string name="payment_method_other">Other</string>
+    <!-- A forma dentro da frase do recibo ("Received $5.86 by card"): minúscula, no meio da frase. -->
+    <string name="payment_method_inline_pix">Pix</string>
+    <string name="payment_method_inline_card">card</string>
+    <string name="payment_method_inline_cash">cash</string>
+    <string name="payment_method_inline_other">another method</string>
     <string name="payments_title">Payments</string>
     <string name="payments_deposit">Deposit</string>
     <string name="payments_empty">No payments yet.</string>

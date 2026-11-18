@@ -10,6 +10,7 @@ import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.OrderSettings
 import com.threedreport.core.pix.PixKeyType
 import com.threedreport.core.pix.PixSetupIssue
@@ -228,12 +229,12 @@ class Leva11SettingsViewModelTest {
 
         viewModel.setTrackingUrl("https://exemplo.com/?c={codigo}")
         viewModel.save()
-        assertEquals("https://exemplo.com/?c=AB1", repository.settings.value.trackingUrl("AB1"))
+        assertEquals("https://exemplo.com/?c=AB1", repository.settings.value.trackingUrl("AB1", Currency.BRL))
 
         viewModel.setTrackingUrl("")
         viewModel.save()
         assertEquals("", repository.settings.value.trackingUrlTemplate)
-        assertNull(repository.settings.value.trackingUrl("AB1"), "apagar o campo é sem link")
+        assertNull(repository.settings.value.trackingUrl("AB1", Currency.BRL), "apagar o campo é sem link")
 
         viewModel.useDefaultTracking()
         viewModel.save()

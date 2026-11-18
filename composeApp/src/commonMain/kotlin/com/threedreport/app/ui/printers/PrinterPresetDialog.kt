@@ -63,7 +63,7 @@ fun PrinterPresetDialog(onPick: (PrinterPreset) -> Unit, onDismiss: () -> Unit) 
             filtered.forEach { preset ->
                 ListRow(
                     title = preset.displayName,
-                    details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.takeIf { currency == Currency.BRL }?.toWholeCurrencyText(currency)),
+                    details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.takeIf { currency.hasBrazilOnlyFeatures }?.toWholeCurrencyText(currency)),
                     onClick = { onPick(preset) },
                     actions = listOf(RowAction(AppIcons.Check, stringResource(Res.string.printers_presets_use), { onPick(preset) }, skipTab = true)),
                 )

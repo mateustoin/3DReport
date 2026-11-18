@@ -179,7 +179,7 @@ fun QuoteScreen(
         if (sent != null && deadline != null) {
             // O prazo se muda na seção Detalhes, que está na própria tela: "Alterar prazo" só fecha o aviso.
             OverdueExportDialog(
-                overdue = listOf(OverdueItem(sent.name, deadline)),
+                overdue = listOf(OverdueItem(sent.shownName(), deadline)),
                 onChangeDate = viewModel::dismissPendingSend,
                 onSendAnyway = viewModel::confirmPendingSend,
                 onCancel = viewModel::dismissPendingSend,

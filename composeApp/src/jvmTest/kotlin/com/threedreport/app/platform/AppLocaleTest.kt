@@ -3,6 +3,7 @@ package com.threedreport.app.platform
 import com.threedreport.app.data.AppLanguage
 import com.threedreport.app.data.LocalStorage
 import com.threedreport.app.ui.format.DurationTexts
+import com.threedreport.app.ui.format.oneDecimalText
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.format.toWeightText
 import java.time.LocalDate
@@ -154,5 +155,19 @@ class AppLocaleTest {
         assertEquals("12.5 g", 12.5.toWeightText())
         assertEquals("12.5%", 0.125.toPercentText())
         assertEquals("12 g", 12.0.toWeightText())
+    }
+
+    @Test
+    fun negativeDecimalsKeepTheirSign() {
+        assertEquals("-0,5", (-0.5).oneDecimalText())
+        assertEquals("-1,2", (-1.25).oneDecimalText(), "arredonda como antes (meio pro par)")
+        assertEquals("0", (-0.05).oneDecimalText(), "o que arredonda pra zero sai sem sinal")
+        assertEquals("-0,5%", (-0.005).toPercentText())
+        assertEquals("-5%", (-0.05).toPercentText())
+
+        AppLocale.use(AppLocaleState(UiLanguage.ENGLISH, "US"))
+        assertEquals("-0.5", (-0.5).oneDecimalText())
+        assertEquals("-1.2", (-1.25).oneDecimalText())
+        assertEquals("-0.5%", (-0.005).toPercentText())
     }
 }

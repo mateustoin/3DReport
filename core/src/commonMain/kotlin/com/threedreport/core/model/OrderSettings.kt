@@ -25,10 +25,6 @@ data class OrderSettings(
         require(staleQuoteDays in 0..MAX_STALE_QUOTE_DAYS) { "staleQuoteDays fora de 0..$MAX_STALE_QUOTE_DAYS: $staleQuoteDays" }
     }
 
-    /** O site de rastreio em uso com a moeda padrão em real: ver [effectiveTrackingUrlTemplate] com a moeda. */
-    val effectiveTrackingUrlTemplate: String
-        get() = effectiveTrackingUrlTemplate(Currency.BRL)
-
     /**
      * O site de rastreio em uso: o escolhido, ou o padrão quando a pessoa nunca mexeu. O padrão são os Correios e só vale
      * com a moeda padrão em real (decisão 16b da Leva 11B): em outra moeda ele é vazio, e o pedido fica sem link até a
@@ -39,9 +35,10 @@ data class OrderSettings(
 
     /**
      * Endereço de rastreio do código [code], com o código no lugar de `{codigo}` (codificado pra URL). `null` sem site
-     * ou sem código. Um site sem `{codigo}` abre como está.
+     * ou sem código. Um site sem `{codigo}` abre como está. [defaultCurrency] é a moeda padrão de agora: o site padrão
+     * depende dela (os Correios só em real), então quem chama sempre diz qual é.
      */
-    fun trackingUrl(code: String, defaultCurrency: Currency = Currency.BRL): String? {
+    fun trackingUrl(code: String, defaultCurrency: Currency): String? {
         val template = effectiveTrackingUrlTemplate(defaultCurrency).ifEmpty { return null }
         val trimmed = code.trim().ifEmpty { return null }
         return template.replace(CODE_MARKER, percentEncode(trimmed)).replace(ENGLISH_CODE_MARKER, percentEncode(trimmed))
@@ -66,7 +63,7 @@ data class OrderSettings(
 
         /** O padrão do app pra [defaultCurrency]: os Correios em real, vazio nas outras moedas. */
         fun defaultTrackingUrlTemplate(defaultCurrency: Currency): String =
-            if (defaultCurrency == Currency.BRL) DEFAULT_TRACKING_URL_TEMPLATE else ""
+            if (defaultCurrency.hasBrazilOnlyFeatures) DEFAULT_TRACKING_URL_TEMPLATE else ""
 
         private const val HEX = "0123456789ABCDEF"
 

@@ -104,7 +104,7 @@ class AppViewModels(
         BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value }, today = today)
     }
     val orderSettingsViewModel: OrderSettingsViewModel by lazy {
-        OrderSettingsViewModel(container.orderSettings, scope, currency = { container.currency.currency.value })
+        OrderSettingsViewModel(container.orderSettings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency)
     }
     val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding, scope) }
     val salesChannelViewModel: SalesChannelViewModel by lazy {

@@ -55,6 +55,7 @@ import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.components.matchingClients
 import com.threedreport.app.ui.format.NumberKind
+import com.threedreport.app.ui.format.displayName
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseDurationMinutes
 import com.threedreport.app.ui.format.parseWholeNumber
@@ -152,6 +153,8 @@ class QuoteViewModel(
     private val stlPreviewer: (ByteArray, StlProgress) -> StlPreviewResult = { bytes, progress -> prepareStlPreview(bytes, progress) },
     /** Lê a miniatura de um 3MF (roda em [background]). */
     private val threeMfReader: (ByteArray) -> ThreeMfThumbnail = ::readThreeMfThumbnail,
+    /** Avisa quando o idioma muda, pra o rascunho passar os números que não são dinheiro pro separador novo. */
+    languageChanges: Flow<Any?> = AppLocale.current,
 ) {
     private val scope: CoroutineScope = scope
 
@@ -180,6 +183,37 @@ class QuoteViewModel(
     }
 
     private var pendingImports = 0
+
+    /** O separador com que os números que não são dinheiro do rascunho foram escritos: o do idioma em que a pessoa digitou. */
+    private var draftNumberSeparator: Char = AppLocale.decimalSeparator
+
+    init {
+        languageChanges.onEach { followLanguage() }.launchIn(scope)
+    }
+
+    /**
+     * O idioma mudou com o rascunho aberto (decisão 153): os números que não são dinheiro passam pro separador novo, senão
+     * "1,250" g escrito em inglês seria lido como 1,25 g em português. O retrato do orçamento reaberto passa junto, com a
+     * mesma regra: nada que muda o preço foi mexido, e o preço congelado continua (decisão 108).
+     */
+    private fun followLanguage() {
+        val from = draftNumberSeparator
+        val to = AppLocale.decimalSeparator
+        if (from == to) return
+        draftNumberSeparator = to
+        removedPrint = removedPrint?.let { (index, print) -> index to print.withNumberSeparator(from, to) }
+        change { current ->
+            val operation = current.form.operation
+            current.copy(
+                input = current.input.withNumberSeparator(from, to),
+                form = if (operation is QuoteOperation.Editing) {
+                    current.form.copy(operation = operation.copy(originalInput = operation.originalInput.withNumberSeparator(from, to)))
+                } else {
+                    current.form
+                },
+            )
+        }
+    }
 
     init {
         // Um cadastro mexido em outra tela muda a conta desta: o estado acompanha os repositórios. Um `combine`
@@ -1033,7 +1067,7 @@ class QuoteViewModel(
             val updated = update() ?: historyRepository.restore(existing.id)?.let { update() }
             if (updated != null) return updated
             if (editing != null) {
-                updateForm { it.copy(blockedMessage = uiText(Res.string.quote_blocked_deleted, existing.name)) }
+                updateForm { it.copy(blockedMessage = uiText(Res.string.quote_blocked_deleted, existing.displayName(historyRepository::autoName))) }
                 return null
             }
         }

@@ -392,7 +392,7 @@ private fun AppContent(
                     currentSettings = settingsRepository.settings.value,
                     onFinish = { settings, printer ->
                         settingsRepository.update(settings)
-                        printer?.let { applyOnboardingPrinter(printerRepository, it, withReferencePrice = currency == Currency.BRL) }
+                        printer?.let { applyOnboardingPrinter(printerRepository, it, withReferencePrice = currency.hasBrazilOnlyFeatures) }
                         onboardingRepository.markCompleted()
                     },
                     onSkip = onboardingRepository::markCompleted,

@@ -9,6 +9,7 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.ui.components.OverdueItem
 import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.format.displayName
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
@@ -111,7 +112,7 @@ internal class HistoryExports(
         val todayEpochDay = today()
         val overdue = quotes.filter { it.isDeliveryOverdue(todayEpochDay) }
         if (overdue.isEmpty()) return false
-        val items = overdue.map { OverdueItem(it.name, it.deliveryDateEpochDay!!) }
+        val items = overdue.map { OverdueItem(it.displayName(repository::autoName), it.deliveryDateEpochDay!!) }
         change { it.copy(pendingExport = PendingExport(export, quotes, items)) }
         return true
     }
@@ -122,7 +123,7 @@ internal class HistoryExports(
      */
     fun selectedVisible(): List<SavedQuote> {
         val selected = state().selectedIds
-        return visibleQuotes(repository.savedQuotes.value, state().filter).filter { it.id in selected }
+        return visibleQuotes(repository.savedQuotes.value, state().filter) { it.displayName(repository::autoName) }.filter { it.id in selected }
     }
 
     fun exportSelectedPdf() {
@@ -139,7 +140,7 @@ internal class HistoryExports(
      */
     fun exportCatalog() {
         val selected = selectedVisible().ifEmpty {
-            if (state().filter.kind == QuoteKind.PRODUCT) visibleQuotes(repository.savedQuotes.value, state().filter) else emptyList()
+            if (state().filter.kind == QuoteKind.PRODUCT) visibleQuotes(repository.savedQuotes.value, state().filter) { it.displayName(repository::autoName) } else emptyList()
         }
         if (selected.isEmpty()) return
         val clearsSelection = state().selectedIds.isNotEmpty()

@@ -12,6 +12,7 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.platform.localEpochDayOf
+import com.threedreport.app.ui.format.displayName
 import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
@@ -97,7 +98,8 @@ internal class HistoryStateBuilder(
             CategoryFilter.All -> false
         }
         val filter = if (orphan) state.filter.copy(category = CategoryFilter.All) else state.filter
-        val visible = visibleQuotes(all, filter)
+        val shownName: (SavedQuote) -> String = { it.displayName(repository::autoName) }
+        val visible = visibleQuotes(all, filter, shownName)
         val sold = soldProductIds(all)
         val repricedProducts = if (orders) emptyMap() else repricedProducts(all)
         val orderSettings = orderSettingsRepository?.settings?.value ?: OrderSettings()
@@ -124,8 +126,8 @@ internal class HistoryStateBuilder(
         }
 
         val now = clock.nowMillis()
-        val kanban = if (orders) kanbanQuotes(all, filter, state.showAllDelivered, now) else emptyList()
-        val allDelivered = if (orders) kanbanQuotes(all, filter, true, now).count { it.status == OrderStatus.ENTREGUE } else 0
+        val kanban = if (orders) kanbanQuotes(all, filter, state.showAllDelivered, now, shownName = shownName) else emptyList()
+        val allDelivered = if (orders) kanbanQuotes(all, filter, true, now, shownName = shownName).count { it.status == OrderStatus.ENTREGUE } else 0
         val byStatus = kanban.groupBy { it.status }
         return state.copy(
             filter = filter,

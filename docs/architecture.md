@@ -514,6 +514,19 @@ Outros:
   (`composeApp/build.gradle.kts`). As palavras de duração ("h", "min") vêm de `strings.xml`
   (`duration_`), pelo `DurationTexts` (`durationTexts()` na tela,
   `loadDurationTexts()` ou `ClientDocumentTexts.duration` fora dela).
+- Trocar o idioma com um rascunho aberto reescreve os números que não são
+  dinheiro no separador novo (`rewriteDecimalText`): os ViewModels do
+  Orçamento, de Configurações > Pedidos e de canal de venda (Negócio refaz o
+  rascunho sem edição; o percentual dele é lido igual com vírgula ou ponto)
+  acompanham `AppLocale.current`. O Orçamento reaberto reescreve junto o retrato
+  de quando abriu, pra o preço congelado continuar.
+- O nome automático mostrado (`SavedQuote.displayName`, `shownName()` na tela)
+  vale também na busca, nos avisos e nos diálogos montados no ViewModel; fora da
+  tela, quem monta é `QuoteHistoryRepository.autoName`.
+- O que só vale pro Brasil (Pix, Correios, preço de referência das
+  impressoras) pergunta a `Currency.hasBrazilOnlyFeatures`, no `core`. A forma de
+  pagamento dentro da frase do recibo tem recurso próprio
+  (`payment_method_inline_`), pra cada idioma escolher maiúscula e preposição.
 
 ### Workaround: janela em monitores com DPI diferentes
 `Main.kt` contorna um bug conhecido do Compose Desktop/Skiko (decisão 23):

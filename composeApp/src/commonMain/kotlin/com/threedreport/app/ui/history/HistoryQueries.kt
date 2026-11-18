@@ -27,8 +27,15 @@ import com.threedreport.core.pricing.RepriceResult
 const val RECENT_DELIVERED_DAYS = 30
 private const val DAY_MILLIS = 24L * 60 * 60 * 1000
 
-/** Função pura: aplica [filter] a [savedQuotes], do mais recente pro mais antigo. */
-fun visibleQuotes(savedQuotes: List<SavedQuote>, filter: HistoryFilter): List<SavedQuote> {
+/**
+ * Função pura: aplica [filter] a [savedQuotes], do mais recente pro mais antigo. A busca acha pelo nome mostrado
+ * ([shownName], o automático no idioma do app, item 7b da Leva 11B) e também pelo texto gravado.
+ */
+fun visibleQuotes(
+    savedQuotes: List<SavedQuote>,
+    filter: HistoryFilter,
+    shownName: (SavedQuote) -> String = { it.name },
+): List<SavedQuote> {
     val query = filter.query.trim()
     return savedQuotes
         .filter { quote ->
@@ -36,7 +43,7 @@ fun visibleQuotes(savedQuotes: List<SavedQuote>, filter: HistoryFilter): List<Sa
                 quote.matchesCategory(filter.category) &&
                 (filter.status == null || quote.status == filter.status) &&
                 filter.period.contains(quote.savedAtEpochMillis) &&
-                (query.isEmpty() || quote.matchesQuery(query))
+                (query.isEmpty() || quote.matchesQuery(query, shownName(quote)))
         }
         .sortedByDescending { it.savedAtEpochMillis }
 }
@@ -53,6 +60,7 @@ fun kanbanQuotes(
     showAllDelivered: Boolean,
     nowEpochMillis: Long,
     recentDays: Int = RECENT_DELIVERED_DAYS,
+    shownName: (SavedQuote) -> String = { it.name },
 ): List<SavedQuote> {
     val query = filter.query.trim()
     val recentStart = nowEpochMillis - recentDays * DAY_MILLIS
@@ -60,7 +68,7 @@ fun kanbanQuotes(
         .filter { quote ->
             quote.isOrder &&
                 quote.status in OrderStatus.PIPELINE &&
-                (query.isEmpty() || quote.matchesQuery(query)) &&
+                (query.isEmpty() || quote.matchesQuery(query, shownName(quote))) &&
                 (showAllDelivered || quote.status != OrderStatus.ENTREGUE || (quote.deliveredAtEpochMillis ?: 0) >= recentStart)
         }
         .sortedByDeadline()
@@ -111,8 +119,9 @@ private fun SavedQuote.matchesCategory(filter: CategoryFilter): Boolean = when (
     is CategoryFilter.Named -> category.equals(filter.name, ignoreCase = true)
 }
 
-private fun SavedQuote.matchesQuery(query: String): Boolean =
-    name.contains(query, ignoreCase = true) ||
+private fun SavedQuote.matchesQuery(query: String, shownName: String): Boolean =
+    shownName.contains(query, ignoreCase = true) ||
+        name.contains(query, ignoreCase = true) ||
         client?.name?.contains(query, ignoreCase = true) == true ||
         displayNumber?.contains(query) == true
 

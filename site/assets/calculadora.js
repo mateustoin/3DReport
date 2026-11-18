@@ -93,8 +93,16 @@
     var s = String(raw).trim();
     if (s === "") return NaN;
     if (LANG === "en") {
-      // Inglês: ponto decimal, vírgula só separa milhar.
-      s = s.replace(/,/g, "");
+      // Inglês: ponto decimal. Com ponto, a vírgula separa milhar ("1,250.5"). Sem ponto, uma vírgula só é milhar
+      // quando vem seguida de exatamente 3 dígitos ("1,250" = 1250); senão é decimal de quem escreve com vírgula
+      // ("0,25", "12,5"), espelhando o que o português faz com o ponto.
+      if (s.indexOf(".") !== -1 || (s.match(/,/g) || []).length > 1) {
+        s = s.replace(/,/g, "");
+      } else if (/^-?[1-9]\d{0,2},\d{3}$/.test(s)) {
+        s = s.replace(",", "");
+      } else {
+        s = s.replace(",", ".");
+      }
     } else if (s.indexOf(",") !== -1) {
       s = s.replace(/\./g, "").replace(",", ".");
     }

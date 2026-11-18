@@ -240,7 +240,7 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
     }
 
     // O Pix só existe em real (decisão 155): com outra moeda padrão a seção some e as seguintes sobem um número.
-    val showPix = LocalCurrency.current == Currency.BRL
+    val showPix = LocalCurrency.current.hasBrazilOnlyFeatures
     if (showPix) {
         FormSection(4, stringResource(Res.string.settings_docs_pix_title), help = HelpText(stringResource(Res.string.settings_docs_pix_help))) {
             PixFields(branding, viewModel)
