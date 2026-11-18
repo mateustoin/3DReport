@@ -45,6 +45,13 @@ sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que
   primeiro campo, e o Tab circula só dentro do diálogo. Os ícones de ajuda saíram da ordem do Tab (continuam
   clicáveis).
 
+### In English
+- **The app in English.** Settings, Appearance has a new Language option (Automatic, Português, English). It applies at once, and the PDF, messages, image and receipt follow. Dates follow your system region.
+- **Get paid and keep in touch.** Record deposits and payments, print a PDF receipt for each one, send ready-made messages at every stage, spot quotes that are waiting and keep a tracking code and private notes. Pix for sellers in Brazil.
+- **A better price.** Supplies, a fixed fee per item on sales channels, free shipping, a minimum order price and a rush fee, all counted in the profit.
+- **A new look.** A redone interface, Settings in sections, a new PDF and chat image, and STL or 3MF files kept with each order.
+- **Easier to keep up.** 57 printers with reference values, and an "Update now" button in About.
+
 ## [2.2.1] - 2026-11-17
 
 Impressoras da lista com valores de referência e atualização pelo próprio app. Impressoras e pedidos que

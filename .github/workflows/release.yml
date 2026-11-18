@@ -143,6 +143,9 @@ jobs:
             }
             printing { print }
           ' CHANGELOG.md > changelog_section.md
+          # O bloco "### In English" (decisão 156) vai pra nota em seção própria, depois do texto em português.
+          awk '/^### In English/ { exit } { print }' changelog_section.md > changelog_pt.md
+          awk '/^### In English/ { found = 1; next } found { print }' changelog_section.md > changelog_en.md
 
           cat > release_notes.md <<'EOF'
           3DReport é um app gratuito e de código aberto para orçamentos de
@@ -152,7 +155,11 @@ jobs:
           ## O que mudou
           EOF
 
-          cat changelog_section.md >> release_notes.md
+          cat changelog_pt.md >> release_notes.md
+
+          if [ -s changelog_en.md ]; then
+            { printf '\n## In English\n\n'; cat changelog_en.md; } >> release_notes.md
+          fi
 
           cat >> release_notes.md <<'EOF'
 

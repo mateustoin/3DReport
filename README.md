@@ -15,6 +15,7 @@
 </p>
 
 <p align="center">
+  <a href="README.en.md">English</a> ·
   <a href="https://mateustoin.github.io/3DReport/">Site</a> ·
   <a href="https://github.com/mateustoin/3DReport/releases/latest">Download</a> ·
   <a href="https://mateustoin.github.io/3DReport/calculadora.html">Calculadora online</a> ·

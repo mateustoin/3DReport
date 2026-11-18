@@ -178,6 +178,14 @@ importa), não em termos de arquivos/classes internos (isso já está em
 release notes quando um release for de fato publicado no GitHub (ver
 [roadmap.md](roadmap/catalogo.md#3-instaladores-desktop)).
 
+A partir da 2.2, cada versão termina com um bloco `### In English` de 3 a 6 linhas
+(decisão 156), escrito pra quem não lê português: um item por linha, em inglês
+natural de quem vende impressão 3D, do ponto de vista de quem usa, sem travessão,
+com os termos do glossário (`docs/glossario.md`). Ele resume a versão, não traduz
+o bloco em português item por item. O bloco fica no fim da seção da versão e o
+workflow de release o leva pra nota da release, sob o título "In English", depois
+do texto em português.
+
 ## Cortando um release
 
 Instaladores dos 3 SOs (decisão 33 em [decisions.md](decisions.md)) são

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3DReport manual: quote and sell 3D prints</title>
+  <meta name="description" content="Step by step: set up 3DReport, make your first 3D printing quote and follow the sale to delivery. Printer and filament setup, price calculation, PDF and order status.">
+  <meta name="keywords" content="how to quote 3D printing, how to sell 3D prints, 3DReport tutorial, 3D printing quote manual">
+  <link rel="canonical" href="https://mateustoin.github.io/3DReport/en/manual.html">
+  <link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/manual.html">
+  <link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/manual.html">
+  <link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/manual.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b5fa8">
+  <link rel="icon" type="image/png" href="../assets/icon.png">
+  <link rel="apple-touch-icon" href="../assets/icon.png">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="3DReport">
+  <meta property="og:title" content="3DReport manual: quote and sell 3D prints">
+  <meta property="og:description" content="Step by step: make your first 3D printing quote and follow the sale to delivery.">
+  <meta property="og:url" content="https://mateustoin.github.io/3DReport/en/manual.html">
+  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/og-banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="3DReport manual: quote and sell 3D prints">
+  <meta name="twitter:description" content="Step by step: make your first 3D printing quote and follow the sale to delivery.">
+  <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/og-banner.png">
+
+  <link rel="stylesheet" href="../assets/style.css?v=dev">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "inLanguage": "en",
+    "name": "How to quote and sell 3D prints with 3DReport",
+    "description": "Step by step: set up your printer and filament, make a 3D printing quote and follow the sale to delivery in 3DReport.",
+    "step": [
+      {"@type": "HowToStep", "name": "Install 3DReport", "text": "Download the installer for your operating system from the releases page and install it as usual."},
+      {"@type": "HowToStep", "name": "Add your printer", "text": "In Printers, enter the energy use, the maintenance cost per hour and the machine's investment."},
+      {"@type": "HowToStep", "name": "Add your filament", "text": "In Filaments, enter the brand, price per kg, density and the colors you have in stock."},
+      {"@type": "HowToStep", "name": "Set up your business", "text": "In Settings, set the energy price per kWh, the value of your working hour, the monthly fixed cost, the failure reserve, tax, sales channels, admin cost and profit margin."},
+      {"@type": "HowToStep", "name": "Make the quote", "text": "Drag the slicer's G-code into the window (or, on the Quote screen, choose the filament and printer and enter the filament length and print time of one part) and enter the quantity the customer wants."},
+      {"@type": "HowToStep", "name": "Save and export", "text": "Save the quote (with an optional name, photo, customer and model link) and send it to the customer: PDF, copied text, a WhatsApp chat already filled in or a square image for a story."},
+      {"@type": "HowToStep", "name": "Follow the sale to delivery", "text": "In Orders, update the order status (Quoted, Approved, Printing, Ready, Delivered) as the sale moves forward, and follow the total sold on the Dashboard."}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="./">
+        <img src="../assets/icon.png" alt="3DReport icon" width="32" height="32">
+        3DReport
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+        <svg class="icon-open" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Menu
+      </button>
+      <div class="nav-links" id="nav-links">
+        <a href="./#features">Features</a>
+        <a href="./#how-it-works">How it works</a>
+        <a href="calculadora.html">Calculator</a>
+        <a href="manual.html">Manual</a>
+        <a href="imprensa.html">Press</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <span class="lang-switch" aria-label="Language"><a href="../manual.html" lang="pt-BR" hreflang="pt-BR">PT</a><span aria-hidden="true">|</span><a href="manual.html" lang="en" hreflang="en" aria-current="true">EN</a></span>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" style="padding-bottom: 20px;">
+      <div class="container" style="display: block;">
+        <p class="eyebrow">Quick manual</p>
+        <h1>From quote to finished sale in 8 steps</h1>
+        <p class="lead">
+          This guide covers the essentials to start quoting and selling 3D
+          prints with 3DReport today. For the full list of features, see the
+          <a href="./#features">home page</a>.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div>
+              <h3>Install 3DReport</h3>
+              <p>Download the installer for your operating system (Windows, Linux or macOS) from the <a href="https://github.com/mateustoin/3DReport/releases/latest">releases page</a> and install it as usual.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div>
+              <h3>Add your printer</h3>
+              <p>On the <strong>Printers</strong> screen, add a profile with the energy use (W), the maintenance cost per hour and the machine's investment (price, payback time, days and hours of use). You can add more than one printer and choose which one to use in each quote.</p>
+              <p>The <strong>Maintenance</strong> button on each printer keeps what has to be done from time to time (change the nozzle every 200 h, lubricate the rails every 100 h), each with its own interval. The hours come from the Ready or Delivered orders on that printer; calibration, reprints and your own use go in as separate hours. When something is close or overdue, the printer's row warns you. "Done today" logs it in the journal and restarts the counter.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div>
+              <h3>Add your filament</h3>
+              <p>On the <strong>Filaments</strong> screen, enter the brand, the price per kilo, the density and the colors you have (with a manual "In stock" or "Out" toggle for each color).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <div>
+              <h3>Set up your business</h3>
+              <p>The first time you open it, the app asks four quick questions (your printer and what it cost, the energy price per kWh, the value of your working hour and your profit margin) so it starts calibrated; you can skip them and adjust later. In <strong>Settings</strong>, set the energy price per kWh, what your working hour is worth, the monthly fixed cost of the business (rent, internet, packaging) together with the print hours of the month, the failure reserve, the tax on the sale (if you pay a percentage; a flat monthly tax goes in the monthly fixed cost), the sales channels you use with the fee of each, an admin cost (for example, modeling time) and the profit margin you want. These values are the same for any printer or quote.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">5</div>
+            <div>
+              <h3>Make the quote</h3>
+              <p>The fastest way is to <strong>drag the G-code</strong> exported by your slicer into the app window: length, time, photo and print settings are filled in for you, and the printer and filament are already selected when the name matches what you saved. If you prefer, on the <strong>Quote</strong> screen, choose the filament and printer you saved and enter the filament length (in meters, straight from the slicer) and the print time (in minutes). The app works out the production cost and suggests a sale price with your margin. If you entered the value of your hour in Settings, also enter your working time for the whole order, adding it all up: slicing, setting up the plate, taking the print off, removing supports, sanding, painting, packing. To sell several identical parts, enter the quantity: the filament and time numbers stay for one part, and the app multiplies them, showing the total and the price of each unit. If the customer offers a price, type it in the negotiation field: the app shows what is left and warns you if the price does not cover the cost. The app keeps your list price next to the agreed price, and the Dashboard shows how much discount you gave in the period.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">6</div>
+            <div>
+              <h3>Save and export</h3>
+              <p>Save the quote (name, photo and model link are optional) and, on the <strong>Orders</strong> screen, export it as a PDF, copy a short text, open the customer's WhatsApp chat with the quote already written, or make a square image with photo and price to send in a chat or post as a story. When you save, you can pick the delivery date with one click (+3, +7 or +15 days, or a date on the calendar): it stands out in the PDF and the message, and Orders warns you when the date passes. In Settings you can also show the print time in the PDF and the message.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">7</div>
+            <div>
+              <h3>Follow the sale to delivery</h3>
+              <p>In <strong>Orders</strong>, update the order status as the sale moves forward: Quoted → Approved → Printing → Ready → Delivered, and at each change the app offers a ready-made WhatsApp message (you edit the texts in Settings). A quote that has waited 3 days or more is highlighted, with "Resume conversation". The <strong>Dashboard</strong> counts what the customer approved as a sale and shows, by period, the total sold, the profit, how much each machine hour and work hour earned and the parts that earn the most.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">8</div>
+            <div>
+              <h3>Record deposits and payments</h3>
+              <p>In <strong>Settings</strong>, <strong>Orders</strong>, the "Default deposit (%)" starts at 0: with a value, every new order is born with the deposit. In <strong>Orders</strong>, the "Payments" item in the order menu records each amount received, with method and date, shows whether the order is paid, has a deposit or is partly paid, and makes a PDF receipt for each payment. Until the deposit is in, the PDF and the message say how much to pay to start. The tracking code and the notes (yours only, they never go to the customer) are in "Edit details". For sellers in Brazil, there is also a Pix section in <strong>Settings</strong>, <strong>Customer documents</strong>, which adds a Pix code and QR to the PDF and the message.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt">
+      <div class="container">
+        <h2>Next steps</h2>
+        <p class="section-intro">After the first quote, explore:</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Optional services</h3>
+            <p>Add painting, sanding or delivery in <strong>Services</strong> and tick which ones apply to each quote, typing how much you will charge on that order. Each service can be charged per part or once per order. Enter the time of the service and the app suggests the value from your hourly rate and shows how much it really earns.</p>
+          </div>
+          <div class="card">
+            <h3>Supplies</h3>
+            <p>Key rings, magnets, screws, boxes, bags: add in <strong>Supplies</strong> what goes into the part and costs money, and tick in the quote how many go in each part or in the order. The cost goes into the price, like the filament.</p>
+          </div>
+          <div class="card">
+            <h3>Multicolor parts</h3>
+            <p>Printed with an AMS, an MMU or two nozzles? On the Quote screen, click <strong>"+ Add filament"</strong>: each row has the filament, the color and the meters of that material, and each one goes into the price at its own value. Drag in a multicolor G-code from Bambu Studio, OrcaSlicer or PrusaSlicer and the rows build themselves, one per extruder, with the usage the slicer reports (purge and tower included). Anything that does not match what you saved stays blank for you to choose. The customer still sees a single item.</p>
+          </div>
+          <div class="card">
+            <h3>Your brand on the PDF, and templates</h3>
+            <p>In Settings → "Customer documents", add your brand name, your logo and your contact (WhatsApp, email, Instagram): they appear in the PDF header, and the name and contact go on the square image too. You can turn on the page border, the watermark and the footer, and click "See how it looks" to check the PDF before saving. The look can be kept as a template; when you load a template, the fields are filled in and you confirm with "Save" (or discard). Logo and contact stay the same when you switch templates. A dark part used to vanish on the blue background of the chat image, so there is a <strong>"Image background"</strong> option: in Automatic, the app looks at the part's brightness and uses a light background when the part is dark; Dark and Light force one of the two. The PDFs and the chat image carry one small, faded line, "Made with 3DReport", in the bottom corner, far from your name and the price.</p>
+          </div>
+          <div class="card">
+            <h3>Catalog products</h3>
+            <p>No customer yet, or want to keep the parts you offer? Before saving, choose <strong>"Catalog product"</strong> instead of "Customer order". The product keeps the price, the photo and the files, with no customer, delivery date or shipping, and lives on the <strong>Catalog</strong> screen, outside the Kanban and the Dashboard. You can advertise a round price ($18.90 instead of $18.37) and give it a category, like Key rings or Decor. When the filament goes up, the card warns that costs changed, and <strong>"Update price"</strong> shows the before and after. When someone buys, click <strong>"Sell"</strong>: the Quote opens filled in to create the order, and the product stays in the catalog. "Export catalog" makes a PDF with all the products, split by category. If you chose "I am just starting" the first time (or in Settings, under "How you use the app"), the app saves to the catalog by default, and the Dashboard shows which product is worth offering first while there are no sales yet.</p>
+          </div>
+          <div class="card">
+            <h3>Dashboard</h3>
+            <p>On the Dashboard screen, filtered by period, follow the total sold, the profit, the profit per machine hour, how much your work earned per hour (compared with the hour you set), the parts that earned the most and the customers who push the price down the most. A quote the customer has not approved yet stays out of the totals and shows on a separate line, with the conversion rate.</p>
+          </div>
+          <div class="card">
+            <h3>3D viewer for STL</h3>
+            <p>On the Quote screen, attach the model's STL file to view it in 3D (drag to rotate, use the mouse wheel to zoom), capture an automatic photo for the quote and see a suggested difficulty level (Easy, Medium or Hard) to help price more demanding parts. The same field accepts the slicer project's 3MF file: it is kept with the order, and the thumbnail from Bambu Studio, OrcaSlicer or PrusaSlicer becomes the quote photo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>3DReport · Apache License 2.0 · by Mateus Antonio</span>
+      <div class="footer-links">
+        <a href="./">Home</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <a href="https://github.com/mateustoin/3DReport/releases/latest">Downloads</a>
+        <a href="imprensa.html">Press</a>
+        <a href="https://buymeacoffee.com/mateustoin">Donate</a>
+      </div>
+    </div>
+  </footer>
+  <script src="../assets/nav.js?v=dev" defer></script>
+  <!-- Visit count without cookies or personal data (decision 120). Site only: the app sends nothing. -->
+  <script data-goatcounter="https://3dreport.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
