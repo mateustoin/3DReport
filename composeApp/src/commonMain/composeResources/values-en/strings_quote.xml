@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos em inglês (decisão 154), com as mesmas chaves de values/ e o glossário de docs/glossario.md.
+  Área: Orçamento (chaves quote_). O teste de paridade (StringResourceParityTest) confere chaves,
+  marcadores (%1$s, {cliente}) e plurais.
+-->
+<resources>
+    <!-- Quote: field errors, blocks, warnings and the G-code import message -->
+    <string name="quote_error_quantity">Quantity: use a whole number, 1 or more.</string>
+    <string name="quote_error_service_value">%1$s price: not a number.</string>
+    <string name="quote_error_service_minutes">%1$s time: use minutes (30) or hours and minutes (1h30).</string>
+    <string name="quote_error_consumable_quantity">%1$s quantity: use a number greater than zero.</string>
+    <string name="quote_error_shipping_invalid">Shipping: not a number. Use a period for cents (19.90).</string>
+    <string name="quote_error_shipping_negative">Shipping can't be negative.</string>
+    <string name="quote_error_target_invalid">Price: not a number. Use a period for cents (19.90).</string>
+    <string name="quote_error_target_negative">Price can't be negative.</string>
+    <string name="quote_error_target_below_extras">This price doesn't cover services and shipping (%1$s). Enter at least that amount.</string>
+    <string name="quote_error_labor">Labor time: use minutes (90) or hours and minutes (1h30).</string>
+    <string name="quote_error_weight">Weight: use a number in grams (42 or 42.5).</string>
+    <string name="quote_error_length">Length: use a number in meters (27.5).</string>
+    <string name="quote_error_runs">Runs: use a whole number, 1 or more.</string>
+    <string name="quote_error_print_time">Print time: use minutes (200) or hours and minutes (3h20).</string>
+    <string name="quote_error_channel_missing">The channel "%1$s" no longer exists. Pick another channel, or "Direct sale", to calculate the price.</string>
+    <string name="quote_error_printer_missing">The printer "%1$s" is no longer registered. Pick another one.</string>
+    <string name="quote_error_printer_missing_unnamed">The selected printer is no longer registered. Pick another one.</string>
+    <string name="quote_error_filament_missing">The filament "%1$s" is no longer registered. Pick another one.</string>
+    <string name="quote_error_filament_missing_unnamed">The selected filament is no longer registered. Pick another one.</string>
+    <string name="quote_error_deductions">The channel fee plus tax add up to 100% of the sale price, so nothing is left for you. Review the channel fee or the tax in Settings.</string>
+    <string name="quote_error_check_values">Check the values you entered.</string>
+    <string name="quote_blocked_prefix">Not saved:</string>
+    <string name="quote_blocked_incomplete">Not saved: fill in filament, printer, length and time.</string>
+    <string name="quote_blocked_service_price">Not saved: enter the price of each selected service.</string>
+    <string name="quote_blocked_deleted">Not saved: "%1$s" was deleted. Cancel the edit and use Duplicate on a similar order.</string>
+    <string name="quote_photo_unreadable">Couldn't read that image. Try a PNG or JPG.</string>
+    <string name="quote_notice_print_removed">Print %1$d removed.</string>
+    <string name="quote_action_undo">Undo</string>
+    <string name="quote_import_unreadable">Couldn't read that G-code. Check that it's the file exported by the slicer.</string>
+    <string name="quote_import_unsupported_bgcode">Binary G-code (.bgcode) isn't supported yet. In PrusaSlicer, turn off "Binary G-code" in the printer settings and export again.</string>
+    <string name="quote_import_unsupported_sliced_3mf">That's a sliced Bambu Studio file (.gcode.3mf), which the app can't read yet. In Bambu Studio, use "Export G-code" (instead of "Export plate sliced file") and drop the .gcode.</string>
+    <string name="quote_import_unsupported_3mf">That's a project file (.3mf), not G-code. In the slicer, use "Export G-code" and drop the .gcode file.</string>
+    <string name="quote_import_unsupported_other">"%1$s" isn't G-code. Use the .gcode file exported by the slicer.</string>
+    <string name="quote_import_filled">Filled from the G-code: %1$s.</string>
+    <string name="quote_import_filled_per_extruder">usage of each filament</string>
+    <string name="quote_import_filled_length">filament length</string>
+    <string name="quote_import_filled_time">print time</string>
+    <string name="quote_import_filled_photo">model photo</string>
+    <string name="quote_import_filled_settings">print settings</string>
+    <string name="quote_import_nothing_found">Couldn't find length or time in that G-code. Fill them in manually.</string>
+    <string name="quote_import_printer_found">Printer: %1$s.</string>
+    <string name="quote_import_printer_similar">The G-code is for a "%1$s". The closest registered printer is "%2$s". Pick it from the list if it's the one.</string>
+    <string name="quote_import_printer_not_registered">The G-code is for a "%1$s", which isn't registered. Pick one from the list.</string>
+    <string name="quote_import_per_extruder">One filament per extruder: %1$s.</string>
+    <string name="quote_import_extruder_item">%1$d) %2$s</string>
+    <string name="quote_import_extruder_ambiguous">%1$s (%2$d in stock, pick one)</string>
+    <string name="quote_import_extruder_not_registered">%1$s (not in stock list, pick one)</string>
+    <string name="quote_import_extruder_not_registered_vendor">%1$s from %2$s (not in stock list, pick one)</string>
+    <string name="quote_import_extruder_unknown">material not specified (pick one)</string>
+    <string name="quote_import_filament_color">%1$s, color %2$s</string>
+    <plurals name="quote_import_kept_rows">
+        <item quantity="one">The G-code uses %1$d filament but doesn't report its usage. Your filament rows were left as they were.</item>
+        <item quantity="other">The G-code uses %1$d filaments but doesn't report the usage of each. Your filament rows were left as they were.</item>
+    </plurals>
+    <plurals name="quote_import_kept_rows_total">
+        <item quantity="one">The G-code uses %1$d filament but doesn't report its usage (%2$s m in total). Your filament rows were left as they were.</item>
+        <item quantity="other">The G-code uses %1$d filaments but doesn't report the usage of each (%2$s m in total). Your filament rows were left as they were.</item>
+    </plurals>
+    <plurals name="quote_import_merged_rows">
+        <item quantity="one">The G-code uses %1$d filament but doesn't report its usage. The total went into a single row.</item>
+        <item quantity="other">The G-code uses %1$d filaments but doesn't report the usage of each. The total went into a single row. Split it with "Add filament" to charge each one at its own price.</item>
+    </plurals>
+    <string name="quote_import_filament_found">Filament: %1$s.</string>
+    <string name="quote_import_filament_found_color">Filament: %1$s, color %2$s.</string>
+    <plurals name="quote_import_filament_ambiguous">
+        <item quantity="one">There is %1$d %2$s filament in stock. Pick the one you used.</item>
+        <item quantity="other">There are %1$d %2$s filaments in stock. Pick the one you used.</item>
+    </plurals>
+    <string name="quote_import_filament_not_registered">The G-code uses %1$s, which isn't in your stock list.</string>
+    <string name="quote_import_filament_not_registered_vendor">The G-code uses %1$s from %2$s, which isn't in your stock list.</string>
+    <string name="quote_import_photo_kept">This G-code had a photo, but the one you already picked was kept.</string>
+
+    <!-- Quote: form, prints, result panel -->
+    <string name="quote_title_order">New quote</string>
+    <string name="quote_title_product">New product</string>
+    <string name="quote_kind_order">Customer order</string>
+    <string name="quote_kind_product">Catalog product</string>
+    <string name="quote_help_kind_order">A quote for a customer, tracked from Quoted to Delivered.</string>
+    <string name="quote_help_kind_product">An item you offer, with a price and no customer. When someone buys it, just click "Sell".</string>
+    <string name="quote_section_print">Print</string>
+    <string name="quote_section_prints">Prints</string>
+    <string name="quote_section_extras">Labor and extras</string>
+    <string name="quote_section_sale">Sale</string>
+    <string name="quote_section_details">Details</string>
+    <string name="quote_help_details">Photo and deadline appear in the PDF and the message. Contact, model file and link stay with you.</string>
+    <string name="quote_field_name">Part name (optional)</string>
+    <string name="quote_field_quantity">Number of parts</string>
+    <string name="quote_help_quantity">Weight, length and time are for ONE part. The app multiplies by the quantity.</string>
+    <string name="quote_help_quantity_detail">If you sliced the whole plate at once and the numbers already cover the full batch, leave the quantity at 1.</string>
+    <string name="quote_reading">Reading…</string>
+
+    <!-- Quote: saving and operations in progress -->
+    <string name="quote_save_order">Save order</string>
+    <string name="quote_save_product">Save to catalog</string>
+    <string name="quote_save_changes">Save changes</string>
+    <string name="quote_saved_order">Order %1$s saved in Orders.</string>
+    <string name="quote_saved_product">Product %1$s saved in the Catalog.</string>
+    <string name="quote_cannot_save_field">Fix the field marked in red to save.</string>
+    <string name="quote_cannot_save_service">Enter the price of each selected service (or deselect it) to save.</string>
+    <string name="quote_cannot_save_incomplete">Fill in filament, printer, weight (or length) and time, or drop the G-code, to save.</string>
+    <string name="quote_op_editing">Editing "%1$s"</string>
+    <string name="quote_op_editing_numbered">Editing %1$s "%2$s"</string>
+    <string name="quote_op_editing_help_order">Save to update the order. The original creation date is kept. What you were working on in Quote comes back when you're done.</string>
+    <string name="quote_op_editing_help_product">Save to update the product. The original creation date is kept. What you were working on in Quote comes back when you're done.</string>
+    <string name="quote_op_editing_cancel">Cancel edit</string>
+    <string name="quote_op_selling">Selling "%1$s"</string>
+    <string name="quote_op_selling_help">Fill in the customer and deadline, then save the order. The product stays in the catalog, unchanged.</string>
+    <string name="quote_op_selling_cancel">Cancel sale</string>
+    <string name="quote_op_copying">Copying "%1$s" to the catalog</string>
+    <string name="quote_op_copying_help">Review and click "Save to catalog". Negotiated price, shipping, customer and deadline don't come along. The order doesn't change.</string>
+    <string name="quote_op_copying_cancel">Cancel copy</string>
+    <string name="quote_op_duplicating">Duplicating "%1$s"</string>
+    <string name="quote_op_duplicating_help_order">Review the data, fill in the customer and save to create a new order. The original doesn't change.</string>
+    <string name="quote_op_duplicating_help_product">Review the data, fill in the customer and save to create a new product. The original doesn't change.</string>
+    <string name="quote_op_duplicating_cancel">Cancel duplicate</string>
+
+    <!-- Quote: prints -->
+    <string name="quote_print_title">Print %1$d</string>
+    <string name="quote_print_title_named">Print %1$d · %2$s</string>
+    <string name="quote_print_add">Add another print</string>
+    <string name="quote_print_open">Open</string>
+    <string name="quote_print_collapse">Collapse</string>
+    <string name="quote_print_duplicate">Duplicate %1$s</string>
+    <string name="quote_print_remove">Remove %1$s</string>
+    <string name="quote_print_field_name">Print name (optional)</string>
+    <string name="quote_print_name_placeholder">Head, body, base…</string>
+    <string name="quote_print_gcode">G-code for this print</string>
+    <string name="quote_print_settings">Print settings</string>
+    <string name="quote_print_settings_edit">Edit settings</string>
+    <string name="quote_print_summary_cost">cost %1$s</string>
+    <string name="quote_print_summary_empty">No data yet</string>
+    <string name="quote_gcode_undo">Undo G-code import</string>
+    <string name="quote_gcode_hint_label">G-code</string>
+    <string name="quote_drop_one">Drop a G-code here or</string>
+    <string name="quote_drop_many">Drop the G-code files here or</string>
+    <string name="quote_drop_pick">choose the file</string>
+    <string name="quote_help_gcode">Weight, time, photo, printer and filament come from the slicer file.</string>
+    <string name="quote_help_gcode_multi">Each file becomes a print. When you drop it, you can pick which print it replaces.</string>
+    <string name="quote_filament">Filament</string>
+    <string name="quote_filament_n">Filament %1$d</string>
+    <string name="quote_filament_add">Add filament</string>
+    <string name="quote_filament_choose">Choose the filament</string>
+    <string name="quote_filament_not_registered">%1$s (not registered)</string>
+    <string name="quote_filament_remove">Remove filament %1$d</string>
+    <string name="quote_color">Color</string>
+    <string name="quote_color_n">Color %1$d</string>
+    <string name="quote_weight">Weight (g)</string>
+    <string name="quote_weight_n">Weight %1$d (g)</string>
+    <string name="quote_length">Length (m)</string>
+    <string name="quote_length_n">Meters %1$d</string>
+    <string name="quote_mark_archived">(archived)</string>
+    <string name="quote_mark_archived_female">(archived)</string>
+    <string name="quote_mark_out_of_stock">(out of stock)</string>
+    <string name="quote_help_weight_disabled">Choose the filament to enter the weight in grams. The conversion uses its density.</string>
+    <string name="quote_help_multicolor">Multicolor part: each filament has its own usage and price.</string>
+    <string name="quote_help_multicolor_detail">Use the weight or meters the slicer reports for each filament (purge and tower included).</string>
+    <string name="quote_print_time">Print time</string>
+    <string name="quote_print_time_placeholder">3h20 or 200 (minutes)</string>
+    <string name="quote_printer">Printer</string>
+    <string name="quote_printer_choose">Choose the printer</string>
+    <string name="quote_printer_not_registered">%1$s (not registered)</string>
+    <string name="quote_runs">Runs</string>
+    <string name="quote_print_time_runs">%1$s × %2$d</string>
+    <string name="quote_help_runs">How many times this plate runs in the order: 4 identical plates of keychains is one print × 4.</string>
+    <string name="quote_help_runs_detail">This is different from the number of parts, which repeats the whole order. Time and usage here are for one run.</string>
+
+    <!-- Quote: labor, services and supplies -->
+    <string name="quote_labor_label">Your labor</string>
+    <string name="quote_labor_placeholder">1h30 or 90 (minutes)</string>
+    <string name="quote_labor_help_one">The whole order, charged at %1$s/h, without the margin on top.</string>
+    <string name="quote_labor_help_many">Total for the %1$d parts, charged at %2$s/h, without the margin on top. Changed the quantity? Review the time.</string>
+    <string name="quote_labor_help_detail">Not counting machine time: slicing, plate setup, removing the print, removing supports, sanding, painting, packing. The hourly rate can be adjusted in Settings. If finishing is already in the percentage in Settings, don't count it here.</string>
+    <string name="quote_labor_missing">Your labor isn't in the price yet. Enter the time for this order.</string>
+    <string name="quote_extras_services">Services</string>
+    <string name="quote_extras_consumables">Supplies</string>
+    <string name="quote_help_services">The price applies to this order: check the service and enter how much you'll charge for it.</string>
+    <string name="quote_service_suggested">%1$s · suggested %2$s</string>
+    <string name="quote_service_field_value">Price</string>
+    <string name="quote_service_field_value_per_piece">Price per part</string>
+    <string name="quote_service_field_minutes">Time (min)</string>
+    <string name="quote_service_error_required">Enter the price</string>
+    <string name="quote_service_error_not_number">Not a number</string>
+    <string name="quote_service_total">= %1$s</string>
+    <string name="quote_consumable_field_quantity">Qty (%1$s each)</string>
+    <string name="quote_consumable_removed">%1$s (removed from the list)</string>
+
+    <!-- Quote: sale -->
+    <string name="quote_sale_direct">Direct sale (no fee)</string>
+    <string name="quote_sale_field_channel">Sales channel</string>
+    <string name="quote_sale_channel_deleted">%1$s (deleted)</string>
+    <string name="quote_help_channel">The channel fee comes out of what you receive. The price goes up enough to keep your margin the same.</string>
+    <string name="quote_help_channel_detail">The fee applies to everything the customer pays, including services and shipping, the way Etsy, eBay, Amazon and card processors really charge. Set up your channels in Settings.</string>
+    <string name="quote_sale_channel_missing">The channel "%1$s" on this quote no longer exists in your list. The saved price still holds. To recalculate, pick another channel or "Direct sale" above.</string>
+    <string name="quote_sale_field_shipping">Shipping (%1$s, optional)</string>
+    <string name="quote_help_shipping">Its own line in the total, never built into the part price.</string>
+    <string name="quote_help_shipping_detail">Shipping is passed through, not your product: it isn't multiplied by the quantity or counted in the margin. The channel fee and tax apply to it, because the customer pays everything together.</string>
+    <string name="quote_sale_field_client">Customer (optional)</string>
+    <string name="quote_sale_field_contact">Customer contact (optional)</string>
+    <string name="quote_sale_contact_placeholder">(555) 123-4567</string>
+    <string name="quote_help_client_private">Only for you. It doesn't appear in the PDF or the message.</string>
+    <string name="quote_sale_field_target_order">Agreed price (optional)</string>
+    <string name="quote_sale_field_target_product">Listed price (optional)</string>
+    <string name="quote_help_target_order">The total the customer will pay, if different from the calculated one.</string>
+    <string name="quote_help_target_order_detail">Enter the amount the customer offered and see what's left. It becomes the real price of the quote: it goes to the PDF, the history and the Dashboard. Leave it empty to use your margin price.</string>
+    <string name="quote_help_target_product">A round number for the storefront, in place of what the margin gave.</string>
+    <string name="quote_help_target_product_detail">This is the price shown in the catalog, the PDF and the image, and the price the order gets when you click "Sell". Leave it empty to list the calculated price.</string>
+    <string name="quote_sale_round_to">Round to %1$s</string>
+    <string name="quote_sale_announced_price">Listed product price: %1$s. Shipping and services are added on top. Enter an amount in Agreed price to agree on a different price.</string>
+    <string name="quote_sale_free_shipping">Free shipping for the customer (you pay)</string>
+    <string name="quote_sale_free_shipping_hint">Free shipping</string>
+    <string name="quote_help_free_shipping">The customer sees "Free shipping" and the cost comes out of your profit.</string>
+    <string name="quote_sale_rush">Rush order (+%1$s)</string>
+    <string name="quote_sale_rush_suggest">Short deadline: mark as rush?</string>
+
+    <!-- Quote: details, photo and STL -->
+    <string name="quote_details_deadline">Delivery deadline (optional)</string>
+    <plurals name="quote_details_queue">
+        <item quantity="one">In the %1$s queue: %2$s of printing across %3$d approved or printing order. This order takes %4$s.</item>
+        <item quantity="other">In the %1$s queue: %2$s of printing across %3$d approved or printing orders. This order takes %4$s.</item>
+    </plurals>
+    <string name="quote_details_category">Category (optional)</string>
+    <string name="quote_details_category_placeholder">E.g. Keychains, Decor</string>
+    <string name="quote_help_category">Splits the product list and the PDF catalog into sections.</string>
+    <string name="quote_details_link">Model link (optional)</string>
+    <string name="quote_details_open_link">Open link in browser</string>
+    <string name="quote_details_photo_pick">Choose photo</string>
+    <string name="quote_details_photo_label">Photo (optional)</string>
+    <string name="quote_details_photo_remove">Remove photo</string>
+    <string name="quote_details_photo_description">Part photo</string>
+    <string name="quote_details_photo_unavailable">Couldn't show that image.</string>
+    <string name="quote_details_photo_automatic">File thumbnail</string>
+    <string name="quote_details_settings_add">Add print settings</string>
+    <string name="quote_details_settings_edit">Edit print settings</string>
+    <string name="quote_model_label">Model file (optional)</string>
+    <string name="quote_model_attach">Choose file</string>
+    <string name="quote_model_remove">Remove file</string>
+    <string name="quote_model_hint_label">Model file</string>
+    <string name="quote_help_model">STL or 3MF. Kept so you can download it again from Orders or the Catalog.</string>
+    <string name="quote_model_loading">Preparing the 3D preview</string>
+    <string name="quote_model_too_large">This file is too large to preview (%1$d MB). It's stored normally, just without the 3D preview.</string>
+    <string name="quote_model_stl_unreadable">Couldn't read that STL. It may be corrupted.</string>
+    <string name="quote_model_stl_simplified">Simplified preview for faster drawing. Measurements use the full file.</string>
+    <string name="quote_model_3mf_thumbnail">3MF thumbnail</string>
+    <string name="quote_model_3mf_use_as_photo">Use as quote photo</string>
+    <string name="quote_model_3mf_no_thumbnail">This 3MF has no thumbnail.</string>
+    <string name="quote_model_3mf_unreadable">Couldn't read that 3MF.</string>
+    <string name="quote_stl_viewer_label">3D preview</string>
+    <string name="quote_help_stl_viewer">Drag to rotate, use the mouse wheel to zoom.</string>
+    <string name="quote_stl_capture">Capture as quote photo</string>
+    <string name="quote_stl_difficulty">Level: %1$s</string>
+    <string name="quote_stl_difficulty_easy">easy</string>
+    <string name="quote_stl_difficulty_medium">medium</string>
+    <string name="quote_stl_difficulty_hard">hard</string>
+    <string name="quote_stl_analysis_label">STL analysis</string>
+    <string name="quote_help_stl_analysis">Geometric estimates, only to help you decide whether to charge extra for complexity.</string>
+    <string name="quote_help_stl_analysis_detail">Difficulty level and measurements don't replace the slicer and aren't included in the PDF or the copied text.</string>
+    <string name="quote_stl_measures">Area %1$s cm² · volume %2$s cm³ · overhang %3$s · %4$s</string>
+    <plurals name="quote_stl_pieces">
+        <item quantity="one">%1$d piece</item>
+        <item quantity="other">%1$d pieces</item>
+    </plurals>
+    <string name="quote_stl_not_manifold">Warning: this STL file has geometry with holes or flipped normals (non-manifold). It may cause problems when slicing.</string>
+
+    <!-- Quote: deadline and print settings (also used in Orders) -->
+    <string name="quote_deadline_days">+%1$d days</string>
+    <string name="quote_deadline_none">No deadline</string>
+    <string name="quote_deadline_unset">No deadline set.</string>
+    <string name="quote_deadline_until">Delivery by %1$s (%2$s)</string>
+    <string name="quote_deadline_title">Delivery deadline</string>
+    <string name="quote_settings_help">Kept only for you to look up and reuse. It doesn't affect the price or any export.</string>
+    <string name="quote_settings_layer">Layer height (mm)</string>
+    <string name="quote_settings_infill">Infill (%)</string>
+    <string name="quote_settings_pattern">Infill pattern</string>
+    <string name="quote_settings_pattern_placeholder">grid, gyroid</string>
+    <string name="quote_settings_supports">Supports</string>
+    <string name="quote_settings_supports_yes">Yes</string>
+    <string name="quote_settings_supports_no">No</string>
+    <string name="quote_settings_supports_unknown">Not specified</string>
+
+    <!-- Quote: result panel -->
+    <string name="quote_negotiate">Negotiate</string>
+    <string name="quote_negotiate_field">Agreed price</string>
+    <string name="quote_negotiate_clear">Clear agreed price</string>
+    <string name="quote_send">Send to customer</string>
+    <string name="quote_send_whatsapp">Send text on WhatsApp</string>
+    <string name="quote_send_image">Save image for WhatsApp</string>
+    <string name="quote_send_pdf">Export PDF</string>
+    <string name="quote_send_copy">Copy text</string>
+    <string name="quote_result_overline">You charge</string>
+    <string name="quote_result_no_price">-</string>
+    <string name="quote_result_fix_field">Fix the marked field to calculate: %1$s</string>
+    <string name="quote_result_all_out_of_stock">All registered filaments are out. Mark one as "In stock" in Filaments.</string>
+    <string name="quote_result_no_filament">Add a filament in Filaments.</string>
+    <string name="quote_result_no_printer">Add a printer in Printers.</string>
+    <string name="quote_result_filaments_archived">All in-stock filaments are archived. Restore one in Filaments, under Archived.</string>
+    <string name="quote_result_printers_archived">All printers are archived. Restore one in Printers, under Archived.</string>
+    <string name="quote_result_fill_many">Fill in weight (or length) and time for each print to calculate, or drop the G-code files.</string>
+    <string name="quote_result_fill_one">Fill in weight (or length) and time to calculate, or drop the G-code.</string>
+    <plurals name="quote_result_units">
+        <item quantity="one">%1$d unit · %2$s each</item>
+        <item quantity="other">%1$d units · %2$s each</item>
+    </plurals>
+    <plurals name="quote_result_units_extras">
+        <item quantity="one">%1$d unit · %2$s each + %3$s</item>
+        <item quantity="other">%1$d units · %2$s each + %3$s</item>
+    </plurals>
+    <string name="quote_result_extras_both">services and shipping</string>
+    <string name="quote_result_extras_services">services</string>
+    <string name="quote_result_extras_shipping">shipping</string>
+    <string name="quote_result_consumption">Uses %1$s</string>
+    <string name="quote_result_prints">%1$d prints · %2$s of machine time</string>
+    <string name="quote_result_deadline">Delivery by %1$s (%2$s)</string>
+    <plurals name="quote_result_deadline_overdue">
+        <item quantity="one">Delivery %1$s (%2$s) · %3$d day late</item>
+        <item quantity="other">Delivery %1$s (%2$s) · %3$d days late</item>
+    </plurals>
+    <string name="quote_result_calculated">Calculated %1$s</string>
+    <string name="quote_result_minimum_applied">Minimum order price applied (the math gave %1$s)</string>
+    <string name="quote_result_kept">Saved quote price kept.</string>
+    <string name="quote_result_kept_with_today">Saved quote price kept. With today's costs it would be %1$s. Change any value of the part to recalculate.</string>
+    <string name="quote_result_recalculated">Recalculated with today's costs. It was %1$s when saved.</string>
+    <string name="quote_result_profit">Your profit</string>
+    <string name="quote_result_break_even">Break-even</string>
+    <string name="quote_result_loss">Loss: at this price you pay %1$s to print.</string>
+    <string name="quote_result_below_minimum">Below your minimum order price (%1$s).</string>
+    <string name="quote_result_full_account">See the full breakdown</string>
+    <string name="quote_composition_description">Price breakdown</string>
+    <string name="quote_composition_material">Material and machine</string>
+    <string name="quote_composition_labor">Labor and services</string>
+    <string name="quote_composition_fees">Fees and taxes</string>
+    <string name="quote_composition_profit">Profit</string>
+    <string name="quote_account_channel_rate">%1$s %2$s</string>
+    <string name="quote_account_channel_fixed">%1$s (%2$s per item)</string>
+    <string name="quote_account_channel_both">%1$s (%2$s + %3$s per item)</string>
+    <string name="quote_account_tax">tax %1$s</string>
+    <string name="quote_account_and">and</string>
+    <string name="quote_account_absorb">Price already raised to absorb %1$s. The customer pays this amount as usual, and the profit is what's left for you.</string>
+    <string name="quote_account_channel_takes">%1$s takes</string>
+    <string name="quote_account_production">Production cost</string>
+    <string name="quote_account_print_line">%1$s · %2$s</string>
+    <string name="quote_account_order_level">Order level (labor, failures, admin)</string>
+    <string name="quote_account_consumables">Supplies</string>
+    <string name="quote_account_profit">Profit</string>
+    <string name="quote_account_margin">Margin at this price</string>
+    <string name="quote_account_rush">Rush</string>
+    <string name="quote_account_service_times">%1$s (× %2$d)</string>
+    <string name="quote_account_service_yield">· %1$s · earns %2$s/h</string>
+    <string name="quote_account_service_below_rate">pays less than your hourly rate (%1$s/h)</string>
+    <string name="quote_account_shipping">Shipping</string>
+    <string name="quote_account_free_shipping">Free shipping (you pay)</string>
+    <string name="quote_account_minus">− %1$s</string>
+    <string name="quote_account_free_shipping_note">Comes out of your profit.</string>
+    <string name="quote_account_keep_margin">To keep the margin, charge %1$s</string>
+    <string name="quote_account_use_price">Use this price</string>
+    <string name="quote_compare_title">Compare printers</string>
+    <string name="quote_compare_all_on">All on %1$s</string>
+    <string name="quote_compare_cheapest">%1$s (cheapest)</string>
+    <string name="quote_compare_caption_all">All prints on the same machine, at the price your margin gives.</string>
+    <string name="quote_compare_caption_one">Same part, changing only the machine.</string>
+    <string name="quote_help_compare">The difference comes from each printer's power use, maintenance and return on investment.</string>
+
+    <!-- Name the app gives to a saved order with a blank name; %1$s is the date and time. -->
+    <string name="quote_auto_name">Quote - %1$s</string>
+</resources>
