@@ -186,6 +186,23 @@ com uma mensagem pronta, sem sair do app e sem internet.
     2.2.1). O item "Capturas de todas as telas" da Leva 10B é marcado como feito e
     a decisão 140 deixa de dizer "ainda aberto". Só documentação.
 
+### I. Ajustes da revisão de design (aprovados em 2026-11-18)
+
+35. **Selo de pagamento só de Aprovado em diante.** Em Orçado nenhum selo de pagamento
+    aparece (o sinal só é cobrado depois do sim). "Não pago" no tom de atenção a
+    partir de Aprovado; "Pago", "Sinal pago" e "Pago em parte" no neutro. Sem tom
+    positivo novo no kit.
+36. **Configurações > Pedidos usa a barra "Alterações não salvas"** com Salvar, como
+    as outras seções.
+37. **A linha do sinal só aparece enquanto falta o sinal** (`pendingDeposit > 0`).
+    Depois de pago, some do PDF e da mensagem, e o Pix cobra o restante ("Valor:").
+    No PDF, a linha vai pra dentro do quadro do total, sob o valor.
+38. **Na janela "Mensagem pro cliente", o código Pix fica fora do texto editável:**
+    embaixo do campo, só leitura, com a marcação "Incluir o Pix" (aparece só quando
+    há Pix a cobrar; nasce ligada no Lembrete de pagamento e no Aprovado, e
+    desligada nos outros modelos). Ao copiar ou abrir
+    no WhatsApp, o código vai no fim, intacto, sozinho na última linha.
+
 ## Fora de escopo
 
 - Saber se o Pix foi pago (Pix dinâmico, confirmação automática): Leva 18.
