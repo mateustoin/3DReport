@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos em inglês (decisão 154): Sobre e Atualização. -->
+<resources>
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_summary">Free, open-source app for quoting and selling 3D printing. Made by %1$s.</string>
+    <string name="about_does_quote">In Quote, drag the G-code into the window and weight, time, photo, printer and filament come filled in.</string>
+    <string name="about_does_orders">In Orders and Catalog, keep track of what clients ordered and save the products you offer.</string>
+    <string name="about_does_settings">In Settings, adjust costs, sales channels, client documents, theme, currency and backup.</string>
+    <string name="about_link_site">Website</string>
+    <string name="about_link_code">Source code</string>
+    <string name="about_link_support">Support the project</string>
+    <string name="about_link_licenses">Third-party licenses</string>
+    <string name="about_shortcuts_title">Keyboard shortcuts</string>
+    <string name="about_shortcut_screens">Jump straight to each sidebar screen, in order</string>
+    <string name="about_shortcut_screens_keys">Ctrl/Cmd+1 to 9</string>
+    <string name="about_shortcut_save">Save the quote</string>
+    <string name="about_shortcut_save_keys">Ctrl/Cmd+S</string>
+    <string name="about_shortcut_new">Start a new quote</string>
+    <string name="about_shortcut_new_keys">Ctrl/Cmd+N</string>
+    <string name="about_shortcut_close">Close the open form in a registry</string>
+    <string name="about_shortcut_close_keys">Esc</string>
+    <string name="about_updates_title">Updates</string>
+    <string name="about_updates_toggle">Tell me when a new version is out</string>
+    <string name="about_updates_help">When the app opens, it asks GitHub for the latest version.</string>
+    <string name="about_updates_help_detail">Only that request leaves your computer. Your quotes and records stay here.</string>
+    <string name="about_updates_check">Check now</string>
+    <string name="about_updates_checking">Checking…</string>
+    <string name="about_updates_up_to_date">You're on the latest version</string>
+    <string name="about_updates_failed">Couldn't check. Check your internet and try again.</string>
+    <string name="about_updates_available">Version %1$s available</string>
+    <string name="about_updates_see_news">See what's new</string>
+    <string name="about_updates_install_now">Update now</string>
+    <string name="update_title">Update to version %1$s</string>
+    <string name="update_downloading">Downloading the installer</string>
+    <string name="update_downloading_size">%1$d of %2$d MB</string>
+    <string name="update_unsaved_title">Close without saving?</string>
+    <string name="update_verifying">Verifying the file</string>
+    <string name="update_installing">Installing</string>
+    <string name="update_ready_windows">The Windows installer opens and the window closes. Confirm the administrator permission to finish.</string>
+    <string name="update_ready_linux">The system asks for your password. The new version is installed and the app opens again.</string>
+    <string name="update_ready_linux_manual">The file is ready. The folder opens and the install command shows up here.</string>
+    <string name="update_ready_macos">The installer file opens. Drag 3DReport to Applications and replace the current one.</string>
+    <string name="update_password_cancelled">Installation cancelled. Nothing changed.</string>
+    <string name="update_install_and_close">Install and close the app</string>
+    <string name="update_open_folder">Open the folder</string>
+    <string name="update_unsaved">There are unsaved changes. They're lost when the app closes.</string>
+    <string name="update_install_anyway">Install anyway</string>
+    <string name="update_back">Back</string>
+    <string name="update_manual_message">The folder with the file opened. To install, run this in the terminal:</string>
+    <string name="update_copy_command">Copy command</string>
+    <string name="update_error_network">Couldn't download the update. Check your internet.</string>
+    <string name="update_error_no_checksums">This version has no checksum file. Download it from the release page.</string>
+    <string name="update_error_checksum_mismatch">The downloaded file failed verification and was deleted. Nothing was installed.</string>
+    <string name="update_error_install">Couldn't install. Nothing changed.</string>
+    <string name="about_updates_announce">3DReport version %1$s available.</string>
+</resources>
