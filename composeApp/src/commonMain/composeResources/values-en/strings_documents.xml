@@ -43,14 +43,14 @@
     <string name="client_doc_print_time">Print time: %1$s</string>
     <string name="client_doc_print_time_pieces">%1$s (%2$s)</string>
     <plurals name="client_doc_pieces">
-        <item quantity="one">%1$d piece</item>
-        <item quantity="other">%1$d pieces</item>
+        <item quantity="one">%1$d part</item>
+        <item quantity="other">%1$d parts</item>
     </plurals>
     <string name="client_doc_title_numbered">%1$s · %2$s</string>
     <string name="client_doc_title_auto_order">Quote</string>
     <string name="client_doc_title_auto_order_numbered">Quote %1$s</string>
     <string name="client_doc_title_auto_product">Product</string>
-    <string name="client_doc_to">To: %1$s</string>
+    <string name="client_doc_to">For: %1$s</string>
     <string name="client_doc_kit">Kit with %1$s</string>
     <string name="client_doc_order_number">Order %1$s</string>
     <string name="client_doc_issued">Issued on %1$s</string>
@@ -78,9 +78,9 @@
     <string name="client_doc_pix_code_label">Pix copy and paste</string>
     <string name="client_doc_receipt_title">Receipt</string>
     <string name="client_doc_receipt_title_numbered">Receipt %1$s</string>
-    <string name="client_doc_receipt_body">Received from %1$s the amount of %2$s (%3$s) on %4$s, for %5$s.</string>
-    <string name="client_doc_receipt_body_anonymous">Received the amount of %1$s (%2$s) on %3$s, for %4$s.</string>
-    <string name="client_doc_receipt_reference_numbered">order %1$s, %2$s</string>
+    <string name="client_doc_receipt_body">Received %2$s from %1$s by %3$s on %4$s for %5$s.</string>
+    <string name="client_doc_receipt_body_anonymous">Received %1$s by %2$s on %3$s for %4$s.</string>
+    <string name="client_doc_receipt_reference_numbered">order %1$s (%2$s)</string>
     <string name="client_doc_receipt_reference_plain">%1$s</string>
     <string name="client_doc_receipt_total">Order total</string>
     <string name="client_doc_receipt_paid">Paid so far</string>

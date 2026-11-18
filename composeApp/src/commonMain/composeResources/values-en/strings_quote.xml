@@ -223,8 +223,8 @@
     <!-- Quote: details, photo and STL -->
     <string name="quote_details_deadline">Delivery deadline (optional)</string>
     <plurals name="quote_details_queue">
-        <item quantity="one">In the %1$s queue: %2$s of printing across %3$d approved or printing order. This order takes %4$s.</item>
-        <item quantity="other">In the %1$s queue: %2$s of printing across %3$d approved or printing orders. This order takes %4$s.</item>
+        <item quantity="one">%1$s queue: %2$s in %3$d order. This one takes %4$s.</item>
+        <item quantity="other">%1$s queue: %2$s in %3$d orders. This one takes %4$s.</item>
     </plurals>
     <string name="quote_details_category">Category (optional)</string>
     <string name="quote_details_category_placeholder">E.g. Keychains, Decor</string>
@@ -264,8 +264,8 @@
     <string name="quote_help_stl_analysis_detail">Difficulty level and measurements don't replace the slicer and aren't included in the PDF or the copied text.</string>
     <string name="quote_stl_measures">Area %1$s cm² · volume %2$s cm³ · overhang %3$s · %4$s</string>
     <plurals name="quote_stl_pieces">
-        <item quantity="one">%1$d piece</item>
-        <item quantity="other">%1$d pieces</item>
+        <item quantity="one">%1$d part</item>
+        <item quantity="other">%1$d parts</item>
     </plurals>
     <string name="quote_stl_not_manifold">Warning: this STL file has geometry with holes or flipped normals (non-manifold). It may cause problems when slicing.</string>
 

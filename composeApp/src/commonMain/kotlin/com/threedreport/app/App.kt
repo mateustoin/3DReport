@@ -110,6 +110,7 @@ import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsSection
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.spacing
+import com.threedreport.core.model.Currency
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -391,10 +392,11 @@ private fun AppContent(
                     currentSettings = settingsRepository.settings.value,
                     onFinish = { settings, printer ->
                         settingsRepository.update(settings)
-                        printer?.let { applyOnboardingPrinter(printerRepository, it) }
+                        printer?.let { applyOnboardingPrinter(printerRepository, it, withReferencePrice = currency == Currency.BRL) }
                         onboardingRepository.markCompleted()
                     },
                     onSkip = onboardingRepository::markCompleted,
+                    onCurrencyChange = viewModels.currencyViewModel::setCurrency,
                 )
             }
 
@@ -436,9 +438,9 @@ private fun AppContent(
  * A impressora respondida no onboarding vai pra primeira impressora cadastrada (a de exemplo, numa
  * instalação nova): o modelo troca nome, consumo médio, manutenção e preço de referência, e o valor digitado troca o preço.
  */
-private fun applyOnboardingPrinter(repository: PrinterRepository, choice: OnboardingPrinter) {
+private fun applyOnboardingPrinter(repository: PrinterRepository, choice: OnboardingPrinter, withReferencePrice: Boolean) {
     val printer = repository.printers.value.firstOrNull() ?: return
-    repository.update(printer.withPreset(choice.preset, choice.machinePrice))
+    repository.update(printer.withPreset(choice.preset, choice.machinePrice, withReferencePrice))
 }
 
 /**

@@ -71,7 +71,7 @@ class OnboardingViewModel(
     currency: Currency = Currency.BRL,
 ) {
 
-    private val separator = currency.decimalSeparator
+    private var separator = currency.decimalSeparator
 
     private val state = MutableStateFlow(
         OnboardingUiState(
@@ -86,6 +86,18 @@ class OnboardingViewModel(
     fun setEnergy(text: String) = edit { it.copy(energyText = text) }
     fun setLabor(text: String) = edit { it.copy(laborText = text) }
     fun setMargin(text: String) = edit { it.copy(marginText = text) }
+
+    /**
+     * A moeda mudou no passo 1 (decisão 16a da Leva 11B): os valores em dinheiro já digitados ou sugeridos são relidos com o
+     * separador antigo e reescritos com o da moeda nova, e os erros são refeitos.
+     */
+    fun setCurrency(currency: Currency) {
+        val old = separator
+        if (currency.decimalSeparator == old) return
+        separator = currency.decimalSeparator
+        fun convert(text: String): String = parseDecimal(text, NumberKind.MEASURE, old)?.toInputText(separator) ?: text
+        edit { it.copy(machinePriceText = convert(it.machinePriceText), energyText = convert(it.energyText), laborText = convert(it.laborText)) }
+    }
 
     /** Segue pro passo dos custos, se as respostas do passo atual estão certas. */
     fun next() {

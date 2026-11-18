@@ -169,10 +169,11 @@ fun printerPresetsMatching(query: String): List<PrinterPreset> =
  * Aplica [preset] numa impressora já cadastrada (a de exemplo, no primeiro uso): nome, consumo médio, manutenção da
  * faixa, preço e o uso típico ([PrinterUsageDefaults]), como num cadastro novo. O preço é o que a pessoa digitou
  * ([machinePrice]); sem ele, o de referência do preset; sem nenhum, o que a impressora já tinha. Sem [preset], só o
- * preço digitado muda e o resto fica como estava.
+ * preço digitado muda e o resto fica como estava. O preço de referência é em reais: com [withReferencePrice] falso (moeda
+ * padrão fora do real, decisão 16b da Leva 11B) ele não entra.
  */
-fun PrinterProfile.withPreset(preset: PrinterPreset?, machinePrice: Double?): PrinterProfile {
-    val price = machinePrice ?: preset?.referencePrice
+fun PrinterProfile.withPreset(preset: PrinterPreset?, machinePrice: Double?, withReferencePrice: Boolean = true): PrinterProfile {
+    val price = machinePrice ?: preset?.referencePrice?.takeIf { withReferencePrice }
     val investment = if (preset == null) {
         machineInvestment
     } else {

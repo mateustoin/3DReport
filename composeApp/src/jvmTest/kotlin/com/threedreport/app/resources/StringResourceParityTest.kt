@@ -1,5 +1,7 @@
 package com.threedreport.app.resources
 
+import com.threedreport.core.message.MessagePlaceholder
+import com.threedreport.core.model.OrderSettings
 import org.w3c.dom.Element
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
@@ -58,7 +60,10 @@ class StringResourceParityTest {
         (0 until childNodes.length).map { childNodes.item(it) }.filterIsInstance<Element>()
 
     /** Os marcadores de um texto, sem repetição: `%1$s`, `%2$d` e os `{cliente}` dos modelos de mensagem. */
-    private fun markers(text: String): Set<String> = MARKER.findAll(text).map { it.value }.toSet()
+    private fun markers(text: String): Set<String> = MARKER.findAll(text).map { canonical(it.value) }.toSet()
+
+    /** O nome em português do marcador: `{customer}` e `{cliente}` são o mesmo (decisão 16e da Leva 11B). */
+    private fun canonical(marker: String): String = ALIASES[marker] ?: marker
 
     private fun portuguese(): Texts = read("values") ?: fail("sem a pasta values/ em ${resourcesDir.absolutePath}")
 
@@ -130,6 +135,10 @@ class StringResourceParityTest {
          * `values/` precisa existir em inglês, e o build falha se faltar alguma.
          */
         const val EVERY_KEY_TRANSLATED = true
+
+        /** Cada nome em inglês e o gravado em português: os marcadores de mensagem e o `{code}` do rastreio. */
+        val ALIASES: Map<String, String> =
+            MessagePlaceholder.entries.associate { it.englishToken to it.token } + (OrderSettings.ENGLISH_CODE_MARKER to OrderSettings.CODE_MARKER)
 
         val MARKER = Regex("""%\d+\$[sd]|\{[a-z_]+\}""")
         val UNNUMBERED = Regex("""%[sd]""")

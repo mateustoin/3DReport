@@ -32,6 +32,7 @@ import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toWholeCurrencyText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
+import com.threedreport.core.model.Currency
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -62,7 +63,7 @@ fun PrinterPresetDialog(onPick: (PrinterPreset) -> Unit, onDismiss: () -> Unit) 
             filtered.forEach { preset ->
                 ListRow(
                     title = preset.displayName,
-                    details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.toWholeCurrencyText(currency)),
+                    details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.takeIf { currency == Currency.BRL }?.toWholeCurrencyText(currency)),
                     onClick = { onPick(preset) },
                     actions = listOf(RowAction(AppIcons.Check, stringResource(Res.string.printers_presets_use), { onPick(preset) }, skipTab = true)),
                 )

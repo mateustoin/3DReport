@@ -131,7 +131,15 @@ class LocalStorage(
 
     fun backup(): BackupRepository = LocalBackupRepository(dataDir)
 
+    /**
+     * Se esta pasta ainda não tem dado nenhum: uma instalação nova (decisão 16a da Leva 11B). Lê antes de qualquer repositório
+     * gravar, e quem já usa o app (qualquer arquivo de dados) fica de fora.
+     */
+    fun isNewInstall(): Boolean = INSTALL_MARKERS.none { File(dataDir, it).exists() }
+
     companion object {
+        private val INSTALL_MARKERS = listOf("onboarding.json", "currency.json", "settings.json", "quotes.json", "filaments.json", "printers.json")
+
         const val ATTACHMENTS_DIR = "attachments"
 
         /** O modelo do nome automático ("Orçamento - %1$s") e o idioma em que foi lido, lido uma vez por idioma e guardado. */

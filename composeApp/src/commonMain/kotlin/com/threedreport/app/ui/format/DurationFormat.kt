@@ -74,11 +74,17 @@ suspend fun loadDurationTexts(): DurationTexts = DurationTexts(
 
 /** "6 h 30 min" na tela (ver [DurationTexts.duration]). */
 @Composable
-fun Double.minutesToDurationText(): String = durationTexts().duration(this)
+fun Double.minutesToDurationText(): String = durationTexts().duration(this).withNoBreakSpaces()
 
 /** "12,5 h" na tela (ver [DurationTexts.decimalHours]). */
 @Composable
-fun Double.minutesToHoursText(): String = durationTexts().decimalHours(this)
+fun Double.minutesToHoursText(): String = durationTexts().decimalHours(this).withNoBreakSpaces()
+
+/**
+ * Os espaços viram espaço que não quebra (decisão 16 da Leva 11B): "6 h 20 min" não pode partir no meio na tela. Só na tela;
+ * o PDF, a mensagem e a imagem seguem com o espaço comum.
+ */
+private fun String.withNoBreakSpaces(): String = replace(' ', ' ')
 
 /**
  * Lê um tempo digitado, em minutos (decisão 107): "200" (minutos), "3h20", "3h 20min", "3:20", "3h",

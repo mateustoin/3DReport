@@ -176,7 +176,7 @@
     <string name="history_notice_notify_client">Notify customer</string>
     <string name="history_notice_pix_copied">Pix code copied.</string>
     <string name="history_notice_tracking_copied">Tracking code copied.</string>
-    <string name="history_menu_message">Message to customer</string>
+    <string name="history_menu_message">Message customer</string>
     <string name="history_menu_copy_pix">Copy Pix code</string>
     <string name="history_menu_payments">Payments</string>
     <string name="history_menu_tracking_open">Track package</string>

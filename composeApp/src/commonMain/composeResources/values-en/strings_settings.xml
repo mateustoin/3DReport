@@ -68,7 +68,7 @@
     <string name="settings_energy_mode_flag">Rate plus surcharge</string>
     <string name="settings_energy_mode_white">Time-of-use rate</string>
     <string name="settings_energy_field_bill_total">Bill total</string>
-    <string name="settings_energy_field_bill_kwh">Usage for the month (kWh)</string>
+    <string name="settings_energy_field_bill_kwh">Monthly usage (kWh)</string>
     <string name="settings_energy_help_bill">The most accurate way: the bill already includes taxes and surcharges.</string>
     <string name="settings_energy_field_flag_tariff">Rate per kWh</string>
     <string name="settings_energy_field_flag_surcharge">Surcharge per kWh</string>
@@ -157,7 +157,7 @@
     <string name="settings_docs_print_time">Print time in the PDF and message</string>
     <string name="settings_docs_print_time_help">Print time is the machine time of the order (e.g. "6 h 30 min").</string>
     <string name="settings_docs_print_time_help_detail">It helps the customer understand the work, but it can also become an argument for a discount, so it starts off.</string>
-    <string name="settings_docs_client_name">Customer name in the PDF ("For: Maria")</string>
+    <string name="settings_docs_client_name">Customer name in the PDF ("For: Emma")</string>
     <string name="settings_docs_field_validity">Quote validity (days)</string>
     <string name="settings_docs_validity_help">The PDF says "Valid until" the issue date plus these days, so a customer who comes back months later can't ask for the old price.</string>
     <string name="settings_docs_validity_help_detail">Leave it at 0 to hide it.</string>
@@ -255,7 +255,15 @@
     <string name="settings_docs_pix_missing_city">the city</string>
     <string name="settings_docs_messages_title">Ready-made messages</string>
     <string name="settings_docs_messages_help">Placeholders: %1$s</string>
-    <string name="settings_docs_messages_help_detail">Anything in square brackets disappears when the data is missing. In [ by {prazo}], if the order has no deadline, the whole part is left out.</string>
+    <string name="message_placeholder_meaning_client">customer name</string>
+    <string name="message_placeholder_meaning_order">order number</string>
+    <string name="message_placeholder_meaning_part">part name</string>
+    <string name="message_placeholder_meaning_due">delivery date</string>
+    <string name="message_placeholder_meaning_total">total price</string>
+    <string name="message_placeholder_meaning_balance">balance due</string>
+    <string name="message_placeholder_meaning_tracking">tracking code</string>
+    <string name="message_placeholder_meaning_shop">shop name</string>
+    <string name="settings_docs_messages_help_detail">Anything in square brackets disappears when the data is missing. In [ by {due}], if the order has no deadline, the whole part is left out.</string>
     <string name="settings_docs_messages_reset">Back to default text</string>
     <string name="settings_section_orders">Orders</string>
     <string name="settings_orders_deposit">Default deposit (%)</string>
@@ -263,7 +271,7 @@
     <string name="settings_orders_stale">Highlight a waiting quote after (days)</string>
     <string name="settings_orders_stale_help">0 turns the highlight off.</string>
     <string name="settings_orders_tracking">Tracking website</string>
-    <string name="settings_orders_tracking_help">Use {codigo} where the code goes. Empty means no link.</string>
+    <string name="settings_orders_tracking_help">Use {code} where the code goes. Empty means no link.</string>
     <string name="settings_orders_tracking_default">Use the default site (Correios, Brazil)</string>
     <string name="settings_orders_error_deposit">The deposit goes from 0 to 100.</string>
     <string name="settings_orders_error_days">Use a whole number from 0 to %1$d.</string>

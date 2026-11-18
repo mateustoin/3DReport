@@ -15,7 +15,7 @@
     <string name="consumables_field_name_hint">Keyring ring</string>
     <string name="consumables_field_cost">Cost per unit (%1$s)</string>
     <string name="consumables_help_cost">The cost goes into the price, like material.</string>
-    <string name="consumables_help_charge">One ring per keychain is per piece. A box for the whole shipment is once per order.</string>
+    <string name="consumables_help_charge">One ring per keychain is per part. A box for the whole shipment is once per order.</string>
     <string name="consumables_error_cost_required">Enter the cost</string>
     <string name="consumables_notice_saved">Supply saved</string>
     <string name="consumables_notice_archived">Supply archived</string>
@@ -37,10 +37,10 @@
     <string name="services_field_price">Suggested price (%1$s)</string>
     <string name="services_field_minutes">Your time (min)</string>
     <string name="services_field_minutes_hint">1h30 or 90</string>
-    <string name="services_help_price">Leave blank if the price changes with every piece.</string>
+    <string name="services_help_price">Leave blank if the price changes with every part.</string>
     <string name="services_help_price_detail">This is the price charged to the customer, and it goes into the quote when you pick the service. Marketplace fees are in Settings.</string>
     <string name="services_help_minutes">With your time, the quote suggests a price based on your hourly rate.</string>
-    <string name="services_help_charge">Painting and sanding are usually per piece. Shipping and modeling are once per order.</string>
+    <string name="services_help_charge">Painting and sanding are usually per part. Shipping and modeling are once per order.</string>
     <string name="services_error_minutes_invalid">Enter a time, like 1h30 or 90</string>
     <string name="services_notice_saved">Service saved</string>
     <string name="services_notice_archived">Service archived</string>
@@ -78,7 +78,7 @@
     <string name="filaments_field_color_stock">Stock</string>
     <string name="filaments_color_block">Color %1$d</string>
     <string name="filaments_color_unnamed">Unnamed</string>
-    <string name="filaments_color_out_of_stock">out</string>
+    <string name="filaments_color_out_of_stock">Out of stock</string>
     <string name="filaments_in_stock">In stock</string>
     <string name="filaments_out_of_stock">Out</string>
     <string name="filaments_help_colors">Several colors of the same filament (same brand and price), each with its own stock.</string>
@@ -86,7 +86,7 @@
     <string name="filaments_help_density_varies">Varies by manufacturer and fillers. Check the spool's datasheet.</string>
     <string name="filaments_row_price">%1$s/kg</string>
     <string name="filaments_row_specs">%1$s g/cm³ · %2$s mm</string>
-    <string name="filaments_row_out_of_stock">out</string>
+    <string name="filaments_row_out_of_stock">Out of stock</string>
     <string name="filaments_notice_saved">Filament saved</string>
     <string name="filaments_notice_archived">Filament archived</string>
     <string name="filaments_notice_restored">Filament restored</string>
@@ -129,6 +129,7 @@
     <string name="printers_help_power_detail">A plug-in power meter gives the exact number.</string>
     <string name="printers_notice_reference">Reference values to get you started. Replace them with your machine's.</string>
     <string name="printers_notice_reference_help">Average power draw, average price in Brazil (%1$s) and estimated maintenance.</string>
+    <string name="printers_notice_reference_help_no_price">Average power draw and estimated maintenance.</string>
     <string name="printers_notice_reference_help_detail">For a more accurate price, use what you paid, the power draw measured with a plug-in meter and the hours your machine runs.</string>
     <string name="printers_help_maintenance">Nozzles, belts, PTFE and other wear parts, divided by the hours they last.</string>
     <string name="printers_summary_label">Cost per hour</string>
@@ -170,7 +171,7 @@
     <string name="printers_presets_use">Use</string>
     <string name="printers_presets_none">No printers found for "%1$s".</string>
     <string name="printers_maintenance_title">Maintenance: %1$s</string>
-    <string name="printers_maintenance_known_hours">%1$s of known use</string>
+    <string name="printers_maintenance_known_hours">%1$s logged</string>
     <string name="printers_maintenance_help_known_hours">Machine hours the app knows about for this printer.</string>
     <string name="printers_maintenance_help_known_hours_detail">Ready or delivered orders on it, plus the extra hours logged here.</string>
     <string name="printers_maintenance_components">Components</string>
@@ -184,10 +185,10 @@
     <string name="printers_maintenance_field_interval">Every (hours of use)</string>
     <string name="printers_maintenance_field_hours_since">Hours since last time</string>
     <string name="printers_maintenance_help_hours_since">Leave blank if the part is new or was just replaced.</string>
-    <string name="printers_maintenance_log">Log</string>
+    <string name="printers_maintenance_log">History</string>
     <string name="printers_maintenance_help_log">Logged by mistake? Deleting a component's latest maintenance puts its counter back where it was.</string>
     <string name="printers_maintenance_log_add">Log maintenance</string>
-    <string name="printers_maintenance_log_submit">Log</string>
+    <string name="printers_maintenance_log_submit">Save</string>
     <string name="printers_maintenance_log_entry">%1$s · %2$s</string>
     <string name="printers_maintenance_log_entry_component">%1$s · %2$s (%3$s)</string>
     <string name="printers_maintenance_field_description">What was done</string>
@@ -200,7 +201,7 @@
     <string name="printers_maintenance_help_usage">Calibration, failed reprints and personal use also wear the machine. Log them here so the alert isn't late.</string>
     <string name="printers_maintenance_field_hours">Hours</string>
     <string name="printers_maintenance_field_reason">Reason</string>
-    <string name="printers_maintenance_usage_submit">Log</string>
+    <string name="printers_maintenance_usage_submit">Add hours</string>
     <string name="printers_maintenance_usage_entry">%1$s · %2$s · %3$s</string>
     <string name="printers_maintenance_suggestion_nozzle">Nozzle</string>
     <string name="printers_maintenance_suggestion_rods">Lubricate rods</string>

@@ -77,7 +77,7 @@ class OrderSettingsViewModel(
     private fun OrderSettings.toUiState() = OrderSettingsUiState(
         depositPercentText = (defaultDepositRate * 100).toInputText(AppLocale.decimalSeparator),
         staleDaysText = staleQuoteDays.toString(),
-        trackingUrlText = effectiveTrackingUrlTemplate,
+        trackingUrlText = effectiveTrackingUrlTemplate(currency()),
     )
 
     private fun publish(next: OrderSettingsUiState) {
@@ -96,7 +96,7 @@ class OrderSettingsViewModel(
     fun setTrackingUrl(text: String) = publish(state.value.copy(trackingUrlText = text))
 
     /** "Usar o site dos Correios": o padrão do app volta pro rascunho. */
-    fun useDefaultTracking() = setTrackingUrl(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE)
+    fun useDefaultTracking() = setTrackingUrl(OrderSettings.defaultTrackingUrlTemplate(currency()))
 
     /** Volta o rascunho pro que está gravado ("Descartar" da barra de alterações). */
     fun discard() = publish(baseline.toUiState())

@@ -16,8 +16,10 @@ import com.threedreport.app.ui.components.AppNumberField
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.text.asString
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.OrderSettings
 import org.jetbrains.compose.resources.stringResource
 
@@ -59,7 +61,8 @@ internal fun OrdersSection(viewModel: OrderSettingsViewModel) {
             )
         }
     }
-    if (state.trackingUrlText.trim() != OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE) {
+    // Os Correios só valem com a moeda padrão em real (decisão 16b da Leva 11B): fora dela o botão some.
+    if (LocalCurrency.current == Currency.BRL && state.trackingUrlText.trim() != OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE) {
         AppButton(stringResource(Res.string.settings_orders_tracking_default), viewModel::useDefaultTracking)
     }
 }

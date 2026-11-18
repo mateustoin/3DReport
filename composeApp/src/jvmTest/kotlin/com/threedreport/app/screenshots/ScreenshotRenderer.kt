@@ -1076,7 +1076,7 @@ private fun productSeeds() = listOf(
         gcodeFile = "Articulated_Keychains_PLA_4h57m.gcode",
     ),
     ProductSeed(
-        sample("Suporte de fone (over-ear)", "Headphone stand"), sample("Acessórios", "Accessories"), Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.BAMBU_ID,
+        sample("Suporte de fone (over-ear)", "Headset stand"), sample("Acessórios", "Accessories"), Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.BAMBU_ID,
         gcodeFile = "smartphone_holder_PLA_1h15m.gcode",
     ),
     ProductSeed(

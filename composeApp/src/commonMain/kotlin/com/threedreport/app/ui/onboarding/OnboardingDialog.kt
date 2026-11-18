@@ -27,9 +27,11 @@ import _3dreport.composeapp.generated.resources.onboarding_model_other
 import _3dreport.composeapp.generated.resources.onboarding_printer_title
 import _3dreport.composeapp.generated.resources.onboarding_step
 import _3dreport.composeapp.generated.resources.onboarding_title
+import _3dreport.composeapp.generated.resources.settings_appearance_currency
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -49,6 +51,7 @@ import com.threedreport.app.ui.printers.PRINTER_PRESETS
 import com.threedreport.app.ui.printers.PrinterPreset
 import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.appType
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.PricingSettings
 import org.jetbrains.compose.resources.stringResource
 
@@ -63,11 +66,13 @@ fun OnboardingDialog(
     currentSettings: PricingSettings,
     onFinish: (PricingSettings, OnboardingPrinter?) -> Unit,
     onSkip: () -> Unit,
+    onCurrencyChange: (Currency) -> Unit = {},
 ) {
     val currency = LocalCurrency.current
     // Sem chave: as configurações mudarem com o diálogo aberto não pode recriar o ViewModel e apagar o que se digitou.
     val viewModel = remember { OnboardingViewModel(currentSettings, currency) }
     val state by viewModel.uiState.collectAsState()
+    LaunchedEffect(currency) { viewModel.setCurrency(currency) }
     val symbol = currency.symbol
     val last = state.step == OnboardingStep.COSTS
 
@@ -96,6 +101,15 @@ fun OnboardingDialog(
         )
         when (state.step) {
             OnboardingStep.PRINTER -> FormSection(null, stringResource(Res.string.onboarding_printer_title)) {
+                // A moeda sugerida pela região do sistema, pra trocar já no começo (decisão 16a da Leva 11B).
+                AppDropdownField(
+                    label = stringResource(Res.string.settings_appearance_currency),
+                    items = Currency.entries,
+                    selected = currency,
+                    itemLabel = { "${it.code} (${it.symbol})" },
+                    displayText = { "${it.code} (${it.symbol})" },
+                    onSelect = onCurrencyChange,
+                )
                 val other = stringResource(Res.string.onboarding_model_other)
                 val preset = state.preset
                 AppDropdownField(

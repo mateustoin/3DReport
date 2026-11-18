@@ -196,4 +196,33 @@ class MessageTemplateTest {
         assertNull(paid[MessagePlaceholder.REMAINING])
         assertNull(paid[MessagePlaceholder.STORE])
     }
+
+    // Decisão 16e da Leva 11B: cada marcador aceita o nome em português e em inglês.
+    @Test
+    fun englishAndPortugueseNamesFillTheSame() {
+        val values = MessagePlaceholder.entries.associateWith { "<${it.name}>" }
+        for (placeholder in MessagePlaceholder.entries) {
+            assertEquals("<${placeholder.name}>", fillMessageTemplate(placeholder.token, values))
+            assertEquals("<${placeholder.name}>", fillMessageTemplate(placeholder.englishToken, values))
+        }
+        assertEquals(
+            "Hi, Emma! Order #3 (Vase), due 11/20, balance $5.",
+            fill(
+                "Hi, {customer}! Order {pedido} ({part}), due {due}, balance {balance}.",
+                MessagePlaceholder.CLIENT to "Emma",
+                MessagePlaceholder.ORDER to "#3",
+                MessagePlaceholder.PIECE to "Vase",
+                MessagePlaceholder.DEADLINE to "11/20",
+                MessagePlaceholder.REMAINING to "$5",
+            ),
+        )
+    }
+
+    @Test
+    fun optionalPartsWorkWithEnglishNames() {
+        assertEquals("Hi!", fill("Hi[, {customer}]!"))
+        assertEquals("Hi, Emma!", fill("Hi[, {customer}]!", MessagePlaceholder.CLIENT to "Emma"))
+        assertEquals("{customer}", MessagePlaceholder.CLIENT.tokenFor(english = true))
+        assertEquals("{cliente}", MessagePlaceholder.CLIENT.tokenFor(english = false))
+    }
 }

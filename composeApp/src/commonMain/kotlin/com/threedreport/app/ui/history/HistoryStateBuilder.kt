@@ -119,7 +119,7 @@ internal class HistoryStateBuilder(
                 messageKind = if (order) MessageTemplateKind.forOrder(quote) else null,
                 // Só a pergunta "há Pix?": o código inteiro (com o CRC) é montado quando alguém copia ou exporta.
                 hasPix = order && pixReceiver != null && quote.pixCharge != null,
-                trackingUrl = quote.trackingCode?.takeIf { order && it.isNotBlank() }?.let { orderSettings.trackingUrl(it) },
+                trackingUrl = quote.trackingCode?.takeIf { order && it.isNotBlank() }?.let { orderSettings.trackingUrl(it, currency()) },
             )
         }
 

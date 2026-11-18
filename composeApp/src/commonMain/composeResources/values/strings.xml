@@ -232,6 +232,7 @@
     <string name="printers_help_power_detail">Um medidor de tomada dá o número certo.</string>
     <string name="printers_notice_reference">Valores de referência pra começar. Troque pelos da sua máquina.</string>
     <string name="printers_notice_reference_help">Consumo médio, preço de %1$s e manutenção estimada.</string>
+    <string name="printers_notice_reference_help_no_price">Consumo médio e manutenção estimada.</string>
     <string name="printers_notice_reference_help_detail">Pra um preço mais certo, troque pelo que você pagou, pelo consumo medido com um medidor de tomada e pelas horas que a sua máquina roda.</string>
     <string name="printers_help_maintenance">Bicos, correias, PTFE e peças que gastam, divididos pelas horas que duram.</string>
     <string name="printers_summary_label">Custo por hora</string>
@@ -1172,7 +1173,7 @@
 
     <!-- Primeiro uso -->
     <string name="onboarding_title">Boas-vindas ao 3DReport</string>
-    <string name="onboarding_help">Perguntas rápidas pra o app sair do jeito do seu negócio. Dá pra mudar tudo depois em Configurações e Impressoras.</string>
+    <string name="onboarding_help">Perguntas rápidas pra o app sair do jeito do seu negócio. Os valores sugeridos são exemplos: troque pelos seus. Dá pra mudar tudo depois em Configurações e Impressoras.</string>
     <string name="onboarding_step">Passo %1$d de %2$d</string>
     <string name="onboarding_printer_title">Qual a sua impressora?</string>
     <string name="onboarding_costs_title">Seus custos e sua margem</string>
@@ -1341,6 +1342,14 @@
     <string name="settings_docs_pix_missing_city">a cidade</string>
     <string name="settings_docs_messages_title">Mensagens prontas</string>
     <string name="settings_docs_messages_help">Marcadores: %1$s</string>
+    <string name="message_placeholder_meaning_client">nome do cliente</string>
+    <string name="message_placeholder_meaning_order">número do pedido</string>
+    <string name="message_placeholder_meaning_part">nome da peça</string>
+    <string name="message_placeholder_meaning_due">prazo de entrega</string>
+    <string name="message_placeholder_meaning_total">valor total</string>
+    <string name="message_placeholder_meaning_balance">o que falta pagar</string>
+    <string name="message_placeholder_meaning_tracking">código de rastreio</string>
+    <string name="message_placeholder_meaning_shop">nome da loja</string>
     <string name="settings_docs_messages_help_detail">O que está entre colchetes some quando falta o dado. Em [ até {prazo}], se o pedido não tem prazo, o trecho inteiro sai.</string>
     <string name="settings_docs_messages_reset">Voltar ao texto padrão</string>
     <string name="message_kind_approved">Aprovado</string>

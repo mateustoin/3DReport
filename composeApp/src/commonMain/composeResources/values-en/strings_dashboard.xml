@@ -34,7 +34,7 @@
     <string name="dashboard_col_sales">Sales</string>
     <string name="dashboard_col_profit">Profit</string>
     <string name="dashboard_col_per_hour">Per hour</string>
-    <string name="dashboard_open_title">Open</string>
+    <string name="dashboard_open_title">Open quotes</string>
     <string name="dashboard_open_help">Quotes the customer hasn't approved yet. They become sales when moved to Approved, in Orders. They're left out of the totals.</string>
     <plurals name="dashboard_open_quotes">
         <item quantity="one">%1$d quote waiting for a reply</item>
@@ -63,7 +63,7 @@
     <string name="dashboard_catalog_products">Products</string>
     <string name="dashboard_catalog_price_range">Price range</string>
     <string name="dashboard_price_range">%1$s to %2$s</string>
-    <string name="dashboard_catalog_ranking_title">Which to offer first</string>
+    <string name="dashboard_catalog_ranking_title">What to sell first</string>
     <string name="dashboard_catalog_ranking_help">Profit and profit per machine hour of each catalog product.</string>
     <string name="dashboard_col_product">Product</string>
     <string name="dashboard_col_price">Price</string>

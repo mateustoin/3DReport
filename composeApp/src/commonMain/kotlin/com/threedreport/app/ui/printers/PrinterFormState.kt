@@ -71,11 +71,11 @@ data class PrinterFormState(
          * Formulário de uma impressora da lista: nome, consumo médio, manutenção da faixa e, quando há fonte, o
          * preço de referência (sem fonte, o campo fica vazio); o uso é o típico.
          */
-        fun fromPreset(preset: PrinterPreset, decimalSeparator: Char = ',') = new(decimalSeparator).copy(
+        fun fromPreset(preset: PrinterPreset, decimalSeparator: Char = ',', withReferencePrice: Boolean = true) = new(decimalSeparator).copy(
             name = preset.displayName,
             printerPowerWattsText = preset.averagePowerWatts.toInputText(AppLocale.decimalSeparator),
             maintenanceCostPerHourText = preset.maintenance.costPerHour.toInputText(decimalSeparator),
-            machinePriceText = preset.referencePrice?.toMoneyInputText(decimalSeparator).orEmpty(),
+            machinePriceText = preset.referencePrice?.takeIf { withReferencePrice }?.toMoneyInputText(decimalSeparator).orEmpty(),
             fromPreset = true,
         )
     }

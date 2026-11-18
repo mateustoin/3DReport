@@ -78,7 +78,7 @@
         <item quantity="one">%1$d order or product</item>
         <item quantity="other">%1$d orders or products</item>
     </plurals>
-    <string name="common_date_pick">Choose date…</string>
+    <string name="common_date_pick">Pick date…</string>
     <string name="common_date_use">Use this date</string>
 
     <!-- App -->
@@ -94,7 +94,7 @@
     <string name="app_discard_quote_message">What's filled in on Quote hasn't been saved and will be replaced.</string>
     <string name="app_drop_title_empty">Drop the G-code, STL or 3MF here</string>
     <string name="app_drop_help_empty">Length, time, photo, printer and filament come from the file, when they match what's registered. Several files at once become one print each.</string>
-    <string name="app_drop_title_filled">Drop the G-code on what it will do</string>
+    <string name="app_drop_title_filled">Where should this G-code go?</string>
     <string name="app_drop_replace">Replace %1$s</string>
     <string name="app_drop_add">Add as a new print</string>
 
@@ -121,7 +121,7 @@
 
     <!-- Boas-vindas -->
     <string name="onboarding_title">Welcome to 3DReport</string>
-    <string name="onboarding_help">A few quick questions so the app fits your business. You can change everything later in Settings and Printers.</string>
+    <string name="onboarding_help">A few quick questions so the app fits your business. The suggested values are examples: replace them with yours. You can change everything later in Settings and Printers.</string>
     <string name="onboarding_step">Step %1$d of %2$d</string>
     <string name="onboarding_printer_title">Which printer do you have?</string>
     <string name="onboarding_costs_title">Your costs and margin</string>
@@ -131,7 +131,7 @@
     <string name="onboarding_help_model_preset_detail">If you measure the real draw, adjust it in Printers.</string>
     <string name="onboarding_help_model_none">Without a model, the app uses the sample printer.</string>
     <string name="onboarding_help_model_none_detail">You can add yours in Printers.</string>
-    <string name="onboarding_field_machine_price">What it cost</string>
+    <string name="onboarding_field_machine_price">Price paid</string>
     <string name="onboarding_help_machine_price">The machine pays for itself over time: part of its price goes into each quote.</string>
     <string name="onboarding_field_energy">Electricity rate (per kWh)</string>
     <string name="onboarding_help_energy">It's on your power bill, on the usage line. It varies by region and by utility.</string>

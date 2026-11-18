@@ -144,7 +144,7 @@ class PrinterListViewModel(
     fun startAddFromPreset(preset: PrinterPreset) {
         state.update {
             it.copy(
-                form = PrinterFormState.fromPreset(preset, separator),
+                form = PrinterFormState.fromPreset(preset, separator, withReferencePrice = currency() == Currency.BRL),
                 presetPickerOpen = false,
             )
         }

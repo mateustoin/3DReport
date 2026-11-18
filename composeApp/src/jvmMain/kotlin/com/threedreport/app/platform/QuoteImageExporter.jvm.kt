@@ -230,9 +230,20 @@ actual fun renderQuoteImage(
     return output.toByteArray()
 }
 
-/** [text] em até duas linhas de [RIGHT_MAX_WIDTH], na ordem de leitura. */
-private fun rightLinesOf(graphics: Graphics2D, text: String, font: Font, color: Color): List<RightLine> =
-    wrapLines(graphics.getFontMetrics(font), text, RIGHT_MAX_WIDTH, maxLines = 2).map { RightLine(it, font, color) }
+/**
+ * [text] em até duas linhas de [RIGHT_MAX_WIDTH], na ordem de leitura. Quando a linha "marca · @contato" não cabe numa linha, quebra
+ * no separador (marca numa linha, contato na outra, sem o "·") em vez de no meio de uma palavra.
+ */
+private fun rightLinesOf(graphics: Graphics2D, text: String, font: Font, color: Color): List<RightLine> {
+    val metrics = graphics.getFontMetrics(font)
+    val parts = text.split(" · ").map { it.trim() }.filter { it.isNotEmpty() }
+    val lines = if (parts.size > 1 && metrics.stringWidth(text) > RIGHT_MAX_WIDTH) {
+        parts.flatMap { wrapLines(metrics, it, RIGHT_MAX_WIDTH, maxLines = 1) }.take(2)
+    } else {
+        wrapLines(metrics, text, RIGHT_MAX_WIDTH, maxLines = 2)
+    }
+    return lines.map { RightLine(it, font, color) }
+}
 
 /** A fonte de [base] no maior corpo, de [startSize] pra baixo, em que [text] cabe em [maxWidth] (nunca abaixo de [MIN_PRICE_SIZE]). */
 private fun fitFont(graphics: Graphics2D, base: Font, text: String, maxWidth: Int, startSize: Float): Font {

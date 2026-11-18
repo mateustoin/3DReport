@@ -103,13 +103,13 @@ internal object ST {
 /** Os nomes dos dados de exemplo que a tela mostra e as capturas procuram, no idioma das capturas. */
 internal object Names {
     val painted get() = sample("Miniatura pintada", "Painted miniature")
-    val vaseOrder get() = sample("Vaso geométrico (encomenda)", "Geometric vase (custom order)")
+    val vaseOrder get() = sample("Vaso geométrico (encomenda)", "Geometric vase")
     val headset get() = sample("Suporte de headset", "Headset stand")
     val keychainOrder get() = sample("Chaveiro personalizado", "Custom keychain")
     val phoneStand get() = sample("Porta-celular", "Phone stand")
     val axolotl get() = sample("Axolote de estimação", "Pet axolotl")
-    val organizerOrder get() = sample("Organizador de mesa (encomenda)", "Desk organizer (custom order)")
-    val lampOrder get() = sample("Luminária lua (encomenda)", "Moon lamp (custom order)")
+    val organizerOrder get() = sample("Organizador de mesa (encomenda)", "Desk organizer")
+    val lampOrder get() = sample("Luminária lua (encomenda)", "Moon lamp")
     val boat get() = sample("Barquinho decorativo", "Decorative boat")
     val gift get() = sample("Presente de aniversário", "Birthday gift")
 

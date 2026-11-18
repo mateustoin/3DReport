@@ -387,7 +387,7 @@ class QuoteHistoryViewModel(
     /** Abre o site de rastreio com o código do pedido, se houver site em Configurações. */
     fun openTracking(savedQuote: SavedQuote) {
         val code = savedQuote.trackingCode ?: return
-        val url = (orderSettingsRepository?.settings?.value ?: OrderSettings()).trackingUrl(code) ?: return
+        val url = (orderSettingsRepository?.settings?.value ?: OrderSettings()).trackingUrl(code, currency.value) ?: return
         platform.openUrl(url)
     }
 

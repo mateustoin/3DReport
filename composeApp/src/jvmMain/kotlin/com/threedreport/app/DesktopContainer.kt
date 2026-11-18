@@ -5,7 +5,9 @@ import com.threedreport.app.data.LocalStorage
 import com.threedreport.app.data.WriteBehind
 import com.threedreport.app.data.appDataDir
 import com.threedreport.app.data.store.StorageHealth
+import com.threedreport.app.platform.DesktopLocale
 import com.threedreport.app.platform.GitHubReleaseSource
+import com.threedreport.app.platform.suggestedCurrency
 import com.threedreport.app.update.DesktopUpdateInstaller
 import kotlinx.coroutines.CoroutineScope
 
@@ -19,6 +21,8 @@ fun createDesktopContainer(scope: CoroutineScope): AppContainer {
     val health = StorageHealth()
     val writeBehind = WriteBehind(scope, health)
     val storage = LocalStorage(appDataDir(), Clock.System, health, writeBehind)
+    // Antes de qualquer repositório gravar: só instalação nova sugere a moeda pela região do sistema (decisão 16a).
+    val newInstall = storage.isNewInstall()
     val orderSettings = storage.orderSettings()
     val quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate }
     val branding = storage.branding()
@@ -41,7 +45,7 @@ fun createDesktopContainer(scope: CoroutineScope): AppContainer {
         branding = branding,
         orderSettings = orderSettings,
         theme = storage.theme(),
-        currency = storage.currency(),
+        currency = storage.currency().also { if (newInstall) it.update(suggestedCurrency(DesktopLocale.systemRegion)) },
         onboarding = storage.onboarding(),
         preferences = storage.preferences(),
         backup = storage.backup(),

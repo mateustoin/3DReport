@@ -31,6 +31,7 @@ import _3dreport.composeapp.generated.resources.printers_maintenance_ok
 import _3dreport.composeapp.generated.resources.printers_notice_reference
 import _3dreport.composeapp.generated.resources.printers_notice_reference_help
 import _3dreport.composeapp.generated.resources.printers_notice_reference_help_detail
+import _3dreport.composeapp.generated.resources.printers_notice_reference_help_no_price
 import _3dreport.composeapp.generated.resources.printers_remaining_left
 import _3dreport.composeapp.generated.resources.printers_remaining_overdue
 import _3dreport.composeapp.generated.resources.printers_row_per_hour
@@ -76,6 +77,7 @@ import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
+import com.threedreport.core.model.Currency
 import com.threedreport.core.report.MaintenanceState
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -206,7 +208,11 @@ private fun PrinterFormPanel(form: PrinterFormState, viewModel: PrinterListViewM
             FormNotice(
                 text = stringResource(Res.string.printers_notice_reference),
                 help = HelpText(
-                    stringResource(Res.string.printers_notice_reference_help, shortMonthYearText(PRINTER_PRICES_YEAR, PRINTER_PRICES_MONTH)),
+                    if (LocalCurrency.current == Currency.BRL) {
+                        stringResource(Res.string.printers_notice_reference_help, shortMonthYearText(PRINTER_PRICES_YEAR, PRINTER_PRICES_MONTH))
+                    } else {
+                        stringResource(Res.string.printers_notice_reference_help_no_price)
+                    },
                     stringResource(Res.string.printers_notice_reference_help_detail),
                 ),
             )

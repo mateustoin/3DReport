@@ -257,19 +257,21 @@ class ClientDocumentTexts internal constructor(
         if (number == null) fill(Res.string.client_doc_receipt_title) else fill(Res.string.client_doc_receipt_title_numbered, number)
 
     /**
-     * A frase do recibo: "Recebi de Maria o valor de R$ 50,00 (Pix) em 17/11/2026, referente ao pedido #0042, Suporte."
+     * A frase do recibo: "Recebi de Maria o valor de R$ 50,00 (Pix) em 17/11/2026, referente ao pedido #0042, Suporte." (em inglês, "Received $5.86 from Sophia L. by card on 09/24/2026 for order #0003 (Headset stand).")
      * Sem [client], "Recebi o valor de...". Sem [orderNumber], "referente a Suporte".
      */
     fun receiptBody(client: String?, amount: String, method: String, date: String, orderNumber: String?, piece: String): String {
+        // Em inglês a forma entra no meio da frase ("by card"), então vai em minúscula.
+        val methodText = if (AppLocale.current.value.language == UiLanguage.ENGLISH) method.lowercase() else method
         val reference = if (orderNumber != null) {
             fill(Res.string.client_doc_receipt_reference_numbered, orderNumber, piece)
         } else {
             fill(Res.string.client_doc_receipt_reference_plain, piece)
         }
         return if (client != null) {
-            fill(Res.string.client_doc_receipt_body, client, amount, method, date, reference)
+            fill(Res.string.client_doc_receipt_body, client, amount, methodText, date, reference)
         } else {
-            fill(Res.string.client_doc_receipt_body_anonymous, amount, method, date, reference)
+            fill(Res.string.client_doc_receipt_body_anonymous, amount, methodText, date, reference)
         }
     }
 
