@@ -42,7 +42,15 @@ em inglês, e chega ao projeto por um site e um README em inglês.
    `dd/MM`. Hora sempre 24 h. O decimal que não é dinheiro usa ponto em inglês
    ("12.5 h").
 7. Dinheiro continua seguindo a moeda de cada orçamento (decisão 107), sem mudar:
-   o formato do valor é da moeda, não do idioma.
+   o formato do valor é da moeda, não do idioma. **Número que não é dinheiro**
+   (peso, densidade, comprimento, horas, percentual), mostrado ou digitado, segue o
+   idioma do app: vírgula em português, ponto em inglês (aprovado em 2026-11-18). Em
+   português nada muda.
+7a. A região vem do **formato regional** do sistema (no Windows, Hora e idioma >
+   Região) e, sem ele, da região do idioma do sistema (aprovado em 2026-11-18).
+7b. **Nome automático** (decisão 139) aparece nas listas montado no idioma do app a
+   partir da marca `autoNamed` e da data de criação, e não pelo texto gravado
+   (aprovado em 2026-11-18). O arquivo não muda.
 8. O PDF, o recibo, a imagem e a mensagem usam o mesmo formato de data do app.
 
 ### C. Tradução do app (decisão 154)
