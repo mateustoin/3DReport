@@ -434,7 +434,7 @@ implementação.
   "falhou" (com motivo opcional) e, com histórico suficiente, sugerir um %
   de falha calibrado com dado real do próprio criador em vez de um chute
   inicial.
-- [ ] **Sinal/pagamento parcial no orçamento** *Agendado na Leva 11 do Plano 2.*
+- [x] **Sinal/pagamento parcial no orçamento** **Feito (decisão 146, 2026-11-17).**
   (levantado em 2026-09-19,
   pesquisa de comunidade — prática comum em encomenda sob medida em fóruns
   de venda como Etsy: cobrar 25–50% adiantado, saldo na entrega). Complementa

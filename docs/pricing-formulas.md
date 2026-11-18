@@ -497,6 +497,11 @@ serviços + frete cobrado). Pedido sem sinal nem pagamento fica como antes.
   O código (`pix/PixPayload`) leva o valor com ponto e duas casas.
 - **"A receber"** no resumo de Pedidos: soma `remaining` dos pedidos de Aprovado
   a Pronto, por moeda (num pedido sem pagamento, é o total, como antes).
+- **Valor a cobrar em centavos:** `amountDue` (e o `pixCharge` que sai dele) é
+  arredondado a centavos, porque o total do pedido sai do cálculo com mais casas.
+- **Linha do sinal nos documentos:** "Sinal de R$ X pra começar" aparece no PDF
+  e na mensagem só enquanto `pendingDeposit > 0`; depois de pago, some e o Pix
+  cobra o restante.
 
 ## Exemplo de referência (planilha)
 
