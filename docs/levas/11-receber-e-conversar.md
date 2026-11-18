@@ -57,9 +57,11 @@ com uma mensagem pronta, sem sair do app e sem internet.
    pedido** (valor em reais). Formas: Pix, Cartão, Dinheiro, Outro.
 10. **Sinal padrão**: Configurações ganha "Sinal padrão (%)", nascendo em **0** (sem
     sinal). Ao salvar um pedido novo, o sinal vira valor = total do pedido × %,
-    arredondado a centavos, e fica congelado como o resto do pedido. Reabrir o
-    cálculo e salvar mantém o sinal que já estava (não recalcula pelo % de hoje),
-    a não ser que o pedido ainda não tenha sinal e o % seja maior que zero. O sinal
+    arredondado a centavos, e fica congelado como o resto do pedido. Vale também
+    pra produto do catálogo transformado em pedido. **Reabrir o cálculo e salvar
+    nunca cria nem muda o sinal** (revisto em 2026-11-17: pedido antigo nunca ganha
+    selo "Não pago" sozinho, e quem zerou o sinal de propósito não perde o zero);
+    se o total novo ficar menor que o sinal, o sinal é limitado ao total. O sinal
     é editável no pedido (item 13). Sinal nunca maior que o total.
 11. **Situação, calculada** (nada disso é gravado): pago = soma dos pagamentos; falta
     = max(0, total do pedido − pago).
@@ -92,8 +94,11 @@ com uma mensagem pronta, sem sair do app e sem internet.
 18. Gerado a partir de um pagamento (lista do item 13, ou o aviso depois de
     registrar), pelo mesmo exportador do orçamento e no mesmo visual (cabeçalho com
     logo e contatos, assinatura "Gerado com 3DReport").
-19. Conteúdo: "Recibo" com o número `#0042-1` (número do pedido e a ordem do
-    pagamento na lista); "Recebi de {cliente} o valor de R$ X ({forma}) em {data},
+19. Conteúdo: "Recibo" com o número `#0042-1` (número do pedido e um número do
+    pagamento **gravado ao registrar**, sempre o maior já usado no pedido mais um:
+    excluir um pagamento não renumera os outros, e um recibo entregue nunca muda de
+    número; pagamento sem número gravado, que não existe antes desta leva, usa a
+    posição na lista); "Recebi de {cliente} o valor de R$ X ({forma}) em {data},
     referente ao pedido #0042, {nome da peça}." (sem cliente: "Recebi o valor..."),
     e um quadro com total do pedido, pago até agora e falta pagar. Nome da marca
     embaixo. Sem custo, lucro nem nada interno (decisão 19). O nome do cliente entra
@@ -115,8 +120,15 @@ com uma mensagem pronta, sem sair do app e sem internet.
       quiser, ajusto alguma coisa."
     O texto final de cada modelo é do `construtor-ui`, curto, sem travessão, do
     ponto de vista de quem vende. Marcadores: `{cliente}`, `{pedido}`, `{peca}`,
-    `{prazo}`, `{valor}`, `{falta}`, `{rastreio}`, `{loja}`. Marcador sem valor some
-    junto com o espaço sobrando; o preenchimento é uma função pura testada.
+    `{prazo}`, `{valor}`, `{falta}`, `{rastreio}`, `{loja}`. **Trecho opcional entre
+    colchetes** (aprovado em 2026-11-17): `foi aprovado[ e fica pronto até {prazo}].`
+    Se algum marcador dentro do trecho fica sem valor, o trecho inteiro some; se
+    todos têm valor, só os colchetes somem. Os textos padrão usam isso (prazo no
+    Aprovado, rastreio no Saiu pra entrega, cliente na saudação), e a lista de
+    marcadores em Configurações explica os colchetes numa frase. Marcador sem valor
+    fora de colchetes some junto com o espaço sobrando. O preenchimento é uma função
+    pura testada.
+    Pedido **Cancelado** não oferece mensagem nem Pix.
 22. **Editáveis** em Configurações > Documentos pro cliente, seção "Mensagens
     prontas": um campo de várias linhas por modelo, a lista de marcadores e
     "Voltar ao texto padrão". Só o texto que a pessoa mudou é gravado; o resto vem
@@ -152,10 +164,11 @@ com uma mensagem pronta, sem sair do app e sem internet.
 
 29. "Editar detalhes" de pedido ganha **Código de rastreio** (texto livre, opcional).
 30. Configurações > Pedidos ganha **Site de rastreio**: um endereço com `{codigo}`
-    no lugar do código. Nasce preenchido com um site de rastreio dos Correios que
-    aceite o código pela URL (o `engenheiro-core` confere qual funciona e deixa o
-    endereço como constante; se nenhum funcionar sem verificação, nasce vazio e isso
-    é dito no PR). Vazio = sem link.
+    no lugar do código. Nasce com o site oficial dos Correios,
+    `https://rastreamento.correios.com.br/app/index.php?objetos={codigo}` (aprovado
+    em 2026-11-17: abre com o código no campo; a pessoa clica em Consultar e passa
+    pela verificação de segurança do site). Nada gravado = padrão do app; apagar o
+    campo = sem link.
 31. Pedido com código: o menu ganha "Ver rastreio" (abre o endereço, se houver) e
     "Copiar código de rastreio". O código entra na mensagem "Saiu pra entrega".
     Nunca entra no PDF nem na imagem.
@@ -218,7 +231,8 @@ Derivados (sem gravar): `paidTotal`, `remaining` (sobre `totalWithServices`),
 `staleDays(todayEpochDay, zone)` ou equivalente pro item 26. Testes pra cada regra.
 
 **`Payment`** (core): `id: String`, `amount: Double` (> 0), `method: PaymentMethod`
-(`pix`, `card`, `cash`, `other`), `epochDay: Long`.
+(`pix`, `card`, `cash`, `other`), `epochDay: Long`, `number: Int` (fixo, do recibo,
+item 19; padrão `0` = usar a posição).
 
 **Pix** (core, pacote novo `pix/`): `PixKey` (normalização e tipo), `PixPayload`
 (montagem do BR Code e CRC16). Sem dependência de UI nem de JVM.
