@@ -29,6 +29,7 @@ import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
@@ -41,7 +42,7 @@ fun RepriceDialog(repricing: Repricing, viewModel: QuoteHistoryViewModel) {
     val currency = repricing.product.currency
     fun money(value: Double) = value.toCurrencyText(currency)
     AppDialog(
-        title = stringResource(Res.string.history_reprice_title, repricing.product.name),
+        title = stringResource(Res.string.history_reprice_title, repricing.product.shownName()),
         onDismiss = viewModel::cancelRepricing,
         help = HelpText(stringResource(Res.string.history_reprice_help), stringResource(Res.string.history_reprice_help_detail)),
         buttons = {

@@ -1,6 +1,7 @@
 package com.threedreport.app
 
 import com.threedreport.app.data.Clock
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.consumables.ConsumableListViewModel
@@ -98,7 +99,7 @@ class AppViewModels(
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */
-    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency) }
+    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency, languageChanges = AppLocale.current) }
     val brandingViewModel: BrandingViewModel by lazy {
         BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value }, today = today)
     }

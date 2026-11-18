@@ -29,6 +29,8 @@ internal object SavedQuoteMapper {
         newId: () -> Int,
         thumbnail: (String) -> PickedFile? = { null },
         decimalSeparator: Char = ',',
+        /** O separador do peso, do comprimento e da quantidade, que não são dinheiro: o do idioma do app. */
+        numberSeparator: Char = ',',
     ): QuoteInputState {
         val quote = savedQuote.quote
         // Pelo id; um canal excluído e recriado com o mesmo nome ganha id novo, então o nome é a segunda
@@ -46,7 +48,7 @@ internal object SavedQuoteMapper {
                         FilamentInput(
                             filamentId = usage.filament.id,
                             colorId = usage.color?.id,
-                            lengthText = usage.lengthMeters.toInputText(decimalSeparator),
+                            lengthText = usage.lengthMeters.toInputText(numberSeparator),
                             missingFilamentName = usage.filament.name.takeIf { filaments.none { it.id == usage.filament.id } },
                             id = newId(),
                         )
@@ -76,7 +78,7 @@ internal object SavedQuoteMapper {
                 used.id to ConsumableInput(
                     name = used.name,
                     unitCost = used.unitCost,
-                    quantityText = used.quantity.toInputText(decimalSeparator),
+                    quantityText = used.quantity.toInputText(numberSeparator),
                     chargedPerOrder = used.chargedPerOrder,
                 )
             },

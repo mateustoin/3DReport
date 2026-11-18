@@ -6,6 +6,7 @@ import _3dreport.composeapp.generated.resources.settings_notice_saved
 import _3dreport.composeapp.generated.resources.settings_orders_error_days
 import _3dreport.composeapp.generated.resources.settings_orders_error_deposit
 import com.threedreport.app.data.OrderSettingsRepository
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
@@ -74,7 +75,7 @@ class OrderSettingsViewModel(
         get() = state.value.hasUnsavedChanges
 
     private fun OrderSettings.toUiState() = OrderSettingsUiState(
-        depositPercentText = (defaultDepositRate * 100).toInputText(currency().decimalSeparator),
+        depositPercentText = (defaultDepositRate * 100).toInputText(AppLocale.decimalSeparator),
         staleDaysText = staleQuoteDays.toString(),
         trackingUrlText = effectiveTrackingUrlTemplate,
     )
@@ -103,9 +104,8 @@ class OrderSettingsViewModel(
     private class Parsed(val settings: OrderSettings?, val errors: Map<OrderSettingsField, UiText>)
 
     private fun parse(form: OrderSettingsUiState): Parsed {
-        val separator = currency().decimalSeparator
         val errors = mutableMapOf<OrderSettingsField, UiText>()
-        val percent = if (form.depositPercentText.isBlank()) 0.0 else parseDecimal(form.depositPercentText, NumberKind.MEASURE, separator)
+        val percent = if (form.depositPercentText.isBlank()) 0.0 else parseDecimal(form.depositPercentText, NumberKind.MEASURE, AppLocale.decimalSeparator)
         when {
             percent == null -> errors[OrderSettingsField.DEPOSIT] = uiText(Res.string.common_error_number_invalid)
             percent !in 0.0..100.0 -> errors[OrderSettingsField.DEPOSIT] = uiText(Res.string.settings_orders_error_deposit)

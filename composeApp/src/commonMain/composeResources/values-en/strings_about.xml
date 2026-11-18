@@ -5,8 +5,8 @@
     <string name="about_version">Version %1$s</string>
     <string name="about_summary">Free, open-source app for quoting and selling 3D printing. Made by %1$s.</string>
     <string name="about_does_quote">In Quote, drag the G-code into the window and weight, time, photo, printer and filament come filled in.</string>
-    <string name="about_does_orders">In Orders and Catalog, keep track of what clients ordered and save the products you offer.</string>
-    <string name="about_does_settings">In Settings, adjust costs, sales channels, client documents, theme, currency and backup.</string>
+    <string name="about_does_orders">In Orders and Catalog, keep track of what customers ordered and save the products you offer.</string>
+    <string name="about_does_settings">In Settings, adjust costs, sales channels, customer documents, theme, currency and backup.</string>
     <string name="about_link_site">Website</string>
     <string name="about_link_code">Source code</string>
     <string name="about_link_support">Support the project</string>

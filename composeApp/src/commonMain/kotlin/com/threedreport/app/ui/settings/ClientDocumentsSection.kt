@@ -104,6 +104,7 @@ import com.threedreport.app.ui.components.FormNotice
 import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.clickableAction
+import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.history.defaultTextRes
 import com.threedreport.app.ui.history.labelRes
@@ -117,6 +118,7 @@ import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.message.MessagePlaceholder
 import com.threedreport.core.message.MessageTemplateKind
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.ImageBackground
 import com.threedreport.core.pix.PixSetupIssue
 import org.jetbrains.compose.resources.StringResource
@@ -227,12 +229,16 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         }
     }
 
-    FormSection(4, stringResource(Res.string.settings_docs_pix_title), help = HelpText(stringResource(Res.string.settings_docs_pix_help))) {
-        PixFields(branding, viewModel)
+    // O Pix só existe em real (decisão 155): com outra moeda padrão a seção some e as seguintes sobem um número.
+    val showPix = LocalCurrency.current == Currency.BRL
+    if (showPix) {
+        FormSection(4, stringResource(Res.string.settings_docs_pix_title), help = HelpText(stringResource(Res.string.settings_docs_pix_help))) {
+            PixFields(branding, viewModel)
+        }
     }
 
     FormSection(
-        5,
+        if (showPix) 5 else 4,
         stringResource(Res.string.settings_docs_messages_title),
         help = HelpText(
             stringResource(Res.string.settings_docs_messages_help, MessagePlaceholder.entries.joinToString(" ") { it.token }),
@@ -242,7 +248,7 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         MessageTemplateFields(branding, viewModel)
     }
 
-    FormSection(6, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {
+    FormSection(if (showPix) 6 else 5, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
             AppButton(stringResource(Res.string.settings_docs_template_save), viewModel::startSaveAsTemplate, icon = AppIcons.Save)
             AppButton(stringResource(Res.string.settings_docs_template_list), onClick = { showTemplates = true }, icon = AppIcons.ViewList)

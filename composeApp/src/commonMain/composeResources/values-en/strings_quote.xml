@@ -10,9 +10,9 @@
     <string name="quote_error_service_value">%1$s price: not a number.</string>
     <string name="quote_error_service_minutes">%1$s time: use minutes (30) or hours and minutes (1h30).</string>
     <string name="quote_error_consumable_quantity">%1$s quantity: use a number greater than zero.</string>
-    <string name="quote_error_shipping_invalid">Shipping: not a number. Use a period for cents (19.90).</string>
+    <string name="quote_error_shipping_invalid">Shipping: enter a valid amount.</string>
     <string name="quote_error_shipping_negative">Shipping can't be negative.</string>
-    <string name="quote_error_target_invalid">Price: not a number. Use a period for cents (19.90).</string>
+    <string name="quote_error_target_invalid">Price: enter a valid amount.</string>
     <string name="quote_error_target_negative">Price can't be negative.</string>
     <string name="quote_error_target_below_extras">This price doesn't cover services and shipping (%1$s). Enter at least that amount.</string>
     <string name="quote_error_labor">Labor time: use minutes (90) or hours and minutes (1h30).</string>

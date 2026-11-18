@@ -70,6 +70,7 @@ import com.threedreport.app.ui.components.OverdueItem
 import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.components.ShowSnackbarOnce
 import com.threedreport.app.ui.format.LocalCurrency
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
@@ -207,9 +208,9 @@ private fun operationTexts(form: SaveQuoteFormState, isProduct: Boolean): Operat
         val number = saved.displayNumber?.takeIf { saved.isOrder }
         OperationTexts(
             if (number != null) {
-                stringResource(Res.string.quote_op_editing_numbered, number, saved.name)
+                stringResource(Res.string.quote_op_editing_numbered, number, saved.shownName())
             } else {
-                stringResource(Res.string.quote_op_editing, saved.name)
+                stringResource(Res.string.quote_op_editing, saved.shownName())
             },
             stringResource(if (isProduct) Res.string.quote_op_editing_help_product else Res.string.quote_op_editing_help_order),
             stringResource(Res.string.quote_op_editing_cancel),
@@ -217,7 +218,7 @@ private fun operationTexts(form: SaveQuoteFormState, isProduct: Boolean): Operat
     }
 
     is QuoteOperation.Selling -> OperationTexts(
-        stringResource(Res.string.quote_op_selling, operation.product.name),
+        stringResource(Res.string.quote_op_selling, operation.product.shownName()),
         stringResource(Res.string.quote_op_selling_help),
         stringResource(Res.string.quote_op_selling_cancel),
     )

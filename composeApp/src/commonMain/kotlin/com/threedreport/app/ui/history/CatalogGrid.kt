@@ -31,6 +31,7 @@ import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.components.clickableCard
 import com.threedreport.app.ui.components.rememberCardState
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.asString
@@ -81,7 +82,7 @@ fun ProductCard(
                 shape = RectangleShape,
             )
             Column(modifier = Modifier.padding(space.sm), verticalArrangement = Arrangement.spacedBy(space.xxs)) {
-                Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(quote.shownName(), style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     quote.category.orEmpty(),
                     style = MaterialTheme.appType.caption,

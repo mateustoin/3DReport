@@ -114,7 +114,7 @@ fun Double.toDurationInputText(): String {
     if (!isFinite() || this < 0) return ""
     val hours = kotlin.math.floor(this / 60.0).toLong()
     val minutes = this - hours * 60
-    val minutesText = minutes.toInputText(maxDecimals = 3)
+    val minutesText = minutes.toInputText(AppLocale.decimalSeparator, maxDecimals = 3)
     return when {
         hours == 0L -> minutesText
         minutesText == "0" -> "${hours}h"

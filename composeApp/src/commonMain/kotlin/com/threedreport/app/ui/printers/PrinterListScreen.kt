@@ -70,6 +70,7 @@ import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.minutesToHoursText
+import com.threedreport.app.ui.format.shortMonthYearText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.asString
@@ -205,7 +206,7 @@ private fun PrinterFormPanel(form: PrinterFormState, viewModel: PrinterListViewM
             FormNotice(
                 text = stringResource(Res.string.printers_notice_reference),
                 help = HelpText(
-                    stringResource(Res.string.printers_notice_reference_help, PRINTER_PRICES_MONTH),
+                    stringResource(Res.string.printers_notice_reference_help, shortMonthYearText(PRINTER_PRICES_YEAR, PRINTER_PRICES_MONTH)),
                     stringResource(Res.string.printers_notice_reference_help_detail),
                 ),
             )

@@ -20,6 +20,7 @@ import _3dreport.composeapp.generated.resources.settings_channels_tier_promoted
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.components.PendingDelete
 import com.threedreport.app.ui.components.UiNotice
@@ -125,14 +126,14 @@ class SalesChannelViewModel(
             it.copy(
                 form = SalesChannelFormState(
                     nameText = channel.name,
-                    feeRatePercentText = (channel.feeRate * 100).toInputText(separator),
+                    feeRatePercentText = (channel.feeRate * 100).toInputText(AppLocale.decimalSeparator),
                     // Sem valor fixo, o campo fica vazio (vazio vale zero), em vez de mostrar um "0" pra apagar.
                     fixedFeePerItemText = channel.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText(separator).orEmpty(),
                     tiers = channel.tiers.map { tier ->
                         ChannelTierFormRow(
                             id = newTierId(),
                             upToUnitPriceText = tier.upToUnitPrice?.toInputText(separator).orEmpty(),
-                            feeRatePercentText = (tier.feeRate * 100).toInputText(separator),
+                            feeRatePercentText = (tier.feeRate * 100).toInputText(AppLocale.decimalSeparator),
                             fixedFeePerItemText = tier.fixedFeePerItem.takeIf { fee -> fee > 0 }?.toInputText(separator).orEmpty(),
                         )
                     },
@@ -204,7 +205,7 @@ class SalesChannelViewModel(
 
         // Em branco é taxa zero (Pix, dinheiro); texto que não é número é erro, e não zero: um "20 por
         // cento" que virasse 0% tiraria a taxa do marketplace do preço sem ninguém ver.
-        val feeRate = blankAsZero(current.feeRatePercentText, NumberKind.MEASURE, separator)
+        val feeRate = blankAsZero(current.feeRatePercentText, NumberKind.MEASURE, AppLocale.decimalSeparator)
         val fixedFee = blankAsZero(current.fixedFeePerItemText, NumberKind.AMOUNT, separator)
         val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isBlank() }
         val feeError = when {
@@ -311,7 +312,7 @@ private fun List<ChannelTierFormRow>.toChannelFeeTiers(separator: Char): List<Ch
             previousLimit = value
             value
         }
-        val feeRate = blankAsZero(row.feeRatePercentText, NumberKind.MEASURE, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fee_number))
+        val feeRate = blankAsZero(row.feeRatePercentText, NumberKind.MEASURE, AppLocale.decimalSeparator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fee_number))
         if (feeRate < 0 || feeRate >= 100) throw TierError(uiText(Res.string.settings_channels_error_tier_fee_range))
         val fixedFee = blankAsZero(row.fixedFeePerItemText, NumberKind.AMOUNT, separator) ?: throw TierError(uiText(Res.string.settings_channels_error_tier_fixed_number))
         if (fixedFee < 0) throw TierError(uiText(Res.string.settings_channels_error_tier_fixed_negative))

@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppDropdownField
@@ -107,7 +108,7 @@ fun OnboardingDialog(
                     emptyText = other,
                     help = if (preset != null) {
                         HelpText(
-                            stringResource(Res.string.onboarding_help_model_preset, preset.averagePowerWatts.toInputText()),
+                            stringResource(Res.string.onboarding_help_model_preset, preset.averagePowerWatts.toInputText(AppLocale.decimalSeparator)),
                             stringResource(Res.string.onboarding_help_model_preset_detail),
                         )
                     } else {
@@ -157,6 +158,7 @@ fun OnboardingDialog(
                             value = state.marginText,
                             onValueChange = viewModel::setMargin,
                             kind = NumberKind.MEASURE,
+                            money = false,
                             error = state.marginError?.asString(),
                             help = HelpText(stringResource(Res.string.onboarding_help_margin), stringResource(Res.string.onboarding_help_margin_detail)),
                         )

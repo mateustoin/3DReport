@@ -129,7 +129,7 @@ class StringResourceParityTest {
          * Liga quando a tradução de `values-en/` terminar (etapa de tradução da Leva 11B): daí em diante, toda chave de
          * `values/` precisa existir em inglês, e o build falha se faltar alguma.
          */
-        const val EVERY_KEY_TRANSLATED = false
+        const val EVERY_KEY_TRANSLATED = true
 
         val MARKER = Regex("""%\d+\$[sd]|\{[a-z_]+\}""")
         val UNNUMBERED = Regex("""%[sd]""")

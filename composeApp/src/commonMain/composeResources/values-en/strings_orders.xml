@@ -6,8 +6,8 @@
 -->
 <resources>
     <string name="overdue_send_title">The delivery date has passed</string>
-    <string name="overdue_send_single">"%1$s" promises delivery by %2$s, and that date has passed. If you send it as is, the client gets an expired date.</string>
-    <string name="overdue_send_batch">%1$d of the selected quotes have an expired date: %2$s. If you export as is, the client gets those expired dates.</string>
+    <string name="overdue_send_single">"%1$s" promises delivery by %2$s, and that date has passed. If you send it as is, the customer gets an expired date.</string>
+    <string name="overdue_send_batch">%1$d of the selected quotes have an expired date: %2$s. If you export as is, the customer gets those expired dates.</string>
     <string name="overdue_send_change_date">Change date</string>
     <string name="overdue_send_anyway">Send anyway</string>
     <string name="orders_status_quoted">Quoted</string>
@@ -54,8 +54,8 @@
     <string name="history_details_help">The price doesn't change here.</string>
     <string name="history_details_help_detail">To change weight, time, filament or price, use Edit calculation.</string>
     <string name="history_details_field_name">Part name</string>
-    <string name="history_details_field_client">Client</string>
-    <string name="history_details_field_contact">Client contact</string>
+    <string name="history_details_field_client">Customer</string>
+    <string name="history_details_field_contact">Customer contact</string>
     <string name="history_details_placeholder_contact">WhatsApp: (555) 123-4567</string>
     <string name="history_details_field_category">Category</string>
     <string name="history_details_field_link">Model link</string>
@@ -75,13 +75,13 @@
         <item quantity="other">late</item>
     </plurals>
     <string name="orders_search">Search</string>
-    <string name="orders_search_hint">Name, client or number</string>
+    <string name="orders_search_hint">Name, customer or number</string>
     <string name="orders_filter_status">Status</string>
     <string name="orders_filter_status_all">All statuses</string>
     <string name="history_filter_period">Period</string>
     <string name="orders_col_number">No.</string>
     <string name="orders_col_piece">Part</string>
-    <string name="orders_col_client">Client</string>
+    <string name="orders_col_client">Customer</string>
     <string name="orders_col_status">Status</string>
     <string name="orders_col_deadline">Due</string>
     <string name="orders_col_value">Value</string>
@@ -107,7 +107,7 @@
     <string name="history_action_copy">Copy text</string>
     <string name="history_action_copied">Copied</string>
     <string name="history_menu_more">More actions</string>
-    <string name="history_menu_group_send">Send to client</string>
+    <string name="history_menu_group_send">Send to customer</string>
     <string name="history_menu_group_files">Files</string>
     <string name="history_menu_group_organize">Organize</string>
     <string name="history_menu_export_pdf">Export PDF</string>
@@ -173,10 +173,10 @@
     <string name="catalog_empty_first">No products yet.</string>
     <string name="catalog_empty_filter">No products match this filter.</string>
     <string name="history_notice_status_changed">"%1$s" is now %2$s.</string>
-    <string name="history_notice_notify_client">Notify client</string>
+    <string name="history_notice_notify_client">Notify customer</string>
     <string name="history_notice_pix_copied">Pix code copied.</string>
     <string name="history_notice_tracking_copied">Tracking code copied.</string>
-    <string name="history_menu_message">Message to client</string>
+    <string name="history_menu_message">Message to customer</string>
     <string name="history_menu_copy_pix">Copy Pix code</string>
     <string name="history_menu_payments">Payments</string>
     <string name="history_menu_tracking_open">Track package</string>

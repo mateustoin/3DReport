@@ -27,7 +27,7 @@
     <string name="export_save_failed">Couldn't save the file. If it's open in another program, close it and try again, or save with another name.</string>
     <string name="export_copied">Text copied.</string>
     <string name="export_copy_failed">Couldn't copy: another program is using the clipboard. Try again.</string>
-    <string name="export_whatsapp_copied">Couldn't open WhatsApp. The quote text was copied: paste it into the chat with the client.</string>
+    <string name="export_whatsapp_copied">Couldn't open WhatsApp. The quote text was copied: paste it into the chat with the customer.</string>
     <string name="export_whatsapp_failed">Couldn't open WhatsApp or copy the text. Use "Copy" again in a few seconds.</string>
     <string name="export_file_receipt">Receipt %1$s - %2$s</string>
     <string name="client_doc_value">Price: %1$s</string>

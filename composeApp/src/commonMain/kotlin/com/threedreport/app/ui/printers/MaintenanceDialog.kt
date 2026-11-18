@@ -72,6 +72,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.platform.epochDayToUtcMillis
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.platform.utcMillisToEpochDay
@@ -95,7 +96,6 @@ import com.threedreport.app.ui.components.RevealActions
 import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.revealActionsWidth
 import com.threedreport.app.ui.components.suggestionsFor
-import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.minutesToHoursText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.icons.AppIcons
@@ -234,7 +234,7 @@ private fun ComponentRow(
     if (editing) {
         ComponentFields(
             initialName = status.component.name,
-            initialInterval = status.component.intervalHours.toInputText(LocalCurrency.current.decimalSeparator),
+            initialInterval = status.component.intervalHours.toInputText(AppLocale.decimalSeparator),
             isNew = false,
             onSubmit = { name, interval, _ -> onSave(name, interval).also { if (it == null) editing = false } },
             onCancel = { editing = false },

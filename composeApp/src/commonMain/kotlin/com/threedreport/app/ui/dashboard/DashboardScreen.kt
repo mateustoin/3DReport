@@ -109,7 +109,7 @@ private fun DashboardBody(state: DashboardUiState, wide: Boolean, onNewQuote: ()
                     // O EmptyState já traz o respiro de baixo, então ele e o catálogo ficam num conjunto sem o espaço entre seções.
                     Column {
                         EmptyState(message, actionLabel = actionLabel, onAction = onShowOrders, actionKind = ButtonKind.Secondary, topPadding = false)
-                        catalog?.let { CatalogRanking(it) }
+                        catalog?.let { CatalogRanking(it, state.autoNamedProducts) }
                     }
                 },
                 right = { EmptyBlocks(state) },
@@ -127,7 +127,7 @@ private fun DashboardBody(state: DashboardUiState, wide: Boolean, onNewQuote: ()
                     topPadding = false,
                 )
                 val catalog = state.catalog
-                val ranking: (@Composable ColumnScope.() -> Unit)? = if (catalog == null) null else { { CatalogRanking(catalog) } }
+                val ranking: (@Composable ColumnScope.() -> Unit)? = if (catalog == null) null else { { CatalogRanking(catalog, state.autoNamedProducts) } }
                 Columns(wide = wide, left = ranking, right = { EmptyBlocks(state) })
             }
         }

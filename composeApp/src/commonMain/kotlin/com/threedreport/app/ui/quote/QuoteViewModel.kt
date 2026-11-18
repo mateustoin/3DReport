@@ -40,6 +40,7 @@ import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.attachmentExtension
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.platform.FileKind
 import com.threedreport.app.platform.PickFailure
 import com.threedreport.app.platform.PickResult
@@ -309,14 +310,14 @@ class QuoteViewModel(
     }
 
     private fun FilamentInput.withWeight(text: String, filament: Filament?): FilamentInput {
-        val grams = parseDecimal(text, NumberKind.AMOUNT, separator)
+        val grams = parseDecimal(text, NumberKind.AMOUNT, AppLocale.decimalSeparator)
         val meters = when {
             text.isBlank() -> ""
 
             grams == null || grams < 0 || filament == null -> lengthText
 
             // Duas casas, como o G-code: com mais, o campo mostrava "16,764181" pra 50 g.
-            else -> GCodeImporter.formatLength(filament.lengthMeters(grams), separator)
+            else -> GCodeImporter.formatLength(filament.lengthMeters(grams), AppLocale.decimalSeparator)
         }
         return copy(weightText = text, lengthText = meters)
     }
@@ -570,7 +571,7 @@ class QuoteViewModel(
             (form.photo == null || (form.photoAutomatic && (photoGCodePrintId == printId || index == 0)))
         // O G-code só escolhe entre o que não está arquivado (decisão 115).
         val imported = GCodeImporter.apply(
-            current, metadata, filaments.filterNot { it.archived }, printers.filterNot { it.archived }, photoApplied, ::newId, separator,
+            current, metadata, filaments.filterNot { it.archived }, printers.filterNot { it.archived }, photoApplied, ::newId, AppLocale.decimalSeparator,
         )
 
         if (photoApplied) {
@@ -1224,6 +1225,7 @@ class QuoteViewModel(
             savedQuote, filaments, printers, salesChannels, ::newId,
             thumbnail = { key -> historyRepository.attachmentBytes(key)?.let { PickedFile("miniatura_do_gcode.${attachmentExtension(key)}", it) } },
             decimalSeparator = separator,
+            numberSeparator = AppLocale.decimalSeparator,
         )
 
     private fun formFrom(savedQuote: SavedQuote): SaveQuoteFormState {
@@ -1376,7 +1378,7 @@ class QuoteViewModel(
         }
         // Com o insumo no cadastro, vale o custo de hoje, como o filamento; saído do cadastro, o do pedido.
         val usedConsumables = input.selectedConsumables.mapNotNull { (id, consumableInput) ->
-            val quantity = parseDecimal(consumableInput.quantityText, NumberKind.AMOUNT, separator)?.takeIf { it > 0 }
+            val quantity = parseDecimal(consumableInput.quantityText, NumberKind.AMOUNT, AppLocale.decimalSeparator)?.takeIf { it > 0 }
             if (quantity == null) {
                 errors[QuoteFields.consumable(id)] = uiText(Res.string.quote_error_consumable_quantity, consumableInput.name)
                 return@mapNotNull null
@@ -1519,9 +1521,9 @@ class QuoteViewModel(
         var complete = true
         val jobs = input.prints.zip(resolved).map { (print, resolvedPrint) ->
             val usages = print.filaments.zip(resolvedPrint.filaments).map { (row, resolvedFilament) ->
-                val length = parseDecimal(row.lengthText, NumberKind.MEASURE, separator)
+                val length = parseDecimal(row.lengthText, NumberKind.MEASURE, AppLocale.decimalSeparator)
                 when {
-                    row.weightText != null && row.weightText.isNotBlank() && (parseDecimal(row.weightText, NumberKind.AMOUNT, separator) ?: -1.0) < 0 ->
+                    row.weightText != null && row.weightText.isNotBlank() && (parseDecimal(row.weightText, NumberKind.AMOUNT, AppLocale.decimalSeparator) ?: -1.0) < 0 ->
                         errors[QuoteFields.length(print.id, row.id)] = uiText(Res.string.quote_error_weight)
 
                     row.lengthText.isNotBlank() && (length == null || length < 0) ->

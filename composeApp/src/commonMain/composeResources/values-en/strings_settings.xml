@@ -17,7 +17,7 @@
     <string name="settings_title">Settings</string>
     <string name="settings_section_business">Business</string>
     <string name="settings_section_channels">Sales channels</string>
-    <string name="settings_section_documents">Client documents</string>
+    <string name="settings_section_documents">Customer documents</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_backup">Backup</string>
     <string name="settings_section_pending">Not saved</string>
@@ -143,7 +143,7 @@
     <string name="settings_docs_logo_unreadable">Couldn't read that image. Try a PNG or JPG.</string>
     <string name="settings_docs_logo_missing">The saved logo wasn't found in the app folder. Choose it again.</string>
     <string name="settings_docs_contact_title">Your contact</string>
-    <string name="settings_docs_contact_help">Shown in the PDF and the image, so clients can reach you.</string>
+    <string name="settings_docs_contact_help">Shown in the PDF and the image, so customers can reach you.</string>
     <string name="settings_docs_field_whatsapp">WhatsApp</string>
     <string name="settings_docs_field_email">Email</string>
     <string name="settings_docs_field_instagram">Instagram</string>
@@ -156,10 +156,10 @@
     <string name="settings_docs_border">Border around the page</string>
     <string name="settings_docs_print_time">Print time in the PDF and message</string>
     <string name="settings_docs_print_time_help">Print time is the machine time of the order (e.g. "6 h 30 min").</string>
-    <string name="settings_docs_print_time_help_detail">It helps the client understand the work, but it can also become an argument for a discount, so it starts off.</string>
-    <string name="settings_docs_client_name">Client name in the PDF ("For: Maria")</string>
+    <string name="settings_docs_print_time_help_detail">It helps the customer understand the work, but it can also become an argument for a discount, so it starts off.</string>
+    <string name="settings_docs_client_name">Customer name in the PDF ("For: Maria")</string>
     <string name="settings_docs_field_validity">Quote validity (days)</string>
-    <string name="settings_docs_validity_help">The PDF says "Valid until" the issue date plus these days, so a client who comes back months later can't ask for the old price.</string>
+    <string name="settings_docs_validity_help">The PDF says "Valid until" the issue date plus these days, so a customer who comes back months later can't ask for the old price.</string>
     <string name="settings_docs_validity_help_detail">Leave it at 0 to hide it.</string>
     <string name="settings_docs_image_background">Image background</string>
     <string name="settings_docs_image_background_help">On automatic, a dark part gets a light background and the others a dark one.</string>
@@ -197,7 +197,7 @@
 
     <!-- Configurações > Backup -->
     <string name="settings_backup_title">Backup</string>
-    <string name="settings_backup_help">Your quotes, clients, catalogs, photos and model files stay only on this computer.</string>
+    <string name="settings_backup_help">Your quotes, customers, catalogs, photos and model files stay only on this computer.</string>
     <string name="settings_backup_help_detail">The backup bundles all of it into one .zip file, to keep somewhere else or take to another machine.</string>
     <string name="settings_backup_last">Last backup</string>
     <string name="settings_backup_none">No backup made on this computer yet.</string>
@@ -223,7 +223,7 @@
     <string name="settings_backup_restore_apply_failed_kept">Couldn't apply the backup. Your current data was kept.</string>
     <string name="settings_backup_restore_apply_failed_moved">Couldn't apply the backup, and your current data was kept in %1$s. Rename that folder back to %2$s before opening the app again.</string>
     <string name="settings_backup_restore_title">Restore this backup?</string>
-    <string name="settings_backup_restore_message">All the app's current data (quotes, clients, catalogs, settings, photos and model files) will be replaced by the contents of "%1$s". A copy of the current data is kept automatically, and the app will close at the end to load the restored data.</string>
+    <string name="settings_backup_restore_message">All the app's current data (quotes, customers, catalogs, settings, photos and model files) will be replaced by the contents of "%1$s". A copy of the current data is kept automatically, and the app will close at the end to load the restored data.</string>
     <string name="settings_backup_restore_confirm">Restore</string>
     <string name="settings_backup_restored_title">Backup restored</string>
     <string name="settings_backup_restored_message">The app needs to close now to load the restored data. The data that existed before was kept in:</string>
@@ -264,7 +264,7 @@
     <string name="settings_orders_stale_help">0 turns the highlight off.</string>
     <string name="settings_orders_tracking">Tracking website</string>
     <string name="settings_orders_tracking_help">Use {codigo} where the code goes. Empty means no link.</string>
-    <string name="settings_orders_tracking_default">Use the Correios website</string>
+    <string name="settings_orders_tracking_default">Use the default site (Correios, Brazil)</string>
     <string name="settings_orders_error_deposit">The deposit goes from 0 to 100.</string>
     <string name="settings_orders_error_days">Use a whole number from 0 to %1$d.</string>
     <string name="settings_docs_pix_join_last">%1$s and %2$s</string>

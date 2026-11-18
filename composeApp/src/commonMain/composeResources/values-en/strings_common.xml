@@ -151,4 +151,17 @@
     <string name="duration_hours">%1$d h</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="duration_decimal_hours">%1$s h</string>
+    <string name="month_year_short">%1$s %2$d</string>
+    <string name="month_short_01">Jan</string>
+    <string name="month_short_02">Feb</string>
+    <string name="month_short_03">Mar</string>
+    <string name="month_short_04">Apr</string>
+    <string name="month_short_05">May</string>
+    <string name="month_short_06">Jun</string>
+    <string name="month_short_07">Jul</string>
+    <string name="month_short_08">Aug</string>
+    <string name="month_short_09">Sep</string>
+    <string name="month_short_10">Oct</string>
+    <string name="month_short_11">Nov</string>
+    <string name="month_short_12">Dec</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.printers
 
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseWholeNumber
@@ -44,7 +45,7 @@ data class PrinterFormState(
             val price = parseDecimal(machinePriceText, NumberKind.AMOUNT, decimalSeparator)?.takeIf { it >= 0 } ?: return null
             val months = parseWholeNumber(paybackMonthsText)?.takeIf { it > 0 } ?: return null
             val days = parseWholeNumber(printingDaysPerMonthText)?.takeIf { it > 0 } ?: return null
-            val hours = parseDecimal(printingHoursPerDayText, NumberKind.MEASURE, decimalSeparator)?.takeIf { it > 0 } ?: return null
+            val hours = parseDecimal(printingHoursPerDayText, NumberKind.MEASURE, AppLocale.decimalSeparator)?.takeIf { it > 0 } ?: return null
             val maintenance = parseDecimal(maintenanceCostPerHourText, NumberKind.AMOUNT, decimalSeparator) ?: 0.0
             // A conta é do core: a mesma que a lista mostra depois de salvar.
             return MachineInvestment(price, months, days, hours).costPerHour + maintenance
@@ -62,7 +63,7 @@ data class PrinterFormState(
             maintenanceCostPerHourText = BLANK_MAINTENANCE_PER_HOUR.toInputText(decimalSeparator),
             paybackMonthsText = PrinterUsageDefaults.PAYBACK_MONTHS.toString(),
             printingDaysPerMonthText = PrinterUsageDefaults.DAYS_PER_MONTH.toString(),
-            printingHoursPerDayText = PrinterUsageDefaults.HOURS_PER_DAY.toInputText(decimalSeparator),
+            printingHoursPerDayText = PrinterUsageDefaults.HOURS_PER_DAY.toInputText(AppLocale.decimalSeparator),
             decimalSeparator = decimalSeparator,
         )
 
@@ -72,7 +73,7 @@ data class PrinterFormState(
          */
         fun fromPreset(preset: PrinterPreset, decimalSeparator: Char = ',') = new(decimalSeparator).copy(
             name = preset.displayName,
-            printerPowerWattsText = preset.averagePowerWatts.toInputText(decimalSeparator),
+            printerPowerWattsText = preset.averagePowerWatts.toInputText(AppLocale.decimalSeparator),
             maintenanceCostPerHourText = preset.maintenance.costPerHour.toInputText(decimalSeparator),
             machinePriceText = preset.referencePrice?.toMoneyInputText(decimalSeparator).orEmpty(),
             fromPreset = true,
@@ -83,11 +84,11 @@ data class PrinterFormState(
 internal fun PrinterProfile.toFormState(decimalSeparator: Char = ',') = PrinterFormState(
     id = id,
     name = name,
-    printerPowerWattsText = printerPowerWatts.toInputText(decimalSeparator),
+    printerPowerWattsText = printerPowerWatts.toInputText(AppLocale.decimalSeparator),
     maintenanceCostPerHourText = maintenanceCostPerHour.toInputText(decimalSeparator),
     machinePriceText = machineInvestment.machinePrice.toInputText(decimalSeparator),
     paybackMonthsText = machineInvestment.paybackMonths.toString(),
     printingDaysPerMonthText = machineInvestment.printingDaysPerMonth.toString(),
-    printingHoursPerDayText = machineInvestment.printingHoursPerDay.toInputText(decimalSeparator),
+    printingHoursPerDayText = machineInvestment.printingHoursPerDay.toInputText(AppLocale.decimalSeparator),
     decimalSeparator = decimalSeparator,
 )

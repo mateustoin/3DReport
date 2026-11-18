@@ -17,13 +17,13 @@
     <string name="message_default_out_for_delivery">Hi[, {cliente}]! {peca} is out for delivery.[ Tracking: {rastreio}]</string>
     <string name="message_default_payment_reminder">Hi[, {cliente}]! Reminder: the payment[ of {falta}] for order {pedido} is still due.</string>
     <string name="message_default_follow_up">Hi[, {cliente}]! Did you get a chance to look at the quote for {peca}? I can adjust anything you like.</string>
-    <string name="message_title">Message to client</string>
+    <string name="message_title">Message to customer</string>
     <string name="message_field_kind">Template</string>
     <string name="message_field_text">Message</string>
     <string name="message_action_whatsapp">Open in WhatsApp</string>
     <string name="message_action_copy">Copy</string>
     <string name="message_notice_copied">Message copied.</string>
-    <string name="message_whatsapp_copied">Couldn't open WhatsApp. The message was copied: paste it into the chat with the client.</string>
+    <string name="message_whatsapp_copied">Couldn't open WhatsApp. The message was copied: paste it into the chat with the customer.</string>
     <string name="message_include_pix">Include Pix</string>
     <string name="payment_status_not_paid">Unpaid</string>
     <string name="payment_status_deposit_paid">Deposit paid</string>

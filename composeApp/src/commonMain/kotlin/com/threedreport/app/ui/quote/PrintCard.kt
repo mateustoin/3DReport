@@ -42,12 +42,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.IconAction
 import com.threedreport.app.ui.components.clickableAction
-import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.minutesToDurationText
 import com.threedreport.app.ui.format.parseDecimal
@@ -244,14 +244,13 @@ private fun printSummary(print: PrintInput, resolved: ResolvedPrint?, quoted: Qu
     val time = print.printTimeMinutes?.minutesToDurationText()?.let {
         if (print.runs > 1) stringResource(Res.string.quote_print_time_runs, it, print.runs) else it
     }
-    val separator = LocalCurrency.current.decimalSeparator
     return buildList {
         print.name.trim().takeIf { it.isNotEmpty() }?.let(::add)
         (resolved?.printer?.name ?: print.missingPrinterName)?.let(::add)
         time?.let(::add)
         // O peso sai dos campos, e não do cálculo: aparece mesmo com outra impressão ainda por preencher.
         val grams = print.filaments.zip(resolved?.filaments.orEmpty()).sumOf { (row, chosen) ->
-            val meters = parseDecimal(row.lengthText, NumberKind.MEASURE, separator) ?: 0.0
+            val meters = parseDecimal(row.lengthText, NumberKind.MEASURE, AppLocale.decimalSeparator) ?: 0.0
             chosen.filament?.weightGrams(meters) ?: 0.0
         }
         if (grams > 0) add(grams.toWeightText())

@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppNumberField
@@ -87,7 +88,7 @@ private fun EnergyTariffFormState.billResult(separator: Char): Double? {
     // Conta e consumo passam de mil ("1.250", "1.200 kWh"): o ponto seguido de três dígitos é milhar, como
     // o campo mostra na tela.
     val total = parseDecimal(billTotalText, NumberKind.AMOUNT, separator) ?: return null
-    val consumed = parseDecimal(billConsumedKwhText, NumberKind.AMOUNT, separator) ?: return null
+    val consumed = parseDecimal(billConsumedKwhText, NumberKind.AMOUNT, AppLocale.decimalSeparator) ?: return null
     if (total < 0 || consumed <= 0) return null
     return EnergyTariff.fromBill(total, consumed)
 }
@@ -102,7 +103,7 @@ private fun EnergyTariffFormState.flagResult(separator: Char): Double? {
 private fun EnergyTariffFormState.whiteResult(separator: Char): Double? {
     fun period(priceText: String, shareText: String): EnergyTariff.Period? {
         val price = if (priceText.isBlank()) 0.0 else parseDecimal(priceText, NumberKind.MEASURE, separator) ?: return null
-        val share = if (shareText.isBlank()) 0.0 else parseDecimal(shareText, NumberKind.MEASURE, separator) ?: return null
+        val share = if (shareText.isBlank()) 0.0 else parseDecimal(shareText, NumberKind.MEASURE, AppLocale.decimalSeparator) ?: return null
         if (price < 0 || share < 0) return null
         return EnergyTariff.Period(price, share)
     }
@@ -155,6 +156,7 @@ fun EnergyTariffDialog(onDismiss: () -> Unit, onUse: (Double) -> Unit) {
                         state.billConsumedKwhText,
                         { state = state.copy(billConsumedKwhText = it) },
                         NumberKind.AMOUNT,
+                        money = false,
                         help = HelpText(stringResource(Res.string.settings_energy_help_bill)),
                     )
                 }
@@ -218,7 +220,7 @@ private fun PeriodFields(title: String, price: String, share: String, onPrice: (
     FormSection(null, title, help = help) {
         FormGrid {
             cell(2) { AppNumberField(stringResource(Res.string.settings_energy_field_period_price), price, onPrice, NumberKind.MEASURE, prefix = LocalCurrency.current.symbol) }
-            cell(1) { AppNumberField(stringResource(Res.string.settings_energy_field_period_share), share, onShare, NumberKind.MEASURE) }
+            cell(1) { AppNumberField(stringResource(Res.string.settings_energy_field_period_share), share, onShare, NumberKind.MEASURE, money = false) }
         }
     }
 }

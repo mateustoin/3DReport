@@ -35,6 +35,7 @@ import _3dreport.composeapp.generated.resources.dashboard_ranking_help
 import _3dreport.composeapp.generated.resources.dashboard_ranking_help_machine_hour
 import _3dreport.composeapp.generated.resources.dashboard_ranking_title
 import _3dreport.composeapp.generated.resources.dashboard_times
+import _3dreport.composeapp.generated.resources.quote_auto_name
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -47,6 +48,7 @@ import com.threedreport.app.ui.components.TableColumn
 import com.threedreport.app.ui.components.TableHeader
 import com.threedreport.app.ui.components.TablePlainRow
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.autoNameText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.theme.AppDimens
@@ -87,11 +89,12 @@ internal fun SalesRanking(state: DashboardUiState) {
 
 /** "Qual vale a pena oferecer primeiro": os produtos do catálogo de quem ainda não vende (decisão 103). */
 @Composable
-internal fun CatalogRanking(catalog: CatalogSummary) {
+internal fun CatalogRanking(catalog: CatalogSummary, autoNamedProducts: Map<String, Long> = emptyMap()) {
     val noData = stringResource(Res.string.dashboard_no_data)
+    val autoNameTemplate = stringResource(Res.string.quote_auto_name)
     val rows = catalog.products.map { product ->
         RankingRow(
-            name = product.name,
+            name = autoNamedProducts[product.name]?.let { autoNameText(autoNameTemplate, it) } ?: product.name,
             first = product.profit.toMoney(),
             second = product.price.toMoney(),
             perHour = product.profitPerPrintHour?.let { stringResource(Res.string.dashboard_per_hour, it.toMoney()) } ?: noData,

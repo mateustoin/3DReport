@@ -318,9 +318,9 @@
     <string name="quote_error_service_value">Valor de %1$s: não é um número.</string>
     <string name="quote_error_service_minutes">Tempo de %1$s: use minutos (30) ou horas e minutos (1h30).</string>
     <string name="quote_error_consumable_quantity">Quantidade de %1$s: use um número maior que zero.</string>
-    <string name="quote_error_shipping_invalid">Frete: não é um número. Use vírgula nos centavos (19,90).</string>
+    <string name="quote_error_shipping_invalid">Frete: informe um valor válido.</string>
     <string name="quote_error_shipping_negative">Frete não pode ser negativo.</string>
-    <string name="quote_error_target_invalid">Preço: não é um número. Use vírgula nos centavos (19,90).</string>
+    <string name="quote_error_target_invalid">Preço: informe um valor válido.</string>
     <string name="quote_error_target_negative">Preço não pode ser negativo.</string>
     <string name="quote_error_target_below_extras">Esse preço não cobre serviços e frete (%1$s): digite pelo menos esse valor.</string>
     <string name="quote_error_labor">Tempo de trabalho: use minutos (90) ou horas e minutos (1h30).</string>
@@ -1309,6 +1309,19 @@
     <string name="duration_hours">%1$d h</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="duration_decimal_hours">%1$s h</string>
+    <string name="month_year_short">%1$s/%2$d</string>
+    <string name="month_short_01">jan</string>
+    <string name="month_short_02">fev</string>
+    <string name="month_short_03">mar</string>
+    <string name="month_short_04">abr</string>
+    <string name="month_short_05">mai</string>
+    <string name="month_short_06">jun</string>
+    <string name="month_short_07">jul</string>
+    <string name="month_short_08">ago</string>
+    <string name="month_short_09">set</string>
+    <string name="month_short_10">out</string>
+    <string name="month_short_11">nov</string>
+    <string name="month_short_12">dez</string>
 
     <!-- Nome que o app dá ao pedido salvo com o nome em branco; %1$s é a data e a hora (ver LocalStorage). -->
     <string name="quote_auto_name">Orçamento - %1$s</string>

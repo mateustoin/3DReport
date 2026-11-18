@@ -35,6 +35,7 @@ internal fun OrdersSection(viewModel: OrderSettingsViewModel) {
                 value = state.depositPercentText,
                 onValueChange = viewModel::setDepositPercent,
                 kind = NumberKind.MEASURE,
+                money = false,
                 error = state.errors[OrderSettingsField.DEPOSIT]?.asString(),
                 help = HelpText(stringResource(Res.string.settings_orders_deposit_help)),
             )

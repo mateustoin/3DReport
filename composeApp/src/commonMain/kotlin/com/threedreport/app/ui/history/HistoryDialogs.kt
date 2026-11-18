@@ -2,6 +2,7 @@ package com.threedreport.app.ui.history
 
 import androidx.compose.runtime.Composable
 import com.threedreport.app.ui.components.OverdueExportDialog
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.quote.DeliveryDateDialog
 import com.threedreport.app.ui.quote.PrintSettingsDialog
 import com.threedreport.core.model.PrintSettings
@@ -14,7 +15,7 @@ import com.threedreport.core.model.PrintSettings
 fun HistoryDialogs(state: HistoryUiState, viewModel: QuoteHistoryViewModel) {
     state.deliveryDateEditing?.let { quote ->
         DeliveryDateDialog(
-            quoteName = quote.name,
+            quoteName = quote.shownName(),
             initial = quote.deliveryDateEpochDay,
             daysLate = viewModel::deliveryDaysLate,
             today = state.today,

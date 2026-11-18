@@ -3,6 +3,7 @@ package com.threedreport.app.ui.onboarding
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_number_invalid
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
@@ -75,7 +76,7 @@ class OnboardingViewModel(
     private val state = MutableStateFlow(
         OnboardingUiState(
             energyText = currentSettings.energyPricePerKwh.toInputText(separator),
-            marginText = (currentSettings.profitMargin * 100).toInputText(separator),
+            marginText = (currentSettings.profitMargin * 100).toInputText(AppLocale.decimalSeparator),
         ).validated(separator),
     )
     val uiState: StateFlow<OnboardingUiState> = state.asStateFlow()
@@ -101,7 +102,7 @@ class OnboardingViewModel(
         if (!current.canContinue || current.machinePriceError != null) return null
         val energy = parseDecimal(current.energyText, NumberKind.MEASURE, separator)
         val labor = if (current.laborText.isBlank()) 0.0 else parseDecimal(current.laborText, decimalSeparator = separator)
-        val margin = parseDecimal(current.marginText, NumberKind.MEASURE, separator)
+        val margin = parseDecimal(current.marginText, NumberKind.MEASURE, AppLocale.decimalSeparator)
         val machinePrice = if (current.machinePriceText.isBlank()) null else parseDecimal(current.machinePriceText, decimalSeparator = separator)
         return OnboardingResult(
             settings = currentSettings.copy(
@@ -123,15 +124,15 @@ class OnboardingViewModel(
  * ([NumberKind.MEASURE]), como em Configurações: "1.250" é 1,25, e não mil duzentos e cinquenta.
  */
 private fun OnboardingUiState.validated(separator: Char): OnboardingUiState {
-    fun error(text: String, optional: Boolean, kind: NumberKind = NumberKind.AMOUNT): UiText? {
+    fun error(text: String, optional: Boolean, kind: NumberKind = NumberKind.AMOUNT, money: Boolean = true): UiText? {
         if (optional && text.isBlank()) return null
-        val value = parseDecimal(text, kind, separator) ?: return uiText(Res.string.common_error_number_invalid)
+        val value = parseDecimal(text, kind, if (money) separator else AppLocale.decimalSeparator) ?: return uiText(Res.string.common_error_number_invalid)
         return uiText(Res.string.common_error_negative).takeIf { value < 0 }
     }
     return copy(
         machinePriceError = error(machinePriceText, optional = true),
         energyError = error(energyText, optional = false, kind = NumberKind.MEASURE),
         laborError = error(laborText, optional = true),
-        marginError = error(marginText, optional = false, kind = NumberKind.MEASURE),
+        marginError = error(marginText, optional = false, kind = NumberKind.MEASURE, money = false),
     )
 }

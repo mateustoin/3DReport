@@ -92,10 +92,10 @@ class SettingsSeparatorTest {
         viewModel.startEdit(repository.channels.value.single())
 
         val form = viewModel.uiState.value.form!!
-        assertEquals("12.345", form.feeRatePercentText)
+        assertEquals("12,345", form.feeRatePercentText)
         assertEquals("1.5", form.fixedFeePerItemText)
         assertEquals("50.125", form.tiers[0].upToUnitPriceText)
-        assertEquals("12.345", form.tiers[0].feeRatePercentText)
+        assertEquals("12,345", form.tiers[0].feeRatePercentText)
 
         viewModel.save()
         assertEquals(0.12345, repository.channels.value.single().feeRate, 1e-9)

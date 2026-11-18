@@ -110,6 +110,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     value = state.productiveHoursPerMonthText,
                     onValueChange = { text -> viewModel.update { it.copy(productiveHoursPerMonthText = text) } },
                     kind = NumberKind.AMOUNT,
+                    money = false,
                     error = state.errors[SettingsField.PRODUCTIVE_HOURS]?.asString(),
                     // Custo fixo sem horas pra dividir não entra no preço: o ícone de ajuda fica âmbar e explica.
                     help = if (state.fixedCostWithoutHours) {
@@ -130,6 +131,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     value = state.failureRatePercentText,
                     onValueChange = { text -> viewModel.update { it.copy(failureRatePercentText = text) } },
                     kind = NumberKind.MEASURE,
+                    money = false,
                     error = state.errors[SettingsField.FAILURE_RATE]?.asString(),
                     help = HelpText(stringResource(Res.string.settings_help_failure), stringResource(Res.string.settings_help_failure_detail)),
                 )
@@ -140,6 +142,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     value = state.finishingRatePercentText,
                     onValueChange = { text -> viewModel.update { it.copy(finishingRatePercentText = text) } },
                     kind = NumberKind.MEASURE,
+                    money = false,
                     error = state.errors[SettingsField.FINISHING_RATE]?.asString(),
                     help = HelpText(stringResource(Res.string.settings_help_finishing), stringResource(Res.string.settings_help_finishing_detail)),
                 )
@@ -155,6 +158,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     value = state.profitMarginPercentText,
                     onValueChange = { text -> viewModel.update { it.copy(profitMarginPercentText = text) } },
                     kind = NumberKind.MEASURE,
+                    money = false,
                     error = state.errors[SettingsField.MARGIN]?.asString(),
                 )
             }
@@ -164,6 +168,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     value = state.taxRatePercentText,
                     onValueChange = { text -> viewModel.update { it.copy(taxRatePercentText = text) } },
                     kind = NumberKind.MEASURE,
+                    money = false,
                     error = state.errors[SettingsField.TAX]?.asString(),
                     help = HelpText(stringResource(Res.string.settings_help_tax), stringResource(Res.string.settings_help_tax_detail)),
                 )
@@ -200,6 +205,7 @@ internal fun BusinessSection(state: SettingsUiState, viewModel: SettingsViewMode
                     value = state.rushSurchargeRatePercentText,
                     onValueChange = { text -> viewModel.update { it.copy(rushSurchargeRatePercentText = text) } },
                     kind = NumberKind.MEASURE,
+                    money = false,
                     error = state.errors[SettingsField.RUSH]?.asString(),
                     help = HelpText(stringResource(Res.string.settings_help_rush), stringResource(Res.string.settings_help_rush_detail)),
                 )
