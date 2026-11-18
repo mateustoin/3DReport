@@ -69,6 +69,9 @@ comandos em [docs/development.md](docs/development.md#comandos). Resumo:
    (o `./gradlew build` e o CI falham se o estilo estiver fora do padrão).
 3. Se mudar uma fórmula de cálculo, atualize o teste **e**
    [docs/pricing-formulas.md](docs/pricing-formulas.md) no mesmo commit.
+   Se acrescentar ou mudar um texto do app, escreva nos dois idiomas (`values/` e
+   `values-en/`), pelo [glossário](docs/glossario.md): o teste de paridade falha o
+   build se faltar um lado ([passo a passo](docs/development.md#textos-novos-nos-dois-idiomas)).
 4. Rode `./gradlew build` localmente antes de abrir o PR: o CI roda o mesmo
    comando.
 5. Mensagens de commit seguem o padrão

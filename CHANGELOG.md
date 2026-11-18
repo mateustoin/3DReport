@@ -10,6 +10,7 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 Receber e conversar com o cliente. Depois de mandar o orçamento, você cobra por Pix, registra o que entrou,
 entrega um recibo e avisa o cliente a cada passo, sem sair do app e sem internet. **Nada muda sozinho:**
 sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que você já tem continuam como estão.
+O app também passa a ter versão em inglês, com a escolha do idioma em Configurações.
 
 ### Adicionado
 - **Pix copia e cola e QR Code.** Em Configurações, Documentos pro cliente, informe sua chave Pix, o nome
@@ -37,6 +38,29 @@ sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que
   recibo. Um ícone no cartão mostra que o pedido tem observação.
 - **Calendário nas datas.** O prazo de entrega, o pagamento e a manutenção usam o mesmo seletor, com
   atalhos e calendário.
+- **O app em inglês.** Em Configurações, Aparência, o novo "Idioma" tem Automático, Português e English.
+  A troca vale na hora, sem reiniciar, e o PDF, a mensagem, a imagem e o recibo saem no idioma escolhido.
+  Em Automático, quem usa o sistema em português continua vendo tudo em português, e qualquer outro idioma
+  do sistema abre em inglês. Nada muda pra quem já usa o app em português.
+- **Datas e números no formato do idioma.** Em inglês, a data segue a região do seu sistema (mês/dia nos
+  Estados Unidos, dia/mês nos outros países) e a hora é de 24 h. Pesos, horas e percentuais usam ponto no
+  lugar da vírgula. O dinheiro continua seguindo a moeda de cada orçamento, e a altura de camada e o
+  preenchimento continuam com ponto, como no fatiador.
+- **Moeda sugerida na primeira abertura.** Numa instalação nova, a moeda padrão vem da região do sistema
+  (real, dólar, euro ou libra) e você troca no primeiro passo. Quem já usa o app não muda nada.
+- **Mensagens com marcadores em inglês.** Nos modelos de mensagem, `{customer}`, `{order}`, `{part}`,
+  `{due}`, `{total}`, `{balance}`, `{tracking}` e `{shop}` funcionam no lugar dos nomes em português, e no
+  site de rastreio `{code}` no lugar de `{codigo}`. Os modelos que você já escreveu continuam valendo.
+- **README, notas das versões e site em inglês.** O `README.en.md`, um resumo em inglês no fim de cada versão
+  e o site em `/en/`, com a calculadora, o manual e a página de imprensa.
+
+### Alterado
+- **O que só vale no Brasil some fora do real.** Com outra moeda padrão, a seção Pix das configurações, o
+  Pix como forma de pagamento, o preço de referência das impressoras da lista e o site de rastreio dos
+  Correios não aparecem. Em inglês, os exemplos citam Etsy, eBay e Amazon. Nada do que você já cadastrou
+  muda.
+- **Nome automático do orçamento no idioma do app.** Orçamentos sem nome aparecem nas listas montados no
+  idioma em uso, e o arquivo não muda.
 
 ### Corrigido
 - **Tab nos formulários.** O teclado não chegava aos campos de texto nem às listas de escolha: o foco sumia
@@ -47,10 +71,9 @@ sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que
 
 ### In English
 - **The app in English.** Settings, Appearance has a new Language option (Automatic, Português, English). It applies at once, and the PDF, messages, image and receipt follow. Dates follow your system region.
-- **Get paid and keep in touch.** Record deposits and payments, print a PDF receipt for each one, send ready-made messages at every stage, spot quotes that are waiting and keep a tracking code and private notes. Pix for sellers in Brazil.
-- **A better price.** Supplies, a fixed fee per item on sales channels, free shipping, a minimum order price and a rush fee, all counted in the profit.
-- **A new look.** A redone interface, Settings in sections, a new PDF and chat image, and STL or 3MF files kept with each order.
-- **Easier to keep up.** 57 printers with reference values, and an "Update now" button in About.
+- **Made for sellers outside Brazil.** Examples use Etsy, eBay and Amazon. Pix, reference printer prices and the Brazilian tracking site only show up when your currency is the real. A new install suggests a currency from your region.
+- **Get paid and keep in touch.** Record deposits and payments, print a PDF receipt for each one, send ready-made messages at every stage, spot quotes that are waiting and keep a tracking code and private notes.
+- **Read it in English.** The README, the release notes and the website now have English versions, and the website has a calculator in English too.
 
 ## [2.2.1] - 2026-11-17
 

@@ -102,6 +102,7 @@ machine.
 - Backup and restore of your data in a `.zip` file (take it to another computer, recover after a reformat)
 - Multiple currencies (BRL, USD, EUR, GBP), with the right decimal and thousands separators
 - Light and dark theme (follows the system by default)
+- The app in Portuguese and English: the language follows the system by default and can be changed in Settings, at once; the PDF, message, image and receipt come out in the chosen language
 - Keyboard shortcuts: `Ctrl`/`Cmd` + `1` to `9` jump straight to each sidebar screen (Quote, Orders, Catalog, Dashboard, Filaments, Printers, Services, Supplies, Settings), besides save and clear quote
 - Confirmation before deleting (filaments, printers, services, orders)
 - The window remembers its size, position and whether it was maximized, and opens that way again (if it still fits on the screen)

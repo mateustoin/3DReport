@@ -306,7 +306,7 @@ próprios de Pix e de enviar no `AppIcons` (hoje há ícones genéricos); e um m
 pedido mais curto, já que as ações novas o deixaram longo (revisão de design futura).
 Capturas novas da leva saem com `-Pscreenshots.leva11=true`, sem mudar o conjunto do site.
 
-### Leva 11B: Inglês no app, no README e no site (idioma, fase B)
+### Leva 11B: Inglês no app, no README e no site (feita, decisões 152 a 157)
 
 Segunda metade do item de idioma. Depois da Leva 11, o app já tem o núcleo que
 serve a qualquer vendedor, de qualquer país (G-code, preço certo, PDF, pedidos),
@@ -325,19 +325,28 @@ e toda funcionalidade nova passa a ter texto em dois idiomas. Espanhol, pra Amé
 Latina (Mercado Libre, WhatsApp, venda informal), fica registrado como o próximo
 candidato natural.
 
-- [ ] **Inglês no app.** Tradução dos recursos da Leva 10B, escolha do idioma em
+- [x] **Inglês no app.** **Feito (decisões 152 a 154, 2026-11-18).** Tradução dos recursos da Leva 10B, escolha do idioma em
   Configurações (seguindo o do sistema por padrão, como o tema, decisão 35), datas e
   números no formato do idioma, PDF, mensagem e imagem no idioma do app.
-- [ ] **Padrões de produto pra quem não vende no Brasil.** Pix e MEI (Levas 11 e
+- [x] **Padrões de produto pra quem não vende no Brasil.** **Feito (decisão 155, 2026-11-18)**
+  pro Pix e pro que só vale no Brasil; o MEI (Leva 13) ainda não existe. Pix e MEI (Levas 11 e
   13) aparecem só pra quem usa real; canais sugeridos passam a incluir Etsy, eBay e
   Amazon; o imposto e a moeda já são genéricos (decisão 46).
-- [ ] **README em inglês** (um `README.en.md`, ligado no topo do README) e notas das
+- [x] **README em inglês** **Feito (decisão 156, 2026-11-18).** (um `README.en.md`, ligado no topo do README) e notas das
   versões com um resumo em inglês, já que hoje saem do CHANGELOG em português. Os
   documentos internos (`docs/`, decisões, roadmap) continuam em português.
-- [ ] **Site em inglês.** As 5 páginas (cerca de 9.400 palavras) e os textos da
+- [x] **Site em inglês.** **Feito (decisão 157, 2026-11-18).** As 5 páginas (cerca de 9.400 palavras) e os textos da
   calculadora (`calculadora.js`) numa pasta `/en/`, com seletor de idioma,
   marcações `hreflang`, `sitemap` e dados estruturados em inglês. Esforço M; o maior
   custo é manter as duas versões iguais depois.
+
+**Ficou de fora da Leva 11B** (decisões 153 a 155), pra levas futuras:
+- **Valores de exemplo por moeda** (kWh, filamento e impressoras no primeiro uso): entram na Leva 17. Hoje a ajuda do primeiro uso pede pra trocar pelos valores reais.
+- **Espanhol** como próximo idioma (América Latina).
+- **Formato de dinheiro em inglês sem espaço** ("$37.51"); hoje o formato é o da moeda, igual nos dois idiomas.
+- **Padronizar "System" e "Automatic" no Tema**, pra casar com o Idioma.
+- **Banner og da versão em inglês**: a página de imprensa em inglês ainda usa o texto da 2.1.
+- **`CatalogProductStat` expor `autoNamed` e a data**: hoje o Dashboard junta os dois na tela pra montar o nome automático.
 
 ### Leva 12: Estoque e compras
 
@@ -505,6 +514,9 @@ das levas que criam o que ela mostra.
   12) e manutenção vencida. Mexe na barra lateral e nos atalhos (decisão 111),
   então precisa de decisão sobre onde fica. Visto em: Manager 3D (painel
   operacional), Printforge. Esforço M, impacto A.
+- [ ] **Valores de exemplo por moeda.** KWh, preço de filamento e de impressora no
+  primeiro uso, por moeda (decisão 155; a Leva 11B só pede pra trocar pelos valores
+  reais).
 - [ ] **Modo demonstração.** Abrir o app com dados de exemplo pra explorar sem
   cadastrar nada, reaproveitando os dados do gerador de prints (`renderScreenshots`,
   decisão 120), numa pasta separada que não se mistura com os dados reais. Visto
