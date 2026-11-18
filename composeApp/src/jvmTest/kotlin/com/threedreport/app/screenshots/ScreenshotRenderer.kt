@@ -170,27 +170,27 @@ class ScreenshotRenderer {
         }
 
         // "Negociar" (decisão 131): o painel com o preço combinado aberto, e o preço, o lucro e o mínimo já mudados por ele.
-        renderAppPng(File(outDir, "orcamento-negociar.png"), afterSettle = { it.clickByText("Negociar") }) {
+        renderAppPng(File(outDir, "orcamento-negociar.png"), afterSettle = { it.clickByText(ST.negotiate) }) {
             sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm ->
                     fillDraftQuote(vm)
-                    vm.setTargetTotal("160")
+                    vm.setTargetTotal(sample("160", "45"))
                 },
             )
         }
 
         // Preço combinado abaixo do mínimo do pedido: o aviso do painel (aviso, não bloqueio).
         val settingsBefore = container.settings.settings.value
-        container.settings.update(settingsBefore.copy(minimumOrderPrice = 250.0))
-        renderAppPng(File(outDir, "orcamento-abaixo-minimo.png"), afterSettle = { it.clickByText("Negociar") }) {
+        container.settings.update(settingsBefore.copy(minimumOrderPrice = sample(250.0, 70.0)))
+        renderAppPng(File(outDir, "orcamento-abaixo-minimo.png"), afterSettle = { it.clickByText(ST.negotiate) }) {
             sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm ->
                     fillDraftQuote(vm)
-                    vm.setTargetTotal("160")
+                    vm.setTargetTotal(sample("160", "45"))
                 },
             )
         }
@@ -206,7 +206,7 @@ class ScreenshotRenderer {
         }
 
         // O diálogo de configurações de impressão de uma impressão.
-        renderAppPng(File(outDir, "orcamento-configuracoes.png"), afterSettle = { it.clickByText("Configurações de impressão") }) {
+        renderAppPng(File(outDir, "orcamento-configuracoes.png"), afterSettle = { it.clickByText(ST.printSettings) }) {
             sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
@@ -224,13 +224,13 @@ class ScreenshotRenderer {
             )
         }
         // E o painel de negociação no escuro, onde o azul-marinho e o campo se confundem mais fácil.
-        renderAppPng(File(outDir, "orcamento-negociar-escuro.png"), afterSettle = { it.clickByText("Negociar") }) {
+        renderAppPng(File(outDir, "orcamento-negociar-escuro.png"), afterSettle = { it.clickByText(ST.negotiate) }) {
             sampleApp(
                 container,
                 startAt = AppDestination.QUOTE,
                 prepareQuote = { vm ->
                     fillDraftQuote(vm)
-                    vm.setTargetTotal("160")
+                    vm.setTargetTotal(sample("160", "45"))
                 },
             )
         }
@@ -243,7 +243,7 @@ class ScreenshotRenderer {
             container.theme.update(theme)
             container.preferences.setOrdersView(OrdersView.KANBAN)
             renderAppPng(File(outDir, "pedidos$suffix.png")) { historyApp(container, AppDestination.ORDERS) }
-            renderAppPng(File(outDir, "pedidos-detalhes$suffix.png"), afterSettle = { it.clickByText("Suporte de headset") }) {
+            renderAppPng(File(outDir, "pedidos-detalhes$suffix.png"), afterSettle = { it.clickByText(Names.headset) }) {
                 historyApp(container, AppDestination.ORDERS)
             }
             container.preferences.setOrdersView(OrdersView.LIST)
@@ -254,10 +254,10 @@ class ScreenshotRenderer {
             renderAppPng(File(outDir, "catalogo$suffix.png")) { historyApp(container, AppDestination.CATALOG) }
             if (theme == ThemeMode.LIGHT) {
                 // O menu de ações de um cartão aberto, e o modo de seleção que o "Exportar catálogo" liga.
-                renderAppPng(File(outDir, "pedidos-menu.png"), afterSettle = { it.clickByDescription("Mais ações") }) {
+                renderAppPng(File(outDir, "pedidos-menu.png"), afterSettle = { it.clickByDescription(ST.moreActions) }) {
                     historyApp(container, AppDestination.ORDERS)
                 }
-                renderAppPng(File(outDir, "catalogo-selecao.png"), afterSettle = { it.clickByText("Exportar catálogo") }) {
+                renderAppPng(File(outDir, "catalogo-selecao.png"), afterSettle = { it.clickByText(ST.exportCatalog) }) {
                     historyApp(container, AppDestination.CATALOG)
                 }
             }
@@ -273,27 +273,27 @@ class ScreenshotRenderer {
             container.theme.update(theme)
             renderAppPng(
                 File(outDir, "insumos$suffix.png"),
-                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
+                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText(ST.archived) },
             ) {
                 sampleApp(container, startAt = AppDestination.CONSUMABLES)
             }
-            renderAppPng(File(outDir, "servicos$suffix.png"), afterSettle = { it.clickByText("Montagem") }) {
+            renderAppPng(File(outDir, "servicos$suffix.png"), afterSettle = { it.clickByText(Names.assembly) }) {
                 sampleApp(container, startAt = AppDestination.SERVICES)
             }
             // Filamentos e Impressoras: a lista (no escuro, com os arquivados abertos) e o painel de edição aberto.
             renderAppPng(
                 File(outDir, "filamentos$suffix.png"),
-                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
+                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText(ST.archived) },
             ) {
                 sampleApp(container, startAt = AppDestination.FILAMENTS)
             }
-            renderAppPng(File(outDir, "filamentos-painel$suffix.png"), afterSettle = { it.clickByText("PLA Voolt3D") }) {
+            renderAppPng(File(outDir, "filamentos-painel$suffix.png"), afterSettle = { it.clickByText(Names.PLA_FILAMENT) }) {
                 sampleApp(container, startAt = AppDestination.FILAMENTS)
             }
             renderAppPng(
                 File(outDir, "filamentos-cores$suffix.png"),
                 afterSettle = {
-                    it.clickByText("PLA Voolt3D")
+                    it.clickByText(Names.PLA_FILAMENT)
                     settle(it, frames = 4)
                     it.scrollAllToEnd()
                 },
@@ -302,26 +302,26 @@ class ScreenshotRenderer {
             }
             renderAppPng(
                 File(outDir, "impressoras$suffix.png"),
-                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText("Arquivados") },
+                afterSettle = { if (theme == ThemeMode.DARK) it.clickByText(ST.archived) },
             ) {
                 sampleApp(container, startAt = AppDestination.PRINTERS)
             }
-            renderAppPng(File(outDir, "impressoras-painel$suffix.png"), afterSettle = { it.clickByText("Bambu Lab A1") }) {
+            renderAppPng(File(outDir, "impressoras-painel$suffix.png"), afterSettle = { it.clickByText(Names.BAMBU) }) {
                 sampleApp(container, startAt = AppDestination.PRINTERS)
             }
         }
         container.theme.update(ThemeMode.LIGHT)
 
         // Os diálogos de Impressoras: a manutenção e a lista pré-cadastrada.
-        renderAppPng(File(outDir, "impressoras-manutencao.png"), afterSettle = { it.clickByDescription("Manutenção") }) {
+        renderAppPng(File(outDir, "impressoras-manutencao.png"), afterSettle = { it.clickByDescription(ST.maintenance) }) {
             sampleApp(container, startAt = AppDestination.PRINTERS)
         }
         container.theme.update(ThemeMode.DARK)
-        renderAppPng(File(outDir, "impressoras-manutencao-escuro.png"), afterSettle = { it.clickByDescription("Manutenção") }) {
+        renderAppPng(File(outDir, "impressoras-manutencao-escuro.png"), afterSettle = { it.clickByDescription(ST.maintenance) }) {
             sampleApp(container, startAt = AppDestination.PRINTERS)
         }
         container.theme.update(ThemeMode.LIGHT)
-        renderAppPng(File(outDir, "impressoras-lista.png"), afterSettle = { it.clickByText("Escolher da lista") }) {
+        renderAppPng(File(outDir, "impressoras-lista.png"), afterSettle = { it.clickByText(ST.pickPrinter) }) {
             sampleApp(container, startAt = AppDestination.PRINTERS)
         }
 
@@ -335,7 +335,7 @@ class ScreenshotRenderer {
         renderDropOverlayScreenshots(outDir)
         renderNarrowSettingsScreenshots(container, outDir)
 
-        val portaCelular = container.quoteHistory.savedQuotes.value.first { it.name == "Porta-celular" }
+        val portaCelular = container.quoteHistory.savedQuotes.value.first { it.name == Names.phoneStand }
         val photoBytes = container.quoteHistory.photoBytes(portaCelular)
         val branding = container.branding.branding.value
         renderPdfComposite(portaCelular, photoBytes, branding, File(outDir, "pdf.png"))
@@ -350,10 +350,10 @@ class ScreenshotRenderer {
         val completo = portaCelular.copy(
             quote = portaCelular.quote.copy(quantity = 3, rush = true, salePrice = portaCelular.quote.salePrice * 3),
             services = listOf(
-                QuoteService(id = "pintura", name = "Pintura", price = 5.0, chargedPerOrder = false),
-                QuoteService(id = "embalagem", name = "Embalagem", price = 3.0, chargedPerOrder = true),
+                QuoteService(id = "pintura", name = sample("Pintura", "Painting"), price = sample(5.0, 2.0), chargedPerOrder = false),
+                QuoteService(id = "embalagem", name = sample("Embalagem", "Packaging"), price = sample(3.0, 1.0), chargedPerOrder = true),
             ),
-            shippingCost = 12.0,
+            shippingCost = sample(12.0, 5.0),
         )
         val brandingCompleto = branding.copy(showBorder = true, showPrintTime = true, showClientName = true, quoteValidityDays = 7)
         renderPdfComposite(completo, photoBytes, brandingCompleto, File(outDir, "pdf-completo.png"))
@@ -389,17 +389,17 @@ internal fun screenshotLocale(tag: String?): AppLocaleState {
 private fun renderPrinterPresetScreenshots(container: AppContainer, outDir: File) {
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "claro", ThemeMode.DARK to "escuro")) {
         container.theme.update(theme)
-        renderAppPng(File(outDir, "impressoras-lista-$suffix.png"), afterSettle = { it.clickByText("Escolher da lista") }) {
+        renderAppPng(File(outDir, "impressoras-lista-$suffix.png"), afterSettle = { it.clickByText(ST.pickPrinter) }) {
             sampleApp(container, startAt = AppDestination.PRINTERS)
         }
         renderAppPng(
             File(outDir, "impressoras-formulario-preset-$suffix.png"),
             afterSettle = { scene ->
-                scene.clickByText("Escolher da lista")
+                scene.clickByText(ST.pickPrinter)
                 settle(scene, frames = 3)
-                scene.setTextByLabel("Buscar por marca ou modelo", "A1 Combo")
+                scene.setTextByLabel(ST.presetSearch, "A1 Combo")
                 settle(scene, frames = 3)
-                scene.clickByText("Bambu Lab A1 Combo")
+                scene.clickByText(Names.BAMBU_PRESET)
             },
         ) {
             sampleApp(container, startAt = AppDestination.PRINTERS)
@@ -424,7 +424,7 @@ private fun renderLeva10cScreenshots(container: AppContainer, outDir: File) {
             startAt = AppDestination.QUOTE,
             prepareQuote = { vm ->
                 fillDraftQuote(vm)
-                vm.attachModelFile(PickedFile("Suporte de monitor.3mf", threeMfWithThumbnail(photo)))
+                vm.attachModelFile(PickedFile("${Names.monitorStand}.3mf", threeMfWithThumbnail(photo)))
             },
         )
     }
@@ -487,7 +487,7 @@ private fun renderLeva10cScreenshots(container: AppContainer, outDir: File) {
             startAt = AppDestination.QUOTE,
             prepareQuote = { vm ->
                 fillDraftQuote(vm)
-                vm.attachModelFile(PickedFile("Suporte de monitor.3mf", threeMfWithThumbnail(photo)))
+                vm.attachModelFile(PickedFile("${Names.monitorStand}.3mf", threeMfWithThumbnail(photo)))
             },
         )
     }
@@ -498,11 +498,11 @@ private fun renderLeva10cScreenshots(container: AppContainer, outDir: File) {
     for ((name, installer) in listOf("baixando" to PreviewInstaller(downloading = true), "pronto" to PreviewInstaller(downloading = false))) {
         val dir = createTempDirectory("3dreport-screenshots-update-$name").toFile()
         LocalStorage(dir, Clock.System).onboarding().markCompleted()
-        val updateContainer = buildContainer(dir, ReleaseSource { release }, installer)
+        val updateContainer = buildContainer(dir, ReleaseSource { release }, installer).also { it.currency.update(sampleCurrency()) }
         updateContainer.preferences.update(updateContainer.preferences.preferences.value.copy(checkForUpdates = true))
         for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
             updateContainer.theme.update(theme)
-            renderAppPng(File(outDir, "atualizacao-$name$suffix.png"), afterSettle = { it.clickByText("Atualizar agora") }) {
+            renderAppPng(File(outDir, "atualizacao-$name$suffix.png"), afterSettle = { it.clickByText(ST.updateNow) }) {
                 sampleApp(updateContainer, startAt = AppDestination.ABOUT)
             }
         }
@@ -511,13 +511,13 @@ private fun renderLeva10cScreenshots(container: AppContainer, outDir: File) {
     // Erro de rede, Linux sem pkexec (comando pra copiar) e orçamento não salvo antes de instalar.
     data class State(val name: String, val installer: PreviewInstaller, val steps: List<String>, val draft: Boolean = false)
     for (state in listOf(
-        State("erro", PreviewInstaller(downloading = false, fails = true), listOf("Atualizar agora")),
-        State("manual", PreviewInstaller(downloading = false, manual = true), listOf("Atualizar agora", "Abrir a pasta")),
-        State("nao-salvo", PreviewInstaller(downloading = false), listOf("Atualizar agora", "Instalar e fechar o app"), draft = true),
+        State("erro", PreviewInstaller(downloading = false, fails = true), listOf(ST.updateNow)),
+        State("manual", PreviewInstaller(downloading = false, manual = true), listOf(ST.updateNow, ST.openFolder)),
+        State("nao-salvo", PreviewInstaller(downloading = false), listOf(ST.updateNow, ST.installAndClose), draft = true),
     )) {
         val dir = createTempDirectory("3dreport-screenshots-update-${state.name}").toFile()
         LocalStorage(dir, Clock.System).onboarding().markCompleted()
-        val updateContainer = buildContainer(dir, ReleaseSource { release }, state.installer)
+        val updateContainer = buildContainer(dir, ReleaseSource { release }, state.installer).also { it.currency.update(sampleCurrency()) }
         updateContainer.preferences.update(updateContainer.preferences.preferences.value.copy(checkForUpdates = true))
         for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
             updateContainer.theme.update(theme)
@@ -612,14 +612,14 @@ private fun binaryStlSphere(segments: Int): ByteArray {
  * os modelos que as capturas precisam ter e que ficam só nesta pasta temporária.
  */
 private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
-    val sections = listOf("Negócio" to "negocio", "Canais de venda" to "canais", "Documentos pro cliente" to "documentos", "Aparência" to "aparencia", "Backup" to "backup")
+    val sections = listOf(ST.sectionBusiness to "negocio", ST.sectionChannels to "canais", ST.sectionDocuments to "documentos", ST.sectionAppearance to "aparencia", ST.sectionBackup to "backup")
     // A lista de modelos ainda vazia (o EmptyState do diálogo), antes de os modelos de exemplo entrarem.
     renderAppPng(
         File(outDir, "configuracoes-modelos-vazio.png"),
         afterSettle = {
-            it.clickByText("Documentos pro cliente")
+            it.clickByText(ST.sectionDocuments)
             settle(it, frames = 3)
-            it.clickByText("Ver modelos salvos")
+            it.clickByText(ST.templateList)
         },
     ) {
         sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -627,8 +627,8 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
     // Um canal com faixas de preço e dois modelos, pra o diálogo do canal e a lista de modelos terem o que mostrar.
     val shopee = container.salesChannels.channels.value.first { it.id == Catalog.SHOPEE_ID }
     // "Simples" primeiro: é diferente do que está gravado, então o "Carregar" da primeira linha muda o rascunho.
-    container.templates.add(QuoteTemplate(id = "tpl-simples", name = "Simples", brandName = null, showWatermark = false, showFooter = true, showBorder = true))
-    container.templates.add(QuoteTemplate(id = "tpl-formal", name = "Formal", brandName = "Sua Loja 3D", showWatermark = true, showFooter = true))
+    container.templates.add(QuoteTemplate(id = "tpl-simples", name = sample("Simples", "Simple"), brandName = null, showWatermark = false, showFooter = true, showBorder = true))
+    container.templates.add(QuoteTemplate(id = "tpl-formal", name = "Formal", brandName = Names.shopName, showWatermark = true, showFooter = true))
 
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
         container.theme.update(theme)
@@ -640,7 +640,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
         // Uma alteração por salvar: a barra embaixo e o "Não salvo" na lista.
         renderAppPng(
             File(outDir, "configuracoes-negocio-alterado$suffix.png"),
-            afterSettle = { it.setTextByLabel("Margem de lucro (%)", "150") },
+            afterSettle = { it.setTextByLabel(ST.marginField, "150") },
         ) {
             sampleApp(container, startAt = AppDestination.SETTINGS)
         }
@@ -649,10 +649,10 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             renderAppPng(
                 File(outDir, "configuracoes-negocio-erro.png"),
                 afterSettle = {
-                    it.setTextByLabel("Valor da sua hora de trabalho", "-5")
-                    it.setTextByLabel("Taxa de falhas (%)", "abc")
+                    it.setTextByLabel(ST.laborField, "-5")
+                    it.setTextByLabel(ST.failureField, "abc")
                     settle(it, frames = 3)
-                    it.clickByText("Salvar")
+                    it.clickByText(ST.save)
                 },
             ) {
                 sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -663,7 +663,7 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             renderAppPng(
                 File(outDir, "configuracoes-documentos-fim.png"),
                 afterSettle = {
-                    it.clickByText("Documentos pro cliente")
+                    it.clickByText(ST.sectionDocuments)
                     settle(it, frames = 3)
                     it.scrollAllToEnd()
                 },
@@ -677,32 +677,32 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             shopee.copy(
                 feeRate = 0.0,
                 tiers = listOf(
-                    ChannelFeeTier(upToUnitPrice = 8.0, feeRate = 0.20, fixedFeePerItem = 4.0),
-                    ChannelFeeTier(upToUnitPrice = 80.0, feeRate = 0.14, fixedFeePerItem = 16.0),
-                    ChannelFeeTier(upToUnitPrice = null, feeRate = 0.14, fixedFeePerItem = 26.0),
+                    ChannelFeeTier(upToUnitPrice = sample(8.0, 10.0), feeRate = sample(0.20, 0.065), fixedFeePerItem = sample(4.0, 0.20)),
+                    ChannelFeeTier(upToUnitPrice = sample(80.0, 40.0), feeRate = sample(0.14, 0.065), fixedFeePerItem = sample(16.0, 0.40)),
+                    ChannelFeeTier(upToUnitPrice = null, feeRate = sample(0.14, 0.065), fixedFeePerItem = sample(26.0, 0.80)),
                 ),
             ),
         )
         renderAppPng(
             File(outDir, "configuracoes-canal$suffix.png"),
             afterSettle = {
-                it.clickByText("Canais de venda")
+                it.clickByText(ST.sectionChannels)
                 settle(it, frames = 3)
-                it.clickByText("Shopee")
+                it.clickByText(Names.marketplace)
             },
         ) {
             sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         container.salesChannels.update(shopee)
-        renderAppPng(File(outDir, "configuracoes-tarifa$suffix.png"), afterSettle = { it.clickByText("Calcular o kWh") }) {
+        renderAppPng(File(outDir, "configuracoes-tarifa$suffix.png"), afterSettle = { it.clickByText(ST.energyCalc) }) {
             sampleApp(container, startAt = AppDestination.SETTINGS)
         }
         renderAppPng(
             File(outDir, "configuracoes-tarifa-branca$suffix.png"),
             afterSettle = {
-                it.clickByText("Calcular o kWh")
+                it.clickByText(ST.energyCalc)
                 settle(it, frames = 3)
-                it.clickByText("Tarifa branca")
+                it.clickByText(ST.whiteTariff)
             },
         ) {
             sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -710,10 +710,10 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
         renderAppPng(
             File(outDir, "configuracoes-tarifa-resultado$suffix.png"),
             afterSettle = {
-                it.clickByText("Calcular o kWh")
+                it.clickByText(ST.energyCalc)
                 settle(it, frames = 3)
-                it.setTextByLabel("Valor total da conta", "230")
-                it.setTextByLabel("Consumo do mês (kWh)", "250")
+                it.setTextByLabel(ST.billTotal, "230")
+                it.setTextByLabel(ST.billKwh, "250")
             },
         ) {
             sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -721,9 +721,9 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
         renderAppPng(
             File(outDir, "configuracoes-templates$suffix.png"),
             afterSettle = {
-                it.clickByText("Documentos pro cliente")
+                it.clickByText(ST.sectionDocuments)
                 settle(it, frames = 3)
-                it.clickByText("Ver modelos salvos")
+                it.clickByText(ST.templateList)
             },
         ) {
             sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -732,11 +732,11 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
         renderAppPng(
             File(outDir, "configuracoes-modelo-carregado$suffix.png"),
             afterSettle = {
-                it.clickByText("Documentos pro cliente")
+                it.clickByText(ST.sectionDocuments)
                 settle(it, frames = 3)
-                it.clickByText("Ver modelos salvos")
+                it.clickByText(ST.templateList)
                 settle(it, frames = 3)
-                it.clickByDescription("Carregar")
+                it.clickByDescription(ST.load)
             },
         ) {
             sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -745,9 +745,9 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             renderAppPng(
                 File(outDir, "configuracoes-template-salvar.png"),
                 afterSettle = {
-                    it.clickByText("Documentos pro cliente")
+                    it.clickByText(ST.sectionDocuments)
                     settle(it, frames = 3)
-                    it.clickByText("Salvar como modelo")
+                    it.clickByText(ST.saveTemplate)
                 },
             ) {
                 sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -755,9 +755,9 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
             renderAppPng(
                 File(outDir, "configuracoes-documentos-previa.png"),
                 afterSettle = {
-                    it.clickByText("Documentos pro cliente")
+                    it.clickByText(ST.sectionDocuments)
                     settle(it, frames = 3)
-                    it.clickByText("Ver como fica o PDF")
+                    it.clickByText(ST.previewPdf)
                 },
             ) {
                 sampleApp(container, startAt = AppDestination.SETTINGS)
@@ -780,10 +780,11 @@ private fun renderSettingsScreenshots(container: AppContainer, outDir: File) {
 
     // O primeiro uso, numa pasta de dados vazia (onde o onboarding ainda não foi feito): os dois passos, no claro e no escuro.
     val emptyContainer = buildContainer(createTempDirectory("3dreport-screenshots-onboarding").toFile())
+    emptyContainer.currency.update(sampleCurrency())
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
         emptyContainer.theme.update(theme)
         renderAppPng(File(outDir, "primeiro-uso$suffix.png")) { sampleApp(emptyContainer, startAt = AppDestination.QUOTE) }
-        renderAppPng(File(outDir, "primeiro-uso-custos$suffix.png"), afterSettle = { it.clickByText("Continuar") }) {
+        renderAppPng(File(outDir, "primeiro-uso-custos$suffix.png"), afterSettle = { it.clickByText(ST.next) }) {
             sampleApp(emptyContainer, startAt = AppDestination.QUOTE)
         }
     }
@@ -823,7 +824,7 @@ private fun renderDashboardScreenshots(container: AppContainer, outDir: File, gc
     val loss = buildContainer(lossDir)
     val sample = loss.quoteHistory.savedQuotes.value.first { it.isOrder && it.status.isSold }
     loss.quoteHistory.savedQuotes.value.filter { it.isOrder && !it.status.isOpen }.forEach { loss.quoteHistory.delete(it.id) }
-    val sold = loss.quoteHistory.save(name = "Pedido com prejuízo", quote = sample.quote.copy(salePrice = 1.0), services = emptyList(), photo = null, sourceLink = null)
+    val sold = loss.quoteHistory.save(name = sample("Pedido com prejuízo", "Order at a loss"), quote = sample.quote.copy(salePrice = 1.0), services = emptyList(), photo = null, sourceLink = null)
     loss.quoteHistory.updateStatus(sold.id, OrderStatus.APROVADO)
     renderAppPng(File(outDir, "dashboard-prejuizo.png")) { sampleApp(loss, startAt = AppDestination.DASHBOARD) }
 }
@@ -834,7 +835,7 @@ private fun renderDashboardScreenshots(container: AppContainer, outDir: File, gc
  * tema, com uma das zonas "em cima" pra mostrar o destaque.
  */
 private fun renderDropOverlayScreenshots(outDir: File) {
-    val filled = PrintInput(name = "Suporte de monitor", printTimeText = "190", id = 1)
+    val filled = PrintInput(name = Names.monitorStand, printTimeText = "190", id = 1)
     val another = PrintInput(name = "", printTimeText = "45", id = 2)
     for ((theme, suffix) in listOf(ThemeMode.LIGHT to "", ThemeMode.DARK to "-escuro")) {
         renderAppPng(File(outDir, "arrastar-gcode-vazio$suffix.png")) {
@@ -867,7 +868,7 @@ private fun renderNarrowSettingsScreenshots(container: AppContainer, outDir: Fil
     }
     renderAppPng(
         File(outDir, "configuracoes-documentos-janela-estreita.png"),
-        afterSettle = { it.clickByText("Documentos pro cliente") },
+        afterSettle = { it.clickByText(ST.sectionDocuments) },
         width = 900,
         height = 700,
     ) {
@@ -912,7 +913,7 @@ private object Catalog {
 
 /** O orçamento aberto na aba do print de tela do Orçamento: um pedido com duas impressões, negociação e prazo. */
 internal fun fillDraftQuote(vm: QuoteViewModel) {
-    vm.setPrintName("Cabeça e corpo")
+    vm.setPrintName(sample("Cabeça e corpo", "Head and body"))
     vm.selectFilament(Catalog.PLA_ID)
     vm.selectFilamentColor(Catalog.COR_BRANCO)
     vm.selectPrinter(Catalog.BAMBU_ID)
@@ -928,10 +929,10 @@ internal fun fillDraftQuote(vm: QuoteViewModel) {
     vm.setPrintTimeMinutes("1h40", secondPrintId)
 
     vm.toggleService(Catalog.PINTURA_ID)
-    vm.setServicePrice(Catalog.PINTURA_ID, "35")
+    vm.setServicePrice(Catalog.PINTURA_ID, sample("35", "10"))
     vm.selectSalesChannel(Catalog.SHOPEE_ID)
-    vm.setSaveName("Action figure (cabeça, corpo e base)")
-    vm.setClientName("Larissa M.")
+    vm.setSaveName(sample("Action figure (cabeça, corpo e base)", "Action figure (head, body and base)"))
+    vm.setClientName(sample("Larissa M.", "Emma R."))
     vm.setDeliveryDate(deliveryEpochDay(5))
 }
 
@@ -979,74 +980,74 @@ private data class ProductSeed(
     val gcodeFile: String? = null,
 )
 
-private val ORDER_SEEDS = listOf(
+private fun orderSeeds() = listOf(
     OrderSeed(
-        name = "Miniatura pintada",
+        name = Names.painted,
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_CINZA, printerId = Catalog.BAMBU_ID,
         lengthMeters = "18", printTimeText = "1h50",
-        channelId = Catalog.MERCADO_LIVRE_ID, clientName = "Rafael N.", clientContact = "rafael.n@example.com",
-        servicePrice = "20", createdDaysAgo = 1, deliveryDaysFromToday = 6,
+        channelId = Catalog.MERCADO_LIVRE_ID, clientName = sample("Rafael N.", "Noah B."), clientContact = sample("rafael.n@example.com", "noah.b@example.com"),
+        servicePrice = sample("20", "6"), createdDaysAgo = 1, deliveryDaysFromToday = 6,
     ),
     OrderSeed(
-        name = "Vaso geométrico (encomenda)",
+        name = Names.vaseOrder,
         filamentId = Catalog.PETG_ID, colorId = Catalog.COR_NATURAL, printerId = Catalog.K1_ID,
         lengthMeters = "85", printTimeText = "8h10",
-        channelId = Catalog.PIX_ID, clientName = "Camila F.", clientContact = "camila.f@example.com",
+        channelId = Catalog.PIX_ID, clientName = sample("Camila F.", "Olivia K."), clientContact = sample("camila.f@example.com", "olivia.k@example.com"),
         createdDaysAgo = 2, deliveryDaysFromToday = 10,
     ),
     OrderSeed(
-        name = "Suporte de headset",
+        name = Names.headset,
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_PRETO, printerId = Catalog.BAMBU_ID,
         lengthMeters = "52", printTimeText = "5h",
-        channelId = Catalog.MERCADO_LIVRE_ID, clientName = "Juliana T.", clientContact = "juliana.t@example.com",
+        channelId = Catalog.MERCADO_LIVRE_ID, clientName = sample("Juliana T.", "Sophia L."), clientContact = sample("juliana.t@example.com", "sophia.l@example.com"),
         createdDaysAgo = 4, statusSteps = listOf(OrderStatus.APROVADO to 1), deliveryDaysFromToday = 5,
     ),
     OrderSeed(
-        name = "Chaveiro personalizado",
+        name = Names.keychainOrder,
         gcodeFile = "Articulated_Keychains_PLA_4h57m.gcode",
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_PRETO, printerId = Catalog.BAMBU_ID,
-        channelId = Catalog.PIX_ID, clientName = "Carla S.", clientContact = "carla.s@example.com",
+        channelId = Catalog.PIX_ID, clientName = sample("Carla S.", "Mia H."), clientContact = sample("carla.s@example.com", "mia.h@example.com"),
         createdDaysAgo = 6, statusSteps = listOf(OrderStatus.APROVADO to 1), deliveryDaysFromToday = 3,
     ),
     OrderSeed(
-        name = "Porta-celular",
+        name = Names.phoneStand,
         gcodeFile = "smartphone_holder_PLA_1h15m.gcode",
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_BRANCO, printerId = Catalog.K1_ID,
-        channelId = Catalog.SHOPEE_ID, clientName = "Ana P.", clientContact = "ana.p@example.com",
+        channelId = Catalog.SHOPEE_ID, clientName = sample("Ana P.", "Ava P."), clientContact = sample("ana.p@example.com", "ava.p@example.com"),
         createdDaysAgo = 8, statusSteps = listOf(OrderStatus.APROVADO to 1, OrderStatus.EM_IMPRESSAO to 6),
         deliveryDaysFromToday = 1,
     ),
     OrderSeed(
-        name = "Axolote de estimação",
+        name = Names.axolotl,
         gcodeFile = "articulated_axolotl_2_PLA_2h16m.gcode",
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_CINZA, printerId = Catalog.BAMBU_ID,
-        channelId = Catalog.MERCADO_LIVRE_ID, clientName = "Bruno M.", clientContact = "bruno.m@example.com",
+        channelId = Catalog.MERCADO_LIVRE_ID, clientName = sample("Bruno M.", "Liam M."), clientContact = sample("bruno.m@example.com", "liam.m@example.com"),
         createdDaysAgo = 12, statusSteps = listOf(OrderStatus.APROVADO to 1, OrderStatus.EM_IMPRESSAO to 11),
         deliveryDaysFromToday = 2,
     ),
     OrderSeed(
-        name = "Organizador de mesa (encomenda)",
+        name = Names.organizerOrder,
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_BRANCO, printerId = Catalog.K1_ID,
         lengthMeters = "42", printTimeText = "3h40",
-        channelId = Catalog.PIX_ID, clientName = "Marcos L.", clientContact = "marcos.l@example.com",
+        channelId = Catalog.PIX_ID, clientName = sample("Marcos L.", "Lucas W."), clientContact = sample("marcos.l@example.com", "lucas.w@example.com"),
         createdDaysAgo = 9,
         statusSteps = listOf(OrderStatus.APROVADO to 1, OrderStatus.EM_IMPRESSAO to 4, OrderStatus.PRONTO to 8),
         deliveryDaysFromToday = 0,
     ),
     OrderSeed(
-        name = "Luminária lua (encomenda)",
+        name = Names.lampOrder,
         filamentId = Catalog.PETG_ID, colorId = Catalog.COR_NATURAL, printerId = Catalog.K1_ID,
         lengthMeters = "68", printTimeText = "6h30",
-        channelId = Catalog.SHOPEE_ID, clientName = "Patrícia G.", clientContact = "patricia.g@example.com",
+        channelId = Catalog.SHOPEE_ID, clientName = sample("Patrícia G.", "Grace T."), clientContact = sample("patricia.g@example.com", "grace.t@example.com"),
         createdDaysAgo = 18,
         statusSteps = listOf(OrderStatus.APROVADO to 1, OrderStatus.EM_IMPRESSAO to 4, OrderStatus.PRONTO to 15),
         deliveryDaysFromToday = -2,
     ),
     OrderSeed(
-        name = "Barquinho decorativo",
+        name = Names.boat,
         gcodeFile = "3DBenchy_PLA_31m44s.gcode",
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_BRANCO, printerId = Catalog.BAMBU_ID,
-        channelId = Catalog.SHOPEE_ID, clientName = "Diego A.", clientContact = "diego.a@example.com",
+        channelId = Catalog.SHOPEE_ID, clientName = sample("Diego A.", "Ethan A."), clientContact = sample("diego.a@example.com", "ethan.a@example.com"),
         createdDaysAgo = 22,
         statusSteps = listOf(
             OrderStatus.APROVADO to 1, OrderStatus.EM_IMPRESSAO to 4, OrderStatus.PRONTO to 12, OrderStatus.ENTREGUE to 20,
@@ -1054,11 +1055,11 @@ private val ORDER_SEEDS = listOf(
         deliveryDaysFromToday = -2,
     ),
     OrderSeed(
-        name = "Presente de aniversário",
+        name = Names.gift,
         filamentId = Catalog.PLA_ID, colorId = Catalog.COR_CINZA, printerId = Catalog.K1_ID,
         lengthMeters = "33", printTimeText = "3h",
-        channelId = Catalog.PIX_ID, clientName = "Fernanda R.", clientContact = "fernanda.r@example.com",
-        servicePrice = "15", createdDaysAgo = 25,
+        channelId = Catalog.PIX_ID, clientName = sample("Fernanda R.", "Chloe R."), clientContact = sample("fernanda.r@example.com", "chloe.r@example.com"),
+        servicePrice = sample("15", "5"), createdDaysAgo = 25,
         statusSteps = listOf(
             OrderStatus.APROVADO to 1, OrderStatus.EM_IMPRESSAO to 4, OrderStatus.PRONTO to 10, OrderStatus.ENTREGUE to 23,
         ),
@@ -1066,20 +1067,20 @@ private val ORDER_SEEDS = listOf(
     ),
 )
 
-private val PRODUCT_SEEDS = listOf(
-    ProductSeed("Vaso geométrico", "Decoração", Catalog.PETG_ID, Catalog.COR_NATURAL, Catalog.BAMBU_ID, "60", "5h30"),
-    ProductSeed("Organizador de mesa", "Casa", Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.K1_ID, "45", "4h"),
-    ProductSeed("Luminária lua", "Decoração", Catalog.PETG_ID, Catalog.COR_NATURAL, Catalog.K1_ID, "70", "7h"),
+private fun productSeeds() = listOf(
+    ProductSeed(sample("Vaso geométrico", "Geometric vase"), sample("Decoração", "Decor"), Catalog.PETG_ID, Catalog.COR_NATURAL, Catalog.BAMBU_ID, "60", "5h30"),
+    ProductSeed(sample("Organizador de mesa", "Desk organizer"), sample("Casa", "Home"), Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.K1_ID, "45", "4h"),
+    ProductSeed(sample("Luminária lua", "Moon lamp"), sample("Decoração", "Decor"), Catalog.PETG_ID, Catalog.COR_NATURAL, Catalog.K1_ID, "70", "7h"),
     ProductSeed(
-        "Chaveiro geométrico", "Chaveiros", Catalog.PLA_ID, Catalog.COR_PRETO, Catalog.BAMBU_ID,
+        sample("Chaveiro geométrico", "Geometric keychain"), sample("Chaveiros", "Keychains"), Catalog.PLA_ID, Catalog.COR_PRETO, Catalog.BAMBU_ID,
         gcodeFile = "Articulated_Keychains_PLA_4h57m.gcode",
     ),
     ProductSeed(
-        "Suporte de fone (over-ear)", "Acessórios", Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.BAMBU_ID,
+        sample("Suporte de fone (over-ear)", "Headphone stand"), sample("Acessórios", "Accessories"), Catalog.PLA_ID, Catalog.COR_BRANCO, Catalog.BAMBU_ID,
         gcodeFile = "smartphone_holder_PLA_1h15m.gcode",
     ),
     ProductSeed(
-        "Dragão articulado", "Colecionáveis", Catalog.PLA_ID, Catalog.COR_CINZA, Catalog.K1_ID,
+        sample("Dragão articulado", "Articulated dragon"), sample("Colecionáveis", "Collectibles"), Catalog.PLA_ID, Catalog.COR_CINZA, Catalog.K1_ID,
         gcodeFile = "articulated_axolotl_2_PLA_2h16m.gcode",
     ),
 )
@@ -1095,14 +1096,14 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
         Filament(
             id = Catalog.PLA_ID,
             name = "PLA Voolt3D",
-            pricePerKg = 89.90,
+            pricePerKg = sample(89.90, 24.90),
             densityGPerCm3 = 1.24,
             materialType = "PLA",
             brand = "Voolt3D",
             colors = listOf(
-                FilamentColor(id = Catalog.COR_BRANCO, name = "Branco", hex = "#F5F5F5"),
-                FilamentColor(id = Catalog.COR_PRETO, name = "Preto", hex = "#161616"),
-                FilamentColor(id = Catalog.COR_CINZA, name = "Cinza", hex = "#9E9E9E"),
+                FilamentColor(id = Catalog.COR_BRANCO, name = sample("Branco", "White"), hex = "#F5F5F5"),
+                FilamentColor(id = Catalog.COR_PRETO, name = sample("Preto", "Black"), hex = "#161616"),
+                FilamentColor(id = Catalog.COR_CINZA, name = sample("Cinza", "Gray"), hex = "#9E9E9E"),
             ),
         ),
     )
@@ -1110,7 +1111,7 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
         Filament(
             id = Catalog.PETG_ID,
             name = "PETG Voolt3D",
-            pricePerKg = 118.0,
+            pricePerKg = sample(118.0, 29.90),
             densityGPerCm3 = 1.27,
             materialType = "PETG",
             brand = "Voolt3D",
@@ -1122,11 +1123,11 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
         Filament(
             id = "filamento-abs",
             name = "ABS Voolt3D",
-            pricePerKg = 99.0,
+            pricePerKg = sample(99.0, 27.0),
             densityGPerCm3 = 1.04,
             materialType = "ABS",
             brand = "Voolt3D",
-            colors = listOf(FilamentColor(id = "abs-preto", name = "Preto", hex = "#161616")),
+            colors = listOf(FilamentColor(id = "abs-preto", name = sample("Preto", "Black"), hex = "#161616")),
             archived = true,
         ),
     )
@@ -1138,8 +1139,8 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
             id = Catalog.BAMBU_ID,
             name = "Bambu Lab A1",
             printerPowerWatts = 1300.0,
-            maintenanceCostPerHour = 0.15,
-            machineInvestment = MachineInvestment(machinePrice = 2200.0, paybackMonths = 12, printingDaysPerMonth = 24, printingHoursPerDay = 10.0),
+            maintenanceCostPerHour = sample(0.15, 0.04),
+            machineInvestment = MachineInvestment(machinePrice = sample(2200.0, 399.0), paybackMonths = 12, printingDaysPerMonth = 24, printingHoursPerDay = 10.0),
         ),
     )
     printerRepo.add(
@@ -1147,8 +1148,8 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
             id = "printer-ender",
             name = "Ender 3 V2",
             printerPowerWatts = 350.0,
-            maintenanceCostPerHour = 0.10,
-            machineInvestment = MachineInvestment(machinePrice = 1100.0, paybackMonths = 12, printingDaysPerMonth = 20, printingHoursPerDay = 8.0),
+            maintenanceCostPerHour = sample(0.10, 0.03),
+            machineInvestment = MachineInvestment(machinePrice = sample(1100.0, 229.0), paybackMonths = 12, printingDaysPerMonth = 20, printingHoursPerDay = 8.0),
             archived = true,
         ),
     )
@@ -1157,44 +1158,44 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
             id = Catalog.K1_ID,
             name = "Creality K1",
             printerPowerWatts = 350.0,
-            maintenanceCostPerHour = 0.20,
-            machineInvestment = MachineInvestment(machinePrice = 2600.0, paybackMonths = 12, printingDaysPerMonth = 24, printingHoursPerDay = 10.0),
+            maintenanceCostPerHour = sample(0.20, 0.05),
+            machineInvestment = MachineInvestment(machinePrice = sample(2600.0, 499.0), paybackMonths = 12, printingDaysPerMonth = 24, printingHoursPerDay = 10.0),
         ),
     )
 
     // A manutenção de cada impressora: o contador de cada componente já corre, pra lista mostrar o que está perto.
     val maintenanceRepo = storage.maintenance()
-    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-bico", printerId = Catalog.BAMBU_ID, name = "Bico", intervalHours = 100.0, hoursAtLastService = -92.0))
-    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-correias", printerId = Catalog.BAMBU_ID, name = "Correias", intervalHours = 300.0, hoursAtLastService = -40.0))
-    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-mesa", printerId = Catalog.K1_ID, name = "Limpeza da mesa", intervalHours = 200.0, hoursAtLastService = -20.0))
+    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-bico", printerId = Catalog.BAMBU_ID, name = sample("Bico", "Nozzle"), intervalHours = 100.0, hoursAtLastService = -92.0))
+    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-correias", printerId = Catalog.BAMBU_ID, name = sample("Correias", "Belts"), intervalHours = 300.0, hoursAtLastService = -40.0))
+    maintenanceRepo.addComponent(MaintenanceComponent(id = "comp-mesa", printerId = Catalog.K1_ID, name = sample("Limpeza da mesa", "Bed cleaning"), intervalHours = 200.0, hoursAtLastService = -20.0))
 
     val serviceRepo = storage.services()
-    serviceRepo.add(Service(id = Catalog.PINTURA_ID, name = "Pintura", suggestedPrice = 25.0, chargedPerOrder = false))
-    serviceRepo.add(Service(id = "service-lixamento", name = "Lixamento", suggestedPrice = 12.0, laborMinutes = 20.0))
-    serviceRepo.add(Service(id = "service-montagem", name = "Montagem", suggestedPrice = 18.0, laborMinutes = 30.0))
-    serviceRepo.add(Service(id = "service-modelagem", name = "Modelagem sob medida", chargedPerOrder = true, laborMinutes = 90.0))
-    serviceRepo.add(Service(id = "service-verniz", name = "Acabamento com verniz", suggestedPrice = 15.0, archived = true))
+    serviceRepo.add(Service(id = Catalog.PINTURA_ID, name = sample("Pintura", "Painting"), suggestedPrice = sample(25.0, 8.0), chargedPerOrder = false))
+    serviceRepo.add(Service(id = "service-lixamento", name = sample("Lixamento", "Sanding"), suggestedPrice = sample(12.0, 4.0), laborMinutes = 20.0))
+    serviceRepo.add(Service(id = "service-montagem", name = Names.assembly, suggestedPrice = sample(18.0, 6.0), laborMinutes = 30.0))
+    serviceRepo.add(Service(id = "service-modelagem", name = sample("Modelagem sob medida", "Custom modeling"), chargedPerOrder = true, laborMinutes = 90.0))
+    serviceRepo.add(Service(id = "service-verniz", name = sample("Acabamento com verniz", "Varnish finish"), suggestedPrice = sample(15.0, 5.0), archived = true))
 
     val consumableRepo = storage.consumables()
-    consumableRepo.add(Consumable(id = "insumo-argola", name = "Argola de chaveiro", unitCost = 0.35))
-    consumableRepo.add(Consumable(id = "insumo-ima", name = "Ímã de neodímio 8 mm", unitCost = 1.2))
-    consumableRepo.add(Consumable(id = "insumo-parafuso", name = "Parafuso M3", unitCost = 0.15))
-    consumableRepo.add(Consumable(id = "insumo-caixa", name = "Caixa de papelão", unitCost = 2.8, chargedPerOrder = true))
-    consumableRepo.add(Consumable(id = "insumo-bolha", name = "Embalagem com plástico bolha", unitCost = 1.5, chargedPerOrder = true))
-    consumableRepo.add(Consumable(id = "insumo-saquinho", name = "Saquinho zip", unitCost = 0.25, archived = true))
+    consumableRepo.add(Consumable(id = "insumo-argola", name = sample("Argola de chaveiro", "Keyring"), unitCost = sample(0.35, 0.08)))
+    consumableRepo.add(Consumable(id = "insumo-ima", name = sample("Ímã de neodímio 8 mm", "Neodymium magnet 8 mm"), unitCost = sample(1.2, 0.25)))
+    consumableRepo.add(Consumable(id = "insumo-parafuso", name = sample("Parafuso M3", "M3 screw"), unitCost = sample(0.15, 0.03)))
+    consumableRepo.add(Consumable(id = "insumo-caixa", name = sample("Caixa de papelão", "Cardboard box"), unitCost = sample(2.8, 0.9), chargedPerOrder = true))
+    consumableRepo.add(Consumable(id = "insumo-bolha", name = sample("Embalagem com plástico bolha", "Bubble wrap packaging"), unitCost = sample(1.5, 0.5), chargedPerOrder = true))
+    consumableRepo.add(Consumable(id = "insumo-saquinho", name = sample("Saquinho zip", "Zip bag"), unitCost = sample(0.25, 0.05), archived = true))
 
     val channelRepo = storage.salesChannels()
-    channelRepo.add(SalesChannel(id = Catalog.SHOPEE_ID, name = "Shopee", feeRate = 0.20))
-    channelRepo.add(SalesChannel(id = Catalog.MERCADO_LIVRE_ID, name = "Mercado Livre", feeRate = 0.16))
-    channelRepo.add(SalesChannel(id = Catalog.PIX_ID, name = "Pix", feeRate = 0.0))
+    channelRepo.add(SalesChannel(id = Catalog.SHOPEE_ID, name = Names.marketplace, feeRate = sample(0.20, 0.10)))
+    channelRepo.add(SalesChannel(id = Catalog.MERCADO_LIVRE_ID, name = sample("Mercado Livre", "eBay"), feeRate = sample(0.16, 0.13)))
+    channelRepo.add(SalesChannel(id = Catalog.PIX_ID, name = sample("Pix", "Amazon"), feeRate = sample(0.0, 0.15)))
 
     storage.settings().update(
         PricingSettings(
-            energyPricePerKwh = 0.85,
+            energyPricePerKwh = sample(0.85, 0.16),
             failureRate = 0.08,
             finishingRate = 0.05,
-            laborRatePerHour = 25.0,
-            monthlyFixedCost = 200.0,
+            laborRatePerHour = sample(25.0, 20.0),
+            monthlyFixedCost = sample(200.0, 40.0),
             productiveHoursPerMonth = 150.0,
             taxRate = 0.06,
             profitMargin = 1.0,
@@ -1202,25 +1203,25 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
     )
     storage.branding().update(
         BrandingSettings(
-            brandName = "Sua Loja 3D",
+            brandName = Names.shopName,
             showWatermark = true,
             showFooter = true,
-            contactEmail = "contato@example.com",
-            contactInstagram = "sualoja3d",
+            contactEmail = sample("contato@example.com", "hello@example.com"),
+            contactInstagram = Names.shopHandle,
             quoteValidityDays = 7,
         ),
     )
     storage.theme().update(ThemeMode.LIGHT)
-    storage.currency().update(Currency.BRL)
+    storage.currency().update(sampleCurrency())
     storage.onboarding().markCompleted()
 
     val clientRepo = storage.clients()
     val history = storage.quoteHistory()
     val settingsRepo = storage.settings()
 
-    fun newViewModel() = QuoteViewModel(filamentRepo, printerRepo, settingsRepo, serviceRepo, channelRepo, history, clientRepository = clientRepo)
+    fun newViewModel() = QuoteViewModel(filamentRepo, printerRepo, settingsRepo, serviceRepo, channelRepo, history, clientRepository = clientRepo, currency = { sampleCurrency() })
 
-    for (spec in ORDER_SEEDS) {
+    for (spec in orderSeeds()) {
         clock.millis = atDaysAgo(spec.createdDaysAgo)
         val vm = newViewModel()
         val gcode = spec.gcodeFile?.let { fileName -> gcodesDir?.let { File(it, fileName) } }?.takeIf { it.exists() }
@@ -1240,6 +1241,12 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
             vm.setPrintTimeMinutes("3h")
         }
         vm.selectSalesChannel(spec.channelId)
+        // Sem a pasta de G-codes, o pedido que vai pro PDF e pra imagem do WhatsApp ainda ganha foto: a miniatura de exemplo
+        // do repositório (um suporte de celular), pelo mesmo caminho do 3MF com miniatura.
+        if (gcode == null && spec.gcodeFile == "smartphone_holder_PLA_1h15m.gcode") {
+            val photo = File("src/commonMain/composeResources/files/preview_sample_photo.png").takeIf { it.exists() }?.readBytes()
+            if (photo != null) vm.attachModelFile(PickedFile("phone_stand.3mf", threeMfWithThumbnail(photo)))
+        }
         if (spec.servicePrice != null) {
             vm.toggleService(Catalog.PINTURA_ID)
             vm.setServicePrice(Catalog.PINTURA_ID, spec.servicePrice)
@@ -1257,7 +1264,7 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
         }
     }
 
-    for (spec in PRODUCT_SEEDS) {
+    for (spec in productSeeds()) {
         clock.millis = atDaysAgo(15)
         val vm = newViewModel()
         vm.setKind(QuoteKind.PRODUCT)
@@ -1536,13 +1543,13 @@ private fun OgBanner(icon: ImageBitmap, screenshot: ImageBitmap) = AppTheme(Them
                 }
                 Spacer(Modifier.height(36.dp))
                 Text(
-                    "O sistema de quem vende\nimpressão 3D",
+                    sample("O sistema de quem vende\nimpressão 3D", "The system for people\nwho sell 3D prints"),
                     color = colors.onNavy,
                     style = type.panelTitle.copy(fontSize = 34.sp, lineHeight = 42.sp),
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Grátis, open source e 100% no seu computador",
+                    sample("Grátis, open source e 100% no seu computador", "Free, open source and 100% on your computer"),
                     color = colors.onNavyMuted,
                     style = type.body.copy(fontSize = 23.sp, lineHeight = 30.sp),
                 )

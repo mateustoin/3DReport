@@ -37,57 +37,57 @@ internal fun renderLeva11Screenshots(container: AppContainer, outDir: File) {
     fun order(name: String): SavedQuote = history.savedQuotes.value.first { it.name == name }
 
     // Pix configurado (chave fictícia) e orçamento parado a partir de 1 dia, pra os dois exemplos de Orçado aparecerem parados.
-    container.branding.update(container.branding.branding.value.copy(pixKey = "contato@example.com", pixReceiverName = "Sua Loja 3D", pixCity = "Sao Paulo"))
+    container.branding.update(container.branding.branding.value.copy(pixKey = "contato@example.com", pixReceiverName = Names.shopName, pixCity = "Sao Paulo"))
     container.orderSettings.update(OrderSettings(staleQuoteDays = 1))
 
     val today = TODAY.toEpochDay()
     // Orçado, com sinal de 30% ainda não pago: o pedido dos diálogos.
-    val miniature = order("Miniatura pintada")
+    val miniature = order(Names.painted)
     history.updateDeposit(miniature.id, miniature.totalWithServices * 0.3)
     // Aprovado com sinal pago, aprovado com pagamento em parte, imprimindo com sinal por pagar e entregue pago.
-    val headset = order("Suporte de headset")
+    val headset = order(Names.headset)
     history.updateDeposit(headset.id, headset.totalWithServices * 0.3)
     history.addPayment(headset.id, history.savedQuotes.value.first { it.id == headset.id }.requestedDeposit, PaymentMethod.PIX, today - 2)
-    history.addPayment(order("Chaveiro personalizado").id, 10.0, PaymentMethod.CASH, today - 1)
-    val phoneStand = order("Porta-celular")
+    history.addPayment(order(Names.keychainOrder).id, 10.0, PaymentMethod.CASH, today - 1)
+    val phoneStand = order(Names.phoneStand)
     history.updateDeposit(phoneStand.id, phoneStand.totalWithServices * 0.5)
-    val gift = order("Presente de aniversário")
+    val gift = order(Names.gift)
     history.addPayment(gift.id, gift.totalWithServices, PaymentMethod.CARD, today - 20)
     // Observação interna e código de rastreio (a observação mostra o ícone no cartão).
-    withDetails(container, order("Axolote de estimação"), notes = "Cliente prefere retirar na sexta.")
-    withDetails(container, order("Organizador de mesa (encomenda)"), tracking = "AB123456789BR")
+    withDetails(container, order(Names.axolotl), notes = sample("Cliente prefere retirar na sexta.", "Customer prefers pickup on Friday."))
+    withDetails(container, order(Names.organizerOrder), tracking = "AB123456789BR")
 
     renderAppPng(File(outDir, "pedidos-kanban-selos.png")) { sampleApp(container, startAt = AppDestination.ORDERS) }
 
     // O menu do primeiro cartão de Orçado, parado: "Retomar conversa" e "Marcar como cancelado" no alto.
-    renderAppPng(File(outDir, "pedidos-menu-parado.png"), afterSettle = { it.clickByDescription("Mais ações") }) {
+    renderAppPng(File(outDir, "pedidos-menu-parado.png"), afterSettle = { it.clickByDescription(ST.moreActions) }) {
         sampleApp(container, startAt = AppDestination.ORDERS)
     }
-    renderAppPng(File(outDir, "pagamentos-dialogo.png"), afterSettle = { it.openMenuItem("Pagamentos") }) {
+    renderAppPng(File(outDir, "pagamentos-dialogo.png"), afterSettle = { it.openMenuItem(ST.menuPayments) }) {
         sampleApp(container, startAt = AppDestination.ORDERS)
     }
     renderAppPng(
         File(outDir, "pagamentos-registrar.png"),
         afterSettle = {
-            it.openMenuItem("Pagamentos")
+            it.openMenuItem(ST.menuPayments)
             settle(it, frames = 4)
-            it.clickByText("Registrar pagamento")
+            it.clickByText(ST.registerPayment)
         },
     ) {
         sampleApp(container, startAt = AppDestination.ORDERS)
     }
-    renderAppPng(File(outDir, "mensagem-dialogo.png"), afterSettle = { it.openMenuItem("Mensagem pro cliente") }) {
+    renderAppPng(File(outDir, "mensagem-dialogo.png"), afterSettle = { it.openMenuItem(ST.menuMessage) }) {
         sampleApp(container, startAt = AppDestination.ORDERS)
     }
 
     renderAppPng(
         File(outDir, "configuracoes-pix-mensagens.png"),
-        afterSettle = { it.clickByText("Documentos pro cliente") },
+        afterSettle = { it.clickByText(ST.sectionDocuments) },
         height = TALL_HEIGHT,
     ) {
         sampleApp(container, startAt = AppDestination.SETTINGS)
     }
-    renderAppPng(File(outDir, "configuracoes-pedidos.png"), afterSettle = { it.clickLastByText("Pedidos") }) {
+    renderAppPng(File(outDir, "configuracoes-pedidos.png"), afterSettle = { it.clickLastByText(ST.sectionOrders) }) {
         sampleApp(container, startAt = AppDestination.SETTINGS)
     }
 
@@ -115,14 +115,14 @@ internal fun renderLeva11Screenshots(container: AppContainer, outDir: File) {
     container.preferences.setOrdersView(OrdersView.KANBAN)
 
     // O menu de um pedido com código de rastreio (Pronto, segundo cartão da coluna): cabe na janela sem esconder "Excluir".
-    renderAppPng(File(outDir, "pedidos-menu-rastreio.png"), afterSettle = { it.clickNthByDescription("Mais ações", 7) }) {
+    renderAppPng(File(outDir, "pedidos-menu-rastreio.png"), afterSettle = { it.clickNthByDescription(ST.moreActions, 7) }) {
         sampleApp(container, startAt = AppDestination.ORDERS)
     }
 
     // O tema escuro: kanban e diálogo de pagamentos.
     container.theme.update(ThemeMode.DARK)
     renderAppPng(File(outDir, "pedidos-kanban-selos-escuro.png")) { sampleApp(container, startAt = AppDestination.ORDERS) }
-    renderAppPng(File(outDir, "pagamentos-dialogo-escuro.png"), afterSettle = { it.openMenuItem("Pagamentos") }) {
+    renderAppPng(File(outDir, "pagamentos-dialogo-escuro.png"), afterSettle = { it.openMenuItem(ST.menuPayments) }) {
         sampleApp(container, startAt = AppDestination.ORDERS)
     }
     container.theme.update(ThemeMode.LIGHT)
@@ -131,11 +131,11 @@ internal fun renderLeva11Screenshots(container: AppContainer, outDir: File) {
     renderAppPng(
         File(outDir, "pagamentos-depois-de-registrar.png"),
         afterSettle = {
-            it.openMenuItem("Pagamentos")
+            it.openMenuItem(ST.menuPayments)
             settle(it, frames = 4)
-            it.clickByText("Registrar pagamento")
+            it.clickByText(ST.registerPayment)
             settle(it, frames = 4)
-            it.clickByText("Registrar")
+            it.clickByText(ST.registerConfirm)
         },
     ) {
         sampleApp(container, startAt = AppDestination.ORDERS)
@@ -163,7 +163,7 @@ private fun withDetails(container: AppContainer, order: SavedQuote, notes: Strin
 
 /** Abre o menu do primeiro cartão e clica no item [text]. */
 private fun ImageComposeScene.openMenuItem(text: String) {
-    clickByDescription("Mais ações")
+    clickByDescription(ST.moreActions)
     settle(this, frames = 3)
     clickByText(text)
 }
