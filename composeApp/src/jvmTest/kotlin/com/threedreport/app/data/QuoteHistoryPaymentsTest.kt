@@ -117,6 +117,10 @@ class QuoteHistoryPaymentsTest {
         assertNull(repository.addPayment(order.id, amount = Double.NaN, method = PaymentMethod.PIX, epochDay = 1))
         assertNull(repository.addPayment("nao-existe", amount = 10.0, method = PaymentMethod.PIX, epochDay = 1))
         assertNull(repository.addPayment(product.id, amount = 10.0, method = PaymentMethod.PIX, epochDay = 1))
+        // Valor que arredonda a zero centavo não é pagamento (e não derruba o app).
+        assertNull(repository.addPayment(order.id, amount = 0.004, method = PaymentMethod.PIX, epochDay = 1))
+        assertEquals(0.01, repository.addPayment(order.id, amount = 0.006, method = PaymentMethod.PIX, epochDay = 1)?.amount)
+        repository.deletePayment(order.id, repository.savedQuotes.value.first { it.id == order.id }.payments.single().id)
         assertTrue(QuoteHistoryRepository().savedQuotes.value.all { it.payments.isEmpty() })
     }
 

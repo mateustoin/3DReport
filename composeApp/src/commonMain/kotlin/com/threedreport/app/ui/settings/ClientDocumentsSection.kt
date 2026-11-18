@@ -38,6 +38,7 @@ import _3dreport.composeapp.generated.resources.settings_docs_pdf_help_detail
 import _3dreport.composeapp.generated.resources.settings_docs_pdf_title
 import _3dreport.composeapp.generated.resources.settings_docs_pix_city
 import _3dreport.composeapp.generated.resources.settings_docs_pix_help
+import _3dreport.composeapp.generated.resources.settings_docs_pix_invalid_characters
 import _3dreport.composeapp.generated.resources.settings_docs_pix_join_last
 import _3dreport.composeapp.generated.resources.settings_docs_pix_key
 import _3dreport.composeapp.generated.resources.settings_docs_pix_missing
@@ -354,7 +355,11 @@ private fun PixFields(branding: BrandingUiState, viewModel: BrandingViewModel) {
                 value = branding.pixKeyInput,
                 onValueChange = viewModel::setPixKey,
                 placeholder = stringResource(Res.string.common_optional),
-                error = stringResource(Res.string.settings_docs_pix_too_long).takeIf { PixSetupIssue.KEY_TOO_LONG in issues },
+                error = when {
+                    PixSetupIssue.KEY_INVALID_CHARACTERS in issues -> stringResource(Res.string.settings_docs_pix_invalid_characters)
+                    PixSetupIssue.KEY_TOO_LONG in issues -> stringResource(Res.string.settings_docs_pix_too_long)
+                    else -> null
+                },
             )
         }
         cell(2) {
@@ -373,7 +378,8 @@ private fun PixFields(branding: BrandingUiState, viewModel: BrandingViewModel) {
         }
     }
     // A chave estranha é aceita (o banco valida), mas avisa; o tipo reconhecido não precisa de frase.
-    if (key != null && !key.isRecognized) FormNotice(stringResource(Res.string.settings_docs_pix_unrecognized))
+    // Chave com acento já mostra o erro no campo: o aviso de tipo não reconhecido seria repetir.
+    if (key != null && !key.isRecognized && key.isAscii) FormNotice(stringResource(Res.string.settings_docs_pix_unrecognized))
     val missing = listOfNotNull(
         Res.string.settings_docs_pix_missing_key.takeIf { PixSetupIssue.KEY_MISSING in issues },
         Res.string.settings_docs_pix_missing_name.takeIf { PixSetupIssue.NAME_MISSING in issues },

@@ -154,13 +154,23 @@ class MessageTemplateTest {
     }
 
     @Test
-    fun readyOrDeliveredWithSomethingToPayOpensTheReminder() {
+    fun readyOrDeliveredWithPaymentTrackingAndSomethingToPayOpensTheReminder() {
+        val partly = order.copy(payments = listOf(Payment("p", 30.0, PaymentMethod.PIX, 0L)))
+        val withDeposit = order.copy(depositAmount = 20.0)
         val paid = order.copy(payments = listOf(Payment("p", 100.0, PaymentMethod.PIX, 0L)))
 
-        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, MessageTemplateKind.forOrder(order.copy(status = OrderStatus.PRONTO)))
-        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, MessageTemplateKind.forOrder(order.copy(status = OrderStatus.ENTREGUE)))
+        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, MessageTemplateKind.forOrder(partly.copy(status = OrderStatus.PRONTO)))
+        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, MessageTemplateKind.forOrder(partly.copy(status = OrderStatus.ENTREGUE)))
+        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, MessageTemplateKind.forOrder(withDeposit.copy(status = OrderStatus.ENTREGUE)))
         assertEquals(MessageTemplateKind.READY, MessageTemplateKind.forOrder(paid.copy(status = OrderStatus.PRONTO)))
         assertEquals(MessageTemplateKind.OUT_FOR_DELIVERY, MessageTemplateKind.forOrder(paid.copy(status = OrderStatus.ENTREGUE)))
+    }
+
+    @Test
+    fun withoutPaymentTrackingThereIsNoReminder() {
+        // Pedido sem sinal nem pagamento (como todo pedido de antes da Leva 11): nada de cobrança.
+        assertEquals(MessageTemplateKind.READY, MessageTemplateKind.forOrder(order.copy(status = OrderStatus.PRONTO)))
+        assertEquals(MessageTemplateKind.OUT_FOR_DELIVERY, MessageTemplateKind.forOrder(order.copy(status = OrderStatus.ENTREGUE)))
     }
 
     @Test

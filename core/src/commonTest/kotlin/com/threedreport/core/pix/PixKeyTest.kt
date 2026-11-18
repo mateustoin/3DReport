@@ -64,6 +64,18 @@ class PixKeyTest {
     }
 
     @Test
+    fun aKeyWithCharactersOutsideAsciiIsNotRecognizedAndDoesNotFit() {
+        val key = PixKey.parse("João@Exemplo.com")!!
+
+        assertEquals("joão@exemplo.com", key.value)
+        assertEquals(PixKeyType.UNKNOWN, key.type)
+        assertFalse(key.isRecognized)
+        assertFalse(key.isAscii)
+        assertFalse(key.fitsInPayload)
+        assertTrue(PixKey.parse("joao@exemplo.com")!!.isAscii)
+    }
+
+    @Test
     fun blankIsNoKey() {
         assertNull(PixKey.parse("   "))
         assertNull(PixKey.parse(null))

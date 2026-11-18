@@ -14,6 +14,7 @@ import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuoteService
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.StatusChange
+import com.threedreport.core.model.roundToCents
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -134,8 +135,9 @@ interface QuoteHistoryRepository {
 
     /**
      * Registra um pagamento no fim da lista do pedido [id] (decisão 146) e devolve o [Payment] gravado. `null`, sem
-     * gravar nada, se [id] não existe, é produto do catálogo ou [amount] não é válido ([Payment.isValidAmount]).
-     * O pagamento ganha o número fixo do recibo ([SavedQuote.nextPaymentNumber]). Não conta como edição do pedido
+     * gravar nada, se [id] não existe, é produto do catálogo ou [amount] em centavos ([roundToCents]) não é válido
+     * ([Payment.isValidAmount]): "0,004" arredonda a zero e não é pagamento. O valor gravado é o arredondado. O
+     * pagamento ganha o número fixo do recibo ([SavedQuote.nextPaymentNumber]). Não conta como edição do pedido
      * ([SavedQuote.lastEditedEpochMillis] fica como está).
      */
     fun addPayment(id: String, amount: Double, method: PaymentMethod, epochDay: Long): Payment?
@@ -366,10 +368,12 @@ class StoredQuoteHistoryRepository(
 
     override fun addPayment(id: String, amount: Double, method: PaymentMethod, epochDay: Long): Payment? {
         val existing = collection.find(id)
-        if (!Payment.isValidAmount(amount) || existing?.isOrder != true) return null
+        // Valida o valor já em centavos, que é o que fica gravado: "0,004" arredonda a zero e não é pagamento.
+        val cents = roundToCents(amount)
+        if (!Payment.isValidAmount(cents) || existing?.isOrder != true) return null
         val payment = Payment(
             id = Uuid.random().toString(),
-            amount = kotlin.math.round(amount * 100.0) / 100.0,
+            amount = cents,
             method = method,
             epochDay = epochDay,
             number = existing.nextPaymentNumber,

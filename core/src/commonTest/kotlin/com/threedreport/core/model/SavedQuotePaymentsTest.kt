@@ -194,6 +194,48 @@ class SavedQuotePaymentsTest {
         assertEquals(0.0, order().withDepositLimitedToTotal().depositAmount)
         // Total que caiu abaixo do sinal: o sinal cai junto.
         assertEquals(40.0, order(total = 40.0, deposit = 50.0).withDepositLimitedToTotal().depositAmount)
+        // O total do cálculo tem mais casas: o sinal limitado fica em centavos.
+        assertEquals(126.99, order(total = 126.987561, deposit = 150.0).withDepositLimitedToTotal().depositAmount)
+    }
+
+    @Test
+    fun moneyIsRoundedToTheNearestCent() {
+        assertEquals(126.99, roundToCents(126.987561))
+        assertEquals(0.0, roundToCents(0.004))
+        assertEquals(0.01, roundToCents(0.006))
+    }
+
+    @Test
+    fun anOldOrderDeliveredWithoutPaymentTrackingChargesNothing() {
+        // Pedido de antes da Leva 11 (sem sinal nem pagamento) já entregue: não vira cobrança.
+        val delivered = order().copy(status = OrderStatus.ENTREGUE)
+
+        assertNull(delivered.pixCharge)
+        assertNull(delivered.depositToRequest)
+        // Com acompanhamento, o entregue que ainda deve continua com Pix.
+        assertEquals(AmountDue(70.0, isDeposit = false), order(payments = listOf(30.0)).copy(status = OrderStatus.ENTREGUE).pixCharge)
+        assertEquals(AmountDue(80.0, isDeposit = false), order(deposit = 20.0, payments = listOf(20.0)).copy(status = OrderStatus.ENTREGUE).pixCharge)
+        assertEquals(AmountDue(50.0, isDeposit = true), order(deposit = 50.0).copy(status = OrderStatus.ENTREGUE).pixCharge)
+    }
+
+    @Test
+    fun aNewOrderWithoutDepositHasPixForTheTotalUntilDelivered() {
+        for (status in listOf(OrderStatus.ORCADO, OrderStatus.APROVADO, OrderStatus.EM_IMPRESSAO, OrderStatus.PRONTO)) {
+            assertEquals(AmountDue(100.0, isDeposit = false), order().copy(status = status).pixCharge, "$status")
+        }
+    }
+
+    @Test
+    fun theDepositToRequestFollowsThePixRule() {
+        assertEquals(50.0, order(deposit = 50.0).depositToRequest)
+        assertEquals(30.0, order(deposit = 50.0, payments = listOf(20.0)).depositToRequest)
+        assertNull(order(deposit = 50.0, payments = listOf(50.0)).depositToRequest, "sinal já pago")
+        assertNull(order().depositToRequest, "sem sinal")
+        assertNull(order(deposit = 50.0).copy(status = OrderStatus.CANCELADO).depositToRequest)
+        assertNull(order(deposit = 50.0, kind = QuoteKind.PRODUCT).depositToRequest)
+        // Em outra moeda não há Pix, mas o sinal continua pedido no documento.
+        assertEquals(50.0, order(deposit = 50.0, currency = Currency.USD).depositToRequest)
+        assertEquals(12.35, order(deposit = 12.345678).depositToRequest)
     }
 
     @Test

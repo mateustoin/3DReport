@@ -38,6 +38,14 @@ class PixReceiverTest {
     }
 
     @Test
+    fun aKeyWithAccentIsAnIssueAndGivesNoPix() {
+        val branding = complete.copy(pixKey = "joão@exemplo.com")
+
+        assertEquals(setOf(PixSetupIssue.KEY_INVALID_CHARACTERS), branding.pixSetupIssues)
+        assertNull(branding.pixReceiver)
+    }
+
+    @Test
     fun aKeyTooLongIsAnIssue() {
         assertEquals(setOf(PixSetupIssue.KEY_TOO_LONG), complete.copy(pixKey = "a".repeat(70) + "@exemplo.com").pixSetupIssues)
     }

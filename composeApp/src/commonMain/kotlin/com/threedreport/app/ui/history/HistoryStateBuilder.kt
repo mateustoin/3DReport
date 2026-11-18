@@ -115,9 +115,10 @@ internal class HistoryStateBuilder(
                 canEditPrintSettings = quote.quote.prints.size == 1,
                 // Só de Aprovado em diante: em Orçado o sinal ainda não é cobrado (decisão 146, item 35).
                 paymentStatus = quote.paymentStatus.takeIf { order && quote.hasPaymentTracking && quote.status != OrderStatus.ORCADO && quote.status != OrderStatus.CANCELADO },
-                staleDays = quote.staleDays(today, ::localEpochDayOf).takeIf { order && quote.isStale(today, orderSettings.staleQuoteDays, ::localEpochDayOf) },
+                staleDays = if (order) quote.staleDaysIfStale(today, orderSettings.staleQuoteDays, ::localEpochDayOf) else null,
                 messageKind = if (order) MessageTemplateKind.forOrder(quote) else null,
-                hasPix = order && pixReceiver?.codeFor(quote) != null,
+                // Só a pergunta "há Pix?": o código inteiro (com o CRC) é montado quando alguém copia ou exporta.
+                hasPix = order && pixReceiver != null && quote.pixCharge != null,
                 trackingUrl = quote.trackingCode?.takeIf { order && it.isNotBlank() }?.let { orderSettings.trackingUrl(it) },
             )
         }

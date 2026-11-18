@@ -344,6 +344,7 @@ class QuoteHistoryViewModel(
     fun openPayments(savedQuote: SavedQuote) = payments.open(savedQuote)
     fun closePayments() = payments.close()
     fun setDeposit(text: String) = payments.setDeposit(text)
+    fun commitDeposit() = payments.commitDeposit()
     fun startRegisteringPayment() = payments.startRegistering()
     fun updatePaymentForm(transform: (PaymentForm) -> PaymentForm) = payments.updateForm(transform)
     fun cancelPaymentForm() = payments.cancelForm()

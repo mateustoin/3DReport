@@ -15,9 +15,13 @@ data class PixKey(val value: String, val type: PixKeyType) {
     val isRecognized: Boolean
         get() = type != PixKeyType.UNKNOWN
 
-    /** Se a chave cabe no campo do BR Code ([PixPayload.MAX_KEY_LENGTH]). */
+    /** Se a chave só tem caracteres ASCII imprimíveis, os únicos que o BR Code aceita. Chave com acento não entra. */
+    val isAscii: Boolean
+        get() = PixPayload.isAscii(value)
+
+    /** Se a chave entra no campo do BR Code: só ASCII ([isAscii]) e até [PixPayload.MAX_KEY_LENGTH] bytes. */
     val fitsInPayload: Boolean
-        get() = value.length <= PixPayload.MAX_KEY_LENGTH
+        get() = isAscii && value.encodeToByteArray().size <= PixPayload.MAX_KEY_LENGTH
 
     companion object {
         private val RANDOM_KEY = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
@@ -40,7 +44,12 @@ data class PixKey(val value: String, val type: PixKeyType) {
          * verificadores batem, e telefone quando não. Com "+", parênteses ou espaço é sempre telefone.
          */
         fun parse(raw: String?): PixKey? {
-            val text = raw?.trim()?.ifEmpty { null } ?: return null
+            val key = recognize(raw?.trim()?.ifEmpty { null } ?: return null)
+            // O BR Code só aceita ASCII: um "joão@..." não é um e-mail que o código consiga levar.
+            return if (key.isAscii) key else key.copy(type = PixKeyType.UNKNOWN)
+        }
+
+        private fun recognize(text: String): PixKey {
             if (RANDOM_KEY.matches(text)) return PixKey(text, PixKeyType.RANDOM)
             if ('@' in text) return PixKey(text.lowercase(), PixKeyType.EMAIL)
             if (NUMERIC.matches(text)) return parseNumeric(text)

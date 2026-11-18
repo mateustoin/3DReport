@@ -1315,6 +1315,7 @@
     <string name="settings_docs_pix_city">Cidade</string>
     <string name="settings_docs_pix_unrecognized">Tipo de chave não reconhecido. Confira no banco.</string>
     <string name="settings_docs_pix_too_long">A chave é grande demais pro Pix.</string>
+    <string name="settings_docs_pix_invalid_characters">A chave tem acento ou outro caractere que o Pix não aceita.</string>
     <string name="settings_docs_pix_missing">Falta %1$s pro Pix aparecer nos documentos.</string>
     <string name="settings_docs_pix_missing_key">a chave</string>
     <string name="settings_docs_pix_missing_name">o nome</string>

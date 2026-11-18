@@ -76,6 +76,17 @@ class PixPayloadTest {
     }
 
     @Test
+    fun theFieldLengthCountsUtf8Bytes() {
+        // Os campos vão em ASCII; o tamanho é contado em bytes, como o CRC e o QR leem o texto.
+        assertFailsWith<IllegalArgumentException> {
+            PixPayload.build(key = "joão@b.co", merchantName = "LOJA", merchantCity = "SP", amount = null, txid = "***")
+        }
+        val payload = PixPayload.build(key = "joao@b.co", merchantName = "LOJA", merchantCity = "SP", amount = null, txid = "***")
+        assertEquals(payload.length, payload.encodeToByteArray().size)
+        assertTrue(payload.contains("0109joao@b.co"), payload)
+    }
+
+    @Test
     fun aKeyTooLongForTheFieldIsRejected() {
         assertFailsWith<IllegalArgumentException> {
             PixPayload.build(key = "a".repeat(78), merchantName = "LOJA", merchantCity = "SP", amount = null, txid = "***")

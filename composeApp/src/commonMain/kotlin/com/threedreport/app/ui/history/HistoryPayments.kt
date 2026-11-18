@@ -18,6 +18,7 @@ import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Payment
 import com.threedreport.core.model.PaymentMethod
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.model.roundToCents
 import kotlin.math.abs
 
 /**
@@ -46,28 +47,41 @@ internal class HistoryPayments(
         change { it.copy(payments = PaymentsDialog(current, deposit)) }
     }
 
-    fun close() = change { it.copy(payments = null) }
-
-    /** Grava o sinal a cada número válido digitado; o que o pedido limita ao total volta no campo já limitado. */
-    fun setDeposit(text: String) {
-        val open = state().payments ?: return
-        val value = if (text.isBlank()) 0.0 else parseDecimal(text, NumberKind.AMOUNT, appCurrency().decimalSeparator)
-        when {
-            value == null -> editing { it.copy(depositText = text, depositError = uiText(Res.string.common_error_number_invalid)) }
-
-            value < 0 -> editing { it.copy(depositText = text, depositError = uiText(Res.string.common_error_negative)) }
-
-            else -> {
-                repository.updateDeposit(open.quote.id, value)
-                val saved = repository.savedQuotes.value.find { it.id == open.quote.id }?.depositAmount ?: value
-                val shown = if (abs(saved - value) > 0.004) saved.toInputText(appCurrency().decimalSeparator) else text
-                editing { it.copy(depositText = shown, depositError = null) }
-            }
-        }
+    /** Fecha o diálogo, gravando antes o sinal digitado ([commitDeposit]). */
+    fun close() {
+        commitDeposit()
+        change { it.copy(payments = null) }
     }
+
+    /** O sinal como a pessoa digita: só confere o número; a gravação fica pro [commitDeposit] (sair do campo ou fechar). */
+    fun setDeposit(text: String) {
+        val error = when (val value = parseDeposit(text)) {
+            null -> uiText(Res.string.common_error_number_invalid)
+            else -> if (value < 0) uiText(Res.string.common_error_negative) else null
+        }
+        editing { it.copy(depositText = text, depositError = error) }
+    }
+
+    /**
+     * Grava o sinal do campo, se for um número válido e diferente do gravado. O que o pedido limita ao total volta no
+     * campo já limitado. Chamado ao sair do campo, ao fechar o diálogo e antes de abrir o "Registrar pagamento" (que
+     * parte do sinal pra sugerir o valor).
+     */
+    fun commitDeposit() {
+        val open = state().payments ?: return
+        val value = parseDeposit(open.depositText) ?: return
+        if (value < 0) return
+        val current = repository.savedQuotes.value.find { it.id == open.quote.id } ?: return
+        if (abs(current.depositAmount - value) > 0.004) repository.updateDeposit(open.quote.id, value)
+        val saved = repository.savedQuotes.value.find { it.id == open.quote.id }?.depositAmount ?: value
+        if (abs(saved - value) > 0.004) editing { it.copy(depositText = saved.toInputText(appCurrency().decimalSeparator), depositError = null) }
+    }
+
+    private fun parseDeposit(text: String): Double? = if (text.isBlank()) 0.0 else parseDecimal(text, NumberKind.AMOUNT, appCurrency().decimalSeparator)
 
     /** Abre o formulário já com o valor do que falta (do sinal, ou do pedido), a última forma usada e hoje. */
     fun startRegistering() {
+        commitDeposit()
         val open = state().payments ?: return
         val quote = open.quote
         val amount = quote.amountDue?.amount?.toInputText(appCurrency().decimalSeparator).orEmpty()
@@ -83,7 +97,8 @@ internal class HistoryPayments(
     fun register() {
         val open = state().payments ?: return
         val form = open.form ?: return
-        val amount = parseDecimal(form.amountText, NumberKind.AMOUNT, appCurrency().decimalSeparator)
+        // Em centavos, como o repositório grava: "0,004" arredonda a zero e é valor inválido, não pagamento.
+        val amount = parseDecimal(form.amountText, NumberKind.AMOUNT, appCurrency().decimalSeparator)?.let(::roundToCents)
         if (amount == null || !Payment.isValidAmount(amount)) {
             editing { dialog -> dialog.copy(form = form.copy(error = uiText(Res.string.payments_error_amount))) }
             return

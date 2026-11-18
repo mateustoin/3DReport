@@ -74,9 +74,12 @@ internal fun SavedQuote.toCopyPasteText(
     }
 }
 
-/** "Sinal de R$ 50,00 pra começar" (decisão 146, item 12): só enquanto falta o sinal (item 37). Mesmo texto no PDF e na mensagem. */
+/**
+ * "Sinal de R$ 50,00 pra começar" (decisão 146, item 12): só enquanto falta o sinal (item 37) e o pedido cobra o cliente
+ * (nunca em Cancelado), pela regra do `core` ([SavedQuote.depositToRequest]). Mesmo texto no PDF e na mensagem.
+ */
 internal fun SavedQuote.depositText(texts: ClientDocumentTexts, currency: Currency = this.currency): String? =
-    if (isOrder && pendingDeposit > 0.0) texts.deposit(pendingDeposit.toCurrencyText(currency)) else null
+    depositToRequest?.let { texts.deposit(it.toCurrencyText(currency)) }
 
 /**
  * O fim da mensagem com Pix (decisão 145, item 6): "Pix copia e cola (R$ 50,00):" e o código sozinho na linha de baixo,

@@ -106,6 +106,26 @@ class Leva11ExportTest {
     }
 
     @Test
+    fun aCancelledOrderAsksNoDepositNorPixInTheMessageAndThePdf() {
+        val cancelled = order(deposit = 50.0).copy(status = OrderStatus.CANCELADO)
+
+        assertNull(branding.pixReceiver!!.codeFor(cancelled))
+        assertFalse("pra começar" in cancelled.toCopyPasteText(testClientTexts))
+        val text = pages(pdf(cancelled)).single()
+        assertFalse("pra começar" in text, text)
+        assertFalse("Pague com Pix".uppercase() in text.uppercase(), text)
+    }
+
+    @Test
+    fun anOldOrderAlreadyDeliveredHasNoPix() {
+        // Sem sinal nem pagamento, como todo pedido de antes da Leva 11: entregue não vira cobrança.
+        val delivered = order().copy(status = OrderStatus.ENTREGUE)
+
+        assertNull(branding.pixReceiver!!.codeFor(delivered))
+        assertFalse("Pague com Pix".uppercase() in pages(pdf(delivered)).single().uppercase())
+    }
+
+    @Test
     fun withoutAKeyADepositOrPixTheMessageIsAsBefore() {
         val plain = order()
 

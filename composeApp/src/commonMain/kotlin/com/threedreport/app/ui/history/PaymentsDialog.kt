@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import com.threedreport.app.platform.formatDate
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
@@ -136,7 +137,8 @@ fun PaymentsDialogView(dialog: PaymentsDialog, viewModel: QuoteHistoryViewModel,
                     prefix = currency.symbol,
                     placeholder = "0",
                     error = dialog.depositError?.asString(),
-                    modifier = Modifier.width(AppDimens.moneyFieldWidth),
+                    // Grava ao sair do campo, e não a cada tecla.
+                    modifier = Modifier.width(AppDimens.moneyFieldWidth).onFocusChanged { if (!it.hasFocus) viewModel.commitDeposit() },
                 )
                 // 24 antes da lista: o respiro do diálogo (8) mais este espaço e mais 8.
                 Spacer(Modifier.height(MaterialTheme.spacing.xs))

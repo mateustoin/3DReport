@@ -11,7 +11,10 @@ import kotlin.math.roundToLong
  * que zero; `58` país (`BR`); `59` nome; `60` cidade; `62` com `05` = identificador (txid); `63` CRC16.
  */
 object PixPayload {
-    /** Maior chave que cabe no campo `26` (99 caracteres, menos os 18 do `00` com `br.gov.bcb.pix` e os 4 do `01`). */
+    /**
+     * Maior chave que cabe no campo `26`, em bytes (99, menos os 18 do `00` com `br.gov.bcb.pix` e os 4 do `01`). Como os
+     * campos são só ASCII ([isAscii]), byte e caractere dão o mesmo número.
+     */
     const val MAX_KEY_LENGTH = 77
 
     /** Limite do nome de quem recebe (campo `59`). */
@@ -31,6 +34,7 @@ object PixPayload {
      * (o cliente digita no banco).
      */
     fun build(key: String, merchantName: String, merchantCity: String, amount: Double?, txid: String): String {
+        require(listOf(key, merchantName, merchantCity, txid).all(::isAscii)) { "o BR Code só aceita ASCII" }
         require(key.isNotEmpty() && key.length <= MAX_KEY_LENGTH) { "chave fora do tamanho do BR Code: ${key.length}" }
         require(merchantName.isNotEmpty() && merchantName.length <= MAX_NAME_LENGTH) { "nome fora do tamanho do BR Code" }
         require(merchantCity.isNotEmpty() && merchantCity.length <= MAX_CITY_LENGTH) { "cidade fora do tamanho do BR Code" }
@@ -72,9 +76,14 @@ object PixPayload {
         return crc.toString(16).uppercase().padStart(4, '0')
     }
 
+    /** Se [text] só tem caracteres ASCII imprimíveis (de espaço a `~`), os que o BR Code aceita. */
+    fun isAscii(text: String): Boolean = text.all { it in ' '..'~' }
+
+    /** Um campo `ID` + tamanho + valor. O tamanho é em bytes UTF-8, os mesmos que o CRC e o QR leem. */
     private fun field(id: String, value: String): String {
-        require(value.length <= 99) { "campo $id maior que 99 caracteres" }
-        return id + value.length.toString().padStart(2, '0') + value
+        val size = value.encodeToByteArray().size
+        require(size <= 99) { "campo $id maior que 99 bytes" }
+        return id + size.toString().padStart(2, '0') + value
     }
 
     /** Valor com ponto e duas casas ("174.34"), ou `null` se não há valor a cobrar. */

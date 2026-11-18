@@ -36,11 +36,14 @@ import com.threedreport.core.model.PrintJob
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuotedPrint
 import com.threedreport.core.model.SavedQuote
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.withTimeout
 import java.io.File
 import kotlin.io.path.createTempDirectory
@@ -111,7 +114,7 @@ class QuoteHistoryLeva11Test {
     /** "Hoje" do ViewModel; muda junto com [nowMillis] quando um teste passa os dias. */
     private var today = localEpochDayOf(nowMillis)
 
-    private fun setup(depositRate: Double = 0.0): Setup {
+    private fun setup(depositRate: Double = 0.0, main: CoroutineDispatcher = Dispatchers.Unconfined): Setup {
         val storage = LocalStorage(appDataDir(), Clock { nowMillis })
         val orderSettings = storage.orderSettings()
         val repository = storage.quoteHistory { depositRate }
@@ -120,6 +123,7 @@ class QuoteHistoryLeva11Test {
         val viewModel = QuoteHistoryViewModel(
             repository, branding, FilamentRepository(), PrinterRepository(), SettingsRepository(), SalesChannelRepository(), PreferencesRepository(),
             today = { today }, clientRepository = ClientRepository(), clock = { nowMillis }, platform = platform, scope = scope,
+            main = main,
             orderSettingsRepository = orderSettings,
         )
         return Setup(repository, branding, orderSettings, platform, viewModel)
@@ -228,9 +232,12 @@ class QuoteHistoryLeva11Test {
         val s = setup()
         val quoted = s.order("Suporte")
         val ready = s.order("Vaso", status = OrderStatus.PRONTO)
+        val charged = s.order("Luminária", status = OrderStatus.PRONTO)
+        s.repository.updateDeposit(charged.id, 30.0)
 
         assertEquals(MessageTemplateKind.FOLLOW_UP, s.row(quoted.id).messageKind)
-        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, s.row(ready.id).messageKind, "pronto e sem pagar: lembrete")
+        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, s.row(charged.id).messageKind, "pronto, com sinal e sem pagar: lembrete")
+        assertEquals(MessageTemplateKind.READY, s.row(ready.id).messageKind, "sem acompanhamento de pagamento não há cobrança")
 
         s.viewModel.openMessage(quoted)
         val message = s.awaitMessage()
@@ -326,6 +333,8 @@ class QuoteHistoryLeva11Test {
         val s = setup()
         s.withPix()
         val saved = s.order("Suporte", status = OrderStatus.PRONTO)
+        // O pedido acompanha pagamento (sinal do total), então o pronto abre no lembrete.
+        s.repository.updateDeposit(saved.id, 100.0)
 
         s.viewModel.openMessage(saved)
         val message = s.awaitMessage()
@@ -512,23 +521,117 @@ class QuoteHistoryLeva11Test {
         assertTrue(s.repository.savedQuotes.value.first { it.id == saved.id }.payments.isEmpty())
     }
 
+    /** Todos os modelos editados em Configurações: o preenchimento não lê recurso e só anda quando o [scheduler] avança. */
+    private fun Setup.withEditedTemplates() = branding.update(
+        MessageTemplateKind.entries.fold(BrandingSettings()) { settings, kind ->
+            settings.withMessageTemplate(kind, text = "Modelo ${kind.key}", defaultText = "")
+        },
+    )
+
+    @Test
+    fun closingTheMessageBeforeItIsReadyDoesNotReopenIt() {
+        val scheduler = TestCoroutineScheduler()
+        val s = setup(main = StandardTestDispatcher(scheduler))
+        s.withEditedTemplates()
+        val saved = s.order("Vaso", status = OrderStatus.APROVADO)
+
+        s.viewModel.openMessage(saved)
+        s.viewModel.closeMessage()
+        scheduler.advanceUntilIdle()
+
+        assertNull(s.state.message)
+    }
+
+    @Test
+    fun changingTheTemplateQuicklyShowsTheLastOneChosen() {
+        val scheduler = TestCoroutineScheduler()
+        val s = setup(main = StandardTestDispatcher(scheduler))
+        s.withEditedTemplates()
+        val saved = s.order("Vaso", status = OrderStatus.APROVADO)
+        s.viewModel.openMessage(saved, MessageTemplateKind.READY)
+        scheduler.advanceUntilIdle()
+        assertEquals(MessageTemplateKind.READY, s.state.message!!.kind)
+
+        s.viewModel.changeMessageKind(MessageTemplateKind.APPROVED)
+        s.viewModel.changeMessageKind(MessageTemplateKind.PRINTING)
+        scheduler.advanceUntilIdle()
+
+        val message = s.state.message!!
+        assertEquals(MessageTemplateKind.PRINTING, message.kind)
+        assertEquals("Modelo printing", message.text)
+    }
+
+    @Test
+    fun anOpenRequestForAnotherOrderReplacesTheFirst() {
+        val scheduler = TestCoroutineScheduler()
+        val s = setup(main = StandardTestDispatcher(scheduler))
+        s.withEditedTemplates()
+        val first = s.order("Vaso", status = OrderStatus.APROVADO)
+        val second = s.order("Suporte", status = OrderStatus.EM_IMPRESSAO)
+
+        s.viewModel.openMessage(first)
+        s.viewModel.openMessage(second)
+        scheduler.advanceUntilIdle()
+
+        assertEquals(second.id, s.state.message!!.quote.id)
+        assertEquals(MessageTemplateKind.PRINTING, s.state.message!!.kind)
+    }
+
     @Test
     fun theDepositIsEditableAndLimitedToTheTotal() {
         val s = setup()
         val saved = s.order("Suporte", status = OrderStatus.APROVADO)
         s.viewModel.openPayments(saved)
 
+        // Digitar não grava; sair do campo grava.
+        s.viewModel.setDeposit("4")
         s.viewModel.setDeposit("40")
+        assertEquals(0.0, s.repository.savedQuotes.value.first { it.id == saved.id }.depositAmount)
+        s.viewModel.commitDeposit()
         assertEquals(40.0, s.repository.savedQuotes.value.first { it.id == saved.id }.depositAmount, 1e-9)
         assertEquals(PaymentStatus.NOT_PAID, s.row(saved.id).paymentStatus)
 
         s.viewModel.setDeposit("500")
+        s.viewModel.commitDeposit()
         assertEquals(100.0, s.repository.savedQuotes.value.first { it.id == saved.id }.depositAmount, 1e-9)
         assertEquals("100", s.state.payments!!.depositText, "o campo mostra o sinal já limitado")
 
         s.viewModel.setDeposit("abc")
+        s.viewModel.commitDeposit()
         assertEquals(UiText.Res(Res.string.common_error_number_invalid), s.state.payments!!.depositError)
         assertEquals(100.0, s.repository.savedQuotes.value.first { it.id == saved.id }.depositAmount, 1e-9)
+    }
+
+    @Test
+    fun theTypedDepositIsSavedWhenClosingOrRegistering() {
+        val s = setup()
+        val saved = s.order("Suporte", status = OrderStatus.APROVADO)
+
+        s.viewModel.openPayments(saved)
+        s.viewModel.setDeposit("30")
+        s.viewModel.closePayments()
+        assertEquals(30.0, s.repository.savedQuotes.value.first { it.id == saved.id }.depositAmount, 1e-9)
+
+        s.viewModel.openPayments(s.repository.savedQuotes.value.first { it.id == saved.id })
+        s.viewModel.setDeposit("20")
+        s.viewModel.startRegisteringPayment()
+        // O formulário já parte do sinal novo.
+        assertEquals("20", s.state.payments!!.form!!.amountText)
+        assertEquals(20.0, s.repository.savedQuotes.value.first { it.id == saved.id }.depositAmount, 1e-9)
+    }
+
+    @Test
+    fun anAmountThatRoundsToZeroIsAnInvalidAmount() {
+        val s = setup()
+        val saved = s.order("Suporte", status = OrderStatus.APROVADO)
+        s.viewModel.openPayments(saved)
+        s.viewModel.startRegisteringPayment()
+
+        s.viewModel.updatePaymentForm { it.copy(amountText = "0,004") }
+        s.viewModel.registerPayment()
+
+        assertEquals(UiText.Res(Res.string.payments_error_amount), s.state.payments!!.form!!.error)
+        assertTrue(s.repository.savedQuotes.value.first { it.id == saved.id }.payments.isEmpty())
     }
 
     @Test

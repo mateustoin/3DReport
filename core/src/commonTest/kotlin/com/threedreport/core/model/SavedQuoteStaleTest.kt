@@ -67,6 +67,10 @@ class SavedQuoteStaleTest {
         assertFalse(saved.isStale(todayEpochDay = 12, thresholdDays = 3, epochDayOf = utcDay))
         assertTrue(saved.isStale(todayEpochDay = 13, thresholdDays = 3, epochDayOf = utcDay))
         assertFalse(saved.isStale(todayEpochDay = 100, thresholdDays = 0, epochDayOf = utcDay))
+
+        assertNull(saved.staleDaysIfStale(todayEpochDay = 12, thresholdDays = 3, epochDayOf = utcDay))
+        assertEquals(4, saved.staleDaysIfStale(todayEpochDay = 14, thresholdDays = 3, epochDayOf = utcDay))
+        assertNull(saved.staleDaysIfStale(todayEpochDay = 100, thresholdDays = 0, epochDayOf = utcDay))
     }
 
     @Test

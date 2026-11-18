@@ -36,7 +36,18 @@ import com.threedreport.app.ui.theme.statusColor
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** As colunas da tabela de Pedidos (decisão 132): número, peça, cliente, situação, prazo e valor à direita. */
+/** A posição de cada coluna fixa de [ordersColumns]; a de pagamento, quando existe, vem logo depois do prazo. */
+private const val COL_NUMBER = 0
+private const val COL_PIECE = 1
+private const val COL_CLIENT = 2
+private const val COL_STATUS = 3
+private const val COL_DEADLINE = 4
+private const val COL_PAYMENT = 5
+
+/**
+ * As colunas da tabela de Pedidos (decisão 132): número, peça, cliente, situação, prazo, pagamento (com [showPayment])
+ * e valor à direita. A linha ([OrdersTableRow]) recebe o mesmo [showPayment] pra saber se a coluna existe.
+ */
 @Composable
 fun ordersColumns(showPayment: Boolean = false, showStale: Boolean = false): List<TableColumn> = listOfNotNull(
     TableColumn(stringResource(Res.string.orders_col_number), width = AppDimens.tableNumberColumn),
@@ -60,6 +71,8 @@ fun OrdersTableHeader(columns: List<TableColumn>, selectable: Boolean) = TableHe
 fun OrdersTableRow(
     row: HistoryRow,
     columns: List<TableColumn>,
+    /** O mesmo valor passado pra [ordersColumns]: se a coluna "Pagamento" existe nesta tabela. */
+    showPaymentColumn: Boolean,
     state: HistoryUiState,
     actions: QuoteActions,
     onOpen: () -> Unit,
@@ -84,8 +97,8 @@ fun OrdersTableRow(
         extra = { QuoteActionsMenu(quote, actions) },
         revealActions = !state.selectionMode,
     ) {
-        Cell(0) { Muted(quote.displayNumber.orEmpty()) }
-        Cell(1) {
+        Cell(COL_NUMBER) { Muted(quote.displayNumber.orEmpty()) }
+        Cell(COL_PIECE) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
                 Column(Modifier.weight(1f, fill = false)) {
                     Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -94,15 +107,15 @@ fun OrdersTableRow(
                 quote.notes?.takeIf { it.isNotBlank() }?.let { NotesIcon(it) }
             }
         }
-        Cell(2) { Muted(quote.client?.name.orEmpty()) }
-        Cell(3) {
+        Cell(COL_CLIENT) { Muted(quote.client?.name.orEmpty()) }
+        Cell(COL_STATUS) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
                 StatusLabel(stringResource(quote.status.labelRes()), quote.status.statusColor())
                 row.staleDays?.let { StaleBadgeView(it) }
             }
         }
-        Cell(4) { row.deadline?.let { DeadlineBadgeView(it) } }
-        if (columns.size == 7) Cell(5) { row.paymentStatus?.let { PaymentBadgeView(it) } }
+        Cell(COL_DEADLINE) { row.deadline?.let { DeadlineBadgeView(it) } }
+        if (showPaymentColumn) Cell(COL_PAYMENT) { row.paymentStatus?.let { PaymentBadgeView(it) } }
         Cell(columns.lastIndex) {
             NumericText(
                 quote.totalWithServices.toCurrencyText(quote.currency),

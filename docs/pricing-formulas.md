@@ -492,8 +492,13 @@ serviços + frete cobrado). Pedido sem sinal nem pagamento fica como antes.
   parte**.
 - **O que cobrar agora** (`amountDue`): a falta do sinal enquanto houver, depois
   a falta do pedido; nada quando não falta.
-- **Pix** (`pixCharge`): o mesmo valor, só em pedido em real (`Currency.BRL`)
-  e fora de Cancelado.
+- **Pix** (`pixCharge`): o mesmo valor, só em pedido em real (`Currency.BRL`),
+  fora de Cancelado, e em Entregue só quando o pedido acompanha pagamento (há
+  sinal ou pagamento registrado): pedido antigo já entregue não vira cobrança.
+- **Linha do sinal** no PDF e na mensagem (`depositToRequest`): a falta do
+  sinal, em centavos, pela mesma regra do Pix, em qualquer moeda.
+- **Centavos:** o que é cobrado e gravado (pagamento registrado, sinal, o que
+  cobrar agora) passa por `roundToCents`; preço e custo não.
   O código (`pix/PixPayload`) leva o valor com ponto e duas casas.
 - **"A receber"** no resumo de Pedidos: soma `remaining` dos pedidos de Aprovado
   a Pronto, por moeda (num pedido sem pagamento, é o total, como antes).

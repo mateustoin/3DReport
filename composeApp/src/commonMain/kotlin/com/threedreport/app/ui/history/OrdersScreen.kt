@@ -156,6 +156,7 @@ private fun LazyListScope.tableItems(state: HistoryUiState, columns: List<TableC
         OrdersTableRow(
             row = row,
             columns = columns,
+            showPaymentColumn = state.showPaymentColumn,
             state = state,
             actions = quoteActionsFor(row, viewModel, navigation, selectable = true),
             onOpen = { viewModel.startEditingDetails(row.quote) },

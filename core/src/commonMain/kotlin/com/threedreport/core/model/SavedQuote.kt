@@ -179,11 +179,26 @@ data class SavedQuote(
         }
 
     /**
-     * O que o Pix deste pedido cobra (decisão 145, item 3): o [amountDue], só em pedido (nunca produto), em real e fora
-     * de [OrderStatus.CANCELADO]. `null` = sem Pix.
+     * Se o documento e a mensagem cobram o cliente (Pix e linha do sinal): só pedido, fora de [OrderStatus.CANCELADO], e
+     * um pedido já [OrderStatus.ENTREGUE] só quando acompanha pagamento ([hasPaymentTracking]). Sem isso, todo pedido de
+     * antes da Leva 11 já entregue viraria cobrança do total.
+     */
+    private val chargesClient: Boolean
+        get() = isOrder && status != OrderStatus.CANCELADO && (hasPaymentTracking || status != OrderStatus.ENTREGUE)
+
+    /**
+     * O que o Pix deste pedido cobra (decisão 145, item 3): o [amountDue], em real e só quando o pedido cobra o cliente
+     * (pedido, fora de Cancelado, e Entregue só com pagamento acompanhado). `null` = sem Pix.
      */
     val pixCharge: AmountDue?
-        get() = if (isOrder && currency == Currency.BRL && status != OrderStatus.CANCELADO) amountDue else null
+        get() = if (chargesClient && currency == Currency.BRL) amountDue else null
+
+    /**
+     * O sinal que o PDF e a mensagem pedem ("Sinal de R$ 50,00 pra começar", decisão 146, item 12): o que falta do sinal,
+     * em centavos, pela mesma regra do [pixCharge] (mas em qualquer moeda). `null` sem sinal pendente.
+     */
+    val depositToRequest: Double?
+        get() = if (chargesClient && pendingDeposit > 0.0) roundToCents(pendingDeposit) else null
 
     /** Valor do Pix ([pixCharge]), ou `null` sem Pix. */
     val pixAmount: Double?
@@ -224,12 +239,12 @@ data class SavedQuote(
 
     /**
      * O sinal depois de reabrir o cálculo e salvar (decisão 146, item 10): nunca é criado nem muda, só fica limitado ao
-     * total novo quando ele cai abaixo do sinal. O % padrão só vale pra pedido novo ([initialDeposit]). Produto nunca
-     * tem sinal.
+     * total novo quando ele cai abaixo do sinal, em centavos ([roundToCents]: o total do cálculo tem mais casas). O %
+     * padrão só vale pra pedido novo ([initialDeposit]). Produto nunca tem sinal.
      */
     fun withDepositLimitedToTotal(): SavedQuote = when {
         !isOrder -> copy(depositAmount = 0.0)
-        depositAmount > totalWithServices -> copy(depositAmount = totalWithServices.coerceAtLeast(0.0))
+        depositAmount > totalWithServices -> copy(depositAmount = roundToCents(totalWithServices.coerceAtLeast(0.0)))
         else -> this
     }
 
@@ -246,10 +261,16 @@ data class SavedQuote(
     }
 
     /** Se o orçamento está parado há [thresholdDays] dias ou mais ([staleDays]). [thresholdDays] zero desliga. */
-    fun isStale(todayEpochDay: Long, thresholdDays: Int, epochDayOf: (Long) -> Long): Boolean {
-        if (thresholdDays <= 0) return false
-        val days = staleDays(todayEpochDay, epochDayOf) ?: return false
-        return days >= thresholdDays
+    fun isStale(todayEpochDay: Long, thresholdDays: Int, epochDayOf: (Long) -> Long): Boolean =
+        staleDaysIfStale(todayEpochDay, thresholdDays, epochDayOf) != null
+
+    /**
+     * Os dias parado ([staleDays]) quando o orçamento está parado ([isStale]), ou `null`. Uma conta só, pra quem precisa
+     * do selo "Parado há N dias" (a lista de Pedidos monta um por linha).
+     */
+    fun staleDaysIfStale(todayEpochDay: Long, thresholdDays: Int, epochDayOf: (Long) -> Long): Int? {
+        if (thresholdDays <= 0) return null
+        return staleDays(todayEpochDay, epochDayOf)?.takeIf { it >= thresholdDays }
     }
 
     /**
@@ -391,7 +412,5 @@ data class SavedQuote(
         }
 
         private fun moneyLeft(difference: Double): Double = if (difference < HALF_CENT) 0.0 else difference
-
-        private fun roundToCents(value: Double): Double = kotlin.math.round(value * 100.0) / 100.0
     }
 }

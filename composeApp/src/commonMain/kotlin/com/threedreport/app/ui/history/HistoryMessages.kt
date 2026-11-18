@@ -14,6 +14,8 @@ import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.SavedQuote
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
@@ -44,11 +46,23 @@ internal class HistoryMessages(
         fill(quote, kind)
     }
 
+    /** O preenchimento em andamento, cancelado quando outro começa ou a janela fecha. */
+    private var filling: Job? = null
+
+    /** O pedido e o modelo que a janela espera, ou `null` com a janela fechada: só esse resultado é aplicado. */
+    private var requested: Pair<String, MessageTemplateKind>? = null
+
     private fun fill(quote: SavedQuote, kind: MessageTemplateKind) {
-        scope.launch(main) {
+        filling?.cancel()
+        val request = quote.id to kind
+        requested = request
+        filling = scope.launch(main) {
             val branding = brandingRepository.branding.value
             val text = clientMessageFor(quote, kind, branding)
             val pix = messagePixFor(quote, branding)
+            // Os textos vêm dos recursos e podem demorar: se a janela fechou ou trocou de modelo no meio, este resultado
+            // não vale mais.
+            if (!isActive || requested != request) return@launch
             change { it.copy(message = MessageEditing(quote, kind, text, pix, includePix = pix != null && kind.includesPixByDefault())) }
         }
     }
@@ -58,7 +72,12 @@ internal class HistoryMessages(
 
     fun edit(text: String) = change { s -> s.copy(message = s.message?.copy(text = text)) }
 
-    fun close() = change { it.copy(message = null) }
+    fun close() {
+        filling?.cancel()
+        filling = null
+        requested = null
+        change { it.copy(message = null) }
+    }
 
     fun openInWhatsApp() {
         val message = state().message ?: return

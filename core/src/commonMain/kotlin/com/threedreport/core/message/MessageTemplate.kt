@@ -37,14 +37,15 @@ enum class MessageTemplateKind(val key: String) {
 
         /**
          * O modelo em que "Mensagem pro cliente" abre, pelo andamento atual de [order] (decisão 148, item 24): Orçado
-         * abre "Retomar orçamento"; Pronto ou Entregue com falta a pagar abrem "Lembrete de pagamento"; o resto, o
-         * modelo do andamento. `null` em Cancelado e em produto do catálogo, que não têm modelo.
+         * abre "Retomar orçamento"; Pronto ou Entregue com falta a pagar abrem "Lembrete de pagamento", mas só quando o pedido
+         * acompanha pagamento ([SavedQuote.hasPaymentTracking]: pedido antigo não vira cobrança); o resto, o modelo do
+         * andamento. `null` em Cancelado e em produto do catálogo, que não têm modelo.
          */
         fun forOrder(order: SavedQuote): MessageTemplateKind? {
             if (!order.isOrder) return null
             return when (order.status) {
                 OrderStatus.ORCADO -> FOLLOW_UP
-                OrderStatus.PRONTO, OrderStatus.ENTREGUE -> if (order.remaining > 0.0) PAYMENT_REMINDER else forStatusChange(order.status)
+                OrderStatus.PRONTO, OrderStatus.ENTREGUE -> if (order.hasPaymentTracking && order.remaining > 0.0) PAYMENT_REMINDER else forStatusChange(order.status)
                 else -> forStatusChange(order.status)
             }
         }

@@ -2,8 +2,11 @@ package com.threedreport.core.pix
 
 import com.threedreport.core.model.SavedQuote
 
-/** O que falta (ou está errado) nos dados do Pix em Configurações. A tela escolhe a frase de cada um. */
-enum class PixSetupIssue { KEY_MISSING, KEY_TOO_LONG, NAME_MISSING, CITY_MISSING }
+/**
+ * O que falta (ou está errado) nos dados do Pix em Configurações. A tela escolhe a frase de cada um.
+ * [KEY_INVALID_CHARACTERS]: a chave tem acento ou outro caractere fora do ASCII, que o BR Code não aceita.
+ */
+enum class PixSetupIssue { KEY_MISSING, KEY_INVALID_CHARACTERS, KEY_TOO_LONG, NAME_MISSING, CITY_MISSING }
 
 /**
  * Quem recebe o Pix, já pronto pro código: chave normalizada, nome e cidade limpos (ver [PixPayload.sanitizeName]).
@@ -27,6 +30,8 @@ data class PixReceiver(val key: PixKey, val name: String, val city: String) {
             val key = PixKey.parse(rawKey)
             if (key == null) {
                 add(PixSetupIssue.KEY_MISSING)
+            } else if (!key.isAscii) {
+                add(PixSetupIssue.KEY_INVALID_CHARACTERS)
             } else if (!key.fitsInPayload) {
                 add(PixSetupIssue.KEY_TOO_LONG)
             }

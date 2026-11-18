@@ -101,6 +101,10 @@ class Leva11SettingsViewModelTest {
         viewModel.setPixName("Loja")
         viewModel.setPixCity("Rio")
         assertTrue(viewModel.uiState.value.pixIssues.isEmpty())
+
+        // O BR Code só leva ASCII: chave com acento é apontada, e não vira Pix.
+        viewModel.setPixKey("joão@b.com")
+        assertEquals(setOf(PixSetupIssue.KEY_INVALID_CHARACTERS), viewModel.uiState.value.pixIssues)
     }
 
     // ---- mensagens
