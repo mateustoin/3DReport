@@ -1122,7 +1122,7 @@
     <string name="about_summary">Aplicativo gratuito e de código aberto pra orçar e vender impressão 3D. Feito por %1$s.</string>
     <string name="about_does_quote">No Orçamento, arraste o G-code pra janela e peso, tempo, foto, impressora e filamento vêm preenchidos.</string>
     <string name="about_does_orders">Em Pedidos e no Catálogo, acompanhe o que os clientes pediram e guarde as peças que você oferece.</string>
-    <string name="about_does_settings">Em Configurações, ajuste custos, canais de venda, documentos pro cliente, tema, moeda e backup.</string>
+    <string name="about_does_settings">Em Configurações, ajuste custos, canais de venda, documentos pro cliente, tema, idioma, moeda e backup.</string>
     <string name="about_link_site">Site</string>
     <string name="about_link_code">Código-fonte</string>
     <string name="about_link_support">Apoiar o projeto</string>
