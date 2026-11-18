@@ -4,6 +4,7 @@ package com.threedreport.app.ui.settings
 enum class SettingsSection {
     BUSINESS,
     CHANNELS,
+    ORDERS,
     DOCUMENTS,
     APPEARANCE,
     BACKUP,

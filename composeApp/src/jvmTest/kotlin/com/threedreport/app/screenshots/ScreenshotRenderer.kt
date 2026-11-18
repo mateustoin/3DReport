@@ -112,8 +112,8 @@ import org.jetbrains.skia.Image as SkiaImage
 
 // Tamanho de todo print de tela do site (decisão 120): 1280 é exatamente o SIDEBAR_LABELS_MIN_WINDOW_WIDTH,
 // então a barra lateral sai com os rótulos, e não só os ícones.
-private const val WIDTH = 1280
-private const val HEIGHT = 800
+internal const val WIDTH = 1280
+internal const val HEIGHT = 800
 
 // Janela estreita, abaixo do ponto em que as telas viram uma coluna (a barra lateral já só com ícones).
 private const val NARROW_WIDTH = 820
@@ -121,7 +121,7 @@ private const val NARROW_HEIGHT = 1000
 
 // "Hoje" fixo pros dados de exemplo terem datas plausíveis (prazos, histórico) sem depender de quando o
 // gerador roda.
-private val TODAY: LocalDate = LocalDate.of(2026, 9, 26)
+internal val TODAY: LocalDate = LocalDate.of(2026, 9, 26)
 private val ZONE = ZoneId.systemDefault()
 
 /**
@@ -360,6 +360,7 @@ class ScreenshotRenderer {
         File(outDir, "historico.png").delete()
 
         if (System.getProperty("screenshots.leva10c") != null) renderLeva10cScreenshots(container, outDir)
+        if (System.getProperty("screenshots.leva11") != null) renderLeva11Screenshots(container, outDir)
         if (System.getProperty("screenshots.presets") != null) renderPrinterPresetScreenshots(container, outDir)
     }
 }
@@ -865,7 +866,7 @@ private fun historyApp(container: AppContainer, startAt: AppDestination) {
  * captura depende do dia em que é gerada.
  */
 @Composable
-private fun sampleApp(container: AppContainer, startAt: AppDestination, prepareQuote: (QuoteViewModel) -> Unit = {}) {
+internal fun sampleApp(container: AppContainer, startAt: AppDestination, prepareQuote: (QuoteViewModel) -> Unit = {}) {
     App(container, startAt = startAt, prepareQuote = prepareQuote, today = { TODAY.toEpochDay() }, clock = { atDaysAgo(0, 12) })
 }
 
@@ -923,7 +924,7 @@ private class SeedClock(var millis: Long) : Clock {
     override fun nowMillis(): Long = millis
 }
 
-private fun atDaysAgo(days: Int, hour: Int = 10): Long =
+internal fun atDaysAgo(days: Int, hour: Int = 10): Long =
     TODAY.minusDays(days.toLong()).atTime(hour, 0).atZone(ZONE).toInstant().toEpochMilli()
 
 private fun deliveryEpochDay(daysFromToday: Int): Long = TODAY.plusDays(daysFromToday.toLong()).toEpochDay()
@@ -1207,8 +1208,17 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
         vm.selectFilament(spec.filamentId)
         vm.selectFilamentColor(spec.colorId)
         vm.selectPrinter(spec.printerId)
-        if (spec.lengthMeters.isNotEmpty()) vm.setLengthMeters(spec.lengthMeters)
-        if (spec.printTimeText.isNotEmpty()) vm.setPrintTimeMinutes(spec.printTimeText)
+        // Sem o G-code (a pasta de exemplo é opcional), as medidas vêm do texto, como nos produtos, e o pedido fica sem foto.
+        if (spec.lengthMeters.isNotEmpty()) {
+            vm.setLengthMeters(spec.lengthMeters)
+        } else if (gcode == null) {
+            vm.setLengthMeters("30")
+        }
+        if (spec.printTimeText.isNotEmpty()) {
+            vm.setPrintTimeMinutes(spec.printTimeText)
+        } else if (gcode == null) {
+            vm.setPrintTimeMinutes("3h")
+        }
         vm.selectSalesChannel(spec.channelId)
         if (spec.servicePrice != null) {
             vm.toggleService(Catalog.PINTURA_ID)
@@ -1250,7 +1260,7 @@ private fun seedSampleData(dataDir: File, gcodesDir: File?) {
 
 /** Monta o [AppContainer] pra renderizar, como [com.threedreport.app.DesktopContainer.createDesktopContainer], mas
  * sobre a pasta temporária e sem gravação em segundo plano nem verificação de atualização de verdade. */
-private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }, installer: UpdateInstaller = NoUpdateInstaller): AppContainer {
+internal fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }, installer: UpdateInstaller = NoUpdateInstaller): AppContainer {
     val storage = LocalStorage(dataDir, Clock.System)
     val orderSettings = storage.orderSettings()
     return AppContainer(
@@ -1288,7 +1298,7 @@ private fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSourc
  * usado pra simular um clique (ver [clickByText]).
  */
 @OptIn(ExperimentalComposeUiApi::class)
-private fun renderAppPng(
+internal fun renderAppPng(
     outFile: File,
     afterSettle: (ImageComposeScene) -> Unit = {},
     width: Int = WIDTH,
@@ -1306,7 +1316,7 @@ private fun renderAppPng(
     }
 }
 
-private fun settle(scene: ImageComposeScene, frames: Int = 10, delayMs: Long = 300): SkiaImage {
+internal fun settle(scene: ImageComposeScene, frames: Int = 10, delayMs: Long = 300): SkiaImage {
     var image = scene.render(System.nanoTime())
     repeat(frames - 1) {
         Thread.sleep(delayMs)
@@ -1320,7 +1330,7 @@ private fun settle(scene: ImageComposeScene, frames: Int = 10, delayMs: Long = 3
  * com `onNodeWithText(text).performClick()`), sem precisar de coordenadas de tela. Usado pra trocar
  * Pedidos de Lista pra Kanban, que é estado só da tela (não do ViewModel).
  */
-private fun ImageComposeScene.clickByText(text: String) {
+internal fun ImageComposeScene.clickByText(text: String) {
     for (owner in semanticsOwners) {
         val node = findClickableNodeWithText(owner.rootSemanticsNode, text) ?: continue
         node.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke()
@@ -1329,7 +1339,7 @@ private fun ImageComposeScene.clickByText(text: String) {
 }
 
 /** Como [clickByText], pelo texto de descrição (botão só de ícone, como as ações da linha). */
-private fun ImageComposeScene.clickByDescription(description: String) {
+internal fun ImageComposeScene.clickByDescription(description: String) {
     fun find(node: SemanticsNode): SemanticsNode? {
         val descriptions = node.config.getOrNull(SemanticsProperties.ContentDescription)
         if (node.config.getOrNull(SemanticsActions.OnClick) != null && descriptions?.any { it == description } == true) return node
@@ -1360,7 +1370,7 @@ private fun ImageComposeScene.setTextByLabel(label: String, text: String) {
 }
 
 /** Rola até o fim tudo o que rola na tela (o painel do formulário), pra capturar o que fica embaixo. */
-private fun ImageComposeScene.scrollAllToEnd() {
+internal fun ImageComposeScene.scrollAllToEnd() {
     fun walk(node: SemanticsNode) {
         node.config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(0f, SCROLL_TO_END)
         node.children.forEach(::walk)
@@ -1397,7 +1407,7 @@ private fun renderCatalogComposite(items: List<QuoteExportItem>, branding: Brand
     composePdfPage(renderCatalogPdf(items, testClientTexts, resolved.brandName, resolved.footerText, resolved.options.copy(issuedOnEpochDay = TODAY.toEpochDay())), outFile)
 }
 
-private fun composePdfPage(pdfBytes: ByteArray, outFile: File) {
+internal fun composePdfPage(pdfBytes: ByteArray, outFile: File) {
     val pageImage = Loader.loadPDF(pdfBytes).use { document -> PDFRenderer(document).renderImageWithDPI(0, 150f) }
 
     val canvas = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)

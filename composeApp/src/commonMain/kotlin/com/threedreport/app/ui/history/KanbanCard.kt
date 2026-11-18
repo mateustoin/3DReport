@@ -161,6 +161,23 @@ fun KanbanCard(
                     value()
                 }
             }
+            // Pagamento, orçamento parado e observação (Leva 11): só aparecem quando há o que dizer. Na coluna estreita os
+            // selos se empilham, como o de prazo e o valor, pra nenhum ser cortado.
+            val notes = quote.notes?.takeIf { it.isNotBlank() }
+            if (row.paymentStatus != null || row.staleDays != null || notes != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
+                    val badges: @Composable () -> Unit = {
+                        row.staleDays?.let { StaleBadgeView(it) }
+                        row.paymentStatus?.let { PaymentBadgeView(it) }
+                    }
+                    if (compact) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(space.xxs)) { badges() }
+                    } else {
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(space.xs)) { badges() }
+                    }
+                    notes?.let { NotesIcon(it, onClick = { callbacks.onOpen(row) }) }
+                }
+            }
         }
         QuoteActionsMenu(
             quote,

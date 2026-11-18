@@ -4,6 +4,9 @@ import com.threedreport.app.data.LogoChange
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.ImageBackground
+import com.threedreport.core.pix.PixKey
+import com.threedreport.core.pix.PixReceiver
+import com.threedreport.core.pix.PixSetupIssue
 
 /**
  * Estado da seção "Documentos pro cliente" em Configurações: marca, logo, contato e opções de
@@ -19,6 +22,7 @@ import com.threedreport.core.model.ImageBackground
  * @property savingTemplate o diálogo "Salvar como modelo" aberto, com o nome digitado e o erro dele.
  * @property imageBackground fundo da imagem pro cliente escolhido no formulário (ver [BrandingSettings.imageBackground]).
  * @property hasUnsavedChanges se o formulário difere do que está gravado (a logo incluída).
+ * @property revision sobe quando o formulário é refeito de fora (descartar, restaurar), pra campos com texto local recomeçarem dele.
  */
 data class BrandingUiState(
     val brandNameInput: String = "",
@@ -32,6 +36,10 @@ data class BrandingUiState(
     val contactWhatsAppInput: String = "",
     val contactEmailInput: String = "",
     val contactInstagramInput: String = "",
+    val pixKeyInput: String = "",
+    val pixNameInput: String = "",
+    val pixCityInput: String = "",
+    val messageEdits: Map<String, String> = emptyMap(),
     val logoBytes: ByteArray? = null,
     val logoChange: LogoChange = LogoChange.Keep,
     val logoError: UiText? = null,
@@ -41,7 +49,16 @@ data class BrandingUiState(
     val optionsError: UiText? = null,
     val savingTemplate: TemplateNameState? = null,
     val hasUnsavedChanges: Boolean = false,
+    val revision: Int = 0,
 )
 
 /** O nome do modelo sendo digitado e o erro dele. */
 data class TemplateNameState(val name: String = "", val error: UiText? = null)
+
+/** A chave Pix do formulário já lida (tipo e valor normalizado), ou `null` sem chave. */
+val BrandingUiState.pixKey: PixKey?
+    get() = PixKey.parse(pixKeyInput)
+
+/** O que falta pro Pix aparecer nos documentos, com o que está no formulário agora (vazio = pronto). */
+val BrandingUiState.pixIssues: Set<PixSetupIssue>
+    get() = PixReceiver.issuesOf(pixKeyInput, pixNameInput, pixCityInput)

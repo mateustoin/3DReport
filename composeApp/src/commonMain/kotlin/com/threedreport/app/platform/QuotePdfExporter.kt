@@ -2,7 +2,9 @@ package com.threedreport.app.platform
 
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.ContactEntry
+import com.threedreport.core.model.Payment
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.pix.PixReceiver
 
 /** Um orçamento salvo a incluir na exportação em PDF, com sua foto (se houver) já carregada em memória. */
 data class QuoteExportItem(val savedQuote: SavedQuote, val photoBytes: ByteArray?)
@@ -26,6 +28,7 @@ data class QuoteExportItem(val savedQuote: SavedQuote, val photoBytes: ByteArray
  * @property validityDays "Válido até" a data de emissão mais esses dias; `null` ou zero tira a linha.
  * @property issuedOnEpochDay data de emissão; `null` é hoje (os testes fixam a data).
  * @property showClientName "Para: nome do cliente" abaixo do título.
+ * @property pixReceiver quem recebe o Pix (decisão 145); `null` = nenhum bloco "Pague com Pix". O catálogo nunca mostra.
  *
  * O cabeçalho só aparece com logo ou contato: o nome sozinho já tem a marca d'água e o rodapé.
  */
@@ -39,6 +42,7 @@ data class PdfLayoutOptions(
     val validityDays: Int? = null,
     val issuedOnEpochDay: Long? = null,
     val showClientName: Boolean = false,
+    val pixReceiver: PixReceiver? = null,
 )
 
 /**
@@ -118,6 +122,23 @@ fun BrandingSettings.resolvePdfBranding(logoBytes: ByteArray?): ResolvedPdfBrand
             showAppSignature = true,
             validityDays = quoteValidityDays.takeIf { it > 0 },
             showClientName = showClientName,
+            pixReceiver = pixReceiver,
         ),
     )
 }
+
+/** O que o recibo diz (decisão 147): o pedido, o pagamento e o número `#0042-1` (`null` num pedido sem número). */
+data class ReceiptData(val order: SavedQuote, val payment: Payment, val number: String?)
+
+/**
+ * Gera o recibo em PDF de um pagamento, no mesmo visual do orçamento: cabeçalho com logo e contatos, "Recibo #0042-1",
+ * a frase "Recebi de...", o quadro com total, pago e falta, o nome da marca e "Gerado com 3DReport". Sem custo, lucro
+ * nem observação (decisão 19). [brandName], [footerText] e [options] são os de [renderSavedQuotesPdf].
+ */
+expect fun renderReceiptPdf(
+    receipt: ReceiptData,
+    texts: ClientDocumentTexts,
+    brandName: String?,
+    footerText: String?,
+    options: PdfLayoutOptions = PdfLayoutOptions(),
+): ByteArray

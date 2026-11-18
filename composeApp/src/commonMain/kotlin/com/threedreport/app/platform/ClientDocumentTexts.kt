@@ -6,6 +6,7 @@ import _3dreport.composeapp.generated.resources.client_doc_catalog_title
 import _3dreport.composeapp.generated.resources.client_doc_contact_whatsapp
 import _3dreport.composeapp.generated.resources.client_doc_delivery
 import _3dreport.composeapp.generated.resources.client_doc_delivery_rush
+import _3dreport.composeapp.generated.resources.client_doc_deposit
 import _3dreport.composeapp.generated.resources.client_doc_image_delivery
 import _3dreport.composeapp.generated.resources.client_doc_image_delivery_rush
 import _3dreport.composeapp.generated.resources.client_doc_image_unit_price
@@ -21,8 +22,23 @@ import _3dreport.composeapp.generated.resources.client_doc_label_value
 import _3dreport.composeapp.generated.resources.client_doc_line_amount
 import _3dreport.composeapp.generated.resources.client_doc_order_number
 import _3dreport.composeapp.generated.resources.client_doc_pieces
+import _3dreport.composeapp.generated.resources.client_doc_pix_code_label
+import _3dreport.composeapp.generated.resources.client_doc_pix_copy_paste
+import _3dreport.composeapp.generated.resources.client_doc_pix_deposit
+import _3dreport.composeapp.generated.resources.client_doc_pix_key
+import _3dreport.composeapp.generated.resources.client_doc_pix_title
+import _3dreport.composeapp.generated.resources.client_doc_pix_value
 import _3dreport.composeapp.generated.resources.client_doc_print_time
 import _3dreport.composeapp.generated.resources.client_doc_print_time_pieces
+import _3dreport.composeapp.generated.resources.client_doc_receipt_body
+import _3dreport.composeapp.generated.resources.client_doc_receipt_body_anonymous
+import _3dreport.composeapp.generated.resources.client_doc_receipt_paid
+import _3dreport.composeapp.generated.resources.client_doc_receipt_reference_numbered
+import _3dreport.composeapp.generated.resources.client_doc_receipt_reference_plain
+import _3dreport.composeapp.generated.resources.client_doc_receipt_remaining
+import _3dreport.composeapp.generated.resources.client_doc_receipt_title
+import _3dreport.composeapp.generated.resources.client_doc_receipt_title_numbered
+import _3dreport.composeapp.generated.resources.client_doc_receipt_total
 import _3dreport.composeapp.generated.resources.client_doc_rush
 import _3dreport.composeapp.generated.resources.client_doc_service_per_piece
 import _3dreport.composeapp.generated.resources.client_doc_shipping
@@ -41,9 +57,14 @@ import _3dreport.composeapp.generated.resources.duration_decimal_hours
 import _3dreport.composeapp.generated.resources.duration_hours
 import _3dreport.composeapp.generated.resources.duration_hours_minutes
 import _3dreport.composeapp.generated.resources.duration_minutes
+import _3dreport.composeapp.generated.resources.payment_method_card
+import _3dreport.composeapp.generated.resources.payment_method_cash
+import _3dreport.composeapp.generated.resources.payment_method_other
+import _3dreport.composeapp.generated.resources.payment_method_pix
 import com.threedreport.app.ui.format.DurationTexts
 import com.threedreport.core.model.ContactChannel
 import com.threedreport.core.model.ContactEntry
+import com.threedreport.core.model.PaymentMethod
 import com.threedreport.core.model.SavedQuote
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getPluralString
@@ -201,6 +222,63 @@ class ClientDocumentTexts internal constructor(
     /** "Tempo de impressão", rótulo solto do PDF (a duração vai ao lado). */
     val labelPrintTime: String get() = fill(Res.string.client_doc_label_print_time)
 
+    /** "Sinal de R$ 50,00 pra começar". */
+    fun deposit(amount: String) = fill(Res.string.client_doc_deposit, amount)
+
+    /** "Pix copia e cola (R$ 50,00):", a linha antes do código na mensagem. */
+    fun pixCopyPaste(amount: String) = fill(Res.string.client_doc_pix_copy_paste, amount)
+
+    /** "Pague com Pix", o título do bloco do PDF. */
+    val pixTitle: String get() = fill(Res.string.client_doc_pix_title)
+
+    /** "Sinal: R$ 50,00" (com [isDeposit]) ou "Valor: R$ 174,34", o que o Pix cobra. */
+    fun pixAmount(amount: String, isDeposit: Boolean) =
+        if (isDeposit) fill(Res.string.client_doc_pix_deposit, amount) else fill(Res.string.client_doc_pix_value, amount)
+
+    /** "Chave: nome@email.com". */
+    fun pixKey(key: String) = fill(Res.string.client_doc_pix_key, key)
+
+    /** "Pix copia e cola", o rótulo do código no PDF. */
+    val pixCodeLabel: String get() = fill(Res.string.client_doc_pix_code_label)
+
+    /** "Pix", "Cartão", "Dinheiro" ou "Outro". */
+    fun paymentMethod(method: PaymentMethod): String = when (method) {
+        PaymentMethod.PIX -> fill(Res.string.payment_method_pix)
+        PaymentMethod.CARD -> fill(Res.string.payment_method_card)
+        PaymentMethod.CASH -> fill(Res.string.payment_method_cash)
+        PaymentMethod.OTHER -> fill(Res.string.payment_method_other)
+    }
+
+    /** "Recibo", ou "Recibo #0042-1" com o número. */
+    fun receiptTitle(number: String?) =
+        if (number == null) fill(Res.string.client_doc_receipt_title) else fill(Res.string.client_doc_receipt_title_numbered, number)
+
+    /**
+     * A frase do recibo: "Recebi de Maria o valor de R$ 50,00 (Pix) em 17/11/2026, referente ao pedido #0042, Suporte."
+     * Sem [client], "Recebi o valor de...". Sem [orderNumber], "referente a Suporte".
+     */
+    fun receiptBody(client: String?, amount: String, method: String, date: String, orderNumber: String?, piece: String): String {
+        val reference = if (orderNumber != null) {
+            fill(Res.string.client_doc_receipt_reference_numbered, orderNumber, piece)
+        } else {
+            fill(Res.string.client_doc_receipt_reference_plain, piece)
+        }
+        return if (client != null) {
+            fill(Res.string.client_doc_receipt_body, client, amount, method, date, reference)
+        } else {
+            fill(Res.string.client_doc_receipt_body_anonymous, amount, method, date, reference)
+        }
+    }
+
+    /** "Total do pedido", rótulo do quadro do recibo. */
+    val receiptTotal: String get() = fill(Res.string.client_doc_receipt_total)
+
+    /** "Pago até agora". */
+    val receiptPaid: String get() = fill(Res.string.client_doc_receipt_paid)
+
+    /** "Falta pagar". */
+    val receiptRemaining: String get() = fill(Res.string.client_doc_receipt_remaining)
+
     private companion object {
         const val APP_NAME_PLACEHOLDER = "%1\$s"
     }
@@ -242,6 +320,26 @@ private val CLIENT_DOCUMENT_TEMPLATES: List<StringResource> = listOf(
     Res.string.client_doc_label_delivery,
     Res.string.client_doc_label_valid_until,
     Res.string.client_doc_label_print_time,
+    Res.string.client_doc_deposit,
+    Res.string.client_doc_pix_copy_paste,
+    Res.string.client_doc_pix_title,
+    Res.string.client_doc_pix_deposit,
+    Res.string.client_doc_pix_value,
+    Res.string.client_doc_pix_key,
+    Res.string.client_doc_pix_code_label,
+    Res.string.client_doc_receipt_title,
+    Res.string.client_doc_receipt_title_numbered,
+    Res.string.client_doc_receipt_body,
+    Res.string.client_doc_receipt_body_anonymous,
+    Res.string.client_doc_receipt_reference_numbered,
+    Res.string.client_doc_receipt_reference_plain,
+    Res.string.client_doc_receipt_total,
+    Res.string.client_doc_receipt_paid,
+    Res.string.client_doc_receipt_remaining,
+    Res.string.payment_method_pix,
+    Res.string.payment_method_card,
+    Res.string.payment_method_cash,
+    Res.string.payment_method_other,
     Res.string.duration_hours_minutes,
     Res.string.duration_hours,
     Res.string.duration_minutes,

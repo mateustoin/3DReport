@@ -308,6 +308,7 @@ fun App(
                                         viewModels.currencyViewModel,
                                         viewModels.backupViewModel,
                                         viewModels.salesChannelViewModel,
+                                        viewModels.orderSettingsViewModel,
                                         section = settingsSection,
                                         onSectionChange = { settingsSection = it },
                                     )

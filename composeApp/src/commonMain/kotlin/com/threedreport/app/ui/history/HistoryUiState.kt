@@ -5,9 +5,13 @@ import com.threedreport.app.data.OrdersView
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.ui.components.OverdueItem
 import com.threedreport.app.ui.text.UiText
+import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.Payment
+import com.threedreport.core.model.PaymentMethod
+import com.threedreport.core.model.PaymentStatus
 import com.threedreport.core.model.Quote
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.SavedQuote
@@ -56,6 +60,16 @@ data class HistoryRow(
     val canConvertToOrder: Boolean = false,
     /** Só com uma impressão dá pra editar as configurações aqui; com várias, é no Orçamento (decisão 114). */
     val canEditPrintSettings: Boolean = false,
+    /** Situação do pagamento, só quando o pedido acompanha pagamento (há pagamento ou sinal): sem isso, sem selo (decisão 146). */
+    val paymentStatus: PaymentStatus? = null,
+    /** Há quantos dias o orçamento está parado, quando passou do prazo de Configurações (decisão 149); `null` fora disso. */
+    val staleDays: Int? = null,
+    /** O modelo em que "Mensagem pro cliente" abre; `null` em Cancelado e no catálogo (decisão 148). */
+    val messageKind: MessageTemplateKind? = null,
+    /** Este pedido tem Pix pra copiar agora (decisão 145). */
+    val hasPix: Boolean = false,
+    /** O pedido tem código de rastreio; [trackingUrl] é o endereço dele, ou `null` sem site de rastreio. */
+    val trackingUrl: String? = null,
 )
 
 /** Quanto uma lista de pedidos soma numa [currency]. Moedas diferentes nunca se somam num número só. */
@@ -103,6 +117,8 @@ data class DetailsForm(
     val photo: PickedFile? = null,
     val deliveryDateEpochDay: Long? = null,
     val category: String = "",
+    val trackingCode: String = "",
+    val notes: String = "",
 )
 
 /** O diálogo "Editar detalhes" aberto: o orçamento, o que a pessoa já digitou e o problema com a foto, se houver. */
@@ -136,6 +152,8 @@ data class HistoryUiState(
     val deliveryDateEditing: SavedQuote? = null,
     val printSettingsEditing: SavedQuote? = null,
     val details: DetailsEditing? = null,
+    val payments: PaymentsDialog? = null,
+    val message: MessageEditing? = null,
     val repricing: Repricing? = null,
     val pendingExport: PendingExport? = null,
     val rows: List<HistoryRow> = emptyList(),
@@ -153,3 +171,30 @@ data class HistoryUiState(
 ) {
     val isOrders: Boolean get() = filter.kind == QuoteKind.ORDER
 }
+
+/**
+ * O diálogo "Pagamentos" aberto (decisão 146, item 13). [quote] é o pedido como está agora (o estado o refaz a cada
+ * mudança, e o diálogo fecha se ele sumir); [depositText] é o sinal como a pessoa digita; [form] é o "Registrar
+ * pagamento", quando aberto; [deleting] é o pagamento que espera a confirmação de excluir.
+ */
+data class PaymentsDialog(
+    val quote: SavedQuote,
+    val depositText: String,
+    val depositError: UiText? = null,
+    val form: PaymentForm? = null,
+    val deleting: Payment? = null,
+)
+
+/** O formulário "Registrar pagamento": valor como texto, forma e dia, e o erro do valor. */
+data class PaymentForm(
+    val amountText: String,
+    val method: PaymentMethod,
+    val epochDay: Long,
+    val error: UiText? = null,
+)
+
+/**
+ * A janela "Mensagem pro cliente" (decisão 148, item 23): o pedido, o modelo escolhido e o texto, já preenchido e
+ * editável. Editar aqui não muda o modelo salvo.
+ */
+data class MessageEditing(val quote: SavedQuote, val kind: MessageTemplateKind, val text: String)

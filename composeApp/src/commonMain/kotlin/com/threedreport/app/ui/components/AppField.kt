@@ -164,7 +164,7 @@ private const val LABEL_MAX_LINES = 2
 
 /** Borda do campo: erro, foco (anel de 2), mouse em cima (cor `primary`) ou repouso (`line`). */
 @Composable
-private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean, enabled: Boolean, onNavy: Boolean): Modifier {
+private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean, enabled: Boolean, onNavy: Boolean, multiline: Boolean = false): Modifier {
     val colors = MaterialTheme.appColors
     val borderColor = when {
         error -> if (onNavy) colors.onNavyDanger else MaterialTheme.colorScheme.error
@@ -178,7 +178,7 @@ private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean
     }
     return this
         .fieldBoxLine()
-        .height(AppDimens.controlHeight)
+        .then(if (multiline) Modifier.heightIn(min = AppDimens.controlHeight) else Modifier.height(AppDimens.controlHeight))
         .background(fill, MaterialTheme.shapes.small)
         .border(if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth, borderColor, MaterialTheme.shapes.small)
 }
@@ -258,6 +258,55 @@ fun AppTextField(
         }
         FieldError(error, color = if (onNavy) colors.onNavyDanger else MaterialTheme.colorScheme.error)
         if (error == null && note != null) Text(note, style = MaterialTheme.appType.label, color = mutedColor)
+    }
+}
+
+/**
+ * Campo de várias linhas do kit: a mesma caixa do [AppTextField] (rótulo em `label`, borda `line`, `primary` no mouse, anel
+ * de 2 no foco), crescendo com o texto a partir de [minLines] linhas. Enter quebra a linha; Tab e Shift+Tab continuam
+ * navegando entre os campos. Pra textos maiores que uma linha: observações, mensagens.
+ */
+@Composable
+fun AppTextArea(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    help: HelpText? = null,
+    minLines: Int = 3,
+    maxLines: Int = 8,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    var focused by remember { mutableStateOf(false) }
+    val space = MaterialTheme.spacing
+    val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(space.xxs)) {
+        FieldLabel(label, help)
+        Box(modifier = Modifier.fillMaxWidth().fieldBox(hovered, focused, error = false, enabled = true, onNavy = false, multiline = true).hoverable(interaction)) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                minLines = minLines,
+                maxLines = maxLines,
+                textStyle = MaterialTheme.appType.body.copy(color = MaterialTheme.colorScheme.onSurface, fontFeatureSettings = TABULAR_FIGURES),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focused = it.isFocused }
+                    .tabToNavigate()
+                    .semantics { contentDescription = label },
+                decorationBox = { inner ->
+                    Box(Modifier.padding(horizontal = space.sm, vertical = space.xs)) {
+                        if (value.isEmpty() && placeholder != null) Text(placeholder, style = MaterialTheme.appType.body, color = mutedColor.copy(alpha = 0.7f))
+                        inner()
+                    }
+                },
+            )
+        }
+        trailing?.invoke()
     }
 }
 

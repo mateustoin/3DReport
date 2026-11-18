@@ -32,6 +32,7 @@ internal fun SavedQuote.toCopyPasteText(
     texts: ClientDocumentTexts,
     currency: Currency = this.currency,
     showPrintTime: Boolean = false,
+    pixCode: String? = null,
 ): String = buildString {
     val quantity = quote.quantity
     appendLine(clientTitle(texts))
@@ -52,6 +53,10 @@ internal fun SavedQuote.toCopyPasteText(
         appendLine()
         append(texts.total(totalWithServices.toCurrencyText(currency)))
     }
+    depositText(texts, currency)?.let {
+        appendLine()
+        append(it)
+    }
     // Entrega expressa (decisão 125) junto do prazo, que é como o cliente lê os dois num relance; sem
     // prazo, vira linha própria em vez de sumir.
     deliveryHighlightText(texts)?.let {
@@ -62,6 +67,25 @@ internal fun SavedQuote.toCopyPasteText(
         appendLine()
         append(printTimeText(texts))
     }
+    pixCopyPasteLines(texts, currency, pixCode)?.let {
+        appendLine()
+        appendLine()
+        append(it)
+    }
+}
+
+/** "Sinal de R$ 50,00 pra começar" (decisão 146, item 12): só em pedido com sinal. Mesmo texto no PDF e na mensagem. */
+internal fun SavedQuote.depositText(texts: ClientDocumentTexts, currency: Currency = this.currency): String? =
+    if (isOrder && requestedDeposit > 0.0) texts.deposit(requestedDeposit.toCurrencyText(currency)) else null
+
+/**
+ * O fim da mensagem com Pix (decisão 145, item 6): "Pix copia e cola (R$ 50,00):" e o código sozinho na linha de baixo,
+ * pra o cliente copiar só ele. `null` sem [pixCode] ou sem Pix neste pedido ([SavedQuote.pixCharge]).
+ */
+internal fun SavedQuote.pixCopyPasteLines(texts: ClientDocumentTexts, currency: Currency, pixCode: String?): String? {
+    val charge = pixCharge ?: return null
+    if (pixCode == null) return null
+    return texts.pixCopyPaste(charge.amount.toCurrencyText(currency)) + "\n" + pixCode
 }
 
 /** O nome do serviço na linha do valor: "Pintura (× 3)" quando é cobrado por peça num pedido de mais de uma. */

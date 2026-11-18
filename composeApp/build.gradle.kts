@@ -90,6 +90,8 @@ val renderScreenshots by tasks.registering(Test::class) {
     providers.gradleProperty("screenshots.leva10c").orNull?.let { systemProperty("screenshots.leva10c", it) }
     // `-Pscreenshots.presets=true` acrescenta a lista de impressoras pré-cadastradas e o formulário vindo dela, claro e escuro.
     providers.gradleProperty("screenshots.presets").orNull?.let { systemProperty("screenshots.presets", it) }
+    // `-Pscreenshots.leva11=true` acrescenta as capturas da Leva 11 (pagamentos, mensagem pro cliente, selos, Pix, recibo).
+    providers.gradleProperty("screenshots.leva11").orNull?.let { systemProperty("screenshots.leva11", it) }
     maxHeapSize = "2g" // alguns G-codes reais de exemplo passam de 50 MB
     outputs.upToDateWhen { false }
 }

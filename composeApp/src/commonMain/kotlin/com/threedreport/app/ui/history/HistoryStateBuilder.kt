@@ -1,17 +1,22 @@
 package com.threedreport.app.ui.history
 
+import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.ClientRepository
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.OrderSettingsRepository
 import com.threedreport.app.data.PreferencesRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.platform.localEpochDayOf
+import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.OrderSettings
 import com.threedreport.core.model.OrderStatus
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
@@ -37,6 +42,8 @@ internal class HistoryStateBuilder(
     private val today: () -> Long,
     private val clock: Clock,
     private val currency: () -> Currency,
+    private val brandingRepository: BrandingRepository? = null,
+    private val orderSettingsRepository: OrderSettingsRepository? = null,
 ) {
     // O recálculo de cada produto é caro e não depende do filtro: refeito só quando um cadastro muda.
     private var repriceInputs: List<Any?> = emptyList()
@@ -93,8 +100,11 @@ internal class HistoryStateBuilder(
         val visible = visibleQuotes(all, filter)
         val sold = soldProductIds(all)
         val repricedProducts = if (orders) emptyMap() else repricedProducts(all)
+        val orderSettings = orderSettingsRepository?.settings?.value ?: OrderSettings()
+        val pixReceiver = brandingRepository?.branding?.value?.pixReceiver
         fun rowOf(quote: SavedQuote): HistoryRow {
             val notice = repricedProducts[quote.id]?.toNotice()
+            val order = orders && quote.isOrder
             return HistoryRow(
                 quote = quote,
                 deadline = if (orders) quote.deadlineBadge(today) else null,
@@ -103,6 +113,11 @@ internal class HistoryStateBuilder(
                 canReprice = notice is RepriceNotice.CostsChanged,
                 canConvertToOrder = canConvertToOrder(quote, sold),
                 canEditPrintSettings = quote.quote.prints.size == 1,
+                paymentStatus = quote.paymentStatus.takeIf { order && quote.hasPaymentTracking },
+                staleDays = quote.staleDays(today, ::localEpochDayOf).takeIf { order && quote.isStale(today, orderSettings.staleQuoteDays, ::localEpochDayOf) },
+                messageKind = if (order) MessageTemplateKind.forOrder(quote) else null,
+                hasPix = order && pixReceiver?.codeFor(quote) != null,
+                trackingUrl = quote.trackingCode?.takeIf { order && it.isNotBlank() }?.let { orderSettings.trackingUrl(it) },
             )
         }
 
@@ -133,6 +148,7 @@ internal class HistoryStateBuilder(
             clients = clientRepository?.clients?.value.orEmpty(),
             today = today,
             currency = appCurrency,
+            payments = state.payments?.let { open -> all.find { it.id == open.quote.id }?.let { open.copy(quote = it) } },
         )
     }
 }

@@ -2,13 +2,16 @@ package com.threedreport.app.ui.history
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_optional
 import _3dreport.composeapp.generated.resources.common_save
 import _3dreport.composeapp.generated.resources.history_details_field_category
 import _3dreport.composeapp.generated.resources.history_details_field_client
 import _3dreport.composeapp.generated.resources.history_details_field_contact
 import _3dreport.composeapp.generated.resources.history_details_field_link
 import _3dreport.composeapp.generated.resources.history_details_field_name
+import _3dreport.composeapp.generated.resources.history_details_field_notes
 import _3dreport.composeapp.generated.resources.history_details_field_photo
+import _3dreport.composeapp.generated.resources.history_details_field_tracking
 import _3dreport.composeapp.generated.resources.history_details_help
 import _3dreport.composeapp.generated.resources.history_details_help_detail
 import _3dreport.composeapp.generated.resources.history_details_photo_alt
@@ -35,6 +38,7 @@ import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppSuggestField
+import com.threedreport.app.ui.components.AppTextArea
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.HelpText
@@ -110,6 +114,20 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
             value = form.sourceLink,
             onValueChange = { text -> viewModel.updateDetails { it.copy(sourceLink = text) } },
         )
+        if (quote.isOrder) {
+            AppTextField(
+                label = stringResource(Res.string.history_details_field_tracking),
+                value = form.trackingCode,
+                onValueChange = { text -> viewModel.updateDetails { it.copy(trackingCode = text) } },
+                placeholder = stringResource(Res.string.common_optional),
+            )
+            AppTextArea(
+                label = stringResource(Res.string.history_details_field_notes),
+                value = form.notes,
+                onValueChange = { text -> viewModel.updateDetails { it.copy(notes = text) } },
+                placeholder = stringResource(Res.string.common_optional),
+            )
+        }
     }
 }
 

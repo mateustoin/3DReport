@@ -40,6 +40,8 @@ internal class HistoryDetailsEditor(
             photo = savedQuote.photoFileName?.let { fileName -> repository.photoBytes(savedQuote)?.let { PickedFile(fileName, it) } },
             deliveryDateEpochDay = savedQuote.deliveryDateEpochDay,
             category = savedQuote.category.orEmpty(),
+            trackingCode = savedQuote.trackingCode.orEmpty(),
+            notes = savedQuote.notes.orEmpty(),
         )
         change { it.copy(details = DetailsEditing(savedQuote, form)) }
     }
@@ -89,9 +91,8 @@ internal class HistoryDetailsEditor(
                 photo = form.photo,
                 deliveryDateEpochDay = form.deliveryDateEpochDay,
                 category = form.category,
-                // Os campos da Leva 11 ainda não estão no formulário: ficam como estavam.
-                trackingCode = editing.quote.trackingCode,
-                notes = editing.quote.notes,
+                trackingCode = form.trackingCode.trim().ifEmpty { null },
+                notes = form.notes.trim().ifEmpty { null },
             ),
         )
         change { it.copy(details = null) }

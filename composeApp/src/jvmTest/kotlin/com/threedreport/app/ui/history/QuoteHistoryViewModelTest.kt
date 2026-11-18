@@ -9,7 +9,7 @@ import _3dreport.composeapp.generated.resources.history_notice_see_orders
 import _3dreport.composeapp.generated.resources.history_notice_status_moved
 import _3dreport.composeapp.generated.resources.orders_deadline_late
 import _3dreport.composeapp.generated.resources.orders_deadline_today
-import _3dreport.composeapp.generated.resources.orders_status_approved
+import _3dreport.composeapp.generated.resources.orders_status_quoted
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CatalogView
 import com.threedreport.app.data.ClientRepository
@@ -75,6 +75,8 @@ class QuoteHistoryViewModelTest {
 
     @BeforeTest
     fun setDataDir() {
+        // Esquenta os recursos: a primeira leitura chega de outro thread, e alguns testes aqui esperam o texto na hora.
+        runBlocking { com.threedreport.app.platform.loadClientDocumentTexts(pieceCounts = listOf(1)) }
         dataDir = createTempDirectory("3dreport-test").toFile()
         System.setProperty("threedreport.dataDir", dataDir.path)
     }
@@ -509,14 +511,14 @@ class QuoteHistoryViewModelTest {
         val repository = QuoteHistoryRepository()
         val preferences = PreferencesRepository().also { it.setOrdersView(OrdersView.LIST) }
         val viewModel = viewModelOf(repository, preferences = preferences)
-        val saved = repository.saveOrder("Peça")
-        viewModel.setStatusFilter(OrderStatus.ORCADO)
+        val saved = repository.saveOrder("Peça", status = OrderStatus.APROVADO)
+        viewModel.setStatusFilter(OrderStatus.APROVADO)
 
-        viewModel.updateStatus(saved.id, OrderStatus.APROVADO)
+        viewModel.updateStatus(saved.id, OrderStatus.ORCADO)
 
         val notice = viewModel.awaitNotice()
         assertEquals(
-            UiText.Res(Res.string.history_notice_status_moved, listOf("Peça", UiText.Res(Res.string.orders_status_approved))),
+            UiText.Res(Res.string.history_notice_status_moved, listOf("Peça", UiText.Res(Res.string.orders_status_quoted))),
             notice.message,
         )
         assertEquals(UiText.Res(Res.string.history_notice_see_all), notice.actionLabel)
@@ -953,10 +955,10 @@ class QuoteHistoryViewModelTest {
     fun movingACardOnTheKanbanNeverSaysItLeftAFilteredList() {
         val repository = QuoteHistoryRepository()
         val viewModel = viewModelOf(repository)
-        val saved = repository.saveOrder("Peça")
-        viewModel.setStatusFilter(OrderStatus.ORCADO)
+        val saved = repository.saveOrder("Peça", status = OrderStatus.APROVADO)
+        viewModel.setStatusFilter(OrderStatus.APROVADO)
 
-        viewModel.updateStatus(saved.id, OrderStatus.APROVADO)
+        viewModel.updateStatus(saved.id, OrderStatus.ORCADO)
 
         assertNull(runBlocking { withTimeoutOrNull(200) { viewModel.notices.first() } })
     }

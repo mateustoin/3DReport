@@ -9,6 +9,7 @@ import _3dreport.composeapp.generated.resources.settings_section_backup
 import _3dreport.composeapp.generated.resources.settings_section_business
 import _3dreport.composeapp.generated.resources.settings_section_channels
 import _3dreport.composeapp.generated.resources.settings_section_documents
+import _3dreport.composeapp.generated.resources.settings_section_orders
 import _3dreport.composeapp.generated.resources.settings_section_pending
 import _3dreport.composeapp.generated.resources.settings_title
 import _3dreport.composeapp.generated.resources.settings_unsaved
@@ -68,6 +69,7 @@ fun SettingsScreen(
     currencyViewModel: CurrencyViewModel,
     backupViewModel: BackupViewModel,
     salesChannelViewModel: SalesChannelViewModel,
+    orderSettingsViewModel: OrderSettingsViewModel,
     section: SettingsSection,
     onSectionChange: (SettingsSection) -> Unit,
     modifier: Modifier = Modifier,
@@ -105,6 +107,7 @@ fun SettingsScreen(
                         when (section) {
                             SettingsSection.BUSINESS -> BusinessSection(state, viewModel)
                             SettingsSection.CHANNELS -> SalesChannelSection(salesChannelViewModel)
+                            SettingsSection.ORDERS -> OrdersSection(orderSettingsViewModel)
                             SettingsSection.DOCUMENTS -> ClientDocumentsSection(brandingViewModel, templateListViewModel)
                             SettingsSection.APPEARANCE -> AppearanceSection(themeViewModel, currencyViewModel)
                             SettingsSection.BACKUP -> BackupSection(backupViewModel)
@@ -149,6 +152,7 @@ private fun SectionList(selected: SettingsSection, onSelect: (SettingsSection) -
 private fun SettingsSection.titleRes() = when (this) {
     SettingsSection.BUSINESS -> Res.string.settings_section_business
     SettingsSection.CHANNELS -> Res.string.settings_section_channels
+    SettingsSection.ORDERS -> Res.string.settings_section_orders
     SettingsSection.DOCUMENTS -> Res.string.settings_section_documents
     SettingsSection.APPEARANCE -> Res.string.settings_section_appearance
     SettingsSection.BACKUP -> Res.string.settings_section_backup

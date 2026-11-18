@@ -8,6 +8,7 @@ import _3dreport.composeapp.generated.resources.orders_card_prints
 import _3dreport.composeapp.generated.resources.orders_col_client
 import _3dreport.composeapp.generated.resources.orders_col_deadline
 import _3dreport.composeapp.generated.resources.orders_col_number
+import _3dreport.composeapp.generated.resources.orders_col_payment
 import _3dreport.composeapp.generated.resources.orders_col_piece
 import _3dreport.composeapp.generated.resources.orders_col_status
 import _3dreport.composeapp.generated.resources.orders_col_value
@@ -43,6 +44,7 @@ fun ordersColumns(): List<TableColumn> = listOf(
     TableColumn(stringResource(Res.string.orders_col_client), weight = 1.2f),
     TableColumn(stringResource(Res.string.orders_col_status), width = AppDimens.tableStatusColumn),
     TableColumn(stringResource(Res.string.orders_col_deadline), width = AppDimens.tableDeadlineColumn),
+    TableColumn(stringResource(Res.string.orders_col_payment), width = AppDimens.tableStatusColumn),
     TableColumn(stringResource(Res.string.orders_col_value), width = AppDimens.tableMoneyColumn, end = true),
 )
 
@@ -84,15 +86,24 @@ fun OrdersTableRow(
     ) {
         Cell(0) { Muted(quote.displayNumber.orEmpty()) }
         Cell(1) {
-            Column {
-                Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                row.printCount?.let { Muted(pluralStringResource(Res.plurals.orders_card_prints, it, it)) }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+                Column(Modifier.weight(1f, fill = false)) {
+                    Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    row.printCount?.let { Muted(pluralStringResource(Res.plurals.orders_card_prints, it, it)) }
+                }
+                quote.notes?.takeIf { it.isNotBlank() }?.let { NotesIcon(it, onClick = onOpen) }
             }
         }
         Cell(2) { Muted(quote.client?.name.orEmpty()) }
-        Cell(3) { StatusLabel(stringResource(quote.status.labelRes()), quote.status.statusColor()) }
+        Cell(3) {
+            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+                StatusLabel(stringResource(quote.status.labelRes()), quote.status.statusColor())
+                row.staleDays?.let { StaleBadgeView(it) }
+            }
+        }
         Cell(4) { row.deadline?.let { DeadlineBadgeView(it) } }
-        Cell(5) {
+        Cell(5) { row.paymentStatus?.let { PaymentBadgeView(it) } }
+        Cell(6) {
             NumericText(
                 quote.totalWithServices.toCurrencyText(quote.currency),
                 style = MaterialTheme.appType.body,
