@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos em inglês (decisão 154), com as mesmas chaves de values/ e o glossário de docs/glossario.md.
+  Um arquivo por área, com as chaves da mesma área de values/strings.xml. O teste de paridade
+  (StringResourceParityTest) confere chaves, marcadores (%1$s, {cliente}) e plurais.
+-->
+<resources>
+    <string name="export_busy_pdf">Creating PDF…</string>
+    <string name="export_saved_pdf">PDF saved.</string>
+    <string name="export_busy_image">Creating image…</string>
+    <string name="export_saved_image">Image saved.</string>
+    <string name="export_busy_catalog">Creating catalog…</string>
+    <string name="export_saved_catalog">Catalog saved.</string>
+    <plurals name="export_file_quotes">
+        <item quantity="one">Quotes (%1$d item)</item>
+        <item quantity="other">Quotes (%1$d items)</item>
+    </plurals>
+    <plurals name="export_file_catalog">
+        <item quantity="one">Catalog (%1$d item)</item>
+        <item quantity="other">Catalog (%1$d items)</item>
+    </plurals>
+    <string name="export_file_auto_numbered">Quote %1$s</string>
+    <string name="export_file_auto">Quote</string>
+    <string name="export_file_fallback">quote</string>
+    <string name="export_open_folder">Open folder</string>
+    <string name="export_failed_generate">Couldn't create the file. The details are in the app log.</string>
+    <string name="export_save_failed">Couldn't save the file. If it's open in another program, close it and try again, or save with another name.</string>
+    <string name="export_copied">Text copied.</string>
+    <string name="export_copy_failed">Couldn't copy: another program is using the clipboard. Try again.</string>
+    <string name="export_whatsapp_copied">Couldn't open WhatsApp. The quote text was copied: paste it into the chat with the client.</string>
+    <string name="export_whatsapp_failed">Couldn't open WhatsApp or copy the text. Use "Copy" again in a few seconds.</string>
+    <string name="export_file_receipt">Receipt %1$s - %2$s</string>
+    <string name="client_doc_value">Price: %1$s</string>
+    <string name="client_doc_value_quantity">%1$d × %2$s = %3$s</string>
+    <string name="client_doc_service_per_piece">%1$s (× %2$d)</string>
+    <string name="client_doc_line_amount">%1$s: %2$s</string>
+    <string name="client_doc_shipping">Shipping: %1$s</string>
+    <string name="client_doc_shipping_free">Shipping: free</string>
+    <string name="client_doc_total">Total: %1$s</string>
+    <string name="client_doc_delivery">Delivery by %1$s</string>
+    <string name="client_doc_delivery_rush">%1$s (rush delivery)</string>
+    <string name="client_doc_rush">Rush delivery</string>
+    <string name="client_doc_print_time">Print time: %1$s</string>
+    <string name="client_doc_print_time_pieces">%1$s (%2$s)</string>
+    <plurals name="client_doc_pieces">
+        <item quantity="one">%1$d piece</item>
+        <item quantity="other">%1$d pieces</item>
+    </plurals>
+    <string name="client_doc_title_numbered">%1$s · %2$s</string>
+    <string name="client_doc_title_auto_order">Quote</string>
+    <string name="client_doc_title_auto_order_numbered">Quote %1$s</string>
+    <string name="client_doc_title_auto_product">Product</string>
+    <string name="client_doc_to">To: %1$s</string>
+    <string name="client_doc_kit">Kit with %1$s</string>
+    <string name="client_doc_order_number">Order %1$s</string>
+    <string name="client_doc_issued">Issued on %1$s</string>
+    <string name="client_doc_valid_until">Valid until %1$s</string>
+    <string name="client_doc_signature">Made with %1$s</string>
+    <string name="client_doc_catalog_title">Product catalog</string>
+    <string name="client_doc_catalog_other">Other</string>
+    <string name="client_doc_image_delivery">Delivery by %1$s</string>
+    <string name="client_doc_image_delivery_rush">%1$s · rush delivery</string>
+    <string name="client_doc_image_unit_price">%1$s · %2$s each</string>
+    <string name="client_doc_contact_whatsapp">WhatsApp %1$s</string>
+    <string name="client_doc_label_value">Price</string>
+    <string name="client_doc_label_total">Total</string>
+    <string name="client_doc_label_shipping">Shipping</string>
+    <string name="client_doc_label_shipping_free">free</string>
+    <string name="client_doc_label_delivery">Delivery by</string>
+    <string name="client_doc_label_valid_until">Valid until</string>
+    <string name="client_doc_label_print_time">Print time</string>
+    <string name="client_doc_deposit">Deposit of %1$s to get started</string>
+    <string name="client_doc_pix_copy_paste">Pix copy and paste (%1$s):</string>
+    <string name="client_doc_pix_title">Pay with Pix</string>
+    <string name="client_doc_pix_deposit">Deposit: %1$s</string>
+    <string name="client_doc_pix_value">Amount: %1$s</string>
+    <string name="client_doc_pix_key">Key: %1$s</string>
+    <string name="client_doc_pix_code_label">Pix copy and paste</string>
+    <string name="client_doc_receipt_title">Receipt</string>
+    <string name="client_doc_receipt_title_numbered">Receipt %1$s</string>
+    <string name="client_doc_receipt_body">Received from %1$s the amount of %2$s (%3$s) on %4$s, for %5$s.</string>
+    <string name="client_doc_receipt_body_anonymous">Received the amount of %1$s (%2$s) on %3$s, for %4$s.</string>
+    <string name="client_doc_receipt_reference_numbered">order %1$s, %2$s</string>
+    <string name="client_doc_receipt_reference_plain">%1$s</string>
+    <string name="client_doc_receipt_total">Order total</string>
+    <string name="client_doc_receipt_paid">Paid so far</string>
+    <string name="client_doc_receipt_remaining">Balance due</string>
+    <string name="client_doc_receipt_received">Amount received</string>
+    <string name="client_doc_receipt_date">Date</string>
+    <string name="client_doc_receipt_method">Method</string>
+</resources>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos em inglês (decisão 154), com as mesmas chaves de values/ e o glossário de docs/glossario.md.
+  Um arquivo por área, com as chaves da mesma área de values/strings.xml. O teste de paridade
+  (StringResourceParityTest) confere chaves, marcadores (%1$s, {cliente}) e plurais.
+-->
+<resources>
+    <string name="message_kind_approved">Approved</string>
+    <string name="message_kind_printing">Printing</string>
+    <string name="message_kind_ready">Ready</string>
+    <string name="message_kind_out_for_delivery">Out for delivery</string>
+    <string name="message_kind_payment_reminder">Payment reminder</string>
+    <string name="message_kind_follow_up">Quote follow-up</string>
+    <string name="message_default_approved">Hi[, {cliente}]! Your order {pedido} ({peca}) is approved[ and will be ready by {prazo}].</string>
+    <string name="message_default_printing">Hi[, {cliente}]! {peca} is printing now.</string>
+    <string name="message_default_ready">Hi[, {cliente}]! {peca} is ready!</string>
+    <string name="message_default_out_for_delivery">Hi[, {cliente}]! {peca} is out for delivery.[ Tracking: {rastreio}]</string>
+    <string name="message_default_payment_reminder">Hi[, {cliente}]! Reminder: the payment[ of {falta}] for order {pedido} is still due.</string>
+    <string name="message_default_follow_up">Hi[, {cliente}]! Did you get a chance to look at the quote for {peca}? I can adjust anything you like.</string>
+    <string name="message_title">Message to client</string>
+    <string name="message_field_kind">Template</string>
+    <string name="message_field_text">Message</string>
+    <string name="message_action_whatsapp">Open in WhatsApp</string>
+    <string name="message_action_copy">Copy</string>
+    <string name="message_notice_copied">Message copied.</string>
+    <string name="message_whatsapp_copied">Couldn't open WhatsApp. The message was copied: paste it into the chat with the client.</string>
+    <string name="message_include_pix">Include Pix</string>
+    <string name="payment_status_not_paid">Unpaid</string>
+    <string name="payment_status_deposit_paid">Deposit paid</string>
+    <string name="payment_status_partially_paid">Partially paid</string>
+    <string name="payment_status_paid">Paid</string>
+    <string name="payment_method_pix">Pix</string>
+    <string name="payment_method_card">Card</string>
+    <string name="payment_method_cash">Cash</string>
+    <string name="payment_method_other">Other</string>
+    <string name="payments_title">Payments</string>
+    <string name="payments_deposit">Deposit</string>
+    <string name="payments_empty">No payments yet.</string>
+    <string name="payments_action_register">Record payment</string>
+    <string name="payments_receipt_description">Create receipt for %1$s</string>
+    <string name="payments_delete_description">Delete payment of %1$s</string>
+    <string name="payments_delete_title">Delete payment</string>
+    <string name="payments_delete_message">The payment of %1$s is removed from the list. The others keep their receipt numbers.</string>
+    <string name="payments_register_title">Record payment</string>
+    <string name="payments_field_amount">Amount</string>
+    <string name="payments_field_method">Method</string>
+    <string name="payments_field_date">Date</string>
+    <string name="payments_date_today">Today</string>
+    <string name="payments_date_yesterday">Yesterday</string>
+    <string name="payments_error_amount">Enter an amount greater than zero.</string>
+    <string name="payments_notice_registered">Payment of %1$s recorded.</string>
+    <string name="payments_notice_receipt">Create receipt</string>
+    <string name="payments_notice_deleted">Payment deleted.</string>
+    <string name="payments_remaining">Remaining</string>
+    <string name="payments_paid_of">Paid %1$s of %2$s</string>
+    <string name="payments_list_title">Received</string>
+    <string name="payments_register_confirm">Record</string>
+    <string name="payments_back">Back</string>
+</resources>

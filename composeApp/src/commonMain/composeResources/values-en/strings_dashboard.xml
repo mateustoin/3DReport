@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos em inglês (decisão 154), com as mesmas chaves de values/ e o glossário de docs/glossario.md.
+  Um arquivo por área, com as chaves da mesma área de values/strings.xml. O teste de paridade
+  (StringResourceParityTest) confere chaves, marcadores (%1$s, {cliente}) e plurais.
+-->
+<resources>
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_period">Period</string>
+    <string name="dashboard_period_all">All</string>
+    <string name="dashboard_period_last_7_days">7 days</string>
+    <string name="dashboard_period_last_30_days">30 days</string>
+    <string name="dashboard_period_this_month">This month</string>
+    <string name="dashboard_period_last_month">Last month</string>
+    <string name="dashboard_period_this_year">This year</string>
+    <string name="dashboard_no_data">-</string>
+    <string name="dashboard_summary_no_data">-</string>
+    <string name="dashboard_per_hour">%1$s/h</string>
+    <string name="dashboard_times">%1$dx</string>
+    <string name="dashboard_block_sales">sales</string>
+    <string name="dashboard_block_total">total sold</string>
+    <string name="dashboard_block_profit">profit</string>
+    <string name="dashboard_block_profit_per_machine_hour">profit per machine hour</string>
+    <string name="dashboard_empty_none">No quotes saved in this period.</string>
+    <string name="dashboard_empty_none_all">No quotes saved yet.</string>
+    <string name="dashboard_empty_no_sales">No sales in this period.</string>
+    <string name="dashboard_empty_no_sales_all">No sales yet.</string>
+    <string name="dashboard_action_new_quote">New quote</string>
+    <string name="dashboard_action_see_orders">See orders</string>
+    <string name="dashboard_ranking_title">Most profitable parts</string>
+    <string name="dashboard_ranking_help_machine_hour">Per hour is profit per machine hour: profit divided by print hours.</string>
+    <string name="dashboard_ranking_help">Orders with the same name, or sold from the same catalog product, count as the same part. Quotes saved without a name are left out.</string>
+    <string name="dashboard_col_piece">Part</string>
+    <string name="dashboard_col_sales">Sales</string>
+    <string name="dashboard_col_profit">Profit</string>
+    <string name="dashboard_col_per_hour">Per hour</string>
+    <string name="dashboard_open_title">Open</string>
+    <string name="dashboard_open_help">Quotes the client hasn't approved yet. They become sales when moved to Approved, in Orders. They're left out of the totals.</string>
+    <plurals name="dashboard_open_quotes">
+        <item quantity="one">%1$d quote waiting for a reply</item>
+        <item quantity="other">%1$d quotes waiting for a reply</item>
+    </plurals>
+    <string name="dashboard_open_conversion">Quotes that became sales</string>
+    <string name="dashboard_open_conversion_help">The share that became sales is out of all quotes created in the period, not only the open ones.</string>
+    <string name="dashboard_hours_title">What each hour earned</string>
+    <string name="dashboard_hours_help_labor">Profit plus your labor, divided by your time, only for sales with work time entered.</string>
+    <string name="dashboard_hours_labor">Work hour</string>
+    <string name="dashboard_hours_configured">Your set hourly rate</string>
+    <string name="dashboard_most_used_title">Most used</string>
+    <string name="dashboard_most_used_filament">Filament</string>
+    <string name="dashboard_filament_value">%1$s (%2$dx)</string>
+    <plurals name="dashboard_discounts_given">
+        <item quantity="one">Discounts given (%1$d negotiated)</item>
+        <item quantity="other">Discounts given (%1$d negotiated)</item>
+    </plurals>
+    <string name="dashboard_discount_title">Who got the most discounts</string>
+    <string name="dashboard_discount_help">Total discount on orders with a negotiated price, by client.</string>
+    <plurals name="dashboard_discount_client">
+        <item quantity="one">%1$s (%2$d negotiated)</item>
+        <item quantity="other">%1$s (%2$d negotiated)</item>
+    </plurals>
+    <string name="dashboard_catalog_title">Catalog</string>
+    <string name="dashboard_catalog_products">Products</string>
+    <string name="dashboard_catalog_price_range">Price range</string>
+    <string name="dashboard_price_range">%1$s to %2$s</string>
+    <string name="dashboard_catalog_ranking_title">Which to offer first</string>
+    <string name="dashboard_catalog_ranking_help">Profit and profit per machine hour of each catalog product.</string>
+    <string name="dashboard_col_product">Product</string>
+    <string name="dashboard_col_price">Price</string>
+</resources>
