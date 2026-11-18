@@ -81,6 +81,27 @@ em inglês, e chega ao projeto por um site e um README em inglês.
     pedido ser em real (decisão 145) e não muda.
 16. Nenhum dado gravado muda: canais, serviços e cadastros que a pessoa já tem ficam
     como estão.
+16a. **Moeda da primeira abertura pela região** (aprovado em 2026-11-18): só em
+    instalação nova, a região do sistema sugere a moeda padrão (Brasil = real, EUA =
+    dólar, zona do euro = euro, Reino Unido = libra, outras = dólar), mostrada no
+    passo 1 do primeiro uso pra trocar. Quem já usa não muda nada.
+16b. **O que só vale pro Brasil some fora do real**, seguindo a moeda (do pedido ou a
+    padrão), não o idioma: preço de referência das impressoras pré-cadastradas (não
+    aparece nem preenche "Valor da máquina"); Pix como forma de pagamento (fora do
+    real, sai da lista e a forma padrão é Cartão); site de rastreio padrão dos
+    Correios (fora do real, o padrão é vazio e o botão "usar o site padrão" some).
+16c. **Valores de exemplo por moeda** (kWh, preço de filamento e de impressora no
+    primeiro uso) ficam pra depois, registrados no roadmap (Leva 17). Nesta leva, a
+    ajuda do primeiro uso pede pra trocar pelos valores reais.
+16d. **Configurações de fatiamento** (altura de camada, preenchimento) continuam com
+    ponto, como o fatiador escreve, nos dois idiomas: exceção ao item 7.
+16e. **Marcadores de mensagem com nome em inglês** (aprovado em 2026-11-18): cada
+    marcador aceita o nome em português e em inglês (`{cliente}`/`{customer}`,
+    `{pedido}`/`{order}`, `{peca}`/`{part}`, `{prazo}`/`{due}`, `{valor}`/`{total}`,
+    `{falta}`/`{balance}`, `{rastreio}`/`{tracking}`, `{loja}`/`{shop}`; no rastreio,
+    `{codigo}`/`{code}`). Em inglês, a lista em Configurações e os textos padrão usam
+    os nomes em inglês, cada um com o significado. Modelo já gravado funciona nos dois
+    idiomas.
 
 ### E. README em inglês e notas das versões (decisão 156)
 
