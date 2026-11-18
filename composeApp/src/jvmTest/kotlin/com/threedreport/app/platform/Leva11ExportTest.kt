@@ -101,6 +101,8 @@ class Leva11ExportTest {
         val text = paid.toCopyPasteText(testClientTexts, pixCode = code)
 
         assertTrue("Pix copia e cola (R$ 124,34):" in text, text)
+        assertFalse("pra começar" in text, "depois do sinal pago a linha some")
+        assertFalse("pra começar" in pages(pdf(paid)).single(), "e some do PDF também")
     }
 
     @Test
@@ -231,6 +233,8 @@ class Leva11ExportTest {
         assertTrue("Total do pedido" in text && "R$ 174,34" in text, text)
         assertTrue("Pago até agora" in text && "Falta pagar" in text && "R$ 124,34" in text, text)
         assertTrue("Sua Loja" in text)
+        assertTrue("VALOR RECEBIDO" in text.uppercase() && "Emitido em" in text, text)
+        assertTrue(Regex("Sua Loja").findAll(text).count() <= 2, "o nome da marca no máximo duas vezes: $text")
     }
 
     @Test

@@ -38,20 +38,15 @@ import _3dreport.composeapp.generated.resources.settings_docs_pdf_help_detail
 import _3dreport.composeapp.generated.resources.settings_docs_pdf_title
 import _3dreport.composeapp.generated.resources.settings_docs_pix_city
 import _3dreport.composeapp.generated.resources.settings_docs_pix_help
+import _3dreport.composeapp.generated.resources.settings_docs_pix_join_last
 import _3dreport.composeapp.generated.resources.settings_docs_pix_key
 import _3dreport.composeapp.generated.resources.settings_docs_pix_missing
 import _3dreport.composeapp.generated.resources.settings_docs_pix_missing_city
 import _3dreport.composeapp.generated.resources.settings_docs_pix_missing_key
 import _3dreport.composeapp.generated.resources.settings_docs_pix_missing_name
 import _3dreport.composeapp.generated.resources.settings_docs_pix_name
-import _3dreport.composeapp.generated.resources.settings_docs_pix_recognized
 import _3dreport.composeapp.generated.resources.settings_docs_pix_title
 import _3dreport.composeapp.generated.resources.settings_docs_pix_too_long
-import _3dreport.composeapp.generated.resources.settings_docs_pix_type_cnpj
-import _3dreport.composeapp.generated.resources.settings_docs_pix_type_cpf
-import _3dreport.composeapp.generated.resources.settings_docs_pix_type_email
-import _3dreport.composeapp.generated.resources.settings_docs_pix_type_phone
-import _3dreport.composeapp.generated.resources.settings_docs_pix_type_random
 import _3dreport.composeapp.generated.resources.settings_docs_pix_unrecognized
 import _3dreport.composeapp.generated.resources.settings_docs_preview_description
 import _3dreport.composeapp.generated.resources.settings_docs_preview_help
@@ -104,8 +99,10 @@ import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.FieldError
 import com.threedreport.app.ui.components.FieldLabel
 import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.FormNotice
 import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.history.defaultTextRes
 import com.threedreport.app.ui.history.labelRes
@@ -120,7 +117,6 @@ import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.message.MessagePlaceholder
 import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.ImageBackground
-import com.threedreport.core.pix.PixKeyType
 import com.threedreport.core.pix.PixSetupIssue
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -345,25 +341,20 @@ private fun PdfPreviewDialog(png: ByteArray, onDismiss: () -> Unit) {
     }
 }
 
-/** Chave, nome e cidade do Pix (decisão 145): o tipo da chave reconhecido, o aviso de chave estranha e o que falta. */
+/** Chave, nome e cidade do Pix (decisão 145): o aviso de chave que não parece nenhum tipo e o que falta. */
 @Composable
 private fun PixFields(branding: BrandingUiState, viewModel: BrandingViewModel) {
     val key = branding.pixKey
     val issues = branding.pixIssues
     val typed = branding.pixKeyInput.isNotBlank() || branding.pixNameInput.isNotBlank() || branding.pixCityInput.isNotBlank()
     FormGrid {
-        cell(3) {
+        cell(2) {
             AppTextField(
                 label = stringResource(Res.string.settings_docs_pix_key),
                 value = branding.pixKeyInput,
                 onValueChange = viewModel::setPixKey,
                 placeholder = stringResource(Res.string.common_optional),
                 error = stringResource(Res.string.settings_docs_pix_too_long).takeIf { PixSetupIssue.KEY_TOO_LONG in issues },
-                note = when {
-                    key == null -> null
-                    key.isRecognized -> stringResource(Res.string.settings_docs_pix_recognized, stringResource(key.type.labelRes()))
-                    else -> stringResource(Res.string.settings_docs_pix_unrecognized)
-                },
             )
         }
         cell(2) {
@@ -371,7 +362,6 @@ private fun PixFields(branding: BrandingUiState, viewModel: BrandingViewModel) {
                 label = stringResource(Res.string.settings_docs_pix_name),
                 value = branding.pixNameInput,
                 onValueChange = viewModel::setPixName,
-                placeholder = stringResource(Res.string.common_optional),
             )
         }
         cell(1) {
@@ -379,31 +369,29 @@ private fun PixFields(branding: BrandingUiState, viewModel: BrandingViewModel) {
                 label = stringResource(Res.string.settings_docs_pix_city),
                 value = branding.pixCityInput,
                 onValueChange = viewModel::setPixCity,
-                placeholder = stringResource(Res.string.common_optional),
             )
         }
     }
+    // A chave estranha é aceita (o banco valida), mas avisa; o tipo reconhecido não precisa de frase.
+    if (key != null && !key.isRecognized) FormNotice(stringResource(Res.string.settings_docs_pix_unrecognized))
     val missing = listOfNotNull(
         Res.string.settings_docs_pix_missing_key.takeIf { PixSetupIssue.KEY_MISSING in issues },
         Res.string.settings_docs_pix_missing_name.takeIf { PixSetupIssue.NAME_MISSING in issues },
         Res.string.settings_docs_pix_missing_city.takeIf { PixSetupIssue.CITY_MISSING in issues },
     ).map { stringResource(it) }
     if (typed && missing.isNotEmpty()) {
+        // "o nome e a cidade", "a chave, o nome e a cidade".
+        val list = if (missing.size == 1) {
+            missing.single()
+        } else {
+            stringResource(Res.string.settings_docs_pix_join_last, missing.dropLast(1).joinToString(", "), missing.last())
+        }
         Text(
-            stringResource(Res.string.settings_docs_pix_missing, missing.joinToString(", ")),
+            stringResource(Res.string.settings_docs_pix_missing, list),
             style = MaterialTheme.appType.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-}
-
-private fun PixKeyType.labelRes(): StringResource = when (this) {
-    PixKeyType.PHONE -> Res.string.settings_docs_pix_type_phone
-    PixKeyType.CPF -> Res.string.settings_docs_pix_type_cpf
-    PixKeyType.CNPJ -> Res.string.settings_docs_pix_type_cnpj
-    PixKeyType.EMAIL -> Res.string.settings_docs_pix_type_email
-    PixKeyType.RANDOM -> Res.string.settings_docs_pix_type_random
-    PixKeyType.UNKNOWN -> Res.string.settings_docs_pix_unrecognized
 }
 
 /**
@@ -424,15 +412,22 @@ private fun MessageTemplateFields(branding: BrandingUiState, viewModel: Branding
                 viewModel.setMessageTemplate(kind, it, default)
             },
             minLines = 2,
-            trailing = if (kind.key in branding.messageEdits) {
+            footer = if (kind.key in branding.messageEdits) {
                 {
-                    AppButton(
-                        stringResource(Res.string.settings_docs_messages_reset),
-                        onClick = {
-                            text = default
-                            viewModel.resetMessageTemplate(kind)
-                        },
-                    )
+                    // Ação de texto, à direita, sob o campo: não é um botão do formulário.
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Text(
+                            stringResource(Res.string.settings_docs_messages_reset),
+                            style = MaterialTheme.appType.caption,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clickableAction(onClick = {
+                                    text = default
+                                    viewModel.resetMessageTemplate(kind)
+                                })
+                                .padding(horizontal = MaterialTheme.spacing.xxs, vertical = MaterialTheme.spacing.xxs),
+                        )
+                    }
                 }
             } else {
                 null

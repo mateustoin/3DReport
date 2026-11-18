@@ -77,8 +77,10 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsState()
     val branding by brandingViewModel.uiState.collectAsState()
     val backup by backupViewModel.uiState.collectAsState()
+    val orders by orderSettingsViewModel.uiState.collectAsState()
     ObserveUiNotices(viewModel.notices)
     ObserveUiNotices(brandingViewModel.notices)
+    ObserveUiNotices(orderSettingsViewModel.notices)
     ObserveUiNotices(salesChannelViewModel.notices)
     ObserveUiNotices(backupViewModel.notices)
     val space = MaterialTheme.spacing
@@ -92,7 +94,11 @@ fun SettingsScreen(
             SectionList(
                 selected = section,
                 onSelect = onSectionChange,
-                hasPendingChanges = { (it == SettingsSection.BUSINESS && state.hasUnsavedChanges) || (it == SettingsSection.DOCUMENTS && branding.hasUnsavedChanges) },
+                hasPendingChanges = {
+                    (it == SettingsSection.BUSINESS && state.hasUnsavedChanges) ||
+                        (it == SettingsSection.ORDERS && orders.hasUnsavedChanges) ||
+                        (it == SettingsSection.DOCUMENTS && branding.hasUnsavedChanges)
+                },
             )
             // Uma rolagem por seção: trocar de seção começa do alto.
             key(section) {
@@ -117,14 +123,15 @@ fun SettingsScreen(
             }
         }
 
-        if (state.hasUnsavedChanges || branding.hasUnsavedChanges) {
+        if (state.hasUnsavedChanges || branding.hasUnsavedChanges || orders.hasUnsavedChanges) {
             UnsavedChangesBar(
                 onDiscard = {
                     viewModel.discard()
                     brandingViewModel.discard()
+                    orderSettingsViewModel.discard()
                 },
                 // Um erro leva pra seção dele.
-                onSave = { saveAllSettings(viewModel, brandingViewModel)?.let(onSectionChange) },
+                onSave = { saveAllSettings(viewModel, brandingViewModel, orderSettingsViewModel)?.let(onSectionChange) },
             )
         }
     }

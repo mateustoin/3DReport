@@ -15,12 +15,6 @@ private const val QR_SIZE = 3.5f * 72f / 2.54f
 /** O código copia e cola, em fonte menor que o resto do texto: ele é longo e só serve pra copiar. */
 private val CODE_SIZE = cqw(1.7f)
 
-/** Respiro entre o bloco do valor e a linha do sinal, e a altura dela. */
-private val DEPOSIT_GAP = cqw(1.8f)
-
-/** Altura que a linha "Sinal de R$ X pra começar" ocupa, com o respiro de cima. */
-internal val DEPOSIT_LINE_HEIGHT = DEPOSIT_GAP + ROW_SIZE * (PDF_CAP_HEIGHT + 0.35f)
-
 /** O que o bloco do Pix mostra: o valor cobrado, a chave, o código e a matriz do QR. */
 internal class PixBlock(val amountText: String, val isDeposit: Boolean, val key: String, val code: String, val qr: QrMatrix)
 
@@ -76,11 +70,9 @@ internal fun pixBlockHeight(context: PdfContext, block: PixBlock, width: Float):
     return BLOCK_PAD_Y * 2 + maxOf(QR_SIZE, text)
 }
 
-/** Desenha o bloco no cursor de [writer] e desce o cursor. O bloco nunca é partido: quem chama garante que cabe. */
-internal fun drawPixBlock(context: PdfContext, writer: PageWriter, block: PixBlock, x: Float, width: Float) {
-    val content = writer.content
+/** Desenha o bloco com o alto em [top]. O bloco nunca é partido: quem chama garante que cabe e já desceu o cursor. */
+internal fun drawPixBlock(context: PdfContext, content: PDPageContentStream, block: PixBlock, x: Float, top: Float, width: Float) {
     val height = pixBlockHeight(context, block, width)
-    val top = writer.y
     content.fillPanel(x, top - height, width, height)
     content.drawQr(block.qr, x + BLOCK_PAD_X, top - BLOCK_PAD_Y, QR_SIZE)
 
@@ -95,14 +87,6 @@ internal fun drawPixBlock(context: PdfContext, writer: PageWriter, block: PixBlo
         }
         cursor -= line.size * 0.35f
     }
-    writer.y = top - height
-}
-
-/** "Sinal de R$ X pra começar" logo depois do bloco do valor (decisão 146, item 12). */
-internal fun drawDepositLine(context: PdfContext, writer: PageWriter, text: String) {
-    writer.y -= DEPOSIT_GAP + ROW_SIZE * PDF_CAP_HEIGHT
-    writer.content.text(context.strongFont, ROW_SIZE, SIDE_MARGIN, writer.y, text, INK)
-    writer.y -= ROW_SIZE * 0.35f
 }
 
 /** O QR como retângulos (vetor, nítido em qualquer zoom) num quadrado branco de [size] com o canto de cima à esquerda em [x], [top]. */

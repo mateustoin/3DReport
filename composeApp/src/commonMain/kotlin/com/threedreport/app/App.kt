@@ -172,7 +172,8 @@ fun App(
     // Coletados aqui pro pontinho de "alteração não salva" da barra lateral acompanhar o que se digita.
     val settingsDraft by viewModels.settingsViewModel.uiState.collectAsState()
     val brandingDraft by viewModels.brandingViewModel.uiState.collectAsState()
-    val settingsDirty = settingsDraft.hasUnsavedChanges || brandingDraft.hasUnsavedChanges
+    val ordersDraft by viewModels.orderSettingsViewModel.uiState.collectAsState()
+    val settingsDirty = settingsDraft.hasUnsavedChanges || brandingDraft.hasUnsavedChanges || ordersDraft.hasUnsavedChanges
 
     AppTheme(themeMode) {
         CompositionLocalProvider(LocalCurrency provides currency, LocalSnackbarHostState provides snackbarHostState) {

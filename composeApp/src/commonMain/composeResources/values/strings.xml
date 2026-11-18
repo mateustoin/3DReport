@@ -296,8 +296,6 @@
     <string name="printers_maintenance_field_description">O que foi feito</string>
     <string name="printers_maintenance_field_date">Data</string>
     <string name="printers_maintenance_today">Hoje</string>
-    <string name="printers_maintenance_other_date">Outra data</string>
-    <string name="printers_maintenance_use_date">Usar esta data</string>
     <string name="printers_maintenance_field_reset">Zera o contador de</string>
     <string name="printers_maintenance_reset_none">Nenhum</string>
     <string name="printers_maintenance_help_reset">O contador recomeça agora, mesmo com data antiga: o app não sabe quanto a máquina rodou desde então.</string>
@@ -613,7 +611,6 @@
 
     <!-- Orçamento: prazo e configurações de impressão (também usados em Pedidos) -->
     <string name="quote_deadline_days">+%1$d dias</string>
-    <string name="quote_deadline_pick">Escolher data…</string>
     <string name="quote_deadline_none">Sem prazo</string>
     <string name="quote_deadline_unset">Sem prazo definido.</string>
     <string name="quote_deadline_until">Entrega até %1$s (%2$s)</string>
@@ -622,7 +619,6 @@
     <string name="overdue_send_batch">%1$d dos orçamentos selecionados têm prazo vencido: %2$s. Se exportar assim, o cliente recebe esses prazos vencidos.</string>
     <string name="overdue_send_change_date">Alterar prazo</string>
     <string name="overdue_send_anyway">Enviar assim mesmo</string>
-    <string name="quote_deadline_use">Usar esta data</string>
     <string name="quote_deadline_title">Prazo de entrega</string>
     <string name="quote_settings_help">Guardado só pra você consultar e replicar. Não entra no cálculo do preço nem em nenhum export.</string>
     <string name="quote_settings_layer">Altura de camada (mm)</string>
@@ -828,7 +824,7 @@
     <string name="history_menu_group_files">Arquivos</string>
     <string name="history_menu_group_organize">Organizar</string>
     <string name="history_menu_export_pdf">Exportar PDF</string>
-    <string name="history_menu_whatsapp">Enviar texto no WhatsApp</string>
+    <string name="history_menu_whatsapp">Enviar orçamento no WhatsApp</string>
     <string name="history_menu_save_image">Salvar imagem pro WhatsApp</string>
     <string name="history_menu_copy_text">Copiar texto</string>
     <string name="history_menu_download_photo">Baixar foto</string>
@@ -1317,13 +1313,7 @@
     <string name="settings_docs_pix_key">Chave Pix</string>
     <string name="settings_docs_pix_name">Nome de quem recebe</string>
     <string name="settings_docs_pix_city">Cidade</string>
-    <string name="settings_docs_pix_type_phone">telefone</string>
-    <string name="settings_docs_pix_type_cpf">CPF</string>
-    <string name="settings_docs_pix_type_cnpj">CNPJ</string>
-    <string name="settings_docs_pix_type_email">e-mail</string>
-    <string name="settings_docs_pix_type_random">chave aleatória</string>
-    <string name="settings_docs_pix_recognized">Reconhecida como %1$s.</string>
-    <string name="settings_docs_pix_unrecognized">Não parece telefone, CPF, CNPJ, e-mail nem chave aleatória. Confira no seu banco.</string>
+    <string name="settings_docs_pix_unrecognized">Tipo de chave não reconhecido. Confira no banco.</string>
     <string name="settings_docs_pix_too_long">A chave é grande demais pro Pix.</string>
     <string name="settings_docs_pix_missing">Falta %1$s pro Pix aparecer nos documentos.</string>
     <string name="settings_docs_pix_missing_key">a chave</string>
@@ -1373,10 +1363,6 @@
     <string name="payment_method_cash">Dinheiro</string>
     <string name="payment_method_other">Outro</string>
     <string name="payments_title">Pagamentos</string>
-    <string name="payments_total">Total</string>
-    <string name="payments_paid">Pago</string>
-    <string name="payments_remaining">Falta</string>
-    <string name="payments_status">Situação</string>
     <string name="payments_deposit">Sinal</string>
     <string name="payments_empty">Nenhum pagamento ainda.</string>
     <string name="payments_action_register">Registrar pagamento</string>
@@ -1388,10 +1374,8 @@
     <string name="payments_field_amount">Valor</string>
     <string name="payments_field_method">Forma</string>
     <string name="payments_field_date">Data</string>
-    <string name="payments_register_confirm">Registrar</string>
     <string name="payments_date_today">Hoje</string>
     <string name="payments_date_yesterday">Ontem</string>
-    <string name="payments_date_pick">Escolher data</string>
     <string name="payments_error_amount">Informe um valor maior que zero.</string>
     <string name="payments_notice_registered">Pagamento de %1$s registrado.</string>
     <string name="payments_notice_receipt">Gerar recibo</string>
@@ -1434,4 +1418,16 @@
     <string name="client_doc_receipt_paid">Pago até agora</string>
     <string name="client_doc_receipt_remaining">Falta pagar</string>
     <string name="export_file_receipt">Recibo %1$s - %2$s</string>
+    <string name="common_date_pick">Escolher data…</string>
+    <string name="common_date_use">Usar esta data</string>
+    <string name="settings_docs_pix_join_last">%1$s e %2$s</string>
+    <string name="payments_remaining">Falta</string>
+    <string name="payments_paid_of">Pago %1$s de %2$s</string>
+    <string name="payments_list_title">Recebidos</string>
+    <string name="payments_register_confirm">Registrar</string>
+    <string name="payments_back">Voltar</string>
+    <string name="message_include_pix">Incluir o Pix</string>
+    <string name="client_doc_receipt_received">Valor recebido</string>
+    <string name="client_doc_receipt_date">Data</string>
+    <string name="client_doc_receipt_method">Forma</string>
 </resources>

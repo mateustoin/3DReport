@@ -65,7 +65,7 @@ fun OrdersScreen(
     val state by viewModel.uiState.collectAsState()
     ObserveHistory(viewModel, state.copiedId)
     val kanban = state.ordersView == OrdersView.KANBAN
-    val columns = ordersColumns()
+    val columns = ordersColumns(state.showPaymentColumn, state.showStaleBadges)
     val space = MaterialTheme.spacing
 
     Column(modifier = modifier.fillMaxSize()) {

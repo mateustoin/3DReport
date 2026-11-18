@@ -7,12 +7,20 @@ import _3dreport.composeapp.generated.resources.payment_status_deposit_paid
 import _3dreport.composeapp.generated.resources.payment_status_not_paid
 import _3dreport.composeapp.generated.resources.payment_status_paid
 import _3dreport.composeapp.generated.resources.payment_status_partially_paid
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.threedreport.app.ui.components.AppBadge
-import com.threedreport.app.ui.components.IconAction
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.core.model.PaymentStatus
 import org.jetbrains.compose.resources.StringResource
@@ -41,8 +49,21 @@ fun StaleBadgeView(days: Int, modifier: Modifier = Modifier) {
     AppBadge(pluralStringResource(Res.plurals.orders_stale, days, days), MaterialTheme.appColors.deadlineToday, modifier)
 }
 
-/** O ícone de observação (decisão 151): o texto está na dica, e clicar abre o "Editar detalhes". */
+/** O ícone de observação (decisão 151): 16, só de leitura e sem foco próprio, com o texto na dica. Clicar no cartão ou na linha abre o "Editar detalhes". */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotesIcon(notes: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconAction(AppIcons.Description, stringResource(Res.string.orders_notes_description, notes), onClick, modifier)
+fun NotesIcon(notes: String, modifier: Modifier = Modifier) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text(notes) } },
+        state = rememberTooltipState(),
+        modifier = modifier,
+    ) {
+        Icon(
+            AppIcons.Description,
+            contentDescription = stringResource(Res.string.orders_notes_description, notes),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(AppDimens.noteIconSize),
+        )
+    }
 }

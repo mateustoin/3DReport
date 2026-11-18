@@ -32,7 +32,10 @@ import _3dreport.composeapp.generated.resources.client_doc_print_time
 import _3dreport.composeapp.generated.resources.client_doc_print_time_pieces
 import _3dreport.composeapp.generated.resources.client_doc_receipt_body
 import _3dreport.composeapp.generated.resources.client_doc_receipt_body_anonymous
+import _3dreport.composeapp.generated.resources.client_doc_receipt_date
+import _3dreport.composeapp.generated.resources.client_doc_receipt_method
 import _3dreport.composeapp.generated.resources.client_doc_receipt_paid
+import _3dreport.composeapp.generated.resources.client_doc_receipt_received
 import _3dreport.composeapp.generated.resources.client_doc_receipt_reference_numbered
 import _3dreport.composeapp.generated.resources.client_doc_receipt_reference_plain
 import _3dreport.composeapp.generated.resources.client_doc_receipt_remaining
@@ -273,6 +276,15 @@ class ClientDocumentTexts internal constructor(
     /** "Total do pedido", rótulo do quadro do recibo. */
     val receiptTotal: String get() = fill(Res.string.client_doc_receipt_total)
 
+    /** "Valor recebido", o rótulo do valor grande do recibo. */
+    val receiptReceived: String get() = fill(Res.string.client_doc_receipt_received)
+
+    /** "Data", rótulo solto do recibo. */
+    val receiptDate: String get() = fill(Res.string.client_doc_receipt_date)
+
+    /** "Forma", rótulo solto do recibo. */
+    val receiptMethod: String get() = fill(Res.string.client_doc_receipt_method)
+
     /** "Pago até agora". */
     val receiptPaid: String get() = fill(Res.string.client_doc_receipt_paid)
 
@@ -335,6 +347,9 @@ private val CLIENT_DOCUMENT_TEMPLATES: List<StringResource> = listOf(
     Res.string.client_doc_receipt_reference_plain,
     Res.string.client_doc_receipt_total,
     Res.string.client_doc_receipt_paid,
+    Res.string.client_doc_receipt_received,
+    Res.string.client_doc_receipt_date,
+    Res.string.client_doc_receipt_method,
     Res.string.client_doc_receipt_remaining,
     Res.string.payment_method_pix,
     Res.string.payment_method_card,

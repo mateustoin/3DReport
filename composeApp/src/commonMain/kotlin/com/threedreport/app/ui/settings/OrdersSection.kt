@@ -23,7 +23,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * A seção Pedidos de Configurações: sinal padrão, quando um orçamento conta como parado e o site de rastreio. É uma
- * seção única, então sem título; cada campo explica o que faz numa dica. Vale na hora, sem a barra de alterações.
+ * seção única, então sem título; cada campo explica o que faz numa dica. É rascunho até o "Salvar" da barra de alterações.
  */
 @Composable
 internal fun OrdersSection(viewModel: OrderSettingsViewModel) {
@@ -39,7 +39,7 @@ internal fun OrdersSection(viewModel: OrderSettingsViewModel) {
                 help = HelpText(stringResource(Res.string.settings_orders_deposit_help)),
             )
         }
-        cell(2) {
+        cell(1) {
             AppNumberField(
                 label = stringResource(Res.string.settings_orders_stale),
                 value = state.staleDaysText,

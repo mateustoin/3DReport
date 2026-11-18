@@ -18,7 +18,6 @@ import _3dreport.composeapp.generated.resources.history_details_photo_alt
 import _3dreport.composeapp.generated.resources.history_details_photo_change
 import _3dreport.composeapp.generated.resources.history_details_photo_pick
 import _3dreport.composeapp.generated.resources.history_details_photo_remove
-import _3dreport.composeapp.generated.resources.history_details_placeholder_contact
 import _3dreport.composeapp.generated.resources.history_details_title_order
 import _3dreport.composeapp.generated.resources.history_details_title_product
 import _3dreport.composeapp.generated.resources.quote_deadline_title
@@ -92,7 +91,6 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
                 label = stringResource(Res.string.history_details_field_contact),
                 value = form.clientContact,
                 onValueChange = { text -> viewModel.updateDetails { it.copy(clientContact = text) } },
-                placeholder = stringResource(Res.string.history_details_placeholder_contact),
             )
             Text(stringResource(Res.string.quote_deadline_title), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
             DeliveryDatePicker(
@@ -119,13 +117,11 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
                 label = stringResource(Res.string.history_details_field_tracking),
                 value = form.trackingCode,
                 onValueChange = { text -> viewModel.updateDetails { it.copy(trackingCode = text) } },
-                placeholder = stringResource(Res.string.common_optional),
             )
             AppTextArea(
                 label = stringResource(Res.string.history_details_field_notes),
                 value = form.notes,
                 onValueChange = { text -> viewModel.updateDetails { it.copy(notes = text) } },
-                placeholder = stringResource(Res.string.common_optional),
             )
         }
     }

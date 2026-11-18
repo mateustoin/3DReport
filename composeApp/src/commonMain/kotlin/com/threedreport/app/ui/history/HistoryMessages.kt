@@ -46,10 +46,15 @@ internal class HistoryMessages(
 
     private fun fill(quote: SavedQuote, kind: MessageTemplateKind) {
         scope.launch(main) {
-            val text = clientMessageFor(quote, kind, brandingRepository.branding.value)
-            change { it.copy(message = MessageEditing(quote, kind, text)) }
+            val branding = brandingRepository.branding.value
+            val text = clientMessageFor(quote, kind, branding)
+            val pix = messagePixFor(quote, branding)
+            change { it.copy(message = MessageEditing(quote, kind, text, pix, includePix = pix != null && kind.includesPixByDefault())) }
         }
     }
+
+    /** A marcação "Incluir o Pix" da janela (só existe com Pix a cobrar). */
+    fun setIncludePix(include: Boolean) = change { s -> s.copy(message = s.message?.let { if (it.pix != null) it.copy(includePix = include) else it }) }
 
     fun edit(text: String) = change { s -> s.copy(message = s.message?.copy(text = text)) }
 
@@ -57,13 +62,13 @@ internal class HistoryMessages(
 
     fun openInWhatsApp() {
         val message = state().message ?: return
-        val link = whatsAppLink(message.quote.client?.contact, message.text)
+        val link = whatsAppLink(message.quote.client?.contact, message.finalText)
         if (platform.openUrl(link)) {
             sent(message)
             return
         }
         // Sem navegador, o texto ainda chega no cliente: vai pra área de transferência.
-        if (platform.copyToClipboard(message.text)) {
+        if (platform.copyToClipboard(message.finalText)) {
             sent(message)
             notify(UiNotice(uiText(Res.string.message_whatsapp_copied), isError = true))
         } else {
@@ -73,7 +78,7 @@ internal class HistoryMessages(
 
     fun copy() {
         val message = state().message ?: return
-        if (platform.copyToClipboard(message.text)) {
+        if (platform.copyToClipboard(message.finalText)) {
             sent(message)
             notify(UiNotice(uiText(Res.string.message_notice_copied)))
         } else {

@@ -5,6 +5,7 @@ import _3dreport.composeapp.generated.resources.common_error_number_invalid
 import _3dreport.composeapp.generated.resources.settings_orders_error_deposit
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.OrderSettingsRepository
+import com.threedreport.app.data.SettingsRepository
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.core.message.MessageTemplateKind
@@ -158,37 +159,49 @@ class Leva11SettingsViewModelTest {
     private fun orders(repository: OrderSettingsRepository = OrderSettingsRepository()) = OrderSettingsViewModel(repository, scope) to repository
 
     @Test
-    fun theOrdersFormStartsWithTheDefaults() {
+    fun theOrdersFormStartsWithTheDefaultsAndNothingToSave() {
         val (viewModel, _) = orders()
 
         val state = viewModel.uiState.value
         assertEquals("0", state.depositPercentText)
         assertEquals("3", state.staleDaysText)
         assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, state.trackingUrlText)
+        assertFalse(viewModel.hasUnsavedChanges)
     }
 
     @Test
-    fun theDefaultDepositIsSavedAsAFraction() {
+    fun editsStayInTheDraftUntilSaved() {
         val (viewModel, repository) = orders()
 
         viewModel.setDepositPercent("30")
+        assertTrue(viewModel.hasUnsavedChanges)
+        assertEquals(0.0, repository.settings.value.defaultDepositRate, 1e-9, "ainda não gravou")
+
+        viewModel.save()
         assertEquals(0.3, repository.settings.value.defaultDepositRate, 1e-9)
+        assertFalse(viewModel.hasUnsavedChanges)
 
-        viewModel.setDepositPercent("")
-        assertEquals(0.0, repository.settings.value.defaultDepositRate, 1e-9)
+        viewModel.setDepositPercent("50")
+        viewModel.discard()
+        assertEquals("30", viewModel.uiState.value.depositPercentText)
+        assertFalse(viewModel.hasUnsavedChanges)
     }
 
     @Test
-    fun anInvalidDepositShowsAnErrorAndSavesNothing() {
+    fun anInvalidFieldShowsItsErrorAndSavesNothing() {
         val (viewModel, repository) = orders()
-        viewModel.setDepositPercent("30")
-
         viewModel.setDepositPercent("abc")
-        assertEquals(UiText.Res(Res.string.common_error_number_invalid), viewModel.uiState.value.errors[OrderSettingsField.DEPOSIT])
-        viewModel.setDepositPercent("150")
-        assertEquals(UiText.Res(Res.string.settings_orders_error_deposit), viewModel.uiState.value.errors[OrderSettingsField.DEPOSIT])
+        viewModel.setStaleDays("9999")
 
-        assertEquals(0.3, repository.settings.value.defaultDepositRate, 1e-9)
+        assertFalse(viewModel.validate())
+        assertEquals(UiText.Res(Res.string.common_error_number_invalid), viewModel.uiState.value.errors[OrderSettingsField.DEPOSIT])
+        assertTrue(OrderSettingsField.STALE_DAYS in viewModel.uiState.value.errors)
+        viewModel.save()
+        assertEquals(OrderSettings(), repository.settings.value)
+
+        viewModel.setDepositPercent("150")
+        viewModel.validate()
+        assertEquals(UiText.Res(Res.string.settings_orders_error_deposit), viewModel.uiState.value.errors[OrderSettingsField.DEPOSIT])
         viewModel.setDepositPercent("10")
         assertNull(viewModel.uiState.value.errors[OrderSettingsField.DEPOSIT])
     }
@@ -198,14 +211,10 @@ class Leva11SettingsViewModelTest {
         val (viewModel, repository) = orders()
 
         viewModel.setStaleDays("0")
+        viewModel.save()
         assertEquals(0, repository.settings.value.staleQuoteDays)
-        viewModel.setStaleDays("5")
-        assertEquals(5, repository.settings.value.staleQuoteDays)
         viewModel.setStaleDays("2,5")
-        assertTrue(OrderSettingsField.STALE_DAYS in viewModel.uiState.value.errors)
-        viewModel.setStaleDays("9999")
-        assertTrue(OrderSettingsField.STALE_DAYS in viewModel.uiState.value.errors)
-        assertEquals(5, repository.settings.value.staleQuoteDays)
+        assertFalse(viewModel.validate())
     }
 
     @Test
@@ -214,20 +223,36 @@ class Leva11SettingsViewModelTest {
         assertNull(repository.settings.value.trackingUrlTemplate, "nada gravado é o padrão do app")
 
         viewModel.setTrackingUrl("https://exemplo.com/?c={codigo}")
-        assertEquals("https://exemplo.com/?c={codigo}", repository.settings.value.trackingUrlTemplate)
+        viewModel.save()
         assertEquals("https://exemplo.com/?c=AB1", repository.settings.value.trackingUrl("AB1"))
 
         viewModel.setTrackingUrl("")
+        viewModel.save()
         assertEquals("", repository.settings.value.trackingUrlTemplate)
         assertNull(repository.settings.value.trackingUrl("AB1"), "apagar o campo é sem link")
 
         viewModel.useDefaultTracking()
+        viewModel.save()
         assertNull(repository.settings.value.trackingUrlTemplate)
-        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, viewModel.uiState.value.trackingUrlText)
     }
 
     @Test
-    fun whatIsSavedElsewhereShowsInTheForm() {
+    fun theSharedSaveBarSavesTheOrdersToo() {
+        val (orderViewModel, repository) = orders()
+        val pricing = SettingsViewModel(SettingsRepository(), scope)
+        val branding = branding()
+        orderViewModel.setStaleDays("7")
+
+        assertTrue(hasUnsavedSettings(pricing, branding, orderViewModel))
+        assertNull(saveAllSettings(pricing, branding, orderViewModel))
+        assertEquals(7, repository.settings.value.staleQuoteDays)
+
+        orderViewModel.setStaleDays("zzz")
+        assertEquals(SettingsSection.ORDERS, saveAllSettings(pricing, branding, orderViewModel))
+    }
+
+    @Test
+    fun whatIsSavedElsewhereShowsInTheCleanForm() {
         val (viewModel, repository) = orders()
 
         repository.update(OrderSettings(defaultDepositRate = 0.5, staleQuoteDays = 7))

@@ -170,6 +170,12 @@ data class HistoryUiState(
     val currency: Currency = Currency.BRL,
 ) {
     val isOrders: Boolean get() = filter.kind == QuoteKind.ORDER
+
+    /** A coluna "Pagamento" da tabela só existe quando algum pedido da lista acompanha pagamento. */
+    val showPaymentColumn: Boolean get() = rows.any { it.paymentStatus != null }
+
+    /** Há orçamento parado na lista: a coluna da situação ganha largura pro selo ficar na mesma linha. */
+    val showStaleBadges: Boolean get() = rows.any { it.staleDays != null }
 }
 
 /**
@@ -197,4 +203,15 @@ data class PaymentForm(
  * A janela "Mensagem pro cliente" (decisão 148, item 23): o pedido, o modelo escolhido e o texto, já preenchido e
  * editável. Editar aqui não muda o modelo salvo.
  */
-data class MessageEditing(val quote: SavedQuote, val kind: MessageTemplateKind, val text: String)
+data class MessageEditing(
+    val quote: SavedQuote,
+    val kind: MessageTemplateKind,
+    val text: String,
+    /** O Pix a cobrar (código e a linha que o antecede), fora do texto editável; `null` sem Pix a cobrar. */
+    val pix: MessagePix? = null,
+    val includePix: Boolean = false,
+) {
+    /** O que sai: o texto e, com a marcação ligada, o Pix no fim, o código sozinho na última linha. */
+    val finalText: String
+        get() = if (includePix && pix != null) text.trimEnd() + "\n\n" + pix.header + "\n" + pix.code else text
+}

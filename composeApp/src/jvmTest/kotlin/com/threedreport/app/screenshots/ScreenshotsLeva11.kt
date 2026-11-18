@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import com.threedreport.app.AppContainer
+import com.threedreport.app.data.OrdersView
 import com.threedreport.app.data.QuoteDetails
 import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.QuoteExportItem
@@ -101,6 +102,38 @@ internal fun renderLeva11Screenshots(container: AppContainer, outDir: File) {
     val payment = paid.payments.first()
     val receipt = renderReceiptPdf(ReceiptData(paid, payment, paid.receiptNumber(payment.id)), testClientTexts, pdfBranding.brandName, pdfBranding.footerText, options)
     composePdfPage(receipt, File(outDir, "pdf-recibo.png"))
+
+    // Pedidos em tabela, com a coluna Pagamento e o selo de parado na linha da situação.
+    container.preferences.setOrdersView(OrdersView.LIST)
+    renderAppPng(File(outDir, "pedidos-tabela-pagamentos.png")) { sampleApp(container, startAt = AppDestination.ORDERS) }
+    container.preferences.setOrdersView(OrdersView.KANBAN)
+
+    // O menu de um pedido com código de rastreio (Pronto, segundo cartão da coluna): cabe na janela sem esconder "Excluir".
+    renderAppPng(File(outDir, "pedidos-menu-rastreio.png"), afterSettle = { it.clickNthByDescription("Mais ações", 7) }) {
+        sampleApp(container, startAt = AppDestination.ORDERS)
+    }
+
+    // O tema escuro: kanban e diálogo de pagamentos.
+    container.theme.update(ThemeMode.DARK)
+    renderAppPng(File(outDir, "pedidos-kanban-selos-escuro.png")) { sampleApp(container, startAt = AppDestination.ORDERS) }
+    renderAppPng(File(outDir, "pagamentos-dialogo-escuro.png"), afterSettle = { it.openMenuItem("Pagamentos") }) {
+        sampleApp(container, startAt = AppDestination.ORDERS)
+    }
+    container.theme.update(ThemeMode.LIGHT)
+
+    // Por último, porque grava um pagamento: o diálogo depois de registrar o sinal, com o selo e o que falta mudados.
+    renderAppPng(
+        File(outDir, "pagamentos-depois-de-registrar.png"),
+        afterSettle = {
+            it.openMenuItem("Pagamentos")
+            settle(it, frames = 4)
+            it.clickByText("Registrar pagamento")
+            settle(it, frames = 4)
+            it.clickByText("Registrar")
+        },
+    ) {
+        sampleApp(container, startAt = AppDestination.ORDERS)
+    }
 }
 
 /** Grava a observação e o código de rastreio de [order] pelo mesmo caminho do "Editar detalhes", sem mexer no resto. */
@@ -139,4 +172,16 @@ private fun ImageComposeScene.clickLastByText(text: String) {
     val found = mutableListOf<SemanticsNode>()
     for (owner in semanticsOwners) collect(owner.rootSemanticsNode, found)
     found.lastOrNull()?.config?.getOrNull(SemanticsActions.OnClick)?.action?.invoke()
+}
+
+/** Clica no [index]-ésimo nó (na ordem da tela) com a descrição [description]: o menu de um cartão que não é o primeiro. */
+private fun ImageComposeScene.clickNthByDescription(description: String, index: Int) {
+    fun collect(node: SemanticsNode, into: MutableList<SemanticsNode>) {
+        val descriptions = node.config.getOrNull(SemanticsProperties.ContentDescription)
+        if (node.config.getOrNull(SemanticsActions.OnClick) != null && descriptions?.any { it == description } == true) into += node
+        node.children.forEach { collect(it, into) }
+    }
+    val found = mutableListOf<SemanticsNode>()
+    for (owner in semanticsOwners) collect(owner.rootSemanticsNode, found)
+    found.getOrNull(index)?.config?.getOrNull(SemanticsActions.OnClick)?.action?.invoke()
 }

@@ -38,13 +38,13 @@ import org.jetbrains.compose.resources.stringResource
 
 /** As colunas da tabela de Pedidos (decisão 132): número, peça, cliente, situação, prazo e valor à direita. */
 @Composable
-fun ordersColumns(): List<TableColumn> = listOf(
+fun ordersColumns(showPayment: Boolean = false, showStale: Boolean = false): List<TableColumn> = listOfNotNull(
     TableColumn(stringResource(Res.string.orders_col_number), width = AppDimens.tableNumberColumn),
     TableColumn(stringResource(Res.string.orders_col_piece), weight = 2.2f),
     TableColumn(stringResource(Res.string.orders_col_client), weight = 1.2f),
-    TableColumn(stringResource(Res.string.orders_col_status), width = AppDimens.tableStatusColumn),
+    TableColumn(stringResource(Res.string.orders_col_status), width = if (showStale) AppDimens.tableStatusStaleColumn else AppDimens.tableStatusColumn),
     TableColumn(stringResource(Res.string.orders_col_deadline), width = AppDimens.tableDeadlineColumn),
-    TableColumn(stringResource(Res.string.orders_col_payment), width = AppDimens.tableStatusColumn),
+    TableColumn(stringResource(Res.string.orders_col_payment), width = AppDimens.tableStatusColumn).takeIf { showPayment },
     TableColumn(stringResource(Res.string.orders_col_value), width = AppDimens.tableMoneyColumn, end = true),
 )
 
@@ -91,19 +91,19 @@ fun OrdersTableRow(
                     Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     row.printCount?.let { Muted(pluralStringResource(Res.plurals.orders_card_prints, it, it)) }
                 }
-                quote.notes?.takeIf { it.isNotBlank() }?.let { NotesIcon(it, onClick = onOpen) }
+                quote.notes?.takeIf { it.isNotBlank() }?.let { NotesIcon(it) }
             }
         }
         Cell(2) { Muted(quote.client?.name.orEmpty()) }
         Cell(3) {
-            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
                 StatusLabel(stringResource(quote.status.labelRes()), quote.status.statusColor())
                 row.staleDays?.let { StaleBadgeView(it) }
             }
         }
         Cell(4) { row.deadline?.let { DeadlineBadgeView(it) } }
-        Cell(5) { row.paymentStatus?.let { PaymentBadgeView(it) } }
-        Cell(6) {
+        if (columns.size == 7) Cell(5) { row.paymentStatus?.let { PaymentBadgeView(it) } }
+        Cell(columns.lastIndex) {
             NumericText(
                 quote.totalWithServices.toCurrencyText(quote.currency),
                 style = MaterialTheme.appType.body,

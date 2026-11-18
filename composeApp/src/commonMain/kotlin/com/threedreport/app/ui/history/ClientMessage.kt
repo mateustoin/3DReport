@@ -44,17 +44,26 @@ fun MessageTemplateKind.defaultTextRes(): StringResource = when (this) {
     MessageTemplateKind.FOLLOW_UP -> Res.string.message_default_follow_up
 }
 
+/** O Pix que a mensagem pode levar (decisão 148, item 38): o código e a linha "Pix copia e cola (R$ 50,00):" que vem antes dele. */
+class MessagePix(val code: String, val header: String)
+
+/** O Pix a cobrar de [order] pra mensagem, ou `null` sem Pix configurado ou sem nada a cobrar. */
+suspend fun messagePixFor(order: SavedQuote, branding: BrandingSettings): MessagePix? {
+    val code = branding.pixReceiver?.codeFor(order) ?: return null
+    val charge = order.pixCharge ?: return null
+    return MessagePix(code, loadClientDocumentTexts(listOf(order)).pixCopyPaste(charge.amount.toCurrencyText(order.currency)))
+}
+
+/** O modelo em que a marcação "Incluir o Pix" nasce ligada: o lembrete de pagamento e o aprovado (item 38). */
+fun MessageTemplateKind.includesPixByDefault(): Boolean = this == MessageTemplateKind.PAYMENT_REMINDER || this == MessageTemplateKind.APPROVED
+
 /**
  * A mensagem do modelo [kind] pro pedido [order] (decisão 148): o texto editado em Configurações, ou o padrão dos
- * recursos, com os marcadores preenchidos ([fillMessageTemplate]). O lembrete de pagamento termina com o Pix copia e
- * cola, quando há (decisão 145, item 6).
+ * recursos, com os marcadores preenchidos ([fillMessageTemplate]). O Pix não entra aqui: fica fora do texto editável
+ * ([MessagePix]) e só vai no fim ao enviar.
  */
 suspend fun clientMessageFor(order: SavedQuote, kind: MessageTemplateKind, branding: BrandingSettings): String {
     val template = branding.editedMessageTemplate(kind) ?: getString(kind.defaultTextRes())
     val values = orderMessageValues(order, branding.brandName, { it.toCurrencyText(order.currency) }, ::formatDate)
-    val text = fillMessageTemplate(template, values)
-    if (kind != MessageTemplateKind.PAYMENT_REMINDER) return text
-    val code = branding.pixReceiver?.codeFor(order) ?: return text
-    val pix = order.pixCopyPasteLines(loadClientDocumentTexts(listOf(order)), order.currency, code) ?: return text
-    return text + "\n\n" + pix
+    return fillMessageTemplate(template, values)
 }

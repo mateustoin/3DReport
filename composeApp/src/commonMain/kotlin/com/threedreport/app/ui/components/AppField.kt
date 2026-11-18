@@ -264,7 +264,7 @@ fun AppTextField(
 /**
  * Campo de várias linhas do kit: a mesma caixa do [AppTextField] (rótulo em `label`, borda `line`, `primary` no mouse, anel
  * de 2 no foco), crescendo com o texto a partir de [minLines] linhas. Enter quebra a linha; Tab e Shift+Tab continuam
- * navegando entre os campos. Pra textos maiores que uma linha: observações, mensagens.
+ * navegando entre os campos. Pra textos maiores que uma linha: observações, mensagens. [footer] fica sob a caixa (uma ação de texto, como "Voltar ao texto padrão").
  */
 @Composable
 fun AppTextArea(
@@ -276,7 +276,7 @@ fun AppTextArea(
     help: HelpText? = null,
     minLines: Int = 3,
     maxLines: Int = 8,
-    trailing: (@Composable () -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
@@ -306,7 +306,7 @@ fun AppTextArea(
                 },
             )
         }
-        trailing?.invoke()
+        footer?.invoke()
     }
 }
 

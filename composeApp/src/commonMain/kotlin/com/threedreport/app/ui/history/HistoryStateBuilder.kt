@@ -113,7 +113,8 @@ internal class HistoryStateBuilder(
                 canReprice = notice is RepriceNotice.CostsChanged,
                 canConvertToOrder = canConvertToOrder(quote, sold),
                 canEditPrintSettings = quote.quote.prints.size == 1,
-                paymentStatus = quote.paymentStatus.takeIf { order && quote.hasPaymentTracking },
+                // Só de Aprovado em diante: em Orçado o sinal ainda não é cobrado (decisão 146, item 35).
+                paymentStatus = quote.paymentStatus.takeIf { order && quote.hasPaymentTracking && quote.status != OrderStatus.ORCADO && quote.status != OrderStatus.CANCELADO },
                 staleDays = quote.staleDays(today, ::localEpochDayOf).takeIf { order && quote.isStale(today, orderSettings.staleQuoteDays, ::localEpochDayOf) },
                 messageKind = if (order) MessageTemplateKind.forOrder(quote) else null,
                 hasPix = order && pixReceiver?.codeFor(quote) != null,

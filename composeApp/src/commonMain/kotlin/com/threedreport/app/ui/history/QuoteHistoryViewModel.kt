@@ -362,6 +362,7 @@ class QuoteHistoryViewModel(
     fun followUp(savedQuote: SavedQuote) = messages.open(savedQuote, MessageTemplateKind.FOLLOW_UP)
     fun changeMessageKind(kind: MessageTemplateKind) = messages.changeKind(kind)
     fun editMessage(text: String) = messages.edit(text)
+    fun setIncludePix(include: Boolean) = messages.setIncludePix(include)
     fun closeMessage() = messages.close()
     fun sendMessageOnWhatsApp() = messages.openInWhatsApp()
     fun copyMessage() = messages.copy()

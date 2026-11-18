@@ -133,7 +133,7 @@ class AppViewModels(
             // O que o app perde ao fechar: os rascunhos do Orçamento e as Configurações ou a Marca por salvar.
             hasUnsavedWork = {
                 quoteViewModel.hasDraft || editQuoteViewModel.hasUnsavedEdits ||
-                    settingsViewModel.hasUnsavedChanges || brandingViewModel.hasUnsavedChanges
+                    settingsViewModel.hasUnsavedChanges || brandingViewModel.hasUnsavedChanges || orderSettingsViewModel.hasUnsavedChanges
             },
             closeApp = closeApp,
         )

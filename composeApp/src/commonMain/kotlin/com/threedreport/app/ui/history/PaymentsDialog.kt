@@ -1,7 +1,6 @@
 package com.threedreport.app.ui.history
 
 import _3dreport.composeapp.generated.resources.Res
-import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.common_close
 import _3dreport.composeapp.generated.resources.common_delete
 import _3dreport.composeapp.generated.resources.payment_method_card
@@ -9,7 +8,7 @@ import _3dreport.composeapp.generated.resources.payment_method_cash
 import _3dreport.composeapp.generated.resources.payment_method_other
 import _3dreport.composeapp.generated.resources.payment_method_pix
 import _3dreport.composeapp.generated.resources.payments_action_register
-import _3dreport.composeapp.generated.resources.payments_date_pick
+import _3dreport.composeapp.generated.resources.payments_back
 import _3dreport.composeapp.generated.resources.payments_date_today
 import _3dreport.composeapp.generated.resources.payments_date_yesterday
 import _3dreport.composeapp.generated.resources.payments_delete_description
@@ -20,48 +19,44 @@ import _3dreport.composeapp.generated.resources.payments_empty
 import _3dreport.composeapp.generated.resources.payments_field_amount
 import _3dreport.composeapp.generated.resources.payments_field_date
 import _3dreport.composeapp.generated.resources.payments_field_method
-import _3dreport.composeapp.generated.resources.payments_paid
+import _3dreport.composeapp.generated.resources.payments_list_title
+import _3dreport.composeapp.generated.resources.payments_paid_of
 import _3dreport.composeapp.generated.resources.payments_receipt_description
 import _3dreport.composeapp.generated.resources.payments_register_confirm
 import _3dreport.composeapp.generated.resources.payments_register_title
 import _3dreport.composeapp.generated.resources.payments_remaining
-import _3dreport.composeapp.generated.resources.payments_status
 import _3dreport.composeapp.generated.resources.payments_title
-import _3dreport.composeapp.generated.resources.payments_total
-import _3dreport.composeapp.generated.resources.quote_deadline_use
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.threedreport.app.platform.epochDayToUtcMillis
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.threedreport.app.platform.formatDate
-import com.threedreport.app.platform.utcMillisToEpochDay
 import com.threedreport.app.ui.components.AppButton
-import com.threedreport.app.ui.components.AppChoiceField
 import com.threedreport.app.ui.components.AppDialog
+import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppNumberField
 import com.threedreport.app.ui.components.ButtonKind
-import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DateShortcut
+import com.threedreport.app.ui.components.DateShortcutPicker
 import com.threedreport.app.ui.components.DialogText
-import com.threedreport.app.ui.components.InfoRow
 import com.threedreport.app.ui.components.ListRow
 import com.threedreport.app.ui.components.RowAction
-import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.format.NumberKind
+import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.asString
-import com.threedreport.app.ui.theme.appColors
+import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.PaymentMethod
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -75,148 +70,145 @@ fun PaymentMethod.labelRes(): StringResource = when (this) {
 }
 
 /**
- * "Pagamentos" de um pedido (decisão 146, item 13): total, pago, falta e situação, o sinal editável, a lista de
- * pagamentos (com "Recibo" e excluir) e o "Registrar pagamento", a única ação principal. Só desenha o [PaymentsDialog].
+ * "Pagamentos" de um pedido (decisão 146, item 13). Um [AppDialog] só, de largura fixa, com três passos que trocam o
+ * título, o corpo e os botões: a lista (o que falta em destaque, o sinal, os pagamentos), o "Registrar pagamento" (com
+ * "Voltar") e a confirmação de excluir. Só o calendário abre por cima. A ação principal é registrar, a não ser que não
+ * falte nada: aí ela é secundária.
  */
 @Composable
 fun PaymentsDialogView(dialog: PaymentsDialog, viewModel: QuoteHistoryViewModel, today: Long) {
+    val form = dialog.form
+    val deleting = dialog.deleting
     val quote = dialog.quote
     val currency = quote.currency
+    val amountOf = { value: Double -> value.toCurrencyText(currency) }
     AppDialog(
-        title = stringResource(Res.string.payments_title),
-        onDismiss = viewModel::closePayments,
-        buttons = {
-            AppButton(stringResource(Res.string.common_close), viewModel::closePayments)
-            AppButton(stringResource(Res.string.payments_action_register), viewModel::startRegisteringPayment, kind = ButtonKind.Primary, icon = AppIcons.Add)
-        },
-    ) {
-        InfoRow(stringResource(Res.string.payments_total), quote.totalWithServices.toCurrencyText(currency))
-        InfoRow(stringResource(Res.string.payments_paid), quote.paidTotal.toCurrencyText(currency))
-        InfoRow(stringResource(Res.string.payments_remaining), quote.remaining.toCurrencyText(currency))
-        InfoRow(stringResource(Res.string.payments_status), stringResource(quote.paymentStatus.labelRes()))
-        AppNumberField(
-            label = stringResource(Res.string.payments_deposit),
-            value = dialog.depositText,
-            onValueChange = viewModel::setDeposit,
-            kind = NumberKind.AMOUNT,
-            prefix = currency.symbol,
-            placeholder = "0",
-            error = dialog.depositError?.asString(),
-        )
-        if (quote.payments.isEmpty()) {
-            DialogText(stringResource(Res.string.payments_empty), muted = true)
-        }
-        quote.payments.forEach { payment ->
-            val amount = payment.amount.toCurrencyText(currency)
-            ListRow(
-                title = formatDate(payment.epochDay),
-                details = listOf(stringResource(payment.method.labelRes())),
-                value = amount,
-                actions = listOf(
-                    RowAction(AppIcons.ReceiptLong, stringResource(Res.string.payments_receipt_description, amount), onClick = { viewModel.generateReceipt(payment.id) }),
-                    RowAction(AppIcons.Delete, stringResource(Res.string.payments_delete_description, amount), { viewModel.requestDeletePayment(payment) }, danger = true),
-                ),
-            )
-        }
-    }
-    dialog.form?.let { PaymentFormDialog(it, currency.symbol, viewModel, today) }
-    dialog.deleting?.let { payment ->
-        ConfirmDialog(
-            title = stringResource(Res.string.payments_delete_title),
-            message = stringResource(Res.string.payments_delete_message, payment.amount.toCurrencyText(currency)),
-            onConfirm = viewModel::confirmDeletePayment,
-            onDismiss = viewModel::cancelDeletePayment,
-            confirmLabel = stringResource(Res.string.common_delete),
-        )
-    }
-}
-
-/** O formulário "Registrar pagamento": valor (já preenchido), forma e dia. */
-@Composable
-private fun PaymentFormDialog(form: PaymentForm, symbol: String, viewModel: QuoteHistoryViewModel, today: Long) {
-    val methods = PaymentMethod.entries
-    AppDialog(
-        title = stringResource(Res.string.payments_register_title),
-        onDismiss = viewModel::cancelPaymentForm,
-        dismissOnClickOutside = false,
-        buttons = {
-            AppButton(stringResource(Res.string.common_cancel), viewModel::cancelPaymentForm)
-            AppButton(stringResource(Res.string.payments_register_confirm), viewModel::registerPayment, kind = ButtonKind.Primary)
-        },
-    ) {
-        AppNumberField(
-            label = stringResource(Res.string.payments_field_amount),
-            value = form.amountText,
-            onValueChange = { text -> viewModel.updatePaymentForm { it.copy(amountText = text) } },
-            kind = NumberKind.AMOUNT,
-            prefix = symbol,
-            error = form.error?.asString(),
-        )
-        AppChoiceField(
-            label = stringResource(Res.string.payments_field_method),
-            options = methods.map { stringResource(it.labelRes()) },
-            selectedIndex = methods.indexOf(form.method),
-            onSelect = { index -> viewModel.updatePaymentForm { it.copy(method = methods[index]) } },
-            fillWidth = true,
-        )
-        Text(stringResource(Res.string.payments_field_date), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        PaymentDatePicker(form.epochDay, today) { day -> viewModel.updatePaymentForm { it.copy(epochDay = day) } }
-    }
-}
-
-/**
- * O dia do pagamento: "Hoje", "Ontem" ou "Escolher data" (o calendário, até hoje: recibo de dia que ainda não
- * chegou não existe). Mostra a data escolhida quando não é um dos atalhos.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PaymentDatePicker(epochDay: Long, today: Long, onChange: (Long) -> Unit) {
-    var showCalendar by remember { mutableStateOf(false) }
-    val selected = when (epochDay) {
-        today -> 0
-        today - 1 -> 1
-        else -> 2
-    }
-    SegmentedChoice(
-        options = listOf(
-            stringResource(Res.string.payments_date_today),
-            stringResource(Res.string.payments_date_yesterday),
-            if (selected == 2) formatDate(epochDay) else stringResource(Res.string.payments_date_pick),
+        title = stringResource(
+            when {
+                deleting != null -> Res.string.payments_delete_title
+                form != null -> Res.string.payments_register_title
+                else -> Res.string.payments_title
+            },
         ),
-        selectedIndex = selected,
-        onSelect = { index ->
-            when (index) {
-                0 -> onChange(today)
-                1 -> onChange(today - 1)
-                else -> showCalendar = true
+        onDismiss = when {
+            deleting != null -> viewModel::cancelDeletePayment
+            form != null -> viewModel::cancelPaymentForm
+            else -> viewModel::closePayments
+        },
+        dismissOnClickOutside = form == null && deleting == null,
+        width = AppDimens.paymentsDialogWidth,
+        buttons = {
+            when {
+                deleting != null -> {
+                    AppButton(stringResource(Res.string.payments_back), viewModel::cancelDeletePayment)
+                    AppButton(stringResource(Res.string.common_delete), viewModel::confirmDeletePayment, kind = ButtonKind.Danger)
+                }
+
+                form != null -> {
+                    AppButton(stringResource(Res.string.payments_back), viewModel::cancelPaymentForm)
+                    AppButton(stringResource(Res.string.payments_register_confirm), viewModel::registerPayment, kind = ButtonKind.Primary)
+                }
+
+                else -> {
+                    AppButton(stringResource(Res.string.common_close), viewModel::closePayments)
+                    AppButton(
+                        stringResource(Res.string.payments_action_register),
+                        viewModel::startRegisteringPayment,
+                        kind = if (quote.remaining > 0.0) ButtonKind.Primary else ButtonKind.Secondary,
+                        icon = AppIcons.Add,
+                    )
+                }
             }
         },
-    )
-    if (showCalendar) {
-        val state = rememberDatePickerState(
-            initialSelectedDateMillis = epochDayToUtcMillis(epochDay),
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcMillisToEpochDay(utcTimeMillis) <= today
-            },
-        )
-        DatePickerDialog(
-            onDismissRequest = { showCalendar = false },
-            shape = MaterialTheme.shapes.large,
-            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.appColors.card),
-            confirmButton = {
-                AppButton(
-                    stringResource(Res.string.quote_deadline_use),
-                    onClick = {
-                        state.selectedDateMillis?.let { onChange(utcMillisToEpochDay(it)) }
-                        showCalendar = false
-                    },
-                    kind = ButtonKind.Primary,
-                    enabled = state.selectedDateMillis != null,
+    ) {
+        when {
+            deleting != null -> DialogText(stringResource(Res.string.payments_delete_message, amountOf(deleting.amount)))
+
+            form != null -> PaymentFormFields(form, currency.symbol, viewModel, today)
+
+            else -> {
+                PaymentsSummary(dialog, amountOf)
+                AppNumberField(
+                    label = stringResource(Res.string.payments_deposit),
+                    value = dialog.depositText,
+                    onValueChange = viewModel::setDeposit,
+                    kind = NumberKind.AMOUNT,
+                    prefix = currency.symbol,
+                    placeholder = "0",
+                    error = dialog.depositError?.asString(),
+                    modifier = Modifier.width(AppDimens.moneyFieldWidth),
                 )
-            },
-            dismissButton = { AppButton(stringResource(Res.string.common_cancel), onClick = { showCalendar = false }) },
-        ) {
-            DatePicker(state = state, showModeToggle = false, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.appColors.card))
+                // 24 antes da lista: o respiro do diálogo (8) mais este espaço e mais 8.
+                Spacer(Modifier.height(MaterialTheme.spacing.xs))
+                Text(stringResource(Res.string.payments_list_title), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (quote.payments.isEmpty()) DialogText(stringResource(Res.string.payments_empty), muted = true)
+                quote.payments.forEach { payment ->
+                    val amount = amountOf(payment.amount)
+                    ListRow(
+                        title = formatDate(payment.epochDay),
+                        details = listOf(stringResource(payment.method.labelRes())),
+                        value = amount,
+                        actions = listOf(
+                            RowAction(AppIcons.ReceiptLong, stringResource(Res.string.payments_receipt_description, amount), onClick = { viewModel.generateReceipt(payment.id) }),
+                            RowAction(AppIcons.Delete, stringResource(Res.string.payments_delete_description, amount), { viewModel.requestDeletePayment(payment) }, danger = true),
+                        ),
+                    )
+                }
+            }
         }
     }
+}
+
+/** O que falta como número em destaque, a situação como selo, e o que já foi pago de apoio. */
+@Composable
+private fun PaymentsSummary(dialog: PaymentsDialog, amountOf: (Double) -> String) {
+    val quote = dialog.quote
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
+        Column {
+            Text(stringResource(Res.string.payments_remaining), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            NumericText(amountOf(quote.remaining), style = MaterialTheme.appType.statValue, color = MaterialTheme.colorScheme.onSurface)
+        }
+        PaymentBadgeView(quote.paymentStatus)
+    }
+    Text(
+        stringResource(Res.string.payments_paid_of, amountOf(quote.paidTotal), amountOf(quote.totalWithServices)),
+        style = MaterialTheme.appType.caption,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** O passo "Registrar pagamento": valor (já preenchido), forma e dia. */
+@Composable
+private fun PaymentFormFields(form: PaymentForm, symbol: String, viewModel: QuoteHistoryViewModel, today: Long) {
+    val methods = PaymentMethod.entries
+    val labels = methods.associateWith { stringResource(it.labelRes()) }
+    AppNumberField(
+        label = stringResource(Res.string.payments_field_amount),
+        value = form.amountText,
+        onValueChange = { text -> viewModel.updatePaymentForm { it.copy(amountText = text) } },
+        kind = NumberKind.AMOUNT,
+        prefix = symbol,
+        error = form.error?.asString(),
+        modifier = Modifier.width(AppDimens.moneyFieldWidth),
+    )
+    AppDropdownField(
+        label = stringResource(Res.string.payments_field_method),
+        items = methods,
+        selected = form.method,
+        itemLabel = { labels.getValue(it) },
+        displayText = { labels.getValue(it) },
+        onSelect = { method -> viewModel.updatePaymentForm { it.copy(method = method) } },
+        modifier = Modifier.width(AppDimens.moneyFieldWidth),
+    )
+    Text(stringResource(Res.string.payments_field_date), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    DateShortcutPicker(
+        epochDay = form.epochDay,
+        shortcuts = listOf(
+            DateShortcut(stringResource(Res.string.payments_date_today), today),
+            DateShortcut(stringResource(Res.string.payments_date_yesterday), today - 1),
+        ),
+        today = today,
+        onChange = { day -> if (day != null) viewModel.updatePaymentForm { it.copy(epochDay = day) } },
+        allowFuture = false,
+    )
 }

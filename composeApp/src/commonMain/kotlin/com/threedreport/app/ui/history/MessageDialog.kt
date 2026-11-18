@@ -6,14 +6,19 @@ import _3dreport.composeapp.generated.resources.message_action_copy
 import _3dreport.composeapp.generated.resources.message_action_whatsapp
 import _3dreport.composeapp.generated.resources.message_field_kind
 import _3dreport.composeapp.generated.resources.message_field_text
+import _3dreport.composeapp.generated.resources.message_include_pix
 import _3dreport.composeapp.generated.resources.message_title
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.threedreport.app.ui.components.AppButton
+import com.threedreport.app.ui.components.AppCheckbox
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppTextArea
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.theme.appType
 import com.threedreport.core.message.MessageTemplateKind
 import org.jetbrains.compose.resources.stringResource
 
@@ -49,5 +54,13 @@ fun MessageDialog(editing: MessageEditing, viewModel: QuoteHistoryViewModel) {
             minLines = 6,
             maxLines = 14,
         )
+        // O Pix fica fora do texto editável: só leitura, embaixo, e vai no fim (sozinho na última linha) quando marcado.
+        editing.pix?.let { pix ->
+            AppCheckbox(stringResource(Res.string.message_include_pix), editing.includePix, viewModel::setIncludePix)
+            if (editing.includePix) {
+                Text(pix.header, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(pix.code, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }

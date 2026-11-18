@@ -131,17 +131,19 @@ fun KanbanCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     val prints = row.printCount?.let { pluralStringResource(Res.plurals.orders_card_prints, it, it) }
+                    val notes = quote.notes?.takeIf { it.isNotBlank() }
                     if (compact) {
                         // Coluna estreita: o cliente ganha a própria linha (e até duas), em vez de ser cortado depois do número.
-                        Caption(listOfNotNull(quote.displayNumber, prints).joinToString(" · "), maxLines = 1)
+                        CaptionWithNotes(listOfNotNull(quote.displayNumber, prints).joinToString(" · "), notes)
                         Caption(quote.client?.name.orEmpty(), maxLines = 2)
                     } else {
-                        Caption(listOfNotNull(quote.displayNumber, quote.client?.name, prints).joinToString(" · "), maxLines = 1)
+                        CaptionWithNotes(listOfNotNull(quote.displayNumber, quote.client?.name, prints).joinToString(" · "), notes)
                     }
                 }
             }
-            // O mesmo valor da tabela: o que o cliente paga. Na coluna estreita o selo e o valor se empilham; um FlowRow
-            // aqui erra a altura intrínseca (a que iguala as colunas) quando quebra a linha, e corta o cartão.
+            // O valor é sempre a última linha, depois de todos os selos juntos num bloco (prazo, parado, pagamento). Sem selo
+            // além do prazo e com espaço, o prazo e o valor dividem a linha. Um FlowRow aqui erra a altura intrínseca (a que
+            // iguala as colunas) quando quebra a linha, e corta o cartão.
             val value: @Composable () -> Unit = {
                 NumericText(
                     quote.totalWithServices.toCurrencyText(quote.currency),
@@ -149,9 +151,12 @@ fun KanbanCard(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            if (compact) {
+            val hasExtraBadges = row.staleDays != null || row.paymentStatus != null
+            if (compact || hasExtraBadges) {
                 Column(verticalArrangement = Arrangement.spacedBy(space.xxs)) {
                     row.deadline?.let { DeadlineBadgeView(it) }
+                    row.staleDays?.let { StaleBadgeView(it) }
+                    row.paymentStatus?.let { PaymentBadgeView(it) }
                     value()
                 }
             } else {
@@ -159,23 +164,6 @@ fun KanbanCard(
                     row.deadline?.let { DeadlineBadgeView(it) }
                     Spacer(Modifier.weight(1f))
                     value()
-                }
-            }
-            // Pagamento, orçamento parado e observação (Leva 11): só aparecem quando há o que dizer. Na coluna estreita os
-            // selos se empilham, como o de prazo e o valor, pra nenhum ser cortado.
-            val notes = quote.notes?.takeIf { it.isNotBlank() }
-            if (row.paymentStatus != null || row.staleDays != null || notes != null) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.xs)) {
-                    val badges: @Composable () -> Unit = {
-                        row.staleDays?.let { StaleBadgeView(it) }
-                        row.paymentStatus?.let { PaymentBadgeView(it) }
-                    }
-                    if (compact) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(space.xxs)) { badges() }
-                    } else {
-                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(space.xs)) { badges() }
-                    }
-                    notes?.let { NotesIcon(it, onClick = { callbacks.onOpen(row) }) }
                 }
             }
         }
@@ -191,4 +179,13 @@ fun KanbanCard(
 private fun Caption(text: String, maxLines: Int) {
     if (text.isEmpty()) return
     Text(text, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+}
+
+/** A linha do número e do cliente, com o ícone de observação no fim (a linha do número, não uma só pra ele). */
+@Composable
+private fun CaptionWithNotes(text: String, notes: String?) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+        Box(Modifier.weight(1f)) { Caption(text, maxLines = 1) }
+        notes?.let { NotesIcon(it) }
+    }
 }

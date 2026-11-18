@@ -153,7 +153,7 @@ class QuoteHistoryLeva11Test {
     @Test
     fun theBadgeFollowsTheDepositAndThePayments() {
         val s = setup(depositRate = 0.3)
-        val saved = s.order()
+        val saved = s.order(status = OrderStatus.APROVADO)
         assertEquals(PaymentStatus.NOT_PAID, s.row(saved.id).paymentStatus)
 
         s.repository.addPayment(saved.id, 10.0, PaymentMethod.PIX, 1L)
@@ -322,18 +322,46 @@ class QuoteHistoryLeva11Test {
     }
 
     @Test
-    fun thePaymentReminderEndsWithThePixCode() {
+    fun thePixStaysOutOfTheEditableTextAndGoesLastWhenIncluded() {
         val s = setup()
         s.withPix()
         val saved = s.order("Suporte", status = OrderStatus.PRONTO)
 
         s.viewModel.openMessage(saved)
-        val text = s.awaitMessage().text
+        val message = s.awaitMessage()
 
-        assertTrue("falta o pagamento de R$ 100,00 do pedido #0001." in text, text)
-        val lines = text.lines()
+        assertEquals(MessageTemplateKind.PAYMENT_REMINDER, message.kind)
+        assertTrue("falta o pagamento de R$ 100,00 do pedido #0001." in message.text, message.text)
+        assertFalse("Pix copia e cola" in message.text, "o Pix não entra no texto editável")
+        assertTrue(message.includePix, "nasce ligado no lembrete de pagamento")
+        val lines = message.finalText.lines()
         assertEquals("Pix copia e cola (R$ 100,00):", lines[lines.size - 2])
         assertTrue(lines.last().startsWith("000201"), "o código vai sozinho na última linha")
+
+        s.viewModel.setIncludePix(false)
+        assertFalse("000201" in s.state.message!!.finalText)
+        s.viewModel.copyMessage()
+        assertFalse("000201" in s.platform.copied.single())
+    }
+
+    @Test
+    fun thePixCheckboxStartsOnlyInApprovedAndTheReminderAndOnlyWithAChargeToMake() {
+        val s = setup()
+        s.withPix()
+        val quoted = s.order("Suporte")
+        s.viewModel.openMessage(quoted)
+        assertFalse(s.awaitMessage().includePix, "Retomar orçamento nasce desligado")
+        assertNotNull(s.state.message!!.pix, "há Pix a cobrar sem estar marcado")
+
+        s.viewModel.changeMessageKind(MessageTemplateKind.APPROVED)
+        runBlocking { withTimeout(AWAIT_MILLIS) { s.viewModel.uiState.first { it.message?.kind == MessageTemplateKind.APPROVED } } }
+        assertTrue(s.state.message!!.includePix)
+
+        s.repository.addPayment(quoted.id, 100.0, PaymentMethod.PIX, 1L)
+        s.viewModel.openMessage(s.repository.savedQuotes.value.first { it.id == quoted.id }, MessageTemplateKind.APPROVED)
+        val paid = runBlocking { withTimeout(AWAIT_MILLIS) { s.viewModel.uiState.first { it.message?.quote?.paidTotal == 100.0 }.message!! } }
+        assertNull(paid.pix, "pedido pago: sem marcação")
+        assertFalse(paid.includePix)
     }
 
     @Test
@@ -444,6 +472,33 @@ class QuoteHistoryLeva11Test {
     }
 
     @Test
+    fun theFormShowsTheAmountInCentsEvenWhenTheTotalHasLooseDecimals() {
+        val s = setup()
+        val saved = s.repository.save(
+            name = "Peça", quote = quote.copy(salePrice = 126.98999999999999), services = emptyList(), photo = null, sourceLink = null,
+            client = Client(name = "Maria"), currency = Currency.BRL,
+        )
+        s.viewModel.openPayments(saved)
+
+        s.viewModel.startRegisteringPayment()
+
+        assertEquals("126,99", s.state.payments!!.form!!.amountText)
+    }
+
+    @Test
+    fun paymentBadgesAndTheColumnOnlyAppearFromApprovedOn() {
+        val s = setup(depositRate = 0.3)
+        val quoted = s.order("Orçado")
+        assertNull(s.row(quoted.id).paymentStatus, "em Orçado nenhum selo de pagamento")
+        assertFalse(s.state.showPaymentColumn)
+
+        s.viewModel.updateStatus(quoted.id, OrderStatus.APROVADO)
+
+        assertEquals(PaymentStatus.NOT_PAID, s.row(quoted.id).paymentStatus)
+        assertTrue(s.state.showPaymentColumn)
+    }
+
+    @Test
     fun anInvalidAmountShowsAnErrorAndRegistersNothing() {
         val s = setup()
         val saved = s.order("Suporte")
@@ -460,7 +515,7 @@ class QuoteHistoryLeva11Test {
     @Test
     fun theDepositIsEditableAndLimitedToTheTotal() {
         val s = setup()
-        val saved = s.order("Suporte")
+        val saved = s.order("Suporte", status = OrderStatus.APROVADO)
         s.viewModel.openPayments(saved)
 
         s.viewModel.setDeposit("40")

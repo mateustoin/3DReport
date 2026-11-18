@@ -336,6 +336,9 @@ internal fun PDPageContentStream.hairline(x1: Float, x2: Float, y: Float, color:
 
 /** Uma página sendo desenhada: o conteúdo, o cursor vertical (a próxima coisa começa abaixo dele) e a área da foto. */
 internal class PageWriter(val page: PDPage, val content: PDPageContentStream, var y: Float) {
+    /** O que desenhar por cima da marca d'água e do rodapé (o bloco do Pix). */
+    var afterDecorations: (() -> Unit)? = null
+
     /** Onde a marca d'água fica: o quadro da foto, quando há. `[x, base, largura, altura]`. */
     var watermarkArea: FloatArray? = null
 }
@@ -368,6 +371,7 @@ internal fun PdfContext.startPage(withHeader: Boolean): PageWriter {
 
 internal fun PdfContext.finishPage(writer: PageWriter, brandName: String?, footerText: String?) {
     drawPageDecorations(this, writer, brandName, footerText)
+    writer.afterDecorations?.invoke()
     writer.content.close()
 }
 
@@ -375,10 +379,10 @@ internal fun PdfContext.finishPage(writer: PageWriter, brandName: String?, foote
 private class DetailRow(val label: String, val value: String)
 
 /** Uma linha do lado direito do bloco do valor: rótulo pequeno em maiúsculas (se houver), valor, e o respiro até a próxima. [muted] é a linha de apoio (fonte de corpo, cor apagada), como a entrega expressa. */
-private class BlockLine(val label: String?, val value: String, val valueSize: Float, val gapBelow: Float, val muted: Boolean = false)
+internal class BlockLine(val label: String?, val value: String, val valueSize: Float, val gapBelow: Float, val muted: Boolean = false)
 
 /** O bloco cinza: rótulo e preço grande à esquerda, entrega e validade à direita. */
-private class PriceBlock(val label: String, val price: String, val lines: List<BlockLine>)
+internal class PriceBlock(val label: String, val price: String, val lines: List<BlockLine>, val note: String? = null)
 
 /** As linhas de detalhe entre a foto e o bloco do valor: a conta das peças, serviços, frete e tempo de impressão. */
 private fun detailRows(savedQuote: SavedQuote, options: PdfLayoutOptions, texts: ClientDocumentTexts): List<DetailRow> = buildList {
@@ -424,6 +428,7 @@ private fun priceBlock(savedQuote: SavedQuote, options: PdfLayoutOptions, texts:
         label = if (hasBreakdown(savedQuote)) texts.labelTotal else texts.labelValue,
         price = savedQuote.totalWithServices.toCurrencyText(savedQuote.currency),
         lines = closed,
+        note = savedQuote.depositText(texts),
     )
 }
 
@@ -431,7 +436,7 @@ private fun priceBlock(savedQuote: SavedQuote, options: PdfLayoutOptions, texts:
 private val MIN_PRICE_SIZE = cqw(5.2f)
 
 /** Como o bloco do valor se organiza pra largura que tem: o corpo do preço e se a coluna da direita vai pra baixo dele. */
-private class PriceLayout(val priceSize: Float, val stacked: Boolean)
+internal class PriceLayout(val priceSize: Float, val stacked: Boolean)
 
 /** Largura da coluna da direita: a mais larga entre os rótulos e os valores. */
 private fun rightColumnWidth(context: PdfContext, block: PriceBlock): Float = block.lines.maxOfOrNull { line ->
@@ -446,7 +451,7 @@ private fun rightColumnWidth(context: PdfContext, block: PriceBlock): Float = bl
  * `fitFont` da imagem). Se nem no mínimo cabe ao lado, a coluna da direita desce pra baixo do preço, que então usa a
  * largura inteira do bloco.
  */
-private fun priceLayout(context: PdfContext, block: PriceBlock, width: Float): PriceLayout {
+internal fun priceLayout(context: PdfContext, block: PriceBlock, width: Float): PriceLayout {
     val inner = width - BLOCK_PAD_X * 2
     val fullWidth = context.displayFont.widthOf(block.price, PRICE_SIZE).coerceAtLeast(1f)
     val rightWidth = rightColumnWidth(context, block)
@@ -458,22 +463,26 @@ private fun priceLayout(context: PdfContext, block: PriceBlock, width: Float): P
 }
 
 /** Altura do que a coluna da esquerda ocupa, do alto do rótulo até a linha de base do preço. */
-private fun leftColumnHeight(priceSize: Float): Float = LABEL_SIZE * CAP_HEIGHT + PRICE_LABEL_GAP + priceSize * CAP_HEIGHT
+private fun leftColumnHeight(priceSize: Float, hasNote: Boolean): Float =
+    LABEL_SIZE * CAP_HEIGHT + PRICE_LABEL_GAP + priceSize * CAP_HEIGHT + if (hasNote) noteOffset() else 0f
+
+/** O que a linha do sinal (sob o preço, dentro do quadro) soma: o respiro e a altura das letras. */
+private fun noteOffset(): Float = cqw(2.4f) + ROW_SIZE * CAP_HEIGHT
 
 /** Altura da coluna da direita, do alto do primeiro rótulo até a linha de base do último valor. */
 private fun rightColumnHeight(block: PriceBlock): Float = block.lines.sumOf { line ->
     ((if (line.label != null) LABEL_SIZE * CAP_HEIGHT + LABEL_GAP else 0f) + line.valueSize * CAP_HEIGHT + line.gapBelow).toDouble()
 }.toFloat()
 
-private fun blockHeight(block: PriceBlock, layout: PriceLayout): Float {
-    val left = leftColumnHeight(layout.priceSize)
+internal fun blockHeight(block: PriceBlock, layout: PriceLayout): Float {
+    val left = leftColumnHeight(layout.priceSize, block.note != null)
     val right = rightColumnHeight(block)
     val content = if (layout.stacked && right > 0f) left + GROUP_GAP + right else maxOf(left, right)
     return BLOCK_PAD_Y * 2 + content + cqw(0.5f)
 }
 
 /** Desenha o bloco cinza com o valor, alinhando as duas colunas pela linha de base de baixo. */
-private fun drawPriceBlock(context: PdfContext, writer: PageWriter, block: PriceBlock, layout: PriceLayout, x: Float, width: Float) {
+internal fun drawPriceBlock(context: PdfContext, writer: PageWriter, block: PriceBlock, layout: PriceLayout, x: Float, width: Float) {
     val content = writer.content
     val height = blockHeight(block, layout)
     val bottom = writer.y - height
@@ -483,9 +492,10 @@ private fun drawPriceBlock(context: PdfContext, writer: PageWriter, block: Price
     val rightHeight = rightColumnHeight(block)
     // Empilhado, a coluna da direita fica embaixo, alinhada à esquerda como o preço; lado a lado, ela vai à direita.
     val rightBase = bottom + BLOCK_PAD_Y + cqw(0.5f)
-    val baseline = if (layout.stacked) rightBase + rightHeight + GROUP_GAP else rightBase
+    val baseline = (if (layout.stacked) rightBase + rightHeight + GROUP_GAP else rightBase) + if (block.note != null) noteOffset() else 0f
     content.text(context.displayFont, layout.priceSize, x + BLOCK_PAD_X, baseline, block.price)
     content.overline(context.bodyFont, LABEL_SIZE, x + BLOCK_PAD_X, baseline + layout.priceSize * CAP_HEIGHT + PRICE_LABEL_GAP, block.label)
+    block.note?.let { content.text(context.strongFont, ROW_SIZE, x + BLOCK_PAD_X, baseline - noteOffset(), it, INK) }
 
     // Do alto pra baixo: cada item tem o rótulo (se houver) e o valor; o último valor fica na linha de base de baixo.
     var cursor = rightBase + rightHeight
@@ -530,10 +540,9 @@ private fun drawQuote(context: PdfContext, item: QuoteExportItem, brandName: Str
     val priceLayout = priceLayout(context, block, contentWidth)
     val blockHeight = blockHeight(block, priceLayout)
     // Depois do preço: a linha do sinal e o bloco do Pix. Entram na conta da foto, pra ficarem na mesma página do preço.
-    val depositLine = savedQuote.depositText(texts)
     val pix = pixBlockFor(savedQuote, context.options)
     val pixHeight = pix?.let { pixBlockHeight(context, it, contentWidth) } ?: 0f
-    val afterBlock = (if (depositLine != null) DEPOSIT_LINE_HEIGHT else 0f) + (if (pix != null) GAP + pixHeight else 0f)
+    val afterBlock = if (pix != null) GAP + pixHeight else 0f
 
     var writer = context.startPage(withHeader = true)
     val content = writer.content
@@ -587,13 +596,11 @@ private fun drawQuote(context: PdfContext, item: QuoteExportItem, brandName: Str
     }
     if (rows.isNotEmpty()) writer.y -= GAP
 
-    val depositHeight = if (depositLine != null) DEPOSIT_LINE_HEIGHT else 0f
-    if (writer.y - blockHeight - depositHeight < CONTENT_BOTTOM - EPSILON) {
+    if (writer.y - blockHeight < CONTENT_BOTTOM - EPSILON) {
         context.finishPage(writer, brandName, footerText)
         writer = context.startPage(withHeader = false)
     }
     drawPriceBlock(context, writer, block, priceLayout, SIDE_MARGIN, contentWidth)
-    if (depositLine != null) drawDepositLine(context, writer, depositLine)
     if (pix != null) {
         // O bloco do Pix não é cortado entre páginas: se não cabe aqui, vai inteiro pra próxima.
         writer.y -= GAP
@@ -601,7 +608,10 @@ private fun drawQuote(context: PdfContext, item: QuoteExportItem, brandName: Str
             context.finishPage(writer, brandName, footerText)
             writer = context.startPage(withHeader = false)
         }
-        drawPixBlock(context, writer, pix, SIDE_MARGIN, contentWidth)
+        val pixTop = writer.y
+        writer.y -= pixHeight
+        // Desenhado depois da marca d'água, que não deve passar por cima do QR nem do código.
+        writer.afterDecorations = { drawPixBlock(context, writer.content, pix, SIDE_MARGIN, pixTop, contentWidth) }
     }
     context.finishPage(writer, brandName, footerText)
 
