@@ -48,6 +48,14 @@ class SavedQuotePaymentsTest {
     }
 
     @Test
+    fun theAmountDueIsInCentsAndPayingItSettlesTheOrder() {
+        val saved = order(total = 126.987561)
+
+        assertEquals(AmountDue(126.99, isDeposit = false), saved.amountDue)
+        assertEquals(PaymentStatus.PAID, order(total = 126.987561, payments = listOf(126.99)).paymentStatus)
+    }
+
+    @Test
     fun aDepositAloneShowsAsNotPaid() {
         val saved = order(deposit = 50.0)
 

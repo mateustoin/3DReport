@@ -169,8 +169,10 @@ data class SavedQuote(
      */
     val amountDue: AmountDue?
         get() = when {
-            pendingDeposit > 0.0 -> AmountDue(pendingDeposit, isDeposit = true)
-            remaining > 0.0 -> AmountDue(remaining, isDeposit = false)
+            // Em centavos: o total do pedido sai do cálculo com mais casas (R$ 126,987561), e o formulário de pagamento
+            // e o Pix mostram e cobram o que a pessoa vê.
+            pendingDeposit > 0.0 -> AmountDue(roundToCents(pendingDeposit), isDeposit = true)
+            remaining > 0.0 -> AmountDue(roundToCents(remaining), isDeposit = false)
             else -> null
         }
 

@@ -369,7 +369,7 @@ class StoredQuoteHistoryRepository(
         if (!Payment.isValidAmount(amount) || existing?.isOrder != true) return null
         val payment = Payment(
             id = Uuid.random().toString(),
-            amount = amount,
+            amount = kotlin.math.round(amount * 100.0) / 100.0,
             method = method,
             epochDay = epochDay,
             number = existing.nextPaymentNumber,
