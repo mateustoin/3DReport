@@ -2,11 +2,9 @@ package com.threedreport.core.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
 /**
  * Um pagamento recebido num pedido (decisão 146): o sinal, uma parcela ou o resto. Fica na lista
- * [SavedQuote.payments], na ordem em que foi registrado; é essa ordem que numera o recibo (`#0042-1`,
- * ver [SavedQuote.receiptNumber]).
+ * [SavedQuote.payments], na ordem em que foi registrado.
  *
  * Não entra no preço, no lucro nem no Dashboard: é só o registro do que já entrou.
  *
@@ -15,6 +13,9 @@ import kotlinx.serialization.Serializable
  * @property method forma do pagamento.
  * @property epochDay dia do pagamento, em dias desde 01/01/1970 (data de calendário, como
  *   [SavedQuote.deliveryDateEpochDay]).
+ * @property number número do pagamento no pedido, o do recibo (`#0042-2`, decisão 147), gravado ao registrar
+ *   ([SavedQuote.nextPaymentNumber]) e nunca renumerado: um recibo entregue não muda de número. `0` = sem número
+ *   gravado, e aí vale a posição na lista ([SavedQuote.paymentNumber]).
  */
 @Serializable
 data class Payment(
@@ -22,9 +23,11 @@ data class Payment(
     val amount: Double,
     val method: PaymentMethod,
     val epochDay: Long,
+    val number: Int = 0,
 ) {
     init {
         require(isValidAmount(amount)) { "amount precisa ser maior que zero: $amount" }
+        require(number >= 0) { "number não pode ser negativo: $number" }
     }
 
     companion object {

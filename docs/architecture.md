@@ -121,7 +121,8 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   (`platform/PixQrCode.kt`, só JVM).
 - `message/` (decisão 148): `MessageTemplateKind` (qual modelo em cada
   andamento), `MessagePlaceholder` e `fillMessageTemplate`, o preenchimento
-  puro dos modelos. O texto padrão mora em `strings.xml`; o editado, em
+  puro dos modelos, com trecho opcional entre colchetes (some se um marcador
+  de dentro fica vazio). O texto padrão mora em `strings.xml`; o editado, em
   `BrandingSettings.messageTemplates`.
 - `report/`: agregações puras sobre o histórico (`CatalogReport` pro resumo do
   catálogo no Dashboard de quem ainda não vende, decisão 103; `QuoteReport` pro

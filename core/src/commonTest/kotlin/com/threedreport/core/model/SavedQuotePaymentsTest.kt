@@ -140,13 +140,36 @@ class SavedQuotePaymentsTest {
     }
 
     @Test
-    fun theReceiptNumberIsTheOrderNumberAndThePaymentPosition() {
+    fun noPixForACancelledOrder() {
+        assertNull(order().copy(status = OrderStatus.CANCELADO).pixCharge)
+        assertNull(order(deposit = 50.0).copy(status = OrderStatus.CANCELADO).pixAmount)
+    }
+
+    @Test
+    fun theReceiptNumberIsTheOrderNumberAndTheFixedPaymentNumber() {
+        val saved = order().copy(
+            payments = listOf(
+                Payment("b", 10.0, PaymentMethod.PIX, 0L, number = 2),
+                Payment("c", 10.0, PaymentMethod.PIX, 0L, number = 3),
+            ),
+        )
+
+        // O pagamento 1 foi excluído: os outros não mudam de número.
+        assertEquals("#0042-2", saved.receiptNumber("b"))
+        assertEquals("#0042-3", saved.receiptNumber("c"))
+        assertEquals(4, saved.nextPaymentNumber)
+        assertNull(saved.receiptNumber("outro"))
+        assertNull(saved.copy(number = 0).receiptNumber("b"))
+    }
+
+    @Test
+    fun aPaymentWithoutNumberUsesItsPosition() {
         val saved = order(payments = listOf(10.0, 20.0))
 
         assertEquals("#0042-1", saved.receiptNumber("p0"))
         assertEquals("#0042-2", saved.receiptNumber("p1"))
-        assertNull(saved.receiptNumber("outro"))
-        assertNull(saved.copy(number = 0).receiptNumber("p0"))
+        assertEquals(3, saved.nextPaymentNumber)
+        assertEquals(1, order().nextPaymentNumber)
     }
 
     @Test
@@ -157,20 +180,17 @@ class SavedQuotePaymentsTest {
     }
 
     @Test
-    fun reopeningKeepsTheDepositUnlessThereWasNone() {
-        // Mantém o que já estava, mesmo com o % de hoje diferente.
-        assertEquals(50.0, order(deposit = 50.0).withDepositAfterEdit(rate = 0.3).depositAmount)
-        // Sem sinal e % maior que zero: ganha o do % padrão.
-        assertEquals(30.0, order().withDepositAfterEdit(rate = 0.3).depositAmount, 1e-9)
-        // Sem sinal e % zero: continua sem.
-        assertEquals(0.0, order().withDepositAfterEdit(rate = 0.0).depositAmount)
+    fun reopeningNeverCreatesNorChangesTheDeposit() {
+        assertEquals(50.0, order(deposit = 50.0).withDepositLimitedToTotal().depositAmount)
+        // Sem sinal continua sem, seja qual for o % padrão de hoje.
+        assertEquals(0.0, order().withDepositLimitedToTotal().depositAmount)
         // Total que caiu abaixo do sinal: o sinal cai junto.
-        assertEquals(40.0, order(total = 40.0, deposit = 50.0).withDepositAfterEdit(rate = 0.0).depositAmount)
+        assertEquals(40.0, order(total = 40.0, deposit = 50.0).withDepositLimitedToTotal().depositAmount)
     }
 
     @Test
     fun aProductNeverGetsADeposit() {
-        assertEquals(0.0, order(kind = QuoteKind.PRODUCT).withDepositAfterEdit(rate = 0.5).depositAmount)
+        assertEquals(0.0, order(kind = QuoteKind.PRODUCT, deposit = 10.0).withDepositLimitedToTotal().depositAmount)
     }
 
     @Test
@@ -185,6 +205,7 @@ class SavedQuotePaymentsTest {
     fun invalidValuesAreRejected() {
         assertFailsWith<IllegalArgumentException> { Payment("x", 0.0, PaymentMethod.CASH, 0L) }
         assertFailsWith<IllegalArgumentException> { Payment("x", -1.0, PaymentMethod.CASH, 0L) }
+        assertFailsWith<IllegalArgumentException> { Payment("x", 1.0, PaymentMethod.CASH, 0L, number = -1) }
         assertFailsWith<IllegalArgumentException> { order(deposit = -1.0) }
         assertFalse(Payment.isValidAmount(Double.NaN))
     }

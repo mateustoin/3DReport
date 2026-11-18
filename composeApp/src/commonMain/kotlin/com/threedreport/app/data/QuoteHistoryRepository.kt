@@ -71,8 +71,8 @@ interface QuoteHistoryRepository {
      * Reabre e salva de novo o orçamento [id] (edição explícita) — troca o retrato por um novo,
      * preservando [SavedQuote.savedAtEpochMillis], o número, o andamento e a moeda, e marcando
      * [SavedQuote.lastEditedEpochMillis]. Também ficam os pagamentos, o rastreio, as observações e o último "Retomar
-     * conversa"; o sinal fica como estava, limitado ao total novo, e só um pedido sem sinal ganha o do % padrão de hoje
-     * ([SavedQuote.withDepositAfterEdit]). `null` de [photo]/[stlFile] remove o anexo. Retorna `null`
+     * conversa"; o sinal nunca é criado nem muda por aqui, só fica limitado ao total novo se ele cair abaixo do sinal
+     * ([SavedQuote.withDepositLimitedToTotal]). `null` de [photo]/[stlFile] remove o anexo. Retorna `null`
      * sem fazer nada se [id] não existir. O [SavedQuote.kind] não muda por aqui (produto continua
      * produto); mudar de tipo é pelo [convertToOrder]. Nome em branco ganha um nome automático novo; [autoNamed] diz
      * que [name] é o automático que já estava no campo, sem ninguém mexer, e aí ele continua automático.
@@ -135,7 +135,8 @@ interface QuoteHistoryRepository {
     /**
      * Registra um pagamento no fim da lista do pedido [id] (decisão 146) e devolve o [Payment] gravado. `null`, sem
      * gravar nada, se [id] não existe, é produto do catálogo ou [amount] não é válido ([Payment.isValidAmount]).
-     * Não conta como edição do pedido ([SavedQuote.lastEditedEpochMillis] fica como está).
+     * O pagamento ganha o número fixo do recibo ([SavedQuote.nextPaymentNumber]). Não conta como edição do pedido
+     * ([SavedQuote.lastEditedEpochMillis] fica como está).
      */
     fun addPayment(id: String, amount: Double, method: PaymentMethod, epochDay: Long): Payment?
 
@@ -291,7 +292,7 @@ class StoredQuoteHistoryRepository(
             soldAtCatalogPrice = !isProduct && soldAtCatalogPrice,
             shippingAbsorbed = !isProduct && shippingAbsorbed,
             // Pagamentos, rastreio, observações e último contato vêm do `existing` como estão.
-        ).withDepositAfterEdit(defaultDepositRate())
+        ).withDepositLimitedToTotal()
         return collection.update(id) {
             draft.copy(
                 quote = draft.quote.withThumbnails(printThumbnails),
@@ -364,8 +365,15 @@ class StoredQuoteHistoryRepository(
     }
 
     override fun addPayment(id: String, amount: Double, method: PaymentMethod, epochDay: Long): Payment? {
-        if (!Payment.isValidAmount(amount) || collection.find(id)?.isOrder != true) return null
-        val payment = Payment(id = Uuid.random().toString(), amount = amount, method = method, epochDay = epochDay)
+        val existing = collection.find(id)
+        if (!Payment.isValidAmount(amount) || existing?.isOrder != true) return null
+        val payment = Payment(
+            id = Uuid.random().toString(),
+            amount = amount,
+            method = method,
+            epochDay = epochDay,
+            number = existing.nextPaymentNumber,
+        )
         collection.update(id) { it.copy(payments = it.payments + payment) }
         return payment
     }

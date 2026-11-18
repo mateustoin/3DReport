@@ -74,6 +74,45 @@ class MessageTemplateTest {
     }
 
     @Test
+    fun anOptionalPartGoesAwayWhenAMarkerInsideHasNoValue() {
+        val template = "Seu pedido {pedido} foi aprovado[ e fica pronto até {prazo}]."
+
+        assertEquals("Seu pedido #0042 foi aprovado.", fill(template, MessagePlaceholder.ORDER to "#0042"))
+        assertEquals("Vaso saiu pra entrega.", fill("{peca} saiu pra entrega. [Rastreio: {rastreio}]", MessagePlaceholder.PIECE to "Vaso"))
+        assertEquals("Oi! Tudo certo.", fill("Oi[, {cliente}]! Tudo certo."))
+        // Basta um marcador vazio pra o trecho todo sair.
+        assertEquals("Pronto.", fill("Pronto[ ({peca} {pedido})].", MessagePlaceholder.PIECE to "Vaso"))
+    }
+
+    @Test
+    fun anOptionalPartWithAllValuesLosesOnlyTheBrackets() {
+        val text = fill(
+            "Seu pedido foi aprovado[ e fica pronto até {prazo}]. {peca} saiu pra entrega. [Rastreio: {rastreio}]",
+            MessagePlaceholder.DEADLINE to "20/11/2026",
+            MessagePlaceholder.PIECE to "Vaso",
+            MessagePlaceholder.TRACKING to "AA123456789BR",
+        )
+
+        assertEquals("Seu pedido foi aprovado e fica pronto até 20/11/2026. Vaso saiu pra entrega. Rastreio: AA123456789BR", text)
+    }
+
+    @Test
+    fun bracketsWithoutMarkersKeepTheText() {
+        assertEquals("Obrigado pela compra!", fill("Obrigado[ pela compra]!"))
+    }
+
+    @Test
+    fun anUnclosedBracketStaysAsWritten() {
+        assertEquals("Promoção [só hoje Vaso", fill("Promoção [só hoje {peca}", MessagePlaceholder.PIECE to "Vaso"))
+        assertEquals("Fim] do texto", fill("Fim] do texto"))
+    }
+
+    @Test
+    fun aValueWithBracketsIsNotReadAsAnOptionalPart() {
+        assertEquals("Oi, [Maria]!", fill("Oi[, {cliente}]!", MessagePlaceholder.CLIENT to "[Maria]"))
+    }
+
+    @Test
     fun theTemplateOfAStatusChange() {
         assertEquals(MessageTemplateKind.APPROVED, MessageTemplateKind.forStatusChange(OrderStatus.APROVADO))
         assertEquals(MessageTemplateKind.PRINTING, MessageTemplateKind.forStatusChange(OrderStatus.EM_IMPRESSAO))

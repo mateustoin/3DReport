@@ -481,17 +481,19 @@ serviços + frete cobrado). Pedido sem sinal nem pagamento fica como antes.
   total (`requestedDeposit = min(depositAmount, totalWithServices)`).
   - Pedido novo: `sinal = totalWithServices × sinal padrão (fração)`,
     arredondado a centavos (`SavedQuote.initialDeposit`). O padrão nasce 0:
-    sem sinal.
-  - Reabrir o cálculo e salvar mantém o sinal que já estava, limitado ao total
-    novo; só um pedido sem sinal ganha o do % padrão de hoje
-    (`withDepositAfterEdit`). Produto do catálogo nunca tem sinal.
+    sem sinal. Vale também pro produto transformado em pedido.
+  - Reabrir o cálculo e salvar nunca cria nem muda o sinal: só o limita ao
+    total novo, se ele ficar menor (`withDepositLimitedToTotal`). Pedido antigo
+    não ganha sinal sozinho, e um sinal zerado de propósito continua zero.
+    Produto do catálogo nunca tem sinal.
 - **Falta do sinal:** `pendingDeposit = max(0, requestedDeposit − paidTotal)`.
 - **Situação** (`paymentStatus`): sem pagamento, **não pago**; falta zero,
   **pago**; com sinal e `pendingDeposit = 0`, **sinal pago**; o resto, **pago em
   parte**.
 - **O que cobrar agora** (`amountDue`): a falta do sinal enquanto houver, depois
   a falta do pedido; nada quando não falta.
-- **Pix** (`pixCharge`): o mesmo valor, só em pedido em real (`Currency.BRL`).
+- **Pix** (`pixCharge`): o mesmo valor, só em pedido em real (`Currency.BRL`)
+  e fora de Cancelado.
   O código (`pix/PixPayload`) leva o valor com ponto e duas casas.
 - **"A receber"** no resumo de Pedidos: soma `remaining` dos pedidos de Aprovado
   a Pronto, por moeda (num pedido sem pagamento, é o total, como antes).

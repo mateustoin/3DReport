@@ -83,7 +83,7 @@ import kotlinx.serialization.Serializable
  *   preço, no lucro nem no Dashboard; a situação sai de [paymentStatus]. Duplicar não copia.
  * @property depositAmount sinal pedido ao cliente, em valor da moeda do pedido (não em %), `0.0` = sem sinal. Nasce do
  *   sinal padrão de Configurações ao salvar um pedido novo ([initialDeposit]) e fica congelado como o resto do pedido
- *   ([withDepositAfterEdit]). Quem lê o sinal pra mostrar ou cobrar usa [requestedDeposit], que nunca passa do total.
+ *   ([withDepositLimitedToTotal]). Quem lê o sinal pra mostrar ou cobrar usa [requestedDeposit], que nunca passa do total.
  * @property trackingCode código de rastreio da entrega (decisão 150), texto livre. Vai na mensagem "Saiu pra entrega",
  *   nunca no PDF nem na imagem.
  * @property notes observações internas (decisão 151). Uso **só interno**: nunca entra em PDF, imagem, mensagem nem recibo.
@@ -175,25 +175,42 @@ data class SavedQuote(
         }
 
     /**
-     * O que o Pix deste pedido cobra (decisão 145, item 3): o [amountDue], só em pedido (nunca produto) e em real.
-     * `null` = sem Pix.
+     * O que o Pix deste pedido cobra (decisão 145, item 3): o [amountDue], só em pedido (nunca produto), em real e fora
+     * de [OrderStatus.CANCELADO]. `null` = sem Pix.
      */
     val pixCharge: AmountDue?
-        get() = if (isOrder && currency == Currency.BRL) amountDue else null
+        get() = if (isOrder && currency == Currency.BRL && status != OrderStatus.CANCELADO) amountDue else null
 
     /** Valor do Pix ([pixCharge]), ou `null` sem Pix. */
     val pixAmount: Double?
         get() = pixCharge?.amount
 
     /**
-     * Número do recibo do pagamento [paymentId] (decisão 147): o número do pedido e a posição do pagamento na lista,
-     * contando de 1 (`#0042-1`). `null` se o pedido não tem número ou o pagamento não está na lista.
+     * Número do pagamento [paymentId] no pedido (decisão 147): o [Payment.number] gravado ao registrar, ou, num pagamento
+     * sem número (`0`), a posição dele na lista contando de 1. `null` se o pagamento não está na lista.
+     */
+    fun paymentNumber(paymentId: String): Int? {
+        val index = payments.indexOfFirst { it.id == paymentId }
+        return if (index < 0) null else payments[index].numberOr(index)
+    }
+
+    /**
+     * Número do próximo pagamento registrado: o maior já usado no pedido mais um ([paymentNumber]). Excluir um pagamento
+     * não renumera os outros, e o número que saiu não volta.
+     */
+    val nextPaymentNumber: Int
+        get() = (payments.mapIndexed { index, payment -> payment.numberOr(index) }.maxOrNull() ?: 0) + 1
+
+    /**
+     * Número do recibo do pagamento [paymentId] (decisão 147): o número do pedido e o [paymentNumber] (`#0042-1`).
+     * `null` se o pedido não tem número ou o pagamento não está na lista.
      */
     fun receiptNumber(paymentId: String): String? {
         val number = displayNumber ?: return null
-        val index = payments.indexOfFirst { it.id == paymentId }
-        return if (index < 0) null else "$number-${index + 1}"
+        return paymentNumber(paymentId)?.let { "$number-$it" }
     }
+
+    private fun Payment.numberOr(index: Int): Int = if (number > 0) number else index + 1
 
     /** O mesmo pedido com o sinal [amount], arredondado a centavos e mantido entre zero e o total do pedido. */
     fun withDeposit(amount: Double): SavedQuote {
@@ -202,14 +219,14 @@ data class SavedQuote(
     }
 
     /**
-     * O sinal depois de reabrir o cálculo e salvar (decisão 146, item 10): o que já estava fica (não recalcula pelo % de
-     * hoje), limitado ao total novo; sem sinal e com [rate] maior que zero, ganha o do % padrão ([initialDeposit]).
-     * Produto nunca tem sinal.
+     * O sinal depois de reabrir o cálculo e salvar (decisão 146, item 10): nunca é criado nem muda, só fica limitado ao
+     * total novo quando ele cai abaixo do sinal. O % padrão só vale pra pedido novo ([initialDeposit]). Produto nunca
+     * tem sinal.
      */
-    fun withDepositAfterEdit(rate: Double): SavedQuote = when {
+    fun withDepositLimitedToTotal(): SavedQuote = when {
         !isOrder -> copy(depositAmount = 0.0)
-        depositAmount > 0.0 -> withDeposit(depositAmount)
-        else -> copy(depositAmount = initialDeposit(totalWithServices, rate))
+        depositAmount > totalWithServices -> copy(depositAmount = totalWithServices.coerceAtLeast(0.0))
+        else -> this
     }
 
     /**

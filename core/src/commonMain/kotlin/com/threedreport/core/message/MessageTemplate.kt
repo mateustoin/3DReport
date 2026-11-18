@@ -67,27 +67,40 @@ enum class MessagePlaceholder(val token: String) {
 private const val GAP = '\u0000'
 
 private val TOKENS = Regex(MessagePlaceholder.entries.joinToString("|") { Regex.escape(it.token) })
-private val GAPS_IN_A_ROW = Regex("$GAP[ \\t]*$GAP")
-private val EMPTY_PARENTHESES = Regex("\\([ \\t]*$GAP[ \\t]*\\)")
-private val GAP_BEFORE_PUNCTUATION = Regex("[,;:]?[ \\t]*$GAP[ \\t]*(?=[,.;:!?)])")
-private val GAP_AT_LINE_START = Regex("^[ \\t]*$GAP[ \\t]*", RegexOption.MULTILINE)
-private val GAP_AT_LINE_END = Regex("[ \\t]*$GAP[ \\t]*$", RegexOption.MULTILINE)
-private val GAP_BETWEEN_WORDS = Regex("[ \\t]*$GAP[ \\t]*")
+
+/** Trecho opcional: o que está entre `[` e o `]` seguinte, sem outro colchete no meio. Colchete sem par fica literal. */
+private val OPTIONAL_PART = Regex("""\[([^\[\]]*)\]""")
+private val GAPS_IN_A_ROW = Regex("$GAP[ \t]*$GAP")
+private val EMPTY_PARENTHESES = Regex("\\([ \t]*$GAP[ \t]*\\)")
+private val GAP_BEFORE_PUNCTUATION = Regex("[,;:]?[ \t]*$GAP[ \t]*(?=[,.;:!?)])")
+private val GAP_AT_LINE_START = Regex("^[ \t]*$GAP[ \t]*", RegexOption.MULTILINE)
+private val GAP_AT_LINE_END = Regex("[ \t]*$GAP[ \t]*$", RegexOption.MULTILINE)
+private val GAP_BETWEEN_WORDS = Regex("[ \t]+$GAP[ \t]*|[ \t]*$GAP[ \t]+")
 
 /**
  * Preenche o modelo [template] com [values] (decisão 148, item 21). Função pura: quem chama já passa cada valor
  * formatado (dinheiro, data) no idioma do app.
  *
- * Marcador sem valor (ausente, `null` ou em branco) some junto com o espaço que sobraria: no meio da frase fica um
- * espaço só; antes de pontuação sai o espaço (e a vírgula de antes, em "Oi, {cliente}!" vira "Oi!"); parênteses que
- * ficariam vazios saem; no começo e no fim da linha não sobra espaço. O resto do texto, inclusive as quebras de linha
- * e chaves que não são marcadores, fica como está. O valor não é lido de novo como modelo.
+ * **Trecho opcional entre colchetes**: em `foi aprovado[ e fica pronto até {prazo}].`, se algum marcador de dentro do
+ * trecho fica sem valor, o trecho inteiro some; se todos têm valor (ou não há marcador dentro), só os colchetes somem.
+ * Colchete sem par fica como foi escrito.
+ *
+ * Marcador sem valor (ausente, `null` ou em branco) fora de colchetes some junto com o espaço que sobraria, e o mesmo
+ * vale pro lugar de um trecho opcional que saiu: no meio da frase fica um espaço só; antes de pontuação sai o espaço (e
+ * a vírgula de antes, em "Oi, {cliente}!" vira "Oi!"); parênteses que ficariam vazios saem; no começo e no fim da linha
+ * não sobra espaço. O resto do texto, inclusive as quebras de linha e chaves que não são marcadores, fica como está. O
+ * valor não é lido de novo como modelo (nem como marcador, nem como trecho opcional).
  */
 fun fillMessageTemplate(template: String, values: Map<MessagePlaceholder, String?>): String {
-    val filled = TOKENS.replace(template.replace(GAP, ' ')) { match ->
-        val placeholder = MessagePlaceholder.entries.first { it.token == match.value }
-        values[placeholder]?.trim()?.takeIf { it.isNotEmpty() }?.replace(GAP, ' ') ?: GAP.toString()
+    fun valueOf(token: String): String? {
+        val placeholder = MessagePlaceholder.entries.first { it.token == token }
+        return values[placeholder]?.trim()?.takeIf { it.isNotEmpty() }?.replace(GAP, ' ')
     }
+    val withOptionalParts = OPTIONAL_PART.replace(template.replace(GAP, ' ')) { part ->
+        val inside = part.groupValues[1]
+        if (TOKENS.findAll(inside).any { valueOf(it.value) == null }) GAP.toString() else inside
+    }
+    val filled = TOKENS.replace(withOptionalParts) { match -> valueOf(match.value) ?: GAP.toString() }
     if (GAP !in filled) return filled
     var text = filled
     while (GAPS_IN_A_ROW.containsMatchIn(text)) text = GAPS_IN_A_ROW.replace(text, GAP.toString())
@@ -95,7 +108,8 @@ fun fillMessageTemplate(template: String, values: Map<MessagePlaceholder, String
     text = GAP_BEFORE_PUNCTUATION.replace(text, "")
     text = GAP_AT_LINE_START.replace(text, "")
     text = GAP_AT_LINE_END.replace(text, "")
-    return GAP_BETWEEN_WORDS.replace(text, " ")
+    text = GAP_BETWEEN_WORDS.replace(text, " ")
+    return text.replace(GAP.toString(), "")
 }
 
 /**

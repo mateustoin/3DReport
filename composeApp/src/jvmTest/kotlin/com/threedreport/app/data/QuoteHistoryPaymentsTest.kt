@@ -158,12 +158,35 @@ class QuoteHistoryPaymentsTest {
     }
 
     @Test
-    fun reopeningAnOrderWithoutDepositAppliesTheDefaultRate() {
-        val saved = QuoteHistoryRepository().saveOrder()
+    fun reopeningNeverCreatesADepositNorBringsBackAZeroedOne() {
+        // Um pedido salvo sem sinal (como os de antes desta leva) e outro com o sinal zerado de propósito.
+        val old = QuoteHistoryRepository().saveOrder()
+        val repository = QuoteHistoryRepository(defaultDepositRate = 0.5)
+        val zeroed = repository.saveOrder()
+        repository.updateDeposit(zeroed.id, 0.0)
 
-        val edited = QuoteHistoryRepository(defaultDepositRate = 0.5).reopenAndSave(saved.id)!!
+        // Com o % padrão de hoje em 50%, reabrir e salvar não cria sinal em nenhum dos dois.
+        assertEquals(0.0, repository.reopenAndSave(zeroed.id)!!.depositAmount)
+        assertEquals(0.0, repository.reopenAndSave(old.id)!!.depositAmount)
+    }
 
-        assertEquals(kotlin.math.round(edited.totalWithServices * 50) / 100, edited.depositAmount, 1e-9)
+    @Test
+    fun theReceiptNumberIsFixedWhenThePaymentIsRegistered() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.saveOrder()
+        val first = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+        val second = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+        val third = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+
+        repository.deletePayment(saved.id, first.id)
+        val fourth = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.single()
+        val number = saved.displayNumber!!
+        assertEquals("$number-2", reloaded.receiptNumber(second.id))
+        assertEquals("$number-3", reloaded.receiptNumber(third.id))
+        assertEquals("$number-4", reloaded.receiptNumber(fourth.id))
+        assertEquals(listOf(2, 3, 4), reloaded.payments.map { it.number })
     }
 
     @Test
