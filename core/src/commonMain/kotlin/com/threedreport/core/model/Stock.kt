@@ -37,6 +37,18 @@ sealed interface StockItemRef {
 enum class StockUnit { GRAMS, UNITS }
 
 /**
+ * Quantas unidades do saldo cabem numa unidade do cadastro: 1000 g num kg (o preço do filamento é por kg), 1 unidade
+ * numa unidade (o custo do insumo é por unidade). Usado pra levar custo de compra pra unidade do cadastro.
+ */
+internal val StockItemRef.catalogFactor: Double
+    get() = when (this) {
+        is StockItemRef.ColorRef -> GRAMS_PER_KG
+        is StockItemRef.ConsumableRef -> 1.0
+    }
+
+private const val GRAMS_PER_KG = 1000.0
+
+/**
  * O controle de saldo ligado num item (decisão 158). Existir é estar controlado: sem ele, o item continua só com o
  * "tem / acabou" manual. O saldo não fica aqui: é a soma dos [StockMovement] do item.
  *

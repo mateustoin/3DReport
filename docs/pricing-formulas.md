@@ -521,15 +521,17 @@ Pedido salvo nunca muda. Item sem controle de saldo fica como antes.
   vazio` (sem carretel vazio, o peso).
 - **Consumo de um pedido** (`StockReport.consumptionOf`): filamento,
   `weightGrams × runs × quantity` de cada uso, pelo retrato gravado no pedido
-  (densidade e diâmetro de quando foi orçado), somado por cor. Cor vazia num
-  filamento de uma cor só vai pra essa cor; com várias cores, não desconta.
+  (densidade e diâmetro de quando foi orçado), somado por cor (a mesma soma de
+  `Quote.filamentTotals`). Cor vazia num filamento de uma cor só vai pra essa
+  cor; com várias cores, não desconta.
   Insumo, `quantidade × (1 se por pedido, senão quantity)`. A reserva de falha
   não entra: é preço, não material.
 - **Baixa** (`StockLedger.reconcile`): o consumo vira movimento quando o pedido
   entra em Pronto ou Entregue, e sai quando ele volta (ou é cancelado). Pedido
   excluído mantém o movimento. Pedido que já estava pronto quando o controle
-  do item começou não desconta.
-- **Reservado** (`StockReport.reserved`): o consumo dos pedidos Aprovados e Em
+  do item começou não desconta. Mudança que não é no orçamento, no tipo nem no
+  andamento (pagamento, follow-up, prazo) não refaz o movimento.
+- **Reservado** (`StockReport.reservedByRef`): o consumo dos pedidos Aprovados e Em
   impressão. **Disponível** = saldo − reservado. No Orçamento, o pedido em
   edição sai do reservado.
 - **Estado** (`StockReport.state`): acabando com saldo ≤ 0; baixo com saldo

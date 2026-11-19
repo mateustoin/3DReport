@@ -427,7 +427,10 @@ Formato e migrações:
   `filaments.json` não mudou; um backup antigo sem esses arquivos abre com o
   estoque vazio. O `StockRepository` guarda itens, movimentos e compras como
   `StateFlow` (ativar e parar o controle, limite, avulso, ajuste, compras que
-  refazem os movimentos dela, `deleteAllFor`). A reconciliação é um embrulho do
+  refazem os movimentos dela, `deleteAllFor` da cor que sai do filamento), com
+  as mudanças de várias linhas gravadas num lote só (`RecordCollection.applyBatch`).
+  Excluir o filamento ou o insumo inteiro não apaga o estoque: ele vai pra
+  lixeira, e restaurar traz o saldo de volta. A reconciliação é um embrulho do
   `QuoteHistoryRepository` em `StockWiring.kt`: guarda a última lista de pedidos
   vista e chama `StockLedger.reconcile` a cada mudança; a primeira lista ao
   abrir o app é só a base, então abrir com pedidos já Prontos não desconta.

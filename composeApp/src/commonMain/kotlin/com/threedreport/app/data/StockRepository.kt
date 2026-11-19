@@ -21,7 +21,9 @@ import kotlin.uuid.Uuid
  * ([com.threedreport.core.report.StockReport]); aqui só se grava.
  *
  * A baixa dos pedidos não é chamada pelas telas: o histórico montado com [reconcilingStock] chama [reconcileOrders] a
- * cada mudança. Do mesmo jeito, os cadastros montados com [deletingStockWith] chamam [deleteAllFor] ao excluir.
+ * cada mudança. Do mesmo jeito, o cadastro de filamentos montado com [deletingStockWith] chama [deleteAllFor] quando uma
+ * cor sai do filamento. Excluir o filamento ou o insumo inteiro não apaga nada: ele vai pra lixeira, e restaurar traz o
+ * saldo de volta.
  */
 interface StockRepository {
     /** Os itens com controle de saldo ligado. */
@@ -77,11 +79,11 @@ interface StockRepository {
     /** Os fornecedores já usados, pra sugestão no formulário. */
     fun supplierSuggestions(): List<String>
 
-    /** Apaga o controle e os movimentos de [ref]: a cor ou o insumo foi excluído do cadastro. */
+    /**
+     * Apaga o controle e os movimentos de [ref] (uma cor saiu do filamento, e a cor não tem lixeira). Quem exclui o
+     * filamento ou o insumo inteiro não chama: o controle fica pra quando ele for restaurado.
+     */
     fun deleteAllFor(ref: StockItemRef)
-
-    /** Apaga o controle e os movimentos de todas as cores do filamento [filamentId], que foi excluído. */
-    fun deleteAllForFilament(filamentId: String)
 
     /**
      * A baixa dos pedidos ([StockLedger.reconcile]) entre a lista de pedidos [previous], a última vista, e [current].
@@ -170,32 +172,30 @@ class StoredStockRepository(
 
     override fun deleteAllFor(ref: StockItemRef) = deleteWhere { it == ref }
 
-    override fun deleteAllForFilament(filamentId: String) = deleteWhere { it is StockItemRef.ColorRef && it.filamentId == filamentId }
-
     override fun reconcileOrders(previous: List<SavedQuote>, current: List<SavedQuote>, filaments: List<Filament>) {
         if (items.value.isEmpty() && movements.value.isEmpty()) return
         applyMovements(StockLedger.reconcile(previous, current, movements.value, items.value, filaments, clock.nowMillis(), newId))
     }
 
     private fun deleteWhere(matches: (StockItemRef) -> Boolean) {
-        items.value.filter { matches(it.ref) }.forEach { itemRecords.delete(it.id) }
-        movements.value.filter { matches(it.ref) }.forEach { movementRecords.delete(it.id) }
+        itemRecords.applyBatch(deleted = items.value.filter { matches(it.ref) }.map { it.id })
+        movementRecords.applyBatch(deleted = movements.value.filter { matches(it.ref) }.map { it.id })
     }
 
-    /** Grava a diferença entre os movimentos de agora e [target]: exclui quem saiu, troca quem mudou, acrescenta quem entrou. */
+    /**
+     * Grava a diferença entre os movimentos de agora e [target] num lote só ([RecordCollection.applyBatch]): exclui quem
+     * saiu, troca quem mudou, acrescenta quem entrou.
+     */
     private fun applyMovements(target: List<StockMovement>) {
         val before = movements.value
         if (target == before) return
         val beforeById = before.associateBy { it.id }
         val targetIds = target.mapTo(HashSet()) { it.id }
-        before.filter { it.id !in targetIds }.forEach { movementRecords.delete(it.id) }
-        target.forEach { movement ->
-            val old = beforeById[movement.id]
-            when {
-                old == null -> movementRecords.add(movement)
-                old != movement -> movementRecords.update(movement)
-            }
-        }
+        movementRecords.applyBatch(
+            added = target.filter { it.id !in beforeById },
+            updated = target.filter { movement -> beforeById[movement.id].let { it != null && it != movement } },
+            deleted = before.filter { it.id !in targetIds }.map { it.id },
+        )
     }
 
     private fun String?.clean(): String? = this?.trim()?.ifEmpty { null }

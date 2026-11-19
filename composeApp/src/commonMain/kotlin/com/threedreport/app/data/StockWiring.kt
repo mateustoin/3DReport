@@ -23,11 +23,13 @@ import com.threedreport.core.model.StockItemRef
 fun QuoteHistoryRepository.reconcilingStock(stock: StockRepository, filaments: () -> List<Filament>): QuoteHistoryRepository =
     StockReconcilingQuoteHistoryRepository(this, stock, filaments)
 
-/** O cadastro de filamentos [this] apagando o controle de saldo da cor que sai do filamento e do filamento excluído (item 9). */
+/**
+ * O cadastro de filamentos [this] apagando o controle de saldo da cor que sai do filamento (item 9): a cor não tem
+ * lixeira. Excluir o filamento inteiro não apaga o controle, porque ele vai pra lixeira e pode ser restaurado; enquanto
+ * está lá, o `core` já o deixa de fora do estoque, dos alertas e da lista de compras. Insumo excluído segue a mesma
+ * regra, por isso o cadastro de insumos não precisa de embrulho.
+ */
 fun FilamentRepository.deletingStockWith(stock: StockRepository): FilamentRepository = StockCleaningFilamentRepository(this, stock)
-
-/** O cadastro de insumos [this] apagando o controle de saldo do insumo excluído (item 9). Arquivar mantém. */
-fun ConsumableRepository.deletingStockWith(stock: StockRepository): ConsumableRepository = StockCleaningConsumableRepository(this, stock)
 
 /**
  * Ver [reconcilingStock]. A baixa roda logo depois de cada chamada que muda o histórico, na mesma thread (a da tela):
@@ -139,22 +141,5 @@ private class StockCleaningFilamentRepository(
         if (before == null) return
         val kept = item.colors.mapTo(HashSet()) { it.id }
         before.colors.filter { it.id !in kept }.forEach { stock.deleteAllFor(StockItemRef.ColorRef(item.id, it.id)) }
-    }
-
-    override fun delete(id: String) {
-        inner.delete(id)
-        stock.deleteAllForFilament(id)
-    }
-}
-
-/** Ver [deletingStockWith]. */
-private class StockCleaningConsumableRepository(
-    private val inner: ConsumableRepository,
-    private val stock: StockRepository,
-) : ConsumableRepository by inner {
-
-    override fun delete(id: String) {
-        inner.delete(id)
-        stock.deleteAllFor(StockItemRef.ConsumableRef(id))
     }
 }

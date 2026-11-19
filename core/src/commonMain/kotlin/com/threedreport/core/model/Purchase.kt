@@ -135,15 +135,6 @@ private const val PRICE_TOLERANCE = 0.005
 /** Custo de insumo sugerido por compra: 4 casas decimais ([Purchase.catalogPriceUpdates]). */
 private const val CONSUMABLE_COST_SCALE = 10_000.0
 
-/** Quantas unidades do saldo cabem numa unidade do cadastro: 1000 g num kg, 1 unidade numa unidade. */
-private val StockItemRef.catalogFactor: Double
-    get() = when (this) {
-        is StockItemRef.ColorRef -> GRAMS_PER_KG
-        is StockItemRef.ConsumableRef -> 1.0
-    }
-
-private const val GRAMS_PER_KG = 1000.0
-
 /** Um preço do cadastro que uma compra sugere trocar ([Purchase.catalogPriceUpdates]). */
 sealed interface CatalogPriceUpdate {
     /** O preço por kg do filamento [filamentId], de [currentPricePerKg] pra [newPricePerKg]. */

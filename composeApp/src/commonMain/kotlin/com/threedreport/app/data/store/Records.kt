@@ -122,6 +122,47 @@ class RecordCollection<T>(
         return data
     }
 
+    /**
+     * Várias mudanças de uma vez, com uma cópia da lista, uma gravação e um valor novo em [items] (em vez de um de
+     * cada por registro). Cada uma segue a regra da chamada avulsa, com os mesmos carimbos (decisão 106):
+     *
+     * - [added] entra no fim, na ordem dada, com criação e alteração agora. Id que já existe (mesmo na lixeira) ou
+     *   repetido no lote é erro, e aí nada é aplicado.
+     * - [updated] troca o registro vivo de mesmo id. Quem não existe, está na lixeira ou não mudou fica como está.
+     * - [deleted] manda pra lixeira. Quem não existe ou já foi excluído fica como está.
+     *
+     * Um mesmo id não pode estar em mais de uma das três. Devolve `true` se alguma coisa mudou; sem mudança, não grava.
+     */
+    fun applyBatch(added: List<T> = emptyList(), updated: List<T> = emptyList(), deleted: Collection<String> = emptyList()): Boolean {
+        val addedIds = added.map(idOf)
+        val updatedById = updated.associateBy(idOf)
+        val deletedIds = deleted.toSet()
+        require(addedIds.toSet().size == addedIds.size) { "id repetido entre os registros novos" }
+        require(updatedById.size == updated.size) { "id repetido entre os registros alterados" }
+        require(addedIds.none { it in updatedById || it in deletedIds } && updatedById.keys.none { it in deletedIds }) {
+            "um registro só pode estar numa das mudanças do lote"
+        }
+        val current = records.value
+        if (addedIds.isNotEmpty()) {
+            val existingIds = current.mapTo(HashSet()) { it.id }
+            addedIds.firstOrNull { it in existingIds }?.let { throw IllegalArgumentException("já existe um registro com o id $it") }
+        }
+        val now = clock.nowMillis()
+        val changed = current.map { record -> record.changedBy(updatedById, deletedIds, now) }
+        if (added.isEmpty() && changed.indices.all { changed[it] === current[it] }) return false
+        commit(changed + added.map { StoredRecord(idOf(it), it, now, now) })
+        return true
+    }
+
+    /** O registro depois do lote de [applyBatch]: excluído, alterado ou o mesmo objeto, quando nada muda nele. */
+    private fun StoredRecord<T>.changedBy(updatedById: Map<String, T>, deletedIds: Set<String>, now: Long): StoredRecord<T> {
+        if (isDeleted) return this
+        val current = data ?: return this
+        if (id in deletedIds) return copy(deletedAtEpochMillis = now, updatedAtEpochMillis = now)
+        val replacement = updatedById[id] ?: return this
+        return if (replacement == current) this else copy(data = replacement, updatedAtEpochMillis = now)
+    }
+
     private fun commit(newRecords: List<StoredRecord<T>>) {
         records.value = newRecords
         live.value = liveOf(newRecords)

@@ -108,4 +108,42 @@ class FilamentExchangeJsonTest {
         assertEquals(listOf("PETG"), result.toAdd.map { it.name })
         assertEquals("Azul", FilamentRepository().filaments.value.single { it.name == "PETG" }.colors.single().name)
     }
+
+    @Test
+    fun anEntryWithAWrongTypeCountsAsInvalidAndTheRestIsImported() {
+        val text = """
+            {"format":"3dreport-filaments","version":1,"filaments":[
+              {"name":"PLA","densityGPerCm3":1.24,"pricePerKg":"89,90"},
+              {"name":"ABS","densityGPerCm3":1.04,"pricePerKg":80.0,"colors":null},
+              "não é um filamento",
+              {"name":"PETG","densityGPerCm3":1.27,"pricePerKg":95.0}
+            ]}
+        """.trimIndent()
+
+        val result = assertIs<FilamentImportPlan.Ready>(FilamentRepository().importFilaments(text))
+
+        assertEquals(3, result.invalid)
+        assertEquals(listOf("PETG"), result.toAdd.map { it.name })
+        assertEquals(listOf("PETG"), FilamentRepository().filaments.value.map { it.name })
+    }
+
+    @Test
+    fun aFileStartingWithAByteOrderMarkIsRead() {
+        val text = Char(0xFEFF).toString() + FilamentExchangeJson.encode(listOf(pla))
+
+        val result = assertIs<FilamentImportPlan.Ready>(FilamentRepository().importFilaments(text))
+
+        assertEquals(listOf("PLA"), result.toAdd.map { it.name })
+    }
+
+    @Test
+    fun theFileWrittenToDiskWithAByteOrderMarkIsRead() {
+        // Como um editor de texto do Windows grava "UTF-8 com BOM": o BOM chega como primeiro caractere do texto.
+        val file = File(dataDir, "com-bom.json")
+        file.writeBytes(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + FilamentExchangeJson.encode(listOf(pla)).toByteArray(Charsets.UTF_8))
+
+        val result = assertIs<FilamentImportPlan.Ready>(FilamentRepository().importFilaments(file.readText(Charsets.UTF_8)))
+
+        assertEquals(1, result.toAdd.size)
+    }
 }

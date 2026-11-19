@@ -35,7 +35,7 @@ class StockReconciliationTest {
 
     private fun StockApp.balance() = StockReport.balance(red, stock.movements.value)
 
-    private fun StockApp.reserved() = StockReport.reserved(red, history.savedQuotes.value, filaments.filaments.value)
+    private fun StockApp.reserved() = StockReport.reservedByRef(history.savedQuotes.value, filaments.filaments.value)[red] ?: 0.0
 
     private fun appWithRedTracked(): StockApp {
         val app = StockApp(dataDir)

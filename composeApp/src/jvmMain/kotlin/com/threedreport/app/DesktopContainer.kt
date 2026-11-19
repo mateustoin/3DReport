@@ -26,11 +26,12 @@ fun createDesktopContainer(scope: CoroutineScope): AppContainer {
     // Antes de qualquer repositório gravar: só instalação nova sugere a moeda pela região do sistema (decisão 16a).
     val newInstall = storage.isNewInstall()
     val orderSettings = storage.orderSettings()
-    // Estoque (Leva 12): os pedidos dão baixa ao ficar prontos, e excluir uma cor, um filamento ou um insumo apaga o
-    // controle dele. A lista de pedidos de agora é só a base: abrir o app não desconta nada.
+    // Estoque (Leva 12): os pedidos dão baixa ao ficar prontos, e tirar uma cor do filamento apaga o controle dela.
+    // Excluir o filamento ou o insumo inteiro não apaga: vai pra lixeira. A lista de pedidos de agora é só a base: abrir
+    // o app não desconta nada.
     val stock = storage.stock()
     val filaments = storage.filaments().deletingStockWith(stock)
-    val consumables = storage.consumables().deletingStockWith(stock)
+    val consumables = storage.consumables()
     val quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate }.reconcilingStock(stock) { filaments.filaments.value }
     val branding = storage.branding()
 

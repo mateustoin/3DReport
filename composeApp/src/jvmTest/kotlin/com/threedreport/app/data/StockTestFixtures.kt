@@ -17,14 +17,14 @@ internal class TestClock(var now: Long = 1_000L) : Clock {
 }
 
 /**
- * O app montado como no [com.threedreport.app.createDesktopContainer], com estoque ligado aos pedidos, aos filamentos e
- * aos insumos, sobre a pasta [dataDir]. Cada instância lê do disco: criar outra é como abrir o app de novo.
+ * O app montado como no [com.threedreport.app.createDesktopContainer], com estoque ligado aos pedidos e aos filamentos,
+ * sobre a pasta [dataDir]. Cada instância lê do disco: criar outra é como abrir o app de novo.
  */
 internal class StockApp(dataDir: File, val clock: TestClock = TestClock()) {
     private val storage = LocalStorage(dataDir, clock)
     val stock: StockRepository = storage.stock()
     val filaments: FilamentRepository = storage.filaments().deletingStockWith(stock)
-    val consumables: ConsumableRepository = storage.consumables().deletingStockWith(stock)
+    val consumables: ConsumableRepository = storage.consumables()
     val history: QuoteHistoryRepository = storage.quoteHistory().reconcilingStock(stock) { filaments.filaments.value }
 }
 

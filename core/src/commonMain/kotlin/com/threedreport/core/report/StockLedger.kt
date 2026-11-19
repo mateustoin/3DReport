@@ -27,7 +27,9 @@ object StockLedger {
      * - Continua Pronto/Entregue com consumo diferente (reaberto e salvo): os movimentos são refeitos, com o mesmo id e
      *   a mesma data.
      * - Sumiu da lista (excluído): os movimentos ficam, porque o material foi gasto. Restaurar não desconta de novo.
-     * - Sem mudança, ou Pronto para Entregue: nada.
+     * - Sem mudança no orçamento ([SavedQuote.quote]), no tipo (pedido ou produto) nem no andamento: nada, nem se o
+     *   cadastro mudou desde a baixa. Pagamento, follow-up, prazo e anotação não refazem o consumo, que é fato gravado.
+     * - Pronto para Entregue: nada.
      * - Produto do catálogo nunca desconta.
      *
      * Um pedido que já estava pronto quando o controle de um item começou ([StockItem.trackedSinceEpochMillis]) não
@@ -51,7 +53,7 @@ object StockLedger {
         var result = movements
         for (quote in current) {
             val before = previousById[quote.id]
-            if (before == quote) continue
+            if (before != null && !affectsStock(before, quote)) continue
             val existing = result.filter { it.kind == StockMovementKind.ORDER && it.quoteId == quote.id }
             val desired = desiredOrderMovements(quote, before, existing, itemsByRef, filaments)
             result = syncMovements(result, existing, desired) { ref, amount ->
@@ -68,6 +70,10 @@ object StockLedger {
         }
         return result
     }
+
+    /** Se a mudança de [before] pra [after] pode mudar a baixa: o orçamento, o tipo ou o andamento. */
+    private fun affectsStock(before: SavedQuote, after: SavedQuote): Boolean =
+        before.quote != after.quote || before.kind != after.kind || before.status != after.status
 
     /** Quanto o pedido [quote] deve ter descontado de cada item, com sinal (negativo). */
     private fun desiredOrderMovements(

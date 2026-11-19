@@ -10,6 +10,7 @@ import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.StockItem
 import com.threedreport.core.model.StockItemRef
 import com.threedreport.core.model.StockMovement
+import com.threedreport.core.model.catalogFactor
 
 /** Situação do saldo de um item controlado (decisão 159). */
 enum class StockState {
@@ -112,9 +113,10 @@ object StockReport {
     const val EPSILON = 1e-6
 
     /**
-     * Quanto [quote] gasta de cada item (item 5). Filamento: o peso de cada uso, pelo retrato gravado no orçamento,
-     * vezes as rodadas da impressão e a quantidade do pedido, somado por cor ([colorRefOf]). Insumo: a quantidade dele,
-     * vezes a quantidade do pedido quando é por peça. A reserva de falha não entra: é preço, não material.
+     * Quanto [quote] gasta de cada item (item 5). Filamento: o consumo de cada filamento e cor do pedido inteiro
+     * ([Quote.filamentTotals]: o peso de cada uso, pelo retrato gravado no orçamento, vezes as rodadas da impressão e a
+     * quantidade do pedido), atribuído a uma cor do estoque por [colorRefOf]. Insumo: a quantidade dele, vezes a
+     * quantidade do pedido quando é por peça. A reserva de falha não entra: é preço, não material.
      *
      * Não olha se é pedido ou produto: quem decide se desconta é quem chama.
      */
@@ -123,11 +125,9 @@ object StockReport {
         fun add(ref: StockItemRef, amount: Double) {
             if (amount > 0) result[ref] = (result[ref] ?: 0.0) + amount
         }
-        for (print in quote.prints) {
-            for (usage in print.job.filaments) {
-                val ref = colorRefOf(usage, filaments) ?: continue
-                add(ref, usage.weightGrams * print.job.runs * quote.quantity)
-            }
+        for (total in quote.filamentTotals()) {
+            val ref = colorRefOf(total.filament.id, total.color?.id, filaments) ?: continue
+            add(ref, total.weightGrams)
         }
         for (consumable in quote.consumables) {
             add(StockItemRef.ConsumableRef(consumable.id), consumable.quantity * (if (consumable.chargedPerOrder) 1 else quote.quantity))
@@ -142,10 +142,11 @@ object StockReport {
      * A cor de [usage]: a gravada nele, ou, sem cor gravada, a única cor do filamento no cadastro ([filaments]). Com
      * várias cores e nenhuma gravada (ou filamento que saiu do cadastro), não é atribuída a nenhuma.
      */
-    fun colorRefOf(usage: FilamentUsage, filaments: List<Filament>): StockItemRef.ColorRef? {
-        val filamentId = usage.filament.id
-        val colorId = usage.color?.id ?: filaments.find { it.id == filamentId }?.colors?.singleOrNull()?.id ?: return null
-        return StockItemRef.ColorRef(filamentId, colorId)
+    fun colorRefOf(usage: FilamentUsage, filaments: List<Filament>): StockItemRef.ColorRef? = colorRefOf(usage.filament.id, usage.color?.id, filaments)
+
+    private fun colorRefOf(filamentId: String, colorId: String?, filaments: List<Filament>): StockItemRef.ColorRef? {
+        val resolved = colorId ?: filaments.find { it.id == filamentId }?.colors?.singleOrNull()?.id ?: return null
+        return StockItemRef.ColorRef(filamentId, resolved)
     }
 
     /** Saldo de [ref]: a soma dos movimentos dele. */
@@ -163,13 +164,9 @@ object StockReport {
         savedQuotes.filter { it.isOrder && it.status in RESERVED_STATUSES && it.id != excludingQuoteId }
 
     /**
-     * O que os pedidos Aprovados e Em impressão ainda vão gastar de [ref] (item 11). [excludingQuoteId] tira um pedido
-     * da conta: o que está sendo editado no Orçamento, pra não contar duas vezes.
+     * O que os pedidos Aprovados e Em impressão ainda vão gastar de cada item (item 11). [excludingQuoteId] tira um
+     * pedido da conta: o que está sendo editado no Orçamento, pra não contar duas vezes.
      */
-    fun reserved(ref: StockItemRef, savedQuotes: List<SavedQuote>, filaments: List<Filament>, excludingQuoteId: String? = null): Double =
-        reservingOrders(savedQuotes, excludingQuoteId).sumOf { consumptionOf(it, filaments)[ref] ?: 0.0 }
-
-    /** [reserved] de todos os itens de uma vez. */
     fun reservedByRef(savedQuotes: List<SavedQuote>, filaments: List<Filament>, excludingQuoteId: String? = null): Map<StockItemRef, Double> {
         val result = HashMap<StockItemRef, Double>()
         reservingOrders(savedQuotes, excludingQuoteId).forEach { order ->
@@ -178,26 +175,11 @@ object StockReport {
         return result
     }
 
-    /** Disponível = saldo − reservado (item 11). */
-    fun available(
-        ref: StockItemRef,
-        movements: List<StockMovement>,
-        savedQuotes: List<SavedQuote>,
-        filaments: List<Filament>,
-        excludingQuoteId: String? = null,
-    ): Double = balance(ref, movements) - reserved(ref, savedQuotes, filaments, excludingQuoteId)
-
     /** Situação de [item] com saldo [balance] (item 10): acabando com zero ou menos, baixo abaixo do limite. */
     fun state(item: StockItem, balance: Double): StockState = when {
         balance < EPSILON -> StockState.OUT
         item.lowThreshold != null && balance < item.lowThreshold -> StockState.LOW
         else -> StockState.OK
-    }
-
-    /** Os números de [item] agora. */
-    fun status(item: StockItem, movements: List<StockMovement>, savedQuotes: List<SavedQuote>, filaments: List<Filament>): StockStatus {
-        val balance = balance(item.ref, movements)
-        return StockStatus(item, balance, reserved(item.ref, savedQuotes, filaments), state(item, balance))
     }
 
     /**
@@ -262,8 +244,9 @@ object StockReport {
     ): ShoppingList {
         val byRef = items.associateBy { it.ref }
         val balances = balances(movements)
-        val reservingOrders = reservingOrders(savedQuotes)
-        val consumptions = reservingOrders.map { consumptionOf(it, filaments) }
+        val reservedByRef = reservedByRef(savedQuotes, filaments)
+        // Só a contagem de pedidos por cor esgotada precisa do consumo de cada pedido em separado.
+        val consumptions by lazy { reservingOrders(savedQuotes).map { consumptionOf(it, filaments) } }
         val lines = mutableListOf<ShoppingLine>()
         val outOfStock = mutableListOf<OutOfStockColor>()
         val outOfStockRefs = filaments.flatMap { filament -> filament.colors.filter { !it.inStock }.map { StockItemRef.ColorRef(filament.id, it.id) } }.toSet()
@@ -271,7 +254,7 @@ object StockReport {
             val item = byRef[ref]
             if (item != null) {
                 val balance = balances[ref] ?: 0.0
-                val reserved = consumptions.sumOf { it[ref] ?: 0.0 }
+                val reserved = reservedByRef[ref] ?: 0.0
                 val amount = reserved + (item.lowThreshold ?: 0.0) - balance
                 if (amount > EPSILON) lines += ShoppingLine(ref, amount, reserved, balance, item.lowThreshold)
             } else if (ref is StockItemRef.ColorRef && ref in outOfStockRefs) {
@@ -297,7 +280,7 @@ object StockReport {
             }
         }
         if (amount <= 0) return null
-        return cost / amount * catalogFactorOf(ref)
+        return cost / amount * ref.catalogFactor
     }
 
     /** O link da compra mais recente de [ref] que tinha link, pro "Comprar de novo" (item 19). Mesma data: a gravada por último. */
@@ -324,11 +307,6 @@ object StockReport {
         return purchases
             .filter { it.id != excludingPurchaseId }
             .firstNotNullOfOrNull { purchase -> purchase.supplier?.trim()?.takeIf { it.equals(trimmed, ignoreCase = true) } } ?: trimmed
-    }
-
-    private fun catalogFactorOf(ref: StockItemRef): Double = when (ref) {
-        is StockItemRef.ColorRef -> 1000.0
-        is StockItemRef.ConsumableRef -> 1.0
     }
 
     /** Os itens do cadastro vivo (sem arquivados), na ordem da tela: filamentos por nome e marca, cores por nome, insumos por nome. */

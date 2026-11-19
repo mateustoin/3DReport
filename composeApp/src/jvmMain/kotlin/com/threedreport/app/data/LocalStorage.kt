@@ -108,7 +108,7 @@ class LocalStorage(
     /**
      * Estoque e compras (Leva 12), em três arquivos novos. Uma pasta sem eles (gravada antes da 2.2 ter estoque) abre com
      * tudo vazio, e nada é gravado até alguém ligar um controle ou registrar uma compra. Quem monta o app liga o histórico
-     * e os cadastros a ele ([reconcilingStock] e [deletingStockWith]).
+     * e o cadastro de filamentos a ele ([reconcilingStock] e [deletingStockWith]).
      */
     fun stock(): StockRepository = StoredStockRepository(
         itemRecords = records("stock-items.json", StockItem.serializer(), { it.id }),

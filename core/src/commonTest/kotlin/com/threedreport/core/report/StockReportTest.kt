@@ -58,6 +58,16 @@ class StockReportTest {
     }
 
     @Test
+    fun nullColorAndTheOnlyColorWrittenOutSumInTheSameItem() {
+        val q = quote(usages = listOf(usage(petg, 50.0, null), usage(petg, 30.0, petg.colors.single())), runs = 2, quantity = 3)
+
+        val consumption = StockReport.consumptionOf(q, filaments)
+
+        assertEquals(listOf(petgDefault), consumption.keys.toList())
+        assertEquals(80.0 * 2 * 3, consumption.getValue(petgDefault), 1e-6)
+    }
+
+    @Test
     fun nullColorOfAFilamentWithManyColorsIsNotAttributed() {
         val consumption = StockReport.consumptionOf(quote(usages = listOf(usage(pla, 50.0, null))), filaments)
 
@@ -110,15 +120,8 @@ class StockReportTest {
             order("f", OrderStatus.APROVADO, kind = QuoteKind.PRODUCT),
         )
 
-        assertEquals(200.0, StockReport.reserved(plaRed, quotes, filaments), 1e-6)
-        assertEquals(100.0, StockReport.reserved(plaRed, quotes, filaments, excludingQuoteId = "a"), 1e-6)
-    }
-
-    @Test
-    fun availableIsBalanceMinusReserved() {
-        val quotes = listOf(order("a", OrderStatus.APROVADO))
-
-        assertEquals(150.0, StockReport.available(plaRed, listOf(movement(plaRed, 250.0)), quotes, filaments), 1e-6)
+        assertEquals(200.0, StockReport.reservedByRef(quotes, filaments).getValue(plaRed), 1e-6)
+        assertEquals(100.0, StockReport.reservedByRef(quotes, filaments, excludingQuoteId = "a").getValue(plaRed), 1e-6)
     }
 
     @Test

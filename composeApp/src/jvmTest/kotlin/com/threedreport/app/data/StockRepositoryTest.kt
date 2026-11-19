@@ -19,7 +19,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** O estoque grava e lê o saldo, os movimentos e as compras (Leva 12), e limpa o que é de um cadastro excluído. */
+/** O estoque grava e lê o saldo, os movimentos e as compras (Leva 12), e limpa o controle da cor que sai do filamento. */
 class StockRepositoryTest {
 
     private lateinit var dataDir: File
@@ -194,25 +194,65 @@ class StockRepositoryTest {
     }
 
     @Test
-    fun deletingAColorAFilamentOrAConsumableDeletesItsControl() {
+    fun removingAColorFromTheFilamentDeletesItsControl() {
         val app = app()
         app.stock.startTracking(red, 1000.0)
         app.stock.startTracking(black, 1000.0)
-        app.stock.startTracking(ring, 10.0)
+        app.stock.recordManualUse(black, 40.0, ManualUseReason.TEST, null)
 
-        // Tirar a cor preta do filamento apaga só o controle dela.
+        // A cor não tem lixeira: tirar a preta do filamento apaga só o controle e os movimentos dela.
         val pla = app.filaments.filaments.value.single { it.id == "pla" }
         app.filaments.update(pla.copy(colors = pla.colors.filter { it.id != "black" }))
-        assertNull(app.stock.itemFor(black))
-        assertNotNull(app.stock.itemFor(red))
+
+        val reopened = StockApp(dataDir)
+        assertNull(reopened.stock.itemFor(black))
+        assertTrue(reopened.stock.movements.value.none { it.ref == black })
+        assertNotNull(reopened.stock.itemFor(red))
+        assertEquals(1000.0, reopened.balance(red), 1e-9)
+    }
+
+    @Test
+    fun deletingAFilamentOrAConsumableKeepsTheControlForWhenItIsRestored() {
+        val app = app()
+        // Os dois abaixo do limite: entram no alerta e na lista de compras enquanto existem.
+        app.stock.startTracking(red, 100.0)
+        app.stock.updateItemSettings(red, lowThreshold = 500.0, emptySpoolGrams = null)
+        app.stock.recordManualUse(red, 30.0, ManualUseReason.FAILURE, "espaguete")
+        app.stock.startTracking(ring, 2.0)
+        app.stock.updateItemSettings(ring, lowThreshold = 10.0, emptySpoolGrams = null)
+        val items = app.stock.items.value
+        val movements = app.stock.movements.value
+        assertEquals(2, app.overview().alertCount)
+        assertEquals(setOf(red, ring), app.shoppingList().lines.map { it.ref }.toSet())
 
         app.filaments.delete("pla")
         app.consumables.delete("ring")
 
-        val reopened = StockApp(dataDir)
-        assertTrue(reopened.stock.items.value.isEmpty())
-        assertTrue(reopened.stock.movements.value.isEmpty())
+        val deleted = StockApp(dataDir)
+        assertEquals(items, deleted.stock.items.value, "o controle fica")
+        assertEquals(movements, deleted.stock.movements.value, "os movimentos ficam")
+        val overview = deleted.overview()
+        assertTrue(overview.tracked.isEmpty(), "excluído não aparece no estoque")
+        assertTrue(overview.untracked.none { it == red || it == ring }, "nem como item sem controle")
+        assertEquals(0, overview.alertCount, "nem no alerta")
+        assertTrue(deleted.shoppingList().isEmpty, "nem na lista de compras")
+
+        deleted.filaments.restore("pla")
+        deleted.consumables.restore("ring")
+
+        val restored = StockApp(dataDir)
+        assertEquals(70.0, restored.balance(red), 1e-9)
+        assertEquals(2.0, restored.balance(ring), 1e-9)
+        assertEquals(movements, restored.stock.movements.value)
+        assertEquals(2, restored.overview().alertCount)
+        assertEquals(setOf(red, ring), restored.shoppingList().lines.map { it.ref }.toSet())
     }
+
+    private fun StockApp.overview() =
+        StockReport.overview(stock.items.value, stock.movements.value, history.savedQuotes.value, filaments.filaments.value, consumables.consumables.value)
+
+    private fun StockApp.shoppingList() =
+        StockReport.shoppingList(stock.items.value, stock.movements.value, history.savedQuotes.value, filaments.filaments.value, consumables.consumables.value)
 
     @Test
     fun archivingKeepsTheControl() {

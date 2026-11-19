@@ -1,6 +1,9 @@
 package com.threedreport.core.report
 
+import com.threedreport.core.model.FilamentColor
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.Payment
+import com.threedreport.core.model.PaymentMethod
 import com.threedreport.core.model.Purchase
 import com.threedreport.core.model.PurchaseLine
 import com.threedreport.core.model.QuoteKind
@@ -12,6 +15,8 @@ import com.threedreport.core.report.StockFixtures.black
 import com.threedreport.core.report.StockFixtures.filaments
 import com.threedreport.core.report.StockFixtures.item
 import com.threedreport.core.report.StockFixtures.order
+import com.threedreport.core.report.StockFixtures.petg
+import com.threedreport.core.report.StockFixtures.petgDefault
 import com.threedreport.core.report.StockFixtures.pla
 import com.threedreport.core.report.StockFixtures.plaBlack
 import com.threedreport.core.report.StockFixtures.plaRed
@@ -193,6 +198,51 @@ class StockLedgerTest {
         val movements = reconcile(listOf(before), listOf(ready))
 
         assertEquals(movements, reconcile(listOf(ready), listOf(ready.copy(notes = "embalar bem")), movements))
+    }
+
+    @Test
+    fun aPaymentOnADeliveredOrderKeepsItsMovementEvenIfTheCatalogChanged() {
+        // Cor `null` num filamento de uma cor só: o movimento foi pra essa cor.
+        val petgItems = listOf(item(petgDefault, since = 100L))
+        val before = order("q", OrderStatus.APROVADO, quote(usages = listOf(usage(petg, 300.0))), history = listOf(StatusChange(OrderStatus.APROVADO, 150L)))
+        val delivered = before.movedTo(OrderStatus.ENTREGUE)
+        val movements = StockLedger.reconcile(listOf(before), listOf(delivered), emptyList(), petgItems, filaments, 500L, newId)
+        assertEquals(-300.0, movements.single().amount, 1e-6)
+
+        // O filamento ganha uma segunda cor, e a cor `null` deixa de ser atribuível. Depois, um pagamento.
+        val petgTwoColors = petg.copy(colors = petg.colors + FilamentColor(id = "blue", name = "Azul"))
+        val paid = delivered.copy(payments = listOf(Payment(id = "p", amount = 10.0, method = PaymentMethod.PIX, epochDay = 1L)))
+        val after = StockLedger.reconcile(listOf(delivered), listOf(paid), movements, petgItems, listOf(pla, petgTwoColors), 600L, newId)
+
+        assertEquals(movements, after, "o pagamento não mexe no estoque: os 300 g continuam descontados")
+    }
+
+    @Test
+    fun aPaymentOnAReadyOrderDoesNotTouchTheStock() {
+        val before = aprovado()
+        val ready = before.movedTo(OrderStatus.PRONTO)
+        val movements = reconcile(listOf(before), listOf(ready))
+        val paid = ready.copy(
+            payments = listOf(Payment(id = "p", amount = 10.0, method = PaymentMethod.PIX, epochDay = 1L)),
+            lastFollowUpEpochMillis = 700L,
+            deliveryDateEpochDay = 30L,
+        )
+
+        assertEquals(movements, reconcile(listOf(ready), listOf(paid), movements, now = 800L))
+    }
+
+    @Test
+    fun anOrderMovementWhoseItemIsNoLongerDesiredIsKeptWhenOnlyThePaymentChanges() {
+        // Mesmo um movimento que a conta de agora não daria (o item deixou de ser controlado e voltou com outra data)
+        // fica como está quando nem o orçamento, nem o tipo, nem o andamento mudaram.
+        val before = aprovado()
+        val ready = before.movedTo(OrderStatus.PRONTO)
+        val movements = reconcile(listOf(before), listOf(ready))
+        val paid = ready.copy(payments = listOf(Payment(id = "p", amount = 10.0, method = PaymentMethod.PIX, epochDay = 1L)))
+
+        val after = StockLedger.reconcile(listOf(ready), listOf(paid), movements, emptyList(), filaments, 800L, newId)
+
+        assertEquals(movements, after)
     }
 
     // --- Início, ajuste e balança (itens 3 e 6) ---

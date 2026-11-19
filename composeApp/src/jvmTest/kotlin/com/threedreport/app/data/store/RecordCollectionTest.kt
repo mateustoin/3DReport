@@ -1,13 +1,19 @@
 package com.threedreport.app.data.store
 
 import com.threedreport.app.data.Clock
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Os metadados que uma sincronização futura precisa (decisão 106): criação, alteração e exclusão lógica. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class RecordCollectionTest {
 
     private data class Item(val id: String, val name: String)
@@ -82,6 +88,68 @@ class RecordCollectionTest {
         val onDisk = file.content!!.single()
         assertNull(onDisk.data)
         assertTrue(onDisk.isDeleted)
+    }
+
+    @Test
+    fun aBatchAppliesEverythingWithOneWriteAndOneEmission() = runTest(UnconfinedTestDispatcher()) {
+        val file = MemoryDataFile<List<StoredRecord<Item>>>("itens.json")
+        val items = collection(file)
+        items.add(Item("a", "Primeiro"))
+        items.add(Item("b", "Segundo"))
+        items.add(Item("c", "Terceiro"))
+        val writes = file.writeCount
+        val emitted = mutableListOf<List<Item>>()
+        backgroundScope.launch { items.items.collect { emitted += it } }
+
+        now = 2_000L
+        val changed = items.applyBatch(
+            added = listOf(Item("d", "Quarto"), Item("e", "Quinto")),
+            updated = listOf(Item("b", "Renomeado"), Item("c", "Terceiro")),
+            deleted = listOf("a"),
+        )
+
+        assertTrue(changed)
+        assertEquals(writes + 1, file.writeCount, "uma gravação só")
+        assertEquals(2, emitted.size, "o valor de antes e um valor novo só")
+        assertEquals(listOf("Renomeado", "Terceiro", "Quarto", "Quinto"), items.items.value.map { it.name })
+        // Os carimbos de cada operação, como nas chamadas uma a uma.
+        val records = file.content!!.associateBy { it.id }
+        assertEquals(2_000L, records.getValue("a").deletedAtEpochMillis)
+        assertEquals(2_000L, records.getValue("a").updatedAtEpochMillis)
+        assertEquals(1_000L, records.getValue("b").createdAtEpochMillis)
+        assertEquals(2_000L, records.getValue("b").updatedAtEpochMillis)
+        assertEquals(1_000L, records.getValue("c").updatedAtEpochMillis, "o que não mudou não ganha data de alteração")
+        assertEquals(2_000L, records.getValue("d").createdAtEpochMillis)
+        assertEquals(2_000L, records.getValue("d").updatedAtEpochMillis)
+        assertNull(records.getValue("d").deletedAtEpochMillis)
+        assertEquals("Primeiro", items.restore("a")?.name, "excluir em lote também vai pra lixeira")
+    }
+
+    @Test
+    fun aBatchThatChangesNothingDoesNotWrite() {
+        val file = MemoryDataFile<List<StoredRecord<Item>>>("itens.json")
+        val items = collection(file)
+        items.add(Item("a", "Primeiro"))
+        items.add(Item("b", "Segundo"))
+        items.delete("b")
+        val writes = file.writeCount
+
+        // Alterar igual, alterar e excluir quem não existe ou já está na lixeira: nada a fazer.
+        val changed = items.applyBatch(updated = listOf(Item("a", "Primeiro"), Item("x", "Novo")), deleted = listOf("b", "y"))
+
+        assertFalse(changed)
+        assertEquals(writes, file.writeCount)
+    }
+
+    @Test
+    fun aBatchCannotAddAnIdThatExists() {
+        val items = collection()
+        items.add(Item("a", "Primeiro"))
+        items.delete("a")
+
+        assertFailsWith<IllegalArgumentException> { items.applyBatch(added = listOf(Item("a", "De novo"))) }
+        assertFailsWith<IllegalArgumentException> { items.applyBatch(added = listOf(Item("z", "Um"), Item("z", "Dois"))) }
+        assertTrue(items.items.value.isEmpty(), "o lote que falha não aplica nada")
     }
 
     @Test

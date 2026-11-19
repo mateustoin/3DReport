@@ -39,8 +39,8 @@ class AppContainer(
     val clients: ClientRepository,
     val maintenance: MaintenanceRepository,
     /**
-     * Estoque e compras (Leva 12). O [quoteHistory], o [filaments] e o [consumables] de um contêiner montado pela plataforma
-     * já vêm ligados a ele (baixa dos pedidos e limpeza ao excluir, ver `reconcilingStock` e `deletingStockWith`).
+     * Estoque e compras (Leva 12). O [quoteHistory] e o [filaments] de um contêiner montado pela plataforma já vêm
+     * ligados a ele (baixa dos pedidos e limpeza da cor que sai do filamento, ver `reconcilingStock` e `deletingStockWith`).
      */
     val stock: StockRepository,
     val quoteHistory: QuoteHistoryRepository,
