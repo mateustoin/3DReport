@@ -60,7 +60,8 @@ class RowAction(
  * que seja clicável responde por si, sem abrir a edição.
  * As ações ficam por cima do fim da linha, com o fundo dela, e cobrem o valor enquanto estão visíveis.
  * [leading] é um marcador antes do nome (a amostra de cor de uma cor do filamento, no Estoque); [valueError] pinta o valor de `error`
- * (saldo baixo ou acabando), sempre junto de um texto que diz o motivo.
+ * (saldo baixo ou sem saldo), sempre junto de um texto que diz o motivo.
+ * [trailing] é uma ação no fim da linha (o "Controlar saldo" do Estoque), depois do valor.
  */
 @Composable
 fun ListRow(
@@ -76,6 +77,7 @@ fun ListRow(
     footer: (@Composable () -> Unit)? = null,
     leading: (@Composable () -> Unit)? = null,
     valueError: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
@@ -131,6 +133,7 @@ fun ListRow(
                         },
                     )
                 }
+                trailing?.invoke()
             }
         }
         HorizontalDivider(color = colors.line, thickness = AppDimens.borderWidth)

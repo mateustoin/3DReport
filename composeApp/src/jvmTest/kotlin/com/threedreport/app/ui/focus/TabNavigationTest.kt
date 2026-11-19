@@ -307,7 +307,7 @@ class TabNavigationTest {
     fun stockPurchaseFormReachesEveryField() {
         checkScreen(
             TabScenario("Estoque: compra", AppDestination.STOCK, maxTabs = 90, before = ::trackSample, setup = { it.clickByText("Registrar compra") }),
-            mustReach = listOf("Fornecedor", "Link", "Item", "Quantidade", "Preço pago", "Frete", "Salvar"),
+            mustReach = listOf("Fornecedor", "Link", "Filamento ou insumo", "Quantidade", "Preço pago", "Frete", "Salvar"),
         )
     }
 

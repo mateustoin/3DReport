@@ -8,7 +8,9 @@ import _3dreport.composeapp.generated.resources.stock_action_register_purchase
 import _3dreport.composeapp.generated.resources.stock_action_track
 import _3dreport.composeapp.generated.resources.stock_action_weigh
 import _3dreport.composeapp.generated.resources.stock_alert_banner
+import _3dreport.composeapp.generated.resources.stock_empty_action
 import _3dreport.composeapp.generated.resources.stock_empty_balance
+import _3dreport.composeapp.generated.resources.stock_first_use
 import _3dreport.composeapp.generated.resources.stock_purchases_empty
 import _3dreport.composeapp.generated.resources.stock_row_limit
 import _3dreport.composeapp.generated.resources.stock_row_low
@@ -17,6 +19,7 @@ import _3dreport.composeapp.generated.resources.stock_row_reserved
 import _3dreport.composeapp.generated.resources.stock_section_consumables
 import _3dreport.composeapp.generated.resources.stock_section_filaments
 import _3dreport.composeapp.generated.resources.stock_section_untracked
+import _3dreport.composeapp.generated.resources.stock_shopping_buy
 import _3dreport.composeapp.generated.resources.stock_shopping_copy
 import _3dreport.composeapp.generated.resources.stock_shopping_empty
 import _3dreport.composeapp.generated.resources.stock_shopping_empty_untracked
@@ -36,7 +39,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +65,7 @@ import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.filaments.parseHexColor
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.StockItemRef
@@ -72,7 +78,7 @@ import org.jetbrains.compose.resources.stringResource
  * vistas. O item ou a compra abertos ficam no painel à direita, como nos cadastros.
  */
 @Composable
-fun StockScreen(viewModel: StockViewModel, modifier: Modifier = Modifier) {
+fun StockScreen(viewModel: StockViewModel, onRegisterFilament: () -> Unit = {}, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsState()
     ObserveUiNotices(viewModel.notices)
 
@@ -86,12 +92,15 @@ fun StockScreen(viewModel: StockViewModel, modifier: Modifier = Modifier) {
     }
     ListScreenLayout(panel = panel, modifier = modifier) {
         ScreenHeader(stringResource(Res.string.stock_title)) {
-            AppButton(
-                stringResource(Res.string.stock_action_register_purchase),
-                onClick = viewModel::startPurchase,
-                kind = if (panel == null) ButtonKind.Primary else ButtonKind.Secondary,
-                icon = AppIcons.Add,
-            )
+            // Sem nenhum cadastro não há o que comprar: o botão âmbar sai, e o estado vazio leva a cadastrar (como em Filamentos).
+            if (!state.hasNoItems) {
+                AppButton(
+                    stringResource(Res.string.stock_action_register_purchase),
+                    onClick = viewModel::startPurchase,
+                    kind = if (panel == null) ButtonKind.Primary else ButtonKind.Secondary,
+                    icon = AppIcons.Add,
+                )
+            }
         }
         val shoppingLabel = if (state.shopping.size > 0) {
             stringResource(Res.string.stock_view_shopping_count, state.shopping.size)
@@ -105,7 +114,7 @@ fun StockScreen(viewModel: StockViewModel, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(bottom = MaterialTheme.spacing.md),
         )
         when (state.view) {
-            StockView.BALANCE -> BalanceView(state, viewModel)
+            StockView.BALANCE -> BalanceView(state, viewModel, onRegisterFilament)
             StockView.PURCHASES -> PurchasesView(state, viewModel)
             StockView.SHOPPING -> ShoppingView(state, viewModel)
         }
@@ -117,10 +126,15 @@ fun StockScreen(viewModel: StockViewModel, modifier: Modifier = Modifier) {
 // --------------------------------------------------------------------------------------------------------- saldo
 
 @Composable
-private fun BalanceView(state: StockUiState, viewModel: StockViewModel) {
+private fun BalanceView(state: StockUiState, viewModel: StockViewModel, onRegisterFilament: () -> Unit) {
     val space = MaterialTheme.spacing
     if (state.hasNoItems) {
-        EmptyState(stringResource(Res.string.stock_empty_balance), topPadding = false)
+        EmptyState(
+            stringResource(Res.string.stock_empty_balance),
+            actionLabel = stringResource(Res.string.stock_empty_action),
+            onAction = onRegisterFilament,
+            topPadding = false,
+        )
         return
     }
     val openRef = (state.panel as? StockPanel.Item)?.panel?.entry?.ref
@@ -148,16 +162,30 @@ private fun BalanceView(state: StockUiState, viewModel: StockViewModel) {
         state.consumables.forEach { row -> key(row.ref) { TrackedRow(row, viewModel, title = row.entry.label(), selected = row.ref == openRef) } }
     }
     if (state.untracked.isNotEmpty()) {
-        CollapsibleSection(stringResource(Res.string.stock_section_untracked, state.untracked.size)) {
+        // Primeiro uso: nada controlado ainda, então a lista já vem aberta, com uma frase que diz o que fazer.
+        val firstUse = state.filamentGroups.isEmpty() && state.consumables.isEmpty()
+        if (firstUse) {
+            Text(
+                stringResource(Res.string.stock_first_use),
+                style = MaterialTheme.appType.body,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = space.xs),
+            )
+        }
+        CollapsibleSection(stringResource(Res.string.stock_section_untracked, state.untracked.size), initiallyExpanded = firstUse) {
             state.untracked.forEach { entry ->
                 key(entry.ref) {
                     ListRow(
                         title = entry.label(),
-                        value = stringResource(Res.string.stock_action_track),
-                        valueMuted = true,
-                        onClick = { viewModel.startTrack(entry.ref) },
                         actions = emptyList(),
-                        leading = entry.swatch(),
+                        leading = entry.marker(),
+                        trailing = {
+                            AppButton(
+                                stringResource(Res.string.stock_action_track),
+                                onClick = { viewModel.startTrack(entry.ref) },
+                                height = AppDimens.smallControlHeight,
+                            )
+                        },
                     )
                 }
             }
@@ -179,7 +207,7 @@ private fun TrackedRow(row: StockRowState, viewModel: StockViewModel, title: Str
     }
     val actions = buildList {
         if (ref is StockItemRef.ColorRef) add(RowAction(AppIcons.Scale, stringResource(Res.string.stock_action_weigh), { viewModel.startWeigh(ref) }))
-        add(RowAction(AppIcons.Remove, stringResource(Res.string.stock_action_manual_use), { viewModel.startManualUse(ref) }))
+        add(RowAction(AppIcons.Outbox, stringResource(Res.string.stock_action_manual_use), { viewModel.startManualUse(ref) }))
     }
     ListRow(
         title = title,
@@ -200,6 +228,15 @@ private fun StockEntry.swatch(): (@Composable () -> Unit)? =
         { ColorSwatch(parseHexColor(colorHex)) }
     } else {
         null
+    }
+
+/** Como [swatch], mas o insumo leva um espaço do tamanho da amostra: numa lista que mistura os dois, os nomes alinham. */
+@Composable
+private fun StockEntry.marker(): (@Composable () -> Unit)? =
+    if (ref is StockItemRef.ColorRef) {
+        { ColorSwatch(parseHexColor(colorHex)) }
+    } else {
+        { Spacer(Modifier.size(AppDimens.swatchSize)) }
     }
 
 @Composable
@@ -285,9 +322,9 @@ private fun ShoppingView(state: StockUiState, viewModel: StockViewModel) {
                         stringResource(Res.string.stock_shopping_reason_balance, stockAmountText(ref, line.balance)),
                         line.lowThreshold?.let { stringResource(Res.string.stock_shopping_reason_limit, stockAmountText(ref, it)) },
                     ),
-                    value = stockAmountText(ref, row.amount),
+                    value = stringResource(Res.string.stock_shopping_buy, stockAmountText(ref, row.amount)),
                     actions = emptyList(),
-                    leading = row.entry.swatch(),
+                    leading = row.entry.marker(),
                 )
             }
         }
@@ -301,7 +338,7 @@ private fun ShoppingView(state: StockUiState, viewModel: StockViewModel) {
                         title = row.entry.label(),
                         details = listOf(pluralStringResource(Res.plurals.stock_shopping_out_row, row.orderCount, row.orderCount)),
                         actions = emptyList(),
-                        leading = row.entry.swatch(),
+                        leading = row.entry.marker(),
                     )
                 }
             }

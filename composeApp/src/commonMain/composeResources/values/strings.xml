@@ -1478,8 +1478,8 @@
     <string name="stock_unit_un">un</string>
     <string name="stock_item_removed">Item removido</string>
     <plurals name="stock_alert_banner">
-        <item quantity="one">%1$d item acabando ou abaixo do limite</item>
-        <item quantity="other">%1$d itens acabando ou abaixo do limite</item>
+        <item quantity="one">%1$d item sem saldo ou abaixo do limite</item>
+        <item quantity="other">%1$d itens sem saldo ou abaixo do limite</item>
     </plurals>
     <plurals name="stock_alert_badge">
         <item quantity="one">%1$d item pede atenção</item>
@@ -1496,13 +1496,13 @@
     <string name="stock_action_stop">Parar de controlar</string>
     <string name="stock_row_reserved">%1$s reservados</string>
     <string name="stock_row_low">abaixo de %1$s</string>
-    <string name="stock_row_out">acabando</string>
+    <string name="stock_row_out">sem saldo</string>
     <string name="stock_row_limit">avisa abaixo de %1$s</string>
 
     <string name="stock_purchases_empty">Nenhuma compra registrada.</string>
 
     <string name="stock_shopping_empty">Nada a comprar pros pedidos aprovados.</string>
-    <string name="stock_shopping_empty_untracked">Nada a comprar pros pedidos aprovados. A lista acompanha os itens com controle de saldo.</string>
+    <string name="stock_shopping_empty_untracked">A lista aparece quando um item tem controle de saldo.</string>
     <string name="stock_shopping_see_balance">Ver o saldo</string>
     <string name="stock_shopping_copy">Copiar lista</string>
     <string name="stock_shopping_register">Registrar compra da lista</string>
@@ -1511,8 +1511,8 @@
     <string name="stock_shopping_reason_limit">limite: %1$s</string>
     <string name="stock_shopping_out_title">Marcadas como acabou</string>
     <plurals name="stock_shopping_out_row">
-        <item quantity="one">Marcada como acabou, usada em %1$d pedido aprovado</item>
-        <item quantity="other">Marcada como acabou, usada em %1$d pedidos aprovados</item>
+        <item quantity="one">Usada em %1$d pedido aprovado</item>
+        <item quantity="other">Usada em %1$d pedidos aprovados</item>
     </plurals>
 
     <string name="stock_panel_balance">Saldo</string>
@@ -1571,7 +1571,7 @@
     <string name="stock_field_supplier">Fornecedor</string>
     <string name="stock_field_link">Link</string>
     <string name="stock_item_n">Item %1$d</string>
-    <string name="stock_field_item">Item</string>
+    <string name="stock_field_item">Filamento ou insumo</string>
     <string name="stock_item_choose">Escolher item</string>
     <string name="stock_field_amount">Quantidade (%1$s)</string>
     <string name="stock_field_amount_plain">Quantidade</string>
@@ -1635,4 +1635,14 @@
     <string name="quote_stock_warning_empty">Falta %1$s: este pedido usa %2$s e não sobra nada livre.</string>
     <string name="about_shortcut_settings">Abrir Configurações</string>
     <string name="about_shortcut_settings_keys">Ctrl/Cmd+vírgula</string>
+    <string name="stock_first_use">Escolha um filamento ou insumo pra controlar o saldo.</string>
+    <string name="stock_empty_action">Cadastrar filamento</string>
+    <string name="stock_panel_notice_short">Faltam %1$s pros pedidos aprovados</string>
+    <string name="stock_panel_notice_low">Abaixo do limite de %1$s</string>
+    <string name="stock_panel_notice_out">Sem saldo</string>
+    <string name="stock_shopping_buy">Comprar %1$s</string>
+    <string name="stock_amount_grams">%1$s g</string>
+    <string name="stock_amount_kilograms">%1$s kg</string>
+    <string name="filaments_stock_low">baixo</string>
+    <string name="filaments_stock_out">sem saldo</string>
 </resources>

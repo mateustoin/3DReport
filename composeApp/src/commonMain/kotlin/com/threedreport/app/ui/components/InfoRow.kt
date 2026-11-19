@@ -18,10 +18,10 @@ import com.threedreport.app.ui.theme.spacing
 
 /**
  * Linha só de leitura, no molde da linha de lista (não é cartão, não clica): [title] em `body` à esquerda, [value] em
- * `bodyStrong` com algarismos tabulares à direita e divisor de 1 px embaixo. Pra pares que se leem juntos, como um atalho e o que ele faz.
+ * `bodyStrong` com algarismos tabulares à direita e divisor de 1 px embaixo. Com [valueError] o valor sai em `error` (saldo que não cobre os pedidos), junto de um texto que diz o motivo. Pra pares que se leem juntos, como um atalho e o que ele faz.
  */
 @Composable
-fun InfoRow(title: String, value: String, modifier: Modifier = Modifier) {
+fun InfoRow(title: String, value: String, modifier: Modifier = Modifier, valueError: Boolean = false) {
     val space = MaterialTheme.spacing
     Column(modifier.fillMaxWidth()) {
         Row(
@@ -30,7 +30,7 @@ fun InfoRow(title: String, value: String, modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(space.md),
         ) {
             Text(title, style = MaterialTheme.appType.body, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-            NumericText(value, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface)
+            NumericText(value, style = MaterialTheme.appType.bodyStrong, color = if (valueError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
         }
         AppDivider()
     }

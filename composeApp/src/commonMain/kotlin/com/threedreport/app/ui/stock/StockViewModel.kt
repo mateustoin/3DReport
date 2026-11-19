@@ -5,6 +5,7 @@ import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_number_invalid
 import _3dreport.composeapp.generated.resources.common_error_positive
 import _3dreport.composeapp.generated.resources.common_error_required
+import _3dreport.composeapp.generated.resources.stock_amount_grams
 import _3dreport.composeapp.generated.resources.stock_amount_units
 import _3dreport.composeapp.generated.resources.stock_error_below_spool
 import _3dreport.composeapp.generated.resources.stock_error_no_items
@@ -37,7 +38,7 @@ import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.format.toMoneyInputText
 import com.threedreport.app.ui.format.toUnitsNumberText
-import com.threedreport.app.ui.format.toWholeGramsText
+import com.threedreport.app.ui.format.toWholeGramsNumber
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.CatalogPriceUpdate
@@ -477,7 +478,7 @@ class StockViewModel(
     }
 
     private suspend fun amountText(ref: StockItemRef, amount: Double): String = when (ref) {
-        is StockItemRef.ColorRef -> amount.toWholeGramsText()
+        is StockItemRef.ColorRef -> getString(Res.string.stock_amount_grams, amount.toWholeGramsNumber())
         is StockItemRef.ConsumableRef -> getString(Res.string.stock_amount_units, amount.toUnitsNumberText())
     }
 

@@ -49,7 +49,7 @@ class QuoteExportTextTest {
     fun includesNameAndSalePriceOnly() {
         val text = savedQuote.toCopyPasteText(testClientTexts)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19", text)
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19", text)
     }
 
     @Test
@@ -83,7 +83,7 @@ class QuoteExportTextTest {
 
         val text = withServices.toCopyPasteText(testClientTexts)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nPintura: R$ 20,00\nTotal: R$ 36,19", text)
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19\nPintura: R$\u00A020,00\nTotal: R$\u00A036,19", text)
     }
 
     @Test
@@ -98,7 +98,7 @@ class QuoteExportTextTest {
     fun usesTheGivenCurrencyInsteadOfBrl() {
         val text = savedQuote.toCopyPasteText(testClientTexts, Currency.USD)
 
-        assertEquals("Suporte de celular\nValor: $ 16.19", text)
+        assertEquals("Suporte de celular\nValor: $\u00A016.19", text)
     }
 
     @Test
@@ -114,7 +114,7 @@ class QuoteExportTextTest {
         val text = withQuantity.toCopyPasteText(testClientTexts)
 
         assertEquals(
-            "Suporte de celular\nValor: 10 × R$ 6,02 = R$ 60,20\nPintura (× 10): R$ 10,00\nEntrega: R$ 15,00\nTotal: R$ 85,20",
+            "Suporte de celular\nValor: 10 × R$\u00A06,02 = R$\u00A060,20\nPintura (× 10): R$\u00A010,00\nEntrega: R$\u00A015,00\nTotal: R$\u00A085,20",
             text,
         )
     }
@@ -128,10 +128,10 @@ class QuoteExportTextTest {
 
         val text = withQuantity.toCopyPasteText(testClientTexts)
 
-        // O "cada" fecha o texto e sai do total que o cliente paga (R$ 210,20 / 10), não do valor
+        // O "cada" fecha o texto e sai do total que o cliente paga (R$\u00A0210,20 / 10), não do valor
         // de venda: é o mesmo número que a tela de Orçamento mostra pro mesmo orçamento.
         assertEquals(
-            "Suporte de celular\nValor: 10 × R$ 6,02 = R$ 60,20\nPintura (× 10): R$ 150,00\nTotal: R$ 210,20",
+            "Suporte de celular\nValor: 10 × R$\u00A06,02 = R$\u00A060,20\nPintura (× 10): R$\u00A0150,00\nTotal: R$\u00A0210,20",
             text,
         )
         // A soma exibida bate com o total de fato cobrado (venda + serviços × quantidade).
@@ -144,7 +144,7 @@ class QuoteExportTextTest {
 
         val text = withShipping.toCopyPasteText(testClientTexts)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nFrete: R$ 12,00\nTotal: R$ 28,19", text)
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19\nFrete: R$\u00A012,00\nTotal: R$\u00A028,19", text)
         assertEquals(withShipping.totalWithServices, 16.19 + 12.0, 0.001)
     }
 
@@ -159,7 +159,7 @@ class QuoteExportTextTest {
         val text = withShippingAndServices.toCopyPasteText(testClientTexts)
 
         assertEquals(
-            "Suporte de celular\nValor: 10 × R$ 6,02 = R$ 60,20\nPintura (× 10): R$ 150,00\nFrete: R$ 25,00\nTotal: R$ 235,20",
+            "Suporte de celular\nValor: 10 × R$\u00A06,02 = R$\u00A060,20\nPintura (× 10): R$\u00A0150,00\nFrete: R$\u00A025,00\nTotal: R$\u00A0235,20",
             text,
         )
         assertEquals(withShippingAndServices.totalWithServices, 60.20 + 150.0 + 25.0, 0.001)
@@ -174,7 +174,7 @@ class QuoteExportTextTest {
 
         val text = quantityOne.toCopyPasteText(testClientTexts)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nPintura: R$ 20,00\nTotal: R$ 36,19", text)
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19\nPintura: R$\u00A020,00\nTotal: R$\u00A036,19", text)
         assertFalse(text.contains("peças"))
         assertFalse(text.contains("cada"))
         assertFalse(text.contains("×"))
@@ -186,7 +186,7 @@ class QuoteExportTextTest {
     fun deliveryDateClosesTheMessage() {
         val withDeadline = savedQuote.copy(deliveryDateEpochDay = september30)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nPrazo de entrega: até 30/09/2026", withDeadline.toCopyPasteText(testClientTexts))
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19\nPrazo de entrega: até 30/09/2026", withDeadline.toCopyPasteText(testClientTexts))
     }
 
     @Test
@@ -198,7 +198,7 @@ class QuoteExportTextTest {
 
         assertFalse(twoPieces.toCopyPasteText(testClientTexts).contains("Tempo"))
         assertEquals(
-            "Suporte de celular\nValor: 2 × R$ 16,19 = R$ 32,38\nPrazo de entrega: até 30/09/2026\n" +
+            "Suporte de celular\nValor: 2 × R$\u00A016,19 = R$\u00A032,38\nPrazo de entrega: até 30/09/2026\n" +
                 "Tempo de impressão: 6 h 20 min (2 peças)",
             twoPieces.toCopyPasteText(testClientTexts, showPrintTime = true),
         )
@@ -207,7 +207,7 @@ class QuoteExportTextTest {
     @Test
     fun singlePiecePrintTimeHasNoPieceCount() {
         assertEquals(
-            "Suporte de celular\nValor: R$ 16,19\nTempo de impressão: 3 h 10 min",
+            "Suporte de celular\nValor: R$\u00A016,19\nTempo de impressão: 3 h 10 min",
             savedQuote.toCopyPasteText(testClientTexts, showPrintTime = true),
         )
     }
@@ -226,7 +226,7 @@ class QuoteExportTextTest {
     fun usesTheCurrencyTheQuoteWasSavedIn() {
         val inDollars = savedQuote.copy(currency = Currency.USD)
 
-        assertEquals("Suporte de celular\nValor: $ 16.19", inDollars.toCopyPasteText(testClientTexts))
+        assertEquals("Suporte de celular\nValor: $\u00A016.19", inDollars.toCopyPasteText(testClientTexts))
     }
 
     @Test
@@ -235,7 +235,7 @@ class QuoteExportTextTest {
 
         val text = withFreeShipping.toCopyPasteText(testClientTexts)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nFrete: grátis\nTotal: R$ 16,19", text)
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19\nFrete: grátis\nTotal: R$\u00A016,19", text)
         assertEquals(16.19, withFreeShipping.totalWithServices, 0.001)
     }
 
@@ -248,7 +248,7 @@ class QuoteExportTextTest {
 
         val text = rushWithDeadline.toCopyPasteText(testClientTexts)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nPrazo de entrega: até 30/09/2026 (entrega expressa)", text)
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19\nPrazo de entrega: até 30/09/2026 (entrega expressa)", text)
     }
 
     @Test
@@ -257,6 +257,6 @@ class QuoteExportTextTest {
 
         val text = rushWithoutDeadline.toCopyPasteText(testClientTexts)
 
-        assertEquals("Suporte de celular\nValor: R$ 16,19\nEntrega expressa", text)
+        assertEquals("Suporte de celular\nValor: R$\u00A016,19\nEntrega expressa", text)
     }
 }

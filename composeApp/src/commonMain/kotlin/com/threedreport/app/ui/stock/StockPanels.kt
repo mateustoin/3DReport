@@ -34,6 +34,9 @@ import _3dreport.composeapp.generated.resources.stock_panel_available
 import _3dreport.composeapp.generated.resources.stock_panel_average
 import _3dreport.composeapp.generated.resources.stock_panel_balance
 import _3dreport.composeapp.generated.resources.stock_panel_movements
+import _3dreport.composeapp.generated.resources.stock_panel_notice_low
+import _3dreport.composeapp.generated.resources.stock_panel_notice_out
+import _3dreport.composeapp.generated.resources.stock_panel_notice_short
 import _3dreport.composeapp.generated.resources.stock_panel_reserved
 import _3dreport.composeapp.generated.resources.stock_per_kg
 import _3dreport.composeapp.generated.resources.stock_per_unit
@@ -53,6 +56,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -67,11 +72,14 @@ import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppNumberField
 import com.threedreport.app.ui.components.AppSuggestField
 import com.threedreport.app.ui.components.AppTextField
+import com.threedreport.app.ui.components.AttentionNotice
+import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.DateShortcut
 import com.threedreport.app.ui.components.DateShortcutPicker
 import com.threedreport.app.ui.components.FieldError
 import com.threedreport.app.ui.components.FormBlock
 import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.FormNotice
 import com.threedreport.app.ui.components.FormPanel
 import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.FormSummary
@@ -83,6 +91,7 @@ import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.suggestionsFor
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
+import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.asString
@@ -90,6 +99,7 @@ import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.StockItemRef
+import com.threedreport.core.report.StockState
 import org.jetbrains.compose.resources.stringResource
 
 /** A unidade do saldo, pra rótulo de campo: "g" na cor de filamento, "un" no insumo. */
@@ -114,16 +124,21 @@ internal fun StockItemPanelView(panel: StockItemPanel, viewModel: StockViewModel
     val unit = ref.unitLabel()
     val status = panel.status
     FormPanel(title = panel.entry.label(), onSave = viewModel::saveItem, onCancel = viewModel::closePanel) {
+        // O problema que a lista mostra, dito no alto do painel.
+        val notice = when {
+            status.reserved > 0 && status.available < 0 -> stringResource(Res.string.stock_panel_notice_short, stockAmountText(ref, -status.available))
+            status.state == StockState.OUT -> stringResource(Res.string.stock_panel_notice_out)
+            status.state == StockState.LOW -> status.item.lowThreshold?.let { stringResource(Res.string.stock_panel_notice_low, stockAmountText(ref, it)) }
+            else -> null
+        }
+        if (notice != null) AttentionNotice(notice)
         Column {
-            InfoRow(stringResource(Res.string.stock_panel_balance), stockAmountText(ref, status.balance))
+            InfoRow(stringResource(Res.string.stock_panel_balance), stockAmountText(ref, status.balance), valueError = status.state != StockState.OK)
             if (status.reserved > 0) {
                 InfoRow(stringResource(Res.string.stock_panel_reserved), stockAmountText(ref, status.reserved))
-                InfoRow(stringResource(Res.string.stock_panel_available), stockAmountText(ref, status.available))
+                InfoRow(stringResource(Res.string.stock_panel_available), stockAmountText(ref, status.available), valueError = status.available < 0)
             }
             panel.averageCost?.let { InfoRow(stringResource(Res.string.stock_panel_average), catalogCostText(ref, it)) }
-        }
-        if (panel.buyAgainLink != null) {
-            AppButton(stringResource(Res.string.stock_action_buy_again), { viewModel.buyAgain(ref) }, icon = AppIcons.OpenInNew)
         }
         AppNumberField(
             label = stringResource(Res.string.stock_field_threshold, unit),
@@ -175,7 +190,11 @@ private fun ItemActions(panel: StockItemPanel, viewModel: StockViewModel) {
     val space = MaterialTheme.spacing
     FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
         AppButton(stringResource(Res.string.stock_action_adjust), { viewModel.startAdjust(panel.entry.ref) })
-        AppButton(stringResource(Res.string.stock_action_stop), { viewModel.requestStopTracking(panel.entry.ref) })
+        // "Comprar de novo" depois dos campos: ao abrir o painel o foco vai pro primeiro campo, e não pra um link.
+        if (panel.buyAgainLink != null) {
+            AppButton(stringResource(Res.string.stock_action_buy_again), { viewModel.buyAgain(panel.entry.ref) }, icon = AppIcons.OpenInNew)
+        }
+        AppButton(stringResource(Res.string.stock_action_stop), { viewModel.requestStopTracking(panel.entry.ref) }, kind = ButtonKind.Danger)
     }
 }
 
@@ -227,6 +246,12 @@ internal fun StockPurchasePanelView(panel: PurchasePanel, today: Long, viewModel
                     onValueChange = { text -> viewModel.updatePurchase { it.copy(link = text) } },
                     placeholder = stringResource(Res.string.common_optional),
                 )
+                AppTextField(
+                    label = stringResource(Res.string.stock_field_note),
+                    value = form.note,
+                    onValueChange = { text -> viewModel.updatePurchase { it.copy(note = text) } },
+                    placeholder = stringResource(Res.string.common_optional),
+                )
             }
         }
         PanelSection(2, stringResource(Res.string.stock_section_items)) {
@@ -265,16 +290,10 @@ internal fun StockPurchasePanelView(panel: PurchasePanel, today: Long, viewModel
                         )
                     }
                 }
-                AppTextField(
-                    label = stringResource(Res.string.stock_field_note),
-                    value = form.note,
-                    onValueChange = { text -> viewModel.updatePurchase { it.copy(note = text) } },
-                    placeholder = stringResource(Res.string.common_optional),
-                )
             }
         }
         if (!panel.isNew) {
-            AppButton(stringResource(Res.string.stock_action_delete_purchase), { viewModel.requestDeletePurchase() }, icon = AppIcons.Delete)
+            AppButton(stringResource(Res.string.stock_action_delete_purchase), { viewModel.requestDeletePurchase() }, icon = AppIcons.Delete, kind = ButtonKind.Danger)
         }
     }
 }
@@ -299,12 +318,10 @@ private fun PurchaseLineBlock(number: Int, line: PurchaseLineForm, view: Purchas
             onSelect = { choice -> viewModel.updatePurchaseLine(line.id) { it.copy(ref = choice.ref) } },
             emptyText = stringResource(Res.string.stock_item_choose),
             error = line.refError?.asString(),
-            help = if (ref != null && !view.tracked) {
-                HelpText(stringResource(if (ref is StockItemRef.ColorRef) Res.string.stock_help_untracked_color else Res.string.stock_help_untracked_consumable), warning = true)
-            } else {
-                null
-            },
         )
+        if (ref != null && !view.tracked) {
+            FormNotice(stringResource(if (ref is StockItemRef.ColorRef) Res.string.stock_help_untracked_color else Res.string.stock_help_untracked_consumable))
+        }
         FormGrid {
             cell(1) {
                 AppNumberField(
@@ -335,7 +352,7 @@ private fun PurchaseLineBlock(number: Int, line: PurchaseLineForm, view: Purchas
         }
         view.catalogUnitCost?.let { cost ->
             if (ref != null) {
-                FormSummary(
+                CostLine(
                     stringResource(if (ref is StockItemRef.ColorRef) Res.string.stock_cost_per_kg else Res.string.stock_cost_per_unit),
                     cost.toMoney(),
                 )
@@ -346,3 +363,15 @@ private fun PurchaseLineBlock(number: Int, line: PurchaseLineForm, view: Purchas
 
 private const val KILOGRAM_GRAMS = 1000.0
 private const val HALF_KILOGRAM_GRAMS = 500.0
+
+/**
+ * O custo por kg ou por unidade de uma linha da compra: só o rótulo e o valor, sem fundo nem recuo, alinhados aos campos do
+ * bloco (um `FormSummary` aqui seria um bloco dentro de outro).
+ */
+@Composable
+private fun CostLine(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        NumericText(value, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface)
+    }
+}

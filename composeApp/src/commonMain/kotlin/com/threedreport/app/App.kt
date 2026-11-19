@@ -338,7 +338,7 @@ private fun AppContent(
 
                                     AppDestination.CONSUMABLES -> ConsumableListScreen(viewModels.consumableListViewModel)
 
-                                    AppDestination.STOCK -> StockScreen(viewModels.stockViewModel)
+                                    AppDestination.STOCK -> StockScreen(viewModels.stockViewModel, onRegisterFilament = { navigator.goTo(AppDestination.FILAMENTS) })
 
                                     AppDestination.SETTINGS -> SettingsScreen(
                                         viewModels.settingsViewModel,

@@ -86,7 +86,7 @@ fun SwatchButton(color: Color, description: String, selected: Boolean, onClick: 
 
 /**
  * Selo de uma cor do filamento na lista, que marca se tem em estoque: com amostra, nome e, quando acabou, o
- * [outOfStockLabel]. Clicar alterna ([onToggle]). Acabou fica apagado. Com [balanceText] (a cor tem controle de saldo, Leva 12), o saldo vem depois do nome ("Vermelho · 640 g"), em `error` quando [balanceAttention] (baixo ou acabando); o texto sempre acompanha, a cor sozinha não diz. Com [onSelectedRow] (linha selecionada, que já é `tint`), o fundo do selo vira `card`.
+ * [outOfStockLabel]. Clicar alterna ([onToggle]). Acabou fica apagado. Com [balanceText] (a cor tem controle de saldo, Leva 12), o saldo vem depois do nome ("Vermelho · 640 g"), em `error` quando [balanceAttention] (baixo ou sem saldo); [balanceStatus] é o mesmo aviso em palavra, pro leitor de tela; o texto sempre acompanha, a cor sozinha não diz. Com [onSelectedRow] (linha selecionada, que já é `tint`), o fundo do selo vira `card`.
  */
 @Composable
 fun ColorChip(
@@ -99,12 +99,13 @@ fun ColorChip(
     onSelectedRow: Boolean = false,
     balanceText: String? = null,
     balanceAttention: Boolean = false,
+    balanceStatus: String? = null,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
     var focused by remember { mutableStateOf(false) }
     val base = if (inStock) label else "$label, $outOfStockLabel"
-    val description = if (balanceText != null) "$base, $balanceText" else base
+    val description = listOfNotNull(base, balanceText, balanceStatus).joinToString(", ")
     Row(
         modifier = modifier
             .alpha(if (inStock) 1f else 0.6f)

@@ -85,10 +85,10 @@ class Leva11ExportTest {
         val lines = order.toCopyPasteText(testClientTexts, pixCode = code).lines()
 
         assertEquals("Suporte de celular · #0042", lines[0])
-        assertEquals("Valor: R$ 174,34", lines[1])
-        assertEquals("Sinal de R$ 50,00 pra começar", lines[2])
+        assertEquals("Valor: R$\u00A0174,34", lines[1])
+        assertEquals("Sinal de R$\u00A050,00 pra começar", lines[2])
         assertEquals("", lines[3])
-        assertEquals("Pix copia e cola (R$ 50,00):", lines[4])
+        assertEquals("Pix copia e cola (R$\u00A050,00):", lines[4])
         assertEquals(code, lines[5], "o código vai sozinho na linha")
         assertEquals(6, lines.size)
     }
@@ -100,7 +100,7 @@ class Leva11ExportTest {
 
         val text = paid.toCopyPasteText(testClientTexts, pixCode = code)
 
-        assertTrue("Pix copia e cola (R$ 124,34):" in text, text)
+        assertTrue("Pix copia e cola (R$\u00A0124,34):" in text, text)
         assertFalse("pra começar" in text, "depois do sinal pago a linha some")
         assertFalse("pra começar" in pages(pdf(paid)).single(), "e some do PDF também")
     }
@@ -129,7 +129,7 @@ class Leva11ExportTest {
     fun withoutAKeyADepositOrPixTheMessageIsAsBefore() {
         val plain = order()
 
-        assertEquals("Suporte de celular · #0042\nValor: R$ 174,34", plain.toCopyPasteText(testClientTexts))
+        assertEquals("Suporte de celular · #0042\nValor: R$\u00A0174,34", plain.toCopyPasteText(testClientTexts))
     }
 
     @Test
@@ -148,7 +148,7 @@ class Leva11ExportTest {
         val link = order.toWhatsAppLink(testClientTexts, pixCode = code)
 
         assertTrue(link.startsWith("https://wa.me/5511999990000?text="))
-        assertTrue("Sinal%20de%20R%24%2050%2C00%20pra%20come%C3%A7ar" in link, link)
+        assertTrue("Sinal%20de%20R%24%C2%A050%2C00%20pra%20come%C3%A7ar" in link, link)
         assertTrue(code in java.net.URLDecoder.decode(link.substringAfter("text="), "UTF-8"), "o código inteiro entra no link")
     }
 
@@ -172,8 +172,8 @@ class Leva11ExportTest {
         val text = pages(pdf(order)).single()
 
         assertTrue("PAGUE COM PIX" in text.uppercase() || "Pague com Pix" in text, text)
-        assertTrue("Sinal: R$ 50,00" in text, text)
-        assertTrue("Sinal de R$ 50,00 pra começar" in text, text)
+        assertTrue("Sinal: R$\u00A050,00" in text, text)
+        assertTrue("Sinal de R$\u00A050,00 pra começar" in text, text)
         assertTrue("Chave: loja@example.com" in text, text)
         assertTrue(compact(code) in compact(text), "o copia e cola inteiro está no PDF")
     }
@@ -182,7 +182,7 @@ class Leva11ExportTest {
     fun withoutADepositThePixBlockShowsTheValue() {
         val text = pages(pdf(order())).single()
 
-        assertTrue("Valor: R$ 174,34" in text, text)
+        assertTrue("Valor: R$\u00A0174,34" in text, text)
         assertFalse("pra começar" in text)
     }
 
@@ -248,10 +248,10 @@ class Leva11ExportTest {
         val text = pages.single().replace("\n", " ")
 
         assertTrue("Recibo #0042-1" in text, text)
-        assertTrue("Recebi de Maria o valor de R$ 50,00 (Pix) em " in text, text)
+        assertTrue("Recebi de Maria o valor de R$\u00A050,00 (Pix) em " in text, text)
         assertTrue("referente ao pedido #0042, Suporte de celular." in text, text)
-        assertTrue("Total do pedido" in text && "R$ 174,34" in text, text)
-        assertTrue("Pago até agora" in text && "Falta pagar" in text && "R$ 124,34" in text, text)
+        assertTrue("Total do pedido" in text && "R$\u00A0174,34" in text, text)
+        assertTrue("Pago até agora" in text && "Falta pagar" in text && "R$\u00A0124,34" in text, text)
         assertTrue("Sua Loja" in text)
         assertTrue("VALOR RECEBIDO" in text.uppercase() && "Emitido em" in text, text)
         assertTrue(Regex("Sua Loja").findAll(text).count() <= 2, "o nome da marca no máximo duas vezes: $text")
@@ -265,7 +265,7 @@ class Leva11ExportTest {
         val text = pages(receipt(order, payment)).single().replace("\n", " ")
 
         assertTrue("Recibo #0042-3" in text, text)
-        assertTrue("Recebi o valor de R$ 20,00 (Dinheiro) em " in text, text)
+        assertTrue("Recebi o valor de R$\u00A020,00 (Dinheiro) em " in text, text)
     }
 
     @Test

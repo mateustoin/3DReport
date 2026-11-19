@@ -81,7 +81,7 @@ data class FilamentsUiState(
 }
 
 /** O saldo de uma cor controlada: gramas e se está baixo ou acabando (o selo fica vermelho). */
-data class ColorStock(val grams: Double, val needsAttention: Boolean)
+data class ColorStock(val grams: Double, val needsAttention: Boolean, val isEmpty: Boolean = false)
 
 /**
  * ViewModel da tela de Filamentos. Um [uiState] só, e os [notices] (avisos de uma frase, como "Filamento arquivado").
@@ -285,7 +285,7 @@ class FilamentListViewModel(
         val balances = StockReport.balances(tracking.movements.value)
         return tracking.items.value.filter { it.ref is StockItemRef.ColorRef }.associate { item ->
             val balance = balances[item.ref] ?: 0.0
-            item.ref to ColorStock(balance, StockReport.state(item, balance) != StockState.OK)
+            item.ref to StockReport.state(item, balance).let { ColorStock(balance, it != StockState.OK, it == StockState.OUT) }
         }
     }
 

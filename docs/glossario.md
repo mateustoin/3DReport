@@ -70,3 +70,5 @@ os plurais diferirem ou se um texto em inglês tiver travessão. Ver
 | Corrigir saldo | Adjust balance |
 | Controlar saldo | Track balance |
 | Reservado | Reserved |
+| Cadastro (de filamentos, insumos) | your filaments, your supplies (nunca "catalog", que é o Catálogo de produtos) |
+| Sem saldo | No balance |

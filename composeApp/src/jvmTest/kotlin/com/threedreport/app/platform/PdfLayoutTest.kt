@@ -145,7 +145,7 @@ class PdfLayoutTest {
             val names = fonts.map { it.name }
             assertTrue(names.any { "SpaceGrotesk" in it } && names.any { "Inter" in it }, "$names")
             val text = PDFTextStripper().getText(document)
-            assertTrue("Cápsula de café" in text && "VÁLIDO ATÉ" in text && "R$ 16,19" in text, text)
+            assertTrue("Cápsula de café" in text && "VÁLIDO ATÉ" in text && "R$\u00A016,19" in text, text)
         }
     }
 

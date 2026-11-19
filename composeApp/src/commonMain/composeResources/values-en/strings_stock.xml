@@ -16,8 +16,8 @@
     <string name="stock_unit_un">pcs</string>
     <string name="stock_item_removed">Removed item</string>
     <plurals name="stock_alert_banner">
-        <item quantity="one">%1$d item running out or below its limit</item>
-        <item quantity="other">%1$d items running out or below their limit</item>
+        <item quantity="one">%1$d item with no balance or below its limit</item>
+        <item quantity="other">%1$d items with no balance or below their limit</item>
     </plurals>
     <plurals name="stock_alert_badge">
         <item quantity="one">%1$d item needs attention</item>
@@ -34,13 +34,13 @@
     <string name="stock_action_stop">Stop tracking</string>
     <string name="stock_row_reserved">%1$s reserved</string>
     <string name="stock_row_low">below %1$s</string>
-    <string name="stock_row_out">running out</string>
+    <string name="stock_row_out">no balance</string>
     <string name="stock_row_limit">alert below %1$s</string>
 
     <string name="stock_purchases_empty">No purchases recorded.</string>
 
     <string name="stock_shopping_empty">Nothing to buy for approved orders.</string>
-    <string name="stock_shopping_empty_untracked">Nothing to buy for approved orders. The list follows the items you track.</string>
+    <string name="stock_shopping_empty_untracked">The list starts once you track an item's balance.</string>
     <string name="stock_shopping_see_balance">See the balance</string>
     <string name="stock_shopping_copy">Copy list</string>
     <string name="stock_shopping_register">Record purchase from list</string>
@@ -49,8 +49,8 @@
     <string name="stock_shopping_reason_limit">limit: %1$s</string>
     <string name="stock_shopping_out_title">Marked out of stock</string>
     <plurals name="stock_shopping_out_row">
-        <item quantity="one">Marked out of stock, used in %1$d approved order</item>
-        <item quantity="other">Marked out of stock, used in %1$d approved orders</item>
+        <item quantity="one">Used in %1$d approved order</item>
+        <item quantity="other">Used in %1$d approved orders</item>
     </plurals>
 
     <string name="stock_panel_balance">Balance</string>
@@ -96,7 +96,7 @@
     <string name="stock_delete_movement_title">Delete this movement?</string>
     <string name="stock_delete_movement_message">The balance goes back to what it was before it.</string>
     <string name="stock_delete_purchase_title">Delete this purchase?</string>
-    <string name="stock_delete_purchase_message">What it added to the balance is removed with it. Catalog prices stay as they are.</string>
+    <string name="stock_delete_purchase_message">What it added to the balance is removed with it. Saved prices stay as they are.</string>
 
     <string name="stock_purchase_new">Record purchase</string>
     <string name="stock_purchase_edit">Edit purchase</string>
@@ -109,7 +109,7 @@
     <string name="stock_field_supplier">Supplier</string>
     <string name="stock_field_link">Link</string>
     <string name="stock_item_n">Item %1$d</string>
-    <string name="stock_field_item">Item</string>
+    <string name="stock_field_item">Filament or supply</string>
     <string name="stock_item_choose">Choose item</string>
     <string name="stock_field_amount">Quantity (%1$s)</string>
     <string name="stock_field_amount_plain">Quantity</string>
@@ -155,8 +155,8 @@
         <item quantity="other">%1$d filaments imported</item>
     </plurals>
     <plurals name="filaments_import_already">
-        <item quantity="one">%1$d was already in the catalog</item>
-        <item quantity="other">%1$d were already in the catalog</item>
+        <item quantity="one">%1$d was already in your filaments</item>
+        <item quantity="other">%1$d were already in your filaments</item>
     </plurals>
     <plurals name="filaments_import_invalid">
         <item quantity="one">%1$d with invalid data</item>
@@ -174,4 +174,14 @@
     <string name="about_shortcut_settings">Open Settings</string>
     <string name="about_shortcut_settings_keys">Ctrl/Cmd+comma</string>
     <string name="nav_stock">Stock</string>
+    <string name="stock_first_use">Pick a filament or supply to track its balance.</string>
+    <string name="stock_empty_action">Add a filament</string>
+    <string name="stock_panel_notice_short">%1$s short for approved orders</string>
+    <string name="stock_panel_notice_low">Below the limit of %1$s</string>
+    <string name="stock_panel_notice_out">No balance</string>
+    <string name="stock_shopping_buy">Buy %1$s</string>
+    <string name="stock_amount_grams">%1$s g</string>
+    <string name="stock_amount_kilograms">%1$s kg</string>
+    <string name="filaments_stock_low">low</string>
+    <string name="filaments_stock_out">no balance</string>
 </resources>

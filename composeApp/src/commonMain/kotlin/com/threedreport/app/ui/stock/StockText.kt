@@ -2,6 +2,8 @@ package com.threedreport.app.ui.stock
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.filaments_color_unnamed
+import _3dreport.composeapp.generated.resources.stock_amount_grams
+import _3dreport.composeapp.generated.resources.stock_amount_kilograms
 import _3dreport.composeapp.generated.resources.stock_amount_units
 import _3dreport.composeapp.generated.resources.stock_item_removed
 import _3dreport.composeapp.generated.resources.stock_movement_adjustment
@@ -14,19 +16,24 @@ import _3dreport.composeapp.generated.resources.stock_reason_other
 import _3dreport.composeapp.generated.resources.stock_reason_own_use
 import _3dreport.composeapp.generated.resources.stock_reason_test
 import androidx.compose.runtime.Composable
-import com.threedreport.app.ui.format.toPurchaseGramsText
+import com.threedreport.app.ui.format.isKilogramAmount
+import com.threedreport.app.ui.format.toKilogramsNumber
 import com.threedreport.app.ui.format.toUnitsNumberText
-import com.threedreport.app.ui.format.toWholeGramsText
+import com.threedreport.app.ui.format.toWholeGramsNumber
 import com.threedreport.core.model.ManualUseReason
 import com.threedreport.core.model.StockItemRef
 import com.threedreport.core.model.StockMovementKind
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
+/** Gramas inteiras com a unidade do recurso: "640 g", "-40 g" (sinal U+2212), "2.400 g". */
+@Composable
+fun stockGramsText(amount: Double): String = stringResource(Res.string.stock_amount_grams, amount.toWholeGramsNumber())
+
 /** O saldo de um item no texto da tela: gramas sem casa decimal ("640 g", "-40 g") ou unidades ("8 un"). */
 @Composable
 fun stockAmountText(ref: StockItemRef, amount: Double): String = when (ref) {
-    is StockItemRef.ColorRef -> amount.toWholeGramsText()
+    is StockItemRef.ColorRef -> stockGramsText(amount)
     is StockItemRef.ConsumableRef -> stringResource(Res.string.stock_amount_units, amount.toUnitsNumberText())
 }
 
@@ -38,7 +45,7 @@ fun stockSignedAmountText(ref: StockItemRef, amount: Double): String =
 /** A quantidade de uma linha de compra: gramas viram quilos a partir de mil ("1 kg", "500 g"). */
 @Composable
 fun stockPurchaseAmountText(ref: StockItemRef, amount: Double): String = when (ref) {
-    is StockItemRef.ColorRef -> amount.toPurchaseGramsText()
+    is StockItemRef.ColorRef -> if (amount.isKilogramAmount) stringResource(Res.string.stock_amount_kilograms, amount.toKilogramsNumber()) else stockGramsText(amount)
     is StockItemRef.ConsumableRef -> stringResource(Res.string.stock_amount_units, amount.toUnitsNumberText())
 }
 

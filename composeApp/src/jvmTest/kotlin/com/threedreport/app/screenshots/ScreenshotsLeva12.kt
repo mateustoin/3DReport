@@ -65,8 +65,8 @@ internal fun renderLeva12Screenshots(container: AppContainer, outDir: File) {
     val stock = container.stock
     val today = TODAY.toEpochDay()
 
-    // Sem nenhum controle ligado: o Saldo só tem a seção recolhida (aberta aqui), e as outras duas vistas, o estado vazio.
-    renderAppPng(File(outDir, "estoque-saldo-sem-controle.png"), afterSettle = { it.clickByText(Stock.untrackedSection) }) {
+    // Primeiro uso, sem nenhum controle ligado: o Saldo traz a frase e a lista "Sem controle de saldo" já aberta; as outras duas vistas, o estado vazio.
+    renderAppPng(File(outDir, "estoque-saldo-primeiro-uso.png")) {
         sampleApp(container, startAt = AppDestination.STOCK)
     }
     renderAppPng(File(outDir, "estoque-compras-vazio.png"), afterSettle = { it.clickByText(Stock.purchasesTab) }) {
@@ -116,6 +116,10 @@ internal fun renderLeva12Screenshots(container: AppContainer, outDir: File) {
 
     renderAppPng(File(outDir, "estoque-saldo.png")) { sampleApp(container, startAt = AppDestination.STOCK) }
     renderAppPng(File(outDir, "estoque-saldo-painel.png"), afterSettle = { it.clickByText(sample("Preto", "Black")) }) {
+        sampleApp(container, startAt = AppDestination.STOCK)
+    }
+    // O painel de um insumo: sem carretel vazio, com o limite e o aviso de abaixo do limite.
+    renderAppPng(File(outDir, "estoque-painel-insumo.png"), afterSettle = { it.clickByText(sample("Argola de chaveiro", "Keyring")) }) {
         sampleApp(container, startAt = AppDestination.STOCK)
     }
     renderAppPng(File(outDir, "estoque-compras.png"), afterSettle = { it.clickByText(Stock.purchasesTab) }) {

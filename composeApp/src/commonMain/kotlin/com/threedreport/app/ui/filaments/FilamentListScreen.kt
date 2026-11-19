@@ -47,6 +47,8 @@ import _3dreport.composeapp.generated.resources.filaments_row_specs
 import _3dreport.composeapp.generated.resources.filaments_section_basics
 import _3dreport.composeapp.generated.resources.filaments_section_colors
 import _3dreport.composeapp.generated.resources.filaments_section_price
+import _3dreport.composeapp.generated.resources.filaments_stock_low
+import _3dreport.composeapp.generated.resources.filaments_stock_out
 import _3dreport.composeapp.generated.resources.filaments_title
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,12 +93,13 @@ import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.format.toMoney
-import com.threedreport.app.ui.format.toWholeGramsText
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.stock.stockGramsText
 import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.StockItemRef
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 /** Tela de Filamentos: catálogo salvo, escolhido depois na tela de Orçamento. Mesmo molde da tela de Insumos. */
@@ -191,7 +194,8 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
                                 outOfStockLabel = outOfStock,
                                 onToggle = { viewModel.toggleColorInStock(filament.id, color.id) },
                                 onSelectedRow = selectedId == filament.id,
-                                balanceText = balance?.grams?.toWholeGramsText(),
+                                balanceText = balance?.grams?.let { stockGramsText(it) },
+                                balanceStatus = balance?.statusRes()?.let { stringResource(it) },
                                 balanceAttention = balance?.needsAttention == true,
                             )
                         }
@@ -320,6 +324,13 @@ private fun ColorBlock(number: Int, colorForm: FilamentColorFormState, canRemove
             onSelect = { index -> viewModel.updateColorRow(colorForm.id) { it.copy(inStock = index == 0) } },
         )
     }
+}
+
+/** O que o leitor de tela diz do saldo da cor, além do número: "baixo" ou "sem saldo". */
+private fun ColorStock.statusRes(): StringResource? = when {
+    isEmpty -> Res.string.filaments_stock_out
+    needsAttention -> Res.string.filaments_stock_low
+    else -> null
 }
 
 /** O menu "Mais ações" do cabeçalho: exportar os filamentos pra um arquivo e importar de um (decisão 164). */

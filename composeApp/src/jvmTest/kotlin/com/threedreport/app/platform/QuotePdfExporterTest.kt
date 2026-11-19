@@ -323,7 +323,7 @@ class QuotePdfExporterTest {
 
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
-        assertTrue(text.contains("Entrega R$ 15,00"))
+        assertTrue(text.contains("Entrega R$\u00A015,00"))
         assertFalse(text.contains("Entrega (×"))
         assertTrue(text.contains("75,20")) // total: 60,20 (venda) + 15,00 (entrega, uma vez)
     }
@@ -345,7 +345,7 @@ class QuotePdfExporterTest {
         val text = Loader.loadPDF(pdfBytes).use { PDFTextStripper().getText(it) }
 
         // A conta das peças por extenso: quantidade × valor de cada = valor das peças.
-        assertTrue(text.contains("10 × R$ 6,02 = R$ 60,20"), text)
+        assertTrue(text.contains("10 × R$\u00A06,02 = R$\u00A060,20"), text)
         assertTrue(text.contains("Pintura"))
         assertTrue(text.contains("150,00")) // 15,00 (por peça) × 10 = 150,00
         assertTrue(text.contains("210,20")) // total: 60,20 (peças) + 150,00 (serviço)

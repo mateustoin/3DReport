@@ -340,11 +340,11 @@ class QuoteHistoryLeva11Test {
         val message = s.awaitMessage()
 
         assertEquals(MessageTemplateKind.PAYMENT_REMINDER, message.kind)
-        assertTrue("falta o pagamento de R$ 100,00 do pedido #0001." in message.text, message.text)
+        assertTrue("falta o pagamento de R$\u00A0100,00 do pedido #0001." in message.text, message.text)
         assertFalse("Pix copia e cola" in message.text, "o Pix não entra no texto editável")
         assertTrue(message.includePix, "nasce ligado no lembrete de pagamento")
         val lines = message.finalText.lines()
-        assertEquals("Pix copia e cola (R$ 100,00):", lines[lines.size - 2])
+        assertEquals("Pix copia e cola (R$\u00A0100,00):", lines[lines.size - 2])
         assertTrue(lines.last().startsWith("000201"), "o código vai sozinho na última linha")
 
         s.viewModel.setIncludePix(false)
