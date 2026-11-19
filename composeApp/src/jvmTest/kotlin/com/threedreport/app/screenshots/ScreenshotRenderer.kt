@@ -45,6 +45,8 @@ import com.threedreport.app.data.CatalogView
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.LocalStorage
 import com.threedreport.app.data.OrdersView
+import com.threedreport.app.data.deletingStockWith
+import com.threedreport.app.data.reconcilingStock
 import com.threedreport.app.platform.AppLocaleState
 import com.threedreport.app.platform.DesktopLocale
 import com.threedreport.app.platform.PickedFile
@@ -1290,16 +1292,19 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
 internal fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }, installer: UpdateInstaller = NoUpdateInstaller): AppContainer {
     val storage = LocalStorage(dataDir, Clock.System)
     val orderSettings = storage.orderSettings()
+    val stock = storage.stock()
+    val filaments = storage.filaments().deletingStockWith(stock)
     return AppContainer(
-        filaments = storage.filaments(),
+        filaments = filaments,
         printers = storage.printers(),
         services = storage.services(),
         salesChannels = storage.salesChannels(),
-        consumables = storage.consumables(),
+        consumables = storage.consumables().deletingStockWith(stock),
         templates = storage.templates(),
         clients = storage.clients(),
         maintenance = storage.maintenance(),
-        quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate },
+        stock = stock,
+        quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate }.reconcilingStock(stock) { filaments.filaments.value },
         settings = storage.settings(),
         branding = storage.branding(),
         orderSettings = orderSettings,

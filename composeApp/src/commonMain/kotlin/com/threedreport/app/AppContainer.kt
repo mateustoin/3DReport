@@ -15,6 +15,7 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.data.StockRepository
 import com.threedreport.app.data.TemplateRepository
 import com.threedreport.app.data.ThemeRepository
 import com.threedreport.app.data.store.StorageHealth
@@ -37,6 +38,11 @@ class AppContainer(
     val templates: TemplateRepository,
     val clients: ClientRepository,
     val maintenance: MaintenanceRepository,
+    /**
+     * Estoque e compras (Leva 12). O [quoteHistory], o [filaments] e o [consumables] de um contêiner montado pela plataforma
+     * já vêm ligados a ele (baixa dos pedidos e limpeza ao excluir, ver `reconcilingStock` e `deletingStockWith`).
+     */
+    val stock: StockRepository,
     val quoteHistory: QuoteHistoryRepository,
     val settings: SettingsRepository,
     val branding: BrandingRepository,
