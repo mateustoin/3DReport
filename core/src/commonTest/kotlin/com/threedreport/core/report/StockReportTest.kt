@@ -6,6 +6,7 @@ import com.threedreport.core.model.Purchase
 import com.threedreport.core.model.PurchaseLine
 import com.threedreport.core.model.QuoteKind
 import com.threedreport.core.model.QuotedConsumable
+import com.threedreport.core.model.StockItemRef
 import com.threedreport.core.model.StockMovement
 import com.threedreport.core.model.StockMovementKind
 import com.threedreport.core.report.StockFixtures.abs
@@ -167,6 +168,20 @@ class StockReportTest {
         val shortages = StockReport.shortages(editing.quote, items, movements, listOf(editing), filaments, excludingQuoteId = "approved")
 
         assertTrue(shortages.isEmpty())
+    }
+
+    @Test
+    fun shortagesFromKeptNumbersTakeTheEditedOrderOutWithoutLeavingARemainder() {
+        // 0,1 + 0,2 − 0,3 não dá zero em Double: o resíduo não pode virar "reservado".
+        val reserved = mapOf<StockItemRef, Double>(plaRed to 0.1 + 0.2)
+        val own = mapOf<StockItemRef, Double>(plaRed to 0.3)
+
+        val ok = StockReport.shortages(mapOf(plaRed to 100.0), mapOf(plaRed to 100.0), reserved, excluding = own)
+        assertTrue(ok.isEmpty())
+
+        val short = StockReport.shortages(mapOf(plaRed to 120.0), mapOf(plaRed to 100.0), mapOf(plaRed to 30.0)).single()
+        assertEquals(70.0, short.available, 1e-6)
+        assertEquals(30.0, short.reserved, 1e-6)
     }
 
     @Test

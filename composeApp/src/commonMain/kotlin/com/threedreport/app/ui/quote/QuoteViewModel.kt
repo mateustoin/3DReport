@@ -95,7 +95,6 @@ import com.threedreport.core.pricing.PricingError
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
 import com.threedreport.core.report.StockReport
-import com.threedreport.core.report.StockShortage
 import com.threedreport.core.slicer.GCodeMetadataParser
 import com.threedreport.core.stl.StlPreviewResult
 import com.threedreport.core.stl.StlProgress
@@ -122,7 +121,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.StringResource
-import kotlin.math.abs
 
 /**
  * ViewModel da tela de Orçamento. Expõe um [uiState] só (ver [QuoteUiState]) e os [notices].
@@ -293,12 +291,7 @@ class QuoteViewModel(
         val needed = StockReport.consumptionOf(quote, catalog.filaments).filterKeys { it in snapshot.tracked }
         // O pedido em edição sai do reservado: o consumo dele, já guardado, é subtraído (e não conta duas vezes).
         val own = editingId?.let { snapshot.consumptionByOrder[it] }.orEmpty()
-        val shortages = needed.mapNotNull { (ref, amount) ->
-            val reserved = ((snapshot.reserved[ref] ?: 0.0) - (own[ref] ?: 0.0)).let { if (abs(it) < StockReport.EPSILON) 0.0 else it }
-            val available = (snapshot.balances[ref] ?: 0.0) - reserved
-            if (amount > available + StockReport.EPSILON) StockShortage(ref, amount, available, reserved) else null
-        }
-        return shortages.map { shortage ->
+        return StockReport.shortages(needed, snapshot.balances, snapshot.reserved, excluding = own).map { shortage ->
             val ref = shortage.ref
             QuoteStockWarning(
                 ref = ref,

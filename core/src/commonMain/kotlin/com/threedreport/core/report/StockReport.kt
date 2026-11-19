@@ -197,12 +197,24 @@ object StockReport {
         val tracked = items.mapTo(HashSet()) { it.ref }
         val needed = consumptionOf(quote, filaments).filterKeys { it in tracked }
         if (needed.isEmpty()) return emptyList()
-        val reserved = reservedByRef(savedQuotes, filaments, excludingQuoteId)
-        return needed.mapNotNull { (ref, amount) ->
-            val itemReserved = reserved[ref] ?: 0.0
-            val available = balance(ref, movements) - itemReserved
-            if (amount > available + EPSILON) StockShortage(ref, amount, available, itemReserved) else null
-        }
+        return shortages(needed, balances(movements), reservedByRef(savedQuotes, filaments, excludingQuoteId))
+    }
+
+    /**
+     * A mesma regra de [shortages], com os números já prontos: quem guarda [balances] e [reserved] entre uma tecla e outra (o
+     * Orçamento) não refaz o reservado de todos os pedidos. [needed] é o consumo do orçamento, só dos itens controlados.
+     * [excluding] é o consumo do pedido em edição, que sai do reservado pra não contar duas vezes.
+     */
+    fun shortages(
+        needed: Map<StockItemRef, Double>,
+        balances: Map<StockItemRef, Double>,
+        reserved: Map<StockItemRef, Double>,
+        excluding: Map<StockItemRef, Double> = emptyMap(),
+    ): List<StockShortage> = needed.mapNotNull { (ref, amount) ->
+        // Tirar o próprio pedido pode deixar um resíduo de `Double`: abaixo de [EPSILON] é zero.
+        val itemReserved = ((reserved[ref] ?: 0.0) - (excluding[ref] ?: 0.0)).let { if (it < EPSILON) 0.0 else it }
+        val available = (balances[ref] ?: 0.0) - itemReserved
+        if (amount > available + EPSILON) StockShortage(ref, amount, available, itemReserved) else null
     }
 
     /** A tela Estoque de uma vez ([StockOverview]). */
