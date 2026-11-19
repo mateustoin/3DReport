@@ -3,6 +3,7 @@ package com.threedreport.app.ui.components
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.common_delete
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -16,12 +17,21 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.DialogProperties
+import com.threedreport.app.ui.focus.requestFocusWhenReady
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
@@ -29,7 +39,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * Diálogo do kit: fundo `card`, raio 12, título em `panelTitle`, o [content] e os [buttons] no pé, alinhados à
- * direita (o último é o que confirma). O diálogo nunca passa da altura da janela menos 2 vezes `space.xxl`: o título e os botões ficam fixos e só o corpo rola. Com [dismissOnClickOutside] desligado, só os botões fecham (formulário: perder o que foi digitado por um clique distraído é pior que um clique a mais). [width] fixa a largura (a janela de atualização não muda de tamanho entre os passos; sem ele, o diálogo se ajusta ao conteúdo). [help] vira uma dica ao lado do título, no lugar de um parágrafo no corpo. Base do [ConfirmDialog] e do [DeleteOrArchiveDialog].
+ * direita (o último é o que confirma). O diálogo nunca passa da altura da janela menos 2 vezes `space.xxl`: o título e os botões ficam fixos e só o corpo rola. Com [dismissOnClickOutside] desligado, só os botões fecham (formulário: perder o que foi digitado por um clique distraído é pior que um clique a mais). [width] fixa a largura (a janela de atualização não muda de tamanho entre os passos; sem ele, o diálogo se ajusta ao conteúdo). [help] vira uma dica ao lado do título, no lugar de um parágrafo no corpo. Ao abrir, o foco vai pro primeiro campo do corpo, pra digitar logo; o Tab circula só dentro do diálogo. Base do [ConfirmDialog] e do [DeleteOrArchiveDialog].
  */
 @Composable
 fun AppDialog(
@@ -43,6 +53,8 @@ fun AppDialog(
 ) {
     val space = MaterialTheme.spacing
     val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val firstField = remember { FocusRequester() }
+    var bodyFocused by remember { mutableStateOf(false) }
     AlertDialog(
         modifier = Modifier.heightIn(max = windowHeight - space.xxl * 2).then(if (width != null) Modifier.width(width) else Modifier),
         onDismissRequest = onDismiss,
@@ -56,8 +68,13 @@ fun AppDialog(
             }
         },
         text = {
+            LaunchedEffect(Unit) { firstField.requestFocusWhenReady { bodyFocused } }
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .focusRequester(firstField)
+                    .onFocusChanged { if (it.hasFocus) bodyFocused = true }
+                    .focusGroup(),
                 verticalArrangement = Arrangement.spacedBy(space.xs),
                 content = content,
             )

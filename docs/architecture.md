@@ -108,6 +108,22 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   deduções, fique igual ao de uma venda direta (decisões 26 e 78). Com
   `negotiatedSalePrice`, o preço fechado com o cliente vira o `salePrice` e o
   de tabela fica em `Quote.tableSalePrice` (decisões 79 e 84).
+- Pagamentos (decisão 146): `SavedQuote.payments` (`Payment`, `PaymentMethod`) e
+  `depositAmount`, com a situação calculada (`paidTotal`, `remaining`,
+  `paymentStatus`, `amountDue`, `pixCharge`) e nada gravado além disso. As
+  contas estão em [pricing-formulas.md](pricing-formulas.md). `OrderSettings`
+  guarda o sinal padrão, os dias pra orçamento parado (`SavedQuote.staleDays`,
+  decisão 149) e o site de rastreio (decisão 150).
+- `pix/` (decisão 145): `PixKey` (normalização e tipo da chave), `PixPayload`
+  (BR Code estático e CRC16) e `PixReceiver` (quem recebe, a partir de
+  `BrandingSettings.pixKey`/`pixReceiverName`/`pixCity`). Sem internet e sem
+  JVM; o QR Code é desenhado no `composeApp` pela ZXing
+  (`platform/PixQrCode.kt`, só JVM).
+- `message/` (decisão 148): `MessageTemplateKind` (qual modelo em cada
+  andamento), `MessagePlaceholder` e `fillMessageTemplate`, o preenchimento
+  puro dos modelos, com trecho opcional entre colchetes (some se um marcador
+  de dentro fica vazio). O texto padrão mora em `strings.xml`; o editado, em
+  `BrandingSettings.messageTemplates`.
 - `report/`: agregações puras sobre o histórico (`CatalogReport` pro resumo do
   catálogo no Dashboard de quem ainda não vende, decisão 103; `QuoteReport` pro
   Dashboard, `PrintQueueReport` pra fila de cada impressora,
@@ -389,6 +405,12 @@ Formato e migrações:
   migração e teste** (decisão 106).
 - O arquivo grava todos os campos (`encodeDefaults`), e os enums têm nome fixo
   em inglês no arquivo (`@SerialName`), separado do nome da constante.
+- As configurações de Pedidos da Leva 11 (`OrderSettings`: sinal padrão, dias
+  pra orçamento parado, site de rastreio) ficam em `order-settings.json`, pelo
+  `OrderSettingsRepository`. O histórico lê o sinal padrão a cada pedido novo
+  por uma função passada pelo contêiner (`LocalStorage.quoteHistory`), sem abrir
+  o arquivo de novo. Pix e modelos de mensagem editados moram no `branding.json`
+  (`BrandingSettings`), que já é o de "Documentos pro cliente".
 - Preferências deste computador ficam em `preferences.json` (`AppPreferences`):
   backup automático, aviso de versão nova, posição da janela e a visualização
   lembrada de Pedidos (`OrdersView`, kanban por padrão, decisão 129) e do

@@ -29,9 +29,26 @@ import _3dreport.composeapp.generated.resources.settings_docs_logo_label
 import _3dreport.composeapp.generated.resources.settings_docs_logo_missing
 import _3dreport.composeapp.generated.resources.settings_docs_logo_remove
 import _3dreport.composeapp.generated.resources.settings_docs_logo_replace
+import _3dreport.composeapp.generated.resources.settings_docs_messages_help
+import _3dreport.composeapp.generated.resources.settings_docs_messages_help_detail
+import _3dreport.composeapp.generated.resources.settings_docs_messages_reset
+import _3dreport.composeapp.generated.resources.settings_docs_messages_title
 import _3dreport.composeapp.generated.resources.settings_docs_pdf_help
 import _3dreport.composeapp.generated.resources.settings_docs_pdf_help_detail
 import _3dreport.composeapp.generated.resources.settings_docs_pdf_title
+import _3dreport.composeapp.generated.resources.settings_docs_pix_city
+import _3dreport.composeapp.generated.resources.settings_docs_pix_help
+import _3dreport.composeapp.generated.resources.settings_docs_pix_invalid_characters
+import _3dreport.composeapp.generated.resources.settings_docs_pix_join_last
+import _3dreport.composeapp.generated.resources.settings_docs_pix_key
+import _3dreport.composeapp.generated.resources.settings_docs_pix_missing
+import _3dreport.composeapp.generated.resources.settings_docs_pix_missing_city
+import _3dreport.composeapp.generated.resources.settings_docs_pix_missing_key
+import _3dreport.composeapp.generated.resources.settings_docs_pix_missing_name
+import _3dreport.composeapp.generated.resources.settings_docs_pix_name
+import _3dreport.composeapp.generated.resources.settings_docs_pix_title
+import _3dreport.composeapp.generated.resources.settings_docs_pix_too_long
+import _3dreport.composeapp.generated.resources.settings_docs_pix_unrecognized
 import _3dreport.composeapp.generated.resources.settings_docs_preview_description
 import _3dreport.composeapp.generated.resources.settings_docs_preview_help
 import _3dreport.composeapp.generated.resources.settings_docs_preview_sample
@@ -77,14 +94,19 @@ import com.threedreport.app.ui.components.AppCheckbox
 import com.threedreport.app.ui.components.AppChoiceField
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppNumberField
+import com.threedreport.app.ui.components.AppTextArea
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.FieldError
 import com.threedreport.app.ui.components.FieldLabel
 import com.threedreport.app.ui.components.FormGrid
+import com.threedreport.app.ui.components.FormNotice
 import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.clickableAction
 import com.threedreport.app.ui.format.NumberKind
+import com.threedreport.app.ui.history.defaultTextRes
+import com.threedreport.app.ui.history.labelRes
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.templates.TemplateListDialog
 import com.threedreport.app.ui.templates.TemplateListViewModel
@@ -93,7 +115,10 @@ import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
+import com.threedreport.core.message.MessagePlaceholder
+import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.ImageBackground
+import com.threedreport.core.pix.PixSetupIssue
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -202,7 +227,22 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         }
     }
 
-    FormSection(4, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {
+    FormSection(4, stringResource(Res.string.settings_docs_pix_title), help = HelpText(stringResource(Res.string.settings_docs_pix_help))) {
+        PixFields(branding, viewModel)
+    }
+
+    FormSection(
+        5,
+        stringResource(Res.string.settings_docs_messages_title),
+        help = HelpText(
+            stringResource(Res.string.settings_docs_messages_help, MessagePlaceholder.entries.joinToString(" ") { it.token }),
+            stringResource(Res.string.settings_docs_messages_help_detail),
+        ),
+    ) {
+        MessageTemplateFields(branding, viewModel)
+    }
+
+    FormSection(6, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
             AppButton(stringResource(Res.string.settings_docs_template_save), viewModel::startSaveAsTemplate, icon = AppIcons.Save)
             AppButton(stringResource(Res.string.settings_docs_template_list), onClick = { showTemplates = true }, icon = AppIcons.ViewList)
@@ -298,6 +338,106 @@ private fun PdfPreviewDialog(png: ByteArray, onDismiss: () -> Unit) {
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
                 .border(AppDimens.borderWidth, MaterialTheme.appColors.line, MaterialTheme.shapes.medium),
+        )
+    }
+}
+
+/** Chave, nome e cidade do Pix (decisão 145): o aviso de chave que não parece nenhum tipo e o que falta. */
+@Composable
+private fun PixFields(branding: BrandingUiState, viewModel: BrandingViewModel) {
+    val key = branding.pixKey
+    val issues = branding.pixIssues
+    val typed = branding.pixKeyInput.isNotBlank() || branding.pixNameInput.isNotBlank() || branding.pixCityInput.isNotBlank()
+    FormGrid {
+        cell(2) {
+            AppTextField(
+                label = stringResource(Res.string.settings_docs_pix_key),
+                value = branding.pixKeyInput,
+                onValueChange = viewModel::setPixKey,
+                placeholder = stringResource(Res.string.common_optional),
+                error = when {
+                    PixSetupIssue.KEY_INVALID_CHARACTERS in issues -> stringResource(Res.string.settings_docs_pix_invalid_characters)
+                    PixSetupIssue.KEY_TOO_LONG in issues -> stringResource(Res.string.settings_docs_pix_too_long)
+                    else -> null
+                },
+            )
+        }
+        cell(2) {
+            AppTextField(
+                label = stringResource(Res.string.settings_docs_pix_name),
+                value = branding.pixNameInput,
+                onValueChange = viewModel::setPixName,
+            )
+        }
+        cell(1) {
+            AppTextField(
+                label = stringResource(Res.string.settings_docs_pix_city),
+                value = branding.pixCityInput,
+                onValueChange = viewModel::setPixCity,
+            )
+        }
+    }
+    // A chave estranha é aceita (o banco valida), mas avisa; o tipo reconhecido não precisa de frase.
+    // Chave com acento já mostra o erro no campo: o aviso de tipo não reconhecido seria repetir.
+    if (key != null && !key.isRecognized && key.isAscii) FormNotice(stringResource(Res.string.settings_docs_pix_unrecognized))
+    val missing = listOfNotNull(
+        Res.string.settings_docs_pix_missing_key.takeIf { PixSetupIssue.KEY_MISSING in issues },
+        Res.string.settings_docs_pix_missing_name.takeIf { PixSetupIssue.NAME_MISSING in issues },
+        Res.string.settings_docs_pix_missing_city.takeIf { PixSetupIssue.CITY_MISSING in issues },
+    ).map { stringResource(it) }
+    if (typed && missing.isNotEmpty()) {
+        // "o nome e a cidade", "a chave, o nome e a cidade".
+        val list = if (missing.size == 1) {
+            missing.single()
+        } else {
+            stringResource(Res.string.settings_docs_pix_join_last, missing.dropLast(1).joinToString(", "), missing.last())
+        }
+        Text(
+            stringResource(Res.string.settings_docs_pix_missing, list),
+            style = MaterialTheme.appType.caption,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Um campo de várias linhas por modelo de mensagem (decisão 148, item 22), com o texto padrão dos recursos até a pessoa
+ * mudar, e "Voltar ao texto padrão" no que foi mudado. O texto digitado fica local ao campo: esvaziar o campo não pode
+ * trazer o padrão de volta no meio da digitação.
+ */
+@Composable
+private fun MessageTemplateFields(branding: BrandingUiState, viewModel: BrandingViewModel) {
+    MessageTemplateKind.entries.forEach { kind ->
+        val default = stringResource(kind.defaultTextRes())
+        var text by remember(kind, branding.revision, default) { mutableStateOf(branding.messageEdits[kind.key] ?: default) }
+        AppTextArea(
+            label = stringResource(kind.labelRes()),
+            value = text,
+            onValueChange = {
+                text = it
+                viewModel.setMessageTemplate(kind, it, default)
+            },
+            minLines = 2,
+            footer = if (kind.key in branding.messageEdits) {
+                {
+                    // Ação de texto, à direita, sob o campo: não é um botão do formulário.
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Text(
+                            stringResource(Res.string.settings_docs_messages_reset),
+                            style = MaterialTheme.appType.caption,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clickableAction(onClick = {
+                                    text = default
+                                    viewModel.resetMessageTemplate(kind)
+                                })
+                                .padding(horizontal = MaterialTheme.spacing.xxs, vertical = MaterialTheme.spacing.xxs),
+                        )
+                    }
+                }
+            } else {
+                null
+            },
         )
     }
 }

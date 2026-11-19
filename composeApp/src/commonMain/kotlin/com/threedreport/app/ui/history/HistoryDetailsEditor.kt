@@ -40,6 +40,8 @@ internal class HistoryDetailsEditor(
             photo = savedQuote.photoFileName?.let { fileName -> repository.photoBytes(savedQuote)?.let { PickedFile(fileName, it) } },
             deliveryDateEpochDay = savedQuote.deliveryDateEpochDay,
             category = savedQuote.category.orEmpty(),
+            trackingCode = savedQuote.trackingCode.orEmpty(),
+            notes = savedQuote.notes.orEmpty(),
         )
         change { it.copy(details = DetailsEditing(savedQuote, form)) }
     }
@@ -89,6 +91,8 @@ internal class HistoryDetailsEditor(
                 photo = form.photo,
                 deliveryDateEpochDay = form.deliveryDateEpochDay,
                 category = form.category,
+                trackingCode = form.trackingCode.trim().ifEmpty { null },
+                notes = form.notes.trim().ifEmpty { null },
             ),
         )
         change { it.copy(details = null) }

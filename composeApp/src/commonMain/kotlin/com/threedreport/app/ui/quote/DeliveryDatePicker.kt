@@ -5,11 +5,9 @@ import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.common_save
 import _3dreport.composeapp.generated.resources.quote_deadline_days
 import _3dreport.composeapp.generated.resources.quote_deadline_none
-import _3dreport.composeapp.generated.resources.quote_deadline_pick
 import _3dreport.composeapp.generated.resources.quote_deadline_title
 import _3dreport.composeapp.generated.resources.quote_deadline_unset
 import _3dreport.composeapp.generated.resources.quote_deadline_until
-import _3dreport.composeapp.generated.resources.quote_deadline_use
 import _3dreport.composeapp.generated.resources.quote_result_deadline_overdue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +34,8 @@ import com.threedreport.app.platform.weekdayName
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.ButtonKind
+import com.threedreport.app.ui.components.DateShortcut
+import com.threedreport.app.ui.components.DateShortcutPicker
 import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.components.SegmentedChoice
 import com.threedreport.app.ui.theme.appColors
@@ -61,31 +61,19 @@ private val QUICK_DAYS = listOf(3, 7, 15)
  * @param today hoje, em dias desde 01/01/1970, de quem chama (o ViewModel), pra os atalhos e o calendário.
  * @param onChange chamado com o novo prazo, ou `null` pra remover.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DeliveryDatePicker(epochDay: Long?, daysLate: Int, today: Long, onChange: (Long?) -> Unit) {
-    val space = MaterialTheme.spacing
-    var showCalendar by remember { mutableStateOf(false) }
-
-    Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
-            // Os atalhos e "Escolher data…" formam um seletor só. Marca "Escolher data…" quando a data veio do
-            // calendário e não bate com nenhum atalho.
-            val picked = epochDay != null && QUICK_DAYS.none { epochDay == today + it }
-            val selected = when {
-                picked -> QUICK_DAYS.size
-                else -> QUICK_DAYS.indexOfFirst { epochDay == today + it }
-            }
-            SegmentedChoice(
-                options = QUICK_DAYS.map { stringResource(Res.string.quote_deadline_days, it) } + stringResource(Res.string.quote_deadline_pick),
-                selectedIndex = selected,
-                onSelect = { index -> if (index < QUICK_DAYS.size) onChange(today + QUICK_DAYS[index]) else showCalendar = true },
-            )
-            if (epochDay != null) AppButton(stringResource(Res.string.quote_deadline_none), onClick = { onChange(null) })
-        }
-
+    // Prometer entrega no passado não existe: o calendário só deixa escolher de hoje em diante.
+    DateShortcutPicker(
+        epochDay = epochDay,
+        shortcuts = QUICK_DAYS.map { DateShortcut(stringResource(Res.string.quote_deadline_days, it), today + it) },
+        today = today,
+        onChange = onChange,
+        allowPast = false,
+        clearLabel = stringResource(Res.string.quote_deadline_none),
+    ) { day ->
         when {
-            epochDay == null -> Text(
+            day == null -> Text(
                 stringResource(Res.string.quote_deadline_unset),
                 style = MaterialTheme.appType.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -93,46 +81,16 @@ fun DeliveryDatePicker(epochDay: Long?, daysLate: Int, today: Long, onChange: (L
 
             daysLate > 0 -> Text(
                 // A mesma frase do painel de resultado.
-                pluralStringResource(Res.plurals.quote_result_deadline_overdue, daysLate, formatShortDate(epochDay), weekdayName(epochDay), daysLate),
+                pluralStringResource(Res.plurals.quote_result_deadline_overdue, daysLate, formatShortDate(day), weekdayName(day), daysLate),
                 style = MaterialTheme.appType.body,
                 color = MaterialTheme.colorScheme.error,
             )
 
             else -> Text(
-                stringResource(Res.string.quote_deadline_until, formatDate(epochDay), weekdayName(epochDay)),
+                stringResource(Res.string.quote_deadline_until, formatDate(day), weekdayName(day)),
                 style = MaterialTheme.appType.body,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-        }
-    }
-
-    if (showCalendar) {
-        val state = rememberDatePickerState(
-            initialSelectedDateMillis = epochDay?.let(::epochDayToUtcMillis),
-            // Prometer entrega no passado não existe: o calendário nem deixa escolher.
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcMillisToEpochDay(utcTimeMillis) >= today
-            },
-        )
-        // O calendário é o do Material 3, com a forma e a cor do tema; os botões são os do kit.
-        DatePickerDialog(
-            onDismissRequest = { showCalendar = false },
-            shape = MaterialTheme.shapes.large,
-            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.appColors.card),
-            confirmButton = {
-                AppButton(
-                    stringResource(Res.string.quote_deadline_use),
-                    onClick = {
-                        state.selectedDateMillis?.let { onChange(utcMillisToEpochDay(it)) }
-                        showCalendar = false
-                    },
-                    kind = ButtonKind.Primary,
-                    enabled = state.selectedDateMillis != null,
-                )
-            },
-            dismissButton = { AppButton(stringResource(Res.string.common_cancel), onClick = { showCalendar = false }) },
-        ) {
-            DatePicker(state = state, showModeToggle = false, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.appColors.card))
         }
     }
 }

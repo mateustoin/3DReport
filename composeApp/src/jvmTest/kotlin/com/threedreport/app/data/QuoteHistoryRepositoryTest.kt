@@ -103,7 +103,7 @@ class QuoteHistoryRepositoryTest {
         val first = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
         val second = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
-        val renamed = repository.updateDetails(first.id, QuoteDetails("Vaso", null, null, null, null, null))
+        val renamed = repository.updateDetails(first.id, QuoteDetails("Vaso", null, null, null, null, null, null, null))
         val edited = repository.update(id = second.id, name = "Luminária", quote = quote, services = emptyList(), photo = null, stlFile = null, sourceLink = null, client = null)
 
         assertFalse(renamed!!.autoNamed)
@@ -119,7 +119,7 @@ class QuoteHistoryRepositoryTest {
         val second = repository.save(name = "", quote = quote, services = emptyList(), photo = null, sourceLink = null)
 
         // "Editar detalhes" deixa o campo em branco pro nome automático; reabrir no Orçamento devolve o nome no campo.
-        val details = repository.updateDetails(first.id, QuoteDetails("", null, "https://x.test", null, null, null))
+        val details = repository.updateDetails(first.id, QuoteDetails("", null, "https://x.test", null, null, null, null, null))
         val edited = repository.update(
             id = second.id,
             name = second.name,

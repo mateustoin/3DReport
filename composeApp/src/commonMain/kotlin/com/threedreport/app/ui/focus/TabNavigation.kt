@@ -1,8 +1,10 @@
 package com.threedreport.app.ui.focus
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -28,3 +30,17 @@ fun Modifier.tabToNavigate(): Modifier {
         }
     }
 }
+
+/**
+ * Leva o foco pro elemento deste pedido assim que a tela estiver medida: o primeiro quadro de um painel ou diálogo recém aberto
+ * nega o pedido (nada está posicionado ainda), e o foco inicial nunca chegava. Tenta por alguns quadros e para ao conseguir, ou
+ * quando [alreadyFocused] diz que o foco já está no lugar (um campo com `autoFocus`).
+ */
+suspend fun FocusRequester.requestFocusWhenReady(alreadyFocused: () -> Boolean = { false }) {
+    repeat(FOCUS_ATTEMPTS) {
+        withFrameNanos { }
+        if (alreadyFocused() || runCatching { requestFocus() }.getOrDefault(false)) return
+    }
+}
+
+private const val FOCUS_ATTEMPTS = 10

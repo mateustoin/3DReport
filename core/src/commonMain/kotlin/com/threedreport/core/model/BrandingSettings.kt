@@ -1,5 +1,9 @@
 package com.threedreport.core.model
 
+import com.threedreport.core.message.MessageTemplateKind
+import com.threedreport.core.pix.PixKey
+import com.threedreport.core.pix.PixReceiver
+import com.threedreport.core.pix.PixSetupIssue
 import kotlinx.serialization.Serializable
 
 /**
@@ -31,6 +35,13 @@ import kotlinx.serialization.Serializable
  *   (decisão 19), e só vai pro documento quando o vendedor escolhe.
  * @property imageBackground fundo da imagem quadrada pro cliente ([ImageBackground]). Nasce [ImageBackground.AUTO].
  *   É do vendedor, como a logo: um [QuoteTemplate] não guarda nem muda este campo.
+ * @property pixKey chave Pix de quem vende (decisão 145), como foi digitada; normalizada ao montar o código
+ *   ([PixKey.parse]). Vazia = sem Pix em lugar nenhum. Identidade do vendedor: um [QuoteTemplate] não guarda nem muda.
+ * @property pixReceiverName nome de quem recebe o Pix, como foi digitado (vai pro código sem acento e em maiúsculas).
+ * @property pixCity cidade de quem recebe o Pix, como foi digitada.
+ * @property messageTemplates modelos de mensagem pro cliente que a pessoa editou (decisão 148), pela chave fixa do
+ *   modelo ([MessageTemplateKind.key]). Só o que foi mudado é gravado; o que falta vem dos recursos do app, no idioma
+ *   dele. Chave que esta versão não conhece é ignorada na leitura dos modelos, mas fica no arquivo.
  */
 @Serializable
 data class BrandingSettings(
@@ -46,6 +57,10 @@ data class BrandingSettings(
     val quoteValidityDays: Int = DEFAULT_VALIDITY_DAYS,
     val showClientName: Boolean = false,
     val imageBackground: ImageBackground = ImageBackground.AUTO,
+    val pixKey: String? = null,
+    val pixReceiverName: String? = null,
+    val pixCity: String? = null,
+    val messageTemplates: Map<String, String> = emptyMap(),
 ) {
     init {
         require(quoteValidityDays in 0..MAX_VALIDITY_DAYS) { "quoteValidityDays fora de 0..$MAX_VALIDITY_DAYS: $quoteValidityDays" }
@@ -65,6 +80,27 @@ data class BrandingSettings(
             contactEmail?.trim()?.takeIf { it.isNotEmpty() }?.let { ContactEntry(ContactChannel.EMAIL, it) },
             instagramHandle?.let { ContactEntry(ContactChannel.INSTAGRAM, it) },
         )
+
+    /** O que falta pra gerar o Pix (vazio = pronto). Ver [PixReceiver.issuesOf]. */
+    val pixSetupIssues: Set<PixSetupIssue>
+        get() = PixReceiver.issuesOf(pixKey, pixReceiverName, pixCity)
+
+    /** Quem recebe o Pix, ou `null` enquanto falta chave, nome ou cidade: aí nenhum documento mostra Pix. */
+    val pixReceiver: PixReceiver?
+        get() = PixReceiver.of(pixKey, pixReceiverName, pixCity)
+
+    /** O modelo de mensagem [kind] editado pela pessoa, ou `null` pra usar o texto padrão dos recursos. */
+    fun editedMessageTemplate(kind: MessageTemplateKind): String? = messageTemplates[kind.key]
+
+    /**
+     * A marca com o modelo [kind] trocado por [text]. Só o que a pessoa mudou é gravado: [text] igual ao [defaultText]
+     * dos recursos, ou em branco, apaga a edição (o modelo volta ao padrão, no idioma do app). Os outros modelos, e os
+     * de uma versão mais nova que esta não conhece, ficam como estão.
+     */
+    fun withMessageTemplate(kind: MessageTemplateKind, text: String, defaultText: String): BrandingSettings {
+        val keep = text.isNotBlank() && text.trim() != defaultText.trim()
+        return copy(messageTemplates = if (keep) messageTemplates + (kind.key to text) else messageTemplates - kind.key)
+    }
 
     /** Se há algo pro cabeçalho do PDF (logo ou contato). Sem isso, a página fica como sempre foi. */
     val hasIdentity: Boolean

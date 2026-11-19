@@ -12,6 +12,7 @@ import _3dreport.composeapp.generated.resources.export_file_auto_numbered
 import _3dreport.composeapp.generated.resources.export_file_catalog
 import _3dreport.composeapp.generated.resources.export_file_fallback
 import _3dreport.composeapp.generated.resources.export_file_quotes
+import _3dreport.composeapp.generated.resources.export_file_receipt
 import _3dreport.composeapp.generated.resources.export_saved_catalog
 import _3dreport.composeapp.generated.resources.export_saved_image
 import _3dreport.composeapp.generated.resources.export_saved_pdf
@@ -23,6 +24,7 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.platform.ClientDocumentTexts
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.QuoteExportItem
+import com.threedreport.app.platform.ReceiptData
 import com.threedreport.app.platform.ResolvedPdfBranding
 import com.threedreport.app.platform.SaveResult
 import com.threedreport.app.platform.formatShortDate
@@ -30,6 +32,7 @@ import com.threedreport.app.platform.imageBrandLine
 import com.threedreport.app.platform.loadClientDocumentTexts
 import com.threedreport.app.platform.renderCatalogPdf
 import com.threedreport.app.platform.renderQuoteImage
+import com.threedreport.app.platform.renderReceiptPdf
 import com.threedreport.app.platform.renderSavedQuotesPdf
 import com.threedreport.app.platform.resolvePdfBranding
 import com.threedreport.app.ui.components.UiNotice
@@ -83,6 +86,28 @@ class QuoteExporter(
         }
     }
 
+    /** O Pix copia e cola deste pedido (decisão 145), ou `null` sem Pix configurado ou sem Pix neste pedido. */
+    fun pixCodeFor(savedQuote: SavedQuote): String? = brandingRepository.branding.value.pixReceiver?.codeFor(savedQuote)
+
+    /**
+     * O recibo em PDF do pagamento [paymentId] de [savedQuote] (decisão 147), `Recibo #0042-1 - Peça.pdf`. Não faz nada
+     * se o pagamento não está no pedido.
+     */
+    fun exportReceipt(savedQuote: SavedQuote, paymentId: String) {
+        val payment = savedQuote.payments.firstOrNull { it.id == paymentId } ?: return
+        val number = savedQuote.receiptNumber(paymentId)
+        saveGenerated({ receiptFileName(savedQuote, number) }, uiText(Res.string.export_busy_pdf), uiText(Res.string.export_saved_pdf)) {
+            val branding = resolvePdfBranding()
+            renderReceiptPdf(ReceiptData(savedQuote, payment, number), loadClientDocumentTexts(listOf(savedQuote)), branding.brandName, branding.footerText, branding.options)
+        }
+    }
+
+    /** `Recibo #0042-1 - Nome da peça.pdf`: o '#' fica, que o número do recibo é assim que se lê. */
+    private suspend fun receiptFileName(savedQuote: SavedQuote, number: String?): String {
+        val piece = sanitizeFileName(if (savedQuote.autoNamed) getString(Res.string.export_file_auto) else savedQuote.name)
+        return "${getString(Res.string.export_file_receipt, number ?: "", piece).replace("  ", " ")}.pdf"
+    }
+
     /**
      * Lê os textos da mensagem pro cliente (recursos traduzíveis) e entrega em [main]. Com `Unconfined`, nos testes,
      * a leitura termina na hora e [block] roda antes de a função voltar.
@@ -94,16 +119,16 @@ class QuoteExporter(
     /** O texto do orçamento pra colar numa conversa (ver [toCopyPasteText]), com os textos já lidos dos recursos. */
     fun withCopyPasteText(savedQuote: SavedQuote, block: (String) -> Unit) {
         val showPrintTime = brandingRepository.branding.value.showPrintTime
-        withMessageTexts(savedQuote) { texts -> block(savedQuote.toCopyPasteText(texts, savedQuote.currency, showPrintTime)) }
+        withMessageTexts(savedQuote) { texts -> block(savedQuote.toCopyPasteText(texts, savedQuote.currency, showPrintTime, pixCodeFor(savedQuote))) }
     }
 
     /** Abre a conversa do cliente no WhatsApp com o orçamento já escrito (ver [toWhatsAppLink]). */
     fun openInWhatsApp(savedQuote: SavedQuote) {
         val showPrintTime = brandingRepository.branding.value.showPrintTime
         withMessageTexts(savedQuote) { texts ->
-            if (platform.openUrl(savedQuote.toWhatsAppLink(texts, savedQuote.currency, showPrintTime))) return@withMessageTexts
+            if (platform.openUrl(savedQuote.toWhatsAppLink(texts, savedQuote.currency, showPrintTime, pixCodeFor(savedQuote)))) return@withMessageTexts
             // Sem navegador configurado, o texto ainda chega no cliente: vai pra área de transferência.
-            val copied = platform.copyToClipboard(savedQuote.toCopyPasteText(texts, savedQuote.currency, showPrintTime))
+            val copied = platform.copyToClipboard(savedQuote.toCopyPasteText(texts, savedQuote.currency, showPrintTime, pixCodeFor(savedQuote)))
             notify(
                 UiNotice(
                     uiText(if (copied) Res.string.export_whatsapp_copied else Res.string.export_whatsapp_failed),

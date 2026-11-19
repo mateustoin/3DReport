@@ -138,7 +138,7 @@ junto.
   bandeira escolhido nas Configurações. Visto em: 3D Prime (tarifa da ANEEL por
   estado), ha-bambu-costs (tarifa por horário). Esforço P, impacto B.
 
-### Leva 10B: Nova interface e textos prontos pra tradução (idioma, fase A) (quase feita, decisões 127 a 140)
+### Leva 10B: Nova interface e textos prontos pra tradução (idioma, fase A) (feita, decisões 127 a 140)
 
 **Revisão de 2026-11-14.** A leva ganhou a nova interface (decisões 127 a 129) e uma
 fundação de arquitetura, e deixou de ser "nada muda pro usuário". Os dois trabalhos
@@ -162,8 +162,9 @@ fundação, sistema de design, e depois as telas em grupos.
   visualização lembrada (decisão 129); Dashboard, Configurações e Sobre. O PDF e a
   imagem exportados vieram na decisão 137.
 - [x] **Ícone novo** (decisão 128) no instalador, na janela e no site. **Feito (decisão 138, 2026-11-16).**
-- [ ] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`, e o
-  site com elas (decisão 140). Falta gerar as capturas novas e trocá-las no site e no README.
+- [x] **Capturas de todas as telas**, em claro e escuro, pelo `ScreenshotRenderer`, e o
+  site com elas (decisão 140). **Feito (2026-11-18).** As capturas do site e do README
+  são da interface nova, regeradas na 2.2.0 e na 2.2.1.
 
 O que segue é o texto original da leva, que continua valendo pros textos.
 
@@ -255,20 +256,20 @@ publicada (pedido do responsável do projeto, 2026-11-17).
     dia injetado, como o Orçamento desde a 2.2;
   - `FieldHelp` não é usado em lugar nenhum: remover do kit e do sistema de design.
 
-### Leva 11: Receber e conversar com o cliente
+### Leva 11: Receber e conversar com o cliente (feita, decisões 145 a 151)
 
 O que o vendedor faz o dia inteiro depois de mandar o orçamento: cobrar, receber e
 avisar. Tudo barato e local; nenhum item precisa de internet (o Pix copia e cola é
 gerado no próprio computador).
 
-- [ ] **Pix copia e cola e QR Code no orçamento.** Chave Pix do vendedor em
+- [x] **Pix copia e cola e QR Code no orçamento.** **Feito (decisão 145, 2026-11-17).** Chave Pix do vendedor em
   Configurações (Documentos pro cliente); o PDF, a mensagem do WhatsApp e a imagem
   quadrada ganham o código copia e cola e o QR com o valor. O formato do Pix (BR
   Code, padrão EMV com CRC16) é gerado sem internet, então é um Pix "estático": o
   app não sabe se foi pago (a confirmação automática é da Leva 18). O valor pode
   ser o total ou o sinal (item abaixo). Conferir a leitura nos apps dos bancos
   antes de publicar. Visto em: Calc3D Pro, Kyte, Gestor 3D. Esforço P, impacto A.
-- [ ] **Situação do pagamento, com sinal e pagamento parcial.** Junta o item
+- [x] **Situação do pagamento, com sinal e pagamento parcial.** **Feito (decisão 146, 2026-11-17).** Junta o item
   *(já no roadmap)* "Sinal/pagamento parcial no orçamento" (seção Produção e
   precificação, texto completo lá) com o que a pesquisa mostrou: cada pedido com
   a situação (não pago, sinal pago, pago), a forma (Pix, cartão, dinheiro) e a
@@ -277,27 +278,33 @@ gerado no próprio computador).
   conciliação, só o registro do que entrou. Visto em: Manuflo, Atlas3D, Calc3D
   Pro, 3DPCC; sinal com vencimento próprio em Invoice Ninja e Jobber. Esforço P/M,
   impacto A.
-- [ ] **Recibo em PDF.** Ao registrar um pagamento (ou o sinal), gerar um recibo
+- [x] **Recibo em PDF.** **Feito (decisão 147, 2026-11-17).** Ao registrar um pagamento (ou o sinal), gerar um recibo
   simples com a marca do vendedor, pelo mesmo exportador do orçamento: número do
   pedido, valor, forma e data. Depende do item acima. Visto em: Kyte, GestãoClick,
   apps de orçamento. Esforço P, impacto M.
-- [ ] **Mensagens prontas por andamento.** Hoje só o orçamento vira mensagem de
+- [x] **Mensagens prontas por andamento.** **Feito (decisão 148, 2026-11-17).** Hoje só o orçamento vira mensagem de
   WhatsApp. Cada mudança de andamento pode oferecer uma mensagem pronta e
   editável: "seu pedido foi aprovado, fica pronto até X", "ficou pronto", "saiu
   pra entrega, rastreio Y", "lembrete: falta o pagamento de R$ Z". Abre pelo mesmo
   `wa.me` da decisão 80, sem API. É a versão local do portal de acompanhamento.
   Modelos editáveis em Configurações. Visto em: Custos3D (proposta formatada),
   Jobber, Nuvemshop. Esforço P, impacto A.
-- [ ] **Lembrete de orçamento parado.** Orçamento "Orçado" há N dias
+- [x] **Lembrete de orçamento parado.** **Feito (decisão 149, 2026-11-17).** Orçamento "Orçado" há N dias
   (configurável) aparece destacado em Pedidos, com "Retomar conversa" (mensagem
   pronta, item acima) ou "Marcar como cancelado". Aumenta a conversão sem custo.
   Visto em: Jobber (lembrete de orçamento sem resposta). Esforço P, impacto A.
-- [ ] **Código de rastreio no pedido.** Campo opcional com o código, um link que
+- [x] **Código de rastreio no pedido.** **Feito (decisão 150, 2026-11-17).** Campo opcional com o código, um link que
   abre o rastreio no navegador, e o código na mensagem "saiu pra entrega". Visto
   em: Tiny, 3D Control. Esforço P, impacto M.
-- [ ] **Observações internas no pedido.** Hoje o pedido não tem campo de texto
+- [x] **Observações internas no pedido.** **Feito (decisão 151, 2026-11-17).** Hoje o pedido não tem campo de texto
   livre ("cliente quer a cor mais escura", "entregar na portaria"). Uso só interno
   (decisão 19). Ideia derivada, comum nos sistemas de gestão. Esforço P, impacto M.
+
+**Ficou de fora da Leva 11** (registrado nas decisões 145 e 148): saber se o Pix foi
+pago, com Pix dinâmico e confirmação (Leva 18, item "Pix com confirmação"); ícones
+próprios de Pix e de enviar no `AppIcons` (hoje há ícones genéricos); e um menu do
+pedido mais curto, já que as ações novas o deixaram longo (revisão de design futura).
+Capturas novas da leva saem com `-Pscreenshots.leva11=true`, sem mudar o conjunto do site.
 
 ### Leva 11B: Inglês no app, no README e no site (idioma, fase B)
 

@@ -13,6 +13,7 @@ import com.threedreport.app.ui.services.ServiceListViewModel
 import com.threedreport.app.ui.settings.BackupViewModel
 import com.threedreport.app.ui.settings.BrandingViewModel
 import com.threedreport.app.ui.settings.CurrencyViewModel
+import com.threedreport.app.ui.settings.OrderSettingsViewModel
 import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsViewModel
 import com.threedreport.app.ui.templates.TemplateListViewModel
@@ -77,6 +78,7 @@ class AppViewModels(
         showOrders = { showOrders() },
         consumableRepository = container.consumables,
         currency = container.currency.currency,
+        orderSettingsRepository = container.orderSettings,
     )
 
     val ordersViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.ORDER) }
@@ -99,6 +101,9 @@ class AppViewModels(
     val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency) }
     val brandingViewModel: BrandingViewModel by lazy {
         BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value }, today = today)
+    }
+    val orderSettingsViewModel: OrderSettingsViewModel by lazy {
+        OrderSettingsViewModel(container.orderSettings, scope, currency = { container.currency.currency.value })
     }
     val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding, scope) }
     val salesChannelViewModel: SalesChannelViewModel by lazy {
@@ -128,7 +133,7 @@ class AppViewModels(
             // O que o app perde ao fechar: os rascunhos do Orçamento e as Configurações ou a Marca por salvar.
             hasUnsavedWork = {
                 quoteViewModel.hasDraft || editQuoteViewModel.hasUnsavedEdits ||
-                    settingsViewModel.hasUnsavedChanges || brandingViewModel.hasUnsavedChanges
+                    settingsViewModel.hasUnsavedChanges || brandingViewModel.hasUnsavedChanges || orderSettingsViewModel.hasUnsavedChanges
             },
             closeApp = closeApp,
         )

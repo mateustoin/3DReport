@@ -73,6 +73,8 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Exportar em PDF ou copiar/colar (nome + valor de venda + foto no PDF)
 - Abrir a conversa no WhatsApp com o orçamento já escrito, e gerar uma imagem quadrada da peça pro zap ou pro status
 - Prazo de entrega no orçamento, em destaque no PDF, na mensagem e na imagem, com aviso em Pedidos quando o prazo vence
+- Pix copia e cola e QR Code no PDF e na mensagem do WhatsApp, com sinal e pagamentos registrados por pedido (Pedidos mostra se está pago, com sinal ou em parte) e recibo em PDF por pagamento
+- Mensagens prontas por andamento (aprovado, imprimindo, pronto, saiu pra entrega, lembrete de pagamento), editáveis, com aviso de orçamento parado, código de rastreio e observações internas no pedido
 - Exportar vários orçamentos selecionados num PDF só (um por página)
 - Catálogo/portfólio exportável em PDF (grade, várias peças por página)
 - Dashboard: o que foi vendido no período (orçamento só conta quando o cliente aprova), quanto cada hora de máquina e de trabalho rendeu, as peças que mais dão lucro e os clientes que mais pedem desconto

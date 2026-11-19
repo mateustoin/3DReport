@@ -19,7 +19,8 @@ fun createDesktopContainer(scope: CoroutineScope): AppContainer {
     val health = StorageHealth()
     val writeBehind = WriteBehind(scope, health)
     val storage = LocalStorage(appDataDir(), Clock.System, health, writeBehind)
-    val quoteHistory = storage.quoteHistory()
+    val orderSettings = storage.orderSettings()
+    val quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate }
     val branding = storage.branding()
 
     runCatching {
@@ -38,6 +39,7 @@ fun createDesktopContainer(scope: CoroutineScope): AppContainer {
         quoteHistory = quoteHistory,
         settings = storage.settings(),
         branding = branding,
+        orderSettings = orderSettings,
         theme = storage.theme(),
         currency = storage.currency(),
         onboarding = storage.onboarding(),

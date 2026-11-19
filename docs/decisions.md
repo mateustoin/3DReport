@@ -155,6 +155,13 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [142](decisions/142.md) | 2026-11-17 | Prévia de STL pesado por malha simplificada, medidas da malha completa, teto de 300 MB (revisa a 63) | Aprovada |
 | [143](decisions/143.md) | 2026-11-17 | Atualizar o app por dentro: Atualizar agora, SHA256SUMS e instalação por sistema | Aprovada |
 | [144](decisions/144.md) | 2026-11-17 | Impressoras da lista com valores de referência: consumo médio (oficial, medido ou estimado pela família, com a máxima ao lado), preço médio no Brasil datado de nov/2026, manutenção por faixa (0,20 aberta de entrada, 0,30 fechada/CoreXY, 0,45 multicolor/grande) e uso padrão de 12 h/dia, 25 dias, 12 meses em todo cadastro novo; aviso pra trocar pelos valores reais. Revisa a 54 | Aprovada |
+| [145](decisions/145.md) | 2026-11-17 | Pix copia e cola (BR Code estático no core, txid 3DR+número) e QR pela ZXing, no PDF e na mensagem, não na imagem; valor é o sinal pendente ou o que falta; só pedido em real e não cancelado | Aprovada |
+| [146](decisions/146.md) | 2026-11-17 | Pagamentos como lista (valor, forma, data, número fixo) com sinal pedido; sinal padrão em % nascendo em 0, só pra pedido novo; situação calculada; "a receber" desconta o pago. Revisita a frase sobre contas a receber | Aprovada |
+| [147](decisions/147.md) | 2026-11-17 | Recibo em PDF por pagamento, número fixo `#0042-1` que não renumera, no visual do orçamento | Aprovada |
+| [148](decisions/148.md) | 2026-11-17 | Mensagens prontas por andamento, editáveis em Configurações, com trecho opcional entre colchetes; oferecidas no aviso da mudança de andamento e no menu do pedido | Aprovada |
+| [149](decisions/149.md) | 2026-11-17 | Orçamento parado depois de 3 dias em Orçado (configurável, 0 desliga), com "Retomar conversa" e "Marcar como cancelado" | Aprovada |
+| [150](decisions/150.md) | 2026-11-17 | Código de rastreio no pedido, com site configurável (`{codigo}`), padrão o dos Correios | Aprovada |
+| [151](decisions/151.md) | 2026-11-17 | Observações internas no pedido, nunca exportadas | Aprovada |
 
 ## Pendentes de aprovação
 

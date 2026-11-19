@@ -37,4 +37,7 @@ internal object DocumentColors {
     val rowRule = AwtColor(0xE6, 0xE9, 0xEE)
     val panel = AwtColor(0xF1, 0xF3, 0xF6)
     val pageBorder = AwtColor(190, 190, 190)
+
+    /** Fundo do QR do Pix: branco puro, pra leitura, mesmo sobre o quadro cinza. */
+    val qrBackground = AwtColor(255, 255, 255)
 }

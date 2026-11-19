@@ -467,6 +467,47 @@ que somam exatamente o total:
 A soma fecha porque o lucro é o total menos exatamente o que vai nos outros
 três grupos. Só o lucro pode ser negativo (preço fechado abaixo do custo).
 
+## Sinal, pagamentos e Pix (2026-11-17, decisões 145 e 146)
+
+Nada aqui entra no preço, no lucro nem no Dashboard: é o registro do que o
+cliente já pagou, sobre o total que ele paga (`totalWithServices`, peça +
+serviços + frete cobrado). Pedido sem sinal nem pagamento fica como antes.
+
+- **Pago:** `paidTotal = soma dos pagamentos`.
+- **Falta:** `remaining = max(0, totalWithServices − paidTotal)`. Pagar a mais
+  é aceito e a falta fica em zero; diferença menor que meio centavo conta como
+  zero (soma de `Double` não deixa um pedido pago como "pago em parte").
+- **Sinal pedido:** guardado em valor (`depositAmount`), nunca maior que o
+  total (`requestedDeposit = min(depositAmount, totalWithServices)`).
+  - Pedido novo: `sinal = totalWithServices × sinal padrão (fração)`,
+    arredondado a centavos (`SavedQuote.initialDeposit`). O padrão nasce 0:
+    sem sinal. Vale também pro produto transformado em pedido.
+  - Reabrir o cálculo e salvar nunca cria nem muda o sinal: só o limita ao
+    total novo, se ele ficar menor (`withDepositLimitedToTotal`). Pedido antigo
+    não ganha sinal sozinho, e um sinal zerado de propósito continua zero.
+    Produto do catálogo nunca tem sinal.
+- **Falta do sinal:** `pendingDeposit = max(0, requestedDeposit − paidTotal)`.
+- **Situação** (`paymentStatus`): sem pagamento, **não pago**; falta zero,
+  **pago**; com sinal e `pendingDeposit = 0`, **sinal pago**; o resto, **pago em
+  parte**.
+- **O que cobrar agora** (`amountDue`): a falta do sinal enquanto houver, depois
+  a falta do pedido; nada quando não falta.
+- **Pix** (`pixCharge`): o mesmo valor, só em pedido em real (`Currency.BRL`),
+  fora de Cancelado, e em Entregue só quando o pedido acompanha pagamento (há
+  sinal ou pagamento registrado): pedido antigo já entregue não vira cobrança.
+- **Linha do sinal** no PDF e na mensagem (`depositToRequest`): a falta do
+  sinal, em centavos, pela mesma regra do Pix, em qualquer moeda.
+- **Centavos:** o que é cobrado e gravado (pagamento registrado, sinal, o que
+  cobrar agora) passa por `roundToCents`; preço e custo não.
+  O código (`pix/PixPayload`) leva o valor com ponto e duas casas.
+- **"A receber"** no resumo de Pedidos: soma `remaining` dos pedidos de Aprovado
+  a Pronto, por moeda (num pedido sem pagamento, é o total, como antes).
+- **Valor a cobrar em centavos:** `amountDue` (e o `pixCharge` que sai dele) é
+  arredondado a centavos, porque o total do pedido sai do cálculo com mais casas.
+- **Linha do sinal nos documentos:** "Sinal de R$ X pra começar" aparece no PDF
+  e na mensagem só enquanto `pendingDeposit > 0`; depois de pago, some e o Pix
+  cobra o restante.
+
 ## Exemplo de referência (planilha)
 
 Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.

@@ -62,8 +62,17 @@ object AppDimens {
 
     val iconSize = 18.dp
 
+    /** O ícone de observação do pedido: pequeno e só de leitura, com a dica. */
+    val noteIconSize = 16.dp
+
     /** Largura fixa da janela de atualização, igual em todos os passos (`AppDialog(width = ...)`). */
     val updateDialogWidth = 440.dp
+
+    /** Largura fixa do diálogo de pagamentos: a lista e o formulário de registrar dividem o mesmo diálogo, sem mudar de tamanho. */
+    val paymentsDialogWidth = 480.dp
+
+    /** Largura de um campo de dinheiro (valor, sinal): cabe um valor de seis dígitos, sem ocupar a linha toda. */
+    val moneyFieldWidth = 160.dp
 
     /** Caixa de marcar e o visto dentro dela. */
     val checkboxSize = 20.dp
@@ -106,6 +115,9 @@ object AppDimens {
     val tableHeaderHeight = 34.dp
     val tableNumberColumn = 64.dp
     val tableStatusColumn = 130.dp
+
+    /** Abaixo desta largura de área, a tabela de Pedidos tira as colunas Cliente e Pagamento (viram linhas embaixo da peça e do prazo). */
+    val ordersTableCompactBelow = 1000.dp
     val tableDeadlineColumn = 150.dp
     val tableMoneyColumn = 110.dp
     val tableCategoryColumn = 150.dp

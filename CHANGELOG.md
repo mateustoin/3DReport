@@ -7,6 +7,44 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
+Receber e conversar com o cliente. Depois de mandar o orçamento, você cobra por Pix, registra o que entrou,
+entrega um recibo e avisa o cliente a cada passo, sem sair do app e sem internet. **Nada muda sozinho:**
+sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que você já tem continuam como estão.
+
+### Adicionado
+- **Pix copia e cola e QR Code.** Em Configurações, Documentos pro cliente, informe sua chave Pix, o nome
+  de quem recebe e a cidade. O PDF do orçamento ganha o bloco "Pague com Pix", e a mensagem do WhatsApp
+  termina com o código pra o cliente copiar. O valor é o sinal que falta ou, depois dele, o que falta
+  pagar. Só pedidos em real e que não foram cancelados mostram Pix. A imagem quadrada e o catálogo em PDF
+  não mostram. O Pix é gerado no seu computador e o app não sabe se foi pago. **Confira o QR e o código no
+  app do seu banco antes de usar com clientes.**
+- **Sinal e pagamentos.** Em Pedidos, o item "Pagamentos" do menu registra cada valor recebido, com forma
+  (Pix, cartão, dinheiro ou outro) e data. O pedido mostra se está não pago, com sinal pago, pago em parte
+  ou pago, de Aprovado em diante. Em Configurações, Pedidos, o "Sinal padrão (%)" começa em 0 e vale só pra
+  pedidos novos. Enquanto falta o sinal, o PDF e a mensagem dizem "Sinal de R$ X pra começar". O "a receber"
+  do resumo agora desconta o que já foi pago.
+- **Recibo em PDF.** Cada pagamento gera um recibo no mesmo visual do orçamento, com número como `#0042-1`.
+  Excluir um pagamento não muda o número dos outros recibos.
+- **Mensagens prontas por andamento.** Ao mudar o pedido pra Aprovado, Imprimindo, Pronto ou Entregue, o
+  aviso oferece "Avisar cliente". O menu do pedido tem "Mensagem pro cliente", com lembrete de pagamento e
+  retomada de orçamento. Você edita os textos em Configurações, e um trecho entre colchetes some quando a
+  informação não existe. Nada é enviado sozinho: o WhatsApp abre com a mensagem pronta.
+- **Orçamento parado.** Orçado há 3 dias ou mais mostra "Parado há N dias" (o número é configurável, 0
+  desliga), com "Retomar conversa" e "Marcar como cancelado" no menu.
+- **Código de rastreio.** Guarde o código no pedido, abra o rastreio no site (os Correios por padrão, e
+  você pode trocar) e mande o código na mensagem "Saiu pra entrega". Ele não aparece no PDF.
+- **Observações no pedido.** Um campo livre só seu, que nunca vai pro PDF, pra imagem, pra mensagem nem pro
+  recibo. Um ícone no cartão mostra que o pedido tem observação.
+- **Calendário nas datas.** O prazo de entrega, o pagamento e a manutenção usam o mesmo seletor, com
+  atalhos e calendário.
+
+### Corrigido
+- **Tab nos formulários.** O teclado não chegava aos campos de texto nem às listas de escolha: o foco sumia
+  ao entrar neles e o Tab voltava pro começo da tela. Agora Tab e Shift+Tab percorrem todos os campos, listas,
+  seletores e caixas de marcar na ordem da tela. Ao abrir um diálogo ou o painel de um cadastro, o foco vai pro
+  primeiro campo, e o Tab circula só dentro do diálogo. Os ícones de ajuda saíram da ordem do Tab (continuam
+  clicáveis).
+
 ## [2.2.1] - 2026-11-17
 
 Impressoras da lista com valores de referência e atualização pelo próprio app. Impressoras e pedidos que

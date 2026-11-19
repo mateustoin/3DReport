@@ -26,6 +26,7 @@ class AppViewModelsTodayTest {
             quoteHistory = storage.quoteHistory(),
             settings = storage.settings(),
             branding = storage.branding(),
+            orderSettings = storage.orderSettings(),
             theme = storage.theme(),
             currency = storage.currency(),
             onboarding = storage.onboarding(),

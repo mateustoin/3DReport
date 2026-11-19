@@ -39,4 +39,6 @@ fun HistoryDialogs(state: HistoryUiState, viewModel: QuoteHistoryViewModel) {
         )
     }
     state.repricing?.let { RepriceDialog(it, viewModel) }
+    state.payments?.let { PaymentsDialogView(it, viewModel, state.today) }
+    state.message?.let { MessageDialog(it, viewModel) }
 }

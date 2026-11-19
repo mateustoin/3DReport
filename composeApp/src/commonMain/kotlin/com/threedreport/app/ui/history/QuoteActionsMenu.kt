@@ -4,6 +4,7 @@ import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_delete
 import _3dreport.composeapp.generated.resources.history_menu_back
 import _3dreport.composeapp.generated.resources.history_menu_convert
+import _3dreport.composeapp.generated.resources.history_menu_copy_pix
 import _3dreport.composeapp.generated.resources.history_menu_copy_text
 import _3dreport.composeapp.generated.resources.history_menu_copy_to_catalog
 import _3dreport.composeapp.generated.resources.history_menu_deadline_change
@@ -14,17 +15,23 @@ import _3dreport.composeapp.generated.resources.history_menu_duplicate
 import _3dreport.composeapp.generated.resources.history_menu_edit_calculation
 import _3dreport.composeapp.generated.resources.history_menu_edit_details
 import _3dreport.composeapp.generated.resources.history_menu_export_pdf
+import _3dreport.composeapp.generated.resources.history_menu_follow_up
 import _3dreport.composeapp.generated.resources.history_menu_group_files
 import _3dreport.composeapp.generated.resources.history_menu_group_organize
 import _3dreport.composeapp.generated.resources.history_menu_group_send
+import _3dreport.composeapp.generated.resources.history_menu_mark_cancelled
+import _3dreport.composeapp.generated.resources.history_menu_message
 import _3dreport.composeapp.generated.resources.history_menu_more
 import _3dreport.composeapp.generated.resources.history_menu_move_to
+import _3dreport.composeapp.generated.resources.history_menu_payments
 import _3dreport.composeapp.generated.resources.history_menu_print_settings
 import _3dreport.composeapp.generated.resources.history_menu_reprice
 import _3dreport.composeapp.generated.resources.history_menu_save_image
 import _3dreport.composeapp.generated.resources.history_menu_select
 import _3dreport.composeapp.generated.resources.history_menu_sell
 import _3dreport.composeapp.generated.resources.history_menu_status_current
+import _3dreport.composeapp.generated.resources.history_menu_tracking_copy
+import _3dreport.composeapp.generated.resources.history_menu_tracking_open
 import _3dreport.composeapp.generated.resources.history_menu_whatsapp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -82,6 +89,7 @@ fun QuoteActionsMenu(savedQuote: SavedQuote, actions: QuoteActions, modifier: Mo
                 }
                 return@AppMenu
             }
+            StaleGroup(actions, close)
             SendGroup(actions, close)
             FilesGroup(actions, close)
             OrganizeGroup(savedQuote, actions, close, onChooseStatus = { choosingStatus = true })
@@ -98,6 +106,8 @@ private fun SendGroup(actions: QuoteActions, close: () -> Unit) {
     AppMenuItem(stringResource(Res.string.history_menu_whatsapp), { close(); actions.onOpenWhatsApp() }, AppIcons.Chat)
     AppMenuItem(stringResource(Res.string.history_menu_save_image), { close(); actions.onSaveImage() }, AppIcons.AddPhotoAlternate)
     AppMenuItem(stringResource(Res.string.history_menu_copy_text), { close(); actions.onCopy() }, AppIcons.ContentCopy)
+    actions.onMessage?.let { AppMenuItem(stringResource(Res.string.history_menu_message), { close(); it() }, AppIcons.Handshake) }
+    actions.onCopyPix?.let { AppMenuItem(stringResource(Res.string.history_menu_copy_pix), { close(); it() }, AppIcons.Payments) }
 }
 
 @Composable
@@ -117,6 +127,9 @@ private fun OrganizeGroup(savedQuote: SavedQuote, actions: QuoteActions, close: 
     AppMenuDivider()
     AppMenuGroup(stringResource(Res.string.history_menu_group_organize))
     actions.onSell?.let { AppMenuItem(stringResource(Res.string.history_menu_sell), { close(); it() }, AppIcons.Sell) }
+    actions.onPayments?.let { AppMenuItem(stringResource(Res.string.history_menu_payments), { close(); it() }, AppIcons.AccountBalance) }
+    actions.onOpenTracking?.let { AppMenuItem(stringResource(Res.string.history_menu_tracking_open), { close(); it() }, AppIcons.OpenInNew) }
+    actions.onCopyTracking?.let { AppMenuItem(stringResource(Res.string.history_menu_tracking_copy), { close(); it() }, AppIcons.Badge) }
     AppMenuItem(stringResource(Res.string.history_menu_edit_details), { close(); actions.onEditDetails() }, AppIcons.Edit)
     AppMenuItem(stringResource(Res.string.history_menu_edit_calculation), { close(); actions.onEdit() }, AppIcons.Calculate)
     AppMenuItem(stringResource(Res.string.history_menu_duplicate), { close(); actions.onDuplicate() }, AppIcons.FileCopy)
@@ -129,4 +142,13 @@ private fun OrganizeGroup(savedQuote: SavedQuote, actions: QuoteActions, close: 
     actions.onReprice?.let { AppMenuItem(stringResource(Res.string.history_menu_reprice), { close(); it() }, AppIcons.Sync) }
     actions.onConvertToOrder?.let { AppMenuItem(stringResource(Res.string.history_menu_convert), { close(); it() }, AppIcons.RequestQuote) }
     actions.onSelect?.let { AppMenuItem(stringResource(Res.string.history_menu_select), { close(); it() }, AppIcons.Check) }
+}
+
+/** O alto do menu de um orçamento parado: retomar a conversa ou desistir dele (decisão 149). Sem as duas ações, nada aparece. */
+@Composable
+private fun StaleGroup(actions: QuoteActions, close: () -> Unit) {
+    if (actions.onFollowUp == null && actions.onMarkCancelled == null) return
+    actions.onFollowUp?.let { AppMenuItem(stringResource(Res.string.history_menu_follow_up), { close(); it() }, AppIcons.History) }
+    actions.onMarkCancelled?.let { AppMenuItem(stringResource(Res.string.history_menu_mark_cancelled), { close(); it() }, AppIcons.Close) }
+    AppMenuDivider()
 }

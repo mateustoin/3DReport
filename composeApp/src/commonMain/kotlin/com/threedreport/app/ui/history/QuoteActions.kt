@@ -28,6 +28,18 @@ class QuoteActions(
     /** Entra no modo de seleção com este orçamento marcado; `null` onde não há exportação em lote (o kanban). */
     val onSelect: (() -> Unit)?,
     val onDelete: () -> Unit,
+    /** "Mensagem pro cliente" (decisão 148); `null` em Cancelado e no catálogo. */
+    val onMessage: (() -> Unit)? = null,
+    /** "Copiar código Pix" (decisão 145); `null` sem Pix neste pedido. */
+    val onCopyPix: (() -> Unit)? = null,
+    /** "Pagamentos" (decisão 146); só em pedido. */
+    val onPayments: (() -> Unit)? = null,
+    /** "Ver rastreio" e "Copiar código de rastreio" (decisão 150); `null` sem código (e sem site, no primeiro). */
+    val onOpenTracking: (() -> Unit)? = null,
+    val onCopyTracking: (() -> Unit)? = null,
+    /** "Retomar conversa" e "Marcar como cancelado", no alto do menu de um orçamento parado (decisão 149). */
+    val onFollowUp: (() -> Unit)? = null,
+    val onMarkCancelled: (() -> Unit)? = null,
 )
 
 /** Pra onde as ações que abrem o Orçamento levam (o navegador do app); as que a tela não usa ficam `null`. */
@@ -61,5 +73,12 @@ fun quoteActionsFor(row: HistoryRow, viewModel: QuoteHistoryViewModel, navigatio
         onSaveImage = { viewModel.saveShareableImage(quote) },
         onSelect = if (selectable) ({ viewModel.startSelection(quote.id) }) else null,
         onDelete = { viewModel.delete(quote.id) },
+        onMessage = if (row.messageKind != null) ({ viewModel.openMessage(quote) }) else null,
+        onCopyPix = if (row.hasPix) ({ viewModel.copyPixCode(quote) }) else null,
+        onPayments = if (isOrder) ({ viewModel.openPayments(quote) }) else null,
+        onOpenTracking = if (row.trackingUrl != null) ({ viewModel.openTracking(quote) }) else null,
+        onCopyTracking = if (isOrder && !quote.trackingCode.isNullOrBlank()) ({ viewModel.copyTrackingCode(quote) }) else null,
+        onFollowUp = if (row.staleDays != null) ({ viewModel.followUp(quote) }) else null,
+        onMarkCancelled = if (row.staleDays != null) ({ viewModel.markCancelled(quote.id) }) else null,
     )
 }

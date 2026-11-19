@@ -35,7 +35,6 @@ import _3dreport.composeapp.generated.resources.printers_maintenance_log_add
 import _3dreport.composeapp.generated.resources.printers_maintenance_log_entry
 import _3dreport.composeapp.generated.resources.printers_maintenance_log_entry_component
 import _3dreport.composeapp.generated.resources.printers_maintenance_log_submit
-import _3dreport.composeapp.generated.resources.printers_maintenance_other_date
 import _3dreport.composeapp.generated.resources.printers_maintenance_reset_none
 import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_bed
 import _3dreport.composeapp.generated.resources.printers_maintenance_suggestion_belts
@@ -49,7 +48,6 @@ import _3dreport.composeapp.generated.resources.printers_maintenance_today
 import _3dreport.composeapp.generated.resources.printers_maintenance_usage
 import _3dreport.composeapp.generated.resources.printers_maintenance_usage_entry
 import _3dreport.composeapp.generated.resources.printers_maintenance_usage_submit
-import _3dreport.composeapp.generated.resources.printers_maintenance_use_date
 import _3dreport.composeapp.generated.resources.printers_remaining_left
 import _3dreport.composeapp.generated.resources.printers_remaining_overdue
 import androidx.compose.foundation.layout.Arrangement
@@ -85,6 +83,8 @@ import com.threedreport.app.ui.components.AppSuggestField
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.ConfirmDialog
+import com.threedreport.app.ui.components.DateShortcut
+import com.threedreport.app.ui.components.DateShortcutPicker
 import com.threedreport.app.ui.components.DialogText
 import com.threedreport.app.ui.components.FormGrid
 import com.threedreport.app.ui.components.FormSection
@@ -390,7 +390,6 @@ private fun LogForm(today: Long, components: List<MaintenanceComponent>, onAdd: 
     var componentId by remember { mutableStateOf<String?>(null) }
     // Resolvido contra a lista atual: um componente que sumiu (excluído com o formulário aberto) vira "nenhum".
     val component = components.find { it.id == componentId }
-    var showCalendar by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<UiText?>(null) }
     val noneLabel = stringResource(Res.string.printers_maintenance_reset_none)
 
@@ -400,14 +399,14 @@ private fun LogForm(today: Long, components: List<MaintenanceComponent>, onAdd: 
             value = description,
             onValueChange = { description = it; error = null },
         )
-        AppChoiceField(
-            label = stringResource(Res.string.printers_maintenance_field_date),
-            options = listOf(
-                stringResource(Res.string.printers_maintenance_today),
-                if (date == today) stringResource(Res.string.printers_maintenance_other_date) else formatDate(date),
-            ),
-            selectedIndex = if (date == today) 0 else 1,
-            onSelect = { index -> if (index == 0) date = today else showCalendar = true },
+        Text(stringResource(Res.string.printers_maintenance_field_date), style = MaterialTheme.appType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Manutenção registrada é o que já foi feito: o calendário não deixa escolher o futuro.
+        DateShortcutPicker(
+            epochDay = date,
+            shortcuts = listOf(DateShortcut(stringResource(Res.string.printers_maintenance_today), today)),
+            today = today,
+            onChange = { day -> date = day ?: today },
+            allowFuture = false,
         )
         if (components.isNotEmpty()) {
             AppDropdownField(
@@ -431,33 +430,6 @@ private fun LogForm(today: Long, components: List<MaintenanceComponent>, onAdd: 
                 if (error == null) open = false
             })
             AppButton(stringResource(Res.string.common_cancel), { open = false })
-        }
-    }
-
-    if (showCalendar) {
-        val state = rememberDatePickerState(
-            initialSelectedDateMillis = epochDayToUtcMillis(date),
-            // Manutenção registrada é o que já foi feito: o calendário não deixa escolher o futuro.
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcMillisToEpochDay(utcTimeMillis) <= today
-            },
-        )
-        DatePickerDialog(
-            onDismissRequest = { showCalendar = false },
-            confirmButton = {
-                AppButton(
-                    stringResource(Res.string.printers_maintenance_use_date),
-                    onClick = {
-                        state.selectedDateMillis?.let { date = utcMillisToEpochDay(it) }
-                        showCalendar = false
-                    },
-                    kind = ButtonKind.Primary,
-                    enabled = state.selectedDateMillis != null,
-                )
-            },
-            dismissButton = { AppButton(stringResource(Res.string.common_cancel), { showCalendar = false }) },
-        ) {
-            DatePicker(state = state, showModeToggle = false)
         }
     }
 }

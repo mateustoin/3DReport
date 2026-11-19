@@ -30,6 +30,7 @@ import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.parseWholeNumber
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.BrandingSettings
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.CostBreakdown
@@ -109,7 +110,7 @@ class BrandingViewModel(
         if (saved == baseline) return
         val wasClean = !hasUnsavedChanges
         baseline = saved
-        publish(if (wasClean) saved.toUiState(repository.logoBytes()) else state.value)
+        publish(if (wasClean) saved.toUiState(repository.logoBytes()).copy(revision = state.value.revision + 1) else state.value)
     }
 
     /**
@@ -163,6 +164,26 @@ class BrandingViewModel(
     fun setContactEmail(text: String) = edit { it.copy(contactEmailInput = text) }
     fun setContactInstagram(text: String) = edit { it.copy(contactInstagramInput = text) }
 
+    /** A chave Pix (decisão 145). Na primeira chave digitada, o nome de quem recebe já sai sugerido pelo nome da marca. */
+    fun setPixKey(text: String) = edit {
+        val suggestion = it.brandNameInput.trim().takeIf { _ -> it.pixKeyInput.isBlank() && text.isNotBlank() && it.pixNameInput.isBlank() }
+        it.copy(pixKeyInput = text, pixNameInput = suggestion ?: it.pixNameInput)
+    }
+    fun setPixName(text: String) = edit { it.copy(pixNameInput = text) }
+    fun setPixCity(text: String) = edit { it.copy(pixCityInput = text) }
+
+    /**
+     * Troca o texto do modelo [kind] no rascunho. Só o que difere do [defaultText] (o dos recursos) é gravado: igual ao
+     * padrão, ou em branco, volta ao padrão (decisão 148, item 22).
+     */
+    fun setMessageTemplate(kind: MessageTemplateKind, text: String, defaultText: String) = edit {
+        val settings = BrandingSettings(messageTemplates = it.messageEdits).withMessageTemplate(kind, text, defaultText)
+        it.copy(messageEdits = settings.messageTemplates)
+    }
+
+    /** "Voltar ao texto padrão" do modelo [kind]. */
+    fun resetMessageTemplate(kind: MessageTemplateKind) = edit { it.copy(messageEdits = it.messageEdits - kind.key) }
+
     /**
      * Abre o seletor de imagem e, se a imagem abrir, põe no formulário (grava só em [save]). A
      * checagem é na hora de escolher, e não na de exportar: descobrir que a logo não abre só ao
@@ -182,7 +203,7 @@ class BrandingViewModel(
 
     /** Volta o formulário pro que está gravado, logo incluída ("Descartar" da barra de alterações, decisão 112). */
     fun discard() {
-        publish(baseline.toUiState(repository.logoBytes()))
+        publish(baseline.toUiState(repository.logoBytes()).copy(revision = state.value.revision + 1))
     }
 
     /**
@@ -330,6 +351,10 @@ private fun BrandingUiState.toSettings() = BrandingSettings(
     contactWhatsApp = contactWhatsAppInput.trim().ifEmpty { null },
     contactEmail = contactEmailInput.trim().ifEmpty { null },
     contactInstagram = contactInstagramInput.trim().ifEmpty { null },
+    pixKey = pixKeyInput.trim().ifEmpty { null },
+    pixReceiverName = pixNameInput.trim().ifEmpty { null },
+    pixCity = pixCityInput.trim().ifEmpty { null },
+    messageTemplates = messageEdits,
     showBorder = showBorder,
     quoteValidityDays = validityDays(),
     showClientName = showClientName,
@@ -370,6 +395,10 @@ private fun BrandingSettings.toUiState(logoBytes: ByteArray?) = BrandingUiState(
     contactWhatsAppInput = contactWhatsApp.orEmpty(),
     contactEmailInput = contactEmail.orEmpty(),
     contactInstagramInput = contactInstagram.orEmpty(),
+    pixKeyInput = pixKey.orEmpty(),
+    pixNameInput = pixReceiverName.orEmpty(),
+    pixCityInput = pixCity.orEmpty(),
+    messageEdits = messageTemplates,
     logoBytes = logoBytes,
     // Configurada, mas o arquivo sumiu da pasta (apagado à mão, backup parcial): avisa em vez de
     // deixar o PDF sair sem logo em silêncio.

@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import com.threedreport.app.ui.focus.requestFocusWhenReady
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -84,7 +85,7 @@ fun FormPanel(title: String, onSave: () -> Unit, onCancel: () -> Unit, modifier:
     val space = MaterialTheme.spacing
     val firstField = remember { FocusRequester() }
     val scroll = rememberScrollState()
-    LaunchedEffect(Unit) { runCatching { firstField.requestFocus() } }
+    LaunchedEffect(Unit) { firstField.requestFocusWhenReady() }
     Row(modifier = modifier.fillMaxSize().background(colors.card)) {
         VerticalDivider(color = colors.line, thickness = AppDimens.borderWidth)
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {

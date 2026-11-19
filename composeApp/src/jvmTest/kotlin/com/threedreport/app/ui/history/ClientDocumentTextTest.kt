@@ -200,7 +200,8 @@ class ClientDocumentTextTest {
             "R$ 78,57",
             "Gerado com 3DReport",
         )
-        assertEquals(page.joinToString("\n", postfix = "\n"), text)
+        // O PDFBox quebra a linha com o separador do sistema (CRLF no Windows): confere o texto, não o separador.
+        assertEquals(page.joinToString("\n", postfix = "\n"), text.replace("\r\n", "\n"))
     }
 
     @Test

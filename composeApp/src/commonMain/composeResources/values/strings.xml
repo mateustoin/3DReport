@@ -296,8 +296,6 @@
     <string name="printers_maintenance_field_description">O que foi feito</string>
     <string name="printers_maintenance_field_date">Data</string>
     <string name="printers_maintenance_today">Hoje</string>
-    <string name="printers_maintenance_other_date">Outra data</string>
-    <string name="printers_maintenance_use_date">Usar esta data</string>
     <string name="printers_maintenance_field_reset">Zera o contador de</string>
     <string name="printers_maintenance_reset_none">Nenhum</string>
     <string name="printers_maintenance_help_reset">O contador recomeça agora, mesmo com data antiga: o app não sabe quanto a máquina rodou desde então.</string>
@@ -613,7 +611,6 @@
 
     <!-- Orçamento: prazo e configurações de impressão (também usados em Pedidos) -->
     <string name="quote_deadline_days">+%1$d dias</string>
-    <string name="quote_deadline_pick">Escolher data…</string>
     <string name="quote_deadline_none">Sem prazo</string>
     <string name="quote_deadline_unset">Sem prazo definido.</string>
     <string name="quote_deadline_until">Entrega até %1$s (%2$s)</string>
@@ -622,7 +619,6 @@
     <string name="overdue_send_batch">%1$d dos orçamentos selecionados têm prazo vencido: %2$s. Se exportar assim, o cliente recebe esses prazos vencidos.</string>
     <string name="overdue_send_change_date">Alterar prazo</string>
     <string name="overdue_send_anyway">Enviar assim mesmo</string>
-    <string name="quote_deadline_use">Usar esta data</string>
     <string name="quote_deadline_title">Prazo de entrega</string>
     <string name="quote_settings_help">Guardado só pra você consultar e replicar. Não entra no cálculo do preço nem em nenhum export.</string>
     <string name="quote_settings_layer">Altura de camada (mm)</string>
@@ -828,7 +824,7 @@
     <string name="history_menu_group_files">Arquivos</string>
     <string name="history_menu_group_organize">Organizar</string>
     <string name="history_menu_export_pdf">Exportar PDF</string>
-    <string name="history_menu_whatsapp">Enviar texto no WhatsApp</string>
+    <string name="history_menu_whatsapp">Enviar orçamento no WhatsApp</string>
     <string name="history_menu_save_image">Salvar imagem pro WhatsApp</string>
     <string name="history_menu_copy_text">Copiar texto</string>
     <string name="history_menu_download_photo">Baixar foto</string>
@@ -1310,4 +1306,129 @@
 
     <!-- Nome que o app dá ao pedido salvo com o nome em branco; %1$s é a data e a hora (ver LocalStorage). -->
     <string name="quote_auto_name">Orçamento - %1$s</string>
+
+    <!-- Leva 11: Pix, mensagens prontas, pagamentos, rastreio -->
+    <string name="settings_docs_pix_title">Pix</string>
+    <string name="settings_docs_pix_help">Com a chave, o PDF do orçamento e a mensagem mostram o Pix copia e cola.</string>
+    <string name="settings_docs_pix_key">Chave Pix</string>
+    <string name="settings_docs_pix_name">Nome de quem recebe</string>
+    <string name="settings_docs_pix_city">Cidade</string>
+    <string name="settings_docs_pix_unrecognized">Tipo de chave não reconhecido. Confira no banco.</string>
+    <string name="settings_docs_pix_too_long">A chave é grande demais pro Pix.</string>
+    <string name="settings_docs_pix_invalid_characters">A chave tem acento ou outro caractere que o Pix não aceita.</string>
+    <string name="settings_docs_pix_missing">Falta %1$s pro Pix aparecer nos documentos.</string>
+    <string name="settings_docs_pix_missing_key">a chave</string>
+    <string name="settings_docs_pix_missing_name">o nome</string>
+    <string name="settings_docs_pix_missing_city">a cidade</string>
+    <string name="settings_docs_messages_title">Mensagens prontas</string>
+    <string name="settings_docs_messages_help">Marcadores: %1$s</string>
+    <string name="settings_docs_messages_help_detail">O que está entre colchetes some quando falta o dado. Em [ até {prazo}], se o pedido não tem prazo, o trecho inteiro sai.</string>
+    <string name="settings_docs_messages_reset">Voltar ao texto padrão</string>
+    <string name="message_kind_approved">Aprovado</string>
+    <string name="message_kind_printing">Imprimindo</string>
+    <string name="message_kind_ready">Pronto</string>
+    <string name="message_kind_out_for_delivery">Saiu pra entrega</string>
+    <string name="message_kind_payment_reminder">Lembrete de pagamento</string>
+    <string name="message_kind_follow_up">Retomar orçamento</string>
+    <string name="message_default_approved">Oi[, {cliente}]! Seu pedido {pedido} ({peca}) foi aprovado[ e fica pronto até {prazo}].</string>
+    <string name="message_default_printing">Oi[, {cliente}]! {peca} já está imprimindo.</string>
+    <string name="message_default_ready">Oi[, {cliente}]! {peca} ficou pronto!</string>
+    <string name="message_default_out_for_delivery">Oi[, {cliente}]! {peca} saiu pra entrega.[ Rastreio: {rastreio}]</string>
+    <string name="message_default_payment_reminder">Oi[, {cliente}]! Lembrete: falta o pagamento[ de {falta}] do pedido {pedido}.</string>
+    <string name="message_default_follow_up">Oi[, {cliente}]! Conseguiu ver o orçamento de {peca}? Se quiser, ajusto alguma coisa.</string>
+    <string name="message_title">Mensagem pro cliente</string>
+    <string name="message_field_kind">Modelo</string>
+    <string name="message_field_text">Mensagem</string>
+    <string name="message_action_whatsapp">Abrir no WhatsApp</string>
+    <string name="message_action_copy">Copiar</string>
+    <string name="message_notice_copied">Mensagem copiada.</string>
+    <string name="message_whatsapp_copied">Não consegui abrir o WhatsApp. A mensagem foi copiada: cole na conversa com o cliente.</string>
+
+    <string name="settings_section_orders">Pedidos</string>
+    <string name="settings_orders_deposit">Sinal padrão (%)</string>
+    <string name="settings_orders_deposit_help">Em pedido novo, o sinal é esse percentual do total. 0 é sem sinal.</string>
+    <string name="settings_orders_stale">Destacar orçamento parado depois de (dias)</string>
+    <string name="settings_orders_stale_help">0 desliga o destaque.</string>
+    <string name="settings_orders_tracking">Site de rastreio</string>
+    <string name="settings_orders_tracking_help">Use {codigo} no lugar do código. Vazio é sem link.</string>
+    <string name="settings_orders_tracking_default">Usar o site dos Correios</string>
+    <string name="settings_orders_error_deposit">O sinal vai de 0 a 100.</string>
+    <string name="settings_orders_error_days">Use um número inteiro de 0 a %1$d.</string>
+
+    <string name="payment_status_not_paid">Não pago</string>
+    <string name="payment_status_deposit_paid">Sinal pago</string>
+    <string name="payment_status_partially_paid">Pago em parte</string>
+    <string name="payment_status_paid">Pago</string>
+    <string name="payment_method_pix">Pix</string>
+    <string name="payment_method_card">Cartão</string>
+    <string name="payment_method_cash">Dinheiro</string>
+    <string name="payment_method_other">Outro</string>
+    <string name="payments_title">Pagamentos</string>
+    <string name="payments_deposit">Sinal</string>
+    <string name="payments_empty">Nenhum pagamento ainda.</string>
+    <string name="payments_action_register">Registrar pagamento</string>
+    <string name="payments_receipt_description">Gerar recibo de %1$s</string>
+    <string name="payments_delete_description">Excluir pagamento de %1$s</string>
+    <string name="payments_delete_title">Excluir pagamento</string>
+    <string name="payments_delete_message">O pagamento de %1$s sai da lista. Os outros mantêm o número do recibo.</string>
+    <string name="payments_register_title">Registrar pagamento</string>
+    <string name="payments_field_amount">Valor</string>
+    <string name="payments_field_method">Forma</string>
+    <string name="payments_field_date">Data</string>
+    <string name="payments_date_today">Hoje</string>
+    <string name="payments_date_yesterday">Ontem</string>
+    <string name="payments_error_amount">Informe um valor maior que zero.</string>
+    <string name="payments_notice_registered">Pagamento de %1$s registrado.</string>
+    <string name="payments_notice_receipt">Gerar recibo</string>
+    <string name="payments_notice_deleted">Pagamento excluído.</string>
+
+    <string name="history_notice_status_changed">"%1$s" agora está em %2$s.</string>
+    <string name="history_notice_notify_client">Avisar cliente</string>
+    <string name="history_notice_pix_copied">Código Pix copiado.</string>
+    <string name="history_notice_tracking_copied">Código de rastreio copiado.</string>
+    <string name="history_menu_message">Mensagem pro cliente</string>
+    <string name="history_menu_copy_pix">Copiar código Pix</string>
+    <string name="history_menu_payments">Pagamentos</string>
+    <string name="history_menu_tracking_open">Ver rastreio</string>
+    <string name="history_menu_tracking_copy">Copiar código de rastreio</string>
+    <string name="history_menu_follow_up">Retomar conversa</string>
+    <string name="history_menu_mark_cancelled">Marcar como cancelado</string>
+    <string name="history_details_field_tracking">Código de rastreio</string>
+    <string name="history_details_field_notes">Observações</string>
+    <string name="orders_col_payment">Pagamento</string>
+    <plurals name="orders_stale">
+        <item quantity="one">Parado há %1$d dia</item>
+        <item quantity="other">Parado há %1$d dias</item>
+    </plurals>
+    <string name="orders_notes_description">Observações: %1$s</string>
+
+    <string name="client_doc_deposit">Sinal de %1$s pra começar</string>
+    <string name="client_doc_pix_copy_paste">Pix copia e cola (%1$s):</string>
+    <string name="client_doc_pix_title">Pague com Pix</string>
+    <string name="client_doc_pix_deposit">Sinal: %1$s</string>
+    <string name="client_doc_pix_value">Valor: %1$s</string>
+    <string name="client_doc_pix_key">Chave: %1$s</string>
+    <string name="client_doc_pix_code_label">Pix copia e cola</string>
+    <string name="client_doc_receipt_title">Recibo</string>
+    <string name="client_doc_receipt_title_numbered">Recibo %1$s</string>
+    <string name="client_doc_receipt_body">Recebi de %1$s o valor de %2$s (%3$s) em %4$s, referente %5$s.</string>
+    <string name="client_doc_receipt_body_anonymous">Recebi o valor de %1$s (%2$s) em %3$s, referente %4$s.</string>
+    <string name="client_doc_receipt_reference_numbered">ao pedido %1$s, %2$s</string>
+    <string name="client_doc_receipt_reference_plain">a %1$s</string>
+    <string name="client_doc_receipt_total">Total do pedido</string>
+    <string name="client_doc_receipt_paid">Pago até agora</string>
+    <string name="client_doc_receipt_remaining">Falta pagar</string>
+    <string name="export_file_receipt">Recibo %1$s - %2$s</string>
+    <string name="common_date_pick">Escolher data…</string>
+    <string name="common_date_use">Usar esta data</string>
+    <string name="settings_docs_pix_join_last">%1$s e %2$s</string>
+    <string name="payments_remaining">Falta</string>
+    <string name="payments_paid_of">Pago %1$s de %2$s</string>
+    <string name="payments_list_title">Recebidos</string>
+    <string name="payments_register_confirm">Registrar</string>
+    <string name="payments_back">Voltar</string>
+    <string name="message_include_pix">Incluir o Pix</string>
+    <string name="client_doc_receipt_received">Valor recebido</string>
+    <string name="client_doc_receipt_date">Data</string>
+    <string name="client_doc_receipt_method">Forma</string>
 </resources>

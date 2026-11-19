@@ -8,6 +8,7 @@ import com.threedreport.app.data.CurrencyRepository
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.MaintenanceRepository
 import com.threedreport.app.data.OnboardingRepository
+import com.threedreport.app.data.OrderSettingsRepository
 import com.threedreport.app.data.PreferencesRepository
 import com.threedreport.app.data.PrinterRepository
 import com.threedreport.app.data.QuoteHistoryRepository
@@ -39,6 +40,8 @@ class AppContainer(
     val quoteHistory: QuoteHistoryRepository,
     val settings: SettingsRepository,
     val branding: BrandingRepository,
+    /** Configurações de Pedidos da Leva 11 (sinal padrão, orçamento parado, site de rastreio). */
+    val orderSettings: OrderSettingsRepository,
     val theme: ThemeRepository,
     val currency: CurrencyRepository,
     val onboarding: OnboardingRepository,

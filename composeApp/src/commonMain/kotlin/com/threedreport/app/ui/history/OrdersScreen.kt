@@ -17,6 +17,7 @@ import _3dreport.composeapp.generated.resources.orders_title
 import _3dreport.composeapp.generated.resources.orders_view_kanban
 import _3dreport.composeapp.generated.resources.orders_view_list
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -65,31 +66,35 @@ fun OrdersScreen(
     val state by viewModel.uiState.collectAsState()
     ObserveHistory(viewModel, state.copiedId)
     val kanban = state.ordersView == OrdersView.KANBAN
-    val columns = ordersColumns()
+
     val space = MaterialTheme.spacing
 
-    Column(modifier = modifier.fillMaxSize()) {
-        state.busy?.let { BusyBar(it) }
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(start = space.xxl, end = space.xxl, top = AppDimens.screenTopPadding, bottom = space.xxl),
-        ) {
-            item(key = "header") { OrdersHeader(state, viewModel, onNewQuote) }
-            if (!state.hasItems) {
-                item(key = "empty") {
-                    EmptyState(stringResource(Res.string.orders_empty_first), actionLabel = stringResource(Res.string.orders_action_new), onAction = onNewQuote)
-                }
-            } else {
-                item(key = "summary") {
-                    Column(verticalArrangement = Arrangement.spacedBy(space.md), modifier = Modifier.padding(bottom = space.md)) {
-                        OrdersSummaryBlocks(state)
-                        OrdersFilters(state, viewModel, showAll = !kanban)
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val layout = OrdersTableLayout(state.showPaymentColumn, ordersTableIsCompact(maxWidth))
+        val columns = ordersColumns(layout)
+        Column(modifier = Modifier.fillMaxSize()) {
+            state.busy?.let { BusyBar(it) }
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = PaddingValues(start = space.xxl, end = space.xxl, top = AppDimens.screenTopPadding, bottom = space.xxl),
+            ) {
+                item(key = "header") { OrdersHeader(state, viewModel, onNewQuote) }
+                if (!state.hasItems) {
+                    item(key = "empty") {
+                        EmptyState(stringResource(Res.string.orders_empty_first), actionLabel = stringResource(Res.string.orders_action_new), onAction = onNewQuote)
                     }
+                } else {
+                    item(key = "summary") {
+                        Column(verticalArrangement = Arrangement.spacedBy(space.md), modifier = Modifier.padding(bottom = space.md)) {
+                            OrdersSummaryBlocks(state)
+                            OrdersFilters(state, viewModel, showAll = !kanban)
+                        }
+                    }
+                    if (kanban) kanbanItems(state, viewModel, navigation) else tableItems(state, columns, layout, viewModel, navigation)
                 }
-                if (kanban) kanbanItems(state, viewModel, navigation) else tableItems(state, columns, viewModel, navigation)
             }
+            if (state.selectionMode && !kanban) OrdersSelectionBar(state, viewModel)
         }
-        if (state.selectionMode && !kanban) OrdersSelectionBar(state, viewModel)
     }
     HistoryDialogs(state, viewModel)
 }
@@ -138,7 +143,7 @@ private fun LazyListScope.kanbanItems(state: HistoryUiState, viewModel: QuoteHis
     }
 }
 
-private fun LazyListScope.tableItems(state: HistoryUiState, columns: List<TableColumn>, viewModel: QuoteHistoryViewModel, navigation: HistoryNavigation) {
+private fun LazyListScope.tableItems(state: HistoryUiState, columns: List<TableColumn>, layout: OrdersTableLayout, viewModel: QuoteHistoryViewModel, navigation: HistoryNavigation) {
     if (state.rows.isEmpty()) {
         item(key = "no-match") {
             EmptyState(
@@ -156,6 +161,7 @@ private fun LazyListScope.tableItems(state: HistoryUiState, columns: List<TableC
         OrdersTableRow(
             row = row,
             columns = columns,
+            layout = layout,
             state = state,
             actions = quoteActionsFor(row, viewModel, navigation, selectable = true),
             onOpen = { viewModel.startEditingDetails(row.quote) },

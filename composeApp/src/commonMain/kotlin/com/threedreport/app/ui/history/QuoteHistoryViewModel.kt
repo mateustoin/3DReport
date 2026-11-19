@@ -7,18 +7,23 @@ import _3dreport.composeapp.generated.resources.history_error_photo_unreadable
 import _3dreport.composeapp.generated.resources.history_notice_converted
 import _3dreport.composeapp.generated.resources.history_notice_deleted
 import _3dreport.composeapp.generated.resources.history_notice_details_saved
+import _3dreport.composeapp.generated.resources.history_notice_notify_client
 import _3dreport.composeapp.generated.resources.history_notice_photo_saved
+import _3dreport.composeapp.generated.resources.history_notice_pix_copied
 import _3dreport.composeapp.generated.resources.history_notice_repriced
 import _3dreport.composeapp.generated.resources.history_notice_see_all
 import _3dreport.composeapp.generated.resources.history_notice_see_orders
 import _3dreport.composeapp.generated.resources.history_notice_status_cancelled
+import _3dreport.composeapp.generated.resources.history_notice_status_changed
 import _3dreport.composeapp.generated.resources.history_notice_status_moved
+import _3dreport.composeapp.generated.resources.history_notice_tracking_copied
 import com.threedreport.app.data.BrandingRepository
 import com.threedreport.app.data.CatalogView
 import com.threedreport.app.data.ClientRepository
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.ConsumableRepository
 import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.OrderSettingsRepository
 import com.threedreport.app.data.OrdersView
 import com.threedreport.app.data.PreferencesRepository
 import com.threedreport.app.data.PrinterRepository
@@ -39,11 +44,14 @@ import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.quote.deliveryDaysLate
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
+import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.Client
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.OrderSettings
 import com.threedreport.core.model.OrderStatus
+import com.threedreport.core.model.Payment
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrintSettings
 import com.threedreport.core.model.PrinterProfile
@@ -79,7 +87,7 @@ import kotlinx.coroutines.flow.update
  */
 class QuoteHistoryViewModel(
     private val repository: QuoteHistoryRepository,
-    brandingRepository: BrandingRepository,
+    private val brandingRepository: BrandingRepository,
     filamentRepository: FilamentRepository,
     printerRepository: PrinterRepository,
     settingsRepository: SettingsRepository,
@@ -102,6 +110,8 @@ class QuoteHistoryViewModel(
     consumableRepository: ConsumableRepository? = null,
     /** A moeda do app: o que os blocos de resumo e as colunas somam vem primeiro nela, e trocar de moeda refaz o estado. */
     private val currency: StateFlow<Currency> = MutableStateFlow(Currency.BRL),
+    /** Configurações de Pedidos (Leva 11): dias pra orçamento parado e site de rastreio. */
+    private val orderSettingsRepository: OrderSettingsRepository? = null,
 ) {
     private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
 
@@ -110,7 +120,7 @@ class QuoteHistoryViewModel(
 
     private val builder = HistoryStateBuilder(
         repository, filamentRepository, printerRepository, settingsRepository, salesChannelRepository, preferencesRepository,
-        clientRepository, consumableRepository, today, clock, { currency.value },
+        clientRepository, consumableRepository, today, clock, { currency.value }, brandingRepository, orderSettingsRepository,
     )
     private val exporter = QuoteExporter(platform, brandingRepository, repository, scope, background, main) { notice -> noticeChannel.trySend(notice) }
 
@@ -128,6 +138,11 @@ class QuoteHistoryViewModel(
         editDeliveryDate = ::startEditingDeliveryDate, clearSelection = ::clearSelection,
     )
     private val detailsEditor = HistoryDetailsEditor(repository, clientRepository, platform, { state.value }, ::patch, noticeChannel::trySend)
+    private val payments = HistoryPayments(
+        repository, { state.value }, ::patch, noticeChannel::trySend, today, { currency.value },
+        generateReceipt = { quote, paymentId -> exporter.exportReceipt(quote, paymentId) },
+    )
+    private val messages = HistoryMessages(repository, brandingRepository, platform, scope, main, { state.value }, ::patch, noticeChannel::trySend)
 
     init {
         // Qualquer coisa que a tela lê e que mude em outro lugar (um filamento, o cliente, a visualização) refaz o estado.
@@ -141,6 +156,8 @@ class QuoteHistoryViewModel(
             currency,
             consumableRepository?.consumables ?: MutableStateFlow(emptyList<Consumable>()),
             clientRepository?.clients ?: MutableStateFlow(emptyList<Client>()),
+            brandingRepository.branding,
+            orderSettingsRepository?.settings ?: MutableStateFlow(OrderSettings()),
         )
         combine(sources) { }.onEach { change { it } }.launchIn(scope)
         exporter.busy.onEach { busy -> patch { it.copy(busy = busy) } }.launchIn(scope)
@@ -191,8 +208,20 @@ class QuoteHistoryViewModel(
         repository.updateStatus(id, status)
         // O filtro de situação só vale na lista: no kanban as colunas são todas as situações, e mover não tira nada da vista.
         val statusFilter = state.value.filter.status.takeIf { state.value.ordersView == OrdersView.LIST }
+        // Aprovado, Imprimindo, Pronto e Entregue oferecem "Avisar cliente" (decisão 148, item 24); nada abre sozinho. Com o
+        // filtro escondendo o pedido, o aviso continua dizendo pra onde ele foi, mas o atalho é o de avisar.
+        val messageKind = MessageTemplateKind.forStatusChange(status)?.takeIf { before.isOrder }
+        val hidden = statusFilter != null && statusFilter != status
         when {
-            statusFilter != null && statusFilter != status -> noticeChannel.trySend(
+            messageKind != null -> noticeChannel.trySend(
+                UiNotice(
+                    uiText(if (hidden) Res.string.history_notice_status_moved else Res.string.history_notice_status_changed, before.name, status.labelText()),
+                    actionLabel = uiText(Res.string.history_notice_notify_client),
+                    action = { repository.savedQuotes.value.find { it.id == id }?.let { openMessage(it, messageKind) } },
+                ),
+            )
+
+            hidden -> noticeChannel.trySend(
                 UiNotice(
                     uiText(Res.string.history_notice_status_moved, before.name, status.labelText()),
                     actionLabel = uiText(Res.string.history_notice_see_all),
@@ -309,6 +338,66 @@ class QuoteHistoryViewModel(
     fun updateDetails(transform: (DetailsForm) -> DetailsForm) = detailsEditor.update(transform)
     fun chooseDetailsPhoto() = detailsEditor.choosePhoto()
     fun saveDetails() = detailsEditor.save()
+
+    // ---- pagamentos (ver [HistoryPayments])
+
+    fun openPayments(savedQuote: SavedQuote) = payments.open(savedQuote)
+    fun closePayments() = payments.close()
+    fun setDeposit(text: String) = payments.setDeposit(text)
+    fun commitDeposit() = payments.commitDeposit()
+    fun startRegisteringPayment() = payments.startRegistering()
+    fun updatePaymentForm(transform: (PaymentForm) -> PaymentForm) = payments.updateForm(transform)
+    fun cancelPaymentForm() = payments.cancelForm()
+    fun registerPayment() = payments.register()
+    fun requestDeletePayment(payment: Payment) = payments.requestDelete(payment)
+    fun cancelDeletePayment() = payments.cancelDelete()
+    fun confirmDeletePayment() = payments.confirmDelete()
+    fun generateReceipt(paymentId: String) = payments.receipt(paymentId)
+
+    // ---- mensagem pro cliente (ver [HistoryMessages])
+
+    /** Abre "Mensagem pro cliente" no modelo do andamento atual; [kind] força outro. Sem modelo (Cancelado), não abre. */
+    fun openMessage(savedQuote: SavedQuote, kind: MessageTemplateKind? = null) = messages.open(savedQuote, kind)
+
+    /** "Retomar conversa" (decisão 149): a janela no modelo "Retomar orçamento". */
+    fun followUp(savedQuote: SavedQuote) = messages.open(savedQuote, MessageTemplateKind.FOLLOW_UP)
+    fun changeMessageKind(kind: MessageTemplateKind) = messages.changeKind(kind)
+    fun editMessage(text: String) = messages.edit(text)
+    fun setIncludePix(include: Boolean) = messages.setIncludePix(include)
+    fun closeMessage() = messages.close()
+    fun sendMessageOnWhatsApp() = messages.openInWhatsApp()
+    fun copyMessage() = messages.copy()
+
+    /** "Marcar como cancelado", no menu do orçamento parado: o mesmo cancelar do "Mover para", com "Desfazer". */
+    fun markCancelled(id: String) = updateStatus(id, OrderStatus.CANCELADO)
+
+    // ---- Pix e rastreio (decisões 145 e 150)
+
+    /** Copia o Pix copia e cola do pedido, quando há. */
+    fun copyPixCode(savedQuote: SavedQuote) {
+        val code = exporter.pixCodeFor(savedQuote) ?: return
+        copyWithNotice(code, Res.string.history_notice_pix_copied)
+    }
+
+    fun copyTrackingCode(savedQuote: SavedQuote) {
+        val code = savedQuote.trackingCode?.trim()?.takeIf { it.isNotEmpty() } ?: return
+        copyWithNotice(code, Res.string.history_notice_tracking_copied)
+    }
+
+    /** Abre o site de rastreio com o código do pedido, se houver site em Configurações. */
+    fun openTracking(savedQuote: SavedQuote) {
+        val code = savedQuote.trackingCode ?: return
+        val url = (orderSettingsRepository?.settings?.value ?: OrderSettings()).trackingUrl(code) ?: return
+        platform.openUrl(url)
+    }
+
+    private fun copyWithNotice(text: String, done: org.jetbrains.compose.resources.StringResource) {
+        if (platform.copyToClipboard(text)) {
+            noticeChannel.trySend(UiNotice(uiText(done)))
+        } else {
+            noticeChannel.trySend(UiNotice(uiText(Res.string.export_copy_failed), isError = true))
+        }
+    }
 
     // ---- fotos, arquivos e envio pro cliente (ver [HistoryExports])
 
