@@ -87,6 +87,8 @@ machine.
 - Printer list: saved profiles (energy use, maintenance, investment), with a pre-filled catalog of the main brands to pick from
 - Maintenance per printer: each component with its own interval in hours (change the nozzle, lubricate the rails), a warning when it is close or overdue, a journal of what was done and hours of use outside quotes (calibration, reprints)
 - Supplies list, with the cost of each unit
+- Optional stock in grams per color and in units per supply, deducted automatically when an order is Ready, with ad hoc use (failures, tests), "I weighed the spool", low-stock and shortage warnings on the quote, purchases with shipping that update the price (only if you confirm) and a shopping list
+- Import and export filaments as a file, to share your list
 - Archive a filament, printer, service, supply or sales channel that is in use: it disappears from the choices on a new quote without deleting anything, and old orders and products keep calculating normally
 
 **PDF customization**
@@ -103,7 +105,7 @@ machine.
 - Multiple currencies (BRL, USD, EUR, GBP), with the right decimal and thousands separators
 - Light and dark theme (follows the system by default)
 - The app in Portuguese and English: the language follows the system by default and can be changed in Settings, at once; the PDF, message, image and receipt come out in the chosen language
-- Keyboard shortcuts: `Ctrl`/`Cmd` + `1` to `9` jump straight to each sidebar screen (Quote, Orders, Catalog, Dashboard, Filaments, Printers, Services, Supplies, Settings), besides save and clear quote
+- Keyboard shortcuts: `Ctrl`/`Cmd` + `1` to `9` jump straight to each sidebar screen (Quote, Orders, Catalog, Dashboard, Filaments, Printers, Services, Supplies, Stock), `Ctrl`/`Cmd` + comma opens Settings, besides save and clear quote
 - Confirmation before deleting (filaments, printers, services, orders)
 - The window remembers its size, position and whether it was maximized, and opens that way again (if it still fits on the screen)
 - Optional new-version check: off by default; when on, the only thing that leaves your machine when the app opens is a request to GitHub's public releases page, to warn you if there is a newer version

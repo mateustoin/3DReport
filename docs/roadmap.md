@@ -348,13 +348,13 @@ candidato natural.
 - **Banner og da versão em inglês**: a página de imprensa em inglês ainda usa o texto da 2.1.
 - **`CatalogProductStat` expor `autoNamed` e a data**: hoje o Dashboard junta os dois na tela pra montar o nome automático.
 
-### Leva 12: Estoque e compras
+### Leva 12: Estoque e compras (feita, decisões 158 a 164)
 
 Todo concorrente brasileiro direto controla o filamento em gramas. Vem depois das
 Levas 10 e 11 por ser maior, e antes da 13 porque o lucro real do mês usa as
 compras.
 
-- [ ] **Estoque em gramas com baixa automática. Revisita a decisão 39.** A decisão
+- [x] **Estoque em gramas com baixa automática. Revisita a decisão 39.** **Feito (decisão 158, 2026-11-18).** A decisão
   39 escolheu estoque manual e binário (tem ou acabou) porque a baixa automática é
   imprecisa: falha, teste e sobra gastam filamento sem virar pedido. O argumento
   novo tem duas partes. Primeiro, todo concorrente direto faz a baixa (3D Control,
@@ -366,36 +366,36 @@ compras.
   pedido chega a Pronto (mesma régua do `MaintenanceReport`) e ajuste manual
   sempre possível; o estoque binário continua pra quem não quiser controlar
   gramas. Esforço M, impacto A.
-- [ ] **Alertas de estoque.** Estoque baixo (limite por filamento) e, no
+- [x] **Alertas de estoque.** **Feito (decisão 159, 2026-11-18).** Estoque baixo (limite por filamento) e, no
   Orçamento, "não tem filamento suficiente pra este pedido", contando o que os
   pedidos aprovados ainda vão gastar. Depende do item acima. Visto em: 3D Control,
   Printora, Gestor 3D, Manager 3D, plugin FilamentManager do OctoPrint. Esforço P,
   impacto A.
-- [ ] **Registro de compras de filamento.** Data, quantidade e preço pago com
+- [x] **Registro de compras de filamento.** **Feito (decisão 160, 2026-11-18).** Data, quantidade e preço pago com
   frete. O preço por kg do cadastro passa a vir das compras (custo médio ponderado
   ou última compra, a decidir), e o catálogo vivo (decisão 102) avisa quando ele
   mudou. A compra soma no estoque do primeiro item. Visto em: Custos3D, SISTEMA3D,
   Craftybase, Pitada. Esforço M, impacto M.
-- [ ] **Lista de compras dos pedidos.** "O que falta comprar pra entregar os
+- [x] **Lista de compras dos pedidos.** **Feito (decisão 161, 2026-11-18).** "O que falta comprar pra entregar os
   pedidos aprovados": o consumo previsto menos o saldo, por filamento e por
   insumo. Visto em: Pitada (lista de compras somando os pedidos). Esforço P/M,
   impacto M.
-- [ ] **Estoque dos insumos** da Leva 10 (argola, ímã, embalagem), com a mesma
+- [x] **Estoque dos insumos** da Leva 10. **Feito (decisão 162, 2026-11-18).** Com a mesma
   baixa e o mesmo alerta. Visto em: 3DTAG, SISTEMA3D, 3DPCC. Esforço P, impacto M.
-- [ ] **Fornecedores.** Cadastro simples (nome, contato, link) ligado às compras.
+- [x] **Fornecedores.** **Feito (decisão 160, 2026-11-18), sem cadastro próprio:** o fornecedor é um texto com sugestão e um link em cada compra. O plano era um cadastro (nome, contato, link); ficou só o texto e o link.
   Visto em: 3DTAG, 3DPCC. Esforço P, impacto B.
-- [ ] **Local do carretel, registro de secagem e etiqueta QR.** Onde o carretel
+- [ ] **Local do carretel, registro de secagem e etiqueta QR.** *Passou pra Leva 21 (Android): a etiqueta só faz sentido com câmera pra ler o QR.* Onde o carretel
   está (prateleira, caixa seca), quando foi seco pela última vez (importa em
   materiais que absorvem umidade, como PETG, TPU e nylon) e uma etiqueta com QR
   pra achar o carretel no app. Visto em: Spoolman, FoxTrack, Spoolio,
   SimplyPrint. Esforço P/M, impacto B.
-- [ ] **Base aberta de filamentos.** Enriquecer os presets de marca, tipo e
+- [ ] **Base aberta de filamentos.** *Voltou pro catálogo (conferir a licença).* Enriquecer os presets de marca, tipo e
   densidade com a Open Filament Database, usada pelo PrintQuote3D (cerca de 2 mil
   produtos e 14 mil cores). Conferir a licença antes de embutir. Esforço M,
   impacto B.
-- [ ] **Importar e exportar o catálogo de filamentos entre criadores** *(já no
+- [x] **Importar e exportar o catálogo de filamentos entre criadores** **Feito (decisão 164, 2026-11-18).** *(já no
   roadmap: seção Integrações)*.
-- [ ] **Compatibilidade com Spoolman** *(já no roadmap: seção Integrações, no
+- [ ] **Compatibilidade com Spoolman** *Passou pra Leva 18 (integração direta, conectada na rede do vendedor).* *(já no roadmap: seção Integrações, no
   mesmo item)*. Entra aqui porque o estoque em gramas é o que permite conversar
   com ele. O Spoolman roda na rede do próprio vendedor, sem custo pro projeto.
 
@@ -545,6 +545,9 @@ conexão na tela) e o **cofre de credenciais** (tokens no Keychain, no Gerenciad
 de Credenciais do Windows ou no libsecret, nunca num JSON). Cada integração diz, na
 tela e na documentação, o que sai do computador.
 
+- [ ] **Compatibilidade com Spoolman** (veio da Leva 12, decisão 164). O Spoolman é um servidor na
+  rede do vendedor: ler e escrever nele é integração conectada, sem custo pro projeto. O
+  formato de exportação de filamentos da decisão 164 não tenta imitar o dele.
 - [ ] **Atualização automática.** Baixar e instalar a versão nova a partir do
   GitHub Releases, evoluindo o aviso da decisão 116. Os instaladores não são
   assinados, o que pesa nos avisos do Windows e do macOS; avaliar junto. Prática
@@ -632,6 +635,9 @@ pro projeto é sincronizar pela nuvem do próprio vendedor (Drive ou Dropbox), s
 servidor do projeto: resolve celular e mais de um computador, mas nada voltado ao
 cliente (isso é da Leva 22). Antes, as mudanças levantadas na Parte 2 da pesquisa:
 
+- [ ] **Local do carretel, secagem e etiqueta QR** (veio da Leva 12, decisão 163). Onde o carretel
+  está, quando foi seco e uma etiqueta com QR pra achar o carretel no app, que só faz
+  sentido com a câmera do celular. Esforço P/M, impacto B.
 - [ ] **SQLite** como nova implementação das mesmas interfaces de repositório, no
   lugar do JSON reescrito inteiro a cada mudança (já previsto na decisão 108).
 - [ ] **Carimbo pra sincronizar:** id do aparelho e a marca de "mudou desde a

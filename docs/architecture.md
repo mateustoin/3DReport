@@ -129,6 +129,15 @@ Dependências: `composeApp → core` e `web → core`. O `core` nunca depende da
   Dashboard, `PrintQueueReport` pra fila de cada impressora,
   `MaintenanceReport` pras horas de uso e a situação de cada componente de
   manutenção), mesmo estilo do `PricingCalculator`.
+- `report/StockReport` e `report/StockLedger` (decisões 158 a 162, Leva 12):
+  `StockReport` é o objeto puro do estoque (consumo de um pedido por item,
+  saldo, reservado, disponível, estado baixo ou sem saldo, lista de compras e
+  média das compras). `StockLedger.reconcile` aplica a regra da baixa por
+  transição de andamento (Pronto/Entregue) e devolve a lista nova de
+  `StockMovement`. Os modelos (`StockItem`, `StockItemRef`, `StockMovement`,
+  `Purchase`, `PurchaseLine`) ficam em `model/Stock.kt` e `model/Purchase.kt`, e
+  `model/FilamentExchange.kt` tem as regras de importar e exportar filamentos
+  (decisão 164). Fórmulas em [pricing-formulas.md](pricing-formulas.md).
 - `slicer/` e `stl/`: leitura dos metadados de G-code (consumo total e por
   extrusor, tempo, miniatura, configurações de impressão, impressora e
   filamentos, casados com os cadastros por `CatalogMatcher`) e da malha STL
@@ -411,6 +420,20 @@ Formato e migrações:
   por uma função passada pelo contêiner (`LocalStorage.quoteHistory`), sem abrir
   o arquivo de novo. Pix e modelos de mensagem editados moram no `branding.json`
   (`BrandingSettings`), que já é o de "Documentos pro cliente".
+- **Estoque e compras (Leva 12, decisões 158 a 164).** Três arquivos novos,
+  todos `RecordCollection`: `stock-items.json` (o controle ligado, `StockItem`),
+  `stock-movements.json` (`StockMovement`) e `purchases.json` (`Purchase`).
+  Nenhum campo novo em `Filament`, `FilamentColor` nem `Consumable`, e
+  `filaments.json` não mudou; um backup antigo sem esses arquivos abre com o
+  estoque vazio. O `StockRepository` guarda itens, movimentos e compras como
+  `StateFlow` (ativar e parar o controle, limite, avulso, ajuste, compras que
+  refazem os movimentos dela, `deleteAllFor`). A reconciliação é um embrulho do
+  `QuoteHistoryRepository` em `StockWiring.kt`: guarda a última lista de pedidos
+  vista e chama `StockLedger.reconcile` a cada mudança; a primeira lista ao
+  abrir o app é só a base, então abrir com pedidos já Prontos não desconta.
+  `LocalStorage` monta tudo. O arquivo de importar e exportar filamentos é lido
+  e gravado em `data/FilamentExchangeJson.kt` (o `core` só tem
+  `kotlinx-serialization-core`).
 - Preferências deste computador ficam em `preferences.json` (`AppPreferences`):
   backup automático, aviso de versão nova, posição da janela e a visualização
   lembrada de Pedidos (`OrdersView`, kanban por padrão, decisão 129) e do

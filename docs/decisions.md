@@ -49,7 +49,7 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [36](decisions/036.md) | 2026-09-16 | Modernização de UI: paleta própria e componente EmptyState nas listas | Aprovada |
 | [37](decisions/037.md) | 2026-09-16 | Cliente embutido opcional no orçamento e status do pedido (OrderStatus) | Aprovada |
 | [38](decisions/038.md) | 2026-09-16 | Período por presets de atalho (Tudo, 7, 30 dias, Este mês) e aba Dashboard | Aprovada |
-| [39](decisions/039.md) | 2026-09-16 | Estoque de filamento manual e binário, esgotado some da seleção do Orçamento | Aprovada |
+| [39](decisions/039.md) | 2026-09-16 | Estoque de filamento manual e binário, esgotado some da seleção do Orçamento (revista na 158) | Aprovada |
 | [40](decisions/040.md) | 2026-09-16 | Filamento com várias cores (colors), cada uma com estoque (refina a 39) | Aprovada |
 | [41](decisions/041.md) | 2026-09-17 | Atualizar o instalador do Windows preserva ~/.3dreport (major upgrade MSI) | Aprovada |
 | [42](decisions/042.md) | 2026-09-17 | Ícone gerado por código e atalho de instalação sempre criado | Aprovada |
@@ -168,6 +168,13 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [155](decisions/155.md) | 2026-11-18 | Em inglês, exemplos de Etsy, eBay e Amazon; o que só vale pro Brasil some fora do real (Pix, preço de referência das impressoras, rastreio dos Correios); moeda da primeira abertura pela região; marcadores de mensagem também em inglês | Aprovada |
 | [156](decisions/156.md) | 2026-11-18 | `README.en.md` e bloco "In English" no CHANGELOG, levado pra nota da release | Aprovada |
 | [157](decisions/157.md) | 2026-11-18 | Site em `/en/` adaptado, sem redirecionar, seletor PT/EN, hreflang, sitemap e capturas em inglês | Aprovada |
+| [158](decisions/158.md) | 2026-11-18 | Saldo em gramas opcional por cor de filamento, soma de movimentos gravados, baixa por transição pra Pronto/Entregue, consumo avulso e "Pesei o carretel" (revisa a 39) | Aprovada |
+| [159](decisions/159.md) | 2026-11-18 | Limite por item, reservado (Aprovado + Em impressão), selo na barra lateral e aviso, sem bloqueio, no Orçamento | Aprovada |
+| [160](decisions/160.md) | 2026-11-18 | Compras com várias linhas e frete rateado pelo valor, soma no saldo, preço do cadastro atualizado só com confirmação, fornecedor como texto com link | Aprovada |
+| [161](decisions/161.md) | 2026-11-18 | Lista de compras = reservado + limite − saldo, mais cores sem controle marcadas "Acabou"; copiar e registrar compra | Aprovada |
+| [162](decisions/162.md) | 2026-11-18 | Estoque dos insumos com o mesmo controle, em unidades decimais | Aprovada |
+| [163](decisions/163.md) | 2026-11-18 | Tela Estoque (Saldo, Compras, Lista de compras), Ctrl/Cmd+9, Configurações em Ctrl/Cmd+vírgula, dinheiro com espaço não separável e componentes novos do kit | Aprovada |
+| [164](decisions/164.md) | 2026-11-18 | Importar e exportar filamentos em JSON próprio (versão 1), pulando repetidos por nome, marca e tipo | Aprovada |
 
 ## Pendentes de aprovação
 

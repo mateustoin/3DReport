@@ -10,7 +10,8 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 Receber e conversar com o cliente. Depois de mandar o orçamento, você cobra por Pix, registra o que entrou,
 entrega um recibo e avisa o cliente a cada passo, sem sair do app e sem internet. **Nada muda sozinho:**
 sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que você já tem continuam como estão.
-O app também passa a ter versão em inglês, com a escolha do idioma em Configurações.
+O app também passa a ter versão em inglês, com a escolha do idioma em Configurações. E o estoque em gramas, opcional,
+com compras e lista de compras.
 
 ### Adicionado
 - **Pix copia e cola e QR Code.** Em Configurações, Documentos pro cliente, informe sua chave Pix, o nome
@@ -48,6 +49,25 @@ O app também passa a ter versão em inglês, com a escolha do idioma em Configu
   preenchimento continuam com ponto, como no fatiador.
 - **Moeda sugerida na primeira abertura.** Numa instalação nova, a moeda padrão vem da região do sistema
   (real, dólar, euro ou libra) e você troca no primeiro passo. Quem já usa o app não muda nada.
+- **Estoque em gramas, se você quiser.** A nova tela Estoque mostra quantos gramas sobram de cada cor e
+  quantas unidades de cada insumo. Você ativa o controle cor a cor, com o saldo de hoje. Quem não ativa
+  continua só com o "tem / acabou" de antes, e nada muda no seu preço.
+- **Baixa sozinha quando o pedido fica Pronto.** O material sai do saldo quando o pedido chega a Pronto ou
+  Entregue, volta se o pedido voltar e fica gasto se ele for excluído. Pedido que já estava pronto antes de
+  você ativar o controle não desconta. Falha, teste e uso próprio entram em "Consumo avulso", e "Pesei o
+  carretel" acerta o saldo pela balança.
+- **Avisos de estoque.** Defina "Avisar abaixo de" em cada item. A barra lateral mostra quantos itens estão
+  baixos ou sem saldo. No Orçamento, uma faixa âmbar avisa quando o pedido usa mais do que sobra, contando o
+  que os pedidos aprovados ainda vão gastar. O aviso nunca impede o orçamento.
+- **Compras com frete.** Registre cada compra com várias cores ou insumos, fornecedor, link e frete. O frete é
+  dividido pelo valor de cada linha, e a compra soma no saldo. O app oferece atualizar o preço do
+  filamento ou do insumo pelo custo da compra, e só atualiza se você deixar a caixa marcada.
+- **Lista de compras.** Mostra o que falta comprar pros pedidos aprovados e o limite que você quer manter.
+  Dá pra copiar a lista pra mandar ao fornecedor ou abrir a compra já com as linhas.
+- **Importar e exportar filamentos.** No menu "Mais ações" de Filamentos, grave seus filamentos num arquivo
+  e importe o de outra pessoa. O arquivo leva nome, marca, tipo, densidade, preço e cores, sem saldo. O que
+  já está no seu cadastro é pulado.
+- **Atalhos.** Estoque abre com Ctrl/Cmd+9, e Configurações passa pra Ctrl/Cmd+vírgula.
 - **Mensagens com marcadores em inglês.** Nos modelos de mensagem, `{customer}`, `{order}`, `{part}`,
   `{due}`, `{total}`, `{balance}`, `{tracking}` e `{shop}` funcionam no lugar dos nomes em português, e no
   site de rastreio `{code}` no lugar de `{codigo}`. Os modelos que você já escreveu continuam valendo.
@@ -61,6 +81,8 @@ O app também passa a ter versão em inglês, com a escolha do idioma em Configu
   muda.
 - **Nome automático do orçamento no idioma do app.** Orçamentos sem nome aparecem nas listas montados no
   idioma em uso, e o arquivo não muda.
+- **Dinheiro sem quebra de linha.** O símbolo da moeda e o número ficam juntos, pra "R$" não sobrar sozinho no
+  fim da linha.
 
 ### Corrigido
 - **Tab nos formulários.** O teclado não chegava aos campos de texto nem às listas de escolha: o foco sumia
@@ -74,6 +96,7 @@ O app também passa a ter versão em inglês, com a escolha do idioma em Configu
 - **Made for sellers outside Brazil.** Examples use Etsy, eBay and Amazon. Pix, reference printer prices and the Brazilian tracking site only show up when your currency is the real. A new install suggests a currency from your region.
 - **Get paid and keep in touch.** Record deposits and payments, print a PDF receipt for each one, send ready-made messages at every stage, spot quotes that are waiting and keep a tracking code and private notes.
 - **Read it in English.** The README, the release notes and the website now have English versions, and the website has a calculator in English too.
+- **Stock in grams, if you want it.** A new Stock screen shows the grams left of each color and the units of each supply, with automatic deduction when an order is Ready, a low-stock warning on new quotes, purchases with shipping, a shopping list, and import and export of filaments. Nothing changes until you turn tracking on.
 
 ## [2.2.1] - 2026-11-17
 
