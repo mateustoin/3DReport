@@ -543,8 +543,10 @@ Pedido salvo nunca muda. Item sem controle de saldo fica como antes.
   insumo (`Purchase.catalogUnitCost`).
 - **Preço sugerido pro cadastro** (`Purchase.catalogPriceUpdates`): por
   filamento, `soma dos custos das linhas dele (todas as cores) / kg somados`;
-  por insumo, `soma dos custos / unidades somadas`. Só é sugerido quando difere
-  do cadastro em mais de meio centavo, e é gravado sem arredondar.
+  por insumo, `soma dos custos / unidades somadas`. O valor é arredondado como
+  alguém digitaria no cadastro: centavos no preço por kg do filamento e 4 casas
+  no custo do insumo (insumo barato precisa de fração de centavo). Só é sugerido
+  quando o valor arredondado difere do cadastro em mais de meio centavo.
 - **Média das compras** (`StockReport.averagePurchaseCost`): `soma dos custos
   das linhas do item / quantidade somada`, por kg ou por unidade. Só
   informação.

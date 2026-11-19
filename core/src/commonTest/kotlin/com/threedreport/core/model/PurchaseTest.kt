@@ -81,10 +81,13 @@ class PurchaseTest {
         val filament = updates.filterIsInstance<CatalogPriceUpdate.FilamentPrice>().single()
         assertEquals("pla", filament.filamentId)
         assertEquals(89.90, filament.currentPricePerKg)
-        assertEquals(purchase.catalogUnitCost(purchase.lines[0]), filament.newPricePerKg, 1e-9)
+        // 89,90 + 15,88 de frete = 105,7801...: vai pro cadastro em centavos.
+        assertEquals(105.78, filament.newPricePerKg, 1e-9)
         val consumable = updates.filterIsInstance<CatalogPriceUpdate.ConsumableCost>().single()
         assertEquals("ring", consumable.consumableId)
         assertEquals(0.20, consumable.currentUnitCost)
+        // (12 + 2,1197...) / 50 = 0,28239...: 4 casas no insumo.
+        assertEquals(0.2824, consumable.newUnitCost, 1e-9)
 
         // Pagou o mesmo preço do cadastro: nada a perguntar.
         val same = Purchase(id = "s", dateEpochDay = 0, lines = listOf(PurchaseLine(red, 1000.0, 89.904)))

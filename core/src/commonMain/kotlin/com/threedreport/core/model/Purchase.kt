@@ -107,15 +107,21 @@ data class Purchase(
      * Os preços do cadastro que esta compra sugere atualizar (item 17): cada filamento e cada insumo da compra cujo
      * custo novo difere do cadastrado em mais de meio centavo. Item que não está mais no cadastro fica de fora. Só
      * lista: quem aplica é a tela, nos que a pessoa deixou marcados ([CatalogPriceUpdate.applyTo]).
+     *
+     * O valor novo vai pro cadastro do jeito que alguém digitaria: o preço por kg do filamento em centavos e o custo do
+     * insumo com 4 casas (insumo barato, como R$ 0,035 a unidade, precisa de fração de centavo). Sem isso o campo de
+     * preço do cadastro abriria com "97,384615". A diferença no custo de uma peça fica abaixo de um centavo.
      */
     fun catalogPriceUpdates(filaments: List<Filament>, consumables: List<Consumable>): List<CatalogPriceUpdate> {
         val forFilaments = costPerKgByFilament().mapNotNull { (id, cost) ->
             val filament = filaments.find { it.id == id } ?: return@mapNotNull null
-            if (differs(cost, filament.pricePerKg)) CatalogPriceUpdate.FilamentPrice(id, filament.pricePerKg, cost) else null
+            val rounded = roundToCents(cost)
+            if (differs(rounded, filament.pricePerKg)) CatalogPriceUpdate.FilamentPrice(id, filament.pricePerKg, rounded) else null
         }
         val forConsumables = unitCostByConsumable().mapNotNull { (id, cost) ->
             val consumable = consumables.find { it.id == id } ?: return@mapNotNull null
-            if (differs(cost, consumable.unitCost)) CatalogPriceUpdate.ConsumableCost(id, consumable.unitCost, cost) else null
+            val rounded = kotlin.math.round(cost * CONSUMABLE_COST_SCALE) / CONSUMABLE_COST_SCALE
+            if (differs(rounded, consumable.unitCost)) CatalogPriceUpdate.ConsumableCost(id, consumable.unitCost, rounded) else null
         }
         return forFilaments + forConsumables
     }
@@ -125,6 +131,9 @@ data class Purchase(
 
 /** Diferença de preço abaixo da qual a compra não sugere mudar o cadastro: meio centavo. */
 private const val PRICE_TOLERANCE = 0.005
+
+/** Custo de insumo sugerido por compra: 4 casas decimais ([Purchase.catalogPriceUpdates]). */
+private const val CONSUMABLE_COST_SCALE = 10_000.0
 
 /** Quantas unidades do saldo cabem numa unidade do cadastro: 1000 g num kg, 1 unidade numa unidade. */
 private val StockItemRef.catalogFactor: Double
