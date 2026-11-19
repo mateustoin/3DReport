@@ -178,6 +178,8 @@ class SavedQuotePaymentsTest {
         assertEquals("#0042-2", saved.receiptNumber("p1"))
         assertEquals(3, saved.nextPaymentNumber)
         assertEquals(1, order().nextPaymentNumber)
+        assertEquals(6, order().copy(lastPaymentNumber = 5).nextPaymentNumber, "o contador guardado vale mesmo sem pagamentos")
+        assertEquals(6, saved.copy(lastPaymentNumber = 5).nextPaymentNumber)
     }
 
     @Test

@@ -508,6 +508,18 @@ class QuoteHistoryLeva11Test {
     }
 
     @Test
+    fun theSuggestedAmountUsesTheDepositJustTyped() {
+        val s = setup()
+        val saved = s.order("Suporte", status = OrderStatus.APROVADO)
+        s.viewModel.openPayments(saved)
+
+        s.viewModel.setDeposit("30")
+        s.viewModel.startRegisteringPayment()
+
+        assertEquals("30", s.state.payments!!.form!!.amountText, "o sinal de 0 pra 30 já vale na sugestão")
+    }
+
+    @Test
     fun anInvalidAmountShowsAnErrorAndRegistersNothing() {
         val s = setup()
         val saved = s.order("Suporte")

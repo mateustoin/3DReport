@@ -269,6 +269,17 @@ class Leva11ExportTest {
     }
 
     @Test
+    fun theReceiptAlwaysNamesTheBrandEvenWithoutFooterAndIdentity() {
+        val payment = Payment("p1", 50.0, PaymentMethod.PIX, 20_043L, number = 1)
+        val order = order(payments = listOf(payment))
+        val bare = BrandingSettings(brandName = "Loja Sem Rodape", showFooter = false, showWatermark = false).resolvePdfBranding(null)
+
+        val text = pages(renderReceiptPdf(ReceiptData(order, payment, "#0042-1"), testClientTexts, bare.brandName, bare.footerText, bare.options)).single()
+
+        assertTrue("Loja Sem Rodape" in text, text)
+    }
+
+    @Test
     fun theReceiptNeverCarriesInternalData() {
         val payment = Payment("p1", 50.0, PaymentMethod.PIX, 20_043L, number = 1)
         val order = order(payments = listOf(payment))

@@ -36,26 +36,28 @@ import com.threedreport.app.ui.theme.statusColor
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** A posição de cada coluna fixa de [ordersColumns]; a de pagamento, quando existe, vem logo depois do prazo. */
-private const val COL_NUMBER = 0
-private const val COL_PIECE = 1
-private const val COL_CLIENT = 2
-private const val COL_STATUS = 3
-private const val COL_DEADLINE = 4
-private const val COL_PAYMENT = 5
-
 /**
- * As colunas da tabela de Pedidos (decisão 132): número, peça, cliente, situação, prazo, pagamento (com [showPayment])
- * e valor à direita. A linha ([OrdersTableRow]) recebe o mesmo [showPayment] pra saber se a coluna existe.
+ * Que colunas a tabela de Pedidos tem: com [showPayment], a de pagamento; em janela estreita ([compact]) o cliente desce pra
+ * baixo do nome da peça e o selo de pagamento pra baixo do prazo, pra peça ter largura de ler (na janela de 960, as colunas
+ * fixas sozinhas passavam do espaço). O cabeçalho ([ordersColumns]) e as linhas ([OrdersTableRow]) usam o mesmo layout.
  */
+data class OrdersTableLayout(val showPayment: Boolean, val compact: Boolean) {
+    internal val hasClientColumn: Boolean get() = !compact
+    internal val hasPaymentColumn: Boolean get() = showPayment && !compact
+}
+
+/** Abaixo desta largura (da área da tela) a tabela de Pedidos usa o layout estreito ([OrdersTableLayout.compact]). */
+fun ordersTableIsCompact(availableWidth: androidx.compose.ui.unit.Dp): Boolean = availableWidth < AppDimens.ordersTableCompactBelow
+
+/** As colunas da tabela de Pedidos (decisão 132): número, peça, cliente, situação, prazo, pagamento e valor à direita, conforme o [layout]. */
 @Composable
-fun ordersColumns(showPayment: Boolean = false, showStale: Boolean = false): List<TableColumn> = listOfNotNull(
+fun ordersColumns(layout: OrdersTableLayout = OrdersTableLayout(showPayment = false, compact = false)): List<TableColumn> = listOfNotNull(
     TableColumn(stringResource(Res.string.orders_col_number), width = AppDimens.tableNumberColumn),
     TableColumn(stringResource(Res.string.orders_col_piece), weight = 2.2f),
-    TableColumn(stringResource(Res.string.orders_col_client), weight = 1.2f),
-    TableColumn(stringResource(Res.string.orders_col_status), width = if (showStale) AppDimens.tableStatusStaleColumn else AppDimens.tableStatusColumn),
+    TableColumn(stringResource(Res.string.orders_col_client), weight = 1.2f).takeIf { layout.hasClientColumn },
+    TableColumn(stringResource(Res.string.orders_col_status), width = AppDimens.tableStatusColumn),
     TableColumn(stringResource(Res.string.orders_col_deadline), width = AppDimens.tableDeadlineColumn),
-    TableColumn(stringResource(Res.string.orders_col_payment), width = AppDimens.tableStatusColumn).takeIf { showPayment },
+    TableColumn(stringResource(Res.string.orders_col_payment), width = AppDimens.tableStatusColumn).takeIf { layout.hasPaymentColumn },
     TableColumn(stringResource(Res.string.orders_col_value), width = AppDimens.tableMoneyColumn, end = true),
 )
 
@@ -71,8 +73,8 @@ fun OrdersTableHeader(columns: List<TableColumn>, selectable: Boolean) = TableHe
 fun OrdersTableRow(
     row: HistoryRow,
     columns: List<TableColumn>,
-    /** O mesmo valor passado pra [ordersColumns]: se a coluna "Pagamento" existe nesta tabela. */
-    showPaymentColumn: Boolean,
+    /** O mesmo layout passado pra [ordersColumns]. */
+    layout: OrdersTableLayout,
     state: HistoryUiState,
     actions: QuoteActions,
     onOpen: () -> Unit,
@@ -97,26 +99,35 @@ fun OrdersTableRow(
         extra = { QuoteActionsMenu(quote, actions) },
         revealActions = !state.selectionMode,
     ) {
-        Cell(COL_NUMBER) { Muted(quote.displayNumber.orEmpty()) }
-        Cell(COL_PIECE) {
+        // Cada célula pela posição que tem neste layout: o cliente e o pagamento só têm coluna própria na janela larga.
+        var index = 0
+        Cell(index++) { Muted(quote.displayNumber.orEmpty()) }
+        Cell(index++) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
                 Column(Modifier.weight(1f, fill = false)) {
                     Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     row.printCount?.let { Muted(pluralStringResource(Res.plurals.orders_card_prints, it, it)) }
+                    if (!layout.hasClientColumn) Muted(quote.client?.name.orEmpty())
                 }
                 quote.notes?.takeIf { it.isNotBlank() }?.let { NotesIcon(it) }
             }
         }
-        Cell(COL_CLIENT) { Muted(quote.client?.name.orEmpty()) }
-        Cell(COL_STATUS) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+        if (layout.hasClientColumn) Cell(index++) { Muted(quote.client?.name.orEmpty()) }
+        Cell(index++) {
+            // O selo de parado fica embaixo da situação: cabe nos 52 da linha, sem alargar a coluna.
+            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
                 StatusLabel(stringResource(quote.status.labelRes()), quote.status.statusColor())
                 row.staleDays?.let { StaleBadgeView(it) }
             }
         }
-        Cell(COL_DEADLINE) { row.deadline?.let { DeadlineBadgeView(it) } }
-        if (showPaymentColumn) Cell(COL_PAYMENT) { row.paymentStatus?.let { PaymentBadgeView(it) } }
-        Cell(columns.lastIndex) {
+        Cell(index++) {
+            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
+                row.deadline?.let { DeadlineBadgeView(it) }
+                if (!layout.hasPaymentColumn) row.paymentStatus?.let { PaymentBadgeView(it) }
+            }
+        }
+        if (layout.hasPaymentColumn) Cell(index++) { row.paymentStatus?.let { PaymentBadgeView(it) } }
+        Cell(index) {
             NumericText(
                 quote.totalWithServices.toCurrencyText(quote.currency),
                 style = MaterialTheme.appType.body,

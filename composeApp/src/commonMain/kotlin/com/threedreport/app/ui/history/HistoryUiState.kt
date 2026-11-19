@@ -173,9 +173,6 @@ data class HistoryUiState(
 
     /** A coluna "Pagamento" da tabela só existe quando algum pedido da lista acompanha pagamento. */
     val showPaymentColumn: Boolean get() = rows.any { it.paymentStatus != null }
-
-    /** Há orçamento parado na lista: a coluna da situação ganha largura pro selo ficar na mesma linha. */
-    val showStaleBadges: Boolean get() = rows.any { it.staleDays != null }
 }
 
 /**

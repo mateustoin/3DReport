@@ -83,8 +83,9 @@ actual fun renderReceiptPdf(
         }
         writer.y = panelBottom
 
-        // Sem marca d'água (o nome já está no cabeçalho e no rodapé).
-        context.finishPage(writer, null, footerText)
+        // Sem marca d'água. O recibo sempre diz quem recebeu: o nome da marca, quando existe, vai no rodapé mesmo com o rodapé
+        // do orçamento desligado e sem logo nem contato no cabeçalho (no máximo duas vezes: cabeçalho e rodapé).
+        context.finishPage(writer, null, options.brandName?.takeIf { it.isNotBlank() } ?: footerText)
         val output = ByteArrayOutputStream()
         document.save(output)
         return output.toByteArray()

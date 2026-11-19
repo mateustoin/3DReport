@@ -194,6 +194,59 @@ class QuoteHistoryPaymentsTest {
     }
 
     @Test
+    fun aDeletedReceiptNumberNeverComesBack() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.saveOrder()
+        repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)
+        val second = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+        assertEquals(2, second.number)
+
+        repository.deletePayment(saved.id, second.id)
+        val next = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+
+        assertEquals(3, next.number, "o 2 já foi entregue num recibo")
+        val reloaded = QuoteHistoryRepository().savedQuotes.value.single()
+        assertEquals(3, reloaded.lastPaymentNumber)
+        // Reabrir o cálculo e salvar preserva o campo.
+        assertEquals(3, repository.reopenAndSave(saved.id, shippingCost = 0.0)!!.lastPaymentNumber)
+    }
+
+    @Test
+    fun deletingEveryPaymentKeepsTheCounter() {
+        val repository = QuoteHistoryRepository()
+        val saved = repository.saveOrder()
+        val only = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+        repository.deletePayment(saved.id, only.id)
+
+        assertEquals(2, repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!.number)
+    }
+
+    @Test
+    fun theCounterAlsoCoversPaymentsWithoutAStoredNumber() {
+        // Pagamento sem número gravado usa a posição: excluir o último não pode devolver a posição dele.
+        val repository = QuoteHistoryRepository()
+        val saved = repository.saveOrder()
+        val a = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+        val b = repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!
+
+        repository.deletePayment(saved.id, b.id)
+        repository.deletePayment(saved.id, a.id)
+
+        assertEquals(3, repository.addPayment(saved.id, 1.0, PaymentMethod.PIX, 20_400)!!.number)
+    }
+
+    @Test
+    fun duplicatingDoesNotCopyTheCounter() {
+        val repository = QuoteHistoryRepository()
+        val original = repository.saveOrder()
+        repository.addPayment(original.id, 1.0, PaymentMethod.PIX, 20_400)
+
+        val copy = repository.save(name = "Cópia", quote = original.quote, services = emptyList(), photo = null, sourceLink = null)
+
+        assertEquals(0, copy.lastPaymentNumber)
+    }
+
+    @Test
     fun reopeningWithALowerTotalBringsTheDepositDown() {
         val repository = QuoteHistoryRepository()
         val saved = repository.saveOrder(shippingCost = 50.0)

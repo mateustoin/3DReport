@@ -89,6 +89,8 @@ import kotlinx.serialization.Serializable
  * @property notes observações internas (decisão 151). Uso **só interno**: nunca entra em PDF, imagem, mensagem nem recibo.
  * @property lastFollowUpEpochMillis último "Retomar conversa" com o cliente (decisão 149), que zera a contagem de
  *   [staleDays]. `null` se nunca houve.
+ * @property lastPaymentNumber o maior número de recibo já emitido neste pedido (decisão 147). Só sobe: excluir um pagamento
+ *   não o reduz, então o número que saiu nunca volta. `0` = nenhum gravado (pedido da 2.2.1), e aí vale o que a lista mostra.
  */
 @Serializable
 data class SavedQuote(
@@ -120,11 +122,13 @@ data class SavedQuote(
     val trackingCode: String? = null,
     val notes: String? = null,
     val lastFollowUpEpochMillis: Long? = null,
+    val lastPaymentNumber: Int = 0,
 ) {
     init {
         require(shippingCost >= 0) { "shippingCost não pode ser negativo: $shippingCost" }
         require(number >= 0) { "number não pode ser negativo: $number" }
         require(depositAmount >= 0) { "depositAmount não pode ser negativo: $depositAmount" }
+        require(lastPaymentNumber >= 0) { "lastPaymentNumber não pode ser negativo: $lastPaymentNumber" }
     }
 
     /** Soma dos [payments]. */
@@ -218,7 +222,7 @@ data class SavedQuote(
      * não renumera os outros, e o número que saiu não volta.
      */
     val nextPaymentNumber: Int
-        get() = (payments.mapIndexed { index, payment -> payment.numberOr(index) }.maxOrNull() ?: 0) + 1
+        get() = maxOf(lastPaymentNumber, payments.mapIndexed { index, payment -> payment.numberOr(index) }.maxOrNull() ?: 0) + 1
 
     /**
      * Número do recibo do pagamento [paymentId] (decisão 147): o número do pedido e o [paymentNumber] (`#0042-1`).

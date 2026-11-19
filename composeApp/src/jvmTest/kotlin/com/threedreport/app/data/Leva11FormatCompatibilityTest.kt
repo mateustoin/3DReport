@@ -62,6 +62,7 @@ class Leva11FormatCompatibilityTest {
         assertNull(saved.trackingCode)
         assertNull(saved.notes)
         assertNull(saved.lastFollowUpEpochMillis)
+        assertEquals(0, saved.lastPaymentNumber, "pedido da 2.2.1 abre sem a chave")
         assertFalse(saved.hasPaymentTracking, "pedido antigo fica sem selo de pagamento")
         assertEquals(PaymentStatus.NOT_PAID, saved.paymentStatus)
         // "A receber" de um pedido antigo continua o total, como antes.
@@ -79,7 +80,8 @@ class Leva11FormatCompatibilityTest {
 
         val text = File(dataDir, "quotes.json").readText()
         val rewritten = QuoteHistoryRepository().savedQuotes.value.single()
-        assertEquals(original, rewritten.copy(payments = emptyList()))
+        assertEquals(original, rewritten.copy(payments = emptyList(), lastPaymentNumber = 0))
+        assertEquals(1, rewritten.lastPaymentNumber)
         assertEquals(42, rewritten.number)
         assertEquals(OrderStatus.APROVADO, rewritten.status)
         assertEquals("Maria", rewritten.client?.name)
@@ -124,6 +126,8 @@ class Leva11FormatCompatibilityTest {
         val quote = dataJson.decodeFromString(SavedQuote.serializer(), sampleQuoteJson).quote
         val saved = repository.save(name = "Vaso", quote = quote, services = emptyList(), photo = null, sourceLink = null)
         repository.addPayment(saved.id, 10.0, PaymentMethod.CASH, 20_400)
+        val second = repository.addPayment(saved.id, 5.0, PaymentMethod.CASH, 20_400)!!
+        repository.deletePayment(saved.id, second.id)
         repository.updateDetails(saved.id, QuoteDetails("Vaso", null, null, null, null, null, trackingCode = "AA1", notes = "nota"))
         OrderSettingsRepository().update(com.threedreport.core.model.OrderSettings(defaultDepositRate = 0.3, staleQuoteDays = 5))
         BrandingRepository().update(BrandingSettings(pixKey = "a@b.co", pixReceiverName = "Ana", pixCity = "SP"))
@@ -137,6 +141,7 @@ class Leva11FormatCompatibilityTest {
 
         val restored = QuoteHistoryRepository().savedQuotes.value.single()
         assertEquals(10.0, restored.paidTotal)
+        assertEquals(2, restored.lastPaymentNumber, "o contador de recibos vai no backup")
         assertEquals("AA1", restored.trackingCode)
         assertEquals("nota", restored.notes)
         assertEquals(5, OrderSettingsRepository().settings.value.staleQuoteDays)

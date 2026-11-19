@@ -83,7 +83,8 @@ internal class HistoryPayments(
     fun startRegistering() {
         commitDeposit()
         val open = state().payments ?: return
-        val quote = open.quote
+        // Do repositório, e não do estado, que um coletor assíncrono atualiza: logo depois do sinal ele ainda pode estar velho.
+        val quote = repository.savedQuotes.value.find { it.id == open.quote.id } ?: open.quote
         val amount = quote.amountDue?.amount?.toInputText(appCurrency().decimalSeparator).orEmpty()
         val method = lastMethod ?: quote.payments.lastOrNull()?.method ?: PaymentMethod.PIX
         editing { it.copy(form = PaymentForm(amount, method, today())) }
@@ -130,7 +131,8 @@ internal class HistoryPayments(
 
     /** "Recibo" de um pagamento da lista: o PDF do pedido como está agora. */
     fun receipt(paymentId: String) {
-        val quote = state().payments?.quote ?: return
+        val open = state().payments ?: return
+        val quote = repository.savedQuotes.value.find { it.id == open.quote.id } ?: open.quote
         generateReceipt(quote, paymentId)
     }
 }

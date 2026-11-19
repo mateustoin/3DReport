@@ -378,13 +378,18 @@ class StoredQuoteHistoryRepository(
             epochDay = epochDay,
             number = existing.nextPaymentNumber,
         )
-        collection.update(id) { it.copy(payments = it.payments + payment) }
+        collection.update(id) { it.copy(payments = it.payments + payment, lastPaymentNumber = maxOf(it.lastPaymentNumber, payment.number)) }
         return payment
     }
 
     override fun deletePayment(id: String, paymentId: String): Payment? {
-        val payment = collection.find(id)?.payments?.firstOrNull { it.id == paymentId } ?: return null
-        collection.update(id) { existing -> existing.copy(payments = existing.payments.filterNot { it.id == paymentId }) }
+        val found = collection.find(id) ?: return null
+        val payment = found.payments.firstOrNull { it.id == paymentId } ?: return null
+        // O número do recibo que sai não volta (decisão 147): o maior já usado fica guardado, nunca diminui.
+        val issued = found.paymentNumber(paymentId) ?: 0
+        collection.update(id) { existing ->
+            existing.copy(payments = existing.payments.filterNot { it.id == paymentId }, lastPaymentNumber = maxOf(existing.lastPaymentNumber, issued))
+        }
         return payment
     }
 

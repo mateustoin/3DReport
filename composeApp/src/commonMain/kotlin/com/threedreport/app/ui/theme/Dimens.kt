@@ -116,8 +116,8 @@ object AppDimens {
     val tableNumberColumn = 64.dp
     val tableStatusColumn = 130.dp
 
-    /** A coluna da situação quando há orçamento parado: o selo "Parado há N dias" fica na mesma linha, sem a linha crescer. */
-    val tableStatusStaleColumn = 230.dp
+    /** Abaixo desta largura de área, a tabela de Pedidos tira as colunas Cliente e Pagamento (viram linhas embaixo da peça e do prazo). */
+    val ordersTableCompactBelow = 1000.dp
     val tableDeadlineColumn = 150.dp
     val tableMoneyColumn = 110.dp
     val tableCategoryColumn = 150.dp

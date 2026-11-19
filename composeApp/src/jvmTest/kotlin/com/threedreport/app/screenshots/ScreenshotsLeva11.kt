@@ -106,6 +106,12 @@ internal fun renderLeva11Screenshots(container: AppContainer, outDir: File) {
     // Pedidos em tabela, com a coluna Pagamento e o selo de parado na linha da situação.
     container.preferences.setOrdersView(OrdersView.LIST)
     renderAppPng(File(outDir, "pedidos-tabela-pagamentos.png")) { sampleApp(container, startAt = AppDestination.ORDERS) }
+    // A janela mínima (960): sem as colunas Cliente e Pagamento, com parado e pagamento embaixo da situação e do prazo; e no
+    // modo de seleção, que ainda divide a largura com a caixa de marcar.
+    renderAppPng(File(outDir, "pedidos-tabela-960.png"), width = 960) { sampleApp(container, startAt = AppDestination.ORDERS) }
+    renderAppPng(File(outDir, "pedidos-tabela-960-selecao.png"), width = 960, afterSettle = { it.openMenuItem("Selecionar pra exportar") }) {
+        sampleApp(container, startAt = AppDestination.ORDERS)
+    }
     container.preferences.setOrdersView(OrdersView.KANBAN)
 
     // O menu de um pedido com código de rastreio (Pronto, segundo cartão da coluna): cabe na janela sem esconder "Excluir".
