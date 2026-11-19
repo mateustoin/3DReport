@@ -26,18 +26,18 @@ import com.threedreport.core.model.StockMovementKind
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Gramas inteiras com a unidade do recurso: "640 g", "-40 g" (sinal U+2212), "2.400 g". */
+/** Gramas inteiras com a unidade do recurso: "640 g", "−40 g" (sinal U+2212), "2.400 g". */
 @Composable
 fun stockGramsText(amount: Double): String = stringResource(Res.string.stock_amount_grams, amount.toWholeGramsNumber())
 
-/** O saldo de um item no texto da tela: gramas sem casa decimal ("640 g", "-40 g") ou unidades ("8 un"). */
+/** O saldo de um item no texto da tela: gramas sem casa decimal ("640 g", "−40 g") ou unidades ("8 un"). */
 @Composable
 fun stockAmountText(ref: StockItemRef, amount: Double): String = when (ref) {
     is StockItemRef.ColorRef -> stockGramsText(amount)
     is StockItemRef.ConsumableRef -> stringResource(Res.string.stock_amount_units, amount.toUnitsNumberText())
 }
 
-/** Como [stockAmountText], mas com o sinal à frente ("+1000 g", "-100 g"): a quantidade de um movimento. */
+/** Como [stockAmountText], mas com o sinal à frente ("+1000 g", "−100 g"): a quantidade de um movimento. */
 @Composable
 fun stockSignedAmountText(ref: StockItemRef, amount: Double): String =
     (if (amount > 0) "+" else "") + stockAmountText(ref, amount)

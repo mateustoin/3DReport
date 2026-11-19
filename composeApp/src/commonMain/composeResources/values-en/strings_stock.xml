@@ -43,10 +43,10 @@
     <string name="stock_shopping_empty_untracked">The list starts once you track an item's balance.</string>
     <string name="stock_shopping_see_balance">See the balance</string>
     <string name="stock_shopping_copy">Copy list</string>
-    <string name="stock_shopping_register">Record purchase from list</string>
-    <string name="stock_shopping_reason_orders">approved orders: %1$s</string>
-    <string name="stock_shopping_reason_balance">balance: %1$s</string>
-    <string name="stock_shopping_reason_limit">limit: %1$s</string>
+    <string name="stock_shopping_register">Start a purchase from the list</string>
+    <string name="stock_shopping_reason_orders">%1$s in orders</string>
+    <string name="stock_shopping_reason_balance">balance %1$s</string>
+    <string name="stock_shopping_reason_limit">limit %1$s</string>
     <string name="stock_shopping_out_title">Marked out of stock</string>
     <plurals name="stock_shopping_out_row">
         <item quantity="one">Used in %1$d approved order</item>
@@ -77,7 +77,8 @@
 
     <string name="stock_dialog_weigh_title">I weighed the spool</string>
     <string name="stock_field_scale">Weight on the scale (g)</string>
-    <string name="stock_weigh_result">New balance: %1$s (was %2$s)</string>
+    <string name="stock_weigh_new">New balance: %1$s</string>
+    <string name="stock_weigh_was">(was %1$s)</string>
     <string name="stock_action_weigh_confirm">Set the balance</string>
     <string name="stock_dialog_use_title">One-off use</string>
     <string name="stock_field_use_amount">How much was used (%1$s)</string>
@@ -118,8 +119,8 @@
     <string name="stock_quick_500g">500 g</string>
     <string name="stock_cost_per_kg">Cost per kg</string>
     <string name="stock_cost_per_unit">Cost per piece</string>
-    <string name="stock_help_untracked_color">This color is not tracked: the purchase is recorded, but it does not add grams.</string>
-    <string name="stock_help_untracked_consumable">This supply is not tracked: the purchase is recorded, but it does not add pieces.</string>
+    <string name="stock_help_untracked_color">Not tracked: the purchase does not add grams.</string>
+    <string name="stock_help_untracked_consumable">Not tracked: the purchase does not add pieces.</string>
     <string name="stock_action_add_item">Add item</string>
     <string name="stock_action_remove_item">Remove item %1$d</string>
     <string name="stock_field_shipping">Shipping</string>

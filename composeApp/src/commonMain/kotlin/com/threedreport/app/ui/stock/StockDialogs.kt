@@ -29,9 +29,13 @@ import _3dreport.composeapp.generated.resources.stock_stop_message
 import _3dreport.composeapp.generated.resources.stock_stop_title
 import _3dreport.composeapp.generated.resources.stock_unit_g
 import _3dreport.composeapp.generated.resources.stock_unit_un
-import _3dreport.composeapp.generated.resources.stock_weigh_result
+import _3dreport.composeapp.generated.resources.stock_weigh_new
+import _3dreport.composeapp.generated.resources.stock_weigh_was
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppDropdownField
@@ -45,6 +49,7 @@ import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.NumericText
 import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.appType
+import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.ManualUseReason
 import com.threedreport.core.model.StockItemRef
 import org.jetbrains.compose.resources.stringResource
@@ -85,11 +90,18 @@ internal fun StockDialogView(dialog: StockDialog, viewModel: StockViewModel) {
             dialog.newBalance?.let { newBalance ->
                 if (ref != null) {
                     // O saldo novo em destaque: é o que a pessoa confere antes de gravar.
-                    NumericText(
-                        stringResource(Res.string.stock_weigh_result, stockAmountText(ref, newBalance), stockAmountText(ref, dialog.currentBalance)),
-                        style = MaterialTheme.appType.bodyStrong,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs), verticalAlignment = Alignment.Bottom) {
+                        NumericText(
+                            stringResource(Res.string.stock_weigh_new, stockAmountText(ref, newBalance)),
+                            style = MaterialTheme.appType.bodyStrong,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        NumericText(
+                            stringResource(Res.string.stock_weigh_was, stockAmountText(ref, dialog.currentBalance)),
+                            style = MaterialTheme.appType.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

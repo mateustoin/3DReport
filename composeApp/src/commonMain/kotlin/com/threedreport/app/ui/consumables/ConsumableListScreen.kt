@@ -23,6 +23,8 @@ import _3dreport.composeapp.generated.resources.consumables_help_charge
 import _3dreport.composeapp.generated.resources.consumables_help_cost
 import _3dreport.composeapp.generated.resources.consumables_row_in_stock
 import _3dreport.composeapp.generated.resources.consumables_title
+import _3dreport.composeapp.generated.resources.filaments_stock_low
+import _3dreport.composeapp.generated.resources.filaments_stock_out
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,6 +44,7 @@ import com.threedreport.app.ui.components.ListScreenLayout
 import com.threedreport.app.ui.components.ObserveNotices
 import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.ScreenHeader
+import com.threedreport.app.ui.filaments.ColorStock
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toMoney
 import com.threedreport.app.ui.format.toUnitsNumberText
@@ -99,7 +102,7 @@ fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier 
 }
 
 @Composable
-private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewModel, selectedId: String?, balance: Double?) {
+private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewModel, selectedId: String?, balance: ColorStock?) {
     val archiveOrRestore = if (consumable.archived) {
         RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(consumable.id, false) })
     } else {
@@ -109,7 +112,16 @@ private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewM
         title = consumable.name,
         details = listOfNotNull(
             stringResource(if (consumable.chargedPerOrder) Res.string.common_charge_per_order else Res.string.common_charge_per_piece),
-            balance?.let { stringResource(Res.string.consumables_row_in_stock, it.toUnitsNumberText()) },
+            balance?.let { stringResource(Res.string.consumables_row_in_stock, it.grams.toUnitsNumberText()) },
+            balance?.let {
+                if (it.isEmpty) {
+                    stringResource(Res.string.filaments_stock_out)
+                } else if (it.needsAttention) {
+                    stringResource(Res.string.filaments_stock_low)
+                } else {
+                    null
+                }
+            },
         ),
         value = consumable.unitCost.toMoney(),
         muted = consumable.archived,

@@ -194,7 +194,7 @@ data class StockDialog(
 /**
  * Tudo o que a tela Estoque mostra.
  *
- * @property alertCount itens controlados baixos ou acabando: o aviso do alto e o selo da barra lateral.
+ * @property alertCount itens controlados baixos ou sem saldo: o aviso do alto e o selo da barra lateral.
  * @property untracked os itens sem controle de saldo, que a tela guarda numa seção recolhida.
  * @property today hoje, em dias desde 01/01/1970 (o seletor de data da compra).
  */

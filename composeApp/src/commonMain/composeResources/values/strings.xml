@@ -1505,10 +1505,10 @@
     <string name="stock_shopping_empty_untracked">A lista aparece quando um item tem controle de saldo.</string>
     <string name="stock_shopping_see_balance">Ver o saldo</string>
     <string name="stock_shopping_copy">Copiar lista</string>
-    <string name="stock_shopping_register">Registrar compra da lista</string>
-    <string name="stock_shopping_reason_orders">pedidos aprovados: %1$s</string>
-    <string name="stock_shopping_reason_balance">saldo: %1$s</string>
-    <string name="stock_shopping_reason_limit">limite: %1$s</string>
+    <string name="stock_shopping_register">Montar compra com a lista</string>
+    <string name="stock_shopping_reason_orders">%1$s em pedidos</string>
+    <string name="stock_shopping_reason_balance">saldo %1$s</string>
+    <string name="stock_shopping_reason_limit">limite %1$s</string>
     <string name="stock_shopping_out_title">Marcadas como acabou</string>
     <plurals name="stock_shopping_out_row">
         <item quantity="one">Usada em %1$d pedido aprovado</item>
@@ -1539,7 +1539,8 @@
 
     <string name="stock_dialog_weigh_title">Pesei o carretel</string>
     <string name="stock_field_scale">Peso na balança (g)</string>
-    <string name="stock_weigh_result">Saldo novo: %1$s (era %2$s)</string>
+    <string name="stock_weigh_new">Saldo novo: %1$s</string>
+    <string name="stock_weigh_was">(era %1$s)</string>
     <string name="stock_action_weigh_confirm">Acertar o saldo</string>
     <string name="stock_dialog_use_title">Consumo avulso</string>
     <string name="stock_field_use_amount">Quanto saiu (%1$s)</string>
@@ -1580,8 +1581,8 @@
     <string name="stock_quick_500g">500 g</string>
     <string name="stock_cost_per_kg">Custo por kg</string>
     <string name="stock_cost_per_unit">Custo por unidade</string>
-    <string name="stock_help_untracked_color">Esta cor não tem controle de saldo: a compra fica registrada, mas não soma gramas.</string>
-    <string name="stock_help_untracked_consumable">Este insumo não tem controle de saldo: a compra fica registrada, mas não soma unidades.</string>
+    <string name="stock_help_untracked_color">Sem controle de saldo: a compra não soma gramas.</string>
+    <string name="stock_help_untracked_consumable">Sem controle de saldo: a compra não soma unidades.</string>
     <string name="stock_action_add_item">Adicionar item</string>
     <string name="stock_action_remove_item">Remover o item %1$d</string>
     <string name="stock_field_shipping">Frete</string>

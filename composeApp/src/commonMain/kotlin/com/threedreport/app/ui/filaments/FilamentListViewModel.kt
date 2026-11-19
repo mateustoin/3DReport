@@ -80,7 +80,7 @@ data class FilamentsUiState(
     val isEmpty: Boolean get() = active.isEmpty() && archived.isEmpty()
 }
 
-/** O saldo de uma cor controlada: gramas e se está baixo ou acabando (o selo fica vermelho). */
+/** O saldo de uma cor controlada: gramas e se está baixo ou sem saldo (o selo fica vermelho). */
 data class ColorStock(val grams: Double, val needsAttention: Boolean, val isEmpty: Boolean = false)
 
 /**
@@ -280,7 +280,7 @@ class FilamentListViewModel(
         }
     }
 
-    /** O saldo de cada cor controlada, com a situação (baixo ou acabando) que o `core` calcula. */
+    /** O saldo de cada cor controlada, com a situação (baixo ou sem saldo) que o `core` calcula. */
     private fun colorStockOf(tracking: StockRepository): Map<StockItemRef, ColorStock> {
         val balances = StockReport.balances(tracking.movements.value)
         return tracking.items.value.filter { it.ref is StockItemRef.ColorRef }.associate { item ->

@@ -7,7 +7,9 @@ import _3dreport.composeapp.generated.resources.quote_stock_warning_left
 import _3dreport.composeapp.generated.resources.quote_stock_warning_left_reserved
 import androidx.compose.runtime.Composable
 import com.threedreport.app.ui.components.AttentionNotice
+import com.threedreport.app.ui.format.toWeightText
 import com.threedreport.app.ui.stock.stockAmountText
+import com.threedreport.core.model.StockItemRef
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -16,9 +18,10 @@ import org.jetbrains.compose.resources.stringResource
  */
 @Composable
 internal fun StockWarningNotice(warning: QuoteStockWarning) {
-    val used = stockAmountText(warning.ref, warning.needed)
-    val free = stockAmountText(warning.ref, warning.available)
-    val reserved = stockAmountText(warning.ref, warning.reserved)
+    // Gramas com uma casa, como o "Consome ..." do painel de resultado: o mesmo peso não pode ser "45 g" num lugar e "44,7 g" no outro.
+    val used = warningAmount(warning.ref, warning.needed)
+    val free = warningAmount(warning.ref, warning.available)
+    val reserved = warningAmount(warning.ref, warning.reserved)
     val hasReserved = warning.reserved > 0
     val text = when {
         warning.available > 0 && hasReserved -> stringResource(Res.string.quote_stock_warning_left_reserved, warning.name, used, free, reserved)
@@ -28,3 +31,7 @@ internal fun StockWarningNotice(warning: QuoteStockWarning) {
     }
     AttentionNotice(text)
 }
+
+@Composable
+private fun warningAmount(ref: StockItemRef, amount: Double): String =
+    if (ref is StockItemRef.ColorRef) amount.toWeightText() else stockAmountText(ref, amount)

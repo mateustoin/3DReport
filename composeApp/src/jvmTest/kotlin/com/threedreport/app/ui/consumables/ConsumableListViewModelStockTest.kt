@@ -43,10 +43,10 @@ class ConsumableListViewModelStockTest {
         assertTrue(viewModel.uiState.value.balances.isEmpty(), "sem controle, nada muda na linha")
 
         app.stock.startTracking(ring, 8.0)
-        assertEquals(mapOf("ring" to 8.0), viewModel.uiState.value.balances)
+        assertEquals(mapOf("ring" to 8.0), viewModel.uiState.value.balances.mapValues { it.value.grams })
 
         app.stock.recordManualUse(ring, 2.5, com.threedreport.core.model.ManualUseReason.TEST, null)
-        assertEquals(5.5, viewModel.uiState.value.balances.getValue("ring"), 1e-9)
+        assertEquals(5.5, viewModel.uiState.value.balances.getValue("ring").grams, 1e-9)
 
         app.stock.stopTracking(ring)
         assertTrue(viewModel.uiState.value.balances.isEmpty())

@@ -124,19 +124,20 @@ internal fun StockItemPanelView(panel: StockItemPanel, viewModel: StockViewModel
     val unit = ref.unitLabel()
     val status = panel.status
     FormPanel(title = panel.entry.label(), onSave = viewModel::saveItem, onCancel = viewModel::closePanel) {
-        // O problema que a lista mostra, dito no alto do painel.
-        val notice = when {
-            status.reserved > 0 && status.available < 0 -> stringResource(Res.string.stock_panel_notice_short, stockAmountText(ref, -status.available))
-            status.state == StockState.OUT -> stringResource(Res.string.stock_panel_notice_out)
-            status.state == StockState.LOW -> status.item.lowThreshold?.let { stringResource(Res.string.stock_panel_notice_low, stockAmountText(ref, it)) }
-            else -> null
+        // O problema que a lista mostra, dito no alto do painel: o que falta pros pedidos e, à parte, o saldo baixo ou zerado.
+        val short = if (status.reserved > 0 && status.available < 0) stringResource(Res.string.stock_panel_notice_short, stockAmountText(ref, -status.available)) else null
+        val low = when (status.state) {
+            StockState.OUT -> stringResource(Res.string.stock_panel_notice_out)
+            StockState.LOW -> status.item.lowThreshold?.let { stringResource(Res.string.stock_panel_notice_low, stockAmountText(ref, it)) }
+            StockState.OK -> null
         }
-        if (notice != null) AttentionNotice(notice)
+        short?.let { AttentionNotice(it) }
+        low?.let { AttentionNotice(it) }
         Column {
-            InfoRow(stringResource(Res.string.stock_panel_balance), stockAmountText(ref, status.balance), valueError = status.state != StockState.OK)
+            InfoRow(stringResource(Res.string.stock_panel_balance), stockAmountText(ref, status.balance), valueError = low != null)
             if (status.reserved > 0) {
                 InfoRow(stringResource(Res.string.stock_panel_reserved), stockAmountText(ref, status.reserved))
-                InfoRow(stringResource(Res.string.stock_panel_available), stockAmountText(ref, status.available), valueError = status.available < 0)
+                InfoRow(stringResource(Res.string.stock_panel_available), stockAmountText(ref, status.available), valueError = short != null)
             }
             panel.averageCost?.let { InfoRow(stringResource(Res.string.stock_panel_average), catalogCostText(ref, it)) }
         }
@@ -320,7 +321,7 @@ private fun PurchaseLineBlock(number: Int, line: PurchaseLineForm, view: Purchas
             error = line.refError?.asString(),
         )
         if (ref != null && !view.tracked) {
-            FormNotice(stringResource(if (ref is StockItemRef.ColorRef) Res.string.stock_help_untracked_color else Res.string.stock_help_untracked_consumable))
+            AttentionNotice(stringResource(if (ref is StockItemRef.ColorRef) Res.string.stock_help_untracked_color else Res.string.stock_help_untracked_consumable))
         }
         FormGrid {
             cell(1) {
@@ -352,9 +353,10 @@ private fun PurchaseLineBlock(number: Int, line: PurchaseLineForm, view: Purchas
         }
         view.catalogUnitCost?.let { cost ->
             if (ref != null) {
-                CostLine(
+                FormSummary(
                     stringResource(if (ref is StockItemRef.ColorRef) Res.string.stock_cost_per_kg else Res.string.stock_cost_per_unit),
                     cost.toMoney(),
+                    inBlock = true,
                 )
             }
         }
@@ -363,15 +365,3 @@ private fun PurchaseLineBlock(number: Int, line: PurchaseLineForm, view: Purchas
 
 private const val KILOGRAM_GRAMS = 1000.0
 private const val HALF_KILOGRAM_GRAMS = 500.0
-
-/**
- * O custo por kg ou por unidade de uma linha da compra: só o rótulo e o valor, sem fundo nem recuo, alinhados aos campos do
- * bloco (um `FormSummary` aqui seria um bloco dentro de outro).
- */
-@Composable
-private fun CostLine(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        NumericText(value, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface)
-    }
-}

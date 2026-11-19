@@ -67,12 +67,18 @@ fun FormBlock(title: String, modifier: Modifier = Modifier, action: RowAction? =
     }
 }
 
-/** Resultado que o formulário calcula enquanto se preenche (o custo por hora da máquina): [label] e [value] numa faixa `cardBlock`. */
+/**
+ * Resultado que o formulário calcula enquanto se preenche (o custo por hora da máquina): [label] e [value] numa faixa `cardBlock`.
+ * Com [inBlock] (dentro de um `FormBlock`, que já é `cardBlock`) a faixa perde o fundo e o recuo: vira só a linha, alinhada aos campos
+ * do bloco, sem bloco dentro de bloco.
+ */
 @Composable
-fun FormSummary(label: String, value: String, modifier: Modifier = Modifier, help: HelpText? = null) {
+fun FormSummary(label: String, value: String, modifier: Modifier = Modifier, help: HelpText? = null, inBlock: Boolean = false) {
     val space = MaterialTheme.spacing
     Row(
-        modifier = modifier.fillMaxWidth().background(MaterialTheme.appColors.cardBlock, MaterialTheme.shapes.medium).padding(horizontal = space.sm, vertical = space.sm),
+        modifier = modifier.fillMaxWidth().then(
+            if (inBlock) Modifier else Modifier.background(MaterialTheme.appColors.cardBlock, MaterialTheme.shapes.medium).padding(horizontal = space.sm, vertical = space.sm),
+        ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(space.xxs),
     ) {
