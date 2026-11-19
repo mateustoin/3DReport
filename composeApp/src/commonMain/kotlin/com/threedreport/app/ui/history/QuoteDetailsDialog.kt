@@ -42,6 +42,7 @@ import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.matchingClients
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.quote.DeliveryDatePicker
 import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.AppDimens
@@ -76,7 +77,7 @@ fun QuoteDetailsDialog(editing: DetailsEditing, viewModel: QuoteHistoryViewModel
             label = stringResource(Res.string.history_details_field_name),
             value = form.name,
             onValueChange = { text -> viewModel.updateDetails { it.copy(name = text) } },
-            placeholder = quote.name.takeIf { quote.autoNamed },
+            placeholder = quote.shownName().takeIf { quote.autoNamed },
         )
         if (quote.isOrder) {
             AppSuggestField(

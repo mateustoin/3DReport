@@ -1,7 +1,51 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "3dreport-calculadora";
+  // Textos por idioma (decisão 157). O idioma vem do lang do <html>; a conta é a mesma nos dois
+  // (vem do core, via web/): aqui só muda o texto, o formato do valor e a leitura do número digitado.
+  var TEXTS = {
+    pt: {
+      prompt: "Preencha o peso da peça e o tempo de impressão para ver o preço.",
+      unavailable: "Não foi possível carregar a calculadora agora. Recarregue a página ou baixe o app 3DReport.",
+      invalidValues: null, // em português a mensagem do core já vem em português
+      partialPrice: "Preço de venda parcial",
+      perUnit: " por unidade",
+      productionCost: "Custo de produção",
+      profit: "Lucro",
+      breakEven: "Preço mínimo sem prejuízo",
+      material: "Material",
+      energy: "Energia",
+      failures: "Reserva para falhas",
+      finishing: "Acabamento",
+      labor: "Seu trabalho",
+      appOnlyCosts: ["Manutenção da impressora", "Retorno da máquina", "Custo fixo do mês"],
+      appOnlyTag: "só no app",
+      note: "Esses custos só aumentam o preço. O app calcula todos.",
+    },
+    en: {
+      prompt: "Enter the part weight and the print time to see the price.",
+      unavailable: "The calculator could not load right now. Reload the page or download the 3DReport app.",
+      invalidValues: "Check the values: the price cannot be worked out with these numbers.",
+      partialPrice: "Partial sale price",
+      perUnit: " per unit",
+      productionCost: "Production cost",
+      profit: "Profit",
+      breakEven: "Break-even price",
+      material: "Material",
+      energy: "Energy",
+      failures: "Failure reserve",
+      finishing: "Finishing",
+      labor: "Your work",
+      appOnlyCosts: ["Printer maintenance", "Machine payback", "Monthly fixed cost"],
+      appOnlyTag: "app only",
+      note: "These costs only raise the price. The app counts all of them.",
+    },
+  };
+
+  var LANG = /^en/i.test(document.documentElement.lang || "") ? "en" : "pt";
+  var T = TEXTS[LANG];
+
+  var STORAGE_KEY = LANG === "en" ? "3dreport-calculadora-en" : "3dreport-calculadora";
 
   var FIELDS = [
     "peso", "horas", "minutos",
@@ -26,25 +70,40 @@
     imposto: "0",
   };
 
-  var currencyFormatter = null;
+  // Em português o valor sai em reais. Em inglês a calculadora não assume moeda: só o número,
+  // com duas casas, porque cada pessoa digita os preços na moeda dela.
+  var moneyFormatter = null;
   try {
-    currencyFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    moneyFormatter = LANG === "en"
+      ? new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
   } catch (e) {
-    currencyFormatter = null;
+    moneyFormatter = null;
   }
 
   function formatMoney(value) {
-    if (currencyFormatter) {
-      return currencyFormatter.format(value);
+    if (moneyFormatter) {
+      return moneyFormatter.format(value);
     }
-    return "R$ " + value.toFixed(2).replace(".", ",");
+    return LANG === "en" ? value.toFixed(2) : "R$ " + value.toFixed(2).replace(".", ",");
   }
 
   function parseDecimal(raw) {
     if (raw == null) return NaN;
     var s = String(raw).trim();
     if (s === "") return NaN;
-    if (s.indexOf(",") !== -1) {
+    if (LANG === "en") {
+      // Inglês: ponto decimal. Com ponto, a vírgula separa milhar ("1,250.5"). Sem ponto, uma vírgula só é milhar
+      // quando vem seguida de exatamente 3 dígitos ("1,250" = 1250); senão é decimal de quem escreve com vírgula
+      // ("0,25", "12,5"), espelhando o que o português faz com o ponto.
+      if (s.indexOf(".") !== -1 || (s.match(/,/g) || []).length > 1) {
+        s = s.replace(/,/g, "");
+      } else if (/^-?[1-9]\d{0,2},\d{3}$/.test(s)) {
+        s = s.replace(",", "");
+      } else {
+        s = s.replace(",", ".");
+      }
+    } else if (s.indexOf(",") !== -1) {
       s = s.replace(/\./g, "").replace(",", ".");
     }
     var n = parseFloat(s);
@@ -135,55 +194,55 @@
   function renderPrompt() {
     var out = getEl("calc-output");
     if (!out) return;
-    out.innerHTML = '<p class="result-placeholder">Preencha o peso da peça e o tempo de impressão para ver o preço.</p>';
+    out.innerHTML = '<p class="result-placeholder">' + T.prompt + "</p>";
   }
 
   function renderUnavailable() {
     var out = getEl("calc-output");
     if (!out) return;
-    out.innerHTML = '<p class="result-error">Não foi possível carregar a calculadora agora. Recarregue a página ou baixe o app 3DReport.</p>';
+    out.innerHTML = '<p class="result-error">' + T.unavailable + "</p>";
   }
 
   function renderError(message) {
     var out = getEl("calc-output");
     if (!out) return;
-    out.innerHTML = '<p class="result-error">' + escapeHtml(message) + "</p>";
+    // A mensagem do core está em português; em inglês mostramos um aviso geral.
+    var text = T.invalidValues != null ? T.invalidValues : message;
+    out.innerHTML = '<p class="result-error">' + escapeHtml(text) + "</p>";
   }
-
-  var APP_ONLY_COSTS = ["Manutenção da impressora", "Retorno da máquina", "Custo fixo do mês"];
 
   function renderResult(result, quantity) {
     var out = getEl("calc-output");
     if (!out) return;
 
     var breakdown = [];
-    if (result.material > 0) breakdown.push(["Material", result.material]);
-    if (result.energy > 0) breakdown.push(["Energia", result.energy]);
-    if (result.failures > 0) breakdown.push(["Reserva para falhas", result.failures]);
-    if (result.finishing > 0) breakdown.push(["Acabamento", result.finishing]);
-    if (result.labor > 0) breakdown.push(["Seu trabalho", result.labor]);
+    if (result.material > 0) breakdown.push([T.material, result.material]);
+    if (result.energy > 0) breakdown.push([T.energy, result.energy]);
+    if (result.failures > 0) breakdown.push([T.failures, result.failures]);
+    if (result.finishing > 0) breakdown.push([T.finishing, result.finishing]);
+    if (result.labor > 0) breakdown.push([T.labor, result.labor]);
 
     var html = "";
-    html += '<p class="result-label">Preço de venda parcial</p>';
+    html += '<p class="result-label">' + T.partialPrice + "</p>";
     html += '<p class="result-total">' + formatMoney(result.salePrice) + "</p>";
     if (quantity > 1) {
-      html += '<p class="result-unit">' + formatMoney(result.unitSalePrice) + " por unidade</p>";
+      html += '<p class="result-unit">' + formatMoney(result.unitSalePrice) + T.perUnit + "</p>";
     }
     html += '<dl class="result-lines">';
-    html += "<div><dt>Custo de produção</dt><dd>" + formatMoney(result.productionCost) + "</dd></div>";
-    html += "<div><dt>Lucro</dt><dd>" + formatMoney(result.profit) + "</dd></div>";
-    html += "<div><dt>Preço mínimo sem prejuízo</dt><dd>" + formatMoney(result.breakEvenSalePrice) + "</dd></div>";
+    html += "<div><dt>" + T.productionCost + "</dt><dd>" + formatMoney(result.productionCost) + "</dd></div>";
+    html += "<div><dt>" + T.profit + "</dt><dd>" + formatMoney(result.profit) + "</dd></div>";
+    html += "<div><dt>" + T.breakEven + "</dt><dd>" + formatMoney(result.breakEvenSalePrice) + "</dd></div>";
     html += "</dl>";
     html += '<ul class="result-breakdown">';
     breakdown.forEach(function (line) {
       html += "<li><span>" + line[0] + "</span><span>" + formatMoney(line[1]) + "</span></li>";
     });
     // Custos que o app cobra e esta calculadora não: ficam à vista, pra ninguém achar que o preço está completo.
-    APP_ONLY_COSTS.forEach(function (name) {
-      html += '<li class="app-only"><span>' + name + '</span><span class="app-only-tag">só no app</span></li>';
+    T.appOnlyCosts.forEach(function (name) {
+      html += '<li class="app-only"><span>' + name + '</span><span class="app-only-tag">' + T.appOnlyTag + "</span></li>";
     });
     html += "</ul>";
-    html += '<p class="result-note">Esses custos só aumentam o preço. O app calcula todos.</p>';
+    html += '<p class="result-note">' + T.note + "</p>";
     out.innerHTML = html;
   }
 

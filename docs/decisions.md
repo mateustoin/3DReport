@@ -162,6 +162,12 @@ desta tabela. Decisão que substitui outra muda o status da antiga nos dois luga
 | [149](decisions/149.md) | 2026-11-17 | Orçamento parado depois de 3 dias em Orçado (configurável, 0 desliga), com "Retomar conversa" e "Marcar como cancelado" | Aprovada |
 | [150](decisions/150.md) | 2026-11-17 | Código de rastreio no pedido, com site configurável (`{codigo}`), padrão o dos Correios | Aprovada |
 | [151](decisions/151.md) | 2026-11-17 | Observações internas no pedido, nunca exportadas | Aprovada |
+| [152](decisions/152.md) | 2026-11-18 | Idioma em Configurações > Aparência (Automático, Português, English), valendo na hora; automático usa inglês pra qualquer sistema fora do português | Aprovada |
+| [153](decisions/153.md) | 2026-11-18 | Datas em inglês pela região do formato regional do sistema (en-US mês/dia; outras dia/mês), 24 h; número que não é dinheiro segue o idioma, dinheiro segue a moeda; fatiamento fica com ponto. Revisa em parte a 139 | Aprovada |
+| [154](decisions/154.md) | 2026-11-18 | Tradução do app pelo glossário (`docs/glossario.md`), um arquivo por área em `values-en/`, teste de paridade que trava o build; nome automático no idioma do app | Aprovada |
+| [155](decisions/155.md) | 2026-11-18 | Em inglês, exemplos de Etsy, eBay e Amazon; o que só vale pro Brasil some fora do real (Pix, preço de referência das impressoras, rastreio dos Correios); moeda da primeira abertura pela região; marcadores de mensagem também em inglês | Aprovada |
+| [156](decisions/156.md) | 2026-11-18 | `README.en.md` e bloco "In English" no CHANGELOG, levado pra nota da release | Aprovada |
+| [157](decisions/157.md) | 2026-11-18 | Site em `/en/` adaptado, sem redirecionar, seletor PT/EN, hreflang, sitemap e capturas em inglês | Aprovada |
 
 ## Pendentes de aprovação
 

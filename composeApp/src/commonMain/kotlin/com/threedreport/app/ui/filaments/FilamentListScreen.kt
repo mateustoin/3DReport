@@ -55,6 +55,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppChoiceField
 import com.threedreport.app.ui.components.AppDropdownField
@@ -138,13 +139,12 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
     } else {
         RowAction(AppIcons.Archive, stringResource(Res.string.common_archive), { viewModel.setArchived(filament.id, true) })
     }
-    val separator = LocalCurrency.current.decimalSeparator
     val unnamed = stringResource(Res.string.filaments_color_unnamed)
     val outOfStock = stringResource(Res.string.filaments_color_out_of_stock)
     ListRow(
         title = filament.name,
         details = listOfNotNull(
-            stringResource(Res.string.filaments_row_specs, filament.densityGPerCm3.toInputText(separator), filament.diameterMm.toInputText(separator)),
+            stringResource(Res.string.filaments_row_specs, filament.densityGPerCm3.toInputText(AppLocale.decimalSeparator), filament.diameterMm.toInputText(AppLocale.decimalSeparator)),
             stringResource(Res.string.filaments_row_out_of_stock).takeIf { !filament.archived && !filament.hasStockAvailable },
         ),
         value = stringResource(Res.string.filaments_row_price, filament.pricePerKg.toMoney()),

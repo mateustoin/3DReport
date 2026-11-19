@@ -168,6 +168,7 @@ private fun ChannelFormDialog(form: SalesChannelFormState, viewModel: SalesChann
                     value = form.feeRatePercentText,
                     onValueChange = viewModel::setFeeRate,
                     kind = NumberKind.MEASURE,
+                    money = false,
                     enabled = !hasTiers,
                     error = form.feeError?.asString(),
                     help = HelpText(stringResource(Res.string.settings_channels_help_tiers_active), warning = true).takeIf { hasTiers },
@@ -262,6 +263,7 @@ private fun ChannelTiersEditor(form: SalesChannelFormState, viewModel: SalesChan
                                 value = tier.feeRatePercentText,
                                 onValueChange = { text -> viewModel.updateTierRow(tier.id) { it.copy(feeRatePercentText = text) } },
                                 kind = NumberKind.MEASURE,
+                                money = false,
                                 labelHidden = true,
                                 modifier = Modifier.fillMaxWidth(),
                             )

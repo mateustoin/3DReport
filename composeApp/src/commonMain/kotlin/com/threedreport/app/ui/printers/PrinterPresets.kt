@@ -36,8 +36,12 @@ object PrinterUsageDefaults {
     const val PAYBACK_MONTHS = 12
 }
 
-/** Mês dos preços de referência da lista, mostrado ao lado do preço e no aviso do formulário. */
-const val PRINTER_PRICES_MONTH = "nov/2026"
+/**
+ * Mês dos preços de referência da lista (novembro de 2026), mostrado no aviso do formulário. Vai em número, e não em
+ * texto, pra sair no idioma do app ([com.threedreport.app.ui.format.shortMonthYearText]).
+ */
+const val PRINTER_PRICES_YEAR = 2026
+const val PRINTER_PRICES_MONTH = 11
 
 /**
  * Impressora da lista pré-cadastrada (decisão 144, que revisa a 54). Escolher uma preenche o formulário com
@@ -46,7 +50,7 @@ const val PRINTER_PRICES_MONTH = "nov/2026"
  *
  * [averagePowerWatts] é o consumo médio imprimindo PLA, e [powerSource] diz de onde veio. [maxPowerWatts] é a
  * potência máxima da fonte (nulo quando o fabricante não publica), mostrada na lista só como contexto.
- * [referencePrice] é o preço médio no Brasil em [PRINTER_PRICES_MONTH], preço normal (não Pix); nulo sem fonte
+ * [referencePrice] é o preço médio no Brasil em [PRINTER_PRICES_YEAR]/[PRINTER_PRICES_MONTH], preço normal (não Pix); nulo sem fonte
  * brasileira, e aí o campo do formulário fica vazio.
  *
  * Como acrescentar uma impressora: confirme a média (oficial, medida ou estimada pela irmã mais próxima, dita no
@@ -165,10 +169,11 @@ fun printerPresetsMatching(query: String): List<PrinterPreset> =
  * Aplica [preset] numa impressora já cadastrada (a de exemplo, no primeiro uso): nome, consumo médio, manutenção da
  * faixa, preço e o uso típico ([PrinterUsageDefaults]), como num cadastro novo. O preço é o que a pessoa digitou
  * ([machinePrice]); sem ele, o de referência do preset; sem nenhum, o que a impressora já tinha. Sem [preset], só o
- * preço digitado muda e o resto fica como estava.
+ * preço digitado muda e o resto fica como estava. O preço de referência é em reais: com [withReferencePrice] falso (moeda
+ * padrão fora do real, decisão 16b da Leva 11B) ele não entra.
  */
-fun PrinterProfile.withPreset(preset: PrinterPreset?, machinePrice: Double?): PrinterProfile {
-    val price = machinePrice ?: preset?.referencePrice
+fun PrinterProfile.withPreset(preset: PrinterPreset?, machinePrice: Double?, withReferencePrice: Boolean = true): PrinterProfile {
+    val price = machinePrice ?: preset?.referencePrice?.takeIf { withReferencePrice }
     val investment = if (preset == null) {
         machineInvestment
     } else {

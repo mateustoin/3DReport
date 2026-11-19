@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos em inglês (decisão 154): navegação, abertura, armazenamento, comuns, boas-vindas. -->
+<resources>
+    <!-- Navegação -->
+    <string name="nav_group_sales">Sales</string>
+    <string name="nav_group_registries">Records</string>
+    <string name="nav_quote">Quote</string>
+    <string name="nav_orders">Orders</string>
+    <string name="nav_catalog">Catalog</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_filaments">Filaments</string>
+    <string name="nav_printers">Printers</string>
+    <string name="nav_services">Services</string>
+    <string name="nav_consumables">Supplies</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_about">About</string>
+
+    <!-- Abertura e erros -->
+    <string name="startup_already_running">3DReport is already open. Use the window that's already open (it may be minimized or behind another one).</string>
+    <string name="startup_data_dir_failed">Couldn't open the data folder</string>
+    <string name="startup_nothing_deleted">Nothing was deleted.</string>
+    <string name="startup_move_failed">This version uses a new data format and needs to set the previous version's data aside, but it couldn't move the folder</string>
+    <string name="startup_move_failed_advice">Close any programs using that folder (file explorer, antivirus, backup) and open 3DReport again. Nothing was deleted.</string>
+    <string name="startup_read_failed">Couldn't read the file</string>
+    <string name="startup_read_failed_advice">It may be open in another program (antivirus, OneDrive, backup). Close those programs and open 3DReport again. Nothing was deleted.</string>
+    <string name="startup_write_failed">Couldn't write the latest changes to disk.</string>
+    <string name="startup_write_failed_advice">Close any programs that might be using the data folder and try again.</string>
+    <string name="startup_write_retry">Try again</string>
+    <string name="startup_write_close_anyway">Close anyway</string>
+    <string name="startup_write_back">Back to the app</string>
+    <string name="startup_error_fatal">3DReport hit an error and needs to close. Your saved data is safe.</string>
+    <string name="startup_error_nonfatal">3DReport hit an error. Your saved data is safe.</string>
+    <string name="startup_error_report">If you want to help fix it, copy the details and send them in a GitHub issue.</string>
+    <string name="startup_error_log">Full log at: %1$s</string>
+    <string name="startup_error_copy">Copy details</string>
+    <string name="startup_close">Close</string>
+    <string name="platform_pick_image">Choose photo</string>
+    <string name="platform_pick_gcode">Choose G-code file</string>
+    <string name="platform_pick_model">Choose model file</string>
+    <string name="platform_pick_backup">Choose 3DReport backup</string>
+    <string name="platform_save_as">Save as</string>
+
+    <!-- Dados de exemplo gravados na primeira abertura -->
+    <string name="seed_printer_name">My printer</string>
+
+    <!-- Comum -->
+    <string name="common_save">Save</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_clear_filters">Clear filters</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_archive">Archive</string>
+    <string name="common_restore">Restore</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_delete_anyway">Delete anyway</string>
+    <string name="common_archived_section">Archived (%1$d)</string>
+    <string name="common_add">Add</string>
+    <string name="common_optional">Optional</string>
+    <string name="common_help_for">Help: %1$s</string>
+    <string name="common_field_charge">Charge</string>
+    <string name="common_charge_per_piece">Per part</string>
+    <string name="common_charge_per_order">Once per order</string>
+    <string name="common_help_charge">You can change it in each quote.</string>
+    <string name="common_error_name_required">Enter the name</string>
+    <string name="common_error_number_invalid">Enter a number</string>
+    <string name="common_error_negative">Can't be negative</string>
+    <string name="common_error_required">Fill in this field</string>
+    <string name="common_error_positive">Must be greater than zero</string>
+    <string name="common_error_whole_number">Enter a whole number</string>
+    <string name="common_close">Close</string>
+    <string name="common_retry">Try again</string>
+    <string name="common_got_it">Got it</string>
+    <string name="common_open_folder">Open folder</string>
+    <string name="common_discard">Discard</string>
+    <string name="common_undo">Undo</string>
+    <string name="common_delete_in_use">%1$s is in %2$s.</string>
+    <string name="common_delete_in_use_hint">Archiving removes it from the Quote list and keeps the record. You can restore it later.</string>
+    <plurals name="common_orders_or_products">
+        <item quantity="one">%1$d order or product</item>
+        <item quantity="other">%1$d orders or products</item>
+    </plurals>
+    <string name="common_date_pick">Pick date…</string>
+    <string name="common_date_use">Use this date</string>
+
+    <!-- App -->
+    <string name="app_saved_changes">Changes saved.</string>
+    <string name="app_status_editing">Editing</string>
+    <string name="app_discard_edit_title">Discard the changes?</string>
+    <string name="app_discard_edit_message">What you changed in this quote hasn't been saved and will be lost.</string>
+    <string name="app_end_editing_title">Discard the edit in progress?</string>
+    <string name="app_end_editing_message">You're editing "%1$s" in Quote and haven't saved yet. To continue, the changes from that edit are lost.</string>
+    <string name="app_end_editing_confirm">Discard and continue</string>
+    <string name="app_end_editing_back">Back to editing</string>
+    <string name="app_discard_quote_title">Discard the quote in progress?</string>
+    <string name="app_discard_quote_message">What's filled in on Quote hasn't been saved and will be replaced.</string>
+    <string name="app_drop_title_empty">Drop the G-code, STL or 3MF here</string>
+    <string name="app_drop_help_empty">Length, time, photo, printer and filament come from the file, when they match what's registered. Several files at once become one print each.</string>
+    <string name="app_drop_title_filled">Where should this G-code go?</string>
+    <string name="app_drop_replace">Replace %1$s</string>
+    <string name="app_drop_add">Add as a new print</string>
+
+    <!-- Armazenamento -->
+    <string name="storage_notice_newer_title">Data from a newer version</string>
+    <string name="storage_notice_newer_message">The data was from a newer version of 3DReport, which this one can't read. To avoid breaking anything, this version starts with blank data.</string>
+    <string name="storage_notice_newer_kept">What you had was kept, with nothing deleted, in:</string>
+    <string name="storage_notice_newer_recover">To recover it, update 3DReport and rename that folder back to .3dreport.</string>
+    <string name="storage_notice_migrated_title">Your data was updated</string>
+    <string name="storage_notice_migrated_message">This version stores data in a new way, and yours was converted. Everything is here.</string>
+    <string name="storage_notice_migrated_kept">A copy of how it was before was kept, unchanged, in:</string>
+    <string name="storage_notice_migrated_cleanup">Once you've checked that everything is fine, you can delete that copy.</string>
+    <string name="storage_unreadable_title">A data file didn't open</string>
+    <string name="storage_unreadable_recovered">%1$s: recovered from the previous copy. Only the last change before closing may have been lost.</string>
+    <string name="storage_unreadable_empty">%1$s: there was no previous copy that opened, so it started empty. Restore a backup in Settings, Backup to recover it.</string>
+    <string name="storage_unreadable_kept">Nothing was deleted. The file with the problem was kept in:</string>
+    <string name="storage_write_failed_title">Couldn't save your changes</string>
+    <string name="storage_write_failed_message">What you changed is only in memory for now. Close any programs that might be using the data folder (antivirus, OneDrive, backup), check that the disk has space and try again.</string>
+    <string name="storage_write_failed_file">%1$s: %2$s</string>
+
+    <!-- Seleção de arquivos -->
+    <string name="pick_failed_unreadable">Couldn't read %1$s. It may be open in another program or have been moved.</string>
+    <string name="pick_failed_too_large">%1$s is too large to open in the app.</string>
+
+    <!-- Boas-vindas -->
+    <string name="onboarding_title">Welcome to 3DReport</string>
+    <string name="onboarding_help">A few quick questions so the app fits your business. The suggested values are examples: replace them with yours. You can change everything later in Settings and Printers.</string>
+    <string name="onboarding_step">Step %1$d of %2$d</string>
+    <string name="onboarding_printer_title">Which printer do you have?</string>
+    <string name="onboarding_costs_title">Your costs and margin</string>
+    <string name="onboarding_field_model">Model</string>
+    <string name="onboarding_model_other">Other, or I'll choose later</string>
+    <string name="onboarding_help_model_preset">Average power draw: %1$s W, a reference value.</string>
+    <string name="onboarding_help_model_preset_detail">If you measure the real draw, adjust it in Printers.</string>
+    <string name="onboarding_help_model_none">Without a model, the app uses the sample printer.</string>
+    <string name="onboarding_help_model_none_detail">You can add yours in Printers.</string>
+    <string name="onboarding_field_machine_price">Price paid</string>
+    <string name="onboarding_help_machine_price">The machine pays for itself over time: part of its price goes into each quote.</string>
+    <string name="onboarding_field_energy">Electricity rate (per kWh)</string>
+    <string name="onboarding_help_energy">It's on your power bill, on the usage line. It varies by region and by utility.</string>
+    <string name="onboarding_field_labor">Your hourly rate</string>
+    <string name="onboarding_help_labor">Preparing the file, removing the print, removing supports, sanding, painting, packing.</string>
+    <string name="onboarding_help_labor_detail">It's the cost that most often goes missing when selling 3D prints. Leave it blank to not charge for it for now.</string>
+    <string name="onboarding_field_margin">Profit margin (%)</string>
+    <string name="onboarding_help_margin">How much you want to earn on top of the cost.</string>
+    <string name="onboarding_help_margin_detail">100% means charging double what the part cost to make.</string>
+    <string name="onboarding_action_skip">Skip</string>
+    <string name="onboarding_action_back">Back</string>
+    <string name="onboarding_action_next">Continue</string>
+    <string name="onboarding_action_start">Get started</string>
+
+    <!-- Duração -->
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_hours">%1$d h</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_decimal_hours">%1$s h</string>
+    <string name="month_year_short">%1$s %2$d</string>
+    <string name="month_short_01">Jan</string>
+    <string name="month_short_02">Feb</string>
+    <string name="month_short_03">Mar</string>
+    <string name="month_short_04">Apr</string>
+    <string name="month_short_05">May</string>
+    <string name="month_short_06">Jun</string>
+    <string name="month_short_07">Jul</string>
+    <string name="month_short_08">Aug</string>
+    <string name="month_short_09">Sep</string>
+    <string name="month_short_10">Oct</string>
+    <string name="month_short_11">Nov</string>
+    <string name="month_short_12">Dec</string>
+</resources>

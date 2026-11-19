@@ -15,6 +15,7 @@
 </p>
 
 <p align="center">
+  <a href="README.en.md">English</a> ·
   <a href="https://mateustoin.github.io/3DReport/">Site</a> ·
   <a href="https://github.com/mateustoin/3DReport/releases/latest">Download</a> ·
   <a href="https://mateustoin.github.io/3DReport/calculadora.html">Calculadora online</a> ·
@@ -99,6 +100,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Backup e restauração dos seus dados num arquivo `.zip` (levar pro outro computador, recuperar depois de formatar)
 - Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
 - Tema claro/escuro (segue o sistema por padrão)
+- App em português e em inglês: o idioma segue o sistema por padrão e dá pra trocar em Configurações, na hora; PDF, mensagem, imagem e recibo saem no idioma escolhido
 - Atalhos de teclado: `Ctrl`/`Cmd` + `1` a `9` pulam direto pra cada tela da barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Insumos, Configurações), fora salvar/limpar orçamento
 - Confirmação antes de excluir (filamentos, impressoras, serviços, pedidos)
 - A janela lembra tamanho, posição e se estava maximizada, e volta a abrir assim (se ainda couber na tela)

@@ -1,5 +1,6 @@
 package com.threedreport.app.ui.filaments
 
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.suggestionsFor
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.text.UiText
@@ -23,7 +24,7 @@ data class FilamentFormState(
     val name: String = "",
     val pricePerKgText: String = "",
     val densityGPerCm3Text: String = "",
-    val diameterMmText: String = Filament.DEFAULT_DIAMETER_MM.toInputText(),
+    val diameterMmText: String = Filament.DEFAULT_DIAMETER_MM.toInputText(AppLocale.decimalSeparator),
     val brand: String = "",
     val materialType: String = "",
     /** `true` quando o tipo veio do campo livre ("Outro tipo"), não de um dos [FILAMENT_MATERIAL_TYPE_PRESETS]. */
@@ -54,8 +55,8 @@ internal fun Filament.toFormState(decimalSeparator: Char = ',') = FilamentFormSt
     id = id,
     name = name,
     pricePerKgText = pricePerKg.toInputText(decimalSeparator),
-    densityGPerCm3Text = densityGPerCm3.toInputText(decimalSeparator),
-    diameterMmText = diameterMm.toInputText(decimalSeparator),
+    densityGPerCm3Text = densityGPerCm3.toInputText(AppLocale.decimalSeparator),
+    diameterMmText = diameterMm.toInputText(AppLocale.decimalSeparator),
     brand = brand.orEmpty(),
     materialType = materialType.orEmpty(),
     isCustomMaterialType = materialType != null && FILAMENT_MATERIAL_TYPE_PRESETS.none { it.label == materialType },

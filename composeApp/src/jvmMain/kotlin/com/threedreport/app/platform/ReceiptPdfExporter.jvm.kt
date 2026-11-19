@@ -55,7 +55,7 @@ actual fun renderReceiptPdf(
         val body = texts.receiptBody(
             client = order.client?.name?.trim()?.takeIf { it.isNotEmpty() },
             amount = payment.amount.toCurrencyText(currency),
-            method = texts.paymentMethod(payment.method),
+            method = payment.method,
             date = formatDate(payment.epochDay),
             orderNumber = order.displayNumber,
             piece = order.clientTitle(texts, withNumber = false),

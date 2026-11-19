@@ -3,6 +3,7 @@ package com.threedreport.app.ui.onboarding
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_number_invalid
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
@@ -70,12 +71,12 @@ class OnboardingViewModel(
     currency: Currency = Currency.BRL,
 ) {
 
-    private val separator = currency.decimalSeparator
+    private var separator = currency.decimalSeparator
 
     private val state = MutableStateFlow(
         OnboardingUiState(
             energyText = currentSettings.energyPricePerKwh.toInputText(separator),
-            marginText = (currentSettings.profitMargin * 100).toInputText(separator),
+            marginText = (currentSettings.profitMargin * 100).toInputText(AppLocale.decimalSeparator),
         ).validated(separator),
     )
     val uiState: StateFlow<OnboardingUiState> = state.asStateFlow()
@@ -85,6 +86,26 @@ class OnboardingViewModel(
     fun setEnergy(text: String) = edit { it.copy(energyText = text) }
     fun setLabor(text: String) = edit { it.copy(laborText = text) }
     fun setMargin(text: String) = edit { it.copy(marginText = text) }
+
+    /**
+     * A moeda mudou no passo 1 (decisão 16a da Leva 11B): os valores em dinheiro já digitados ou sugeridos são relidos com o
+     * separador antigo e reescritos com o da moeda nova, e os erros são refeitos.
+     */
+    fun setCurrency(currency: Currency) {
+        val old = separator
+        if (currency.decimalSeparator == old) return
+        separator = currency.decimalSeparator
+        // Cada campo é relido do jeito que é lido ao terminar: valor da máquina e mão de obra são dinheiro ("2.700" é dois mil
+        // e setecentos), a energia é medida ("1.250" é 1,25).
+        fun convert(text: String, kind: NumberKind): String = parseDecimal(text, kind, old)?.toInputText(separator) ?: text
+        edit {
+            it.copy(
+                machinePriceText = convert(it.machinePriceText, NumberKind.AMOUNT),
+                energyText = convert(it.energyText, NumberKind.MEASURE),
+                laborText = convert(it.laborText, NumberKind.AMOUNT),
+            )
+        }
+    }
 
     /** Segue pro passo dos custos, se as respostas do passo atual estão certas. */
     fun next() {
@@ -101,7 +122,7 @@ class OnboardingViewModel(
         if (!current.canContinue || current.machinePriceError != null) return null
         val energy = parseDecimal(current.energyText, NumberKind.MEASURE, separator)
         val labor = if (current.laborText.isBlank()) 0.0 else parseDecimal(current.laborText, decimalSeparator = separator)
-        val margin = parseDecimal(current.marginText, NumberKind.MEASURE, separator)
+        val margin = parseDecimal(current.marginText, NumberKind.MEASURE, AppLocale.decimalSeparator)
         val machinePrice = if (current.machinePriceText.isBlank()) null else parseDecimal(current.machinePriceText, decimalSeparator = separator)
         return OnboardingResult(
             settings = currentSettings.copy(
@@ -123,15 +144,15 @@ class OnboardingViewModel(
  * ([NumberKind.MEASURE]), como em Configurações: "1.250" é 1,25, e não mil duzentos e cinquenta.
  */
 private fun OnboardingUiState.validated(separator: Char): OnboardingUiState {
-    fun error(text: String, optional: Boolean, kind: NumberKind = NumberKind.AMOUNT): UiText? {
+    fun error(text: String, optional: Boolean, kind: NumberKind = NumberKind.AMOUNT, money: Boolean = true): UiText? {
         if (optional && text.isBlank()) return null
-        val value = parseDecimal(text, kind, separator) ?: return uiText(Res.string.common_error_number_invalid)
+        val value = parseDecimal(text, kind, if (money) separator else AppLocale.decimalSeparator) ?: return uiText(Res.string.common_error_number_invalid)
         return uiText(Res.string.common_error_negative).takeIf { value < 0 }
     }
     return copy(
         machinePriceError = error(machinePriceText, optional = true),
         energyError = error(energyText, optional = false, kind = NumberKind.MEASURE),
         laborError = error(laborText, optional = true),
-        marginError = error(marginText, optional = false, kind = NumberKind.MEASURE),
+        marginError = error(marginText, optional = false, kind = NumberKind.MEASURE, money = false),
     )
 }

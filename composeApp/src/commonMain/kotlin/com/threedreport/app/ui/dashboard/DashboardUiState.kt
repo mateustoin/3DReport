@@ -33,6 +33,11 @@ data class DashboardUiState(
     val summary: QuoteSummary = QuoteSummary.EMPTY,
     val catalog: CatalogSummary? = null,
     val laborRatePerHour: Double = 0.0,
+    /**
+     * Produtos do catálogo com nome automático: o nome gravado (aparado, como o `CatalogReport` o devolve) e a data de
+     * criação. O ranking monta o nome no idioma do app a partir deles (decisão 139, item 7b da Leva 11B).
+     */
+    val autoNamedProducts: Map<String, Long> = emptyMap(),
 ) {
     /** Escolheu "Tudo": os textos de vazio não falam em período. */
     val isAllPeriod: Boolean get() = period == PeriodPreset.ALL

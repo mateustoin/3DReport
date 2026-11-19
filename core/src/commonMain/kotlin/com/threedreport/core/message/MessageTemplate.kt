@@ -52,22 +52,30 @@ enum class MessageTemplateKind(val key: String) {
     }
 }
 
-/** Marcadores dos modelos de mensagem (decisão 148, item 21). O [token] é o que a pessoa escreve no modelo. */
-enum class MessagePlaceholder(val token: String) {
-    CLIENT("{cliente}"),
-    ORDER("{pedido}"),
-    PIECE("{peca}"),
-    DEADLINE("{prazo}"),
-    VALUE("{valor}"),
-    REMAINING("{falta}"),
-    TRACKING("{rastreio}"),
-    STORE("{loja}"),
+/**
+ * Marcadores dos modelos de mensagem (decisão 148, item 21). O [token] é o nome gravado (em português); o [englishToken] é o
+ * mesmo marcador em inglês (decisão 16e da Leva 11B). O preenchimento aceita os dois em qualquer idioma, então um modelo
+ * escrito com um nome funciona com o outro; [tokenFor] diz qual mostrar.
+ */
+enum class MessagePlaceholder(val token: String, val englishToken: String) {
+    CLIENT("{cliente}", "{customer}"),
+    ORDER("{pedido}", "{order}"),
+    PIECE("{peca}", "{part}"),
+    DEADLINE("{prazo}", "{due}"),
+    VALUE("{valor}", "{total}"),
+    REMAINING("{falta}", "{balance}"),
+    TRACKING("{rastreio}", "{tracking}"),
+    STORE("{loja}", "{shop}"),
+    ;
+
+    /** O nome a mostrar no idioma: inglês ou português. */
+    fun tokenFor(english: Boolean): String = if (english) englishToken else token
 }
 
 /** Marca do lugar de um marcador sem valor, durante a limpeza. Não aparece em texto digitado. */
 private const val GAP = '\u0000'
 
-private val TOKENS = Regex(MessagePlaceholder.entries.joinToString("|") { Regex.escape(it.token) })
+private val TOKENS = Regex(MessagePlaceholder.entries.flatMap { listOf(it.token, it.englishToken) }.joinToString("|") { Regex.escape(it) })
 
 /** Trecho opcional: o que está entre `[` e o `]` seguinte, sem outro colchete no meio. Colchete sem par fica literal. */
 private val OPTIONAL_PART = Regex("""\[([^\[\]]*)\]""")
@@ -94,7 +102,7 @@ private val GAP_BETWEEN_WORDS = Regex("[ \t]+$GAP[ \t]*|[ \t]*$GAP[ \t]+")
  */
 fun fillMessageTemplate(template: String, values: Map<MessagePlaceholder, String?>): String {
     fun valueOf(token: String): String? {
-        val placeholder = MessagePlaceholder.entries.first { it.token == token }
+        val placeholder = MessagePlaceholder.entries.first { it.token == token || it.englishToken == token }
         return values[placeholder]?.trim()?.takeIf { it.isNotEmpty() }?.replace(GAP, ' ')
     }
     val withOptionalParts = OPTIONAL_PART.replace(template.replace(GAP, ' ')) { part ->

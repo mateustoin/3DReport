@@ -36,6 +36,7 @@ import com.threedreport.app.ui.components.cardFrame
 import com.threedreport.app.ui.components.clickableCard
 import com.threedreport.app.ui.components.rememberCardState
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
@@ -124,7 +125,7 @@ fun KanbanCard(
                 if (!compact && quote.photoFileName != null) PhotoThumbnail(quote, loadThumbnail, Modifier.size(AppDimens.kanbanPhotoSize))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(space.xxs)) {
                     Text(
-                        quote.name,
+                        quote.shownName(),
                         style = MaterialTheme.appType.bodyStrong,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 2,

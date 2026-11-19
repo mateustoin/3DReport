@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Free 3D printing price calculator | 3DReport</title>
+  <meta name="description" content="Free online 3D printing price calculator: enter the part weight, print time, filament and energy and see the real cost and the sale price at once, right in your browser, with no sign-up and nothing to install.">
+  <meta name="keywords" content="3D printing calculator, 3D printing price calculator online, how much to charge for 3D printing, 3D print quote calculator free, 3D print sale price">
+  <link rel="canonical" href="https://mateustoin.github.io/3DReport/en/calculadora.html">
+  <link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/calculadora.html">
+  <link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/calculadora.html">
+  <link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/calculadora.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b5fa8">
+  <link rel="icon" type="image/png" href="../assets/icon.png">
+  <link rel="apple-touch-icon" href="../assets/icon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="3DReport">
+  <meta property="og:title" content="Free 3D printing price calculator | 3DReport">
+  <meta property="og:description" content="Enter the part weight, print time, filament and energy and see the real cost and the sale price at once, right in your browser, with no sign-up.">
+  <meta property="og:url" content="https://mateustoin.github.io/3DReport/en/calculadora.html">
+  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/en/og-banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Free 3D printing price calculator | 3DReport">
+  <meta name="twitter:description" content="Free online 3D printing price calculator, right in your browser, with no sign-up.">
+  <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/en/og-banner.png">
+
+  <link rel="stylesheet" href="../assets/style.css?v=dev">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "3D printing price calculator",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Any system with a browser",
+    "browserRequirements": "Requires JavaScript",
+    "inLanguage": "en",
+    "description": "Free online calculator to find the sale price of a 3D printed part from its weight, print time, filament and energy. It runs entirely in the browser, without sending data to any server.",
+    "url": "https://mateustoin.github.io/3DReport/en/calculadora.html",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "3DReport",
+      "url": "https://mateustoin.github.io/3DReport/en/"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="./">
+        <img src="../assets/icon.png" alt="3DReport icon" width="32" height="32">
+        3DReport
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+        <svg class="icon-open" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Menu
+      </button>
+      <div class="nav-links" id="nav-links">
+        <a href="./#features">Features</a>
+        <a href="./#sales-management">Sales management</a>
+        <a href="./#how-it-works">How it works</a>
+        <a href="calculadora.html">Calculator</a>
+        <a href="manual.html">Manual</a>
+        <a href="./#faq">FAQ</a>
+        <a href="imprensa.html">Press</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <span class="lang-switch" aria-label="Language"><a href="../calculadora.html" lang="pt-BR" hreflang="pt-BR">PT</a><span aria-hidden="true">|</span><a href="calculadora.html" lang="en" hreflang="en" aria-current="true">EN</a></span>
+      </div>
+    </nav>
+  </header>
+
+  <noscript>
+    <div class="container" style="padding: 20px 0;">
+      <p>This calculator needs JavaScript to work. You can also <a href="https://github.com/mateustoin/3DReport/releases/latest">download the 3DReport app</a> and work out the price there.</p>
+    </div>
+  </noscript>
+
+  <main>
+    <section class="hero calc-hero">
+      <div class="container" style="display: block;">
+        <p class="eyebrow">Free tool</p>
+        <h1>3D printing price calculator</h1>
+        <p class="lead" style="max-width: 70ch;">
+          It uses the same formula as the 3DReport app: enter the part weight,
+          the print time, the filament and the energy, and see the real cost
+          and the suggested sale price at once. It runs entirely in your
+          browser, with no sign-up; nothing you type here leaves your
+          machine. Pick the real, the dollar, the euro or the pound: the numbers are not tied to one.
+        </p>
+      </div>
+    </section>
+
+    <section id="calculator" class="calc-section">
+      <div class="container calc-layout">
+        <form class="calc-form" id="calc-form" novalidate>
+          <fieldset>
+            <legend>Part details</legend>
+            <div class="field-grid">
+            <div class="field">
+              <label for="peso">Part weight (g)</label>
+              <input type="text" inputmode="decimal" id="peso" name="peso" placeholder="50" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="horas">Print time</label>
+              <div class="input-pair">
+                <span class="input-unit"><input type="text" inputmode="decimal" id="horas" name="horas" placeholder="0" autocomplete="off"><span aria-hidden="true">h</span></span>
+                <label for="minutos" class="sr-only">Print minutes</label>
+                <span class="input-unit"><input type="text" inputmode="decimal" id="minutos" name="minutos" placeholder="0" autocomplete="off"><span aria-hidden="true">min</span></span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="precoFilamento">Filament (price per kg)</label>
+              <input type="text" inputmode="decimal" id="precoFilamento" name="precoFilamento" value="25" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="potencia">Printer power (W)</label>
+              <input type="text" inputmode="decimal" id="potencia" name="potencia" value="350" autocomplete="off">
+              <p class="field-hint">From the spec sheet; real use is usually lower.</p>
+            </div>
+            <div class="field">
+              <label for="precoKwh">Energy price (per kWh)</label>
+              <input type="text" inputmode="decimal" id="precoKwh" name="precoKwh" value="0.15" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="margem">Profit margin (%)</label>
+              <input type="text" inputmode="decimal" id="margem" name="margem" value="100" autocomplete="off">
+            </div>
+            </div>
+          </fieldset>
+
+          <details class="calc-advanced" id="calc-advanced">
+            <summary>More costs</summary>
+            <div class="field-grid">
+            <div class="field">
+              <label for="falhas">Failure reserve (%)</label>
+              <input type="text" inputmode="decimal" id="falhas" name="falhas" value="10" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="acabamento">Finishing (% of material)</label>
+              <input type="text" inputmode="decimal" id="acabamento" name="acabamento" value="10" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="valorHora">Your hourly rate (per hour)</label>
+              <input type="text" inputmode="decimal" id="valorHora" name="valorHora" value="0" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="tempoTrabalho">Your work on the order (min)</label>
+              <input type="text" inputmode="decimal" id="tempoTrabalho" name="tempoTrabalho" value="0" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="taxaCanal">Sales channel fee (%)</label>
+              <input type="text" inputmode="decimal" id="taxaCanal" name="taxaCanal" value="0" autocomplete="off">
+              <p class="field-hint">Etsy, eBay, Amazon, card.</p>
+            </div>
+            <div class="field">
+              <label for="taxaFixaCanal">Fixed fee per item</label>
+              <input type="text" inputmode="decimal" id="taxaFixaCanal" name="taxaFixaCanal" value="0" autocomplete="off">
+              <p class="field-hint">Marketplaces like Etsy and eBay charge a fixed amount per item, on top of the percentage.</p>
+            </div>
+            <div class="field">
+              <label for="imposto">Tax on the sale (%)</label>
+              <input type="text" inputmode="decimal" id="imposto" name="imposto" value="0" autocomplete="off">
+              <p class="field-hint">Sales tax or VAT, if you pay it as a percentage of each sale.</p>
+            </div>
+            <div class="field">
+              <label for="quantidade">Number of parts</label>
+              <input type="text" inputmode="numeric" id="quantidade" name="quantidade" value="1" autocomplete="off">
+            </div>
+            </div>
+          </details>
+        </form>
+
+        <aside class="calc-result">
+          <div class="result-panel" id="calc-output" aria-live="polite">
+            <p class="result-placeholder">Enter the part weight and the print time to see the price.</p>
+          </div>
+          <p class="calc-result-more"><a href="#calculator-vs-app">What the app calculates on top</a></p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="calculator-vs-app" class="alt">
+      <div class="container">
+        <h2>The calculator is one part of 3DReport</h2>
+        <p class="section-intro">
+          It is for a quick sum. The app, also free, prices with every cost
+          and takes care of the sale from quote to delivery.
+        </p>
+        <div class="compare-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col"><span class="sr-only">Feature</span></th>
+                <th scope="col">Calculator</th>
+                <th scope="col">3DReport app</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Price of one part: material, energy, failures, finishing, your work, channel and tax</th><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+              <tr><th scope="row">Printer maintenance, machine payback and the monthly fixed cost</th><td class="no">No</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+              <tr><th scope="row">Drag in the G-code and the quote builds itself</th><td class="no">No</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+              <tr><th scope="row">Catalog of printers and filaments, with stock per color</th><td class="no">No</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+              <tr><th scope="row">Save quotes, history and customers</th><td class="no">No</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+              <tr><th scope="row">PDF with your brand and sending on WhatsApp</th><td class="no">No</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+              <tr><th scope="row">Order status and a business Dashboard</th><td class="no">No</td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+              <tr><th scope="row">Free</th><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td><td class="yes"><span aria-hidden="true">✓</span><span class="sr-only">Yes</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="compare-cta">
+          <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Download the app free</a>
+          <span class="compare-cta-note">Windows, Linux and macOS. Your data stays on your computer.</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <h2>Where to find the weight and time in your slicer</h2>
+        <p class="section-intro">
+          After slicing the model, these two numbers show up in the print
+          summary, even before you export the G-code.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Bambu Studio and OrcaSlicer</h3>
+            <p>In the right panel, after slicing, you see the filament weight (g) and the estimated print time, just above the export button.</p>
+          </div>
+          <div class="card">
+            <h3>PrusaSlicer</h3>
+            <p>On the "Slice now" tab (Preview), the summary in the bottom right corner shows the filament weight and the total print time.</p>
+          </div>
+          <div class="card">
+            <h3>Cura</h3>
+            <p>In the bottom right corner, after slicing, you see the estimated time and the weight of the filament used.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt">
+      <div class="container">
+        <h2>What each cost means</h2>
+        <p class="section-intro">
+          The same formula as the app, explained line by line.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Material</h3>
+            <p>The filament used in the part, from the weight you entered and the price per kilo.</p>
+          </div>
+          <div class="card">
+            <h3>Energy</h3>
+            <p>The printer's power use during the print time, from the power you entered and the price per kWh.</p>
+          </div>
+          <div class="card">
+            <h3>Failure reserve</h3>
+            <p>A percentage added to the cost to cover prints that fail halfway and have to be redone.</p>
+          </div>
+          <div class="card">
+            <h3>Finishing</h3>
+            <p>A percentage of the material to cover sanding, painting or removing supports after the print.</p>
+          </div>
+          <div class="card">
+            <h3>Your work</h3>
+            <p>The time you spend preparing the file, slicing, taking the part off the bed and packing, at your hourly rate. It goes into the price at face value, without the profit margin on top: your hour is already what you want to earn for it.</p>
+          </div>
+        </div>
+        <p class="section-intro" style="margin-top: 32px; max-width: 70ch;">
+          This calculator uses the same formula as the 3DReport app, but
+          without printer maintenance, the machine's return on investment and
+          the monthly fixed cost, which depend on your setup. See the full
+          calculation in
+          <a href="./#how-it-works">How the calculation works</a>
+          or in the
+          <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">formula documentation</a>
+          (in Portuguese).
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>3DReport · Apache License 2.0 · by Mateus Antonio</span>
+      <div class="footer-links">
+        <a href="./">Home</a>
+        <a href="manual.html">Manual</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <a href="https://github.com/mateustoin/3DReport/releases/latest">Downloads</a>
+        <a href="imprensa.html">Press</a>
+        <a href="https://buymeacoffee.com/mateustoin">Donate</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/calc/web.js?v=dev" defer></script>
+  <script src="../assets/calculadora.js?v=dev" defer></script>
+  <script src="../assets/nav.js?v=dev" defer></script>
+  <!-- Visit count without cookies or personal data (decision 120). Site only: the app sends nothing. -->
+  <script data-goatcounter="https://3dreport.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

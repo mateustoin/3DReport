@@ -1,6 +1,7 @@
 package com.threedreport.app
 
 import com.threedreport.app.data.Clock
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.about.UpdateViewModel
 import com.threedreport.app.ui.consumables.ConsumableListViewModel
@@ -98,12 +99,12 @@ class AppViewModels(
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */
-    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency) }
+    val settingsViewModel: SettingsViewModel by lazy { SettingsViewModel(container.settings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency, languageChanges = AppLocale.current) }
     val brandingViewModel: BrandingViewModel by lazy {
         BrandingViewModel(container.branding, container.templates, scope, currency = { container.currency.currency.value }, today = today)
     }
     val orderSettingsViewModel: OrderSettingsViewModel by lazy {
-        OrderSettingsViewModel(container.orderSettings, scope, currency = { container.currency.currency.value })
+        OrderSettingsViewModel(container.orderSettings, scope, currency = { container.currency.currency.value }, currencyChanges = container.currency.currency)
     }
     val templateListViewModel: TemplateListViewModel by lazy { TemplateListViewModel(container.templates, container.branding, scope) }
     val salesChannelViewModel: SalesChannelViewModel by lazy {
@@ -119,7 +120,7 @@ class AppViewModels(
     }
 
     /** Cedo: o tema e a moeda valem pra janela inteira desde o primeiro desenho. */
-    val themeViewModel: ThemeViewModel by lazy { ThemeViewModel(container.theme) }
+    val themeViewModel: ThemeViewModel by lazy { ThemeViewModel(container.theme, container.preferences, scope) }
     val currencyViewModel: CurrencyViewModel by lazy { CurrencyViewModel(container.currency) }
 
     /** Cedo: a verificação roda ao abrir (decisão 116), e o aviso pode aparecer em qualquer tela. */

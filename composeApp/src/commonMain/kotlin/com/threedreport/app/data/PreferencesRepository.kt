@@ -27,6 +27,8 @@ import kotlinx.serialization.json.JsonPrimitive
  * @property announcedUpdateVersion a última versão nova já avisada (decisão 116), pro aviso aparecer uma vez só.
  * @property ordersView como Pedidos abre (decisão 129): a última visualização escolhida, kanban por padrão.
  * @property catalogView como o Catálogo abre (decisão 132): a última visualização escolhida, grade por padrão.
+ * @property language o idioma do app (decisão 152). Nasce em [AppLanguage.AUTO]: quem usa o sistema em português não vê
+ *   nada mudar.
  */
 @Serializable
 data class AppPreferences(
@@ -38,7 +40,16 @@ data class AppPreferences(
     val announcedUpdateVersion: String? = null,
     val ordersView: OrdersView = OrdersView.KANBAN,
     val catalogView: CatalogView = CatalogView.GRID,
+    val language: AppLanguage = AppLanguage.AUTO,
 )
+
+/**
+ * O idioma escolhido em Configurações > Aparência (decisão 152): automático (segue o sistema, ver
+ * [com.threedreport.app.platform.resolveAppLocale]), português ou inglês. O nome da constante é o que vai pro arquivo:
+ * não renomear. Valor desconhecido no arquivo (um idioma de versão mais nova) vira [AUTO].
+ */
+@Serializable(with = AppLanguageSerializer::class)
+enum class AppLanguage { AUTO, PT_BR, EN }
 
 /**
  * Visualização da tela de Pedidos (decisão 129). O nome da constante é o que vai pro arquivo: não renomear.
@@ -84,6 +95,9 @@ internal object OrdersViewSerializer :
 internal object CatalogViewSerializer :
     FallbackEnumSerializer<CatalogView>("com.threedreport.app.data.CatalogView", CatalogView.entries, CatalogView.GRID)
 
+internal object AppLanguageSerializer :
+    FallbackEnumSerializer<AppLanguage>("com.threedreport.app.data.AppLanguage", AppLanguage.entries, AppLanguage.AUTO)
+
 /**
  * Posição e tamanho da janela em pixels lógicos (os do `Dp` no desktop). Com [maximized], o retângulo é o
  * de antes de maximizar, pra voltar a ele quando a pessoa sair do maximizado.
@@ -106,6 +120,9 @@ interface PreferencesRepository : DocumentRepository<AppPreferences> {
 
     /** Lembra a visualização do Catálogo pra próxima abertura (decisão 132). */
     fun setCatalogView(view: CatalogView) = update(value.value.copy(catalogView = view))
+
+    /** Troca o idioma do app (decisão 152). Vale na hora: quem aplica o idioma acompanha [preferences]. */
+    fun setLanguage(language: AppLanguage) = update(value.value.copy(language = language))
 }
 
 class StoredPreferencesRepository(document: DocumentValue<AppPreferences>) :

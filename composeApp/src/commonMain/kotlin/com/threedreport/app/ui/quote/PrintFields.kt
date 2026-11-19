@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppDropdownField
 import com.threedreport.app.ui.components.AppTextField
@@ -45,7 +46,6 @@ import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.IconAction
 import com.threedreport.app.ui.components.availableOrSelected
 import com.threedreport.app.ui.filaments.displayLabel
-import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toCurrencyText
@@ -165,7 +165,7 @@ private fun FilamentRow(
     }
     // Peso e metros são o mesmo consumo: digitar um preenche o outro, pelo filamento escolhido.
     val derivedWeight = row.weightText ?: run {
-        val separator = LocalCurrency.current.decimalSeparator
+        val separator = AppLocale.decimalSeparator
         val meters = parseDecimal(row.lengthText, NumberKind.MEASURE, separator)
         if (filament != null && meters != null) (round(filament.weightGrams(meters) * 100) / 100).toInputText(separator) else ""
     }

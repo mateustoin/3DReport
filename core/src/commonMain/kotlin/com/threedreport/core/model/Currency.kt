@@ -18,4 +18,14 @@ enum class Currency(
     USD("USD", "$", '.', ','),
     EUR("EUR", "€", ',', '.'),
     GBP("GBP", "£", '.', ','),
+    ;
+
+    /**
+     * Se o que só vale pro Brasil aparece com esta moeda (decisões 145 e 155, item 16b da Leva 11B): Pix (forma de
+     * pagamento, cobrança nos documentos e a seção de Configurações), o site de rastreio padrão dos Correios e o preço de
+     * referência das impressoras pré-cadastradas. Segue a moeda (do pedido ou a padrão), nunca o idioma. É a regra num
+     * lugar só: quem mostra ou esconde uma dessas coisas pergunta aqui.
+     */
+    val hasBrazilOnlyFeatures: Boolean
+        get() = this == BRL
 }

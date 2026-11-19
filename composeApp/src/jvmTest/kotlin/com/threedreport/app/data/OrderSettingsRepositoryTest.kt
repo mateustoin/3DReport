@@ -2,6 +2,7 @@ package com.threedreport.app.data
 
 import com.threedreport.core.message.MessageTemplateKind
 import com.threedreport.core.model.BrandingSettings
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.OrderSettings
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -30,7 +31,7 @@ class OrderSettingsRepositoryTest {
         assertEquals(0.0, settings.defaultDepositRate)
         assertEquals(3, settings.staleQuoteDays)
         assertNull(settings.trackingUrlTemplate)
-        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, settings.effectiveTrackingUrlTemplate)
+        assertEquals(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE, settings.effectiveTrackingUrlTemplate(Currency.BRL))
     }
 
     @Test
@@ -40,7 +41,7 @@ class OrderSettingsRepositoryTest {
         val reloaded = OrderSettingsRepository().settings.value
         assertEquals(0.3, reloaded.defaultDepositRate)
         assertEquals(0, reloaded.staleQuoteDays)
-        assertNull(reloaded.trackingUrl("AA1"), "site apagado fica apagado, não volta ao padrão")
+        assertNull(reloaded.trackingUrl("AA1", Currency.BRL), "site apagado fica apagado, não volta ao padrão")
     }
 
     @Test

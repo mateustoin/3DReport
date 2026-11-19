@@ -18,12 +18,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppChoiceField
 import com.threedreport.app.ui.components.AppDialog
 import com.threedreport.app.ui.components.AppTextField
 import com.threedreport.app.ui.components.ButtonKind
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.core.model.PrintSettings
 import org.jetbrains.compose.resources.stringResource
@@ -62,8 +64,8 @@ fun PrintSettingsDialog(initial: PrintSettings, onDismiss: () -> Unit, onSave: (
                 onClick = {
                     onSave(
                         PrintSettings(
-                            layerHeightMm = parseDecimal(layerHeightText),
-                            infillPercentage = parseDecimal(infillText),
+                            layerHeightMm = parseDecimal(layerHeightText, NumberKind.MEASURE, AppLocale.decimalSeparator),
+                            infillPercentage = parseDecimal(infillText, NumberKind.MEASURE, AppLocale.decimalSeparator),
                             infillPattern = infillPattern.trim().ifEmpty { null },
                             supportsEnabled = supportsEnabled,
                         ),

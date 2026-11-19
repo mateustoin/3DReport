@@ -109,6 +109,16 @@ fun Double.toInputText(decimalSeparator: Char = ',', maxDecimals: Int = 6): Stri
     return if (fraction.isEmpty()) "$sign$integerPart" else "$sign$integerPart$decimalSeparator$fraction"
 }
 
+/**
+ * Um número que não é dinheiro digitado com [from] como separador decimal, reescrito com [to] (decisão 153): o idioma
+ * mudou com o rascunho aberto, e o texto antigo seria lido de outro jeito ("1,250" g em inglês é mil duzentos e cinquenta;
+ * em português, um vírgula vinte e cinco). Lido como [kind], igual ao campo; vazio ou ilegível fica como está.
+ */
+fun rewriteDecimalText(text: String, kind: NumberKind, from: Char, to: Char): String {
+    if (from == to || text.isBlank()) return text
+    return parseDecimal(text.trim(), kind, from)?.toInputText(to) ?: text
+}
+
 /** Valor monetário pra um campo de texto, sempre com duas casas (`4498.5` → `"4498,50"`), sem separador de milhar. */
 fun Double.toMoneyInputText(decimalSeparator: Char = ','): String {
     if (!isFinite()) return ""

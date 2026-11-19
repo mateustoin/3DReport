@@ -27,6 +27,13 @@ interface QuoteHistoryRepository {
     val savedQuotes: StateFlow<List<SavedQuote>>
 
     /**
+     * O nome automático de quem foi criado em [createdAtEpochMillis], montado agora no idioma do app (item 7b da Leva 11B):
+     * é o que as listas, a busca e os avisos mostram no lugar do texto gravado de um [SavedQuote.autoNamed]. Ver
+     * [com.threedreport.app.ui.format.displayName].
+     */
+    fun autoName(createdAtEpochMillis: Long): String
+
+    /**
      * Salva [quote] com [name] (gera um nome genérico se vazio), os [services] escolhidos (retrato do
      * preço no momento), [photo], [stlFile] (o arquivo do modelo, STL ou 3MF, guardado com a extensão dele),
      * [sourceLink] e [client] opcionais. Nasce
@@ -204,6 +211,8 @@ class StoredQuoteHistoryRepository(
 ) : QuoteHistoryRepository {
 
     override val savedQuotes: StateFlow<List<SavedQuote>> = collection.items
+
+    override fun autoName(createdAtEpochMillis: Long): String = defaultName(createdAtEpochMillis)
 
     override fun save(
         name: String,

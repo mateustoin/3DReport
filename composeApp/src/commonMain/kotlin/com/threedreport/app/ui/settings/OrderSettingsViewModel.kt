@@ -6,10 +6,12 @@ import _3dreport.composeapp.generated.resources.settings_notice_saved
 import _3dreport.composeapp.generated.resources.settings_orders_error_days
 import _3dreport.composeapp.generated.resources.settings_orders_error_deposit
 import com.threedreport.app.data.OrderSettingsRepository
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.parseWholeNumber
+import com.threedreport.app.ui.format.rewriteDecimalText
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -38,7 +41,13 @@ data class OrderSettingsUiState(
     val trackingUrlText: String = "",
     val errors: Map<OrderSettingsField, UiText> = emptyMap(),
     val hasUnsavedChanges: Boolean = false,
-)
+    /** O site de rastreio padrão da moeda padrão de agora: os Correios em real, vazio nas outras (item 16b da Leva 11B). */
+    val defaultTrackingUrl: String = "",
+) {
+    /** "Usar o site padrão" aparece quando há um padrão (só em real) e o campo não está nele. */
+    val canUseDefaultTracking: Boolean
+        get() = defaultTrackingUrl.isNotEmpty() && trackingUrlText.trim() != defaultTrackingUrl
+}
 
 /**
  * ViewModel de Configurações > Pedidos (Leva 11, item 36): sinal padrão (%), dias pra orçamento parado e site de
@@ -50,6 +59,10 @@ class OrderSettingsViewModel(
     scope: CoroutineScope,
     /** A moeda do app: os números são lidos com o separador decimal dela. */
     private val currency: () -> Currency = { Currency.BRL },
+    /** Avisa quando o idioma muda, pra o sinal (%) do rascunho passar pro separador novo. */
+    languageChanges: Flow<Any?> = AppLocale.current,
+    /** Avisa quando a moeda padrão muda: o site de rastreio padrão (e o botão de voltar a ele) segue a moeda. */
+    currencyChanges: Flow<Currency> = emptyFlow(),
 ) {
     /** O que está gravado e de onde o rascunho saiu. */
     private var baseline: OrderSettings = repository.settings.value
@@ -60,6 +73,9 @@ class OrderSettingsViewModel(
     private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
     val notices: Flow<UiNotice> = noticeChannel.receiveAsFlow()
 
+    /** O separador com que o sinal (%) do rascunho foi escrito: o do idioma em que a pessoa digitou. */
+    private var draftNumberSeparator: Char = AppLocale.decimalSeparator
+
     init {
         // O que foi gravado por outro caminho (restaurar um backup): sem edição em andamento, o formulário mostra o novo.
         repository.settings.onEach { saved ->
@@ -68,20 +84,34 @@ class OrderSettingsViewModel(
             baseline = saved
             publish(if (wasClean) saved.toUiState() else state.value)
         }.launchIn(scope)
+        languageChanges.onEach { followLanguage() }.launchIn(scope)
+        // Sem edição, o campo passa a mostrar o site em uso com a moeda nova; com edição, fica o digitado.
+        currencyChanges.onEach { publish(if (hasUnsavedChanges) state.value else baseline.toUiState()) }.launchIn(scope)
+    }
+
+    /** O idioma mudou com o rascunho aberto (decisão 153): o sinal passa pro separador novo, digitado ou não. */
+    private fun followLanguage() {
+        val from = draftNumberSeparator
+        val to = AppLocale.decimalSeparator
+        if (from == to) return
+        draftNumberSeparator = to
+        publish(state.value.copy(depositPercentText = rewriteDecimalText(state.value.depositPercentText, NumberKind.MEASURE, from, to)))
     }
 
     val hasUnsavedChanges: Boolean
         get() = state.value.hasUnsavedChanges
 
     private fun OrderSettings.toUiState() = OrderSettingsUiState(
-        depositPercentText = (defaultDepositRate * 100).toInputText(currency().decimalSeparator),
+        depositPercentText = (defaultDepositRate * 100).toInputText(AppLocale.decimalSeparator),
         staleDaysText = staleQuoteDays.toString(),
-        trackingUrlText = effectiveTrackingUrlTemplate,
+        trackingUrlText = effectiveTrackingUrlTemplate(currency()),
+        defaultTrackingUrl = OrderSettings.defaultTrackingUrlTemplate(currency()),
     )
 
     private fun publish(next: OrderSettingsUiState) {
         val saved = baseline.toUiState()
         state.value = next.copy(
+            defaultTrackingUrl = OrderSettings.defaultTrackingUrlTemplate(currency()),
             hasUnsavedChanges = next.depositPercentText != saved.depositPercentText ||
                 next.staleDaysText != saved.staleDaysText ||
                 next.trackingUrlText.trim() != saved.trackingUrlText.trim(),
@@ -95,7 +125,7 @@ class OrderSettingsViewModel(
     fun setTrackingUrl(text: String) = publish(state.value.copy(trackingUrlText = text))
 
     /** "Usar o site dos Correios": o padrão do app volta pro rascunho. */
-    fun useDefaultTracking() = setTrackingUrl(OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE)
+    fun useDefaultTracking() = setTrackingUrl(OrderSettings.defaultTrackingUrlTemplate(currency()))
 
     /** Volta o rascunho pro que está gravado ("Descartar" da barra de alterações). */
     fun discard() = publish(baseline.toUiState())
@@ -103,9 +133,8 @@ class OrderSettingsViewModel(
     private class Parsed(val settings: OrderSettings?, val errors: Map<OrderSettingsField, UiText>)
 
     private fun parse(form: OrderSettingsUiState): Parsed {
-        val separator = currency().decimalSeparator
         val errors = mutableMapOf<OrderSettingsField, UiText>()
-        val percent = if (form.depositPercentText.isBlank()) 0.0 else parseDecimal(form.depositPercentText, NumberKind.MEASURE, separator)
+        val percent = if (form.depositPercentText.isBlank()) 0.0 else parseDecimal(form.depositPercentText, NumberKind.MEASURE, AppLocale.decimalSeparator)
         when {
             percent == null -> errors[OrderSettingsField.DEPOSIT] = uiText(Res.string.common_error_number_invalid)
             percent !in 0.0..100.0 -> errors[OrderSettingsField.DEPOSIT] = uiText(Res.string.settings_orders_error_deposit)
@@ -115,16 +144,27 @@ class OrderSettingsViewModel(
             errors[OrderSettingsField.STALE_DAYS] = uiText(Res.string.settings_orders_error_days, OrderSettings.MAX_STALE_QUOTE_DAYS)
         }
         if (errors.isNotEmpty()) return Parsed(null, errors)
-        // O endereço dos Correios grava como "padrão do app" (nada gravado); texto vazio, como "sem link".
-        val url = form.trackingUrlText.trim()
         return Parsed(
             OrderSettings(
                 defaultDepositRate = percent!! / 100.0,
                 staleQuoteDays = days!!,
-                trackingUrlTemplate = url.takeUnless { it == OrderSettings.DEFAULT_TRACKING_URL_TEMPLATE },
+                trackingUrlTemplate = trackingTemplateToSave(form.trackingUrlText.trim()),
             ),
             errors,
         )
+    }
+
+    /**
+     * O que gravar do site de rastreio [url]:
+     * - sem mexer no campo, o que já estava gravado (salvar o sinal não grava o site que só aparecia como padrão);
+     * - igual ao padrão da moeda em uso (os Correios em real, vazio nas outras), "padrão do app" (`null`), que volta a
+     *   ser os Correios se a moeda virar real;
+     * - qualquer outro texto como está, e o vazio só quando a pessoa apagou um padrão que existia: "sem link".
+     */
+    private fun trackingTemplateToSave(url: String): String? = when (url) {
+        baseline.effectiveTrackingUrlTemplate(currency()) -> baseline.trackingUrlTemplate
+        OrderSettings.defaultTrackingUrlTemplate(currency()) -> null
+        else -> url
     }
 
     /** Confere os campos sem gravar: com erro, mostra no campo e devolve `false`. Quem salva mais de uma seção valida todas antes. */

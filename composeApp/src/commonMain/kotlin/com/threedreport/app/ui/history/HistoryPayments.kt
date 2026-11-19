@@ -86,7 +86,7 @@ internal class HistoryPayments(
         // Do repositório, e não do estado, que um coletor assíncrono atualiza: logo depois do sinal ele ainda pode estar velho.
         val quote = repository.savedQuotes.value.find { it.id == open.quote.id } ?: open.quote
         val amount = quote.amountDue?.amount?.toInputText(appCurrency().decimalSeparator).orEmpty()
-        val method = lastMethod ?: quote.payments.lastOrNull()?.method ?: PaymentMethod.PIX
+        val method = defaultPaymentMethod(lastMethod ?: quote.payments.lastOrNull()?.method, quote.currency)
         editing { it.copy(form = PaymentForm(amount, method, today())) }
     }
 
@@ -135,4 +135,14 @@ internal class HistoryPayments(
         val quote = repository.savedQuotes.value.find { it.id == open.quote.id } ?: open.quote
         generateReceipt(quote, paymentId)
     }
+}
+
+/** As formas de pagamento oferecidas num pedido na moeda [currency]: o Pix só existe em real (decisão 16b da Leva 11B). */
+fun paymentMethodsFor(currency: Currency): List<PaymentMethod> =
+    if (currency.hasBrazilOnlyFeatures) PaymentMethod.entries else PaymentMethod.entries - PaymentMethod.PIX
+
+/** A forma já marcada: a [preferred] se o pedido a oferece; senão Pix em real e Cartão nas outras moedas. */
+fun defaultPaymentMethod(preferred: PaymentMethod?, currency: Currency): PaymentMethod {
+    val allowed = paymentMethodsFor(currency)
+    return preferred?.takeIf { it in allowed } ?: if (PaymentMethod.PIX in allowed) PaymentMethod.PIX else PaymentMethod.CARD
 }

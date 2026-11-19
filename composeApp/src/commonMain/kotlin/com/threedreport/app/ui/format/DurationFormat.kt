@@ -44,13 +44,7 @@ class DurationTexts(
     }
 
     /** Minutos em horas com uma casa decimal e o separador do idioma ([AppLocale]), ex.: "12,5 h". */
-    fun decimalHours(minutes: Double): String {
-        val tenths = kotlin.math.round(minutes / 60.0 * 10).toLong()
-        val whole = tenths / 10
-        val decimal = kotlin.math.abs(tenths % 10)
-        val number = if (decimal == 0L) "$whole" else "$whole${AppLocale.decimalSeparator}$decimal"
-        return decimalHoursTemplate.fill(number)
-    }
+    fun decimalHours(minutes: Double): String = decimalHoursTemplate.fill((minutes / 60.0).oneDecimalText())
 
     private fun String.fill(vararg args: Any): String = fillTemplate(this, *args)
 }
@@ -74,11 +68,17 @@ suspend fun loadDurationTexts(): DurationTexts = DurationTexts(
 
 /** "6 h 30 min" na tela (ver [DurationTexts.duration]). */
 @Composable
-fun Double.minutesToDurationText(): String = durationTexts().duration(this)
+fun Double.minutesToDurationText(): String = durationTexts().duration(this).withNoBreakSpaces()
 
 /** "12,5 h" na tela (ver [DurationTexts.decimalHours]). */
 @Composable
-fun Double.minutesToHoursText(): String = durationTexts().decimalHours(this)
+fun Double.minutesToHoursText(): String = durationTexts().decimalHours(this).withNoBreakSpaces()
+
+/**
+ * Os espaços viram espaço que não quebra (decisão 16 da Leva 11B): "6 h 20 min" não pode partir no meio na tela. Só na tela;
+ * o PDF, a mensagem e a imagem seguem com o espaço comum.
+ */
+private fun String.withNoBreakSpaces(): String = replace(' ', ' ')
 
 /**
  * Lê um tempo digitado, em minutos (decisão 107): "200" (minutos), "3h20", "3h 20min", "3:20", "3h",
@@ -114,7 +114,7 @@ fun Double.toDurationInputText(): String {
     if (!isFinite() || this < 0) return ""
     val hours = kotlin.math.floor(this / 60.0).toLong()
     val minutes = this - hours * 60
-    val minutesText = minutes.toInputText(maxDecimals = 3)
+    val minutesText = minutes.toInputText(AppLocale.decimalSeparator, maxDecimals = 3)
     return when {
         hours == 0L -> minutesText
         minutesText == "0" -> "${hours}h"

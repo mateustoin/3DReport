@@ -85,6 +85,7 @@ class DashboardViewModel(
             summary = summary,
             catalog = catalog,
             laborRatePerHour = inputs.laborRatePerHour,
+            autoNamedProducts = if (catalog == null) emptyMap() else savedQuotes.filter { it.autoNamed && !it.isOrder }.associate { it.name.trim() to it.savedAtEpochMillis },
         )
     }
 }

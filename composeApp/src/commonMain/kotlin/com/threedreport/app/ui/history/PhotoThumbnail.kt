@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import com.threedreport.app.platform.decodeImageBitmap
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.core.model.SavedQuote
@@ -55,7 +56,7 @@ fun PhotoThumbnail(
         if (current != null) {
             Image(
                 bitmap = current,
-                contentDescription = stringResource(Res.string.history_photo_alt, savedQuote.name),
+                contentDescription = stringResource(Res.string.history_photo_alt, savedQuote.shownName()),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = if (current.hasAlpha) ContentScale.Fit else ContentScale.Crop,
             )

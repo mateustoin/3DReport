@@ -48,7 +48,7 @@ jobs:
       # antes do deploy vê o HTML novo com o CSS velho. Os HTMLs apontam pra "?v=dev" e aqui isso
       # vira o commit publicado.
       - name: Versionar CSS e JS
-        run: sed -i "s/?v=dev/?v=${GITHUB_SHA::8}/g" site/*.html
+        run: sed -i "s/?v=dev/?v=${GITHUB_SHA::8}/g" site/*.html site/en/*.html
 
       - uses: actions/configure-pages@v5
 

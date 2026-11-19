@@ -17,6 +17,7 @@ import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.TableColumn
 import com.threedreport.app.ui.components.TableRow
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
@@ -71,7 +72,7 @@ fun CatalogListRow(
         Cell(0) { PhotoThumbnail(quote, loadThumbnail, Modifier.size(AppDimens.printThumbnailSize), placeholder = true, shape = MaterialTheme.shapes.small) }
         Cell(1) {
             Column {
-                Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(quote.shownName(), style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (!state.selectionMode) RepriceHint(row, { value -> value.toCurrencyText(quote.currency) }, onReprice)
             }
         }

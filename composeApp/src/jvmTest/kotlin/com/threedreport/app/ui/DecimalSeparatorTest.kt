@@ -31,9 +31,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 /**
- * Cadastros e Orçamento leem o número com o separador decimal da moeda escolhida (Leva 10B, parte 7), como
+ * Cadastros e Orçamento leem o dinheiro com o separador decimal da moeda escolhida (Leva 10B, parte 7), como
  * Configurações, canais e primeiro uso: "1,250" é mil duzentos e cinquenta em dólar e um e vinte e cinco em real.
- * O que volta pro campo sai com o mesmo separador, pra ser lido de volta igual.
+ * O que volta pro campo sai com o mesmo separador, pra ser lido de volta igual. Peso, densidade, horas e percentual
+ * seguem o idioma do app e não a moeda (ver NumberLanguageTest).
  */
 class DecimalSeparatorTest {
 
@@ -90,7 +91,7 @@ class DecimalSeparatorTest {
         val inDollars = printerViewModel(repository, usd).apply { startEdit("p") }.uiState.value.form!!
         assertEquals("1500.5", inDollars.machinePriceText)
         assertEquals("0.17", inDollars.maintenanceCostPerHourText)
-        assertEquals("7.5", inDollars.printingHoursPerDayText)
+        assertEquals("7,5", inDollars.printingHoursPerDayText)
         val expected = MachineInvestment(1500.5, 12, 25, 7.5).costPerHour + 0.17
         assertEquals(expected, inDollars.machineCostPerHour!!, 1e-9)
         assertEquals("0.17", printerViewModel(repository, usd).apply { startAdd() }.uiState.value.form!!.maintenanceCostPerHourText)
@@ -108,7 +109,7 @@ class DecimalSeparatorTest {
         val repository = FilamentRepository()
         val viewModel = FilamentListViewModel(repository, scope, currency = usd)
         viewModel.startAdd()
-        assertEquals("1.75", viewModel.uiState.value.form!!.diameterMmText)
+        assertEquals("1,75", viewModel.uiState.value.form!!.diameterMmText)
         viewModel.updateForm { it.copy(name = "PETG X", pricePerKgText = "1,250", densityGPerCm3Text = "1.27") }
         viewModel.save()
 
@@ -118,7 +119,7 @@ class DecimalSeparatorTest {
         assertEquals(1.75, saved.diameterMm)
 
         viewModel.startEdit(saved.id)
-        assertEquals("1.27", viewModel.uiState.value.form!!.densityGPerCm3Text)
+        assertEquals("1,27", viewModel.uiState.value.form!!.densityGPerCm3Text)
     }
 
     @Test
@@ -212,7 +213,7 @@ class DecimalSeparatorTest {
         val editing = quoteViewModel(QuoteHistoryRepository(), usd)
         editing.loadForEditing(saved)
         assertEquals("1200", editing.uiState.value.input.shippingCostText)
-        assertEquals("12.5", editing.uiState.value.input.prints.single().filaments.single().lengthText)
+        assertEquals("12,5", editing.uiState.value.input.prints.single().filaments.single().lengthText)
         assertFalse(editing.hasUnsavedEdits, "reabrir não cria alteração não salva")
         assertEquals(saved.quote.salePrice, editing.uiState.value.result.quote!!.salePrice, 1e-9)
     }

@@ -115,6 +115,18 @@ header.site-header {
   color: var(--primary);
 }
 
+/* Seletor de idioma (decisão 157): "PT | EN", o idioma da página em destaque. */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--border);
+}
+
+.nav-links .lang-switch a[aria-current] {
+  color: var(--primary);
+}
+
 /* Menu no celular (decisão 99): um botão "Menu" abre os links numa coluna embaixo do cabeçalho.
    Só vale depois que assets/nav.js marca o cabeçalho com .nav-ready; sem JS, os links aparecem
    como antes. */

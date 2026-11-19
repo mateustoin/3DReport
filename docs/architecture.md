@@ -414,9 +414,11 @@ Formato e migrações:
 - Preferências deste computador ficam em `preferences.json` (`AppPreferences`):
   backup automático, aviso de versão nova, posição da janela e a visualização
   lembrada de Pedidos (`OrdersView`, kanban por padrão, decisão 129) e do
-  Catálogo (`CatalogView`, grade por padrão, decisão 132). Esses dois enums são
-  gravados pelo nome da constante e, se o arquivo trouxer um valor que a versão
-  não conhece, abrem no padrão em vez de pôr o arquivo de lado como ilegível.
+  Catálogo (`CatalogView`, grade por padrão, decisão 132), e o idioma
+  (`AppLanguage`: `AUTO`, `PT_BR`, `EN`, automático por padrão, decisão 152).
+  Esses enums são gravados pelo nome da constante e, se o arquivo trouxer um
+  valor que a versão não conhece, abrem no padrão em vez de pôr o arquivo de
+  lado como ilegível.
 
 Outros:
 
@@ -486,12 +488,45 @@ Outros:
   `loadClientDocumentTexts(orçamentos)`, que lê os recursos e já resolve o
   plural de "peças" pras quantidades usadas, e passa o `ClientDocumentTexts`
   pros exportadores e pro `toCopyPasteText`.
-- Idioma dos formatos num ponto só: `platform/AppLocale.kt` tem a tag do
-  idioma (hoje `pt-BR`, fixa), os padrões de data e o separador decimal das
-  horas. `formatDate`, `formatShortDate`, `formatDateTime` e `weekdayName` leem
-  dele. As palavras de duração ("h", "min") vêm de `strings.xml`
+- Idioma num ponto só: `platform/AppLocale.kt` guarda o idioma em uso
+  (`AppLocaleState`: português ou inglês, mais a região do sistema), de onde
+  saem a tag, os padrões de data (decisão 153: em inglês, mês/dia só com região
+  `US` ou sem região) e o separador decimal do que não é dinheiro (horas, peso,
+  percentual). `formatDate`, `formatShortDate`, `formatDateTime` e `weekdayName`
+  leem dele na hora. `resolveAppLocale` transforma a escolha (`AppLanguage`) no
+  idioma: automático é português pra sistema em português e inglês pra qualquer
+  outro.
+- Troca de idioma com o app aberto (decisão 152): o `main` acompanha
+  `AppPreferences.language` e chama `DesktopLocale.use`, que muda o idioma
+  padrão da JVM (é por ele que o Compose escolhe entre `values/` e `values-en/`,
+  na tela e no `getString`) e depois o `AppLocale`. Na raiz, `App` passa tudo
+  por `ProvideAppLocale`, que troca um `staticCompositionLocalOf` a cada idioma
+  novo: isso recompõe a tela inteira sem pular nada e sem perder estado, e cada
+  `stringResource` relê o texto. Os textos guardados fora da tela (diálogos do
+  Swing, títulos dos seletores de arquivo, modelo do nome automático) são
+  relidos em segundo plano; o nome automático também confere o idioma antes de
+  usar o guardado. `LanguageSwitchTest` cobre a troca, inclusive em lista
+  preguiçosa, subcomposição e janela por cima.
+- Textos em inglês em `composeResources/values-en/`, um `.xml` por área (o
+  Compose junta os arquivos da pasta). `StringResourceParityTest` confere chaves,
+  marcadores, plurais, travessão e chave repetida entre arquivos, que o Compose
+  aceitaria calado. Os testes rodam com a JVM em `pt-BR`
+  (`composeApp/build.gradle.kts`). As palavras de duração ("h", "min") vêm de `strings.xml`
   (`duration_`), pelo `DurationTexts` (`durationTexts()` na tela,
   `loadDurationTexts()` ou `ClientDocumentTexts.duration` fora dela).
+- Trocar o idioma com um rascunho aberto reescreve os números que não são
+  dinheiro no separador novo (`rewriteDecimalText`): os ViewModels do
+  Orçamento, de Configurações > Pedidos e de canal de venda (Negócio refaz o
+  rascunho sem edição; o percentual dele é lido igual com vírgula ou ponto)
+  acompanham `AppLocale.current`. O Orçamento reaberto reescreve junto o retrato
+  de quando abriu, pra o preço congelado continuar.
+- O nome automático mostrado (`SavedQuote.displayName`, `shownName()` na tela)
+  vale também na busca, nos avisos e nos diálogos montados no ViewModel; fora da
+  tela, quem monta é `QuoteHistoryRepository.autoName`.
+- O que só vale pro Brasil (Pix, Correios, preço de referência das
+  impressoras) pergunta a `Currency.hasBrazilOnlyFeatures`, no `core`. A forma de
+  pagamento dentro da frase do recibo tem recurso próprio
+  (`payment_method_inline_`), pra cada idioma escolher maiúscula e preposição.
 
 ### Workaround: janela em monitores com DPI diferentes
 `Main.kt` contorna um bug conhecido do Compose Desktop/Skiko (decisão 23):

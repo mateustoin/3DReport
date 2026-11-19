@@ -7,7 +7,7 @@
     button.addEventListener('click', function () {
       var iframe = document.createElement('iframe');
       iframe.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(box.dataset.videoId) + '?autoplay=1&rel=0';
-      iframe.title = 'Vídeo de apresentação do 3DReport';
+      iframe.title = /^en/i.test(document.documentElement.lang || "") ? "3DReport presentation video" : "Vídeo de apresentação do 3DReport";
       iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
       iframe.allowFullscreen = true;
       box.replaceChildren(iframe);

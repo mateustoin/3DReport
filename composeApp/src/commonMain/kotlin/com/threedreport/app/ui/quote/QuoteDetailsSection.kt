@@ -73,6 +73,7 @@ import com.threedreport.app.ui.components.HelpHint
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.LinkText
 import com.threedreport.app.ui.format.minutesToDurationText
+import com.threedreport.app.ui.format.oneDecimalText
 import com.threedreport.app.ui.format.toPercentText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.asString
@@ -84,16 +85,6 @@ import com.threedreport.app.ui.viewer.Stl3DViewer
 import com.threedreport.app.ui.viewer.rememberStl3DViewerState
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import kotlin.math.abs
-import kotlin.math.round
-
-/** Arredonda pra 1 casa decimal, separador decimal brasileiro (vírgula), mesmo estilo de `toWeightText()`. */
-private fun Double.formatOneDecimal(): String {
-    val tenths = round(this * 10).toLong()
-    val whole = tenths / 10
-    val decimal = abs(tenths % 10)
-    return if (decimal == 0L) "$whole" else "$whole,$decimal"
-}
 
 /** Prazo, categoria, link, foto, arquivo do modelo e configurações de impressão: o que acompanha o pedido ao salvar. */
 @Composable
@@ -337,8 +328,8 @@ private fun StlPreviewBlock(viewModel: QuoteViewModel, current: ModelPreview.Stl
     Text(
         stringResource(
             Res.string.quote_stl_measures,
-            (analysis.surfaceAreaMm2 / 100).formatOneDecimal(),
-            (analysis.volumeMm3 / 1000).formatOneDecimal(),
+            (analysis.surfaceAreaMm2 / 100).oneDecimalText(),
+            (analysis.volumeMm3 / 1000).oneDecimalText(),
             (analysis.overhangPercentage / 100).toPercentText(),
             pluralStringResource(Res.plurals.quote_stl_pieces, analysis.disconnectedComponents, analysis.disconnectedComponents),
         ),

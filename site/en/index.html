@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3DReport: free 3D printing quotes and sales app</title>
+  <meta name="description" content="Free, open source app for people who sell 3D prints: price every part from its real cost (filament, energy, machine wear, your own time) and your profit margin, with order history, PDF quotes and a product catalog.">
+  <meta name="keywords" content="3D printing quote, 3D printing price calculator, how much to charge for 3D printing, sell 3D prints, 3D print business software">
+  <link rel="canonical" href="https://mateustoin.github.io/3DReport/en/">
+  <link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/">
+  <link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/">
+  <link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b5fa8">
+  <link rel="icon" type="image/png" href="../assets/icon.png">
+  <link rel="apple-touch-icon" href="../assets/icon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="3DReport">
+  <meta property="og:title" content="3DReport: free 3D printing quotes and sales app">
+  <meta property="og:description" content="Price every part from its real cost and your profit margin. Free, open source, with order history, PDF quotes and a product catalog.">
+  <meta property="og:url" content="https://mateustoin.github.io/3DReport/en/">
+  <meta property="og:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/en/og-banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="3DReport, the system for people who sell 3D prints: free, open source and 100% on your computer">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="3DReport: free 3D printing quotes and sales app">
+  <meta name="twitter:description" content="Free, open source tool for people who sell 3D prints: quotes, sale prices, order history and a product catalog.">
+  <meta name="twitter:image" content="https://mateustoin.github.io/3DReport/assets/screenshots/en/og-banner.png">
+
+  <link rel="stylesheet" href="../assets/style.css?v=dev">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "3DReport",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Windows, Linux, macOS",
+    "inLanguage": "en",
+    "description": "Quote calculator and sales manager for people who sell 3D prints, free and open source, with order history, PDF quotes and a product catalog.",
+    "url": "https://mateustoin.github.io/3DReport/en/",
+    "downloadUrl": "https://github.com/mateustoin/3DReport/releases/latest",
+    "license": "https://github.com/mateustoin/3DReport/blob/main/LICENSE",
+    "softwareVersion": "2.2.1",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How much does 3DReport cost?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nothing. 3DReport is free and open source, with no paid edition and no subscription. The project is kept going by voluntary donations."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does 3DReport price a 3D print?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "From the filament used (price per kg, density), the printer profile (energy use, maintenance, return on investment) and your business settings (energy price, monthly fixed cost, the value of your hour, failure reserve and profit margin), the app works out the production cost and suggests a sale price with the margin you want."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does the app charge for my working time?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It does, if you want it to. In Settings you enter what your hour is worth, and in each quote you enter how many minutes that order took you: preparing the file, slicing, taking the print off the bed, removing supports, sanding, painting, packing. This is the cost that most often goes missing when people sell 3D prints, because the machine works alone but everything else is you. Entering your hourly rate only adds to the price. If you already count sanding and painting in those minutes, leave the finishing rate at 0 so you do not charge twice."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I have to type the filament length and print time of each part?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Drag the G-code exported by your slicer into the app window (or use the import button): filament length, print time, part photo and print settings are filled in for you. If the printer name and filament type in the G-code match what you have saved, they are selected too; when they only look similar, the app suggests and you confirm. It works with Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer and Cura (in Cura, only the printer, because Cura does not write the filament)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I quote several identical parts at once?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Enter the quantity in the quote and the app multiplies the cost of each part, showing the total and the price per unit. You enter your working time for the whole order, and slicing or setting up the plate does not grow with the number of parts, so the price per part drops in a batch without an invented discount. The filament length and print time you enter are for one part; if you sliced a full plate in one go, leave the quantity at 1."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the app handle marketplace fees, tax and shipping?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The sales channel fee (Etsy, eBay, Amazon, card) and the tax come out of what you receive, so the app raises the price just enough for your margin to stay the same, and the profit it shows is already net. A marketplace and a payment method are a single field on purpose: adding the Etsy fee to the card fee would charge you twice, because the marketplace already includes payment processing. If you pay a flat monthly tax instead of a percentage, put it in the monthly fixed cost, not in the tax field. Services and shipping appear as their own lines in the total and do not go through your margin, but the marketplace and the tax charge on them too: the app includes that part in the price of the print, so you do not pay the fee out of your own pocket. A channel can also have the fixed amount per item that marketplaces like Etsy and eBay charge, with price tiers if you need them. And if you offer free shipping, mark that you pay for shipping: the customer sees \"Free shipping\" and the cost comes out of your profit."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I know how low I can go in a negotiation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. The app always shows the minimum price, the value below which the sale starts to lose money, after the channel fee and tax. You can also type the price the customer offered to see at once how much profit and margin is left, with a red warning if the value does not cover the cost. The agreed price becomes the real value of the quote, so your history and your revenue keep matching what you actually charged. And the Dashboard adds up how much discount you gave in the period."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does any 3DReport branding show up on the PDF I send to customers?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Only one small, faded line, \"Made with 3DReport\", in the bottom corner of the PDF (with a link to the app's site) and of the square image. It sits far from your name, your logo and the price, and it does not appear in the text message. The app is free and has no ads: that line is how other sellers get to know 3DReport, and it is what keeps the app going."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I send the quote to the customer?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Whichever way is easiest for you. The app exports a formal PDF, copies a short text to paste into any chat, opens the customer's WhatsApp with the quote already written, or makes a square image with photo, name and price to send in a chat or post as a story. If you set a delivery date, it stands out in all of them, and the app warns you before you send a date that has already passed. They only show what belongs to the customer: production cost, profit and the model link stay internal to you."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is there an Android or mobile version?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Not yet. It is a possibility on the roadmap, with no date."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which operating systems does 3DReport run on?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Windows, Linux and macOS, with native installers (.msi, .deb, .dmg) on the GitHub releases page."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does the site collect any data from visitors?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Only a visit count, through GoatCounter: how many people opened each page and where they came from (a video, a post, a search). No cookies, no tracking across sites and no personal data stored. This applies to this site only: the app sends nothing anywhere."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Where are my quote data saved?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Locally, on your computer, inside your user folder. 3DReport does not send any data to outside servers."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is 3DReport only for one-off quotes, or also for running a 3D printing business?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Both. Besides the quote calculation, each sale has a customer and an order status (Quoted, Approved, Printing, Ready, Delivered) and goes into the history and the dashboard, with total sold, accumulated profit and most used filament by period."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What does the \"difficulty level\" mean when I attach an STL?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "When you attach the model's STL file, 3DReport analyzes the 3D mesh and suggests a level (Easy, Medium or Hard) by combining four signals: how far the shape is from something smooth and compact (like a sphere) for the same volume, how much surface hangs in the air and needs support (overhang), how many triangles the mesh has, and whether the file has several loose parts. It is a geometric estimate (it does not simulate the slicer) to help you decide whether to charge an extra margin for more demanding parts, and the pricing decision stays yours."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="./">
+        <img src="../assets/icon.png" alt="3DReport icon" width="32" height="32">
+        3DReport
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+        <svg class="icon-open" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Menu
+      </button>
+      <div class="nav-links" id="nav-links">
+        <a href="#features">Features</a>
+        <a href="#sales-management">Sales management</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="calculadora.html">Calculator</a>
+        <a href="manual.html">Manual</a>
+        <a href="#faq">FAQ</a>
+        <a href="imprensa.html">Press</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <span class="lang-switch" aria-label="Language"><a href="../" lang="pt-BR" hreflang="pt-BR">PT</a><span aria-hidden="true">|</span><a href="./" lang="en" hreflang="en" aria-current="true">EN</a></span>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div>
+          <p class="eyebrow">The system for people who sell 3D prints</p>
+          <h1>From the right price to the delivered part, in one app and with no monthly fee</h1>
+          <p class="lead">
+            Drag in the G-code and your 3D printing quote builds itself from
+            the real cost: filament, energy, machine, your own time, tax and
+            the fee of each sales channel. Send it to the customer on WhatsApp
+            or as a PDF with your brand, negotiate without losing money and
+            follow every order to delivery. Free, open source and 100% on your
+            computer: your prices and your customers never leave your machine.
+          </p>
+          <div class="btn-row">
+            <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">Download free</a>
+            <a class="btn btn-secondary" href="calculadora.html">Calculate a price online</a>
+            <a class="btn btn-secondary" href="manual.html">Read the quick manual</a>
+          </div>
+        </div>
+        <div class="hero-art">
+          <img src="../assets/icon.png" alt="3DReport icon, three printed layers with the nozzle on top" width="160" height="160">
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Presentation video (decision 120). When it is on YouTube: replace VIDEO_ID with the video ID
+      (what comes after "v=" in the link) and remove the hidden attribute. The YouTube player only
+      loads after the click (assets/video.js): until then, the cover is one of our screenshots and
+      nothing goes out to Google.
+    -->
+    <section id="video" hidden>
+      <div class="container">
+        <h2>See 3DReport in action</h2>
+        <p class="section-intro">
+          From the dragged-in G-code to the delivered order, across every screen of the app.
+        </p>
+        <div class="video" data-video-id="VIDEO_ID">
+          <button type="button" class="video-play" aria-label="Watch the 3DReport presentation video on YouTube">
+            <img src="../assets/screenshots/en/orcamento.png" alt="" loading="lazy">
+            <span class="video-play-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="video-note">The video opens through YouTube, without cookies, only after you click.</p>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="container">
+        <h2>Inside the app</h2>
+        <p class="section-intro">
+          From the quote to the delivered order, including what goes to the customer.
+          Click an image to see it full size.
+        </p>
+        <div class="grid gallery">
+          <figure class="screenshot">
+            <a href="../assets/screenshots/en/orcamento.png"><img src="../assets/screenshots/en/orcamento.png" alt="3DReport Quote screen with a two-print order: on the right, the price charged, the delivery date, the price breakdown and the negotiation" loading="lazy"></a>
+            <figcaption><strong>Quote.</strong> A two-print order: the price, the delivery date, the cost breakdown and the negotiation next to the inputs</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="../assets/screenshots/en/pedidos.png"><img src="../assets/screenshots/en/pedidos.png" alt="3DReport Orders in Kanban, with the orders by status and the delivery date of each" loading="lazy"></a>
+            <figcaption><strong>Orders in Kanban.</strong> Each order in its status, with the delivery date in plain sight</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="../assets/screenshots/en/dashboard.png"><img src="../assets/screenshots/en/dashboard.png" alt="3DReport Dashboard with the total sold in the period, profit per machine hour and the parts that earn the most" loading="lazy"></a>
+            <figcaption><strong>Dashboard.</strong> What sold in the period, profit per hour and the parts that earn the most</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="../assets/screenshots/en/catalogo.png"><img src="../assets/screenshots/en/catalogo.png" alt="3DReport Catalog in a grid, with the photo, category and price of each product and the Sell button" loading="lazy"></a>
+            <figcaption><strong>Catalog.</strong> Parts with a category and a ready price, to sell with one click</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="../assets/screenshots/en/pdf.png"><img src="../assets/screenshots/en/pdf.png" alt="PDF quote with the seller's name and contact, the part photo and the price with delivery date and validity" loading="lazy"></a>
+            <figcaption><strong>PDF with your brand.</strong> The quote that goes to the customer, with your brand, contact, price and delivery date</figcaption>
+          </figure>
+          <figure class="screenshot">
+            <a href="../assets/screenshots/en/whatsapp.png"><img src="../assets/screenshots/en/whatsapp.png" alt="Square image made by 3DReport with the part photo, the price and the delivery date, ready to send on WhatsApp" loading="lazy"></a>
+            <figcaption><strong>Chat image.</strong> Photo, price and delivery date in a square, ready for WhatsApp or a story</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="alt">
+      <div class="container">
+        <h2>Built for people who sell 3D prints every day</h2>
+        <p class="section-intro">
+          It is not just a calculator: it follows the whole sale, from the
+          G-code that comes out of the slicer to the PDF that goes to the
+          customer and the delivered order.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Drag in the G-code and you are done</h3>
+            <p>Drop the slicer file into the window: length, time, photo and print settings are filled in for you, and the printer and filament are already selected when they match what you saved. Works with Bambu Studio, OrcaSlicer, PrusaSlicer and Cura.</p>
+          </div>
+          <div class="card">
+            <h3>The real cost</h3>
+            <p>Filament, supplies (key rings, magnets, boxes), energy, maintenance, the printer's return on investment, the fixed cost of the business, your own working time and a failure reserve. Sales tax or VAT and the fee of each channel (Etsy, eBay, Amazon, card), including the fixed amount per item, are already in the price.</p>
+          </div>
+          <div class="card">
+            <h3>See where the money goes</h3>
+            <p>Next to the price, a bar shows how much is material, energy, machine, your work, failure reserve and profit. It is clear where to cut when the customer says it is too expensive.</p>
+          </div>
+          <div class="card">
+            <h3>Negotiate without losing money</h3>
+            <p>Type the price the customer offered and see at once what is left: profit, margin and a warning when the value does not cover the cost. The minimum price is always in view, and the Dashboard adds up how much discount you gave.</p>
+          </div>
+          <div class="card">
+            <h3>Delivery dates you do not lose track of</h3>
+            <p>Pick the date with one click (+3, +7 or +15 days) while seeing how much print time is already queued on the machine. It stands out for the customer, and the app warns you when an order runs late.</p>
+          </div>
+          <div class="card">
+            <h3>Ready to send on WhatsApp</h3>
+            <p>Open the customer's chat with the quote already written, or make a square image with photo, price and delivery date to send in a chat or post as a story.</p>
+          </div>
+          <div class="card">
+            <h3>PDF with your brand</h3>
+            <p>A single quote, several in one PDF or a grid catalog, with your logo and contact in the header, plus an optional border and watermark. You can check how it looks before saving.</p>
+          </div>
+          <div class="card">
+            <h3>From quoted to delivered</h3>
+            <p>Orders with search and filters, a Kanban by status, each printer's queue and maintenance, and a Dashboard with sales, profit per hour and the parts that earn the most in the period.</p>
+          </div>
+          <div class="card">
+            <h3>A catalog that talks to the quote</h3>
+            <p>Printers with presets of the main brands, filaments with brand, type, colors and stock per color, services like painting, sanding and delivery (with the amount of each order, per part or once), and sales channels with the fee of each.</p>
+          </div>
+          <div class="card">
+            <h3>3D viewer and difficulty level</h3>
+            <p>Attach the model's STL to rotate and zoom inside the app, capture a photo for the quote and see a suggested difficulty level (Easy, Medium or Hard) to price complex parts.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="on-your-computer">
+      <div class="container">
+        <h2>100% on your computer</h2>
+        <p class="section-intro">
+          No account, no monthly fee and no required internet. Your prices
+          and your customers are your business, and they stay with you.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Really free</h3>
+            <p>No paid plan, no "pro" version and no limit on quotes. The app is open source and lives on voluntary support.</p>
+          </div>
+          <div class="card">
+            <h3>Your data stays with you</h3>
+            <p>Everything lives in a folder on your computer. One click makes a backup file, to take to your laptop or keep before you reformat.</p>
+          </div>
+          <div class="card">
+            <h3>Four currencies, your sales channels</h3>
+            <p>Your own sales channels with their fees, a tax rate you set, free shipping and delivery dates, and each quote in the real, the dollar, the euro or the pound. The app speaks Portuguese and English.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sales-management">
+      <div class="container">
+        <h2>From quote to finished sale</h2>
+        <p class="section-intro">
+          3DReport does not stop at the price: it follows the sale of a 3D
+          print from the first contact with the customer to the delivered part.
+        </p>
+        <div class="pipeline">
+          <span class="pipeline-step">Quoted</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Approved</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Printing</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Ready</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">Delivered</span>
+        </div>
+        <div class="grid" style="margin-top: 28px;">
+          <div class="card">
+            <h3>Customer linked to the quote</h3>
+            <p>Name and contact are saved with each sale, ready to look up later in the history.</p>
+          </div>
+          <div class="card">
+            <h3>Order status</h3>
+            <p>Update the progress of each sale right in the list, with no side spreadsheet to track who has paid or received.</p>
+          </div>
+          <div class="card">
+            <h3>Sales dashboard</h3>
+            <p>How much you sold, how much each machine hour and work hour earned and which parts are worth repeating, filtered by period. It only counts what the customer approved.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <div class="container">
+        <h2>How the calculation works</h2>
+        <p class="section-intro">
+          A transparent formula, no black box. Full details and a worked
+          example are in
+          <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a>
+          (in Portuguese).
+          Want to try your own part's numbers right now? Use the
+          <a href="calculadora.html">free online calculator</a>.
+        </p>
+        <div class="formula-box">
+COST PER PART     = material + energy + maintenance
+                    + return on investment + fixed cost + finishing
+
+REWORKED COST     = cost per part × quantity + your work on the order
+
+PRODUCTION VALUE  = reworked cost + failure reserve + admin
+                    + supplies
+BASE PRICE        = (production − your work) × (1 + profit margin)
+                    + your work (+ rush fee, on a rush order)
+
+EXTRAS            = services per part × quantity
+                    + services per order + shipping charged
+SALE VALUE        = (base price + extras + fixed fee × quantity)
+                    / (1 − channel fee − tax) − extras
+CUSTOMER TOTAL    = sale + extras
+PROFIT            = customer total × (1 − channel fee − tax)
+                    − fixed fee × quantity − extras − production
+                    − free shipping
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="alt">
+      <div class="container">
+        <h2>Installation</h2>
+        <p class="section-intro">Native installers, built for each release, for the three desktop operating systems.</p>
+        <div class="grid">
+          <div class="card">
+            <span class="badge-os">Windows</span>
+            <p>Download the <code>.msi</code> from the releases page. Windows may warn "Unknown publisher": click "More info" and then "Run anyway".</p>
+          </div>
+          <div class="card">
+            <span class="badge-os">Linux</span>
+            <p>Download the <code>.deb</code> from the releases page and install it as usual with your system's package manager.</p>
+          </div>
+          <div class="card">
+            <span class="badge-os">macOS</span>
+            <p>Download the <code>.dmg</code> from the releases page. If opening is blocked, try right-clicking the app and choosing "Open". If that does not work (common on recent macOS versions), go to System Settings, then Privacy &amp; Security, and click "Open Anyway" on the notice about the blocked app.</p>
+          </div>
+        </div>
+        <div class="btn-row" style="margin-top: 28px;">
+          <a class="btn btn-primary" href="https://github.com/mateustoin/3DReport/releases/latest">See all downloads</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="container">
+        <h2>Frequently asked questions</h2>
+        <details class="faq-item">
+          <summary>How much does 3DReport cost?</summary>
+          <p>Nothing. It is free and open source, with no paid edition and no subscription. The project is kept going by voluntary donations.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How does 3DReport price a 3D print?</summary>
+          <p>From the filament used (price per kg, density), the printer profile (energy use, maintenance, return on investment) and your business settings (energy price, monthly fixed cost, the value of your hour, failure reserve and profit margin), the app works out the production cost and suggests a sale price with the margin you want.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Does the app charge for my working time?</summary>
+          <p>It does, if you want it to. In Settings you enter what your hour is worth, and in each quote you enter how many minutes that order took you: preparing the file, slicing, taking the print off the bed, removing supports, sanding, painting, packing. This is the cost that most often goes missing when people sell 3D prints, because the machine works alone but everything else is you. Entering your hourly rate only adds to the price. If you already count sanding and painting in those minutes, leave the finishing rate at 0 so you do not charge twice.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Do I have to type the filament length and print time of each part?</summary>
+          <p>No. Drag the G-code exported by your slicer into the app window (or use the import button): filament length, print time, part photo and print settings are filled in for you. If the printer name and filament type in the G-code match what you have saved, they are selected too; when they only look similar, the app suggests and you confirm. It works with Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer and Cura (in Cura, only the printer, because Cura does not write the filament).</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I quote several identical parts at once?</summary>
+          <p>Yes. Enter the quantity in the quote and the app multiplies the cost of each part, showing the total and the price per unit. You enter your working time for the whole order, and slicing or setting up the plate does not grow with the number of parts, so the price per part drops in a batch without an invented discount. The filament length and print time you enter are for one part; if you sliced a full plate in one go, leave the quantity at 1.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Which operating systems does 3DReport run on?</summary>
+          <p>Windows, Linux and macOS, with a native installer for each.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Where are my quote data saved?</summary>
+          <p>Locally, on your computer. 3DReport does not send any data to outside servers.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Does the site collect any data from visitors?</summary>
+          <p>Only a visit count, through <a href="https://www.goatcounter.com/">GoatCounter</a>: how many people opened each page and where they came from (a video, a post, a search). No cookies, no tracking across sites and no personal data stored. This applies to this site only: the app sends nothing anywhere.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is 3DReport only for one-off quotes, or also for running a 3D printing business?</summary>
+          <p>Both. Besides the quote calculation, each sale has a customer and an order status (Quoted, Approved, Printing, Ready, Delivered) and goes into the history and the dashboard, with total sold, accumulated profit and most used filament by period.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What does the "difficulty level" mean when I attach an STL?</summary>
+          <p>When you attach the model's STL file, 3DReport analyzes the 3D mesh and suggests a level (Easy, Medium or Hard) by combining four signals: how far the shape is from something smooth and compact (like a sphere) for the same volume, how much surface hangs in the air and needs support (overhang), how many triangles the mesh has, and whether the file has several loose parts. It is a geometric estimate (it does not simulate the slicer) to help you decide whether to charge an extra margin for more demanding parts, and the pricing decision stays yours. The formulas are in <a href="https://github.com/mateustoin/3DReport/blob/main/docs/pricing-formulas.md">docs/pricing-formulas.md</a> (in Portuguese).</p>
+        </details>
+        <details class="faq-item">
+          <summary>How does the app handle marketplace fees, tax and shipping?</summary>
+          <p>The sales channel fee (Etsy, eBay, Amazon, card) and the tax come out of what you receive, so the app raises the price just enough for your margin to stay the same, and the profit it shows is already net. A marketplace and a payment method are a single field on purpose: adding the Etsy fee to the card fee would charge you twice, because the marketplace already includes payment processing. If you pay a flat monthly tax instead of a percentage, put it in the monthly fixed cost, not in the tax field. Services and shipping appear as their own lines in the total and do not go through your margin, but the marketplace and the tax charge on them too: the app includes that part in the price of the print, so you do not pay the fee out of your own pocket. A channel can also have the fixed amount per item that marketplaces like Etsy and eBay charge, with price tiers if you need them. And if you offer free shipping, mark that you pay for shipping: the customer sees "Free shipping" and the cost comes out of your profit.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I know how low I can go in a negotiation?</summary>
+          <p>Yes. The app always shows the minimum price, the value below which the sale starts to lose money, after the channel fee and tax. You can also type the price the customer offered to see at once how much profit and margin is left, with a red warning if the value does not cover the cost. The agreed price becomes the real value of the quote, so your history and your revenue keep matching what you actually charged. And the Dashboard adds up how much discount you gave in the period.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How do I send the quote to the customer?</summary>
+          <p>Whichever way is easiest for you. The app exports a formal PDF, copies a short text to paste into any chat, opens the customer's WhatsApp with the quote already written, or makes a square image with photo, name and price to send in a chat or post as a story. If you set a delivery date, it stands out in all of them, and the app warns you before you send a date that has already passed. They only show what belongs to the customer: production cost, profit and the model link stay internal to you.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Does any 3DReport branding show up on the PDF I send to customers?</summary>
+          <p>Only one small, faded line, "Made with 3DReport", in the bottom corner of the PDF (with a link to the app's site) and of the square image. It sits far from your name, your logo and the price, and it does not appear in the text message. The app is free and has no ads: that line is how other sellers get to know 3DReport, and it is what keeps the app going.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is there an Android or mobile version?</summary>
+          <p>Not yet. It is a possibility on the <a href="https://github.com/mateustoin/3DReport/blob/main/docs/roadmap.md">roadmap</a>, with no date.</p>
+        </details>
+      </div>
+    </section>
+
+    <section id="support" class="alt">
+      <div class="container">
+        <h2>Support the project</h2>
+        <p class="section-intro">
+          3DReport is and always will be free and open source. If it helps you
+          price your 3D printing business better, please consider a voluntary
+          donation.
+        </p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="https://buymeacoffee.com/mateustoin">Buy Me a Coffee</a>
+          <a class="btn btn-secondary" href="https://github.com/mateustoin/3DReport">See the code on GitHub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>3DReport · Apache License 2.0 · by Mateus Antonio</span>
+      <div class="footer-links">
+        <a href="manual.html">Manual</a>
+        <a href="https://github.com/mateustoin/3DReport">GitHub</a>
+        <a href="https://github.com/mateustoin/3DReport/releases/latest">Downloads</a>
+        <a href="imprensa.html">Press</a>
+        <a href="https://buymeacoffee.com/mateustoin">Donate</a>
+      </div>
+    </div>
+  </footer>
+  <script src="../assets/nav.js?v=dev" defer></script>
+  <script src="../assets/video.js?v=dev" defer></script>
+  <!-- Visit count without cookies or personal data (decision 120). Site only: the app sends nothing. -->
+  <script data-goatcounter="https://3dreport.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

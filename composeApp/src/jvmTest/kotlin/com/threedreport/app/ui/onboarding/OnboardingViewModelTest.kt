@@ -151,4 +151,43 @@ class OnboardingViewModelTest {
         assertEquals(1250.0, result.settings.laborRatePerHour, 1e-9)
         assertEquals(2700.5, result.printer?.machinePrice)
     }
+
+    /** Trocar a moeda no passo 1 relê os valores em dinheiro como dinheiro: "2.700" continua dois mil e setecentos. */
+    @Test
+    fun changingFromRealToDollarKeepsTheThousandsOfTheMoneyFields() {
+        val viewModel = OnboardingViewModel(settings, Currency.BRL)
+        viewModel.setMachinePrice("2.700")
+        viewModel.setLabor("1.250,50")
+        viewModel.setEnergy("0,95")
+
+        viewModel.setCurrency(Currency.USD)
+
+        val state = viewModel.uiState.value
+        assertEquals("2700", state.machinePriceText)
+        assertEquals("1250.5", state.laborText)
+        assertEquals("0.95", state.energyText)
+        val result = assertNotNull(viewModel.finish())
+        assertEquals(2700.0, result.printer?.machinePrice)
+        assertEquals(1250.5, result.settings.laborRatePerHour, 1e-9)
+        assertEquals(0.95, result.settings.energyPricePerKwh, 1e-9)
+    }
+
+    @Test
+    fun changingFromDollarToRealKeepsTheThousandsOfTheMoneyFields() {
+        val viewModel = OnboardingViewModel(settings, Currency.USD)
+        viewModel.setMachinePrice("2,700")
+        viewModel.setLabor("1,250.50")
+        viewModel.setEnergy("0.15")
+
+        viewModel.setCurrency(Currency.BRL)
+
+        val state = viewModel.uiState.value
+        assertEquals("2700", state.machinePriceText)
+        assertEquals("1250,5", state.laborText)
+        assertEquals("0,15", state.energyText)
+        val result = assertNotNull(viewModel.finish())
+        assertEquals(2700.0, result.printer?.machinePrice)
+        assertEquals(1250.5, result.settings.laborRatePerHour, 1e-9)
+        assertEquals(0.15, result.settings.energyPricePerKwh, 1e-9)
+    }
 }

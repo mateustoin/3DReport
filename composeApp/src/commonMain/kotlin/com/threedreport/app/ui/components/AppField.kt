@@ -59,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.focus.tabToNavigate
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
@@ -323,7 +324,8 @@ fun AppTextArea(
 /**
  * [AppTextField] pra número (decisão 107). Embaixo dele aparece como o app entendeu o que foi digitado quando há como
  * ler de dois jeitos ("2.700" vira "= 2.700"), e um erro quando não é número, em vez de o valor virar zero ou outro
- * número em silêncio. Um [error] vindo de fora (a validação do ViewModel) tem prioridade.
+ * número em silêncio. Um [error] vindo de fora (a validação do ViewModel) tem prioridade. Com [money] falso (peso, horas,
+ * percentual), o separador é o do idioma do app ([AppLocale]) e não o da moeda (decisão 153).
  */
 @Composable
 fun AppNumberField(
@@ -338,8 +340,9 @@ fun AppNumberField(
     enabled: Boolean = true,
     prefix: String? = null,
     labelHidden: Boolean = false,
+    money: Boolean = true,
 ) {
-    val separator = LocalCurrency.current.decimalSeparator
+    val separator = if (money) LocalCurrency.current.decimalSeparator else AppLocale.decimalSeparator
     val invalid = value.isNotBlank() && parseDecimal(value, kind, separator) == null
     AppTextField(
         label = label,

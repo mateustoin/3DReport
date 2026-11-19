@@ -12,6 +12,7 @@ import com.threedreport.app.platform.PickedFile
 import com.threedreport.app.platform.PlatformServices
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.format.displayName
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.text
 import com.threedreport.app.ui.text.uiText
@@ -96,6 +97,6 @@ internal class HistoryDetailsEditor(
             ),
         )
         change { it.copy(details = null) }
-        if (saved != null) notify(UiNotice(uiText(Res.string.history_notice_details_saved, saved.name)))
+        if (saved != null) notify(UiNotice(uiText(Res.string.history_notice_details_saved, saved.displayName(repository::autoName))))
     }
 }

@@ -7,6 +7,7 @@ import _3dreport.composeapp.generated.resources.settings_error_percent_max
 import _3dreport.composeapp.generated.resources.settings_notice_saved
 import _3dreport.composeapp.generated.resources.settings_notice_saved_fixed_cost
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
@@ -41,6 +42,10 @@ class SettingsViewModel(
     private val currency: () -> Currency = { Currency.BRL },
     /** Avisa quando a moeda muda, pra o rascunho limpo passar a mostrar os números com o separador da moeda nova. */
     currencyChanges: Flow<Currency> = emptyFlow(),
+    /** O separador decimal dos números que não são dinheiro (percentual, horas): o do idioma do app (decisão 153). */
+    private val numberSeparator: () -> Char = { AppLocale.decimalSeparator },
+    /** Avisa quando o idioma muda, pelo mesmo motivo de [currencyChanges]. */
+    languageChanges: Flow<Any?> = emptyFlow(),
 ) {
 
     /** O que está gravado e de onde o rascunho saiu; serve pra saber se há edição por salvar. */
@@ -48,8 +53,9 @@ class SettingsViewModel(
 
     /** O separador com que o texto do rascunho foi escrito; o de um rascunho com edição só muda quando ele é refeito. */
     private var shownSeparator: Char = currency().decimalSeparator
+    private var shownNumberSeparator: Char = numberSeparator()
 
-    private val state = MutableStateFlow(baseline.toUiState(shownSeparator))
+    private val state = MutableStateFlow(baseline.toUiState(shownSeparator, shownNumberSeparator))
     val uiState: StateFlow<SettingsUiState> = state.asStateFlow()
 
     private val noticeChannel = Channel<UiNotice>(Channel.CONFLATED)
@@ -58,6 +64,7 @@ class SettingsViewModel(
     init {
         settingsRepository.settings.onEach(::syncWith).launchIn(scope)
         currencyChanges.onEach { refreshSeparator() }.launchIn(scope)
+        languageChanges.onEach { refreshSeparator() }.launchIn(scope)
     }
 
     /**
@@ -66,15 +73,18 @@ class SettingsViewModel(
      */
     fun refreshSeparator() {
         val separator = currency().decimalSeparator
-        if (separator == shownSeparator || hasUnsavedChanges) return
+        val numbers = numberSeparator()
+        if ((separator == shownSeparator && numbers == shownNumberSeparator) || hasUnsavedChanges) return
         shownSeparator = separator
-        publish(baseline.toUiState(separator))
+        shownNumberSeparator = numbers
+        publish(baseline.toUiState(separator, numbers))
     }
 
     /** Refaz o texto do rascunho a partir de [settings], com o separador da moeda de agora. */
     private fun fromSaved(settings: PricingSettings): SettingsUiState {
         shownSeparator = currency().decimalSeparator
-        return settings.toUiState(shownSeparator)
+        shownNumberSeparator = numberSeparator()
+        return settings.toUiState(shownSeparator, shownNumberSeparator)
     }
 
     /** Se o formulário tem alguma mudança ainda não salva. */
@@ -137,10 +147,10 @@ class SettingsViewModel(
     private class ParseResult(val settings: PricingSettings?, val errors: Map<SettingsField, UiText>)
 
     private fun parse(current: SettingsUiState): ParseResult {
-        val separator = currency().decimalSeparator
+        val moneySeparator = currency().decimalSeparator
         val errors = mutableMapOf<SettingsField, UiText>()
-        fun amount(field: SettingsField, text: String, kind: NumberKind = NumberKind.AMOUNT, below100: Boolean = false): Double {
-            val value = if (text.isBlank()) 0.0 else parseDecimal(text, kind, separator)
+        fun amount(field: SettingsField, text: String, kind: NumberKind = NumberKind.AMOUNT, below100: Boolean = false, money: Boolean = false): Double {
+            val value = if (text.isBlank()) 0.0 else parseDecimal(text, kind, if (money) moneySeparator else numberSeparator())
             when {
                 value == null -> errors[field] = uiText(Res.string.common_error_number_invalid)
                 value < 0 -> errors[field] = uiText(Res.string.common_error_negative)
@@ -148,16 +158,16 @@ class SettingsViewModel(
             }
             return value ?: 0.0
         }
-        val energy = amount(SettingsField.ENERGY, current.energyPricePerKwhText, NumberKind.MEASURE)
+        val energy = amount(SettingsField.ENERGY, current.energyPricePerKwhText, NumberKind.MEASURE, money = true)
         val failure = amount(SettingsField.FAILURE_RATE, current.failureRatePercentText, NumberKind.MEASURE)
         val finishing = amount(SettingsField.FINISHING_RATE, current.finishingRatePercentText, NumberKind.MEASURE)
-        val labor = amount(SettingsField.LABOR, current.laborRatePerHourText)
-        val fixedCost = amount(SettingsField.MONTHLY_FIXED_COST, current.monthlyFixedCostText)
+        val labor = amount(SettingsField.LABOR, current.laborRatePerHourText, money = true)
+        val fixedCost = amount(SettingsField.MONTHLY_FIXED_COST, current.monthlyFixedCostText, money = true)
         val hours = amount(SettingsField.PRODUCTIVE_HOURS, current.productiveHoursPerMonthText)
-        val administrative = amount(SettingsField.ADMINISTRATIVE_COST, current.administrativeCostText)
+        val administrative = amount(SettingsField.ADMINISTRATIVE_COST, current.administrativeCostText, money = true)
         val margin = amount(SettingsField.MARGIN, current.profitMarginPercentText, NumberKind.MEASURE)
         val tax = amount(SettingsField.TAX, current.taxRatePercentText, NumberKind.MEASURE, below100 = true)
-        val minimum = amount(SettingsField.MINIMUM_PRICE, current.minimumOrderPriceText)
+        val minimum = amount(SettingsField.MINIMUM_PRICE, current.minimumOrderPriceText, money = true)
         val rush = amount(SettingsField.RUSH, current.rushSurchargeRatePercentText, NumberKind.MEASURE)
         if (errors.isNotEmpty()) return ParseResult(null, errors)
         return ParseResult(
@@ -184,7 +194,7 @@ class SettingsViewModel(
      */
     private fun publish(next: SettingsUiState) {
         state.value = next.copy(
-            hasUnsavedChanges = next.fieldsOnly() != baseline.toUiState(shownSeparator).fieldsOnly(),
+            hasUnsavedChanges = next.fieldsOnly() != baseline.toUiState(shownSeparator, shownNumberSeparator).fieldsOnly(),
             fixedCostWithoutHours = baseline.hasFixedCostWithoutHours(),
         )
     }
@@ -195,17 +205,17 @@ private fun PricingSettings.hasFixedCostWithoutHours() = monthlyFixedCost > 0 &&
 
 private fun SettingsUiState.fieldsOnly() = copy(errors = emptyMap(), fixedCostWithoutHours = false, hasUnsavedChanges = false)
 
-private fun PricingSettings.toUiState(separator: Char) = SettingsUiState(
+private fun PricingSettings.toUiState(separator: Char, numberSeparator: Char) = SettingsUiState(
     energyPricePerKwhText = energyPricePerKwh.toInputText(separator),
-    failureRatePercentText = (failureRate * 100).toInputText(separator),
-    finishingRatePercentText = (finishingRate * 100).toInputText(separator),
+    failureRatePercentText = (failureRate * 100).toInputText(numberSeparator),
+    finishingRatePercentText = (finishingRate * 100).toInputText(numberSeparator),
     laborRatePerHourText = laborRatePerHour.toInputText(separator),
     monthlyFixedCostText = monthlyFixedCost.toInputText(separator),
-    productiveHoursPerMonthText = productiveHoursPerMonth.toInputText(separator),
+    productiveHoursPerMonthText = productiveHoursPerMonth.toInputText(numberSeparator),
     administrativeCostText = administrativeCost.toInputText(separator),
-    profitMarginPercentText = (profitMargin * 100).toInputText(separator),
-    taxRatePercentText = (taxRate * 100).toInputText(separator),
+    profitMarginPercentText = (profitMargin * 100).toInputText(numberSeparator),
+    taxRatePercentText = (taxRate * 100).toInputText(numberSeparator),
     minimumOrderPriceText = minimumOrderPrice.toInputText(separator),
-    rushSurchargeRatePercentText = (rushSurchargeRate * 100).toInputText(separator),
+    rushSurchargeRatePercentText = (rushSurchargeRate * 100).toInputText(numberSeparator),
     fixedCostWithoutHours = hasFixedCostWithoutHours(),
 )

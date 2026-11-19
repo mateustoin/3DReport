@@ -5,6 +5,14 @@ import _3dreport.composeapp.generated.resources.common_cancel
 import _3dreport.composeapp.generated.resources.common_close
 import _3dreport.composeapp.generated.resources.common_optional
 import _3dreport.composeapp.generated.resources.common_save
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_balance
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_client
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_due
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_order
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_part
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_shop
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_total
+import _3dreport.composeapp.generated.resources.message_placeholder_meaning_tracking
 import _3dreport.composeapp.generated.resources.settings_docs_action_preview
 import _3dreport.composeapp.generated.resources.settings_docs_border
 import _3dreport.composeapp.generated.resources.settings_docs_brand_title
@@ -88,6 +96,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import com.threedreport.app.platform.AppLocale
+import com.threedreport.app.platform.UiLanguage
 import com.threedreport.app.platform.decodeImageBitmap
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppCheckbox
@@ -104,6 +114,7 @@ import com.threedreport.app.ui.components.FormNotice
 import com.threedreport.app.ui.components.FormSection
 import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.components.clickableAction
+import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.history.defaultTextRes
 import com.threedreport.app.ui.history.labelRes
@@ -117,6 +128,7 @@ import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.message.MessagePlaceholder
 import com.threedreport.core.message.MessageTemplateKind
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.ImageBackground
 import com.threedreport.core.pix.PixSetupIssue
 import org.jetbrains.compose.resources.StringResource
@@ -227,22 +239,26 @@ internal fun ClientDocumentsSection(viewModel: BrandingViewModel, templateListVi
         }
     }
 
-    FormSection(4, stringResource(Res.string.settings_docs_pix_title), help = HelpText(stringResource(Res.string.settings_docs_pix_help))) {
-        PixFields(branding, viewModel)
+    // O Pix só existe em real (decisão 155): com outra moeda padrão a seção some e as seguintes sobem um número.
+    val showPix = LocalCurrency.current.hasBrazilOnlyFeatures
+    if (showPix) {
+        FormSection(4, stringResource(Res.string.settings_docs_pix_title), help = HelpText(stringResource(Res.string.settings_docs_pix_help))) {
+            PixFields(branding, viewModel)
+        }
     }
 
     FormSection(
-        5,
+        if (showPix) 5 else 4,
         stringResource(Res.string.settings_docs_messages_title),
         help = HelpText(
-            stringResource(Res.string.settings_docs_messages_help, MessagePlaceholder.entries.joinToString(" ") { it.token }),
+            stringResource(Res.string.settings_docs_messages_help, messagePlaceholderList()),
             stringResource(Res.string.settings_docs_messages_help_detail),
         ),
     ) {
         MessageTemplateFields(branding, viewModel)
     }
 
-    FormSection(6, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {
+    FormSection(if (showPix) 6 else 5, stringResource(Res.string.settings_docs_templates_title), help = HelpText(stringResource(Res.string.settings_docs_templates_help))) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(space.xs), verticalArrangement = Arrangement.spacedBy(space.xs)) {
             AppButton(stringResource(Res.string.settings_docs_template_save), viewModel::startSaveAsTemplate, icon = AppIcons.Save)
             AppButton(stringResource(Res.string.settings_docs_template_list), onClick = { showTemplates = true }, icon = AppIcons.ViewList)
@@ -440,4 +456,25 @@ private fun MessageTemplateFields(branding: BrandingUiState, viewModel: Branding
             },
         )
     }
+}
+
+/** Os marcadores com o nome do idioma em uso e o que cada um significa (decisão 16e da Leva 11B). */
+@Composable
+private fun messagePlaceholderList(): String {
+    val english = AppLocale.current.collectAsState().value.language == UiLanguage.ENGLISH
+    val meanings = MessagePlaceholder.entries.associateWith { placeholder ->
+        stringResource(
+            when (placeholder) {
+                MessagePlaceholder.CLIENT -> Res.string.message_placeholder_meaning_client
+                MessagePlaceholder.ORDER -> Res.string.message_placeholder_meaning_order
+                MessagePlaceholder.PIECE -> Res.string.message_placeholder_meaning_part
+                MessagePlaceholder.DEADLINE -> Res.string.message_placeholder_meaning_due
+                MessagePlaceholder.VALUE -> Res.string.message_placeholder_meaning_total
+                MessagePlaceholder.REMAINING -> Res.string.message_placeholder_meaning_balance
+                MessagePlaceholder.TRACKING -> Res.string.message_placeholder_meaning_tracking
+                MessagePlaceholder.STORE -> Res.string.message_placeholder_meaning_shop
+            },
+        )
+    }
+    return MessagePlaceholder.entries.joinToString(", ") { "${it.tokenFor(english)} ${meanings.getValue(it)}" }
 }

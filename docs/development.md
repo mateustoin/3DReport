@@ -108,6 +108,25 @@ saem do próprio app, renderizado sem janela com dados de exemplo fictícios
 Confira cada imagem antes de commitar. O teste só roda por essa task: no
 `./gradlew build` ele não faz nada.
 
+## Textos novos nos dois idiomas
+
+Todo texto que aparece na tela, no PDF, na mensagem ou na imagem nasce em português e em
+inglês (decisão 154). Passo a passo:
+
+1. Acrescente a chave em `composeApp/src/commonMain/composeResources/values/` (português) e a
+   mesma chave em `values-en/`, no arquivo da mesma área (`strings_quote`, `strings_orders`,
+   `strings_payments`, `strings_documents`, `strings_registers`, `strings_settings`,
+   `strings_dashboard`, `strings_about` ou `strings_common`). Não repita chave em dois arquivos.
+2. Escreva o inglês pelo [glossário](glossario.md) e na escrita do projeto: frases curtas, do
+   ponto de vista de quem vende, sem travessão. Termo novo que se repete entra no glossário.
+3. Mantenha os marcadores (`%1$s`, `%2$d`) e as quantidades dos plurais iguais nos dois idiomas.
+4. Exemplos de loja e de imposto em inglês citam Etsy, eBay, Amazon e cartão, nunca Shopee, Mercado
+   Livre, MEI ou Pix (decisão 155). O que só vale no Brasil precisa sumir fora do real.
+5. Número que não é dinheiro vai pelos formatadores que seguem o idioma (`ui/format/`), e data
+   por `formatDate` e companhia; nada de `String.format` com `Locale` fixo.
+6. Rode `scripts/check.sh build`: o `StringResourceParityTest` falha o build se faltar chave, se
+   os marcadores ou plurais diferirem ou se um texto em inglês tiver travessão.
+
 ## Fluxo de mudanças
 
 1. Decisões de UI/UX, arquitetura, organização e funcionalidades são propostas e
@@ -177,6 +196,14 @@ importa), não em termos de arquivos/classes internos (isso já está em
 `decisions.md`/`architecture.md`). Serve de rascunho pronto pra colar como
 release notes quando um release for de fato publicado no GitHub (ver
 [roadmap.md](roadmap/catalogo.md#3-instaladores-desktop)).
+
+A partir da 2.2, cada versão termina com um bloco `### In English` de 3 a 6 linhas
+(decisão 156), escrito pra quem não lê português: um item por linha, em inglês
+natural de quem vende impressão 3D, do ponto de vista de quem usa, sem travessão,
+com os termos do glossário (`docs/glossario.md`). Ele resume a versão, não traduz
+o bloco em português item por item. O bloco fica no fim da seção da versão e o
+workflow de release o leva pra nota da release, sob o título "In English", depois
+do texto em português.
 
 ## Cortando um release
 

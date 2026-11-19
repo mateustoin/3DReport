@@ -369,6 +369,18 @@ class DashboardViewModelTest {
 
         assertEquals(builds, viewModel.buildCount)
     }
+
+    // Item 7b da Leva 11B: o ranking do catálogo monta o nome automático no idioma do app, a partir da data de criação.
+
+    fun theCatalogKnowsWhichProductsHaveAnAutomaticName() {
+        saveProduct("")
+        saveProduct("Vaso")
+
+        val state = viewModel().uiState.value
+        val automatic = history.savedQuotes.value.single { it.autoNamed }
+
+        assertEquals(mapOf(automatic.name.trim() to automatic.savedAtEpochMillis), state.autoNamedProducts)
+    }
 }
 
 private const val DAY_MILLIS = 24L * 60 * 60 * 1000

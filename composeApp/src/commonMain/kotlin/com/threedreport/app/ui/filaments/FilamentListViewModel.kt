@@ -13,6 +13,7 @@ import _3dreport.composeapp.generated.resources.filaments_notice_saved
 import com.threedreport.app.data.FilamentRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
+import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.components.PendingDelete
 import com.threedreport.app.ui.format.NumberKind
@@ -82,7 +83,7 @@ class FilamentListViewModel(
         state.update {
             it.copy(
                 form = FilamentFormState(
-                    diameterMmText = Filament.DEFAULT_DIAMETER_MM.toInputText(separator),
+                    diameterMmText = Filament.DEFAULT_DIAMETER_MM.toInputText(AppLocale.decimalSeparator),
                     colors = listOf(FilamentColorFormState(id = newColorId())),
                 ),
             )
@@ -120,7 +121,7 @@ class FilamentListViewModel(
                 form.copy(
                     materialType = preset.label,
                     isCustomMaterialType = false,
-                    densityGPerCm3Text = preset.defaultDensityGPerCm3?.toInputText(separator) ?: form.densityGPerCm3Text,
+                    densityGPerCm3Text = preset.defaultDensityGPerCm3?.toInputText(AppLocale.decimalSeparator) ?: form.densityGPerCm3Text,
                 )
             }
         }
@@ -150,8 +151,8 @@ class FilamentListViewModel(
         val name = current.name.trim()
         val separator = separator
         val price = parseDecimal(current.pricePerKgText.trim(), NumberKind.AMOUNT, separator)
-        val density = parseDecimal(current.densityGPerCm3Text.trim(), NumberKind.MEASURE, separator)
-        val diameter = parseDecimal(current.diameterMmText.trim(), NumberKind.MEASURE, separator)
+        val density = parseDecimal(current.densityGPerCm3Text.trim(), NumberKind.MEASURE, AppLocale.decimalSeparator)
+        val diameter = parseDecimal(current.diameterMmText.trim(), NumberKind.MEASURE, AppLocale.decimalSeparator)
 
         val nameError = uiText(Res.string.common_error_name_required).takeIf { name.isEmpty() }
         val priceError = when {

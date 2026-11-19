@@ -232,6 +232,7 @@
     <string name="printers_help_power_detail">Um medidor de tomada dá o número certo.</string>
     <string name="printers_notice_reference">Valores de referência pra começar. Troque pelos da sua máquina.</string>
     <string name="printers_notice_reference_help">Consumo médio, preço de %1$s e manutenção estimada.</string>
+    <string name="printers_notice_reference_help_no_price">Consumo médio e manutenção estimada.</string>
     <string name="printers_notice_reference_help_detail">Pra um preço mais certo, troque pelo que você pagou, pelo consumo medido com um medidor de tomada e pelas horas que a sua máquina roda.</string>
     <string name="printers_help_maintenance">Bicos, correias, PTFE e peças que gastam, divididos pelas horas que duram.</string>
     <string name="printers_summary_label">Custo por hora</string>
@@ -318,9 +319,9 @@
     <string name="quote_error_service_value">Valor de %1$s: não é um número.</string>
     <string name="quote_error_service_minutes">Tempo de %1$s: use minutos (30) ou horas e minutos (1h30).</string>
     <string name="quote_error_consumable_quantity">Quantidade de %1$s: use um número maior que zero.</string>
-    <string name="quote_error_shipping_invalid">Frete: não é um número. Use vírgula nos centavos (19,90).</string>
+    <string name="quote_error_shipping_invalid">Frete: informe um valor válido.</string>
     <string name="quote_error_shipping_negative">Frete não pode ser negativo.</string>
-    <string name="quote_error_target_invalid">Preço: não é um número. Use vírgula nos centavos (19,90).</string>
+    <string name="quote_error_target_invalid">Preço: informe um valor válido.</string>
     <string name="quote_error_target_negative">Preço não pode ser negativo.</string>
     <string name="quote_error_target_below_extras">Esse preço não cobre serviços e frete (%1$s): digite pelo menos esse valor.</string>
     <string name="quote_error_labor">Tempo de trabalho: use minutos (90) ou horas e minutos (1h30).</string>
@@ -1064,6 +1065,12 @@
     <string name="settings_appearance_currency">Moeda</string>
     <string name="settings_appearance_currency_help">A moeda dos orçamentos novos: símbolo e formato dos valores na tela, no PDF e no copiar/colar.</string>
     <string name="settings_appearance_currency_help_detail">Não afeta o cálculo. Cada orçamento salvo continua na moeda em que foi feito. Vale na hora, sem precisar salvar.</string>
+    <string name="settings_appearance_language">Idioma</string>
+    <string name="settings_appearance_language_help">Automático segue o idioma do sistema. Vale na hora, também pro PDF e as mensagens.</string>
+    <string name="settings_language_auto">Automático</string>
+    <!-- O nome de cada idioma fica sempre no próprio idioma, igual em values/ e values-en/: não traduzir. -->
+    <string name="settings_language_portuguese">Português</string>
+    <string name="settings_language_english">English</string>
 
     <string name="settings_backup_title">Backup</string>
     <string name="settings_backup_help">Seus orçamentos, clientes, catálogos, fotos e arquivos de modelo ficam só neste computador.</string>
@@ -1115,7 +1122,7 @@
     <string name="about_summary">Aplicativo gratuito e de código aberto pra orçar e vender impressão 3D. Feito por %1$s.</string>
     <string name="about_does_quote">No Orçamento, arraste o G-code pra janela e peso, tempo, foto, impressora e filamento vêm preenchidos.</string>
     <string name="about_does_orders">Em Pedidos e no Catálogo, acompanhe o que os clientes pediram e guarde as peças que você oferece.</string>
-    <string name="about_does_settings">Em Configurações, ajuste custos, canais de venda, documentos pro cliente, tema, moeda e backup.</string>
+    <string name="about_does_settings">Em Configurações, ajuste custos, canais de venda, documentos pro cliente, tema, idioma, moeda e backup.</string>
     <string name="about_link_site">Site</string>
     <string name="about_link_code">Código-fonte</string>
     <string name="about_link_support">Apoiar o projeto</string>
@@ -1166,7 +1173,7 @@
 
     <!-- Primeiro uso -->
     <string name="onboarding_title">Boas-vindas ao 3DReport</string>
-    <string name="onboarding_help">Perguntas rápidas pra o app sair do jeito do seu negócio. Dá pra mudar tudo depois em Configurações e Impressoras.</string>
+    <string name="onboarding_help">Perguntas rápidas pra o app sair do jeito do seu negócio. Os valores sugeridos são exemplos: troque pelos seus. Dá pra mudar tudo depois em Configurações e Impressoras.</string>
     <string name="onboarding_step">Passo %1$d de %2$d</string>
     <string name="onboarding_printer_title">Qual a sua impressora?</string>
     <string name="onboarding_costs_title">Seus custos e sua margem</string>
@@ -1303,6 +1310,19 @@
     <string name="duration_hours">%1$d h</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="duration_decimal_hours">%1$s h</string>
+    <string name="month_year_short">%1$s/%2$d</string>
+    <string name="month_short_01">jan</string>
+    <string name="month_short_02">fev</string>
+    <string name="month_short_03">mar</string>
+    <string name="month_short_04">abr</string>
+    <string name="month_short_05">mai</string>
+    <string name="month_short_06">jun</string>
+    <string name="month_short_07">jul</string>
+    <string name="month_short_08">ago</string>
+    <string name="month_short_09">set</string>
+    <string name="month_short_10">out</string>
+    <string name="month_short_11">nov</string>
+    <string name="month_short_12">dez</string>
 
     <!-- Nome que o app dá ao pedido salvo com o nome em branco; %1$s é a data e a hora (ver LocalStorage). -->
     <string name="quote_auto_name">Orçamento - %1$s</string>
@@ -1322,6 +1342,14 @@
     <string name="settings_docs_pix_missing_city">a cidade</string>
     <string name="settings_docs_messages_title">Mensagens prontas</string>
     <string name="settings_docs_messages_help">Marcadores: %1$s</string>
+    <string name="message_placeholder_meaning_client">nome do cliente</string>
+    <string name="message_placeholder_meaning_order">número do pedido</string>
+    <string name="message_placeholder_meaning_part">nome da peça</string>
+    <string name="message_placeholder_meaning_due">prazo de entrega</string>
+    <string name="message_placeholder_meaning_total">valor total</string>
+    <string name="message_placeholder_meaning_balance">o que falta pagar</string>
+    <string name="message_placeholder_meaning_tracking">código de rastreio</string>
+    <string name="message_placeholder_meaning_shop">nome da loja</string>
     <string name="settings_docs_messages_help_detail">O que está entre colchetes some quando falta o dado. Em [ até {prazo}], se o pedido não tem prazo, o trecho inteiro sai.</string>
     <string name="settings_docs_messages_reset">Voltar ao texto padrão</string>
     <string name="message_kind_approved">Aprovado</string>
@@ -1363,6 +1391,11 @@
     <string name="payment_method_card">Cartão</string>
     <string name="payment_method_cash">Dinheiro</string>
     <string name="payment_method_other">Outro</string>
+    <!-- A forma dentro da frase do recibo ("o valor de R$ 50,00 (Pix)"); em inglês, minúscula no meio da frase ("by card"). -->
+    <string name="payment_method_inline_pix">Pix</string>
+    <string name="payment_method_inline_card">Cartão</string>
+    <string name="payment_method_inline_cash">Dinheiro</string>
+    <string name="payment_method_inline_other">Outro</string>
     <string name="payments_title">Pagamentos</string>
     <string name="payments_deposit">Sinal</string>
     <string name="payments_empty">Nenhum pagamento ainda.</string>

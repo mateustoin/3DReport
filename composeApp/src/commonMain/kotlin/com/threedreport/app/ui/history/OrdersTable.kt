@@ -27,6 +27,7 @@ import com.threedreport.app.ui.components.TableColumn
 import com.threedreport.app.ui.components.TableHeader
 import com.threedreport.app.ui.components.TableRow
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.format.shownName
 import com.threedreport.app.ui.format.toCurrencyText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.theme.AppDimens
@@ -105,7 +106,7 @@ fun OrdersTableRow(
         Cell(index++) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
                 Column(Modifier.weight(1f, fill = false)) {
-                    Text(quote.name, style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(quote.shownName(), style = MaterialTheme.appType.bodyStrong, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     row.printCount?.let { Muted(pluralStringResource(Res.plurals.orders_card_prints, it, it)) }
                     if (!layout.hasClientColumn) Muted(quote.client?.name.orEmpty())
                 }

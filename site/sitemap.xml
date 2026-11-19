@@ -1,26 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://mateustoin.github.io/3DReport/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/"/>
     <lastmod>2026-09-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://mateustoin.github.io/3DReport/en/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/"/>
+    <lastmod>2026-11-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
     <loc>https://mateustoin.github.io/3DReport/manual.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/manual.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/manual.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/manual.html"/>
     <lastmod>2026-09-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mateustoin.github.io/3DReport/en/manual.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/manual.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/manual.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/manual.html"/>
+    <lastmod>2026-11-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mateustoin.github.io/3DReport/calculadora.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/calculadora.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/calculadora.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/calculadora.html"/>
     <lastmod>2026-09-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mateustoin.github.io/3DReport/en/calculadora.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/calculadora.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/calculadora.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/calculadora.html"/>
+    <lastmod>2026-11-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mateustoin.github.io/3DReport/imprensa.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/imprensa.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/imprensa.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/imprensa.html"/>
     <lastmod>2026-09-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mateustoin.github.io/3DReport/en/imprensa.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://mateustoin.github.io/3DReport/imprensa.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mateustoin.github.io/3DReport/en/imprensa.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mateustoin.github.io/3DReport/imprensa.html"/>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

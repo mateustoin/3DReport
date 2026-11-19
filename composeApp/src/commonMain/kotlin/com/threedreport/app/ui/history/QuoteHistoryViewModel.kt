@@ -41,6 +41,7 @@ import com.threedreport.app.platform.defaultPlatform
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.OverdueItem
 import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.format.displayName
 import com.threedreport.app.ui.quote.deliveryDaysLate
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
@@ -215,7 +216,7 @@ class QuoteHistoryViewModel(
         when {
             messageKind != null -> noticeChannel.trySend(
                 UiNotice(
-                    uiText(if (hidden) Res.string.history_notice_status_moved else Res.string.history_notice_status_changed, before.name, status.labelText()),
+                    uiText(if (hidden) Res.string.history_notice_status_moved else Res.string.history_notice_status_changed, before.shown(), status.labelText()),
                     actionLabel = uiText(Res.string.history_notice_notify_client),
                     action = { repository.savedQuotes.value.find { it.id == id }?.let { openMessage(it, messageKind) } },
                 ),
@@ -223,7 +224,7 @@ class QuoteHistoryViewModel(
 
             hidden -> noticeChannel.trySend(
                 UiNotice(
-                    uiText(Res.string.history_notice_status_moved, before.name, status.labelText()),
+                    uiText(Res.string.history_notice_status_moved, before.shown(), status.labelText()),
                     actionLabel = uiText(Res.string.history_notice_see_all),
                     action = { setStatusFilter(null) },
                 ),
@@ -231,13 +232,16 @@ class QuoteHistoryViewModel(
 
             status == OrderStatus.CANCELADO -> noticeChannel.trySend(
                 UiNotice(
-                    uiText(Res.string.history_notice_status_cancelled, before.name),
+                    uiText(Res.string.history_notice_status_cancelled, before.shown()),
                     actionLabel = uiText(Res.string.common_undo),
                     action = { repository.updateStatus(id, before.status) },
                 ),
             )
         }
     }
+
+    /** O nome como a lista mostra (o automático no idioma do app, item 7b da Leva 11B), pros avisos. */
+    private fun SavedQuote.shown(): String = displayName(repository::autoName)
 
     /** Manda pra lixeira, com "Desfazer" no aviso (os dados ficam 30 dias antes de sumir de vez). */
     fun delete(id: String) {
@@ -246,7 +250,7 @@ class QuoteHistoryViewModel(
         change { it.copy(selectedIds = it.selectedIds - id) }
         noticeChannel.trySend(
             UiNotice(
-                uiText(Res.string.history_notice_deleted, deleted.name),
+                uiText(Res.string.history_notice_deleted, deleted.shown()),
                 actionLabel = uiText(Res.string.common_undo),
                 action = { repository.restore(id) },
             ),
@@ -259,7 +263,7 @@ class QuoteHistoryViewModel(
         change { it.copy(selectedIds = it.selectedIds - id) }
         noticeChannel.trySend(
             UiNotice(
-                uiText(Res.string.history_notice_converted, product.name),
+                uiText(Res.string.history_notice_converted, product.shown()),
                 actionLabel = uiText(Res.string.history_notice_see_orders),
                 action = showOrders,
             ),
@@ -302,7 +306,7 @@ class QuoteHistoryViewModel(
         val pending = state.value.repricing ?: return
         repository.updateQuote(pending.product.id, pending.newQuote)
         patch { it.copy(repricing = null) }
-        noticeChannel.trySend(UiNotice(uiText(Res.string.history_notice_repriced, pending.product.name)))
+        noticeChannel.trySend(UiNotice(uiText(Res.string.history_notice_repriced, pending.product.shown())))
     }
 
     // ---- prazo e configurações de impressão
@@ -387,7 +391,7 @@ class QuoteHistoryViewModel(
     /** Abre o site de rastreio com o código do pedido, se houver site em Configurações. */
     fun openTracking(savedQuote: SavedQuote) {
         val code = savedQuote.trackingCode ?: return
-        val url = (orderSettingsRepository?.settings?.value ?: OrderSettings()).trackingUrl(code) ?: return
+        val url = (orderSettingsRepository?.settings?.value ?: OrderSettings()).trackingUrl(code, currency.value) ?: return
         platform.openUrl(url)
     }
 

@@ -195,7 +195,7 @@ data class SavedQuote(
      * (pedido, fora de Cancelado, e Entregue só com pagamento acompanhado). `null` = sem Pix.
      */
     val pixCharge: AmountDue?
-        get() = if (chargesClient && currency == Currency.BRL) amountDue else null
+        get() = if (chargesClient && currency.hasBrazilOnlyFeatures) amountDue else null
 
     /**
      * O sinal que o PDF e a mensagem pedem ("Sinal de R$ 50,00 pra começar", decisão 146, item 12): o que falta do sinal,

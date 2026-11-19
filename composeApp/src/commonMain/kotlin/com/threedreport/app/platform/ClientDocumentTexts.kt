@@ -62,6 +62,10 @@ import _3dreport.composeapp.generated.resources.duration_hours_minutes
 import _3dreport.composeapp.generated.resources.duration_minutes
 import _3dreport.composeapp.generated.resources.payment_method_card
 import _3dreport.composeapp.generated.resources.payment_method_cash
+import _3dreport.composeapp.generated.resources.payment_method_inline_card
+import _3dreport.composeapp.generated.resources.payment_method_inline_cash
+import _3dreport.composeapp.generated.resources.payment_method_inline_other
+import _3dreport.composeapp.generated.resources.payment_method_inline_pix
 import _3dreport.composeapp.generated.resources.payment_method_other
 import _3dreport.composeapp.generated.resources.payment_method_pix
 import com.threedreport.app.ui.format.DurationTexts
@@ -252,24 +256,34 @@ class ClientDocumentTexts internal constructor(
         PaymentMethod.OTHER -> fill(Res.string.payment_method_other)
     }
 
+    /** A forma dentro da frase do recibo: "Pix", "Cartão" em português; "Pix", "card", "another method" em inglês. */
+    private fun paymentMethodInline(method: PaymentMethod): String = when (method) {
+        PaymentMethod.PIX -> fill(Res.string.payment_method_inline_pix)
+        PaymentMethod.CARD -> fill(Res.string.payment_method_inline_card)
+        PaymentMethod.CASH -> fill(Res.string.payment_method_inline_cash)
+        PaymentMethod.OTHER -> fill(Res.string.payment_method_inline_other)
+    }
+
     /** "Recibo", ou "Recibo #0042-1" com o número. */
     fun receiptTitle(number: String?) =
         if (number == null) fill(Res.string.client_doc_receipt_title) else fill(Res.string.client_doc_receipt_title_numbered, number)
 
     /**
-     * A frase do recibo: "Recebi de Maria o valor de R$ 50,00 (Pix) em 17/11/2026, referente ao pedido #0042, Suporte."
-     * Sem [client], "Recebi o valor de...". Sem [orderNumber], "referente a Suporte".
+     * A frase do recibo: "Recebi de Maria o valor de R$ 50,00 (Pix) em 17/11/2026, referente ao pedido #0042, Suporte." (em inglês, "Received $5.86 from Sophia L. by card on 09/24/2026 for order #0003 (Headset stand).")
+     * Sem [client], "Recebi o valor de...". Sem [orderNumber], "referente a Suporte". A forma vem do recurso próprio de
+     * dentro da frase ([paymentMethodInline]), e não do rótulo com maiúscula: cada idioma escolhe como ela entra.
      */
-    fun receiptBody(client: String?, amount: String, method: String, date: String, orderNumber: String?, piece: String): String {
+    fun receiptBody(client: String?, amount: String, method: PaymentMethod, date: String, orderNumber: String?, piece: String): String {
+        val methodText = paymentMethodInline(method)
         val reference = if (orderNumber != null) {
             fill(Res.string.client_doc_receipt_reference_numbered, orderNumber, piece)
         } else {
             fill(Res.string.client_doc_receipt_reference_plain, piece)
         }
         return if (client != null) {
-            fill(Res.string.client_doc_receipt_body, client, amount, method, date, reference)
+            fill(Res.string.client_doc_receipt_body, client, amount, methodText, date, reference)
         } else {
-            fill(Res.string.client_doc_receipt_body_anonymous, amount, method, date, reference)
+            fill(Res.string.client_doc_receipt_body_anonymous, amount, methodText, date, reference)
         }
     }
 
@@ -355,6 +369,10 @@ private val CLIENT_DOCUMENT_TEMPLATES: List<StringResource> = listOf(
     Res.string.payment_method_card,
     Res.string.payment_method_cash,
     Res.string.payment_method_other,
+    Res.string.payment_method_inline_pix,
+    Res.string.payment_method_inline_card,
+    Res.string.payment_method_inline_cash,
+    Res.string.payment_method_inline_other,
     Res.string.duration_hours_minutes,
     Res.string.duration_hours,
     Res.string.duration_minutes,

@@ -58,6 +58,7 @@ import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
+import com.threedreport.core.model.Currency
 import com.threedreport.core.model.PaymentMethod
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -125,7 +126,7 @@ fun PaymentsDialogView(dialog: PaymentsDialog, viewModel: QuoteHistoryViewModel,
         when {
             deleting != null -> DialogText(stringResource(Res.string.payments_delete_message, amountOf(deleting.amount)))
 
-            form != null -> PaymentFormFields(form, currency.symbol, viewModel, today)
+            form != null -> PaymentFormFields(form, currency, viewModel, today)
 
             else -> {
                 PaymentsSummary(dialog, amountOf)
@@ -181,8 +182,9 @@ private fun PaymentsSummary(dialog: PaymentsDialog, amountOf: (Double) -> String
 
 /** O passo "Registrar pagamento": valor (já preenchido), forma e dia. */
 @Composable
-private fun PaymentFormFields(form: PaymentForm, symbol: String, viewModel: QuoteHistoryViewModel, today: Long) {
-    val methods = PaymentMethod.entries
+private fun PaymentFormFields(form: PaymentForm, currency: Currency, viewModel: QuoteHistoryViewModel, today: Long) {
+    val symbol = currency.symbol
+    val methods = paymentMethodsFor(currency)
     val labels = methods.associateWith { stringResource(it.labelRes()) }
     AppNumberField(
         label = stringResource(Res.string.payments_field_amount),

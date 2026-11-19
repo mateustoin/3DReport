@@ -72,6 +72,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.PrinterRepository
+import com.threedreport.app.platform.ProvideAppLocale
 import com.threedreport.app.platform.fileDropTarget
 import com.threedreport.app.platform.isModelFile
 import com.threedreport.app.platform.openFolder
@@ -109,10 +110,15 @@ import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsSection
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.spacing
+import com.threedreport.core.model.Currency
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
+/**
+ * A tela inteira. Trocar o idioma recompõe tudo o que está aqui dentro na hora, sem perder estado ([ProvideAppLocale]);
+ * quem troca o idioma da plataforma é o `main` (no desktop, `DesktopLocale`).
+ */
 @Composable
 fun App(
     container: AppContainer,
@@ -126,6 +132,21 @@ fun App(
     clock: Clock = Clock.System,
     // Fecha o app pelo caminho normal de fechar a janela, que grava o que está pendente; a atualização por dentro o usa.
     onCloseApp: () -> Unit = {},
+) {
+    ProvideAppLocale {
+        AppContent(container, dataFolderNotice, startAt, prepareQuote, today, clock, onCloseApp)
+    }
+}
+
+@Composable
+private fun AppContent(
+    container: AppContainer,
+    dataFolderNotice: DataFolderNotice?,
+    startAt: AppDestination,
+    prepareQuote: (QuoteViewModel) -> Unit,
+    today: () -> Long,
+    clock: Clock,
+    onCloseApp: () -> Unit,
 ) {
     val settingsRepository = container.settings
     val printerRepository = container.printers
@@ -371,10 +392,11 @@ fun App(
                     currentSettings = settingsRepository.settings.value,
                     onFinish = { settings, printer ->
                         settingsRepository.update(settings)
-                        printer?.let { applyOnboardingPrinter(printerRepository, it) }
+                        printer?.let { applyOnboardingPrinter(printerRepository, it, withReferencePrice = currency.hasBrazilOnlyFeatures) }
                         onboardingRepository.markCompleted()
                     },
                     onSkip = onboardingRepository::markCompleted,
+                    onCurrencyChange = viewModels.currencyViewModel::setCurrency,
                 )
             }
 
@@ -416,9 +438,9 @@ fun App(
  * A impressora respondida no onboarding vai pra primeira impressora cadastrada (a de exemplo, numa
  * instalação nova): o modelo troca nome, consumo médio, manutenção e preço de referência, e o valor digitado troca o preço.
  */
-private fun applyOnboardingPrinter(repository: PrinterRepository, choice: OnboardingPrinter) {
+private fun applyOnboardingPrinter(repository: PrinterRepository, choice: OnboardingPrinter, withReferencePrice: Boolean) {
     val printer = repository.printers.value.firstOrNull() ?: return
-    repository.update(printer.withPreset(choice.preset, choice.machinePrice))
+    repository.update(printer.withPreset(choice.preset, choice.machinePrice, withReferencePrice))
 }
 
 /**
