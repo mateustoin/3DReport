@@ -218,6 +218,21 @@ class StockLedgerTest {
     }
 
     @Test
+    fun restoringADeliveredOrderKeepsItsMovementEvenIfTheCatalogChanged() {
+        val petgItems = listOf(item(petgDefault, since = 100L))
+        val before = order("q", OrderStatus.APROVADO, quote(usages = listOf(usage(petg, 300.0))), history = listOf(StatusChange(OrderStatus.APROVADO, 150L)))
+        val delivered = before.movedTo(OrderStatus.ENTREGUE)
+        val movements = StockLedger.reconcile(listOf(before), listOf(delivered), emptyList(), petgItems, filaments, 500L, newId)
+
+        // Excluído, o filamento ganha uma segunda cor (a cor `null` deixa de ser atribuível), e o pedido volta da lixeira.
+        val petgTwoColors = petg.copy(colors = petg.colors + FilamentColor(id = "blue", name = "Azul"))
+        val deleted = StockLedger.reconcile(listOf(delivered), emptyList(), movements, petgItems, filaments, 600L, newId)
+        val restored = StockLedger.reconcile(emptyList(), listOf(delivered), deleted, petgItems, listOf(pla, petgTwoColors), 700L, newId)
+
+        assertEquals(movements, restored, "restaurar não devolve os 300 g gastos")
+    }
+
+    @Test
     fun aPaymentOnAReadyOrderDoesNotTouchTheStock() {
         val before = aprovado()
         val ready = before.movedTo(OrderStatus.PRONTO)

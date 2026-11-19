@@ -55,6 +55,9 @@ object StockLedger {
             val before = previousById[quote.id]
             if (before != null && !affectsStock(before, quote)) continue
             val existing = result.filter { it.kind == StockMovementKind.ORDER && it.quoteId == quote.id }
+            // Voltou da lixeira com a baixa ainda gravada: fica como estava. Refazer pelo cadastro de agora poderia
+            // perder a baixa (uma cor que deixou de ser atribuível) e devolver material que foi gasto.
+            if (before == null && existing.isNotEmpty()) continue
             val desired = desiredOrderMovements(quote, before, existing, itemsByRef, filaments)
             result = syncMovements(result, existing, desired) { ref, amount ->
                 StockMovement(
