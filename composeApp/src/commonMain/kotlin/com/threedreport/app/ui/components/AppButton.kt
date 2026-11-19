@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -135,6 +136,7 @@ fun IconAction(
     modifier: Modifier = Modifier,
     tint: Color = Color.Unspecified,
     onNavy: Boolean = false,
+    tabStop: Boolean = true,
 ) {
     androidx.compose.material3.TooltipBox(
         positionProvider = androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(),
@@ -149,6 +151,7 @@ fun IconAction(
                 .clip(MaterialTheme.shapes.small)
                 .then(if (focused) Modifier.border(AppDimens.focusRingWidth, if (onNavy) MaterialTheme.appColors.onNavy else MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
                 .onFocusChanged { focused = it.isFocused }
+                .focusProperties { canFocus = tabStop }
                 .clickable(role = Role.Button, onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {

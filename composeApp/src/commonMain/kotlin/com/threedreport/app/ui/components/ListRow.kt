@@ -47,6 +47,8 @@ class RowAction(
     val onClick: () -> Unit,
     /** Ação destrutiva: o ícone sai na cor de erro. */
     val danger: Boolean = false,
+    /** Fora da ordem do Tab: a ação continua visível e clicável, mas a linha inteira já é a parada (a lista de impressoras). */
+    val skipTab: Boolean = false,
 )
 
 /**
@@ -180,6 +182,7 @@ fun RevealActions(
                         icon = action.icon,
                         description = action.description,
                         onClick = action.onClick,
+                        tabStop = !action.skipTab,
                         tint = if (action.danger) MaterialTheme.colorScheme.error else Color.Unspecified,
                     )
                 }

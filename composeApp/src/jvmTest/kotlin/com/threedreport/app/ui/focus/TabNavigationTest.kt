@@ -241,6 +241,23 @@ class TabNavigationTest {
     }
 
     @Test
+    fun presetListHasOneTabStopPerRow() {
+        val scenario = TabScenario(
+            "Impressoras pré-cadastradas",
+            AppDestination.PRINTERS,
+            maxTabs = 8,
+            dialog = true,
+            walkBack = false,
+            setup = { it.clickByText("Escolher da lista") },
+        )
+        val run = runScenario(container, scenario, frames = 4, delayMs = 100)
+        val names = run.forward.filterNotNull().map { it.name }
+        assertEquals("Buscar por marca ou modelo", run.initial?.name, run.report())
+        assertTrue(names.size >= 6 && names.none { it == "Usar" }, "só a linha é parada, sem o botão Usar: ${run.report()}")
+        assertFalse(run.lost, run.report())
+    }
+
+    @Test
     fun editDetailsDialogStartsOnTheFirstFieldAndStaysInside() {
         val scenario = TabScenario(
             "Editar detalhes",

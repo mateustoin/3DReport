@@ -64,7 +64,7 @@ fun PrinterPresetDialog(onPick: (PrinterPreset) -> Unit, onDismiss: () -> Unit) 
                     title = preset.displayName,
                     details = listOfNotNull(presetPowerText(preset), preset.referencePrice?.toWholeCurrencyText(currency)),
                     onClick = { onPick(preset) },
-                    actions = listOf(RowAction(AppIcons.Check, stringResource(Res.string.printers_presets_use), { onPick(preset) })),
+                    actions = listOf(RowAction(AppIcons.Check, stringResource(Res.string.printers_presets_use), { onPick(preset) }, skipTab = true)),
                 )
             }
         }
