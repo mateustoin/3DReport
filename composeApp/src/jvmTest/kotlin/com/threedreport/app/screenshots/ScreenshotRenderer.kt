@@ -891,7 +891,7 @@ private object Catalog {
 }
 
 /** O orçamento aberto na aba do print de tela do Orçamento: um pedido com duas impressões, negociação e prazo. */
-private fun fillDraftQuote(vm: QuoteViewModel) {
+internal fun fillDraftQuote(vm: QuoteViewModel) {
     vm.setPrintName("Cabeça e corpo")
     vm.selectFilament(Catalog.PLA_ID)
     vm.selectFilamentColor(Catalog.COR_BRANCO)
@@ -1065,7 +1065,7 @@ private val PRODUCT_SEEDS = listOf(
 )
 
 /** Monta o catálogo e o histórico de exemplo, com dados fictícios brasileiros, na pasta [dataDir]. */
-private fun seedSampleData(dataDir: File, gcodesDir: File?) {
+internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
     val clock = SeedClock(atDaysAgo(30))
     val storage = LocalStorage(dataDir, clock)
 
@@ -1356,7 +1356,7 @@ internal fun ImageComposeScene.clickByDescription(description: String) {
  * Digita [text] no campo cuja descrição é [label] (o que um teste de UI faria com `performTextInput`), sem foco nem
  * teclado: usa a ação de semântica do próprio campo.
  */
-private fun ImageComposeScene.setTextByLabel(label: String, text: String) {
+internal fun ImageComposeScene.setTextByLabel(label: String, text: String) {
     fun find(node: SemanticsNode): SemanticsNode? {
         val descriptions = node.config.getOrNull(SemanticsProperties.ContentDescription)
         if (node.config.getOrNull(SemanticsActions.SetText) != null && descriptions?.any { it == label } == true) return node

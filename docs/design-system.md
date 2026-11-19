@@ -172,7 +172,7 @@ PDF, catálogo em PDF e imagem quadrada do orçamento (decisão 137) usam a mesm
 
 - **Uma ação principal por tela**, em âmbar. As demais são secundárias ou vão pra um menu.
 - **Alteração pendente:** o âmbar fica só no botão "Salvar" e no ícone ativo da barra lateral; "Não salvo" vai em texto apagado (decisão 134). Lucro negativo vai em `error`, não em âmbar (decisão 135).
-- **Foco visível** em tudo que recebe teclado. Tab percorre os campos na ordem de leitura.
+- **Foco visível** em tudo que recebe teclado. Tab percorre os campos na ordem de leitura e Shift+Tab volta; Enter ou Espaço ativam o que está em foco. O ícone de ajuda (`HelpHint`) fica fora da ordem do Tab (continua clicável e descrito). Painel e diálogo levam o foco ao primeiro campo ao abrir, e o Tab circula só dentro do diálogo. A regressão está em `TabNavigationTest`: ao mexer no modificador de um campo, não leia o tema (`MaterialTheme.colorScheme`) só dentro de um ramo que o foco ativa, porque o campo perdia o foco logo ao recebê-lo.
 - **Botão só de ícone** tem descrição pra leitor de tela e dica ao passar o mouse.
 - **Movimento:** transições de 120 a 180 ms em hover, seleção e troca de conteúdo.
   Nada se move sem a pessoa ter feito algo.

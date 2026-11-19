@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
@@ -80,7 +81,8 @@ data class HelpText(val short: String, val detail: String? = null, val warning: 
 
 /**
  * Botão de ajuda ao lado de um rótulo: abre (ao passar o mouse ou ao clicar) a dica com o texto. Substitui
- * o parágrafo fixo embaixo do campo.
+ * o parágrafo fixo embaixo do campo. Fica fora da ordem do Tab (um ícone por campo dobrava o caminho do teclado pelo
+ * formulário); a descrição e a ação de clique continuam na árvore de acessibilidade.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,6 +109,7 @@ fun HelpHint(help: HelpText, label: String, modifier: Modifier = Modifier, tint:
             tint = if (tint == androidx.compose.ui.graphics.Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else tint,
             modifier = Modifier
                 .size(AppDimens.iconSize)
+                .focusProperties { canFocus = false }
                 .clickable(role = Role.Button) { scope.launch { state.show() } },
         )
     }
@@ -162,13 +165,20 @@ internal fun FieldLabel(label: String, help: HelpText?, color: androidx.compose.
 
 private const val LABEL_MAX_LINES = 2
 
-/** Borda do campo: erro, foco (anel de 2), mouse em cima (cor `primary`) ou repouso (`line`). */
+/**
+ * Borda do campo: erro, foco (anel de 2), mouse em cima (cor `primary`) ou repouso (`line`).
+ *
+ * O tema é lido por inteiro aqui em cima, nunca dentro dos ramos do `when`: ler `MaterialTheme.colorScheme` só num ramo que
+ * o foco ativa fazia o campo perder o foco logo ao recebê-lo, e o Tab nunca chegava a campo nem a lista de escolha.
+ */
 @Composable
 private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean, enabled: Boolean, onNavy: Boolean, multiline: Boolean = false): Modifier {
     val colors = MaterialTheme.appColors
+    val scheme = MaterialTheme.colorScheme
+    val shape = MaterialTheme.shapes.small
     val borderColor = when {
-        error -> if (onNavy) colors.onNavyDanger else MaterialTheme.colorScheme.error
-        focused || hovered -> if (onNavy) colors.onNavyMuted else MaterialTheme.colorScheme.primary
+        error -> if (onNavy) colors.onNavyDanger else scheme.error
+        focused || hovered -> if (onNavy) colors.onNavyMuted else scheme.primary
         else -> if (onNavy) colors.navyRaised else colors.line
     }
     val fill = when {
@@ -179,8 +189,8 @@ private fun Modifier.fieldBox(hovered: Boolean, focused: Boolean, error: Boolean
     return this
         .fieldBoxLine()
         .then(if (multiline) Modifier.heightIn(min = AppDimens.controlHeight) else Modifier.height(AppDimens.controlHeight))
-        .background(fill, MaterialTheme.shapes.small)
-        .border(if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth, borderColor, MaterialTheme.shapes.small)
+        .background(fill, shape)
+        .border(if (focused) AppDimens.focusRingWidth else AppDimens.borderWidth, borderColor, shape)
 }
 
 @Composable

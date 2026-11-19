@@ -38,6 +38,13 @@ sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que
 - **Calendário nas datas.** O prazo de entrega, o pagamento e a manutenção usam o mesmo seletor, com
   atalhos e calendário.
 
+### Corrigido
+- **Tab nos formulários.** O teclado não chegava aos campos de texto nem às listas de escolha: o foco sumia
+  ao entrar neles e o Tab voltava pro começo da tela. Agora Tab e Shift+Tab percorrem todos os campos, listas,
+  seletores e caixas de marcar na ordem da tela. Ao abrir um diálogo ou o painel de um cadastro, o foco vai pro
+  primeiro campo, e o Tab circula só dentro do diálogo. Os ícones de ajuda saíram da ordem do Tab (continuam
+  clicáveis).
+
 ## [2.2.1] - 2026-11-17
 
 Impressoras da lista com valores de referência e atualização pelo próprio app. Impressoras e pedidos que
