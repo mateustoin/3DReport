@@ -2,6 +2,7 @@ package com.threedreport.app.ui.stock
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.common_cancel
+import _3dreport.composeapp.generated.resources.common_discard
 import _3dreport.composeapp.generated.resources.common_optional
 import _3dreport.composeapp.generated.resources.stock_action_adjust_confirm
 import _3dreport.composeapp.generated.resources.stock_action_stop
@@ -17,6 +18,8 @@ import _3dreport.composeapp.generated.resources.stock_dialog_adjust_title
 import _3dreport.composeapp.generated.resources.stock_dialog_track_title
 import _3dreport.composeapp.generated.resources.stock_dialog_use_title
 import _3dreport.composeapp.generated.resources.stock_dialog_weigh_title
+import _3dreport.composeapp.generated.resources.stock_discard_message
+import _3dreport.composeapp.generated.resources.stock_discard_title
 import _3dreport.composeapp.generated.resources.stock_field_current_balance
 import _3dreport.composeapp.generated.resources.stock_field_new_balance
 import _3dreport.composeapp.generated.resources.stock_field_note
@@ -182,6 +185,14 @@ internal fun StockDialogView(dialog: StockDialog, viewModel: StockViewModel) {
         StockDialogKind.DELETE_MOVEMENT -> ConfirmDialog(
             title = stringResource(Res.string.stock_delete_movement_title),
             message = stringResource(Res.string.stock_delete_movement_message),
+            onConfirm = viewModel::confirmDialog,
+            onDismiss = viewModel::dismissDialog,
+        )
+
+        StockDialogKind.DISCARD_PURCHASE -> ConfirmDialog(
+            title = stringResource(Res.string.stock_discard_title),
+            message = stringResource(Res.string.stock_discard_message),
+            confirmLabel = stringResource(Res.string.common_discard),
             onConfirm = viewModel::confirmDialog,
             onDismiss = viewModel::dismissDialog,
         )

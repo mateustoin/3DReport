@@ -465,6 +465,9 @@ class StockViewModelTest {
         rig.approvedOrderUsing(180.0)
 
         rig.viewModel.copyShoppingList()
+        // O texto da unidade vem de recurso (lido de outra thread na primeira vez): espera a lista chegar.
+        val deadline = System.currentTimeMillis() + 10_000
+        while (rig.platform.copied.isEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(10)
 
         assertEquals(listOf("PLA Voolt Vermelho: 260 g"), rig.platform.copied)
         assertEquals(listOf(uiText(Res.string.stock_notice_list_copied)), rig.notices.map { it.message })
@@ -548,5 +551,105 @@ class StockViewModelTest {
 
         assertTrue(viewModel.uiState.value.hasNoItems)
         assertTrue(viewModel.uiState.value.shopping.isEmpty)
+    }
+
+    // ------------------------------------------------------------------- desempenho e rascunho
+
+    @Test
+    fun typingInTheFormsDoesNotRecomputeTheStockFromTheRepositories() {
+        val rig = rig()
+        rig.app.stock.startTracking(red, 1000.0)
+        val before = rig.viewModel.dataBuilds
+
+        rig.viewModel.startPurchase()
+        rig.viewModel.updatePurchaseLine(1) { it.copy(ref = red) }
+        "1000".forEach { c -> rig.viewModel.updatePurchaseLine(1) { it.copy(amountText = it.amountText + c) } }
+        "97,40".forEach { c -> rig.viewModel.updatePurchaseLine(1) { it.copy(priceText = it.priceText + c) } }
+        rig.viewModel.updatePurchase { it.copy(supplier = "Voolt") }
+        rig.viewModel.openItem(red)
+        rig.viewModel.setThreshold("200")
+        rig.viewModel.startManualUse(red)
+        rig.viewModel.setDialogAmount("12")
+        rig.viewModel.selectView(StockView.SHOPPING)
+
+        assertEquals(before, rig.viewModel.dataBuilds)
+        // O que depende do rascunho acompanha: o painel e o diálogo seguem o que foi digitado.
+        assertEquals("12", rig.state.dialog?.amountText)
+
+        // Mudou um repositório: refaz uma vez.
+        rig.app.stock.recordManualUse(red, 10.0, ManualUseReason.TEST, null)
+        assertEquals(before + 1, rig.viewModel.dataBuilds)
+    }
+
+    private fun Rig.halfFilledPurchase() {
+        viewModel.startPurchase()
+        viewModel.updatePurchase { it.copy(supplier = "Voolt") }
+    }
+
+    @Test
+    fun switchingPanelWithAHalfFilledPurchaseAsksBeforeDiscarding() {
+        val rig = rig()
+        rig.app.stock.startTracking(red, 1000.0)
+        rig.halfFilledPurchase()
+
+        rig.viewModel.openItem(red)
+
+        assertEquals(StockDialogKind.DISCARD_PURCHASE, rig.state.dialog?.kind)
+        assertTrue(rig.state.panel is StockPanel.Purchase, "a compra continua aberta até a resposta")
+        assertEquals("Voolt", (rig.state.panel as StockPanel.Purchase).panel.form.supplier)
+
+        rig.viewModel.dismissDialog()
+        assertNull(rig.state.dialog)
+        assertEquals("Voolt", (rig.state.panel as StockPanel.Purchase).panel.form.supplier, "Voltar deixa a compra como estava")
+
+        rig.viewModel.openItem(red)
+        rig.viewModel.confirmDialog()
+        assertNull(rig.state.dialog)
+        assertTrue(rig.state.panel is StockPanel.Item, "Descartar faz a troca que foi pedida")
+    }
+
+    @Test
+    fun everyWayOfReplacingTheOpenPurchaseAsksFirst() {
+        val rig = rig()
+        rig.app.stock.savePurchase(Purchase("p1", today, lines = listOf(PurchaseLine(red, 500.0, 40.0))))
+        rig.app.stock.startTracking(red, 100.0)
+        rig.approvedOrderUsing(500.0)
+
+        for (replace in listOf<() -> Unit>(rig.viewModel::startPurchase, rig.viewModel::startPurchaseFromShopping, { rig.viewModel.openPurchase("p1") })) {
+            rig.halfFilledPurchase()
+            replace()
+            assertEquals(StockDialogKind.DISCARD_PURCHASE, rig.state.dialog?.kind)
+            rig.viewModel.dismissDialog()
+            rig.viewModel.closePanel()
+        }
+    }
+
+    @Test
+    fun anUntouchedPurchaseFormIsReplacedWithoutAsking() {
+        val rig = rig()
+        rig.app.stock.startTracking(red, 1000.0)
+        rig.viewModel.startPurchase()
+
+        rig.viewModel.openItem(red)
+
+        assertNull(rig.state.dialog)
+        assertTrue(rig.state.panel is StockPanel.Item)
+    }
+
+    @Test
+    fun cancellingOrSavingAPurchaseNeverAsks() {
+        val rig = rig()
+        rig.app.stock.startTracking(red, 1000.0)
+        rig.halfFilledPurchase()
+        rig.viewModel.closePanel()
+        assertNull(rig.state.panel)
+
+        rig.viewModel.startPurchase()
+        rig.viewModel.updatePurchaseLine(1) { it.copy(ref = red, amountText = "500", priceText = "40") }
+        rig.viewModel.savePurchase()
+        rig.viewModel.openItem(red)
+
+        assertNull(rig.state.dialog)
+        assertTrue(rig.state.panel is StockPanel.Item)
     }
 }

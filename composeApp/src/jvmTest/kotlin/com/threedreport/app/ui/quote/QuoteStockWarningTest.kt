@@ -165,4 +165,27 @@ class QuoteStockWarningTest {
 
         assertTrue(vm.warnings.isEmpty())
     }
+
+    @Test
+    fun typingInTheQuoteDoesNotRecomputeTheReservedOfAllOrders() {
+        val app = app()
+        app.stock.startTracking(red, 430.0)
+        val reserved = app.history.saveOrder(StockSamples.quote(grams = 180.0))
+        app.history.updateStatus(reserved.id, OrderStatus.APROVADO)
+        val vm = viewModel(app)
+        assertEquals(1, vm.warnings.size)
+        val before = vm.stockSnapshotBuilds
+
+        // Cada tecla refaz a conta do orçamento, mas o reservado de todos os pedidos continua o guardado.
+        listOf("321", "322", "323", "324").forEach { vm.setWeightGrams(it) }
+        vm.setPrintTimeMinutes("200")
+
+        assertEquals(before, vm.stockSnapshotBuilds)
+        assertEquals(1, vm.warnings.size)
+
+        // Mudou o estoque: refaz uma vez.
+        app.stock.recordManualUse(red, 10.0, com.threedreport.core.model.ManualUseReason.TEST, null)
+        vm.setWeightGrams("325")
+        assertEquals(before + 1, vm.stockSnapshotBuilds)
+    }
 }

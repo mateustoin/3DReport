@@ -168,7 +168,7 @@ sealed interface StockPanel {
     data class Purchase(val panel: PurchasePanel) : StockPanel
 }
 
-enum class StockDialogKind { WEIGH, MANUAL_USE, ADJUST, TRACK, STOP_TRACKING, DELETE_MOVEMENT, DELETE_PURCHASE }
+enum class StockDialogKind { WEIGH, MANUAL_USE, ADJUST, TRACK, STOP_TRACKING, DELETE_MOVEMENT, DELETE_PURCHASE, DISCARD_PURCHASE }
 
 /**
  * O diálogo aberto. Um tipo só pros sete, porque cada um usa poucos campos: [amountText] é o número principal (peso na

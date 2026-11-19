@@ -77,9 +77,9 @@ class FilamentListViewModelStockTest {
 
         val stock = rig.viewModel.uiState.value.colorStock
 
-        assertEquals(640.0, stock.getValue(red).grams, 1e-9)
+        assertEquals(640.0, stock.getValue(red).amount, 1e-9)
         assertEquals(false, stock.getValue(red).needsAttention)
-        assertEquals(120.0, stock.getValue(black).grams, 1e-9)
+        assertEquals(120.0, stock.getValue(black).amount, 1e-9)
         assertEquals(true, stock.getValue(black).needsAttention, "abaixo do limite fica vermelho")
 
         rig.app.stock.recordManualUse(red, 700.0, com.threedreport.core.model.ManualUseReason.FAILURE, null)

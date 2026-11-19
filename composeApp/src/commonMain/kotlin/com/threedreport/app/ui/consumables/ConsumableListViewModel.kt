@@ -15,17 +15,16 @@ import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.components.PendingDelete
-import com.threedreport.app.ui.filaments.ColorStock
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.stock.StockBadge
+import com.threedreport.app.ui.stock.badges
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.StockItemRef
-import com.threedreport.core.report.StockReport
-import com.threedreport.core.report.StockState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +49,7 @@ data class ConsumablesUiState(
     val form: ConsumableFormState? = null,
     val pendingDelete: PendingDelete? = null,
     /** O saldo dos insumos com controle de saldo (Leva 12), pelo id do insumo, pra a linha mostrar "8 un em estoque" e, se baixo ou sem saldo, dizer. */
-    val balances: Map<String, ColorStock> = emptyMap(),
+    val balances: Map<String, StockBadge> = emptyMap(),
 ) {
     /** Nenhum insumo cadastrado, nem arquivado: a tela mostra o estado vazio com o botão que cria o primeiro. */
     val isEmpty: Boolean get() = active.isEmpty() && archived.isEmpty()
@@ -164,16 +163,8 @@ class ConsumableListViewModel(
         noticeFlow.tryEmit(uiText(Res.string.consumables_notice_deleted))
     }
 
-    private fun balancesOf(tracking: StockRepository): Map<String, ColorStock> {
-        val balances = StockReport.balances(tracking.movements.value)
-        return tracking.items.value.mapNotNull { item ->
-            (item.ref as? StockItemRef.ConsumableRef)?.let {
-                val balance = balances[item.ref] ?: 0.0
-                val state = StockReport.state(item, balance)
-                it.consumableId to ColorStock(balance, state != StockState.OK, state == StockState.OUT)
-            }
-        }.toMap()
-    }
+    private fun balancesOf(tracking: StockRepository): Map<String, StockBadge> =
+        tracking.badges { it is StockItemRef.ConsumableRef }.mapKeys { (ref, _) -> (ref as StockItemRef.ConsumableRef).consumableId }
 
     private fun ConsumablesUiState.withItems(items: List<Consumable>): ConsumablesUiState {
         val (archived, active) = items.partition { it.archived }

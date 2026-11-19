@@ -103,10 +103,31 @@ class StockViewModel(
         val thresholdError: UiText? = null,
         val spoolError: UiText? = null,
         val purchase: PurchaseFormState? = null,
+        /** Como o formulário de compra nasceu: diferente dele, há alteração não salva (ver [purchaseIsDirty]). */
+        val purchaseBaseline: PurchaseFormState? = null,
+        /** O que a pessoa pediu enquanto a compra tinha alteração não salva; espera a resposta do diálogo de descartar. */
+        val pendingSwitch: PanelSwitch? = null,
         val dialog: StockDialog? = null,
     )
 
+    /** Uma troca de painel que descartaria a compra aberta. */
+    private sealed interface PanelSwitch {
+        data class Item(val ref: StockItemRef) : PanelSwitch
+
+        data object NewPurchase : PanelSwitch
+
+        data object PurchaseFromShopping : PanelSwitch
+
+        data class Purchase(val id: String) : PanelSwitch
+    }
+
     private var local = Local()
+
+    private lateinit var data: Data
+
+    /** Quantas vezes o estoque foi recalculado ([rebuildData]): o teste confere que digitar não recalcula nada. */
+    internal var dataBuilds: Int = 0
+        private set
 
     private val state = MutableStateFlow(StockUiState())
 
@@ -122,29 +143,61 @@ class StockViewModel(
     private val moneyDecimal: Char get() = currency().decimalSeparator
 
     init {
+        rebuildData()
         publish()
         combine(
             listOf(
                 stock.items, stock.movements, stock.purchases,
                 filamentRepository.filaments, consumableRepository.consumables, historyRepository.savedQuotes,
             ),
-        ) { }.onEach { publish() }.launchIn(scope)
+        ) { }.onEach {
+            rebuildData()
+            publish()
+        }.launchIn(scope)
     }
 
     // ---------------------------------------------------------------------------------------------------- vistas
 
     fun selectView(view: StockView) = changeLocal { it.copy(view = view) }
 
-    fun closePanel() = changeLocal { it.copy(itemRef = null, purchase = null, thresholdError = null, spoolError = null) }
+    fun closePanel() = changeLocal { it.copy(itemRef = null, purchase = null, purchaseBaseline = null, thresholdError = null, spoolError = null) }
+
+    /** A compra aberta tem alteração não salva: trocar de painel sem perguntar jogaria o que foi digitado fora. */
+    private val purchaseIsDirty: Boolean get() = local.purchase != null && local.purchase != local.purchaseBaseline
+
+    /** Faz a troca de painel [switch], ou, com uma compra pela metade, pergunta antes se pode descartá-la. */
+    private fun switchTo(switch: PanelSwitch) {
+        val open = local.purchase
+        val same = switch is PanelSwitch.Purchase && open?.id == switch.id
+        if (same) return
+        if (purchaseIsDirty) {
+            changeLocal { it.copy(pendingSwitch = switch, dialog = StockDialog(StockDialogKind.DISCARD_PURCHASE)) }
+        } else {
+            perform(switch)
+        }
+    }
+
+    private fun perform(switch: PanelSwitch) = when (switch) {
+        is PanelSwitch.Item -> showItem(switch.ref)
+        PanelSwitch.NewPurchase -> showNewPurchase()
+        PanelSwitch.PurchaseFromShopping -> showPurchaseFromShopping()
+        is PanelSwitch.Purchase -> showPurchase(switch.id)
+    }
 
     // ------------------------------------------------------------------------------------------- painel do item
 
     fun openItem(ref: StockItemRef) {
+        if (stock.itemFor(ref) == null) return
+        switchTo(PanelSwitch.Item(ref))
+    }
+
+    private fun showItem(ref: StockItemRef) {
         val item = stock.itemFor(ref) ?: return
         changeLocal {
             it.copy(
                 itemRef = ref,
                 purchase = null,
+                purchaseBaseline = null,
                 thresholdText = item.lowThreshold?.toInputText(decimal).orEmpty(),
                 spoolText = item.emptySpoolGrams?.toInputText(decimal).orEmpty(),
                 thresholdError = null,
@@ -218,7 +271,7 @@ class StockViewModel(
 
     private fun openDialog(dialog: StockDialog) = changeLocal { it.copy(dialog = dialog) }
 
-    fun dismissDialog() = changeLocal { it.copy(dialog = null) }
+    fun dismissDialog() = changeLocal { it.copy(dialog = null, pendingSwitch = null) }
 
     /** O número principal do diálogo: peso na balança, quanto saiu, saldo novo ou saldo atual. */
     fun setDialogAmount(text: String) = changeDialog { it.copy(amountText = text, error = null) }
@@ -312,9 +365,16 @@ class StockViewModel(
                 finishDialog(Res.string.stock_notice_movement_deleted)
             }
 
+            StockDialogKind.DISCARD_PURCHASE -> {
+                // Descartou: a compra pela metade sai e a troca que foi pedida acontece.
+                val pending = local.pendingSwitch
+                changeLocal { it.copy(dialog = null, pendingSwitch = null, purchase = null, purchaseBaseline = null) }
+                pending?.let(::perform)
+            }
+
             StockDialogKind.DELETE_PURCHASE -> {
                 dialog.targetId?.let(stock::deletePurchase)
-                changeLocal { it.copy(dialog = null, purchase = null) }
+                changeLocal { it.copy(dialog = null, purchase = null, purchaseBaseline = null) }
                 notify(Res.string.stock_notice_purchase_deleted)
             }
         }
@@ -330,21 +390,30 @@ class StockViewModel(
     // ------------------------------------------------------------------------------------------------- compras
 
     /** "Registrar compra" do cabeçalho: um formulário novo com uma linha em branco. */
-    fun startPurchase() = changeLocal {
-        it.copy(purchase = PurchaseFormState(dateEpochDay = today(), lines = listOf(PurchaseLineForm(id = 1)), nextLineId = 2), itemRef = null)
-    }
+    fun startPurchase() = switchTo(PanelSwitch.NewPurchase)
+
+    private fun showNewPurchase() = openForm(PurchaseFormState(dateEpochDay = today(), lines = listOf(PurchaseLineForm(id = 1)), nextLineId = 2))
+
+    private fun openForm(form: PurchaseFormState) = changeLocal { it.copy(purchase = form, purchaseBaseline = form, itemRef = null) }
 
     /** "Registrar compra" da lista de compras: as linhas e quantidades da lista, com o preço por preencher. */
-    fun startPurchaseFromShopping() {
+    fun startPurchaseFromShopping() = switchTo(PanelSwitch.PurchaseFromShopping)
+
+    private fun showPurchaseFromShopping() {
         val lines = state.value.shopping.lines.mapIndexed { index, row ->
             PurchaseLineForm(id = index + 1, ref = row.line.ref, amountText = row.amount.toInputText(decimal, 2))
         }
-        if (lines.isEmpty()) return startPurchase()
-        changeLocal { it.copy(purchase = PurchaseFormState(dateEpochDay = today(), lines = lines, nextLineId = lines.size + 1), itemRef = null) }
+        if (lines.isEmpty()) return showNewPurchase()
+        openForm(PurchaseFormState(dateEpochDay = today(), lines = lines, nextLineId = lines.size + 1))
     }
 
     /** Abre a compra [id] no painel, pra editar ou excluir. */
     fun openPurchase(id: String) {
+        if (stock.purchases.value.none { it.id == id }) return
+        switchTo(PanelSwitch.Purchase(id))
+    }
+
+    private fun showPurchase(id: String) {
         val purchase = stock.purchases.value.find { it.id == id } ?: return
         val lines = purchase.lines.mapIndexed { index, line ->
             PurchaseLineForm(
@@ -354,22 +423,19 @@ class StockViewModel(
                 priceText = line.price.toMoneyInputText(moneyDecimal),
             )
         }
-        changeLocal {
-            it.copy(
-                itemRef = null,
-                purchase = PurchaseFormState(
-                    id = purchase.id,
-                    dateEpochDay = purchase.dateEpochDay,
-                    supplier = purchase.supplier.orEmpty(),
-                    link = purchase.link.orEmpty(),
-                    shippingText = purchase.shipping.takeIf { it > 0 }?.toMoneyInputText(moneyDecimal).orEmpty(),
-                    note = purchase.note.orEmpty(),
-                    lines = lines,
-                    updatesMarkedByDefault = false,
-                    nextLineId = lines.size + 1,
-                ),
-            )
-        }
+        openForm(
+            PurchaseFormState(
+                id = purchase.id,
+                dateEpochDay = purchase.dateEpochDay,
+                supplier = purchase.supplier.orEmpty(),
+                link = purchase.link.orEmpty(),
+                shippingText = purchase.shipping.takeIf { it > 0 }?.toMoneyInputText(moneyDecimal).orEmpty(),
+                note = purchase.note.orEmpty(),
+                lines = lines,
+                updatesMarkedByDefault = false,
+                nextLineId = lines.size + 1,
+            ),
+        )
     }
 
     fun updatePurchase(transform: (PurchaseFormState) -> PurchaseFormState) = changeLocal { s ->
@@ -419,7 +485,7 @@ class StockViewModel(
         )
         val updates = marked(form, purchase.catalogPriceUpdates(filamentRepository.filaments.value, consumableRepository.consumables.value))
         stock.recordPurchase(purchase, updates, filamentRepository, consumableRepository)
-        changeLocal { it.copy(purchase = null) }
+        changeLocal { it.copy(purchase = null, purchaseBaseline = null) }
         notify(Res.string.stock_notice_purchase_saved)
     }
 
@@ -500,10 +566,38 @@ class StockViewModel(
     }
 
     private fun publish() {
-        state.value = build()
+        state.value = compose(data)
     }
 
-    private fun build(): StockUiState {
+    /**
+     * Tudo o que vem dos repositórios, calculado uma vez e guardado: o `core` refaz o saldo, o reservado e a lista de compras sobre
+     * todos os pedidos, então isso só roda quando itens, movimentos, compras, pedidos, filamentos ou insumos mudam ([rebuildData]).
+     * Digitar num campo, abrir um diálogo ou trocar de vista só refaz o rascunho e o que depende dele ([compose]).
+     */
+    private class Data(
+        val movements: List<StockMovement>,
+        val purchases: List<Purchase>,
+        val filaments: List<Filament>,
+        val consumables: List<Consumable>,
+        val names: NameBook,
+        val statusByRef: Map<StockItemRef, StockStatus>,
+        val trackedRefs: Set<StockItemRef>,
+        val alertCount: Int,
+        val filamentGroups: List<StockFilamentGroup>,
+        val consumableRows: List<StockRowState>,
+        val untracked: List<StockEntry>,
+        val purchaseRows: List<PurchaseRowState>,
+        val shopping: ShoppingState,
+        val choices: List<StockEntry>,
+        val suppliers: List<String>,
+    )
+
+    private fun rebuildData() {
+        data = buildData()
+        dataBuilds++
+    }
+
+    private fun buildData(): Data {
         val items = stock.items.value
         val movements = stock.movements.value
         val purchases = stock.purchases.value
@@ -518,15 +612,20 @@ class StockViewModel(
             .groupBy { (it.ref as StockItemRef.ColorRef).filamentId }
             .values.map { group -> StockFilamentGroup(group.first().entry.filamentName.orEmpty(), group) }
         val shopping = StockReport.shoppingList(items, movements, quotes, filaments, consumables)
-        val openPurchaseId = local.purchase?.id
-
-        return StockUiState(
-            view = local.view,
+        val trackedRefs = overview.tracked.mapTo(HashSet()) { it.item.ref }
+        return Data(
+            movements = movements,
+            purchases = purchases,
+            filaments = filaments,
+            consumables = consumables,
+            names = names,
+            statusByRef = overview.tracked.associateBy { it.item.ref },
+            trackedRefs = trackedRefs,
             alertCount = overview.alertCount,
             filamentGroups = groups,
-            consumables = rows.filter { it.ref is StockItemRef.ConsumableRef },
+            consumableRows = rows.filter { it.ref is StockItemRef.ConsumableRef },
             untracked = overview.untracked.map(names::entryOf),
-            purchases = purchases.withIndex()
+            purchaseRows = purchases.withIndex()
                 .sortedWith(compareByDescending<IndexedValue<Purchase>> { it.value.dateEpochDay }.thenByDescending { it.index })
                 .map { (_, purchase) ->
                     PurchaseRowState(
@@ -535,7 +634,7 @@ class StockViewModel(
                         supplier = purchase.supplier,
                         lines = purchase.lines.map { PurchaseSummaryLine(names.entryOf(it.ref), it.amount) },
                         total = purchase.total,
-                        selected = purchase.id == openPurchaseId,
+                        selected = false,
                     )
                 },
             shopping = ShoppingState(
@@ -543,27 +642,38 @@ class StockViewModel(
                 outOfStock = shopping.outOfStockColors.map { OutOfStockRowState(names.entryOf(it.ref), it.orderCount) },
                 hasTracked = items.isNotEmpty(),
             ),
-            panel = itemPanel(overview.tracked.associateBy { it.item.ref }, names, movements, purchases)?.let(StockPanel::Item)
-                ?: purchasePanel(names, overview.tracked.map { it.item.ref }.toSet(), overview.untracked, purchases, filaments, consumables)?.let(StockPanel::Purchase),
-            dialog = local.dialog?.let { withDerived(it, names, movements) },
+            choices = (trackedRefs + overview.untracked).map(names::entryOf)
+                .sortedWith(compareBy({ it.ref is StockItemRef.ConsumableRef }, { it.displayName.lowercase() })),
+            suppliers = StockReport.suppliers(purchases),
+        )
+    }
+
+    /** O estado da tela: o que veio dos repositórios ([data], já pronto) mais o rascunho de agora. */
+    private fun compose(data: Data): StockUiState {
+        val openPurchaseId = local.purchase?.id
+        return StockUiState(
+            view = local.view,
+            alertCount = data.alertCount,
+            filamentGroups = data.filamentGroups,
+            consumables = data.consumableRows,
+            untracked = data.untracked,
+            purchases = data.purchaseRows.map { it.copy(selected = it.id == openPurchaseId) },
+            shopping = data.shopping,
+            panel = itemPanel(data)?.let(StockPanel::Item) ?: purchasePanel(data)?.let(StockPanel::Purchase),
+            dialog = local.dialog?.let { withDerived(it, data.names, data.movements) },
             today = today(),
         )
     }
 
-    private fun itemPanel(
-        byRef: Map<StockItemRef, StockStatus>,
-        names: NameBook,
-        movements: List<StockMovement>,
-        purchases: List<Purchase>,
-    ): StockItemPanel? {
+    private fun itemPanel(data: Data): StockItemPanel? {
         val ref = local.itemRef ?: return null
-        val status = byRef[ref] ?: return null
+        val status = data.statusByRef[ref] ?: return null
         return StockItemPanel(
-            entry = names.entryOf(ref),
+            entry = data.names.entryOf(ref),
             status = status,
-            averageCost = StockReport.averagePurchaseCost(ref, purchases),
-            buyAgainLink = StockReport.lastPurchaseLink(ref, purchases),
-            movements = movements.withIndex().filter { it.value.ref == ref }
+            averageCost = StockReport.averagePurchaseCost(ref, data.purchases),
+            buyAgainLink = StockReport.lastPurchaseLink(ref, data.purchases),
+            movements = data.movements.withIndex().filter { it.value.ref == ref }
                 .sortedWith(compareByDescending<IndexedValue<StockMovement>> { it.value.epochMillis }.thenByDescending { it.index })
                 .map { (_, m) ->
                     MovementRowState(m.id, m.epochMillis, m.kind, m.amount, m.orderNumber?.let { "#" + it.toString().padStart(ORDER_DIGITS, '0') }, m.reason, m.note, m.isRemovableByHand)
@@ -575,17 +685,9 @@ class StockViewModel(
         )
     }
 
-    private fun purchasePanel(
-        names: NameBook,
-        trackedRefs: Set<StockItemRef>,
-        untracked: List<StockItemRef>,
-        purchases: List<Purchase>,
-        filaments: List<Filament>,
-        consumables: List<Consumable>,
-    ): PurchasePanel? {
+    private fun purchasePanel(data: Data): PurchasePanel? {
         val form = local.purchase ?: return null
-        val choices = (trackedRefs + untracked).map(names::entryOf)
-            .sortedWith(compareBy({ it.ref is StockItemRef.ConsumableRef }, { it.displayName.lowercase() }))
+        val names = data.names
         val ready = form.lines.mapNotNull { line ->
             val ref = line.ref ?: return@mapNotNull null
             val amount = (requiredAmount(line.amountText, allowZero = false) as? ParsedAmount.Value)?.number ?: return@mapNotNull null
@@ -595,18 +697,17 @@ class StockViewModel(
         val shipping = (moneyAmount(form.shippingText) as? ParsedAmount.Value)?.number ?: 0.0
         val partial = ready.takeIf { it.isNotEmpty() }?.let { Purchase(id = form.id.orEmpty(), dateEpochDay = form.dateEpochDay, shipping = shipping, lines = it.map { (_, line) -> line }) }
         val costOf = ready.mapIndexed { index, (lineId, line) -> lineId to partial?.catalogUnitCost(partial.lines[index]) }.toMap()
-        val trackedNow = stock.items.value.mapTo(HashSet()) { it.ref }
-        val allUpdates = partial?.catalogPriceUpdates(filaments, consumables).orEmpty()
+        val allUpdates = partial?.catalogPriceUpdates(data.filaments, data.consumables).orEmpty()
         val total = partial?.total ?: shipping
         return PurchasePanel(
             form = form,
             total = total,
             lines = form.lines.map { line ->
-                PurchaseLineView(line.id, line.ref?.let(names::entryOf), tracked = line.ref in trackedNow, catalogUnitCost = costOf[line.id])
+                PurchaseLineView(line.id, line.ref?.let(names::entryOf), tracked = line.ref in data.trackedRefs, catalogUnitCost = costOf[line.id])
             },
-            updates = allUpdates.map { update -> priceRow(update, form, filaments, consumables) },
-            suppliers = StockReport.suppliers(purchases),
-            choices = choices,
+            updates = allUpdates.map { update -> priceRow(update, form, data.filaments, data.consumables) },
+            suppliers = data.suppliers,
+            choices = data.choices,
         )
     }
 

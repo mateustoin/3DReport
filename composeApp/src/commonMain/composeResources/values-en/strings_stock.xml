@@ -183,6 +183,8 @@
     <string name="stock_shopping_buy">Buy %1$s</string>
     <string name="stock_amount_grams">%1$s g</string>
     <string name="stock_amount_kilograms">%1$s kg</string>
-    <string name="filaments_stock_low">low</string>
-    <string name="filaments_stock_out">no balance</string>
+    <string name="stock_status_low">low</string>
+    <string name="stock_status_out">no balance</string>
+    <string name="stock_discard_title">Discard this purchase?</string>
+    <string name="stock_discard_message">What you filled in has not been saved yet.</string>
 </resources>

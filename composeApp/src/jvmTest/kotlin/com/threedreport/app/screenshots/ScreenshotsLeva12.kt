@@ -174,6 +174,20 @@ internal fun renderLeva12Screenshots(container: AppContainer, outDir: File) {
         sampleApp(container, startAt = AppDestination.STOCK)
     }
 
+    // Uma compra pela metade e um clique em outro item: pergunta antes de descartar o que foi digitado.
+    renderAppPng(
+        File(outDir, "estoque-descartar-compra.png"),
+        afterSettle = {
+            it.clickByText(Stock.registerPurchase)
+            settle(it, frames = 4)
+            it.setTextByLabel(Stock.supplier, "Voolt3D")
+            settle(it, frames = 4)
+            it.clickByText(sample("Preto", "Black"))
+        },
+    ) {
+        sampleApp(container, startAt = AppDestination.STOCK)
+    }
+
     container.theme.update(ThemeMode.DARK)
     renderAppPng(File(outDir, "estoque-saldo-escuro.png")) { sampleApp(container, startAt = AppDestination.STOCK) }
     renderAppPng(File(outDir, "estoque-lista-escuro.png"), afterSettle = { it.clickByText(Stock.shoppingTab) }) {

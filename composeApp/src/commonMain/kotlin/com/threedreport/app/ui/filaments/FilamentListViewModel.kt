@@ -37,6 +37,8 @@ import com.threedreport.app.ui.components.toNotice
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.stock.StockBadge
+import com.threedreport.app.ui.stock.badges
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.text
 import com.threedreport.app.ui.text.uiText
@@ -48,8 +50,6 @@ import com.threedreport.core.model.FilamentImportError
 import com.threedreport.core.model.FilamentImportPlan
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.StockItemRef
-import com.threedreport.core.report.StockReport
-import com.threedreport.core.report.StockState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,14 +74,11 @@ data class FilamentsUiState(
     val form: FilamentFormState? = null,
     val pendingDelete: PendingDelete? = null,
     /** O saldo das cores com controle de saldo (Leva 12), pra o selo da cor mostrar "Vermelho · 640 g". */
-    val colorStock: Map<StockItemRef, ColorStock> = emptyMap(),
+    val colorStock: Map<StockItemRef, StockBadge> = emptyMap(),
 ) {
     /** Nenhum filamento cadastrado, nem arquivado: a tela mostra o estado vazio com o botão que cria o primeiro. */
     val isEmpty: Boolean get() = active.isEmpty() && archived.isEmpty()
 }
-
-/** O saldo de uma cor controlada: gramas e se está baixo ou sem saldo (o selo fica vermelho). */
-data class ColorStock(val grams: Double, val needsAttention: Boolean, val isEmpty: Boolean = false)
 
 /**
  * ViewModel da tela de Filamentos. Um [uiState] só, e os [notices] (avisos de uma frase, como "Filamento arquivado").
@@ -280,14 +277,7 @@ class FilamentListViewModel(
         }
     }
 
-    /** O saldo de cada cor controlada, com a situação (baixo ou sem saldo) que o `core` calcula. */
-    private fun colorStockOf(tracking: StockRepository): Map<StockItemRef, ColorStock> {
-        val balances = StockReport.balances(tracking.movements.value)
-        return tracking.items.value.filter { it.ref is StockItemRef.ColorRef }.associate { item ->
-            val balance = balances[item.ref] ?: 0.0
-            item.ref to StockReport.state(item, balance).let { ColorStock(balance, it != StockState.OK, it == StockState.OUT) }
-        }
-    }
+    private fun colorStockOf(tracking: StockRepository): Map<StockItemRef, StockBadge> = tracking.badges { it is StockItemRef.ColorRef }
 
     /**
      * "Exportar filamentos" (decisão 164): grava os filamentos não arquivados num `.json`, sem saldo, compras nem ids. O
