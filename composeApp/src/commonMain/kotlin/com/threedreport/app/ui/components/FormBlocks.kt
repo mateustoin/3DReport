@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.threedreport.app.ui.format.NumericText
+import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
 import com.threedreport.app.ui.theme.spacing
@@ -103,4 +107,23 @@ fun FormNotice(text: String, modifier: Modifier = Modifier, help: HelpText? = nu
 fun List<String>.suggestionsFor(typed: String): List<String> {
     val text = typed.trim()
     return filter { text.isEmpty() || (it.contains(text, ignoreCase = true) && !it.equals(text, ignoreCase = true)) }
+}
+
+/**
+ * Aviso de atenção, no tom de atenção do sistema (o mesmo do selo "Hoje": fundo e texto de `deadlineToday`, nunca o
+ * vermelho de erro): o ícone de alerta e uma frase em `caption`, numa faixa de raio 10. Avisa, não impede nada: o estoque
+ * que não cobre um pedido, itens acabando. Vale no tema claro e no escuro, porque as cores já vêm dos dois.
+ */
+@Composable
+fun AttentionNotice(text: String, modifier: Modifier = Modifier) {
+    val space = MaterialTheme.spacing
+    val palette = MaterialTheme.appColors.deadlineToday
+    Row(
+        modifier = modifier.fillMaxWidth().background(palette.background, MaterialTheme.shapes.medium).padding(space.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(space.xs),
+    ) {
+        Icon(AppIcons.Warning, contentDescription = null, tint = palette.content, modifier = Modifier.size(AppDimens.iconSize))
+        Text(text, style = MaterialTheme.appType.caption, color = palette.content, modifier = Modifier.weight(1f))
+    }
 }

@@ -16,6 +16,8 @@ import _3dreport.composeapp.generated.resources.about_shortcut_save
 import _3dreport.composeapp.generated.resources.about_shortcut_save_keys
 import _3dreport.composeapp.generated.resources.about_shortcut_screens
 import _3dreport.composeapp.generated.resources.about_shortcut_screens_keys
+import _3dreport.composeapp.generated.resources.about_shortcut_settings
+import _3dreport.composeapp.generated.resources.about_shortcut_settings_keys
 import _3dreport.composeapp.generated.resources.about_shortcuts_title
 import _3dreport.composeapp.generated.resources.about_summary
 import _3dreport.composeapp.generated.resources.about_title
@@ -106,6 +108,7 @@ fun AboutScreen(version: String, updateViewModel: UpdateViewModel) {
                 FormSection(null, stringResource(Res.string.about_shortcuts_title)) {
                     Column {
                         InfoRow(stringResource(Res.string.about_shortcut_screens), stringResource(Res.string.about_shortcut_screens_keys))
+                        InfoRow(stringResource(Res.string.about_shortcut_settings), stringResource(Res.string.about_shortcut_settings_keys))
                         InfoRow(stringResource(Res.string.about_shortcut_save), stringResource(Res.string.about_shortcut_save_keys))
                         InfoRow(stringResource(Res.string.about_shortcut_new), stringResource(Res.string.about_shortcut_new_keys))
                         InfoRow(stringResource(Res.string.about_shortcut_close), stringResource(Res.string.about_shortcut_close_keys))

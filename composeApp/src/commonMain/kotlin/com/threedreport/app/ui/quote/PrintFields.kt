@@ -69,6 +69,7 @@ internal fun PrintFields(
     result: QuoteResult,
     currency: Currency,
     showRuns: Boolean,
+    stockWarnings: List<QuoteStockWarning> = emptyList(),
 ) {
     val space = MaterialTheme.spacing
     val multicolor = print.filaments.size > 1
@@ -89,6 +90,8 @@ internal fun PrintFields(
                 )
             }
         }
+        // Embaixo dos filamentos: o aviso de estoque das cores que esta impressão usa (Leva 12).
+        stockWarnings.filter { print.id in it.printIds }.forEach { StockWarningNotice(it) }
         AppButton(stringResource(Res.string.quote_filament_add), onClick = { viewModel.addFilament(print.id) }, icon = AppIcons.Add)
 
         val timeError = result.errorText(QuoteFields.printTime(print.id))

@@ -16,6 +16,7 @@
     <string name="nav_printers">Impressoras</string>
     <string name="nav_services">Serviços</string>
     <string name="nav_consumables">Insumos</string>
+    <string name="nav_stock">Estoque</string>
     <string name="nav_settings">Configurações</string>
     <string name="nav_about">Sobre</string>
 
@@ -1464,4 +1465,174 @@
     <string name="client_doc_receipt_received">Valor recebido</string>
     <string name="client_doc_receipt_date">Data</string>
     <string name="client_doc_receipt_method">Forma</string>
+
+    <!-- Estoque e compras (Leva 12) -->
+    <string name="stock_title">Estoque</string>
+    <string name="stock_view_balance">Saldo</string>
+    <string name="stock_view_purchases">Compras</string>
+    <string name="stock_view_shopping">Lista de compras</string>
+    <string name="stock_view_shopping_count">Lista de compras (%1$d)</string>
+    <string name="stock_action_register_purchase">Registrar compra</string>
+    <string name="stock_amount_units">%1$s un</string>
+    <string name="stock_unit_g">g</string>
+    <string name="stock_unit_un">un</string>
+    <string name="stock_item_removed">Item removido</string>
+    <plurals name="stock_alert_banner">
+        <item quantity="one">%1$d item acabando ou abaixo do limite</item>
+        <item quantity="other">%1$d itens acabando ou abaixo do limite</item>
+    </plurals>
+    <plurals name="stock_alert_badge">
+        <item quantity="one">%1$d item pede atenção</item>
+        <item quantity="other">%1$d itens pedem atenção</item>
+    </plurals>
+    <string name="stock_empty_balance">Cadastre filamentos ou insumos pra controlar o estoque.</string>
+    <string name="stock_section_filaments">Filamentos</string>
+    <string name="stock_section_consumables">Insumos</string>
+    <string name="stock_section_untracked">Sem controle de saldo (%1$d)</string>
+    <string name="stock_action_track">Controlar saldo</string>
+    <string name="stock_action_weigh">Pesei o carretel</string>
+    <string name="stock_action_manual_use">Consumo avulso</string>
+    <string name="stock_action_adjust">Corrigir saldo</string>
+    <string name="stock_action_stop">Parar de controlar</string>
+    <string name="stock_row_reserved">%1$s reservados</string>
+    <string name="stock_row_low">abaixo de %1$s</string>
+    <string name="stock_row_out">acabando</string>
+    <string name="stock_row_limit">avisa abaixo de %1$s</string>
+
+    <string name="stock_purchases_empty">Nenhuma compra registrada.</string>
+
+    <string name="stock_shopping_empty">Nada a comprar pros pedidos aprovados.</string>
+    <string name="stock_shopping_empty_untracked">Nada a comprar pros pedidos aprovados. A lista acompanha os itens com controle de saldo.</string>
+    <string name="stock_shopping_see_balance">Ver o saldo</string>
+    <string name="stock_shopping_copy">Copiar lista</string>
+    <string name="stock_shopping_register">Registrar compra da lista</string>
+    <string name="stock_shopping_reason_orders">pedidos aprovados: %1$s</string>
+    <string name="stock_shopping_reason_balance">saldo: %1$s</string>
+    <string name="stock_shopping_reason_limit">limite: %1$s</string>
+    <string name="stock_shopping_out_title">Marcadas como acabou</string>
+    <plurals name="stock_shopping_out_row">
+        <item quantity="one">Marcada como acabou, usada em %1$d pedido aprovado</item>
+        <item quantity="other">Marcada como acabou, usada em %1$d pedidos aprovados</item>
+    </plurals>
+
+    <string name="stock_panel_balance">Saldo</string>
+    <string name="stock_panel_reserved">Reservado</string>
+    <string name="stock_panel_available">Disponível</string>
+    <string name="stock_panel_average">Média das compras</string>
+    <string name="stock_panel_movements">Movimentos</string>
+    <string name="stock_per_kg">%1$s/kg</string>
+    <string name="stock_per_unit">%1$s/un</string>
+    <string name="stock_action_buy_again">Comprar de novo</string>
+    <string name="stock_field_threshold">Avisar abaixo de (%1$s)</string>
+    <string name="stock_help_threshold">Abaixo disso o item aparece como baixo e entra na lista de compras. Vazio não avisa.</string>
+    <string name="stock_field_spool">Carretel vazio (g)</string>
+    <string name="stock_help_spool">O peso do carretel vazio vem na embalagem, ou dá pra pesar um vazio. Fica lembrado pra próxima vez.</string>
+    <string name="stock_movement_start">Saldo inicial</string>
+    <string name="stock_movement_purchase">Compra</string>
+    <string name="stock_movement_order">Pedido %1$s</string>
+    <string name="stock_movement_order_plain">Pedido</string>
+    <string name="stock_movement_adjustment">Ajuste</string>
+    <string name="stock_reason_failure">Falha</string>
+    <string name="stock_reason_test">Teste</string>
+    <string name="stock_reason_own_use">Uso próprio</string>
+    <string name="stock_reason_other">Outro</string>
+
+    <string name="stock_dialog_weigh_title">Pesei o carretel</string>
+    <string name="stock_field_scale">Peso na balança (g)</string>
+    <string name="stock_weigh_result">Saldo novo: %1$s (era %2$s)</string>
+    <string name="stock_action_weigh_confirm">Acertar o saldo</string>
+    <string name="stock_dialog_use_title">Consumo avulso</string>
+    <string name="stock_field_use_amount">Quanto saiu (%1$s)</string>
+    <string name="stock_field_reason">Motivo</string>
+    <string name="stock_field_note">Observação</string>
+    <string name="stock_action_use_confirm">Registrar consumo</string>
+    <string name="stock_dialog_adjust_title">Corrigir saldo</string>
+    <string name="stock_field_new_balance">Saldo novo (%1$s)</string>
+    <string name="stock_adjust_current">Saldo de agora: %1$s</string>
+    <string name="stock_action_adjust_confirm">Corrigir</string>
+    <string name="stock_dialog_track_title">Controlar saldo</string>
+    <string name="stock_field_current_balance">Saldo atual (%1$s)</string>
+    <string name="stock_action_track_confirm">Controlar</string>
+    <string name="stock_stop_title">Parar de controlar?</string>
+    <string name="stock_stop_message">O saldo e o histórico de %1$s serão apagados. As compras continuam registradas.</string>
+    <string name="stock_delete_movement_title">Excluir o movimento?</string>
+    <string name="stock_delete_movement_message">O saldo volta a ser o de antes dele.</string>
+    <string name="stock_delete_purchase_title">Excluir a compra?</string>
+    <string name="stock_delete_purchase_message">O que ela somou no saldo sai junto. O preço do cadastro não muda.</string>
+
+    <string name="stock_purchase_new">Registrar compra</string>
+    <string name="stock_purchase_edit">Editar compra</string>
+    <string name="stock_section_purchase">Compra</string>
+    <string name="stock_section_items">Itens</string>
+    <string name="stock_section_values">Valores</string>
+    <string name="stock_field_date">Data</string>
+    <string name="stock_date_today">Hoje</string>
+    <string name="stock_date_yesterday">Ontem</string>
+    <string name="stock_field_supplier">Fornecedor</string>
+    <string name="stock_field_link">Link</string>
+    <string name="stock_item_n">Item %1$d</string>
+    <string name="stock_field_item">Item</string>
+    <string name="stock_item_choose">Escolher item</string>
+    <string name="stock_field_amount">Quantidade (%1$s)</string>
+    <string name="stock_field_amount_plain">Quantidade</string>
+    <string name="stock_field_price">Preço pago</string>
+    <string name="stock_quick_1kg">1 kg</string>
+    <string name="stock_quick_500g">500 g</string>
+    <string name="stock_cost_per_kg">Custo por kg</string>
+    <string name="stock_cost_per_unit">Custo por unidade</string>
+    <string name="stock_help_untracked_color">Esta cor não tem controle de saldo: a compra fica registrada, mas não soma gramas.</string>
+    <string name="stock_help_untracked_consumable">Este insumo não tem controle de saldo: a compra fica registrada, mas não soma unidades.</string>
+    <string name="stock_action_add_item">Adicionar item</string>
+    <string name="stock_action_remove_item">Remover o item %1$d</string>
+    <string name="stock_field_shipping">Frete</string>
+    <string name="stock_total">Total</string>
+    <string name="stock_update_filament">Atualizar o preço de %1$s de %2$s/kg pra %3$s/kg</string>
+    <string name="stock_update_consumable">Atualizar o custo de %1$s de %2$s pra %3$s</string>
+    <string name="stock_action_delete_purchase">Excluir compra</string>
+
+    <string name="stock_error_below_spool">O peso é menor que o do carretel vazio</string>
+    <string name="stock_error_no_items">Acrescente ao menos um item</string>
+    <string name="stock_error_pick_item">Escolha o item</string>
+    <string name="stock_notice_weighed">Saldo acertado</string>
+    <string name="stock_notice_use_recorded">Consumo registrado</string>
+    <string name="stock_notice_adjusted">Saldo corrigido</string>
+    <string name="stock_notice_tracking">Controle de saldo ligado</string>
+    <string name="stock_notice_stopped">Controle de saldo desligado</string>
+    <string name="stock_notice_item_saved">Alterações salvas</string>
+    <string name="stock_notice_movement_deleted">Movimento excluído</string>
+    <string name="stock_notice_purchase_saved">Compra salva</string>
+    <string name="stock_notice_purchase_deleted">Compra excluída</string>
+    <string name="stock_notice_list_copied">Lista copiada</string>
+    <string name="stock_notice_copy_failed">Não consegui copiar a lista</string>
+    <string name="stock_notice_link_failed">Não consegui abrir o link</string>
+
+    <!-- Estoque nas outras telas (Leva 12) -->
+    <string name="filaments_menu_more">Mais ações</string>
+    <string name="filaments_menu_export">Exportar filamentos</string>
+    <string name="filaments_menu_import">Importar filamentos</string>
+    <string name="filaments_export_done">Filamentos exportados</string>
+    <string name="filaments_import_none">Nenhum filamento novo</string>
+    <plurals name="filaments_import_done">
+        <item quantity="one">%1$d filamento importado</item>
+        <item quantity="other">%1$d filamentos importados</item>
+    </plurals>
+    <plurals name="filaments_import_already">
+        <item quantity="one">%1$d já estava no cadastro</item>
+        <item quantity="other">%1$d já estavam no cadastro</item>
+    </plurals>
+    <plurals name="filaments_import_invalid">
+        <item quantity="one">%1$d com dados inválidos</item>
+        <item quantity="other">%1$d com dados inválidos</item>
+    </plurals>
+    <string name="filaments_import_result">%1$s.</string>
+    <string name="filaments_import_not_this_format">Este arquivo não é de filamentos do 3DReport. Nada foi importado.</string>
+    <string name="filaments_import_newer_version">Este arquivo é de uma versão mais nova do 3DReport. Atualize o app pra importar. Nada foi importado.</string>
+    <string name="platform_pick_filaments">Escolher arquivo de filamentos</string>
+    <string name="consumables_row_in_stock">%1$s un em estoque</string>
+    <string name="quote_stock_warning_left_reserved">Falta %1$s: este pedido usa %2$s e sobram %3$s livres (%4$s já reservados pra pedidos aprovados).</string>
+    <string name="quote_stock_warning_left">Falta %1$s: este pedido usa %2$s e sobram %3$s livres.</string>
+    <string name="quote_stock_warning_empty_reserved">Falta %1$s: este pedido usa %2$s e não sobra nada livre (%3$s já reservados pra pedidos aprovados).</string>
+    <string name="quote_stock_warning_empty">Falta %1$s: este pedido usa %2$s e não sobra nada livre.</string>
+    <string name="about_shortcut_settings">Abrir Configurações</string>
+    <string name="about_shortcut_settings_keys">Ctrl/Cmd+vírgula</string>
 </resources>

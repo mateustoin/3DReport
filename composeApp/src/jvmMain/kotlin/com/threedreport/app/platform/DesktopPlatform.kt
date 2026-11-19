@@ -2,6 +2,7 @@ package com.threedreport.app.platform
 
 import _3dreport.composeapp.generated.resources.Res
 import _3dreport.composeapp.generated.resources.platform_pick_backup
+import _3dreport.composeapp.generated.resources.platform_pick_filaments
 import _3dreport.composeapp.generated.resources.platform_pick_gcode
 import _3dreport.composeapp.generated.resources.platform_pick_image
 import _3dreport.composeapp.generated.resources.platform_pick_model
@@ -56,6 +57,7 @@ object DesktopPlatform : PlatformServices {
                         FileKind.GCODE to getString(Res.string.platform_pick_gcode),
                         FileKind.MODEL to getString(Res.string.platform_pick_model),
                         FileKind.BACKUP to getString(Res.string.platform_pick_backup),
+                        FileKind.FILAMENTS to getString(Res.string.platform_pick_filaments),
                     ),
                     saveAs = getString(Res.string.platform_save_as),
                 )

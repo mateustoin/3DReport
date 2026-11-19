@@ -37,6 +37,9 @@ import _3dreport.composeapp.generated.resources.filaments_help_density
 import _3dreport.composeapp.generated.resources.filaments_help_density_varies
 import _3dreport.composeapp.generated.resources.filaments_in_stock
 import _3dreport.composeapp.generated.resources.filaments_material_custom_option
+import _3dreport.composeapp.generated.resources.filaments_menu_export
+import _3dreport.composeapp.generated.resources.filaments_menu_import
+import _3dreport.composeapp.generated.resources.filaments_menu_more
 import _3dreport.composeapp.generated.resources.filaments_out_of_stock
 import _3dreport.composeapp.generated.resources.filaments_row_out_of_stock
 import _3dreport.composeapp.generated.resources.filaments_row_price
@@ -46,6 +49,7 @@ import _3dreport.composeapp.generated.resources.filaments_section_colors
 import _3dreport.composeapp.generated.resources.filaments_section_price
 import _3dreport.composeapp.generated.resources.filaments_title
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
@@ -54,11 +58,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.ui.components.AppButton
 import com.threedreport.app.ui.components.AppChoiceField
 import com.threedreport.app.ui.components.AppDropdownField
+import com.threedreport.app.ui.components.AppMenu
+import com.threedreport.app.ui.components.AppMenuItem
 import com.threedreport.app.ui.components.AppSuggestField
 import com.threedreport.app.ui.components.AppSwatchField
 import com.threedreport.app.ui.components.AppTextField
@@ -71,19 +80,23 @@ import com.threedreport.app.ui.components.EmptyState
 import com.threedreport.app.ui.components.FormBlock
 import com.threedreport.app.ui.components.FormPanel
 import com.threedreport.app.ui.components.HelpText
+import com.threedreport.app.ui.components.IconAction
 import com.threedreport.app.ui.components.ListRow
 import com.threedreport.app.ui.components.ListScreenLayout
 import com.threedreport.app.ui.components.ObserveNotices
+import com.threedreport.app.ui.components.ObserveUiNotices
 import com.threedreport.app.ui.components.PanelSection
 import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toInputText
 import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.format.toWholeGramsText
 import com.threedreport.app.ui.icons.AppIcons
 import com.threedreport.app.ui.text.asString
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Filament
+import com.threedreport.core.model.StockItemRef
 import org.jetbrains.compose.resources.stringResource
 
 /** Tela de Filamentos: catálogo salvo, escolhido depois na tela de Orçamento. Mesmo molde da tela de Insumos. */
@@ -91,6 +104,7 @@ import org.jetbrains.compose.resources.stringResource
 fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsState()
     ObserveNotices(viewModel.notices)
+    ObserveUiNotices(viewModel.fileNotices)
 
     val form = state.form
     val panel: (@Composable () -> Unit)? = form?.let { open ->
@@ -98,6 +112,7 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
     }
     ListScreenLayout(panel = panel, modifier = modifier) {
         ScreenHeader(stringResource(Res.string.filaments_title)) {
+            FilamentExchangeMenu(viewModel)
             if (!state.isEmpty) {
                 AppButton(
                     stringResource(Res.string.filaments_action_new),
@@ -114,8 +129,8 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
                 onAction = viewModel::startAdd.takeIf { state.isEmpty },
             )
         }
-        state.active.forEach { key(it.id) { FilamentRow(it, viewModel, selectedId = form?.id) } }
-        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { FilamentRow(it, viewModel, selectedId = form?.id) } } }
+        state.active.forEach { key(it.id) { FilamentRow(it, viewModel, selectedId = form?.id, colorStock = state.colorStock) } }
+        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { FilamentRow(it, viewModel, selectedId = form?.id, colorStock = state.colorStock) } } }
     }
 
     state.pendingDelete?.let { pending ->
@@ -133,7 +148,7 @@ fun FilamentListScreen(viewModel: FilamentListViewModel, modifier: Modifier = Mo
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, selectedId: String?) {
+private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, selectedId: String?, colorStock: Map<StockItemRef, ColorStock>) {
     val archiveOrRestore = if (filament.archived) {
         RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(filament.id, false) })
     } else {
@@ -157,7 +172,7 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
             RowAction(AppIcons.Delete, stringResource(Res.string.common_delete), { viewModel.requestDelete(filament.id) }, danger = true),
         ),
         // Uma cor só, sem nome e em estoque não diz nada: o selo some e a linha fica mais baixa.
-        footer = if (filament.colors.size == 1 && filament.colors[0].let { it.labelOrNull() == null && it.inStock }) {
+        footer = if (filament.colors.size == 1 && filament.colors[0].let { it.labelOrNull() == null && it.inStock && colorStock[StockItemRef.ColorRef(filament.id, it.id)] == null }) {
             null
         } else {
             {
@@ -168,6 +183,7 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
                 ) {
                     filament.colors.forEach { color ->
                         key(color.id) {
+                            val balance = colorStock[StockItemRef.ColorRef(filament.id, color.id)]
                             ColorChip(
                                 label = color.labelOrNull() ?: unnamed,
                                 color = parseHexColor(color.hex),
@@ -175,6 +191,8 @@ private fun FilamentRow(filament: Filament, viewModel: FilamentListViewModel, se
                                 outOfStockLabel = outOfStock,
                                 onToggle = { viewModel.toggleColorInStock(filament.id, color.id) },
                                 onSelectedRow = selectedId == filament.id,
+                                balanceText = balance?.grams?.toWholeGramsText(),
+                                balanceAttention = balance?.needsAttention == true,
                             )
                         }
                     }
@@ -301,5 +319,18 @@ private fun ColorBlock(number: Int, colorForm: FilamentColorFormState, canRemove
             selectedIndex = if (colorForm.inStock) 0 else 1,
             onSelect = { index -> viewModel.updateColorRow(colorForm.id) { it.copy(inStock = index == 0) } },
         )
+    }
+}
+
+/** O menu "Mais ações" do cabeçalho: exportar os filamentos pra um arquivo e importar de um (decisão 164). */
+@Composable
+private fun FilamentExchangeMenu(viewModel: FilamentListViewModel) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconAction(AppIcons.MoreVert, stringResource(Res.string.filaments_menu_more), onClick = { expanded = true })
+        AppMenu(expanded = expanded, onDismiss = { expanded = false }) {
+            AppMenuItem(stringResource(Res.string.filaments_menu_export), { expanded = false; viewModel.exportFilaments() }, AppIcons.Download)
+            AppMenuItem(stringResource(Res.string.filaments_menu_import), { expanded = false; viewModel.importFilaments() }, AppIcons.Upload)
+        }
     }
 }

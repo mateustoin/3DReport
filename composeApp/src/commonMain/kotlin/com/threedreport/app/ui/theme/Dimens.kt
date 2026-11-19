@@ -98,6 +98,9 @@ object AppDimens {
     val printThumbnailSize = 40.dp
     val smallControlHeight = 32.dp
 
+    /** O selo de contagem da barra lateral ([com.threedreport.app.ui.components.CountBadge]): altura e largura mínima. */
+    val countBadgeSize = 20.dp
+
     /**
      * A lista de seções de Configurações, ao lado do conteúdo. Com 264, os rótulos dos campos truncavam numa janela
      * de 900; o "Não salvo" vai embaixo do nome da seção, então 200 cabe "Documentos pro cliente" inteiro.

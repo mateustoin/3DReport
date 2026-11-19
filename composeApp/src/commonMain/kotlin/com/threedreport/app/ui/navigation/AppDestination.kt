@@ -12,7 +12,8 @@ enum class DestinationGroup {
 
 /**
  * As telas do app, na ordem da barra lateral (decisão 111): Vendas, Cadastros e, no pé, Configurações e
- * Sobre. A ordem também é a dos atalhos Ctrl/Cmd+1 a 9; o Sobre fica sem atalho.
+ * Sobre. A ordem também é a dos atalhos Ctrl/Cmd+1 a 9, até o Estoque (decisão 163). Configurações tem o atalho comum de
+ * preferências, Ctrl/Cmd+vírgula ([isPreferences]); o Sobre fica sem atalho.
  */
 enum class AppDestination(
     val group: DestinationGroup,
@@ -27,13 +28,18 @@ enum class AppDestination(
     PRINTERS(DestinationGroup.REGISTRIES, { AppIcons.Printer3d }, { AppIcons.Printer3dFilled }),
     SERVICES(DestinationGroup.REGISTRIES, { AppIcons.Handyman }, { AppIcons.HandymanFilled }),
     CONSUMABLES(DestinationGroup.REGISTRIES, { AppIcons.Inventory2 }, { AppIcons.Inventory2Filled }),
+    STOCK(DestinationGroup.REGISTRIES, { AppIcons.Shelves }, { AppIcons.ShelvesFilled }),
     SETTINGS(DestinationGroup.FOOTER, { AppIcons.Settings }, { AppIcons.SettingsFilled }),
     ABOUT(DestinationGroup.FOOTER, { AppIcons.Info }),
     ;
 
-    /** O número do atalho Ctrl/Cmd+N, ou `null` pra quem não tem. */
+    /** O número do atalho Ctrl/Cmd+N, ou `null` pra quem não tem (Configurações usa a vírgula, o Sobre não tem). */
     val shortcutNumber: Int?
-        get() = if (this == ABOUT) null else ordinal + 1
+        get() = if (this == ABOUT || isPreferences) null else ordinal + 1
+
+    /** Configurações: o atalho é Ctrl/Cmd+vírgula, o de preferências de quase todo programa. */
+    val isPreferences: Boolean
+        get() = this == SETTINGS
 
     /**
      * Ícone contornado dos itens inativos e o preenchido do ativo (padrão do Material 3), quando existe

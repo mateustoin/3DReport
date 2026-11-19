@@ -11,7 +11,7 @@ class DestinationTextTest {
     @Test
     fun everyDestinationAndGroupHasItsNameInResources() = runBlocking {
         assertEquals(
-            listOf("Orçamento", "Pedidos", "Catálogo", "Dashboard", "Filamentos", "Impressoras", "Serviços", "Insumos", "Configurações", "Sobre"),
+            listOf("Orçamento", "Pedidos", "Catálogo", "Dashboard", "Filamentos", "Impressoras", "Serviços", "Insumos", "Estoque", "Configurações", "Sobre"),
             AppDestination.entries.map { getString(it.labelRes()) },
         )
         assertEquals("Vendas", getString(DestinationGroup.SALES.titleRes()!!))

@@ -13,6 +13,7 @@ import _3dreport.composeapp.generated.resources.nav_printers
 import _3dreport.composeapp.generated.resources.nav_quote
 import _3dreport.composeapp.generated.resources.nav_services
 import _3dreport.composeapp.generated.resources.nav_settings
+import _3dreport.composeapp.generated.resources.nav_stock
 import org.jetbrains.compose.resources.StringResource
 
 /** O nome da tela na barra lateral e nos atalhos, em recurso traduzível. */
@@ -25,6 +26,7 @@ fun AppDestination.labelRes(): StringResource = when (this) {
     AppDestination.PRINTERS -> Res.string.nav_printers
     AppDestination.SERVICES -> Res.string.nav_services
     AppDestination.CONSUMABLES -> Res.string.nav_consumables
+    AppDestination.STOCK -> Res.string.nav_stock
     AppDestination.SETTINGS -> Res.string.nav_settings
     AppDestination.ABOUT -> Res.string.nav_about
 }

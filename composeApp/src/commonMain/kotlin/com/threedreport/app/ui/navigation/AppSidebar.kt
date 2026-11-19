@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.threedreport.app.ui.components.BrandMark
+import com.threedreport.app.ui.components.CountBadge
 import com.threedreport.app.ui.theme.AppDimens
 import com.threedreport.app.ui.theme.appColors
 import com.threedreport.app.ui.theme.appType
@@ -72,6 +73,7 @@ val SIDEBAR_LABELS_MIN_WINDOW_WIDTH = 1280.dp
  *
  * @param status texto curto ao lado do rótulo ("Editando"), por tela.
  * @param hasPendingChanges pontinho de "há alteração não salva aqui", por tela.
+ * @param badge selo de contagem ao lado do rótulo (os itens do Estoque que pedem atenção), por tela; `null` não mostra nada.
  */
 @Composable
 fun AppSidebar(
@@ -81,6 +83,7 @@ fun AppSidebar(
     version: String,
     status: (AppDestination) -> String? = { null },
     hasPendingChanges: (AppDestination) -> Boolean = { false },
+    badge: (AppDestination) -> NavBadge? = { null },
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.appColors
@@ -97,14 +100,14 @@ fun AppSidebar(
             listOf(DestinationGroup.SALES, DestinationGroup.REGISTRIES).forEach { group ->
                 GroupTitle(group, compact)
                 AppDestination.entries.filter { it.group == group }.forEach { destination ->
-                    SidebarItem(destination, destination == selected, compact, status(destination), hasPendingChanges(destination)) {
+                    SidebarItem(destination, destination == selected, compact, status(destination), hasPendingChanges(destination), badge(destination)) {
                         onSelect(destination)
                     }
                 }
             }
         }
         AppDestination.entries.filter { it.group == DestinationGroup.FOOTER }.forEach { destination ->
-            SidebarItem(destination, destination == selected, compact, status(destination), hasPendingChanges(destination)) {
+            SidebarItem(destination, destination == selected, compact, status(destination), hasPendingChanges(destination), badge(destination)) {
                 onSelect(destination)
             }
         }
@@ -155,6 +158,7 @@ private fun SidebarItem(
     compact: Boolean,
     status: String?,
     hasPendingChanges: Boolean,
+    badge: NavBadge?,
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.appColors
@@ -194,6 +198,9 @@ private fun SidebarItem(
                 if (hasPendingChanges) {
                     Box(Modifier.align(Alignment.TopEnd).offset(x = space.xxs, y = -space.xxs).size(AppDimens.pendingDotSize).clip(CircleShape).background(colors.onNavy))
                 }
+                if (compact && badge != null) {
+                    CountBadge(badge.count, badge.description, Modifier.align(Alignment.TopEnd).offset(x = space.sm, y = -space.xs))
+                }
             }
             if (!compact) {
                 Text(
@@ -207,6 +214,7 @@ private fun SidebarItem(
                 status?.let {
                     Text(it, style = MaterialTheme.appType.label, color = colors.onNavyMuted, maxLines = 1)
                 }
+                badge?.let { CountBadge(it.count, it.description) }
             }
         }
     }
@@ -221,3 +229,6 @@ private fun SidebarItem(
         item()
     }
 }
+
+/** O selo de contagem de um item da barra: o número e o texto que o leitor de tela diz no lugar dele. */
+data class NavBadge(val count: Int, val description: String)

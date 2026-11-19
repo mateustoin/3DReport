@@ -12,6 +12,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.Density
 import com.threedreport.app.AppContainer
 import com.threedreport.app.data.OrdersView
+import com.threedreport.app.screenshots.Catalog
 import com.threedreport.app.screenshots.clickByDescription
 import com.threedreport.app.screenshots.clickByText
 import com.threedreport.app.screenshots.settle
@@ -27,6 +28,7 @@ import com.threedreport.app.ui.components.HelpText
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.navigation.AppDestination
 import com.threedreport.app.ui.theme.AppTheme
+import com.threedreport.core.model.StockItemRef
 import com.threedreport.core.model.ThemeMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -277,5 +279,52 @@ class TabNavigationTest {
         assertFalse(run.lost, run.report())
         assertNotNull(run.cycle, run.report())
         assertTrue(run.unreached.isEmpty(), run.report())
+    }
+
+    /** O estoque de exemplo da Leva 12: uma cor e um insumo controlados, pra tela Estoque ter linhas, painel e diálogos. */
+    private fun trackSample(container: AppContainer) {
+        container.stock.startTracking(StockItemRef.ColorRef(Catalog.PLA_ID, Catalog.COR_PRETO), 120.0)
+        container.stock.startTracking(StockItemRef.ConsumableRef("insumo-argola"), 8.0)
+    }
+
+    @Test
+    fun stockScreenReachesTheViewsAndThePrimaryAction() {
+        checkScreen(
+            TabScenario("Estoque", AppDestination.STOCK, maxTabs = 40, walkBack = false, before = ::trackSample),
+            mustReach = listOf("Registrar compra", "Saldo", "Compras", "Lista de compras"),
+        )
+    }
+
+    @Test
+    fun stockItemPanelReachesItsFields() {
+        checkScreen(
+            TabScenario("Estoque: painel", AppDestination.STOCK, maxTabs = 60, before = ::trackSample, setup = { it.clickByText("Preto") }),
+            mustReach = listOf("Avisar abaixo de (g)", "Carretel vazio (g)", "Salvar", "Cancelar"),
+        )
+    }
+
+    @Test
+    fun stockPurchaseFormReachesEveryField() {
+        checkScreen(
+            TabScenario("Estoque: compra", AppDestination.STOCK, maxTabs = 90, before = ::trackSample, setup = { it.clickByText("Registrar compra") }),
+            mustReach = listOf("Fornecedor", "Link", "Item", "Quantidade", "Preço pago", "Frete", "Salvar"),
+        )
+    }
+
+    @Test
+    fun stockWeighDialogStartsOnTheScaleFieldAndStaysInside() {
+        val scenario = TabScenario(
+            "Estoque: pesar",
+            AppDestination.STOCK,
+            maxTabs = 30,
+            dialog = true,
+            before = ::trackSample,
+            setup = { it.clickByDescription("Pesei o carretel") },
+        )
+        val run = runScenario(container, scenario, frames = 4, delayMs = 100)
+        assertEquals("Peso na balança (g)", run.initial?.name, run.report())
+        assertFalse(run.escaped, run.report())
+        assertFalse(run.lost, run.report())
+        assertNotNull(run.cycle, run.report())
     }
 }

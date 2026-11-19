@@ -110,6 +110,15 @@ fun DeleteOrArchiveDialog(
 @Composable
 fun ArchivedSection(count: Int, content: @Composable () -> Unit) {
     if (count == 0) return
+    CollapsibleSection(stringResource(Res.string.common_archived_section, count), content)
+}
+
+/**
+ * Seção recolhida no fim de uma lista, com o [title] em `label` e a seta que abre e fecha ("Arquivados (3)", "Sem controle
+ * de saldo (6)"). Começa fechada; a escolha de abrir fica enquanto a tela existe.
+ */
+@Composable
+fun CollapsibleSection(title: String, content: @Composable () -> Unit) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     Row(
         modifier = Modifier
@@ -121,7 +130,7 @@ fun ArchivedSection(count: Int, content: @Composable () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
     ) {
         Text(
-            stringResource(Res.string.common_archived_section, count),
+            title,
             style = MaterialTheme.appType.label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

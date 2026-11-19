@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos em inglês (decisão 154), com as mesmas chaves de values/ e o glossário de docs/glossario.md.
+  Estoque e compras (Leva 12). O teste de paridade (StringResourceParityTest) confere chaves, marcadores e plurais.
+-->
+<resources>
+    <!-- Stock -->
+    <string name="stock_title">Stock</string>
+    <string name="stock_view_balance">Balance</string>
+    <string name="stock_view_purchases">Purchases</string>
+    <string name="stock_view_shopping">Shopping list</string>
+    <string name="stock_view_shopping_count">Shopping list (%1$d)</string>
+    <string name="stock_action_register_purchase">Record purchase</string>
+    <string name="stock_amount_units">%1$s pcs</string>
+    <string name="stock_unit_g">g</string>
+    <string name="stock_unit_un">pcs</string>
+    <string name="stock_item_removed">Removed item</string>
+    <plurals name="stock_alert_banner">
+        <item quantity="one">%1$d item running out or below its limit</item>
+        <item quantity="other">%1$d items running out or below their limit</item>
+    </plurals>
+    <plurals name="stock_alert_badge">
+        <item quantity="one">%1$d item needs attention</item>
+        <item quantity="other">%1$d items need attention</item>
+    </plurals>
+    <string name="stock_empty_balance">Add filaments or supplies to track your stock.</string>
+    <string name="stock_section_filaments">Filaments</string>
+    <string name="stock_section_consumables">Supplies</string>
+    <string name="stock_section_untracked">Not tracked (%1$d)</string>
+    <string name="stock_action_track">Track balance</string>
+    <string name="stock_action_weigh">I weighed the spool</string>
+    <string name="stock_action_manual_use">One-off use</string>
+    <string name="stock_action_adjust">Adjust balance</string>
+    <string name="stock_action_stop">Stop tracking</string>
+    <string name="stock_row_reserved">%1$s reserved</string>
+    <string name="stock_row_low">below %1$s</string>
+    <string name="stock_row_out">running out</string>
+    <string name="stock_row_limit">alert below %1$s</string>
+
+    <string name="stock_purchases_empty">No purchases recorded.</string>
+
+    <string name="stock_shopping_empty">Nothing to buy for approved orders.</string>
+    <string name="stock_shopping_empty_untracked">Nothing to buy for approved orders. The list follows the items you track.</string>
+    <string name="stock_shopping_see_balance">See the balance</string>
+    <string name="stock_shopping_copy">Copy list</string>
+    <string name="stock_shopping_register">Record purchase from list</string>
+    <string name="stock_shopping_reason_orders">approved orders: %1$s</string>
+    <string name="stock_shopping_reason_balance">balance: %1$s</string>
+    <string name="stock_shopping_reason_limit">limit: %1$s</string>
+    <string name="stock_shopping_out_title">Marked out of stock</string>
+    <plurals name="stock_shopping_out_row">
+        <item quantity="one">Marked out of stock, used in %1$d approved order</item>
+        <item quantity="other">Marked out of stock, used in %1$d approved orders</item>
+    </plurals>
+
+    <string name="stock_panel_balance">Balance</string>
+    <string name="stock_panel_reserved">Reserved</string>
+    <string name="stock_panel_available">Available</string>
+    <string name="stock_panel_average">Average purchase cost</string>
+    <string name="stock_panel_movements">Movements</string>
+    <string name="stock_per_kg">%1$s/kg</string>
+    <string name="stock_per_unit">%1$s/pc</string>
+    <string name="stock_action_buy_again">Buy again</string>
+    <string name="stock_field_threshold">Alert below (%1$s)</string>
+    <string name="stock_help_threshold">Below this the item shows as low and goes on the shopping list. Empty means no alert.</string>
+    <string name="stock_field_spool">Empty spool (g)</string>
+    <string name="stock_help_spool">The empty spool weight is on the packaging, or you can weigh an empty one. It is remembered for next time.</string>
+    <string name="stock_movement_start">Starting balance</string>
+    <string name="stock_movement_purchase">Purchase</string>
+    <string name="stock_movement_order">Order %1$s</string>
+    <string name="stock_movement_order_plain">Order</string>
+    <string name="stock_movement_adjustment">Adjustment</string>
+    <string name="stock_reason_failure">Failed print</string>
+    <string name="stock_reason_test">Test</string>
+    <string name="stock_reason_own_use">Own use</string>
+    <string name="stock_reason_other">Other</string>
+
+    <string name="stock_dialog_weigh_title">I weighed the spool</string>
+    <string name="stock_field_scale">Weight on the scale (g)</string>
+    <string name="stock_weigh_result">New balance: %1$s (was %2$s)</string>
+    <string name="stock_action_weigh_confirm">Set the balance</string>
+    <string name="stock_dialog_use_title">One-off use</string>
+    <string name="stock_field_use_amount">How much was used (%1$s)</string>
+    <string name="stock_field_reason">Reason</string>
+    <string name="stock_field_note">Note</string>
+    <string name="stock_action_use_confirm">Record use</string>
+    <string name="stock_dialog_adjust_title">Adjust balance</string>
+    <string name="stock_field_new_balance">New balance (%1$s)</string>
+    <string name="stock_adjust_current">Balance now: %1$s</string>
+    <string name="stock_action_adjust_confirm">Adjust</string>
+    <string name="stock_dialog_track_title">Track balance</string>
+    <string name="stock_field_current_balance">Current balance (%1$s)</string>
+    <string name="stock_action_track_confirm">Track</string>
+    <string name="stock_stop_title">Stop tracking?</string>
+    <string name="stock_stop_message">The balance and history of %1$s will be deleted. Purchases stay recorded.</string>
+    <string name="stock_delete_movement_title">Delete this movement?</string>
+    <string name="stock_delete_movement_message">The balance goes back to what it was before it.</string>
+    <string name="stock_delete_purchase_title">Delete this purchase?</string>
+    <string name="stock_delete_purchase_message">What it added to the balance is removed with it. Catalog prices stay as they are.</string>
+
+    <string name="stock_purchase_new">Record purchase</string>
+    <string name="stock_purchase_edit">Edit purchase</string>
+    <string name="stock_section_purchase">Purchase</string>
+    <string name="stock_section_items">Items</string>
+    <string name="stock_section_values">Amounts</string>
+    <string name="stock_field_date">Date</string>
+    <string name="stock_date_today">Today</string>
+    <string name="stock_date_yesterday">Yesterday</string>
+    <string name="stock_field_supplier">Supplier</string>
+    <string name="stock_field_link">Link</string>
+    <string name="stock_item_n">Item %1$d</string>
+    <string name="stock_field_item">Item</string>
+    <string name="stock_item_choose">Choose item</string>
+    <string name="stock_field_amount">Quantity (%1$s)</string>
+    <string name="stock_field_amount_plain">Quantity</string>
+    <string name="stock_field_price">Price paid</string>
+    <string name="stock_quick_1kg">1 kg</string>
+    <string name="stock_quick_500g">500 g</string>
+    <string name="stock_cost_per_kg">Cost per kg</string>
+    <string name="stock_cost_per_unit">Cost per piece</string>
+    <string name="stock_help_untracked_color">This color is not tracked: the purchase is recorded, but it does not add grams.</string>
+    <string name="stock_help_untracked_consumable">This supply is not tracked: the purchase is recorded, but it does not add pieces.</string>
+    <string name="stock_action_add_item">Add item</string>
+    <string name="stock_action_remove_item">Remove item %1$d</string>
+    <string name="stock_field_shipping">Shipping</string>
+    <string name="stock_total">Total</string>
+    <string name="stock_update_filament">Update the price of %1$s from %2$s/kg to %3$s/kg</string>
+    <string name="stock_update_consumable">Update the cost of %1$s from %2$s to %3$s</string>
+    <string name="stock_action_delete_purchase">Delete purchase</string>
+
+    <string name="stock_error_below_spool">The weight is less than the empty spool</string>
+    <string name="stock_error_no_items">Add at least one item</string>
+    <string name="stock_error_pick_item">Choose the item</string>
+    <string name="stock_notice_weighed">Balance set</string>
+    <string name="stock_notice_use_recorded">Use recorded</string>
+    <string name="stock_notice_adjusted">Balance adjusted</string>
+    <string name="stock_notice_tracking">Balance tracking on</string>
+    <string name="stock_notice_stopped">Balance tracking off</string>
+    <string name="stock_notice_item_saved">Changes saved</string>
+    <string name="stock_notice_movement_deleted">Movement deleted</string>
+    <string name="stock_notice_purchase_saved">Purchase saved</string>
+    <string name="stock_notice_purchase_deleted">Purchase deleted</string>
+    <string name="stock_notice_list_copied">List copied</string>
+    <string name="stock_notice_copy_failed">Could not copy the list</string>
+    <string name="stock_notice_link_failed">Could not open the link</string>
+
+    <!-- Stock in other screens -->
+    <string name="filaments_menu_more">More actions</string>
+    <string name="filaments_menu_export">Export filaments</string>
+    <string name="filaments_menu_import">Import filaments</string>
+    <string name="filaments_export_done">Filaments exported</string>
+    <string name="filaments_import_none">No new filaments</string>
+    <plurals name="filaments_import_done">
+        <item quantity="one">%1$d filament imported</item>
+        <item quantity="other">%1$d filaments imported</item>
+    </plurals>
+    <plurals name="filaments_import_already">
+        <item quantity="one">%1$d was already in the catalog</item>
+        <item quantity="other">%1$d were already in the catalog</item>
+    </plurals>
+    <plurals name="filaments_import_invalid">
+        <item quantity="one">%1$d with invalid data</item>
+        <item quantity="other">%1$d with invalid data</item>
+    </plurals>
+    <string name="filaments_import_result">%1$s.</string>
+    <string name="filaments_import_not_this_format">This file is not a 3DReport filaments file. Nothing was imported.</string>
+    <string name="filaments_import_newer_version">This file is from a newer version of 3DReport. Update the app to import it. Nothing was imported.</string>
+    <string name="platform_pick_filaments">Choose filaments file</string>
+    <string name="consumables_row_in_stock">%1$s pcs in stock</string>
+    <string name="quote_stock_warning_left_reserved">Not enough %1$s: this order uses %2$s and %3$s are free (%4$s already reserved for approved orders).</string>
+    <string name="quote_stock_warning_left">Not enough %1$s: this order uses %2$s and %3$s are free.</string>
+    <string name="quote_stock_warning_empty_reserved">Not enough %1$s: this order uses %2$s and nothing is free (%3$s already reserved for approved orders).</string>
+    <string name="quote_stock_warning_empty">Not enough %1$s: this order uses %2$s and nothing is free.</string>
+    <string name="about_shortcut_settings">Open Settings</string>
+    <string name="about_shortcut_settings_keys">Ctrl/Cmd+comma</string>
+    <string name="nav_stock">Stock</string>
+</resources>

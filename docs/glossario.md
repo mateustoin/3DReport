@@ -60,3 +60,13 @@ os plurais diferirem ou se um texto em inglês tiver travessão. Ver
 | Marca d'água | Watermark |
 | Impressão (de um orçamento) | Print |
 | Vezes | Runs |
+| Estoque | Stock |
+| Saldo | Balance |
+| Lista de compras | Shopping list |
+| Compra | Purchase |
+| Registrar compra | Record purchase |
+| Consumo avulso | One-off use |
+| Pesei o carretel | I weighed the spool |
+| Corrigir saldo | Adjust balance |
+| Controlar saldo | Track balance |
+| Reservado | Reserved |
