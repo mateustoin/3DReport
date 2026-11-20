@@ -86,7 +86,7 @@ fun SwatchButton(color: Color, description: String, selected: Boolean, onClick: 
 
 /**
  * Selo de uma cor do filamento na lista, que marca se tem em estoque: com amostra, nome e, quando acabou, o
- * [outOfStockLabel]. Clicar alterna ([onToggle]). Acabou fica apagado. Com [onSelectedRow] (linha selecionada, que já é `tint`), o fundo do selo vira `card`.
+ * [outOfStockLabel]. Clicar alterna ([onToggle]). Acabou fica apagado. Com [balanceText] (a cor tem controle de saldo, Leva 12), o saldo vem depois do nome ("Vermelho · 640 g"), em `error` quando [balanceAttention] (baixo ou sem saldo); [balanceStatus] é o mesmo aviso em palavra, pro leitor de tela; o texto sempre acompanha, a cor sozinha não diz. Com [onSelectedRow] (linha selecionada, que já é `tint`), o fundo do selo vira `card`.
  */
 @Composable
 fun ColorChip(
@@ -97,11 +97,15 @@ fun ColorChip(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
     onSelectedRow: Boolean = false,
+    balanceText: String? = null,
+    balanceAttention: Boolean = false,
+    balanceStatus: String? = null,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
     var focused by remember { mutableStateOf(false) }
-    val description = if (inStock) label else "$label, $outOfStockLabel"
+    val base = if (inStock) label else "$label, $outOfStockLabel"
+    val description = listOfNotNull(base, balanceText, balanceStatus).joinToString(", ")
     Row(
         modifier = modifier
             .alpha(if (inStock) 1f else 0.6f)
@@ -122,5 +126,13 @@ fun ColorChip(
         ColorSwatch(color, size = AppDimens.swatchSmallSize)
         Text(label, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
         if (!inStock) Text(outOfStockLabel, style = MaterialTheme.appType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        if (balanceText != null) {
+            Text(
+                "· $balanceText",
+                style = MaterialTheme.appType.caption,
+                color = if (balanceAttention) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
     }
 }

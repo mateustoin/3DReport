@@ -85,6 +85,8 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Cadastro de impressoras — perfis salvos (consumo, manutenção, investimento), com catálogo pré-cadastrado das principais marcas pra escolher
 - Manutenção por impressora: cada componente com o seu intervalo em horas (trocar bico, lubrificar eixos), aviso quando está perto ou vencido, diário do que foi feito e horas de uso fora de orçamento (calibração, reimpressão)
 - Cadastro de insumos, com o custo de cada unidade
+- Estoque opcional em gramas por cor e em unidades por insumo, com baixa sozinha quando o pedido fica Pronto, consumo avulso (falha, teste), "pesei o carretel", aviso de estoque baixo e de falta no orçamento, compras com frete que atualizam o preço (só se você confirmar) e lista de compras
+- Importar e exportar filamentos em arquivo, pra compartilhar o cadastro
 - Arquivar filamento, impressora, serviço, insumo ou canal de venda em uso: some das escolhas de um orçamento novo sem apagar nada, e pedidos/produtos antigos continuam calculando normalmente
 
 **Personalização do PDF**
@@ -101,7 +103,7 @@ sem mensalidade: seus preços e seus clientes não saem da sua máquina.
 - Múltiplas moedas (BRL, USD, EUR, GBP), com separador decimal/milhar correto
 - Tema claro/escuro (segue o sistema por padrão)
 - App em português e em inglês: o idioma segue o sistema por padrão e dá pra trocar em Configurações, na hora; PDF, mensagem, imagem e recibo saem no idioma escolhido
-- Atalhos de teclado: `Ctrl`/`Cmd` + `1` a `9` pulam direto pra cada tela da barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Insumos, Configurações), fora salvar/limpar orçamento
+- Atalhos de teclado: `Ctrl`/`Cmd` + `1` a `9` pulam direto pra cada tela da barra lateral (Orçamento, Pedidos, Catálogo, Dashboard, Filamentos, Impressoras, Serviços, Insumos, Estoque), `Ctrl`/`Cmd` + vírgula abre Configurações, fora salvar/limpar orçamento
 - Confirmação antes de excluir (filamentos, impressoras, serviços, pedidos)
 - A janela lembra tamanho, posição e se estava maximizada, e volta a abrir assim (se ainda couber na tela)
 - Verificação opcional de nova versão: desligada por padrão; quando ligada, ao abrir o app a única coisa que sai da sua máquina é uma consulta à página pública de releases do GitHub, pra avisar se há uma versão mais nova

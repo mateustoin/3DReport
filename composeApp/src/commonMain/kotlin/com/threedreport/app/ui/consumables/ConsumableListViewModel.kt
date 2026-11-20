@@ -10,17 +10,21 @@ import _3dreport.composeapp.generated.resources.consumables_notice_deleted
 import _3dreport.composeapp.generated.resources.consumables_notice_restored
 import _3dreport.composeapp.generated.resources.consumables_notice_saved
 import com.threedreport.app.data.ConsumableRepository
+import com.threedreport.app.data.StockRepository
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.components.PendingDelete
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
+import com.threedreport.app.ui.stock.StockBadge
+import com.threedreport.app.ui.stock.badges
 import com.threedreport.app.ui.text.UiText
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.model.StockItemRef
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +32,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -43,6 +48,8 @@ data class ConsumablesUiState(
     val archived: List<Consumable> = emptyList(),
     val form: ConsumableFormState? = null,
     val pendingDelete: PendingDelete? = null,
+    /** O saldo dos insumos com controle de saldo (Leva 12), pelo id do insumo, pra a linha mostrar "8 un em estoque" e, se baixo ou sem saldo, dizer. */
+    val balances: Map<String, StockBadge> = emptyMap(),
 ) {
     /** Nenhum insumo cadastrado, nem arquivado: a tela mostra o estado vazio com o botão que cria o primeiro. */
     val isEmpty: Boolean get() = active.isEmpty() && archived.isEmpty()
@@ -62,6 +69,8 @@ class ConsumableListViewModel(
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
     /** A moeda em uso: os números são lidos e mostrados com o separador decimal dela, o mesmo que o campo usa pra validar. */
     private val currency: () -> Currency = { Currency.BRL },
+    /** O estoque (Leva 12): com ele, a linha do insumo controlado mostra o saldo. */
+    private val stock: StockRepository? = null,
 ) {
 
     private val state = MutableStateFlow(ConsumablesUiState().withItems(repository.consumables.value))
@@ -72,6 +81,12 @@ class ConsumableListViewModel(
 
     init {
         repository.consumables.onEach { items -> state.update { it.withItems(items) } }.launchIn(scope)
+        stock?.let { tracking ->
+            state.update { it.copy(balances = balancesOf(tracking)) }
+            combine(tracking.items, tracking.movements) { _, _ -> }
+                .onEach { state.update { it.copy(balances = balancesOf(tracking)) } }
+                .launchIn(scope)
+        }
     }
 
     fun startAdd() {
@@ -147,6 +162,9 @@ class ConsumableListViewModel(
         state.update { s -> s.copy(form = s.form?.takeUnless { it.id == id }, pendingDelete = null) }
         noticeFlow.tryEmit(uiText(Res.string.consumables_notice_deleted))
     }
+
+    private fun balancesOf(tracking: StockRepository): Map<String, StockBadge> =
+        tracking.badges { it is StockItemRef.ConsumableRef }.mapKeys { (ref, _) -> (ref as StockItemRef.ConsumableRef).consumableId }
 
     private fun ConsumablesUiState.withItems(items: List<Consumable>): ConsumablesUiState {
         val (archived, active) = items.partition { it.archived }

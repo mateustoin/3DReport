@@ -18,6 +18,7 @@ import _3dreport.composeapp.generated.resources.common_discard
 import _3dreport.composeapp.generated.resources.common_got_it
 import _3dreport.composeapp.generated.resources.common_open_folder
 import _3dreport.composeapp.generated.resources.common_retry
+import _3dreport.composeapp.generated.resources.stock_alert_badge
 import _3dreport.composeapp.generated.resources.storage_notice_migrated_cleanup
 import _3dreport.composeapp.generated.resources.storage_notice_migrated_kept
 import _3dreport.composeapp.generated.resources.storage_notice_migrated_message
@@ -95,6 +96,7 @@ import com.threedreport.app.ui.history.HistoryNavigation
 import com.threedreport.app.ui.history.OrdersScreen
 import com.threedreport.app.ui.navigation.AppDestination
 import com.threedreport.app.ui.navigation.AppSidebar
+import com.threedreport.app.ui.navigation.NavBadge
 import com.threedreport.app.ui.navigation.SIDEBAR_LABELS_MIN_WINDOW_WIDTH
 import com.threedreport.app.ui.navigation.destinationForShortcut
 import com.threedreport.app.ui.onboarding.OnboardingDialog
@@ -108,11 +110,13 @@ import com.threedreport.app.ui.quote.QuoteViewModel
 import com.threedreport.app.ui.services.ServiceListScreen
 import com.threedreport.app.ui.settings.SettingsScreen
 import com.threedreport.app.ui.settings.SettingsSection
+import com.threedreport.app.ui.stock.StockScreen
 import com.threedreport.app.ui.theme.AppTheme
 import com.threedreport.app.ui.theme.spacing
 import com.threedreport.core.model.Currency
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -196,6 +200,10 @@ private fun AppContent(
     val ordersDraft by viewModels.orderSettingsViewModel.uiState.collectAsState()
     val settingsDirty = settingsDraft.hasUnsavedChanges || brandingDraft.hasUnsavedChanges || ordersDraft.hasUnsavedChanges
 
+    // O selo do Estoque na barra lateral conta os itens baixos ou acabando; o ViewModel nasce cedo por isso.
+    val stockAlerts = viewModels.stockViewModel.uiState.collectAsState().value.alertCount
+    val stockAlertsText = pluralStringResource(Res.plurals.stock_alert_badge, stockAlerts, stockAlerts)
+
     AppTheme(themeMode) {
         CompositionLocalProvider(LocalCurrency provides currency, LocalSnackbarHostState provides snackbarHostState) {
             Surface(
@@ -206,6 +214,12 @@ private fun AppContent(
                     val shortcut = if (accel) destinationForShortcut(shortcutNumberOf(event.key) ?: 0) else null
                     if (shortcut != null) {
                         navigator.goTo(shortcut)
+                        return@onPreviewKeyEvent true
+                    }
+
+                    // Ctrl/Cmd+vírgula: o atalho comum de preferências leva a Configurações (decisão 163).
+                    if (accel && event.key == Key.Comma) {
+                        navigator.goTo(AppDestination.SETTINGS)
                         return@onPreviewKeyEvent true
                     }
 
@@ -227,6 +241,7 @@ private fun AppContent(
                             AppDestination.PRINTERS -> viewModels.printerListViewModel.let { vm -> vm.uiState.value.form?.let { vm.cancelEdit(); true } ?: false }
                             AppDestination.SERVICES -> viewModels.serviceListViewModel.let { vm -> vm.uiState.value.form?.let { vm.cancelEdit(); true } ?: false }
                             AppDestination.CONSUMABLES -> viewModels.consumableListViewModel.let { vm -> vm.uiState.value.form?.let { vm.cancelEdit(); true } ?: false }
+                            AppDestination.STOCK -> viewModels.stockViewModel.let { vm -> if (vm.uiState.value.panel != null) { vm.closePanel(); true } else false }
                             else -> false
                         }
 
@@ -268,6 +283,7 @@ private fun AppContent(
                                 version = APP_VERSION,
                                 status = { if (it == AppDestination.QUOTE && editing) editingLabel else null },
                                 hasPendingChanges = { it == AppDestination.SETTINGS && settingsDirty },
+                                badge = { if (it == AppDestination.STOCK && stockAlerts > 0) NavBadge(stockAlerts, stockAlertsText) else null },
                             )
                             VerticalDivider()
 
@@ -321,6 +337,8 @@ private fun AppContent(
                                     AppDestination.SERVICES -> ServiceListScreen(viewModels.serviceListViewModel)
 
                                     AppDestination.CONSUMABLES -> ConsumableListScreen(viewModels.consumableListViewModel)
+
+                                    AppDestination.STOCK -> StockScreen(viewModels.stockViewModel, onRegisterFilament = { navigator.goTo(AppDestination.FILAMENTS) })
 
                                     AppDestination.SETTINGS -> SettingsScreen(
                                         viewModels.settingsViewModel,

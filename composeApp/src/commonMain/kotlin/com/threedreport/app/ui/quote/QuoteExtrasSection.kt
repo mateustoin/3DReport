@@ -50,6 +50,7 @@ import com.threedreport.core.model.Consumable
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.Service
+import com.threedreport.core.model.StockItemRef
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -91,6 +92,7 @@ internal fun ExtrasFields(
     input: QuoteInputState,
     result: QuoteResult,
     currency: Currency,
+    stockWarnings: List<QuoteStockWarning> = emptyList(),
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.md)) {
         // O tempo é do pedido inteiro (decisão 94).
@@ -116,6 +118,7 @@ internal fun ExtrasFields(
                     ConsumableRow(
                         viewModel, consumable.id, consumable.name, consumable.unitCost, input.selectedConsumables[consumable.id],
                         input.quantity, result.errorText(QuoteFields.consumable(consumable.id)),
+                        stockWarning = stockWarnings.find { it.ref == StockItemRef.ConsumableRef(consumable.id) },
                     )
                 }
                 offer.orphanConsumables.forEach { (id, consumableInput) ->
@@ -258,6 +261,7 @@ private fun ConsumableRow(
     consumableInput: ConsumableInput?,
     orderQuantity: Int,
     quantityError: String?,
+    stockWarning: QuoteStockWarning? = null,
 ) {
     val space = MaterialTheme.spacing
     Column(verticalArrangement = Arrangement.spacedBy(space.xs)) {
@@ -282,6 +286,8 @@ private fun ConsumableRow(
                     onChange = { viewModel.setConsumableChargedPerOrder(id, it) },
                 )
             }
+            // Falta deste insumo no estoque (Leva 12): só avisa.
+            stockWarning?.let { StockWarningNotice(it) }
         }
     }
 }

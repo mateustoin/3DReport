@@ -278,13 +278,13 @@ private fun QuoteForm(
                         )
                     }
                 }
-                PrintsSection(viewModel, catalog.filaments, catalog.printers, input, result, currency, state.importing, state.collapsedPrintIds)
+                PrintsSection(viewModel, catalog.filaments, catalog.printers, input, result, currency, state.importing, state.collapsedPrintIds, state.stockWarnings)
             }
         }
 
         if (!extras.isEmpty) {
             FormSection(++number, stringResource(Res.string.quote_section_extras)) {
-                ExtrasFields(viewModel, extras, catalog.settings, input, result, currency)
+                ExtrasFields(viewModel, extras, catalog.settings, input, result, currency, state.stockWarnings)
             }
         }
 

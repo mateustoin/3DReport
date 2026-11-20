@@ -6,25 +6,50 @@ import _3dreport.composeapp.generated.resources.common_error_negative
 import _3dreport.composeapp.generated.resources.common_error_number_invalid
 import _3dreport.composeapp.generated.resources.common_error_positive
 import _3dreport.composeapp.generated.resources.common_error_required
+import _3dreport.composeapp.generated.resources.filaments_export_done
+import _3dreport.composeapp.generated.resources.filaments_import_already
+import _3dreport.composeapp.generated.resources.filaments_import_done
+import _3dreport.composeapp.generated.resources.filaments_import_invalid
+import _3dreport.composeapp.generated.resources.filaments_import_newer_version
+import _3dreport.composeapp.generated.resources.filaments_import_none
+import _3dreport.composeapp.generated.resources.filaments_import_not_this_format
+import _3dreport.composeapp.generated.resources.filaments_import_result
 import _3dreport.composeapp.generated.resources.filaments_notice_archived
 import _3dreport.composeapp.generated.resources.filaments_notice_deleted
 import _3dreport.composeapp.generated.resources.filaments_notice_restored
 import _3dreport.composeapp.generated.resources.filaments_notice_saved
 import com.threedreport.app.data.FilamentRepository
+import com.threedreport.app.data.StockRepository
+import com.threedreport.app.data.exportFilamentsJson
+import com.threedreport.app.data.importFilaments
 import com.threedreport.app.data.setArchived
 import com.threedreport.app.data.updateKeepingArchived
 import com.threedreport.app.platform.AppLocale
+import com.threedreport.app.platform.FileKind
+import com.threedreport.app.platform.PickResult
+import com.threedreport.app.platform.PlatformServices
+import com.threedreport.app.platform.defaultPlatform
+import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.CatalogUsage
 import com.threedreport.app.ui.components.PendingDelete
+import com.threedreport.app.ui.components.UiNotice
+import com.threedreport.app.ui.components.toNotice
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.parseDecimal
 import com.threedreport.app.ui.format.toInputText
+import com.threedreport.app.ui.stock.StockBadge
+import com.threedreport.app.ui.stock.badges
 import com.threedreport.app.ui.text.UiText
+import com.threedreport.app.ui.text.text
 import com.threedreport.app.ui.text.uiText
 import com.threedreport.core.model.Currency
 import com.threedreport.core.model.Filament
 import com.threedreport.core.model.FilamentColor
+import com.threedreport.core.model.FilamentExchange
+import com.threedreport.core.model.FilamentImportError
+import com.threedreport.core.model.FilamentImportPlan
 import com.threedreport.core.model.SavedQuote
+import com.threedreport.core.model.StockItemRef
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +57,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -47,6 +73,8 @@ data class FilamentsUiState(
     val archived: List<Filament> = emptyList(),
     val form: FilamentFormState? = null,
     val pendingDelete: PendingDelete? = null,
+    /** O saldo das cores com controle de saldo (Leva 12), pra o selo da cor mostrar "Vermelho · 640 g". */
+    val colorStock: Map<StockItemRef, StockBadge> = emptyMap(),
 ) {
     /** Nenhum filamento cadastrado, nem arquivado: a tela mostra o estado vazio com o botão que cria o primeiro. */
     val isEmpty: Boolean get() = active.isEmpty() && archived.isEmpty()
@@ -66,6 +94,11 @@ class FilamentListViewModel(
     private val usageQuotes: () -> List<SavedQuote> = { emptyList() },
     /** A moeda em uso: os números são lidos e mostrados com o separador decimal dela, o mesmo que o campo usa pra validar. */
     private val currency: () -> Currency = { Currency.BRL },
+    /** O estoque (Leva 12): com ele, o selo de cada cor controlada mostra o saldo. */
+    private val stock: StockRepository? = null,
+    private val platform: PlatformServices = defaultPlatform,
+    /** Hoje, em dias desde 01/01/1970: o nome sugerido do arquivo exportado. */
+    private val today: () -> Long = ::todayEpochDay,
 ) {
     private val separator: Char get() = currency().decimalSeparator
 
@@ -75,8 +108,19 @@ class FilamentListViewModel(
     private val noticeFlow = MutableSharedFlow<UiText>(extraBufferCapacity = NOTICE_BUFFER)
     val notices: SharedFlow<UiText> = noticeFlow.asSharedFlow()
 
+    private val fileNoticeFlow = MutableSharedFlow<UiNotice>(extraBufferCapacity = NOTICE_BUFFER)
+
+    /** O resultado de exportar e de importar filamentos: com "Abrir pasta" ao gravar, e o erro que fica mais tempo na tela. */
+    val fileNotices: SharedFlow<UiNotice> = fileNoticeFlow.asSharedFlow()
+
     init {
         repository.filaments.onEach { items -> state.update { it.withItems(items) } }.launchIn(scope)
+        stock?.let { tracking ->
+            state.update { it.copy(colorStock = colorStockOf(tracking)) }
+            combine(tracking.items, tracking.movements) { _, _ -> }
+                .onEach { state.update { it.copy(colorStock = colorStockOf(tracking)) } }
+                .launchIn(scope)
+        }
     }
 
     fun startAdd() {
@@ -231,6 +275,62 @@ class FilamentListViewModel(
             val form = s.form?.takeIf { it.id == filamentId } ?: return@update s
             s.copy(form = form.copy(colors = form.colors.map { if (it.id == colorId) it.copy(inStock = newInStock) else it }))
         }
+    }
+
+    private fun colorStockOf(tracking: StockRepository): Map<StockItemRef, StockBadge> = tracking.badges { it is StockItemRef.ColorRef }
+
+    /**
+     * "Exportar filamentos" (decisão 164): grava os filamentos não arquivados num `.json`, sem saldo, compras nem ids. O
+     * seletor de arquivo é o nativo do sistema; cancelar não avisa nada.
+     */
+    fun exportFilaments() {
+        val text = repository.exportFilamentsJson()
+        val result = platform.saveFile(text.encodeToByteArray(), FilamentExchange.suggestedFileName(today()), platform.documentsDirectory())
+        result.toNotice(uiText(Res.string.filaments_export_done))?.let(fileNoticeFlow::tryEmit)
+    }
+
+    /**
+     * "Importar filamentos": lê o arquivo escolhido e acrescenta os filamentos novos (cores "tem"), pulando os que já existem.
+     * O aviso diz quantos entraram, quantos já estavam e quantos tinham dado inválido; arquivo de outro formato ou de versão
+     * mais nova não importa nada.
+     */
+    fun importFilaments() {
+        when (val picked = platform.pickFile(FileKind.FILAMENTS)) {
+            PickResult.Cancelled -> Unit
+            is PickResult.Failed -> fileNoticeFlow.tryEmit(UiNotice(picked.text(), isError = true))
+            is PickResult.Deferred -> importPicked(picked.read())
+            is PickResult.Picked -> importText(picked.file.bytes.decodeToString())
+        }
+    }
+
+    private fun importPicked(picked: PickResult) {
+        when (picked) {
+            is PickResult.Picked -> importText(picked.file.bytes.decodeToString())
+            is PickResult.Failed -> fileNoticeFlow.tryEmit(UiNotice(picked.text(), isError = true))
+            else -> Unit
+        }
+    }
+
+    private fun importText(text: String) {
+        val notice = when (val plan = repository.importFilaments(text)) {
+            is FilamentImportPlan.Rejected -> UiNotice(
+                uiText(if (plan.error == FilamentImportError.NEWER_VERSION) Res.string.filaments_import_newer_version else Res.string.filaments_import_not_this_format),
+                isError = true,
+            )
+
+            is FilamentImportPlan.Ready -> UiNotice(importSummary(plan), isError = false)
+        }
+        fileNoticeFlow.tryEmit(notice)
+    }
+
+    /** "5 filamentos importados, 2 já estavam no cadastro, 1 com dados inválidos." */
+    private fun importSummary(plan: FilamentImportPlan.Ready): UiText {
+        val parts = buildList {
+            add(if (plan.toAdd.isEmpty()) uiText(Res.string.filaments_import_none) else UiText.Plural(Res.plurals.filaments_import_done, plan.toAdd.size, listOf(plan.toAdd.size)))
+            if (plan.alreadyPresent > 0) add(UiText.Plural(Res.plurals.filaments_import_already, plan.alreadyPresent, listOf(plan.alreadyPresent)))
+            if (plan.invalid > 0) add(UiText.Plural(Res.plurals.filaments_import_invalid, plan.invalid, listOf(plan.invalid)))
+        }
+        return uiText(Res.string.filaments_import_result, UiText.Joined(parts, separator = ", "))
     }
 
     private fun FilamentsUiState.withItems(items: List<Filament>): FilamentsUiState {

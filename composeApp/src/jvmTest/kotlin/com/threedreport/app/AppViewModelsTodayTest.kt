@@ -23,6 +23,7 @@ class AppViewModelsTodayTest {
             templates = storage.templates(),
             clients = storage.clients(),
             maintenance = storage.maintenance(),
+            stock = storage.stock(),
             quoteHistory = storage.quoteHistory(),
             settings = storage.settings(),
             branding = storage.branding(),

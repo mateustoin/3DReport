@@ -17,6 +17,7 @@ import com.threedreport.app.ui.settings.CurrencyViewModel
 import com.threedreport.app.ui.settings.OrderSettingsViewModel
 import com.threedreport.app.ui.settings.SalesChannelViewModel
 import com.threedreport.app.ui.settings.SettingsViewModel
+import com.threedreport.app.ui.stock.StockViewModel
 import com.threedreport.app.ui.templates.TemplateListViewModel
 import com.threedreport.app.ui.theme.ThemeViewModel
 import com.threedreport.core.model.QuoteKind
@@ -52,6 +53,7 @@ class AppViewModels(
         consumableRepository = container.consumables,
         brandingRepository = container.branding,
         today = today,
+        stockRepository = container.stock,
     )
 
     /** O da aba. Cedo: é a tela de abertura, e o gerador de capturas ([prepareQuote]) o preenche antes de desenhar. */
@@ -86,7 +88,12 @@ class AppViewModels(
     val catalogViewModel: QuoteHistoryViewModel by lazy { newHistoryViewModel(QuoteKind.PRODUCT) }
     val dashboardViewModel: DashboardViewModel by lazy { DashboardViewModel(container.quoteHistory, container.settings, scope) }
     val filamentListViewModel: FilamentListViewModel by lazy {
-        FilamentListViewModel(container.filaments, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
+        FilamentListViewModel(
+            container.filaments, scope, container.quoteHistory::quotesIncludingTrash,
+            currency = { container.currency.currency.value },
+            stock = container.stock,
+            today = today,
+        )
     }
     val printerListViewModel: PrinterListViewModel by lazy {
         PrinterListViewModel(container.printers, container.quoteHistory, container.maintenance, scope, currency = { container.currency.currency.value })
@@ -95,7 +102,21 @@ class AppViewModels(
         ServiceListViewModel(container.services, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
     }
     val consumableListViewModel: ConsumableListViewModel by lazy {
-        ConsumableListViewModel(container.consumables, scope, container.quoteHistory::quotesIncludingTrash, currency = { container.currency.currency.value })
+        ConsumableListViewModel(
+            container.consumables, scope, container.quoteHistory::quotesIncludingTrash,
+            currency = { container.currency.currency.value },
+            stock = container.stock,
+        )
+    }
+
+    /** Estoque e compras (Leva 12). Cedo: o selo de alertas da barra lateral lê o estado dele desde o primeiro desenho. */
+    val stockViewModel: StockViewModel by lazy {
+        StockViewModel(
+            container.stock, container.filaments, container.consumables, container.quoteHistory, scope,
+            currency = { container.currency.currency.value },
+            today = today,
+            main = Dispatchers.Main,
+        )
     }
 
     /** Cedo, junto com [brandingViewModel]: o ponto de "alteração não salva" da barra lateral lê o rascunho dos dois. */

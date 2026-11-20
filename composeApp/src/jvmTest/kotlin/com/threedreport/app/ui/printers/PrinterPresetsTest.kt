@@ -81,9 +81,9 @@ class PrinterPresetsTest {
 
     @Test
     fun moneyFormats() {
-        assertEquals("R$ 2.998", 2998.0.toWholeCurrencyText())
-        assertEquals("R$ 4.499", 4498.5.toWholeCurrencyText())
-        assertEquals("R$ 22.997", 22997.0.toWholeCurrencyText())
+        assertEquals("R$\u00A02.998", 2998.0.toWholeCurrencyText())
+        assertEquals("R$\u00A04.499", 4498.5.toWholeCurrencyText())
+        assertEquals("R$\u00A022.997", 22997.0.toWholeCurrencyText())
         assertEquals("4498,50", 4498.5.toMoneyInputText())
         assertEquals("2178,50", PrinterFormState.fromPreset(PRINTER_PRESETS.first { it.model == "A1 mini" }).machinePriceText)
     }

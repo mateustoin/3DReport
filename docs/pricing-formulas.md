@@ -508,6 +508,51 @@ serviços + frete cobrado). Pedido sem sinal nem pagamento fica como antes.
   e na mensagem só enquanto `pendingDeposit > 0`; depois de pago, some e o Pix
   cobra o restante.
 
+## Estoque e compras (2026-11-18, decisões 158 a 162)
+
+Nada aqui entra no preço de um orçamento: o saldo é material, e o preço do
+cadastro só muda por uma compra salva com a caixa "Atualizar o preço" marcada.
+Pedido salvo nunca muda. Item sem controle de saldo fica como antes.
+
+- **Saldo** (`StockReport.balance`): a soma dos movimentos do item (cor de
+  filamento em gramas, insumo em unidades). Início e compra somam; pedido e
+  consumo avulso subtraem; ajuste ("Corrigir saldo", "Pesei o carretel") grava
+  `saldo novo − saldo de agora`. Pela balança: `saldo novo = peso − carretel
+  vazio` (sem carretel vazio, o peso).
+- **Consumo de um pedido** (`StockReport.consumptionOf`): filamento,
+  `weightGrams × runs × quantity` de cada uso, pelo retrato gravado no pedido
+  (densidade e diâmetro de quando foi orçado), somado por cor (a mesma soma de
+  `Quote.filamentTotals`). Cor vazia num filamento de uma cor só vai pra essa
+  cor; com várias cores, não desconta.
+  Insumo, `quantidade × (1 se por pedido, senão quantity)`. A reserva de falha
+  não entra: é preço, não material.
+- **Baixa** (`StockLedger.reconcile`): o consumo vira movimento quando o pedido
+  entra em Pronto ou Entregue, e sai quando ele volta (ou é cancelado). Pedido
+  excluído mantém o movimento. Pedido que já estava pronto quando o controle
+  do item começou não desconta. Mudança que não é no orçamento, no tipo nem no
+  andamento (pagamento, follow-up, prazo) não refaz o movimento.
+- **Reservado** (`StockReport.reservedByRef`): o consumo dos pedidos Aprovados e Em
+  impressão. **Disponível** = saldo − reservado. No Orçamento, o pedido em
+  edição sai do reservado.
+- **Estado** (`StockReport.state`): acabando com saldo ≤ 0; baixo com saldo
+  abaixo do "Avisar abaixo de"; senão, ok.
+- **Lista de compras** (`StockReport.shoppingList`): `comprar = max(0,
+  reservado + limite − saldo)`, com limite vazio contando zero.
+- **Frete da compra** (`Purchase.shippingShare`): `frete × preço da linha /
+  soma dos preços`; se todas as linhas custaram zero, `frete / linhas`.
+  **Custo da linha** = preço + parte do frete; **custo por g ou un** = custo da
+  linha / quantidade; no cadastro, por kg (× 1000) na cor e por unidade no
+  insumo (`Purchase.catalogUnitCost`).
+- **Preço sugerido pro cadastro** (`Purchase.catalogPriceUpdates`): por
+  filamento, `soma dos custos das linhas dele (todas as cores) / kg somados`;
+  por insumo, `soma dos custos / unidades somadas`. O valor é arredondado como
+  alguém digitaria no cadastro: centavos no preço por kg do filamento e 4 casas
+  no custo do insumo (insumo barato precisa de fração de centavo). Só é sugerido
+  quando o valor arredondado difere do cadastro em mais de meio centavo.
+- **Média das compras** (`StockReport.averagePurchaseCost`): `soma dos custos
+  das linhas do item / quantidade somada`, por kg ou por unidade. Só
+  informação.
+
 ## Exemplo de referência (planilha)
 
 Coberto por `core/src/commonTest/.../PricingCalculatorTest.kt`.

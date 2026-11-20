@@ -13,6 +13,9 @@ enum class FileKind(val extensions: Set<String>) {
     /** O arquivo do modelo de um orçamento (decisão 141): STL ou 3MF. */
     MODEL(setOf("stl", "3mf")),
     BACKUP(setOf("zip")),
+
+    /** O arquivo de filamentos exportado do 3DReport (decisão 164). */
+    FILAMENTS(setOf("json")),
 }
 
 /**

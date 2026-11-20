@@ -45,6 +45,8 @@ import com.threedreport.app.data.CatalogView
 import com.threedreport.app.data.Clock
 import com.threedreport.app.data.LocalStorage
 import com.threedreport.app.data.OrdersView
+import com.threedreport.app.data.deletingStockWith
+import com.threedreport.app.data.reconcilingStock
 import com.threedreport.app.platform.AppLocaleState
 import com.threedreport.app.platform.DesktopLocale
 import com.threedreport.app.platform.PickedFile
@@ -159,7 +161,13 @@ class ScreenshotRenderer {
         val dataDir = createTempDirectory("3dreport-screenshots").toFile()
         seedSampleData(dataDir, gcodesDir)
 
-        val container = buildContainer(dataDir)
+        // O relógio do app fixo no "agora" dos dados de exemplo: o que as capturas gravam (movimentos do estoque) tem a data deles.
+        val container = buildContainer(dataDir, clock = Clock { atDaysAgo(0, 12) })
+        // `-Pscreenshots.only12=true`: só as capturas da Leva 12 (rápido, pra conferir a tela).
+        if (System.getProperty("screenshots.only12") != null) {
+            renderLeva12Screenshots(container, outDir)
+            return
+        }
 
         renderAppPng(File(outDir, "orcamento.png")) {
             sampleApp(
@@ -369,6 +377,7 @@ class ScreenshotRenderer {
 
         if (System.getProperty("screenshots.leva10c") != null) renderLeva10cScreenshots(container, outDir)
         if (System.getProperty("screenshots.leva11") != null) renderLeva11Screenshots(container, outDir)
+        if (System.getProperty("screenshots.leva12") != null) renderLeva12Screenshots(container, outDir)
         if (System.getProperty("screenshots.presets") != null) renderPrinterPresetScreenshots(container, outDir)
     }
 }
@@ -896,7 +905,7 @@ internal fun sampleApp(container: AppContainer, startAt: AppDestination, prepare
  * gerado), usados tanto pra criar o catálogo em [seedSampleData] quanto pra montar os pedidos de
  * exemplo e o rascunho do print do Orçamento ([fillDraftQuote]).
  */
-private object Catalog {
+internal object Catalog {
     const val PLA_ID = "fil-pla-voolt3d"
     const val COR_BRANCO = "cor-branco"
     const val COR_PRETO = "cor-preto"
@@ -1287,11 +1296,13 @@ internal fun seedSampleData(dataDir: File, gcodesDir: File?) {
 
 /** Monta o [AppContainer] pra renderizar, como [com.threedreport.app.DesktopContainer.createDesktopContainer], mas
  * sobre a pasta temporária e sem gravação em segundo plano nem verificação de atualização de verdade. */
-internal fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }, installer: UpdateInstaller = NoUpdateInstaller): AppContainer {
-    val storage = LocalStorage(dataDir, Clock.System)
+internal fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSource { null }, installer: UpdateInstaller = NoUpdateInstaller, clock: Clock = Clock.System): AppContainer {
+    val storage = LocalStorage(dataDir, clock)
     val orderSettings = storage.orderSettings()
+    val stock = storage.stock()
+    val filaments = storage.filaments().deletingStockWith(stock)
     return AppContainer(
-        filaments = storage.filaments(),
+        filaments = filaments,
         printers = storage.printers(),
         services = storage.services(),
         salesChannels = storage.salesChannels(),
@@ -1299,7 +1310,8 @@ internal fun buildContainer(dataDir: File, releases: ReleaseSource = ReleaseSour
         templates = storage.templates(),
         clients = storage.clients(),
         maintenance = storage.maintenance(),
-        quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate },
+        stock = stock,
+        quoteHistory = storage.quoteHistory { orderSettings.settings.value.defaultDepositRate }.reconcilingStock(stock) { filaments.filaments.value },
         settings = storage.settings(),
         branding = storage.branding(),
         orderSettings = orderSettings,

@@ -100,6 +100,9 @@ val renderScreenshots by tasks.registering(Test::class) {
     providers.gradleProperty("screenshots.presets").orNull?.let { systemProperty("screenshots.presets", it) }
     // `-Pscreenshots.leva11=true` acrescenta as capturas da Leva 11 (pagamentos, mensagem pro cliente, selos, Pix, recibo).
     providers.gradleProperty("screenshots.leva11").orNull?.let { systemProperty("screenshots.leva11", it) }
+    // `-Pscreenshots.leva12=true` acrescenta as capturas da Leva 12 (tela Estoque, avisos de estoque, selo de saldo nos filamentos).
+    providers.gradleProperty("screenshots.leva12").orNull?.let { systemProperty("screenshots.leva12", it) }
+    providers.gradleProperty("screenshots.only12").orNull?.let { systemProperty("screenshots.only12", it) }
     // `-Pscreenshots.lang=en` gera as capturas com o app em inglês (decisão 157); junto com `-Pscreenshots.dir`, pra não
     // gravar por cima das em português. Ex.: -Pscreenshots.lang=en -Pscreenshots.dir=site/assets/screenshots/en
     providers.gradleProperty("screenshots.lang").orNull?.let { systemProperty("screenshots.lang", it) }

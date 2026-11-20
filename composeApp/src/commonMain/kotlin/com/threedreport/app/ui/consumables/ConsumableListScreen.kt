@@ -21,6 +21,7 @@ import _3dreport.composeapp.generated.resources.consumables_form_edit
 import _3dreport.composeapp.generated.resources.consumables_form_new
 import _3dreport.composeapp.generated.resources.consumables_help_charge
 import _3dreport.composeapp.generated.resources.consumables_help_cost
+import _3dreport.composeapp.generated.resources.consumables_row_in_stock
 import _3dreport.composeapp.generated.resources.consumables_title
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,7 +44,10 @@ import com.threedreport.app.ui.components.RowAction
 import com.threedreport.app.ui.components.ScreenHeader
 import com.threedreport.app.ui.format.LocalCurrency
 import com.threedreport.app.ui.format.toMoney
+import com.threedreport.app.ui.format.toUnitsNumberText
 import com.threedreport.app.ui.icons.AppIcons
+import com.threedreport.app.ui.stock.StockBadge
+import com.threedreport.app.ui.stock.statusRes
 import com.threedreport.app.ui.text.asString
 import com.threedreport.core.model.Consumable
 import org.jetbrains.compose.resources.stringResource
@@ -79,8 +83,8 @@ fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier 
                 onAction = viewModel::startAdd.takeIf { state.isEmpty },
             )
         }
-        state.active.forEach { key(it.id) { ConsumableRow(it, viewModel, selectedId = form?.id) } }
-        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ConsumableRow(it, viewModel, selectedId = form?.id) } } }
+        state.active.forEach { key(it.id) { ConsumableRow(it, viewModel, selectedId = form?.id, balance = state.balances[it.id]) } }
+        ArchivedSection(state.archived.size) { state.archived.forEach { key(it.id) { ConsumableRow(it, viewModel, selectedId = form?.id, balance = state.balances[it.id]) } } }
     }
 
     state.pendingDelete?.let { pending ->
@@ -97,7 +101,7 @@ fun ConsumableListScreen(viewModel: ConsumableListViewModel, modifier: Modifier 
 }
 
 @Composable
-private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewModel, selectedId: String?) {
+private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewModel, selectedId: String?, balance: StockBadge?) {
     val archiveOrRestore = if (consumable.archived) {
         RowAction(AppIcons.Unarchive, stringResource(Res.string.common_restore), { viewModel.setArchived(consumable.id, false) })
     } else {
@@ -105,7 +109,11 @@ private fun ConsumableRow(consumable: Consumable, viewModel: ConsumableListViewM
     }
     ListRow(
         title = consumable.name,
-        details = listOf(stringResource(if (consumable.chargedPerOrder) Res.string.common_charge_per_order else Res.string.common_charge_per_piece)),
+        details = listOfNotNull(
+            stringResource(if (consumable.chargedPerOrder) Res.string.common_charge_per_order else Res.string.common_charge_per_piece),
+            balance?.let { stringResource(Res.string.consumables_row_in_stock, it.amount.toUnitsNumberText()) },
+            balance?.statusRes()?.let { stringResource(it) },
+        ),
         value = consumable.unitCost.toMoney(),
         muted = consumable.archived,
         selected = selectedId == consumable.id,

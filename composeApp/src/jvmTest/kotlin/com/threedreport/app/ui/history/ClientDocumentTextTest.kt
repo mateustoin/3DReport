@@ -124,7 +124,7 @@ class ClientDocumentTextTest {
      * O desenho do PDF mudou (Leva 10B, parte 7): rótulo e valor viraram texto separado, em fontes e lugares diferentes
      * (o preço no bloco, a entrega e a validade ao lado). O que o cliente lê continua o mesmo, então a conferência é
      * por conjunto de linhas, página a página: cada linha esperada tem de estar na página. Os rótulos soltos do bloco
-     * saem em maiúsculas, sem os dois-pontos que a linha única tinha ("Valor: R$ 16,19" virou "Valor" e "R$ 16,19").
+     * saem em maiúsculas, sem os dois-pontos que a linha única tinha ("Valor: R$\u00A016,19" virou "Valor" e "R$\u00A016,19").
      */
     @Test
     fun theQuotePdfStillSaysEverythingItSaidBefore() {
@@ -138,12 +138,12 @@ class ClientDocumentTextTest {
             "Suporte de celular",
             "Para: Maria Cliente",
             "Kit com 2 peças",
-            "Valor 3 × R$ 16,19 = R$ 48,57",
-            "Pintura (× 3) R$ 15,00",
-            "Embalagem R$ 3,00",
-            "Frete R$ 12,00",
+            "Valor 3 × R$\u00A016,19 = R$\u00A048,57",
+            "Pintura (× 3) R$\u00A015,00",
+            "Embalagem R$\u00A03,00",
+            "Frete R$\u00A012,00",
             "Tempo de impressão 11 h 45 min (3 peças)",
-            "R$ 78,57",
+            "R$\u00A078,57",
             "TOTAL",
             "ENTREGA ATÉ",
             "30/09/2025",
@@ -156,10 +156,10 @@ class ClientDocumentTextTest {
             "Minha Loja (11) 99999-0000",
             "Produto",
             "Emitido em 25/09/2025",
-            "Valor R$ 16,19",
+            "Valor R$\u00A016,19",
             "Frete grátis",
             "Tempo de impressão 1 h",
-            "R$ 16,19",
+            "R$\u00A016,19",
             "TOTAL",
             "Entrega expressa",
             "Minha Loja Gerado com 3DReport",
@@ -192,12 +192,12 @@ class ClientDocumentTextTest {
             "Catálogo de produtos",
             "Chaveiros",
             "Produto",
-            "R$ 16,19",
+            "R$\u00A016,19",
             "Outros",
             "Suporte de celular",
-            "R$ 78,57",
+            "R$\u00A078,57",
             "Suporte de celular",
-            "R$ 78,57",
+            "R$\u00A078,57",
             "Gerado com 3DReport",
         )
         // O PDFBox quebra a linha com o separador do sistema (CRLF no Windows): confere o texto, não o separador.
@@ -209,22 +209,22 @@ class ClientDocumentTextTest {
         assertEquals(
             listOf(
                 "Suporte de celular · #0042",
-                "Valor: 3 × R$ 16,19 = R$ 48,57",
-                "Pintura (× 3): R$ 15,00",
-                "Embalagem: R$ 3,00",
-                "Frete: R$ 12,00",
-                "Total: R$ 78,57",
+                "Valor: 3 × R$\u00A016,19 = R$\u00A048,57",
+                "Pintura (× 3): R$\u00A015,00",
+                "Embalagem: R$\u00A03,00",
+                "Frete: R$\u00A012,00",
+                "Total: R$\u00A078,57",
                 "Prazo de entrega: até 30/09/2025 (entrega expressa)",
                 "Tempo de impressão: 11 h 45 min (3 peças)",
             ).joinToString("\n"),
             fullOrder.toCopyPasteText(testClientTexts, showPrintTime = true),
         )
         assertEquals(
-            "Produto\nValor: R$ 16,19\nFrete: grátis\nTotal: R$ 16,19\nEntrega expressa\nTempo de impressão: 1 h",
+            "Produto\nValor: R$\u00A016,19\nFrete: grátis\nTotal: R$\u00A016,19\nEntrega expressa\nTempo de impressão: 1 h",
             autoProduct.toCopyPasteText(testClientTexts, showPrintTime = true),
         )
         assertEquals(
-            "Orçamento #0007\nValor: R$ 16,19\nFrete: grátis\nTotal: R$ 16,19\nEntrega expressa",
+            "Orçamento #0007\nValor: R$\u00A016,19\nFrete: grátis\nTotal: R$\u00A016,19\nEntrega expressa",
             autoProduct.copy(kind = QuoteKind.ORDER, number = 7).toCopyPasteText(testClientTexts),
         )
     }
@@ -247,8 +247,8 @@ class ClientDocumentTextTest {
         val full = renderQuoteImage(
             texts = testClientTexts,
             title = "Suporte de celular",
-            priceText = "R$ 78,57",
-            unitPriceText = "3 peças · R$ 22,19 cada",
+            priceText = "R$\u00A078,57",
+            unitPriceText = "3 peças · R$\u00A022,19 cada",
             photoBytes = null,
             brandText = null,
             deliveryText = "Entrega até 30/09 · entrega expressa",
@@ -256,7 +256,7 @@ class ClientDocumentTextTest {
         val auto = renderQuoteImage(
             texts = testClientTexts,
             title = "Orçamento",
-            priceText = "R$ 16,19",
+            priceText = "R$\u00A016,19",
             unitPriceText = null,
             photoBytes = null,
             brandText = null,

@@ -39,6 +39,7 @@ import com.threedreport.app.data.QuoteHistoryRepository
 import com.threedreport.app.data.SalesChannelRepository
 import com.threedreport.app.data.ServiceRepository
 import com.threedreport.app.data.SettingsRepository
+import com.threedreport.app.data.StockRepository
 import com.threedreport.app.data.attachmentExtension
 import com.threedreport.app.platform.AppLocale
 import com.threedreport.app.platform.FileKind
@@ -54,6 +55,7 @@ import com.threedreport.app.platform.readThreeMfThumbnail
 import com.threedreport.app.platform.todayEpochDay
 import com.threedreport.app.ui.components.UiNotice
 import com.threedreport.app.ui.components.matchingClients
+import com.threedreport.app.ui.filaments.labelOrNull
 import com.threedreport.app.ui.format.NumberKind
 import com.threedreport.app.ui.format.displayName
 import com.threedreport.app.ui.format.parseDecimal
@@ -84,11 +86,15 @@ import com.threedreport.core.model.QuotedConsumable
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
+import com.threedreport.core.model.StockItem
+import com.threedreport.core.model.StockItemRef
+import com.threedreport.core.model.StockMovement
 import com.threedreport.core.pricing.OrderPricing
 import com.threedreport.core.pricing.OrderTerms
 import com.threedreport.core.pricing.PricingError
 import com.threedreport.core.report.PrintQueueReport
 import com.threedreport.core.report.PrinterQueueEntry
+import com.threedreport.core.report.StockReport
 import com.threedreport.core.slicer.GCodeMetadataParser
 import com.threedreport.core.stl.StlPreviewResult
 import com.threedreport.core.stl.StlProgress
@@ -155,6 +161,8 @@ class QuoteViewModel(
     private val threeMfReader: (ByteArray) -> ThreeMfThumbnail = ::readThreeMfThumbnail,
     /** Avisa quando o idioma muda, pra o rascunho passar os números que não são dinheiro pro separador novo. */
     languageChanges: Flow<Any?> = AppLocale.current,
+    /** O estoque (Leva 12): com ele, um pedido que usa mais do que sobra livre ganha o aviso em âmbar. Sem ele, nenhum aviso. */
+    private val stockRepository: StockRepository? = null,
 ) {
     private val scope: CoroutineScope = scope
 
@@ -228,6 +236,8 @@ class QuoteViewModel(
                 historyRepository.savedQuotes.map { },
                 (consumableRepository?.consumables ?: MutableStateFlow(emptyList<Consumable>())).map { },
                 (clientRepository?.clients ?: MutableStateFlow(emptyList<Client>())).map { },
+                (stockRepository?.items ?: MutableStateFlow(emptyList<StockItem>())).map { },
+                (stockRepository?.movements ?: MutableStateFlow(emptyList<StockMovement>())).map { },
             ),
         ) { }.onEach { change { it } }.launchIn(scope)
     }
@@ -261,7 +271,86 @@ class QuoteViewModel(
                 fresh.input.isProduct,
             ),
             today = today(),
+            stockWarnings = stockWarningsFor(fresh, result),
         )
+    }
+
+    /**
+     * O aviso de estoque (item 13 da Leva 12): os itens controlados que este pedido usa mais do que sobra livre. Só pra pedido,
+     * nunca pra produto do catálogo. Ao editar um pedido, ele sai do reservado (não conta duas vezes); e um pedido já Pronto ou
+     * Entregue não avisa, porque o que ele gastou já saiu do saldo e a conta ficaria dobrada.
+     */
+    private fun stockWarningsFor(state: QuoteUiState, result: QuoteResult): List<QuoteStockWarning> {
+        val stock = stockRepository ?: return emptyList()
+        val quote = result.quote ?: return emptyList()
+        if (state.input.isProduct) return emptyList()
+        val editingId = state.form.editingQuoteId
+        val catalog = state.catalog
+        if (editingId != null && catalog.savedQuotes.find { it.id == editingId }?.status in StockReport.PRINTED_STATUSES) return emptyList()
+        val snapshot = stockSnapshotFor(stock.items.value, stock.movements.value, catalog.savedQuotes, catalog.filaments)
+        val needed = StockReport.consumptionOf(quote, catalog.filaments).filterKeys { it in snapshot.tracked }
+        // O pedido em edição sai do reservado: o consumo dele, já guardado, é subtraído (e não conta duas vezes).
+        val own = editingId?.let { snapshot.consumptionByOrder[it] }.orEmpty()
+        return StockReport.shortages(needed, snapshot.balances, snapshot.reserved, excluding = own).map { shortage ->
+            val ref = shortage.ref
+            QuoteStockWarning(
+                ref = ref,
+                name = stockItemName(ref, catalog),
+                needed = shortage.needed,
+                available = shortage.available,
+                reserved = shortage.reserved,
+                printIds = if (ref is StockItemRef.ColorRef) {
+                    quote.prints.mapIndexedNotNull { index, print ->
+                        state.input.prints.getOrNull(index)?.id?.takeIf { print.job.filaments.any { StockReport.colorRefOf(it, catalog.filaments) == ref } }
+                    }.toSet()
+                } else {
+                    emptySet()
+                },
+            )
+        }
+    }
+
+    /**
+     * O que o aviso de estoque precisa dos pedidos e do estoque, guardado: o reservado de todos os pedidos, o consumo de cada um (pra
+     * tirar o que está em edição) e os saldos. Só é refeito quando itens, movimentos, pedidos ou filamentos mudam (a identidade das
+     * listas dos repositórios); mexer no orçamento, que é o caso de toda tecla, reaproveita o que já está pronto.
+     */
+    private class StockSnapshot(
+        val items: List<StockItem>,
+        val movements: List<StockMovement>,
+        val savedQuotes: List<SavedQuote>,
+        val filaments: List<Filament>,
+        val tracked: Set<StockItemRef>,
+        val balances: Map<StockItemRef, Double>,
+        val reserved: Map<StockItemRef, Double>,
+        val consumptionByOrder: Map<String, Map<StockItemRef, Double>>,
+    )
+
+    private var stockSnapshot: StockSnapshot? = null
+
+    /** Quantas vezes o [StockSnapshot] foi refeito: o teste confere que digitar não recalcula o reservado. */
+    internal var stockSnapshotBuilds: Int = 0
+        private set
+
+    private fun stockSnapshotFor(items: List<StockItem>, movements: List<StockMovement>, savedQuotes: List<SavedQuote>, filaments: List<Filament>): StockSnapshot {
+        stockSnapshot?.takeIf { it.items === items && it.movements === movements && it.savedQuotes === savedQuotes && it.filaments === filaments }?.let { return it }
+        stockSnapshotBuilds++
+        val consumptionByOrder = StockReport.reservingOrders(savedQuotes).associate { it.id to StockReport.consumptionOf(it, filaments) }
+        val reserved = HashMap<StockItemRef, Double>()
+        consumptionByOrder.values.forEach { consumption -> consumption.forEach { (ref, amount) -> reserved[ref] = (reserved[ref] ?: 0.0) + amount } }
+        return StockSnapshot(items, movements, savedQuotes, filaments, items.mapTo(HashSet()) { it.ref }, StockReport.balances(movements), reserved, consumptionByOrder)
+            .also { stockSnapshot = it }
+    }
+
+    /** "PLA Voolt Vermelho" ou "Argola de chaveiro": o nome do item de estoque, como o vendedor o conhece. */
+    private fun stockItemName(ref: StockItemRef, catalog: QuoteCatalog): String = when (ref) {
+        is StockItemRef.ColorRef -> {
+            val filament = catalog.filaments.find { it.id == ref.filamentId }
+            val color = filament?.colors?.find { it.id == ref.colorId }
+            listOfNotNull(filament?.name, color?.labelOrNull()).joinToString(" ")
+        }
+
+        is StockItemRef.ConsumableRef -> catalog.consumables.find { it.id == ref.consumableId }?.name.orEmpty()
     }
 
     /** "Em qual impressora sai mais barato" (ver [comparePrinters]), pro painel: feito aqui, e não na tela. */

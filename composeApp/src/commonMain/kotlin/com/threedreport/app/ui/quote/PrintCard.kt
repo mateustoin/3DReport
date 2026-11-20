@@ -81,6 +81,7 @@ internal fun PrintsSection(
     currency: Currency,
     importing: Boolean,
     collapsed: Set<Int>,
+    stockWarnings: List<QuoteStockWarning> = emptyList(),
 ) {
     // Arquivado sai das escolhas (decisão 115); um já escolhido continua aparecendo, marcado.
     val inStock = allFilaments.filter { it.hasStockAvailable && !it.archived }
@@ -88,7 +89,7 @@ internal fun PrintsSection(
 
     if (input.prints.size == 1) {
         val print = input.prints.single()
-        PrintFields(viewModel, inStock, printers, print, result.prints.firstOrNull(), result, currency, showRuns = false)
+        PrintFields(viewModel, inStock, printers, print, result.prints.firstOrNull(), result, currency, showRuns = false, stockWarnings = stockWarnings)
         AppButton(stringResource(Res.string.quote_print_add), onClick = { viewModel.addPrint() }, icon = AppIcons.Add)
         return
     }
@@ -109,6 +110,7 @@ internal fun PrintsSection(
                     importing = importing,
                     expanded = print.id !in collapsed,
                     onToggleExpanded = { viewModel.toggleCollapsed(print.id) },
+                    stockWarnings = stockWarnings,
                 )
             }
         }
@@ -146,6 +148,7 @@ private fun PrintCard(
     importing: Boolean,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
+    stockWarnings: List<QuoteStockWarning>,
 ) {
     var editingSettings by remember { mutableStateOf(false) }
     val title = printTitle(number, print.name)
@@ -207,7 +210,7 @@ private fun PrintCard(
                 )
             }
         }
-        PrintFields(viewModel, inStock, printers, print, resolved, result, currency, showRuns = true)
+        PrintFields(viewModel, inStock, printers, print, resolved, result, currency, showRuns = true, stockWarnings = stockWarnings)
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.sm)) {
             if (importing) {

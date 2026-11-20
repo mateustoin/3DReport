@@ -10,6 +10,7 @@ import com.threedreport.core.model.Quote
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
+import com.threedreport.core.model.StockItemRef
 
 /**
  * Os cadastros e as configurações que a tela de Orçamento lê, como estavam na última vez que o ViewModel
@@ -46,6 +47,8 @@ data class QuoteCatalog(
  *   como urgente" (ver [shouldSuggestRush]).
  * @property today hoje, em dias desde 01/01/1970, a mesma régua do atraso; o seletor de prazo usa este, e não o
  *   relógio do sistema.
+ * @property stockWarnings os itens controlados que este pedido usa mais do que sobra livre (aviso em âmbar, Leva 12); vazia pra produto,
+ *   sem estoque ou com o estoque dando conta.
  * @property pendingSend o envio ("Enviar pro cliente") segurado porque o prazo já venceu, até a pessoa confirmar ou
  *   desistir; o mesmo aviso de Pedidos.
  * @property exporting o PDF ou a imagem do "Enviar pro cliente" está sendo gerado.
@@ -70,6 +73,7 @@ data class QuoteUiState(
     val suggestRush: Boolean = false,
     val today: Long = 0L,
     val pendingSend: ClientExport? = null,
+    val stockWarnings: List<QuoteStockWarning> = emptyList(),
 )
 
 /**
@@ -77,3 +81,18 @@ data class QuoteUiState(
  * somando [queuedMinutes] de máquina; [thisMinutes] é o tempo que este pedido pede nela.
  */
 data class QueueHint(val printerName: String, val queuedMinutes: Double, val queuedQuoteCount: Int, val thisMinutes: Double)
+
+/**
+ * "Falta PLA Voolt Vermelho: este pedido usa 320 g e sobram 250 g livres (180 g já reservados pra pedidos aprovados)."
+ * Os números são do `core` ([com.threedreport.core.report.StockShortage]); [name] já vem escrito.
+ *
+ * @property printIds as impressões (pelo id da tela) que usam a cor, pra o aviso aparecer no cartão certo; vazio no insumo.
+ */
+data class QuoteStockWarning(
+    val ref: StockItemRef,
+    val name: String,
+    val needed: Double,
+    val available: Double,
+    val reserved: Double,
+    val printIds: Set<Int>,
+)

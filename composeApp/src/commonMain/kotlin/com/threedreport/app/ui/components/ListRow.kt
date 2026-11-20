@@ -59,6 +59,9 @@ class RowAction(
  * [footer] é um bloco opcional sob os detalhes (o estoque de cada cor, a situação da manutenção); o que houver nele
  * que seja clicável responde por si, sem abrir a edição.
  * As ações ficam por cima do fim da linha, com o fundo dela, e cobrem o valor enquanto estão visíveis.
+ * [leading] é um marcador antes do nome (a amostra de cor de uma cor do filamento, no Estoque); [valueError] pinta o valor de `error`
+ * (saldo baixo ou sem saldo), sempre junto de um texto que diz o motivo.
+ * [trailing] é uma ação no fim da linha (o "Controlar saldo" do Estoque), depois do valor.
  */
 @Composable
 fun ListRow(
@@ -72,6 +75,9 @@ fun ListRow(
     valueMuted: Boolean = false,
     selected: Boolean = false,
     footer: (@Composable () -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null,
+    valueError: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val colors = MaterialTheme.appColors
     val space = MaterialTheme.spacing
@@ -96,6 +102,7 @@ fun ListRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(space.md),
             ) {
+                leading?.invoke()
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         title,
@@ -119,9 +126,14 @@ fun ListRow(
                     NumericText(
                         value,
                         style = MaterialTheme.appType.body,
-                        color = if (muted || valueMuted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        color = when {
+                            valueError -> MaterialTheme.colorScheme.error
+                            muted || valueMuted -> MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
                     )
                 }
+                trailing?.invoke()
             }
         }
         HorizontalDivider(color = colors.line, thickness = AppDimens.borderWidth)

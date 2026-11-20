@@ -24,10 +24,13 @@ import com.threedreport.core.model.ManualUsageEntry
 import com.threedreport.core.model.OrderSettings
 import com.threedreport.core.model.PricingSettings
 import com.threedreport.core.model.PrinterProfile
+import com.threedreport.core.model.Purchase
 import com.threedreport.core.model.QuoteTemplate
 import com.threedreport.core.model.SalesChannel
 import com.threedreport.core.model.SavedQuote
 import com.threedreport.core.model.Service
+import com.threedreport.core.model.StockItem
+import com.threedreport.core.model.StockMovement
 import com.threedreport.core.model.ThemeMode
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.KSerializer
@@ -100,6 +103,18 @@ class LocalStorage(
         components = records("maintenance-components.json", MaintenanceComponent.serializer(), { it.id }),
         log = records("maintenance-log.json", MaintenanceLogEntry.serializer(), { it.id }),
         manualUsage = records("maintenance-usage.json", ManualUsageEntry.serializer(), { it.id }),
+    )
+
+    /**
+     * Estoque e compras (Leva 12), em três arquivos novos. Uma pasta sem eles (gravada antes da 2.2 ter estoque) abre com
+     * tudo vazio, e nada é gravado até alguém ligar um controle ou registrar uma compra. Quem monta o app liga o histórico
+     * e o cadastro de filamentos a ele ([reconcilingStock] e [deletingStockWith]).
+     */
+    fun stock(): StockRepository = StoredStockRepository(
+        itemRecords = records("stock-items.json", StockItem.serializer(), { it.id }),
+        movementRecords = records("stock-movements.json", StockMovement.serializer(), { it.id }),
+        purchaseRecords = records("purchases.json", Purchase.serializer(), { it.id }),
+        clock = clock,
     )
 
     /**

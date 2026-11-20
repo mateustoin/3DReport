@@ -730,7 +730,7 @@ funciona hoje.
 - [ ] **Exportar histórico pra CSV/Excel.** *Agendado na Leva 13 do Plano 2.*
   Pra quem já usa planilha
   (Excel/Google Sheets) como contabilidade paralela do negócio.
-- [ ] **Import/export de catálogo de filamentos entre criadores.** *Agendado na Leva 12 do Plano 2.*
+- [x] **Import/export de catálogo de filamentos entre criadores.** **Feito na Leva 12 (decisão 164, 2026-11-18).** A compatibilidade com Spoolman passou pra Leva 18.
   Arquivo
   (JSON/CSV) com perfis de filamentos populares (ex. marcas/linhas comuns no
   Brasil) que a comunidade possa compartilhar/importar, evitando cadastro
@@ -743,8 +743,7 @@ funciona hoje.
   open source pra banco de dados de carretel de filamento — vale avaliar ler
   esse formato em vez de inventar um próprio. **Baixa prioridade — depende
   de um serviço externo rodando** (o Spoolman roda como servidor à parte,
-  fora do escopo 100% local/arquivo do app hoje); fica pra depois do que é
-  local.
+  fora do escopo 100% local/arquivo do app hoje); agendado na Leva 18, que trata conexão.
 - [ ] **Portal de acompanhamento pro cliente** *Agendado na Leva 19 (sem servidor) e na 22 (ao vivo) do Plano 2.*
   (levantado em 2026-09-19,
   pesquisa de concorrentes — visto na Printforge). Um link que o cliente
