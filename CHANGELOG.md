@@ -7,6 +7,8 @@ projeto segue [SemVer](https://semver.org/lang/pt-BR/) (decisão 53 em
 
 ## [Não publicado]
 
+## [2.3.0] - 2026-11-20
+
 Receber e conversar com o cliente. Depois de mandar o orçamento, você cobra por Pix, registra o que entrou,
 entrega um recibo e avisa o cliente a cada passo, sem sair do app e sem internet. **Nada muda sozinho:**
 sem chave Pix e com sinal padrão 0, nenhum documento seu muda, e os pedidos que você já tem continuam como estão.

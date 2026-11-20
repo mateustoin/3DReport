@@ -59,8 +59,9 @@ histórico: só abra se a tarefa pedir.
 - **Campo novo nasce neutro** (zero ou desligado): atualizar o app não muda o preço
   de ninguém, e dado gravado por versão anterior continua abrindo. Mudança de formato
   ganha teste de compatibilidade.
-- **Versão.** As mudanças acumulam pra 2.2 em `[Não publicado]`. Não sugerir versão
-  de correção fora disso, salvo problema grave, e perguntar antes.
+- **Versão.** A última publicada é a 2.3.0 (`appVersion` em `gradle.properties`). As
+  mudanças acumulam em `[Não publicado]`, e o número da próxima versão é decidido com o
+  responsável quando ela for fechada. Não citar versão alvo em título de PR. Não sugerir versão de correção fora disso, salvo problema grave, e perguntar antes.
 - **Nunca criar nem empurrar tag `vX.Y.Z` sem perguntar:** a tag dispara a release.
 - **Repositório público:** todo push é publicação. Não fazer push nem abrir PR sem
   que tenha sido pedido.
