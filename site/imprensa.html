@@ -99,7 +99,7 @@
           </div>
           <div id="texto-longo">
             <p>Quem vende impressão 3D costuma cobrar pelo peso do filamento e esquecer o resto: a energia, o desgaste da máquina, as falhas, as horas tirando suporte e lixando, o imposto e a mordida do marketplace. O 3DReport nasceu pra fechar essa conta. É um app desktop gratuito e de código aberto que transforma o G-code do fatiador num orçamento completo: ele lê o consumo de cada filamento (inclusive peças multicolor de AMS e MMU), o tempo e a foto da peça, e soma todos os custos antes de aplicar a margem.</p>
-            <p>Depois do preço, o app cuida da venda. O orçamento vai pro cliente numa mensagem pronta no WhatsApp, numa imagem quadrada pro status ou num PDF com a logo e o contato do vendedor. Na negociação, ele mostra o preço mínimo e o lucro de qualquer valor proposto. Cada pedido segue num Kanban (orçado, aprovado, em impressão, pronto, entregue) com prazo de entrega, fila por impressora e alertas de manutenção, e o Dashboard mostra o que foi vendido, quanto rendeu cada hora de máquina e quais peças dão mais lucro. A versão 2.1 trouxe pedidos com várias impressões, como uma action figure impressa em partes em máquinas diferentes, com um preço só pro cliente.</p>
+            <p>Depois do preço, o app cuida da venda. O orçamento vai pro cliente numa mensagem pronta no WhatsApp, numa imagem quadrada pro status ou num PDF com a logo e o contato do vendedor. Na negociação, ele mostra o preço mínimo e o lucro de qualquer valor proposto. Cada pedido segue num Kanban (orçado, aprovado, em impressão, pronto, entregue) com prazo de entrega, fila por impressora e alertas de manutenção, e o Dashboard mostra o que foi vendido, quanto rendeu cada hora de máquina e quais peças dão mais lucro. Um pedido também pode ter várias impressões, como uma action figure impressa em partes em máquinas diferentes, com um preço só pro cliente. A versão 2.3 trouxe o Pix com QR Code, o recibo de cada pagamento, mensagens prontas a cada passo do pedido, o estoque em gramas com baixa automática e o app em inglês.</p>
             <p>O projeto é brasileiro, feito em Kotlin com Compose Multiplatform e licenciado em Apache 2.0. Não tem conta, assinatura nem versão paga: tudo fica numa pasta no computador de quem usa, com backup em um clique. Ele se mantém por doações voluntárias, e o código está aberto no GitHub pra quem quiser acompanhar ou contribuir.</p>
           </div>
         </div>
@@ -115,10 +115,10 @@
           <dt>Preço</dt><dd>Grátis, sem versão paga nem assinatura. Mantido por doações</dd>
           <dt>Licença</dt><dd>Apache 2.0, código aberto no GitHub</dd>
           <dt>Sistemas</dt><dd>Windows (.msi), Linux (.deb) e macOS (.dmg, Apple Silicon e Intel)</dd>
-          <dt>Idioma</dt><dd>Português. Moedas: real, dólar, euro e libra</dd>
+          <dt>Idioma</dt><dd>Português e inglês. Moedas: real, dólar, euro e libra</dd>
           <dt>Privacidade</dt><dd>100% local: sem conta, sem internet obrigatória, os dados não saem do computador</dd>
           <dt>Fatiadores</dt><dd>Lê o G-code do Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer e Cura</dd>
-          <dt>Versão atual</dt><dd>2.2.1 (novembro de 2026)</dd>
+          <dt>Versão atual</dt><dd>2.3.0 (novembro de 2026)</dd>
           <dt>Tecnologia</dt><dd>Kotlin Multiplatform e Compose Multiplatform. A fórmula de preço é o mesmo código no app e na calculadora do site</dd>
           <dt>Autor</dt><dd>Mateus Antonio, Brasil</dd>
         </dl>
@@ -127,23 +127,23 @@
 
     <section id="novidades">
       <div class="container">
-        <h2>O que há de novo na 2.1</h2>
+        <h2>O que há de novo na 2.3</h2>
         <div class="grid">
           <div class="card">
-            <h3>Um pedido, várias impressões</h3>
-            <p>Cabeça, corpo e base de uma action figure, cada mesa na sua impressora e com o seu filamento, viram um pedido só, com um preço só pro cliente.</p>
+            <h3>Pix e recibo</h3>
+            <p>O PDF do orçamento e a mensagem do WhatsApp levam o Pix copia e cola e o QR Code. Cada pagamento registrado gera um recibo em PDF.</p>
           </div>
           <div class="card">
-            <h3>Vários G-codes de uma vez</h3>
-            <p>Arrastar vários arquivos cria uma impressão por arquivo, e o resultado mostra quanto custa cada mesa.</p>
+            <h3>Mensagens prontas</h3>
+            <p>A cada passo do pedido (aprovado, imprimindo, pronto, entregue), o app oferece a mensagem pro cliente, com o código de rastreio quando tiver.</p>
           </div>
           <div class="card">
-            <h3>Barra lateral</h3>
-            <p>Vendas (Orçamento, Pedidos, Catálogo, Dashboard) e Cadastros separados, com atalhos de teclado pra cada tela.</p>
+            <h3>Estoque em gramas</h3>
+            <p>Opcional, cor a cor. O saldo baixa sozinho quando o pedido fica pronto, e a lista de compras mostra o que falta pros pedidos aprovados.</p>
           </div>
           <div class="card">
-            <h3>Arquivar sem apagar</h3>
-            <p>Filamento, impressora, serviço ou canal que saiu de uso some das escolhas, e os pedidos antigos continuam calculando.</p>
+            <h3>O app em inglês</h3>
+            <p>Português ou English, trocado na hora em Configurações. O PDF, a mensagem e o recibo saem no idioma escolhido.</p>
           </div>
         </div>
       </div>

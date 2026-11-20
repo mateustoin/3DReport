@@ -98,7 +98,7 @@
           </div>
           <div id="texto-longo">
             <p>People who sell 3D prints often charge for the weight of the filament and forget the rest: the energy, the wear on the machine, the failures, the hours spent removing supports and sanding, the tax and the bite of the marketplace. 3DReport was made to close that gap. It is a free, open source desktop app that turns the slicer's G-code into a complete quote: it reads the usage of each filament (including multicolor parts from an AMS or MMU), the time and the photo of the part, and adds up every cost before applying the margin.</p>
-            <p>After the price, the app takes care of the sale. The quote goes to the customer in a ready-made WhatsApp message, in a square image for a story or in a PDF with the seller's logo and contact. In a negotiation, it shows the minimum price and the profit of any offered value. Each order moves along a Kanban (quoted, approved, printing, ready, delivered) with a delivery date, a queue per printer and maintenance alerts, and the Dashboard shows what sold, how much each machine hour earned and which parts make the most profit. Version 2.1 brought orders with several prints, like an action figure printed in parts on different machines, with a single price for the customer.</p>
+            <p>After the price, the app takes care of the sale. The quote goes to the customer in a ready-made WhatsApp message, in a square image for a story or in a PDF with the seller's logo and contact. In a negotiation, it shows the minimum price and the profit of any offered value. Each order moves along a Kanban (quoted, approved, printing, ready, delivered) with a delivery date, a queue per printer and maintenance alerts, and the Dashboard shows what sold, how much each machine hour earned and which parts make the most profit. An order can also have several prints, like an action figure printed in parts on different machines, with a single price for the customer. Version 2.3 brought payments with PDF receipts, ready-made messages at every order stage, stock in grams with automatic deduction and the app in English.</p>
             <p>The project was made in Brazil, built with Kotlin and Compose Multiplatform and licensed under Apache 2.0. There is no account, subscription or paid version: everything lives in a folder on the user's computer, with a one-click backup. It is kept going by voluntary donations, and the code is open on GitHub for anyone who wants to follow along or contribute.</p>
           </div>
         </div>
@@ -117,7 +117,7 @@
           <dt>Language</dt><dd>English and Portuguese. Currencies: real, dollar, euro and pound</dd>
           <dt>Privacy</dt><dd>100% local: no account, no required internet, the data never leaves the computer</dd>
           <dt>Slicers</dt><dd>Reads G-code from Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer and Cura</dd>
-          <dt>Current version</dt><dd>2.2.1 (November 2026)</dd>
+          <dt>Current version</dt><dd>2.3.0 (November 2026)</dd>
           <dt>Technology</dt><dd>Kotlin Multiplatform and Compose Multiplatform. The price formula is the same code in the app and in the site's calculator</dd>
           <dt>Author</dt><dd>Mateus Antonio, Brazil</dd>
         </dl>
@@ -126,23 +126,23 @@
 
     <section id="news">
       <div class="container">
-        <h2>What is new in 2.1</h2>
+        <h2>What is new in 2.3</h2>
         <div class="grid">
           <div class="card">
-            <h3>One order, several prints</h3>
-            <p>The head, body and base of an action figure, each plate on its own printer and with its own filament, become a single order with a single price for the customer.</p>
+            <h3>Payments and receipts</h3>
+            <p>Record every deposit and payment with its method and date, and print a PDF receipt for each one. In Brazil, quotes also carry a Pix code and QR Code.</p>
           </div>
           <div class="card">
-            <h3>Several G-codes at once</h3>
-            <p>Dragging in several files creates one print per file, and the result shows what each plate costs.</p>
+            <h3>Ready-made messages</h3>
+            <p>At every order stage (approved, printing, ready, delivered), the app offers the message for the customer, with the tracking code when there is one.</p>
           </div>
           <div class="card">
-            <h3>Sidebar</h3>
-            <p>Sales (Quote, Orders, Catalog, Dashboard) and setup screens kept apart, with keyboard shortcuts for each screen.</p>
+            <h3>Stock in grams</h3>
+            <p>Optional, color by color. The balance goes down on its own when an order is ready, and the shopping list shows what the approved orders still need.</p>
           </div>
           <div class="card">
-            <h3>Archive without deleting</h3>
-            <p>A filament, printer, service or channel that is out of use disappears from the choices, and old orders keep calculating.</p>
+            <h3>The app in English</h3>
+            <p>Português or English, switched at once in Settings. The PDF, messages and receipt follow the language you pick.</p>
           </div>
         </div>
       </div>
